@@ -1,0 +1,24 @@
+# Origin: https://github.com/ah-/rdkafka-dotnet
+
+language: csharp
+sudo: required
+dist: trusty
+
+os:
+   - osx
+   - linux
+
+env:
+    - PATH
+
+install:
+   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get install libunwind8; fi
+   - wget https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh
+   - sudo bash dotnet-install.sh --version 1.0.0-preview2-003121
+   - export PATH=$HOME/.dotnet:$PATH
+   - dotnet restore
+
+script:
+   - dotnet build ./src/RdKafka/project.json
+   - dotnet pack ./src/RdKafka/project.json
+   - dotnet test ./test/RdKafka.Tests/

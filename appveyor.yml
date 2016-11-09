@@ -1,0 +1,30 @@
+os: Visual Studio 2015
+
+configuration:
+- Release
+
+install:
+- ps: Start-FileDownload 'https://download.microsoft.com/download/A/3/8/A38489F3-9777-41DD-83F8-2CBDFAB2520C/packages/DotNetCore.1.0.0-SDK.Preview2-x64.exe'
+- cmd: DotNetCore.1.0.0-SDK.Preview2-x64.exe /quiet
+
+environment:
+  PATH: $(PATH);$(PROGRAMFILES)\dotnet\
+
+build_script:
+  - appveyor-retry dotnet restore -v Minimal
+  - dotnet build **/project.json -c %CONFIGURATION%
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/RdKafka/project.json -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/RdKafka/project.json -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - dotnet test test/RdKafka.Tests
+
+test: off
+
+artifacts:
+  - path: ./src/RdKafka/bin/Release/*.nupkg
+
+deploy:
+  provider: NuGet
+  api_key:
+    secure: qbl3uvq1riFSNeRw6/MHnaDbJ0Ft9evEcz3nQp061pKEhXn0ex4eI56dwUOO2fWF
+  skip_symbols: true
+  artifact: /.*\.nupkg/

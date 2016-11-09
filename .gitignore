@@ -1,0 +1,16 @@
+project.lock.json
+bin/
+obj/
+*.so
+*.dylib
+*.csproj.user
+*.xproj.user
+.vs
+todo.txt
+.cache
+src/RdKafka/runtimes
+Properties
+packages/
+doc/api/
+doc/_site/
+doc/src

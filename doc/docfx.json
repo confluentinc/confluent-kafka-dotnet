@@ -1,0 +1,33 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/RdKafka/*.cs"
+          ],
+          "cwd": ".."
+        }
+      ],
+      "dest": "api"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml",
+          "toc.yml",
+          "*.md"
+        ]
+      }
+    ],
+    "globalMetadata": {
+      "_appTitle": "RdKafka",
+      "_disableContribution": true,
+      "_disableFooter": true
+    },
+    "dest": "_site",
+    "template": ["default", "template"]
+  }
+}

@@ -1,0 +1,25 @@
+﻿{
+    "version": "1.0.0",
+    "authors": ["Andreas Heider"],
+
+    "buildOptions": {
+        "emitEntryPoint": true
+    },
+
+    "dependencies": {
+        "RdKafka": {
+            "target": "project"
+        }
+    },
+
+    "frameworks": {
+        "netcoreapp1.0": {
+            "dependencies": {
+                "Microsoft.NETCore.App": {
+                    "type": "platform",
+                    "version": "1.0.0"
+                }
+            }
+        }
+    }
+}
