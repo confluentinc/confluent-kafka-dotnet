@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     /// <summary>
     /// Kafka Consumer that forwards received messages as events to the application.
@@ -50,7 +50,7 @@ namespace RdKafka
                             }
                             else if (mae.Error == ErrorCode._PARTITION_EOF)
                             {
-                                OnEndReached?.Invoke(this, 
+                                OnEndReached?.Invoke(this,
                                         new TopicPartitionOffset()
                                         {
                                             Topic = mae.Message.Topic,

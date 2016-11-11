@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using RdKafka.Internal;
+using Confluent.Kafka.Internal;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     /// <summary>
-    /// Global configuration that is passed to
-    /// Consumer or Producer constructors.
+    ///     Global configuration that is passed to Consumer or Producer constructors.
     /// </summary>
     public class Config
     {
@@ -18,14 +17,14 @@ namespace RdKafka
         }
 
         /// <summary>
-        /// Dump all configuration names and values into a dictionary.
+        ///     Dump all configuration names and values into a dictionary.
         /// </summary>
         public Dictionary<string, string> Dump() => handle.Dump();
 
         /// <summary>
-        /// Get or set a configuration value directly.
+        ///     Get or set a configuration value directly.
         ///
-        /// See <see href="https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md">CONFIGURATION.md</see> for the full list of supported properties.
+        ///     See <see href="https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md">CONFIGURATION.md</see> for the full list of supported properties.
         /// </summary>
         /// <param name="name">The configuration property name.</param>
         /// <returns>The configuration property value.</returns>
@@ -44,9 +43,9 @@ namespace RdKafka
         }
 
         /// <summary>
-        /// Client group id string.
+        ///     Client group id string.
         ///
-        /// All clients sharing the same group.id belong to the same group.
+        ///     All clients sharing the same group.id belong to the same group.
         /// </summary>>
         public string GroupId
         {
@@ -55,7 +54,7 @@ namespace RdKafka
         }
 
         /// <summary>
-        /// Automatically and periodically commit offsets in the background.
+        ///     Automatically and periodically commit offsets in the background.
         /// </summary>>
         public bool EnableAutoCommit
         {
@@ -65,14 +64,14 @@ namespace RdKafka
 
         public delegate void LogCallback(string handle, int level, string fac, string buf);
         /// <summary>
-        /// Set custom logger callback.
+        ///     Set custom logger callback.
         ///
-        /// By default RdKafka logs using Console.WriteLine.
+        ///     By default Confluent.Kafka logs using Console.WriteLine.
         /// </summary>
         public LogCallback Logger { get; set; }
 
         /// <summary>
-        /// Statistics emit interval for <see cref="Handle.OnStatistics">OnStatistics</see>.
+        ///     Statistics emit interval for <see cref="Handle.OnStatistics">OnStatistics</see>.
         /// </summary>
         public TimeSpan StatisticsInterval
         {
@@ -81,8 +80,8 @@ namespace RdKafka
         }
 
         /// <summary>
-        /// Sets the default topic configuration to use for automatically
-        /// subscribed topics (e.g., through pattern-matched topics).
+        ///     Sets the default topic configuration to use for automatically subscribed topics
+        ///     (e.g., through pattern-matched topics).
         /// </summary>
         public TopicConfig DefaultTopicConfig { get; set; }
     }

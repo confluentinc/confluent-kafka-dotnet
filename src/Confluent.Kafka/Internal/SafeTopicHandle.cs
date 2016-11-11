@@ -1,14 +1,14 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace RdKafka.Internal
+namespace Confluent.Kafka.Internal
 {
     enum MsgFlags
     {
         MSG_F_FREE = 1,
         MSG_F_COPY = 2
     }
- 
+
     internal sealed class SafeTopicHandle : SafeHandleZeroIsInvalid
     {
         const int RD_KAFKA_PARTITION_UA = -1;
@@ -35,7 +35,7 @@ namespace RdKafka.Internal
                     payload, (UIntPtr) payloadCount,
                     key, (UIntPtr) keyCount,
                     opaque);
-        
+
         internal bool PartitionAvailable(int partition) => LibRdKafka.topic_partition_available(handle, partition);
     }
 }

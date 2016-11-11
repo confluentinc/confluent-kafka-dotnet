@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     public struct Metadata
     {

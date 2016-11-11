@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using RdKafka;
+using Confluent.Kafka;
 
-namespace Misc
+namespace Confluent.Kafka.Misc
 {
     public class Program
     {

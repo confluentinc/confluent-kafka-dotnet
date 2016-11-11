@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using RdKafka;
+using Confluent.Kafka;
 
-namespace RdKafka.Tests
+namespace Confluent.Kafka.Tests
 {
     public class ConfigTests
     {

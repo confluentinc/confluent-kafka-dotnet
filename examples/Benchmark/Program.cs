@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using RdKafka;
+using Confluent.Kafka;
 
-namespace Benchmark
+namespace Confluent.Kafka.Benchmark
 {
     public class Program
     {

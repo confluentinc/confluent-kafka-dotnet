@@ -4,42 +4,37 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace RdKafka.Internal
+namespace Confluent.Kafka.Internal
 {
-    enum ConfRes {
-        Unknown = -2, /* Unknown configuration name. */
-        Invalid = -1, /* Invalid configuration value. */
-        Ok = 0        /* Configuration okay */
-    }
-
-    class SafeConfigHandle : SafeHandleZeroIsInvalid
+    internal sealed class SafeTopicConfigHandle : SafeHandleZeroIsInvalid
     {
-        private SafeConfigHandle()
+        private SafeTopicConfigHandle()
         {
         }
 
-        internal static SafeConfigHandle Create()
+        internal static SafeTopicConfigHandle Create()
         {
-            var ch = LibRdKafka.conf_new();
+            var ch = LibRdKafka.topic_conf_new();
             if (ch.IsInvalid)
             {
-                throw new Exception("Failed to create config");
+                throw new Exception("Failed to create TopicConfig");
             }
             return ch;
         }
 
         protected override bool ReleaseHandle()
         {
-            LibRdKafka.conf_destroy(handle);
+            LibRdKafka.topic_conf_destroy(handle);
             return true;
         }
 
-        internal IntPtr Dup() => LibRdKafka.conf_dup(handle);
+        internal IntPtr Dup() => LibRdKafka.topic_conf_dup(handle);
 
+        // TODO: deduplicate, merge with other one
         internal Dictionary<string, string> Dump()
         {
             UIntPtr cntp = (UIntPtr) 0;
-            IntPtr data = LibRdKafka.conf_dump(handle, out cntp);
+            IntPtr data = LibRdKafka.topic_conf_dump(handle, out cntp);
 
             if (data == IntPtr.Zero)
             {
@@ -73,7 +68,7 @@ namespace RdKafka.Internal
         {
             // TODO: Constant instead of 512?
             var errorStringBuilder = new StringBuilder(512);
-            ConfRes res = LibRdKafka.conf_set(handle, name, value,
+            ConfRes res = LibRdKafka.topic_conf_set(handle, name, value,
                     errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
             if (res == ConfRes.Ok)
             {
@@ -81,7 +76,7 @@ namespace RdKafka.Internal
             }
             else if (res == ConfRes.Invalid)
             {
-                throw new ArgumentException(errorStringBuilder.ToString());
+                throw new InvalidOperationException(errorStringBuilder.ToString());
             }
             else if (res == ConfRes.Unknown)
             {
@@ -98,11 +93,11 @@ namespace RdKafka.Internal
             UIntPtr destSize = (UIntPtr) 0;
             StringBuilder sb = null;
 
-            ConfRes res = LibRdKafka.conf_get(handle, name, null, ref destSize);
+            ConfRes res = LibRdKafka.topic_conf_get(handle, name, null, ref destSize);
             if (res == ConfRes.Ok)
             {
                 sb = new StringBuilder((int) destSize);
-                res = LibRdKafka.conf_get(handle, name, sb, ref destSize);
+                res = LibRdKafka.topic_conf_get(handle, name, sb, ref destSize);
             }
             if (res != ConfRes.Ok)
             {
