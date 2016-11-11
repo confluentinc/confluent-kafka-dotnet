@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Confluent.Kafka.Internal;
@@ -12,7 +13,7 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
-    /// Handle to a topic obtained from <see cref="Producer" />.
+    ///     Handle to a topic obtained from <see cref="Producer" />.
     /// </summary>
     public class Topic : IDisposable
     {
@@ -26,15 +27,17 @@ namespace Confluent.Kafka
         readonly Producer producer;
         readonly LibRdKafka.PartitionerCallback PartitionerDelegate;
 
-        internal Topic(SafeKafkaHandle kafkaHandle, Producer producer, string topic, TopicConfig config)
+        internal Topic(SafeKafkaHandle kafkaHandle, Producer producer, string topic, IEnumerable<KeyValuePair<string, string>> config)
         {
             this.producer = producer;
 
-            config = config ?? new TopicConfig();
-            config["produce.offset.report"] = "true";
-            IntPtr configPtr = config.handle.Dup();
+            var rdKafkaTopicConfig = new TopicConfig(config);
+            rdKafkaTopicConfig["produce.offset.report"] = "true";
 
-            if (config.CustomPartitioner != null)
+            IntPtr configPtr = rdKafkaTopicConfig.handle.Dup();
+
+            // FIXME (mhowlett): CustomPartitioner currently can't be set.
+            if (rdKafkaTopicConfig.CustomPartitioner != null)
             {
                 PartitionerDelegate = (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt,
                         IntPtr rkt_opaque, IntPtr msg_opaque) =>
@@ -45,7 +48,7 @@ namespace Confluent.Kafka
                         key = new byte[(int) keylen];
                         Marshal.Copy(keydata, key, 0, (int) keylen);
                     }
-                    return config.CustomPartitioner(this, key, partition_cnt);
+                    return rdKafkaTopicConfig.CustomPartitioner(this, key, partition_cnt);
                 };
                 LibRdKafka.topic_conf_set_partitioner_cb(configPtr, PartitionerDelegate);
             }
@@ -77,13 +80,26 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
         /// </summary>
-        /// <param name="payload">Payload to send to Kafka. Can be null.</param>
-        /// <param name="deliveryHandler">IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.</param>
-        /// <param name="key">(Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).</param>
-        /// <param name="partition">(Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="deliveryHandler"/> is null.</exception>
-        /// <remarks>Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka internal thread and will block other operations - consider this when implementing IDeliveryHandler.
-        /// Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.</remarks>
+        /// <param name="payload">
+        ///     Payload to send to Kafka. Can be null.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.
+        /// </param>
+        /// <param name="key">
+        ///     (Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).
+        /// </param>
+        /// <param name="partition">
+        ///     (Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if <paramref name="deliveryHandler"/> is null.
+        /// </exception>
+        /// <remarks>
+        ///     Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka internal thread and will block other operations
+        ///         - consider this when implementing IDeliveryHandler.
+        ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
+        /// </remarks>
         public void Produce(byte[] payload, IDeliveryHandler deliveryHandler, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             Produce(payload, payload?.Length ?? 0, deliveryHandler, key, key?.Length ?? 0, partition, blockIfQueueFull);
@@ -92,15 +108,32 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
         /// </summary>
-        /// <param name="payload">Payload to send to Kafka. Can be null.</param>
-        /// <param name="payloadCount">Number of bytes to use from payload buffer</param>
-        /// <param name="deliveryHandler">IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.</param>
-        /// <param name="key">(Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).</param>
-        /// <param name="keyCount">Number of bytes to use from key buffer</param>
-        /// <param name="partition">(Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="deliveryHandler"/> is null.</exception>
-        /// <remarks>Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka-internal thread and will block other operations - consider this when implementing IDeliveryHandler.
-        /// Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.</remarks>
+        /// <param name="payload">
+        ///     Payload to send to Kafka. Can be null.
+        /// </param>
+        /// <param name="payloadCount">
+        ///     Number of bytes to use from payload buffer
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.
+        /// </param>
+        /// <param name="key">
+        ///     (Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).
+        /// </param>
+        /// <param name="keyCount">
+        ///     Number of bytes to use from key buffer
+        /// </param>
+        /// <param name="partition">
+        ///     (Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if <paramref name="deliveryHandler"/> is null.
+        /// </exception>
+        /// <remarks>
+        ///     Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka-internal thread and will block other operations
+        ///         - consider this when implementing IDeliveryHandler.
+        ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
+        /// </remarks>
         public void Produce(byte[] payload, int payloadCount, IDeliveryHandler deliveryHandler, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             if (deliveryHandler == null)
@@ -123,11 +156,11 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        /// Check if partition is available (has a leader broker).
+        ///     Check if partition is available (has a leader broker).
         ///
-        /// Return true if the partition is available, else false.
+        ///     Return true if the partition is available, else false.
         ///
-        /// This function must only be called from inside a partitioner function.
+        ///     This function must only be called from inside a partitioner function.
         /// </summary>
         public bool PartitionAvailable(int partition) => handle.PartitionAvailable(partition);
     }

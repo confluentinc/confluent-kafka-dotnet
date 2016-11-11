@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Confluent.Kafka.Internal;
 
@@ -11,9 +12,13 @@ namespace Confluent.Kafka
     {
         internal readonly SafeConfigHandle handle;
 
-        public Config()
+        public Config(IEnumerable<KeyValuePair<string, string>> config)
         {
             handle = SafeConfigHandle.Create();
+            if (config != null)
+            {
+                config.ToList().ForEach((kvp) => { this[kvp.Key] = kvp.Value; });
+            }
         }
 
         /// <summary>
@@ -47,20 +52,6 @@ namespace Confluent.Kafka
         ///
         ///     All clients sharing the same group.id belong to the same group.
         /// </summary>>
-        public string GroupId
-        {
-            set { this["group.id"] = value; }
-            get { return this["group.id"]; }
-        }
-
-        /// <summary>
-        ///     Automatically and periodically commit offsets in the background.
-        /// </summary>>
-        public bool EnableAutoCommit
-        {
-            set { this["enable.auto.commit"] = value ? "true" : "false"; }
-            get { return this["enable.auto.commit"] == "true"; }
-        }
 
         public delegate void LogCallback(string handle, int level, string fac, string buf);
         /// <summary>
@@ -69,20 +60,5 @@ namespace Confluent.Kafka
         ///     By default Confluent.Kafka logs using Console.WriteLine.
         /// </summary>
         public LogCallback Logger { get; set; }
-
-        /// <summary>
-        ///     Statistics emit interval for <see cref="Handle.OnStatistics">OnStatistics</see>.
-        /// </summary>
-        public TimeSpan StatisticsInterval
-        {
-            set { this["statistics.interval.ms"] = ((int) value.TotalMilliseconds).ToString(); }
-            get { return TimeSpan.FromMilliseconds(int.Parse(this["statistics.interval.ms"])); }
-        }
-
-        /// <summary>
-        ///     Sets the default topic configuration to use for automatically subscribed topics
-        ///     (e.g., through pattern-matched topics).
-        /// </summary>
-        public TopicConfig DefaultTopicConfig { get; set; }
     }
 }

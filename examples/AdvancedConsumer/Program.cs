@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Confluent.Kafka;
+
 
 namespace Confluent.Kafka.AdvancedConsumer
 {
@@ -12,14 +12,15 @@ namespace Confluent.Kafka.AdvancedConsumer
         {
             bool enableAutoCommit = false;
 
-            var config = new Config()
+            var config = new Dictionary<string, string>
             {
-                GroupId = "advanced-csharp-consumer",
-                EnableAutoCommit = enableAutoCommit,
-                StatisticsInterval = TimeSpan.FromSeconds(60)
+                { "group.id", "advanced-csharp-consumer" },
+                { "enable.auto.commit", enableAutoCommit.ToString() },
+                { "statistics.interval.ms", "60000" },
+                { "bootstrap.servers", brokerList }
             };
 
-            using (var consumer = new EventConsumer(config, brokerList))
+            using (var consumer = new EventConsumer(config))
             {
                 consumer.OnMessage += (obj, msg) => {
                     string text = Encoding.UTF8.GetString(msg.Payload, 0, msg.Payload.Length);

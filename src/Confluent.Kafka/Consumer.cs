@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka.Internal;
@@ -12,24 +13,28 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer : Handle
     {
-        public Consumer(Config config, string brokerList = null)
+        // TODO(mhowlett): default topic config to be set via properties in config.
+        public Consumer(IEnumerable<KeyValuePair<string, string>> config, IEnumerable<KeyValuePair<string, string>> defaultTopicConfig = null)
         {
+            var rdKafkaConfig = new Config(config.Where(a => a.Key != "bootstrap.servers"));
+            var bootstrapServers = config.FirstOrDefault(a => a.Key == "bootstrap.servers").Value;
+
             RebalanceDelegate = RebalanceCallback;
             CommitDelegate = CommitCallback;
 
-            IntPtr cfgPtr = config.handle.Dup();
+            IntPtr cfgPtr = rdKafkaConfig.handle.Dup();
             LibRdKafka.conf_set_rebalance_cb(cfgPtr, RebalanceDelegate);
             LibRdKafka.conf_set_offset_commit_cb(cfgPtr, CommitDelegate);
-            if (config.DefaultTopicConfig != null)
+            if (defaultTopicConfig != null)
             {
-                LibRdKafka.conf_set_default_topic_conf(cfgPtr,
-                        config.DefaultTopicConfig.handle.Dup());
+                var rdKafkaDefaultTopicConfig = new TopicConfig(defaultTopicConfig);
+                LibRdKafka.conf_set_default_topic_conf(cfgPtr, rdKafkaDefaultTopicConfig.handle.Dup());
             }
-            Init(RdKafkaType.Consumer, cfgPtr, config.Logger);
+            Init(RdKafkaType.Consumer, cfgPtr, rdKafkaConfig.Logger);
 
-            if (brokerList != null)
+            if (bootstrapServers != null)
             {
-                handle.AddBrokers(brokerList);
+                handle.AddBrokers(bootstrapServers);
             }
         }
 
