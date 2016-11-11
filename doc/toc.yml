@@ -1,3 +1,3 @@
 - name: Api reference
-  href: api/RdKafka.html
-  homepage: api/RdKafka.yml
+  href: api/Confluent.Kafka.html
+  homepage: api/Confluent.Kafka.yml

@@ -2,9 +2,9 @@
     "version": "0.9.2-*",
 
     "packOptions": {
-        "description": "C# Apache Kafka client",
-        "authors": ["Andreas Heider"],
-        "tags": ["kafka", "rdkafka"]
+        "description": ".NET Apache Kafka client",
+        "authors": ["Andreas Heider", "Confluent Inc"],
+        "tags": ["kafka", "librdkafka", "confluent"]
     },
 
     "dependencies": {

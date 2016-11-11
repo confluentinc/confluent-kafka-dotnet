@@ -1,13 +1,13 @@
 {
     "version": "1.0.0",
-    "authors": ["Andreas Heider"],
+    "authors": ["Andreas Heider", "Confluent Inc"],
 
     "buildOptions": {
         "emitEntryPoint": true
     },
 
     "dependencies": {
-        "RdKafka": {
+        "Confluent.Kafka": {
             "target": "project"
         }
     },

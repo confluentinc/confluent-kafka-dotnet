@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using RdKafka;
+using Confluent.Kafka;
 
-namespace SimpleProducer
+namespace Confluent.Kafka.SimpleProducer
 {
     public class Program
     {

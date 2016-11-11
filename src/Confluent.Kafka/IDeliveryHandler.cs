@@ -1,6 +1,6 @@
 using System;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     /// <summary>
     /// Used by the topics of the producer client to notify on produce request progress.

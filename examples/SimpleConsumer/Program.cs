@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using RdKafka;
+using Confluent.Kafka;
 
-namespace SimpleProducer
+namespace Confluent.Kafka.SimpleProducer
 {
     public class Program
     {

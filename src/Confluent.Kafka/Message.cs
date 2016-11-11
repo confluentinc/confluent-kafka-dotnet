@@ -1,4 +1,4 @@
-namespace RdKafka
+namespace Confluent.Kafka
 {
     public struct Message
     {

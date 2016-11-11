@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
-using RdKafka.Internal;
+using Confluent.Kafka.Internal;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     public class RdKafkaException : Exception
     {

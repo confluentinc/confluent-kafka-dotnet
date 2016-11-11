@@ -6,9 +6,10 @@ obj/
 *.csproj.user
 *.xproj.user
 .vs
+.vscode
 todo.txt
 .cache
-src/RdKafka/runtimes
+src/Confluent.Kafka/runtimes
 Properties
 packages/
 doc/api/

@@ -4,7 +4,7 @@
       "src": [
         {
           "files": [
-            "src/RdKafka/*.cs"
+            "src/Confluent.Kafka/*.cs"
           ],
           "cwd": ".."
         }
@@ -23,7 +23,7 @@
       }
     ],
     "globalMetadata": {
-      "_appTitle": "RdKafka",
+      "_appTitle": "Confluent.Kafka",
       "_disableContribution": true,
       "_disableFooter": true
     },

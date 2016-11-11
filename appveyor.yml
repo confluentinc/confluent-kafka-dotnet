@@ -13,14 +13,14 @@ environment:
 build_script:
   - appveyor-retry dotnet restore -v Minimal
   - dotnet build **/project.json -c %CONFIGURATION%
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/RdKafka/project.json -c %CONFIGURATION%)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/RdKafka/project.json -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
-  - dotnet test test/RdKafka.Tests
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - dotnet test test/Confluent.Kafka.Tests
 
 test: off
 
 artifacts:
-  - path: ./src/RdKafka/bin/Release/*.nupkg
+  - path: ./src/Confluent.Kafka/bin/Release/*.nupkg
 
 deploy:
   provider: NuGet

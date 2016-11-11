@@ -1,7 +1,10 @@
-namespace RdKafka
+namespace Confluent.Kafka
 {
-    /// <summary>Internal errors to rdkafka are prefixed with _</summary>
-    public enum ErrorCode {
+    /// <summary>
+    ///     Internal errors to rdkafka are prefixed with _
+    /// </summary>
+    public enum ErrorCode
+    {
         /// <summary>Begin internal error codes</summary>
         _BEGIN = -200,
         /// <summary>Received message is incorrect</summary>
@@ -37,33 +40,33 @@ namespace RdKafka
         /// <summary>Queue is full</summary>
         _QUEUE_FULL = -184,
         /// <summary>ISR count &lt; required.acks</summary>
-            _ISR_INSUFF = -183,
+        _ISR_INSUFF = -183,
         /// <summary>Broker node update</summary>
-            _NODE_UPDATE = -182,
+        _NODE_UPDATE = -182,
         /// <summary>SSL error</summary>
         _SSL = -181,
         /// <summary>Waiting for coordinator to become available.</summary>
-            _WAIT_COORD = -180,
+        _WAIT_COORD = -180,
         /// <summary>Unknown client group</summary>
-            _UNKNOWN_GROUP = -179,
+        _UNKNOWN_GROUP = -179,
         /// <summary>Operation in progress</summary>
-            _IN_PROGRESS = -178,
+        _IN_PROGRESS = -178,
          /// <summary>Previous operation in progress, wait for it to finish.</summary>
-            _PREV_IN_PROGRESS = -177,
+        _PREV_IN_PROGRESS = -177,
          /// <summary>This operation would interfere with an existing subscription</summary>
-            _EXISTING_SUBSCRIPTION = -176,
+        _EXISTING_SUBSCRIPTION = -176,
         /// <summary>Assigned partitions (rebalance_cb)</summary>
-            _ASSIGN_PARTITIONS = -175,
+        _ASSIGN_PARTITIONS = -175,
         /// <summary>Revoked partitions (rebalance_cb)</summary>
-            _REVOKE_PARTITIONS = -174,
+        _REVOKE_PARTITIONS = -174,
         /// <summary>Conflicting use</summary>
-            _CONFLICT = -173,
+        _CONFLICT = -173,
         /// <summary>Wrong state</summary>
-            _STATE = -172,
+        _STATE = -172,
         /// <summary>Unknown protocol</summary>
-            _UNKNOWN_PROTOCOL = -171,
+        _UNKNOWN_PROTOCOL = -171,
         /// <summary>Not implemented</summary>
-            _NOT_IMPLEMENTED = -170,
+        _NOT_IMPLEMENTED = -170,
         /// <summary>Authentication failure</summary>
         _AUTHENTICATION = -169,
         /// <summary>No stored offset</summary>
@@ -103,37 +106,37 @@ namespace RdKafka
         /// <summary>Broker disconnected before response received</summary>
         NETWORK_EXCEPTION = 13,
         /// <summary>Group coordinator load in progress</summary>
-            GROUP_LOAD_IN_PROGRESS = 14,
+        GROUP_LOAD_IN_PROGRESS = 14,
          /// <summary>Group coordinator not available</summary>
-            GROUP_COORDINATOR_NOT_AVAILABLE = 15,
+        GROUP_COORDINATOR_NOT_AVAILABLE = 15,
         /// <summary>Not coordinator for group</summary>
-            NOT_COORDINATOR_FOR_GROUP = 16,
+        NOT_COORDINATOR_FOR_GROUP = 16,
         /// <summary>Invalid topic</summary>
-            TOPIC_EXCEPTION = 17,
+        TOPIC_EXCEPTION = 17,
         /// <summary>Message batch larger than configured server segment size</summary>
-            RECORD_LIST_TOO_LARGE = 18,
+        RECORD_LIST_TOO_LARGE = 18,
         /// <summary>Not enough in-sync replicas</summary>
-            NOT_ENOUGH_REPLICAS = 19,
+        NOT_ENOUGH_REPLICAS = 19,
         /// <summary>Message(s) written to insufficient number of in-sync replicas</summary>
-            NOT_ENOUGH_REPLICAS_AFTER_APPEND = 20,
+        NOT_ENOUGH_REPLICAS_AFTER_APPEND = 20,
         /// <summary>Invalid required acks value</summary>
-            INVALID_REQUIRED_ACKS = 21,
+        INVALID_REQUIRED_ACKS = 21,
         /// <summary>Specified group generation id is not valid</summary>
-            ILLEGAL_GENERATION = 22,
+        ILLEGAL_GENERATION = 22,
         /// <summary>Inconsistent group protocol</summary>
-            INCONSISTENT_GROUP_PROTOCOL = 23,
+        INCONSISTENT_GROUP_PROTOCOL = 23,
         /// <summary>Invalid group.id</summary>
         INVALID_GROUP_ID = 24,
         /// <summary>Unknown member</summary>
-            UNKNOWN_MEMBER_ID = 25,
+        UNKNOWN_MEMBER_ID = 25,
         /// <summary>Invalid session timeout</summary>
-            INVALID_SESSION_TIMEOUT = 26,
+        INVALID_SESSION_TIMEOUT = 26,
         /// <summary>Group rebalance in progress</summary>
         REBALANCE_IN_PROGRESS = 27,
         /// <summary>Commit offset data size is not valid</summary>
-            INVALID_COMMIT_OFFSET_SIZE = 28,
+        INVALID_COMMIT_OFFSET_SIZE = 28,
         /// <summary>Topic authorization failed</summary>
-            TOPIC_AUTHORIZATION_FAILED = 29,
+        TOPIC_AUTHORIZATION_FAILED = 29,
         /// <summary>Group authorization failed</summary>
         GROUP_AUTHORIZATION_FAILED = 30,
         /// <summary>Cluster authorization failed</summary>

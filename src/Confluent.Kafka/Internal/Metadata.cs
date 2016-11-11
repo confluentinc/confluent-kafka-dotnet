@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace RdKafka.Internal
+namespace Confluent.Kafka.Internal
 {
     [StructLayout(LayoutKind.Sequential)]
     struct rd_kafka_metadata_broker {
