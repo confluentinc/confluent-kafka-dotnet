@@ -4,9 +4,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Threading;
-using RdKafka.Internal;
+using Confluent.Kafka.Internal;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     /// <summary>
     /// Shared base of <see cref="Consumer" /> and <see cref="Producer" />.

@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
-using RdKafka.Internal;
+using Confluent.Kafka.Internal;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     /// <summary>
     /// Miscellaneous APIs for the RdKafka library itself.

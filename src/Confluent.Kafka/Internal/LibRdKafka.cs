@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 #endif
 
-namespace RdKafka.Internal
+namespace Confluent.Kafka.Internal
 {
     internal static class LibRdKafka
     {
@@ -640,7 +640,7 @@ namespace RdKafka.Internal
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_outq_len(IntPtr rk);
-            
+
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_wait_destroyed(IntPtr timeout_ms);
         }

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RdKafka", "src\RdKafka\RdKafka.xproj", "{B2DDB635-4423-45D7-B3DC-F701E6010868}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.xproj", "{B2DDB635-4423-45D7-B3DC-F701E6010868}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RdKafka.Tests", "test\RdKafka.Tests\RdKafka.Tests.xproj", "{33151BE2-C10B-41BC-8C5E-E55211A1722D}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.Tests", "test\Confluent.Kafka.Tests\Confluent.Kafka.Tests.xproj", "{33151BE2-C10B-41BC-8C5E-E55211A1722D}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SimpleProducer", "examples\SimpleProducer\SimpleProducer.xproj", "{A7BF0A75-D3E7-4024-8597-5FCCC567D372}"
 EndProject

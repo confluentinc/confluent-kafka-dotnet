@@ -1,5 +1,5 @@
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     public static class Offset
     {

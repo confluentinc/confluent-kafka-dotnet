@@ -1,9 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using RdKafka.Internal;
+using Confluent.Kafka.Internal;
 
-namespace RdKafka
+namespace Confluent.Kafka
 {
     public struct DeliveryReport
     {
@@ -19,7 +19,7 @@ namespace RdKafka
         private sealed class TaskDeliveryHandler : TaskCompletionSource<DeliveryReport>, IDeliveryHandler
         {
         }
-        
+
         const int RD_KAFKA_PARTITION_UA = -1;
 
         internal readonly SafeTopicHandle handle;
@@ -75,14 +75,14 @@ namespace RdKafka
         }
 
         /// <summary>
-        /// Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
+        ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
         /// </summary>
         /// <param name="payload">Payload to send to Kafka. Can be null.</param>
         /// <param name="deliveryHandler">IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.</param>
         /// <param name="key">(Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).</param>
         /// <param name="partition">(Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="deliveryHandler"/> is null.</exception>
-        /// <remarks>Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka-internal thread and will block other operations - consider this when implementing IDeliveryHandler.
+        /// <remarks>Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka internal thread and will block other operations - consider this when implementing IDeliveryHandler.
         /// Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.</remarks>
         public void Produce(byte[] payload, IDeliveryHandler deliveryHandler, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
@@ -90,7 +90,7 @@ namespace RdKafka
         }
 
         /// <summary>
-        /// Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
+        ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
         /// </summary>
         /// <param name="payload">Payload to send to Kafka. Can be null.</param>
         /// <param name="payloadCount">Number of bytes to use from payload buffer</param>

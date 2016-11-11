@@ -3,8 +3,8 @@
 
     "packOptions": {
         "description": "C# Apache Kafka client",
-        "authors": ["Andreas Heider"],
-        "tags": ["kafka", "rdkafka"]
+        "authors": ["Andreas Heider", "Confluent Inc"],
+        "tags": ["kafka", "librdkafka", "confluent"]
     },
 
     "dependencies": {
