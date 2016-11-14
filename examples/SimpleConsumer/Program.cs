@@ -22,7 +22,7 @@ namespace Confluent.Kafka.SimpleProducer
             {
                 consumer.OnMessage += (obj, msg) =>
                 {
-                    string text = Encoding.UTF8.GetString(msg.Payload, 0, msg.Payload.Length);
+                    string text = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
                     Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {text}");
                 };
 

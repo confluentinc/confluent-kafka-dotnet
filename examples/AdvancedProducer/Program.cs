@@ -28,24 +28,29 @@ namespace Confluent.Kafka.AdvancedProducer
             };
             */
 
-            using (Producer producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
-            using (Topic topic = producer.Topic(topicName))
+            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
+
+            using (var producer = new Producer<string, string>(config, null))
             {
-                Console.WriteLine($"{producer.Name} producing on {topic.Name}. q to exit.");
+                // TODO: work out why explicit cast is needed here.
+                // TODO: remove need to explicitly specify string serializers - assume Utf8StringSerializer in Producer as default.
+                producer.KeySerializer = (ISerializer<string>)new Confluent.Kafka.Serialization.Utf8StringSerializer();
+                producer.ValueSerializer = producer.KeySerializer;
+
+                Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
 
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    byte[] data = Encoding.UTF8.GetBytes(text);
-                    byte[] key = null;
+                    string key = "";
                     // Use the first word as the key
                     int index = text.IndexOf(" ");
                     if (index != -1)
                     {
-                        key = Encoding.UTF8.GetBytes(text.Substring(0, index));
+                        key = text.Substring(0, index);
                     }
 
-                    Task<DeliveryReport> deliveryReport = topic.Produce(data, key);
+                    Task<DeliveryReport> deliveryReport = producer.Produce(topicName, key, text);
                     var unused = deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");

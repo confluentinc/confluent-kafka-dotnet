@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Threading;
-using Confluent.Kafka.Internal;
+using Confluent.Kafka.Interop;
 
 namespace Confluent.Kafka
 {
@@ -77,12 +77,14 @@ namespace Confluent.Kafka
 
         protected virtual void Dispose(bool disposing)
         {
+            // TODO: is this quick? does it need to be?
             callbackCts.Cancel();
             callbackTask.Wait();
 
+            // TODO: Why is this necessary only when disposing?
             if (disposing)
             {
-                // Wait until all outstanding sends have completed
+                // Wait until all outstanding sends have completed.
                 while (OutQueueLength > 0)
                 {
                     handle.Poll((IntPtr) 100);
