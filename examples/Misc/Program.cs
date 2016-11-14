@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 
 namespace Confluent.Kafka.Misc
 {
@@ -11,7 +11,7 @@ namespace Confluent.Kafka.Misc
 
         static async Task ListGroups(string brokerList)
         {
-            using (var producer = new Producer(brokerList))
+            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
             {
                 var groups = await producer.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.Misc
 
         static async Task PrintMetadata(string brokerList)
         {
-            using (var producer = new Producer(brokerList))
+            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
             {
                 var meta = await producer.Metadata();
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.Misc
 
             if (args.Contains("--dump-config"))
             {
-                foreach (var kv in new Config().Dump())
+                foreach (var kv in new Config(new Dictionary<string, string>()).Dump())
                 {
                     Console.WriteLine($"\"{kv.Key}\": \"{kv.Value}\"");
                 }

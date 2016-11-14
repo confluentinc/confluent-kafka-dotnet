@@ -1,7 +1,8 @@
 using System;
 using System.Text;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.Kafka;
+
 
 namespace Confluent.Kafka.AdvancedProducer
 {
@@ -12,6 +13,8 @@ namespace Confluent.Kafka.AdvancedProducer
             string brokerList = args[0];
             string topicName = args[1];
 
+            /*
+            // TODO(mhowlett): allow partitioner to be set.
             var topicConfig = new TopicConfig
             {
                 CustomPartitioner = (top, key, cnt) =>
@@ -23,9 +26,10 @@ namespace Confluent.Kafka.AdvancedProducer
                     return partition;
                 }
             };
+            */
 
-            using (Producer producer = new Producer(brokerList))
-            using (Topic topic = producer.Topic(topicName, topicConfig))
+            using (Producer producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
+            using (Topic topic = producer.Topic(topicName))
             {
                 Console.WriteLine($"{producer.Name} producing on {topic.Name}. q to exit.");
 

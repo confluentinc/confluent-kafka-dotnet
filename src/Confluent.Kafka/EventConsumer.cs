@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
@@ -18,8 +19,8 @@ namespace Confluent.Kafka
         public event EventHandler<ErrorCode> OnConsumerError;
         public event EventHandler<TopicPartitionOffset> OnEndReached;
 
-        public EventConsumer(Config config, string brokerList = null)
-            : base(config, brokerList)
+        public EventConsumer(IEnumerable<KeyValuePair<string,string>> config, IEnumerable<KeyValuePair<string, string>> defaultTopicConfig = null)
+            : base(config, defaultTopicConfig)
         {}
 
         /// <summary>
@@ -80,7 +81,6 @@ namespace Confluent.Kafka
                 consumerCts = null;
             }
         }
-
 
         protected override void Dispose(bool disposing)
         {

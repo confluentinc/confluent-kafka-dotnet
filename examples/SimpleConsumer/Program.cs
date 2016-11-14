@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Confluent.Kafka;
 
 namespace Confluent.Kafka.SimpleProducer
 {
@@ -13,8 +12,13 @@ namespace Confluent.Kafka.SimpleProducer
             string brokerList = args[0];
             var topics = args.Skip(1).ToList();
 
-            var config = new Config() { GroupId = "simple-csharp-consumer" };
-            using (var consumer = new EventConsumer(config, brokerList))
+            var config = new Dictionary<string, string>
+            {
+                { "group.id", "simple-csharp-consumer" },
+                { "bootstrap.servers", brokerList }
+            };
+
+            using (var consumer = new EventConsumer(config))
             {
                 consumer.OnMessage += (obj, msg) =>
                 {

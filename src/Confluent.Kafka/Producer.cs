@@ -1,31 +1,33 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    /// High-level, asynchronous message producer.
+    ///     High-level, asynchronous message producer.
     /// </summary>
     public class Producer : Handle
     {
-        public Producer(string brokerList) : this(null, brokerList) {}
-
-        public Producer(Config config, string brokerList = null)
+        public Producer(IEnumerable<KeyValuePair<string, string>> config)
         {
-            config = config ?? new Config();
+            var rdKafkaConfig = new Config(config.Where(a => a.Key != "bootstrap.servers"));
+            var bootstrapServers = config.FirstOrDefault(a => a.Key == "bootstrap.servers").Value;
 
-            IntPtr cfgPtr = config.handle.Dup();
+            IntPtr cfgPtr = rdKafkaConfig.handle.Dup();
             LibRdKafka.conf_set_dr_msg_cb(cfgPtr, DeliveryReportDelegate);
-            Init(RdKafkaType.Producer, cfgPtr, config.Logger);
+            Init(RdKafkaType.Producer, cfgPtr, rdKafkaConfig.Logger);
 
-            if (brokerList != null)
+            if (bootstrapServers != null)
             {
-                handle.AddBrokers(brokerList);
+                handle.AddBrokers(bootstrapServers);
             }
         }
 
-        public Topic Topic(string topic, TopicConfig config = null) => new Topic(handle, this, topic, config);
+
+        public Topic Topic(string topic, IEnumerable<KeyValuePair<string, string>> config = null) => new Topic(handle, this, topic, config);
 
         // Explicitly keep reference to delegate so it stays alive
         private static readonly LibRdKafka.DeliveryReportCallback DeliveryReportDelegate = DeliveryReportCallback;

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka;
+
 
 namespace Confluent.Kafka.Benchmark
 {
@@ -27,8 +26,8 @@ namespace Confluent.Kafka.Benchmark
         {
             var deliveryHandler = new DeliveryHandler();
 
-            using (var producer = new Producer(broker))
-            using (Topic topic = producer.Topic(topicName))
+            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", broker } }))
+            using (var topic = producer.Topic(topicName))
             {
                 Console.WriteLine($"{producer.Name} producing on {topic.Name}");
                 for (int i = 0; i < numMessages; i++)
@@ -45,14 +44,19 @@ namespace Confluent.Kafka.Benchmark
         {
             long n = 0;
 
-            var topicConfig = new TopicConfig();
-            topicConfig["auto.offset.reset"] = "smallest";
-            var config = new Config()
+            var defaultTopicConfig = new Dictionary<string, string>
             {
-                GroupId = "benchmark-consumer",
-                DefaultTopicConfig = topicConfig
+                { "auto.offset.reset", "smallest" }
             };
-            using (var consumer = new EventConsumer(config, broker))
+
+            var config = new Dictionary<string, string>
+            {
+                { "bootstrap.servers", broker },
+                { "group.id", "benchmark-consumer" }
+            };
+
+            // TODO(mhowlett): merge defaultTopicConfig and config.
+            using (var consumer = new EventConsumer(config, defaultTopicConfig))
             {
                 var signal = new SemaphoreSlim(0, 1);
 

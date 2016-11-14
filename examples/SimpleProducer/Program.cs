@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 
 namespace Confluent.Kafka.SimpleProducer
 {
@@ -12,7 +12,7 @@ namespace Confluent.Kafka.SimpleProducer
             string brokerList = args[0];
             string topicName = args[1];
 
-            using (Producer producer = new Producer(brokerList))
+            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
             using (Topic topic = producer.Topic(topicName))
             {
                 Console.WriteLine($"{producer.Name} producing on {topic.Name}. q to exit.");
