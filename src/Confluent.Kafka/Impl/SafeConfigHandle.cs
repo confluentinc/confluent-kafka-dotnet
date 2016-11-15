@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Confluent.Kafka.Interop
+namespace Confluent.Kafka.Impl
 {
     enum ConfRes {
         Unknown = -2, /* Unknown configuration name. */

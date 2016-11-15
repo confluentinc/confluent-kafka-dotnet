@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka.SimpleProducer
 {
@@ -13,7 +14,7 @@ namespace Confluent.Kafka.SimpleProducer
 
             var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<Empty, string>(config, null))
+            using (var producer = new Producer<Null, string>(config, null))
             {
                 // TODO: figure out why the cast below is necessary and how to avoid it.
                 // TODO: There should be no need to specify a serializer for common types like string - I think it should default to the UTF8 serializer.

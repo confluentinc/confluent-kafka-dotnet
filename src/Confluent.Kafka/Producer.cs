@@ -3,26 +3,23 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Confluent.Kafka.Interop;
+using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka
 {
-
-    // TODO: There is no Void type in C#. I actually think "Empty" is a better name.
-
-    // TODO: Change the name of this to KafkaProducer (matches java but not python or go)? or leave as Producer?
-
     /// <summary>
     ///     High-level, asynchronous message producer.
     /// </summary>
     public class Producer<TKey, TValue> : Handle
     {
+        // TODO: allow be be set only in constructor. make readonly.
         // TODO: These should arguably be left as properties here.
         // TODO: And/or these could be in <string,string> config + use reflection to find the class.
         public ISerializer<TKey> KeySerializer { get; set; }
 
+        // TODO: allow be be set only in constructor. make readonly.
         public ISerializer<TValue> ValueSerializer { get; set; }
 
         private IEnumerable<KeyValuePair<string, string>> topicConfig;
@@ -65,7 +62,7 @@ namespace Confluent.Kafka
 
         // TODO: Support the other function overloads in Topic.
         // TODO: I'd like a way to produce as (byte[], offset, length) as well if possible all the way down to librdkafka (need to investigate).
-        // TODO: Name these Produce or Send?
+        // TODO: should we append the Produce methods with Async? Seems to be a convention.
 
         public Task<DeliveryReport> Produce(string topic, TValue val)
             => getKafkaTopic(topic).Produce(ValueSerializer.Serialize(val));
@@ -75,6 +72,7 @@ namespace Confluent.Kafka
 
         // TODO: do we need both the callback way of doing this and the Task way?
         //       i think this was added late to rdkafka-dotnet, so there is probably a need.
+        //       What about Task.ContinueWith? I belive this can even handle exceptions?
         public void ProduceWithDeliveryReport(string topic, TValue val, IDeliveryHandler deliveryHandler)
             => getKafkaTopic(topic).Produce(ValueSerializer.Serialize(val), deliveryHandler);
 

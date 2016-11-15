@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Confluent.Kafka.Interop;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {
@@ -67,12 +67,12 @@ namespace Confluent.Kafka
             return Produce(val, val?.Length ?? 0, key, key?.Length ?? 0, partition, blockIfQueueFull);
         }
 
-        public Task<DeliveryReport> Produce(byte[] val, int valCount, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public Task<DeliveryReport> Produce(byte[] val, int valLength, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             // Passes the TaskCompletionSource to the delivery report callback
             // via the msg_opaque pointer
             var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(val, valCount, key, keyCount, partition, deliveryCompletionSource, blockIfQueueFull);
+            Produce(val, valLength, key, keyCount, partition, deliveryCompletionSource, blockIfQueueFull);
             return deliveryCompletionSource.Task;
         }
 
@@ -110,7 +110,7 @@ namespace Confluent.Kafka
         /// <param name="val">
         ///     Value to send to Kafka. Can be null.
         /// </param>
-        /// <param name="valCount">
+        /// <param name="valLength">
         ///     Number of bytes to use from val buffer
         /// </param>
         /// <param name="deliveryHandler">
@@ -133,20 +133,20 @@ namespace Confluent.Kafka
         ///         - consider this when implementing IDeliveryHandler.
         ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
         /// </remarks>
-        public void Produce(byte[] value, int valCount, IDeliveryHandler deliveryHandler, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public void Produce(byte[] value, int valLength, IDeliveryHandler deliveryHandler, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             if (deliveryHandler == null)
                 throw new ArgumentNullException(nameof(deliveryHandler));
-            Produce(value, valCount, key, keyCount, partition, deliveryHandler, blockIfQueueFull);
+            Produce(value, valLength, key, keyCount, partition, deliveryHandler, blockIfQueueFull);
         }
 
 
-        private void Produce(byte[] val, int valCount, byte[] key, int keyCount, Int32 partition, object deliveryHandler, bool blockIfQueueFull)
+        private void Produce(byte[] val, int valLength, byte[] key, int keyCount, Int32 partition, object deliveryHandler, bool blockIfQueueFull)
         {
             var gch = GCHandle.Alloc(deliveryHandler);
             var ptr = GCHandle.ToIntPtr(gch);
 
-            if (handle.Produce(val, valCount, key, keyCount, partition, ptr, blockIfQueueFull) != 0)
+            if (handle.Produce(val, valLength, key, keyCount, partition, ptr, blockIfQueueFull) != 0)
             {
                 var err = LibRdKafka.last_error();
                 gch.Free();

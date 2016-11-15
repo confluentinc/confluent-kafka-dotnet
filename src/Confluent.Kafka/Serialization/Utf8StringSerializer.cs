@@ -2,6 +2,8 @@ using System.Text;
 
 namespace Confluent.Kafka.Serialization
 {
+    // TODO: Perhaps have a general string serializer + encoding as a type parameter
+
     /// <summary>
     ///     A UTF-8 encoding string serializer.
     /// </summary>

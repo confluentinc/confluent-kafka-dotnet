@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Confluent.Kafka.Interop
+namespace Confluent.Kafka.Impl
 {
     enum RdKafkaType
     {
@@ -272,6 +272,7 @@ namespace Confluent.Kafka.Interop
             byte[] key = null;
             if (msg.val != IntPtr.Zero)
             {
+                // TODO: is it possible to avoid the allocation / copy here (and elsewhere)?
                 val = new byte[(int) msg.len];
                 Marshal.Copy(msg.val, val, 0, (int) msg.len);
             }

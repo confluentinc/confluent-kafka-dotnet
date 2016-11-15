@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 #endif
 
-namespace Confluent.Kafka.Interop
+namespace Confluent.Kafka.Impl
 {
     internal static class LibRdKafka
     {

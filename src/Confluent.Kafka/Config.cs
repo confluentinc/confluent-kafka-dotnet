@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Confluent.Kafka.Interop;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {

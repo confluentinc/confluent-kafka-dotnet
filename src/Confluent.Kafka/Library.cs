@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using Confluent.Kafka.Interop;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {
