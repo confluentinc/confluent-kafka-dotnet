@@ -6,12 +6,6 @@ using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {
-    public struct DeliveryReport
-    {
-        public int Partition;
-        public long Offset;
-    }
-
     // TODO: We want to get rid of this class entirely.
 
     /// <summary>
@@ -62,46 +56,13 @@ namespace Confluent.Kafka
 
         public string Name => handle.GetName();
 
-        public Task<DeliveryReport> Produce(byte[] val, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
-        {
-            return Produce(val, val?.Length ?? 0, key, key?.Length ?? 0, partition, blockIfQueueFull);
-        }
-
-        public Task<DeliveryReport> Produce(byte[] val, int valLength, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public Task<DeliveryReport> Produce(byte[] val, int valOffset, int valLength, byte[] key = null, int keyOffset = 0, int keyLength = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             // Passes the TaskCompletionSource to the delivery report callback
             // via the msg_opaque pointer
             var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(val, valLength, key, keyCount, partition, deliveryCompletionSource, blockIfQueueFull);
+            Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, deliveryCompletionSource, blockIfQueueFull);
             return deliveryCompletionSource.Task;
-        }
-
-        /// <summary>
-        ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
-        /// </summary>
-        /// <param name="val">
-        ///     Value to send to Kafka. Can be null.
-        /// </param>
-        /// <param name="deliveryHandler">
-        ///     IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.
-        /// </param>
-        /// <param name="key">
-        ///     (Optional) The key associated with <paramref name="val"/> (or null if no key is specified).
-        /// </param>
-        /// <param name="partition">
-        ///     (Optional) The topic partition to which <paramref name="val"/> will be sent (or -1 if no partition is specified).
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown if <paramref name="deliveryHandler"/> is null.
-        /// </exception>
-        /// <remarks>
-        ///     Methods of <paramref name="deliveryHandler"/> will be executed in an RdKafka internal thread and will block other operations
-        ///         - consider this when implementing IDeliveryHandler.
-        ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
-        /// </remarks>
-        public void Produce(byte[] val, IDeliveryHandler deliveryHandler, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
-        {
-            Produce(val, val?.Length ?? 0, deliveryHandler, key, key?.Length ?? 0, partition, blockIfQueueFull);
         }
 
         /// <summary>
@@ -115,11 +76,12 @@ namespace Confluent.Kafka
         /// </param>
         /// <param name="deliveryHandler">
         ///     IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.
+        ///     Can be null.
         /// </param>
         /// <param name="key">
         ///     (Optional) The key associated with <paramref name="val"/> (or null if no key is specified).
         /// </param>
-        /// <param name="keyCount">
+        /// <param name="keyLength">
         ///     Number of bytes to use from key buffer
         /// </param>
         /// <param name="partition">
@@ -133,20 +95,25 @@ namespace Confluent.Kafka
         ///         - consider this when implementing IDeliveryHandler.
         ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
         /// </remarks>
-        public void Produce(byte[] value, int valLength, IDeliveryHandler deliveryHandler, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public void Produce(byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler, byte[] key = null, int keyOffset = 0, int keyLength = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
-            if (deliveryHandler == null)
-                throw new ArgumentNullException(nameof(deliveryHandler));
-            Produce(value, valLength, key, keyCount, partition, deliveryHandler, blockIfQueueFull);
+            Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, deliveryHandler, blockIfQueueFull);
         }
 
-
-        private void Produce(byte[] val, int valLength, byte[] key, int keyCount, Int32 partition, object deliveryHandler, bool blockIfQueueFull)
+        private void Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, Int32 partition, object deliveryHandler, bool blockIfQueueFull)
         {
+            if (deliveryHandler == null)
+            {
+                if (handle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, IntPtr.Zero, blockIfQueueFull) != 0)
+                {
+                    throw RdKafkaException.FromErr(LibRdKafka.last_error(), "Could not produce message");
+                }
+                return;
+            }
+
             var gch = GCHandle.Alloc(deliveryHandler);
             var ptr = GCHandle.ToIntPtr(gch);
-
-            if (handle.Produce(val, valLength, key, keyCount, partition, ptr, blockIfQueueFull) != 0)
+            if (handle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, ptr, blockIfQueueFull) != 0)
             {
                 var err = LibRdKafka.last_error();
                 gch.Free();
@@ -162,5 +129,6 @@ namespace Confluent.Kafka
         ///     This function must only be called from inside a partitioner function.
         /// </summary>
         public bool PartitionAvailable(int partition) => handle.PartitionAvailable(partition);
+
     }
 }

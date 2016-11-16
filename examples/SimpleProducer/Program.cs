@@ -14,18 +14,14 @@ namespace Confluent.Kafka.SimpleProducer
 
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<Null, string>(config))
+            using (var producer = new Producer<Null, string>(config, new NullSerializer(), new StringSerializer()))
             {
-                // TODO: figure out why the cast below is necessary and how to avoid it.
-                // TODO: There should be no need to specify a serializer for common types like string - I think it should default to the UTF8 serializer.
-                producer.ValueSerializer = (ISerializer<string>)new Confluent.Kafka.Serialization.Utf8StringSerializer();
-
                 Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
 
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    Task<DeliveryReport> deliveryReport = producer.Produce(topicName, text);
+                    Task<DeliveryReport> deliveryReport = producer.ProduceAsync(topicName, text);
                     var unused = deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");
