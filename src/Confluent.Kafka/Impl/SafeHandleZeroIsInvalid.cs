@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Confluent.Kafka
+namespace Confluent.Kafka.Impl
 {
     abstract class SafeHandleZeroIsInvalid : SafeHandle
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Confluent.Kafka.Internal
+namespace Confluent.Kafka.Impl
 {
     enum RdKafkaType
     {
@@ -18,9 +18,9 @@ namespace Confluent.Kafka.Internal
         internal ErrorCode err; /* Non-zero for error signaling. */
         internal /* rd_kafka_topic_t * */ IntPtr rkt; /* Topic */
         internal int partition;                 /* Partition */
-        internal /* void   * */ IntPtr payload; /* err==0: Message payload
+        internal /* void   * */ IntPtr val; /* err==0: Message val
                                         * err!=0: Error string */
-        internal UIntPtr  len;                  /* err==0: Message payload length
+        internal UIntPtr  len;                  /* err==0: Message val length
                                         * err!=0: Error string length */
         internal /* void   * */ IntPtr key;     /* err==0: Optional message key */
         internal UIntPtr  key_len;              /* err==0: Optional message key length */
@@ -268,12 +268,13 @@ namespace Confluent.Kafka.Internal
                 return null;
             }
             var msg = Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
-            byte[] payload = null;
+            byte[] val = null;
             byte[] key = null;
-            if (msg.payload != IntPtr.Zero)
+            if (msg.val != IntPtr.Zero)
             {
-                payload = new byte[(int) msg.len];
-                Marshal.Copy(msg.payload, payload, 0, (int) msg.len);
+                // TODO: is it possible to avoid the allocation / copy here (and elsewhere)?
+                val = new byte[(int) msg.len];
+                Marshal.Copy(msg.val, val, 0, (int) msg.len);
             }
             if (msg.key != IntPtr.Zero)
             {
@@ -292,7 +293,7 @@ namespace Confluent.Kafka.Internal
                 Topic = topic,
                 Partition = msg.partition,
                 Offset = msg.offset,
-                Payload = payload,
+                Value = val,
                 Key = key
             };
 

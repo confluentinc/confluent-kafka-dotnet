@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Confluent.Kafka.Internal
+namespace Confluent.Kafka.Impl
 {
     internal sealed class SafeTopicConfigHandle : SafeHandleZeroIsInvalid
     {

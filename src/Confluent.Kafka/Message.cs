@@ -5,7 +5,7 @@ namespace Confluent.Kafka
         public string Topic { get; set; }
         public int Partition { get; set; }
         public long Offset { get; set; }
-        public byte[] Payload { get; set; }
+        public byte[] Value { get; set; }
         public byte[] Key { get; set; }
 
         public TopicPartitionOffset TopicPartitionOffset =>

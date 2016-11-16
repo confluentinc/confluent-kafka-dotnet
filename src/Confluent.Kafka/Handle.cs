@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Threading;
-using Confluent.Kafka.Internal;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {
@@ -77,12 +77,13 @@ namespace Confluent.Kafka
 
         protected virtual void Dispose(bool disposing)
         {
+            // TODO: Is it possible that callbackCts and callbackTask have been collected when this is called by the finalizer?
             callbackCts.Cancel();
             callbackTask.Wait();
 
             if (disposing)
             {
-                // Wait until all outstanding sends have completed
+                // Wait until all outstanding sends have completed.
                 while (OutQueueLength > 0)
                 {
                     handle.Poll((IntPtr) 100);

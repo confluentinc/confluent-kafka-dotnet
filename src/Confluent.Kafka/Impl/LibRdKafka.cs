@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 #endif
 
-namespace Confluent.Kafka.Internal
+namespace Confluent.Kafka.Impl
 {
     internal static class LibRdKafka
     {
@@ -347,10 +347,10 @@ namespace Confluent.Kafka.Internal
                 IntPtr rkt,
                 int partition,
                 IntPtr msgflags,
-                byte[] payload, UIntPtr len,
+                byte[] val, UIntPtr len,
                 byte[] key, UIntPtr keylen,
                 IntPtr msg_opaque)
-            => _produce(rkt, partition, msgflags, payload, len, key, keylen, msg_opaque);
+            => _produce(rkt, partition, msgflags, val, len, key, keylen, msg_opaque);
 
         private delegate ErrorCode Metadata(IntPtr rk, bool all_topics,
                 IntPtr only_rkt, out IntPtr metadatap, IntPtr timeout_ms);
@@ -607,7 +607,7 @@ namespace Confluent.Kafka.Internal
                     IntPtr rkt,
                     int partition,
                     IntPtr msgflags,
-                    byte[] payload, UIntPtr len,
+                    byte[] val, UIntPtr len,
                     byte[] key, UIntPtr keylen,
                     IntPtr msg_opaque);
 

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Confluent.Kafka.Internal
+namespace Confluent.Kafka.Impl
 {
     enum MsgFlags
     {
@@ -28,12 +28,12 @@ namespace Confluent.Kafka.Internal
 
         internal string GetName() => Marshal.PtrToStringAnsi(LibRdKafka.topic_name(handle));
 
-        internal long Produce(byte[] payload, int payloadCount, byte[] key, int keyCount, int partition, IntPtr opaque, bool blockIfQueueFull)
+        internal long Produce(byte[] val, int valLength, byte[] key, int keyCount, int partition, IntPtr opaque, bool blockIfQueueFull)
             => (long) LibRdKafka.produce(
                     handle,
                     partition,
                     (IntPtr) (MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
-                    payload, (UIntPtr) payloadCount,
+                    val, (UIntPtr) valLength,
                     key, (UIntPtr) keyCount,
                     opaque);
 

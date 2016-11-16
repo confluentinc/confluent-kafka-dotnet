@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Benchmark
@@ -26,14 +27,19 @@ namespace Confluent.Kafka.Benchmark
         {
             var deliveryHandler = new DeliveryHandler();
 
-            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", broker } }))
-            using (var topic = producer.Topic(topicName))
+            var config = new Dictionary<string, string> { { "bootstrap.servers", broker } };
+
+            using (var producer = new Producer<Null, byte[]>(config, null))
             {
-                Console.WriteLine($"{producer.Name} producing on {topic.Name}");
+                // TODO: remove need to explicitly specify this serializer.
+                producer.ValueSerializer = (ISerializer<byte[]>)new ByteArraySerializer();
+
+                Console.WriteLine($"{producer.Name} producing on {topicName}");
+                // TODO: think more about exactly what we want to benchmark.
+                var payload = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
                 for (int i = 0; i < numMessages; i++)
                 {
-                    byte[] data = Encoding.UTF8.GetBytes(i.ToString());
-                    topic.Produce(data, deliveryHandler);
+                    producer.ProduceWithDeliveryReport(topicName, payload, deliveryHandler);
                 }
 
                 Console.WriteLine("Shutting down");
@@ -90,6 +96,7 @@ namespace Confluent.Kafka.Benchmark
 
             var stopwatch = new Stopwatch();
 
+            // TODO: we really want time from first ack. as it is, this includes producer startup time.
             stopwatch.Start();
             Produce(brokerList, topic, numMessages);
             stopwatch.Stop();

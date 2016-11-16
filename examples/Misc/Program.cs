@@ -11,7 +11,9 @@ namespace Confluent.Kafka.Misc
 
         static async Task ListGroups(string brokerList)
         {
-            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
+            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
+
+            using (var producer = new Producer<Null, Null>(config, null))
             {
                 var groups = await producer.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
@@ -35,7 +37,8 @@ namespace Confluent.Kafka.Misc
 
         static async Task PrintMetadata(string brokerList)
         {
-            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
+            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
+            using (var producer = new Producer<Null, Null>(config, null))
             {
                 var meta = await producer.Metadata();
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.Kafka.Internal;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {

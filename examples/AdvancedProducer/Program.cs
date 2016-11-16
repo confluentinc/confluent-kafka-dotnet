@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
+using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka.AdvancedProducer
 {
@@ -12,6 +12,12 @@ namespace Confluent.Kafka.AdvancedProducer
         {
             string brokerList = args[0];
             string topicName = args[1];
+
+            if (args.Length != 2)
+            {
+                Console.WriteLine("Usage:  AdvancedProducer brokerList topicName");
+                return;
+            }
 
             /*
             // TODO(mhowlett): allow partitioner to be set.
@@ -28,28 +34,60 @@ namespace Confluent.Kafka.AdvancedProducer
             };
             */
 
-            using (Producer producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
-            using (Topic topic = producer.Topic(topicName))
-            {
-                Console.WriteLine($"{producer.Name} producing on {topic.Name}. q to exit.");
+            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
 
-                string text;
-                while ((text = Console.ReadLine()) != "q")
+            using (var producer = new Producer<string, string>(config, null))
+            {
+                // TODO: work out why explicit cast is needed here.
+                // TODO: remove need to explicitly specify string serializers - assume Utf8StringSerializer in Producer as default.
+                // TODO: allow be be set only in constructor. make readonly.
+                producer.KeySerializer = (ISerializer<string>)new Confluent.Kafka.Serialization.Utf8StringSerializer();
+                producer.ValueSerializer = producer.KeySerializer;
+
+                Console.WriteLine("\n-----------------------------------------------------------------------");
+                Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");
+                Console.WriteLine("-----------------------------------------------------------------------");
+                Console.WriteLine("To create a kafka message with UTF-8 encoded key/value message:");
+                Console.WriteLine("> key value<Enter>");
+                Console.WriteLine("To create a kafka message with empty key and UTF-8 encoded value:");
+                Console.WriteLine("> value<enter>");
+                Console.WriteLine("Ctrl-C to quit.\n");
+
+                var cancelled = false;
+                Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) => {
+                    e.Cancel = true; // prevent the process from terminating.
+                    cancelled = true;
+                };
+
+                while (!cancelled)
                 {
-                    byte[] data = Encoding.UTF8.GetBytes(text);
-                    byte[] key = null;
-                    // Use the first word as the key
+                    Console.Write("> ");
+
+                    string text;
+                    try
+                    {
+                       text = Console.ReadLine();
+                    }
+                    catch
+                    {
+                        // IO exception is thrown when ConsoleCancelEventArgs.Cancel == true.
+                        break;
+                    }
+
+                    var key = "";
+                    var val = text;
+
+                    // split line if both key and value specified.
                     int index = text.IndexOf(" ");
                     if (index != -1)
                     {
-                        key = Encoding.UTF8.GetBytes(text.Substring(0, index));
+                        key = text.Substring(0, index);
+                        val = text.Substring(index);
                     }
 
-                    Task<DeliveryReport> deliveryReport = topic.Produce(data, key);
-                    var unused = deliveryReport.ContinueWith(task =>
-                    {
-                        Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");
-                    });
+                    Task<DeliveryReport> deliveryReport = producer.Produce(topicName, key, val);
+                    var result = deliveryReport.Result; // synchronously waits for message to be produced.
+                    Console.WriteLine($"Partition: {result.Partition}, Offset: {result.Offset}");
                 }
             }
         }

@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka.SimpleProducer
 {
@@ -12,16 +12,20 @@ namespace Confluent.Kafka.SimpleProducer
             string brokerList = args[0];
             string topicName = args[1];
 
-            using (var producer = new Producer(new Dictionary<string, string> { { "bootstrap.servers", brokerList } }))
-            using (Topic topic = producer.Topic(topicName))
+            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
+
+            using (var producer = new Producer<Null, string>(config, null))
             {
-                Console.WriteLine($"{producer.Name} producing on {topic.Name}. q to exit.");
+                // TODO: figure out why the cast below is necessary and how to avoid it.
+                // TODO: There should be no need to specify a serializer for common types like string - I think it should default to the UTF8 serializer.
+                producer.ValueSerializer = (ISerializer<string>)new Confluent.Kafka.Serialization.Utf8StringSerializer();
+
+                Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
 
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    byte[] data = Encoding.UTF8.GetBytes(text);
-                    Task<DeliveryReport> deliveryReport = topic.Produce(data);
+                    Task<DeliveryReport> deliveryReport = producer.Produce(topicName, text);
                     var unused = deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");

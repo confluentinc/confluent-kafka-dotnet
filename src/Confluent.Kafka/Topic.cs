@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Confluent.Kafka.Internal;
+using Confluent.Kafka.Impl;
 
 namespace Confluent.Kafka
 {
@@ -11,6 +11,8 @@ namespace Confluent.Kafka
         public int Partition;
         public long Offset;
     }
+
+    // TODO: We want to get rid of this class entirely.
 
     /// <summary>
     ///     Handle to a topic obtained from <see cref="Producer" />.
@@ -24,13 +26,10 @@ namespace Confluent.Kafka
         const int RD_KAFKA_PARTITION_UA = -1;
 
         internal readonly SafeTopicHandle handle;
-        readonly Producer producer;
         readonly LibRdKafka.PartitionerCallback PartitionerDelegate;
 
-        internal Topic(SafeKafkaHandle kafkaHandle, Producer producer, string topic, IEnumerable<KeyValuePair<string, string>> config)
+        internal Topic(SafeKafkaHandle kafkaHandle, string topic, IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.producer = producer;
-
             var rdKafkaTopicConfig = new TopicConfig(config);
             rdKafkaTopicConfig["produce.offset.report"] = "true";
 
@@ -63,34 +62,34 @@ namespace Confluent.Kafka
 
         public string Name => handle.GetName();
 
-        public Task<DeliveryReport> Produce(byte[] payload, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public Task<DeliveryReport> Produce(byte[] val, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
-            return Produce(payload, payload?.Length ?? 0, key, key?.Length ?? 0, partition, blockIfQueueFull);
+            return Produce(val, val?.Length ?? 0, key, key?.Length ?? 0, partition, blockIfQueueFull);
         }
 
-        public Task<DeliveryReport> Produce(byte[] payload, int payloadCount, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public Task<DeliveryReport> Produce(byte[] val, int valLength, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             // Passes the TaskCompletionSource to the delivery report callback
             // via the msg_opaque pointer
             var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(payload, payloadCount, key, keyCount, partition, deliveryCompletionSource, blockIfQueueFull);
+            Produce(val, valLength, key, keyCount, partition, deliveryCompletionSource, blockIfQueueFull);
             return deliveryCompletionSource.Task;
         }
 
         /// <summary>
         ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
         /// </summary>
-        /// <param name="payload">
-        ///     Payload to send to Kafka. Can be null.
+        /// <param name="val">
+        ///     Value to send to Kafka. Can be null.
         /// </param>
         /// <param name="deliveryHandler">
         ///     IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.
         /// </param>
         /// <param name="key">
-        ///     (Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).
+        ///     (Optional) The key associated with <paramref name="val"/> (or null if no key is specified).
         /// </param>
         /// <param name="partition">
-        ///     (Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).
+        ///     (Optional) The topic partition to which <paramref name="val"/> will be sent (or -1 if no partition is specified).
         /// </param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown if <paramref name="deliveryHandler"/> is null.
@@ -100,31 +99,31 @@ namespace Confluent.Kafka
         ///         - consider this when implementing IDeliveryHandler.
         ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
         /// </remarks>
-        public void Produce(byte[] payload, IDeliveryHandler deliveryHandler, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public void Produce(byte[] val, IDeliveryHandler deliveryHandler, byte[] key = null, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
-            Produce(payload, payload?.Length ?? 0, deliveryHandler, key, key?.Length ?? 0, partition, blockIfQueueFull);
+            Produce(val, val?.Length ?? 0, deliveryHandler, key, key?.Length ?? 0, partition, blockIfQueueFull);
         }
 
         /// <summary>
         ///     Produces a keyed message to a partition of the current Topic and notifies the caller of progress via a callback interface.
         /// </summary>
-        /// <param name="payload">
-        ///     Payload to send to Kafka. Can be null.
+        /// <param name="val">
+        ///     Value to send to Kafka. Can be null.
         /// </param>
-        /// <param name="payloadCount">
-        ///     Number of bytes to use from payload buffer
+        /// <param name="valLength">
+        ///     Number of bytes to use from val buffer
         /// </param>
         /// <param name="deliveryHandler">
         ///     IDeliveryHandler implementation used to notify the caller when the given produce request completes or an error occurs.
         /// </param>
         /// <param name="key">
-        ///     (Optional) The key associated with <paramref name="payload"/> (or null if no key is specified).
+        ///     (Optional) The key associated with <paramref name="val"/> (or null if no key is specified).
         /// </param>
         /// <param name="keyCount">
         ///     Number of bytes to use from key buffer
         /// </param>
         /// <param name="partition">
-        ///     (Optional) The topic partition to which <paramref name="payload"/> will be sent (or -1 if no partition is specified).
+        ///     (Optional) The topic partition to which <paramref name="val"/> will be sent (or -1 if no partition is specified).
         /// </param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown if <paramref name="deliveryHandler"/> is null.
@@ -134,20 +133,20 @@ namespace Confluent.Kafka
         ///         - consider this when implementing IDeliveryHandler.
         ///     Use this overload for high-performance use cases as it does not use TPL and reduces the number of allocations.
         /// </remarks>
-        public void Produce(byte[] payload, int payloadCount, IDeliveryHandler deliveryHandler, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
+        public void Produce(byte[] value, int valLength, IDeliveryHandler deliveryHandler, byte[] key = null, int keyCount = 0, Int32 partition = RD_KAFKA_PARTITION_UA, bool blockIfQueueFull = true)
         {
             if (deliveryHandler == null)
                 throw new ArgumentNullException(nameof(deliveryHandler));
-            Produce(payload, payloadCount, key, keyCount, partition, deliveryHandler, blockIfQueueFull);
+            Produce(value, valLength, key, keyCount, partition, deliveryHandler, blockIfQueueFull);
         }
 
 
-        private void Produce(byte[] payload, int payloadCount, byte[] key, int keyCount, Int32 partition, object deliveryHandler, bool blockIfQueueFull)
+        private void Produce(byte[] val, int valLength, byte[] key, int keyCount, Int32 partition, object deliveryHandler, bool blockIfQueueFull)
         {
             var gch = GCHandle.Alloc(deliveryHandler);
             var ptr = GCHandle.ToIntPtr(gch);
 
-            if (handle.Produce(payload, payloadCount, key, keyCount, partition, ptr, blockIfQueueFull) != 0)
+            if (handle.Produce(val, valLength, key, keyCount, partition, ptr, blockIfQueueFull) != 0)
             {
                 var err = LibRdKafka.last_error();
                 gch.Free();
