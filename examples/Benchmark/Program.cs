@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
@@ -27,9 +26,9 @@ namespace Confluent.Kafka.Benchmark
         {
             var deliveryHandler = new DeliveryHandler();
 
-            var config = new Dictionary<string, string> { { "bootstrap.servers", broker } };
+            var config = new Dictionary<string, object> { { "bootstrap.servers", broker } };
 
-            using (var producer = new Producer<Null, byte[]>(config, null))
+            using (var producer = new Producer<Null, byte[]>(config))
             {
                 // TODO: remove need to explicitly specify this serializer.
                 producer.ValueSerializer = (ISerializer<byte[]>)new ByteArraySerializer();
@@ -50,19 +49,14 @@ namespace Confluent.Kafka.Benchmark
         {
             long n = 0;
 
-            var defaultTopicConfig = new Dictionary<string, string>
-            {
-                { "auto.offset.reset", "smallest" }
-            };
-
-            var config = new Dictionary<string, string>
+            var config = new Dictionary<string, object>
             {
                 { "bootstrap.servers", broker },
-                { "group.id", "benchmark-consumer" }
+                { "group.id", "benchmark-consumer" },
+                { "default.topic.config", new Dictionary<string, object> { { "auto.offset.reset", "smallest" } } }
             };
 
-            // TODO(mhowlett): merge defaultTopicConfig and config.
-            using (var consumer = new EventConsumer(config, defaultTopicConfig))
+            using (var consumer = new EventConsumer(config))
             {
                 var signal = new SemaphoreSlim(0, 1);
 

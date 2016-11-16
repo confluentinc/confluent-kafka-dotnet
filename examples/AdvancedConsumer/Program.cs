@@ -12,11 +12,11 @@ namespace Confluent.Kafka.AdvancedConsumer
         {
             bool enableAutoCommit = false;
 
-            var config = new Dictionary<string, string>
+            var config = new Dictionary<string, object>
             {
                 { "group.id", "advanced-csharp-consumer" },
-                { "enable.auto.commit", enableAutoCommit.ToString() },
-                { "statistics.interval.ms", "60000" },
+                { "enable.auto.commit", enableAutoCommit },
+                { "statistics.interval.ms", 60000 },
                 { "bootstrap.servers", brokerList }
             };
 

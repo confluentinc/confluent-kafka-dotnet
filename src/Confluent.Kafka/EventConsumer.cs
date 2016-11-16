@@ -19,8 +19,8 @@ namespace Confluent.Kafka
         public event EventHandler<ErrorCode> OnConsumerError;
         public event EventHandler<TopicPartitionOffset> OnEndReached;
 
-        public EventConsumer(IEnumerable<KeyValuePair<string,string>> config, IEnumerable<KeyValuePair<string, string>> defaultTopicConfig = null)
-            : base(config, defaultTopicConfig)
+        public EventConsumer(IEnumerable<KeyValuePair<string, object>> config)
+            : base(config)
         {}
 
         /// <summary>

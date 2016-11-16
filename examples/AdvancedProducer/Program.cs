@@ -34,9 +34,9 @@ namespace Confluent.Kafka.AdvancedProducer
             };
             */
 
-            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
+            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<string, string>(config, null))
+            using (var producer = new Producer<string, string>(config))
             {
                 // TODO: work out why explicit cast is needed here.
                 // TODO: remove need to explicitly specify string serializers - assume Utf8StringSerializer in Producer as default.
