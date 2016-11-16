@@ -29,8 +29,7 @@ namespace Confluent.Kafka
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
         {
             this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            var bootstrapServers = config.FirstOrDefault(prop => prop.Key == "bootstrap.servers").Value;
-            var rdKafkaConfig = new Config(config.Where(prop => prop.Key != "bootstrap.servers" && prop.Key != "default.topic.config"));
+            var rdKafkaConfig = new Config(config.Where(prop => prop.Key != "default.topic.config"));
 
             // TODO: If serializers aren't specified in config, then we could use defaults associated with TKey, TValue if
             //       we have matching Confluent.Kafka.Serialization serializers available.
@@ -38,11 +37,6 @@ namespace Confluent.Kafka
             IntPtr cfgPtr = rdKafkaConfig.handle.Dup();
             LibRdKafka.conf_set_dr_msg_cb(cfgPtr, DeliveryReportDelegate);
             Init(RdKafkaType.Producer, cfgPtr, rdKafkaConfig.Logger);
-
-            if (bootstrapServers != null)
-            {
-                handle.AddBrokers((string)bootstrapServers);
-            }
         }
 
         private Topic getKafkaTopic(string topic)
