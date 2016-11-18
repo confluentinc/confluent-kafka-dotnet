@@ -71,7 +71,12 @@ namespace Confluent.Kafka
         _AUTHENTICATION = -169,
         /// <summary>No stored offset</summary>
         _NO_OFFSET = -168,
+        ///<summary>Outdated</summary>
+        _OUTDATED = -167,
+        /// <summary>Timed out in queue</summary>
+        _TIMED_OUT_QUEUE = -166,
         /// <summary>End internal error codes</summary>
+
         _END = -100,
 
         // Kafka broker errors:
@@ -140,6 +145,14 @@ namespace Confluent.Kafka
         /// <summary>Group authorization failed</summary>
         GROUP_AUTHORIZATION_FAILED = 30,
         /// <summary>Cluster authorization failed</summary>
-        CLUSTER_AUTHORIZATION_FAILED = 31
+        CLUSTER_AUTHORIZATION_FAILED = 31,
+        /// <summary>Invalid timestamp</summary>
+        INVALID_TIMESTAMP = 32,
+        /// <summary> Unsupported SASL mechanism</summary>
+        UNSUPPORTED_SASL_MECHANISM = 33,
+        /// <summary>Illegal SASL state</summary>
+        ILLEGAL_SASL_STATE = 34,
+        /// <summary>Unuspported version</summary>
+        UNSUPPORTED_VERSION = 35,
     };
 }
