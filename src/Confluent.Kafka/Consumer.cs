@@ -13,11 +13,10 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer : Handle
     {
-        // TODO(mhowlett): default topic config to be set via properties in config.
-        public Consumer(IEnumerable<KeyValuePair<string, string>> config, IEnumerable<KeyValuePair<string, string>> defaultTopicConfig = null)
+        public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
-            var rdKafkaConfig = new Config(config.Where(a => a.Key != "bootstrap.servers"));
-            var bootstrapServers = config.FirstOrDefault(a => a.Key == "bootstrap.servers").Value;
+            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            var rdKafkaConfig = new Config(config.Where(prop => prop.Key != "default.topic.config"));
 
             RebalanceDelegate = RebalanceCallback;
             CommitDelegate = CommitCallback;
@@ -31,11 +30,6 @@ namespace Confluent.Kafka
                 LibRdKafka.conf_set_default_topic_conf(cfgPtr, rdKafkaDefaultTopicConfig.handle.Dup());
             }
             Init(RdKafkaType.Consumer, cfgPtr, rdKafkaConfig.Logger);
-
-            if (bootstrapServers != null)
-            {
-                handle.AddBrokers(bootstrapServers);
-            }
         }
 
         /// <summary>

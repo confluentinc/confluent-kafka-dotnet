@@ -22,16 +22,14 @@ namespace Confluent.Kafka
         // TODO: allow be be set only in constructor. make readonly.
         public ISerializer<TValue> ValueSerializer { get; set; }
 
-        private IEnumerable<KeyValuePair<string, string>> topicConfig;
+        private IEnumerable<KeyValuePair<string, object>> topicConfig;
         // TODO: get rid of the Topic class.
         private SafeDictionary<string, Topic> topics = new SafeDictionary<string, Topic>();
 
-        // TODO: merge topicConfig with config.
-        public Producer(IEnumerable<KeyValuePair<string, string>> config, IEnumerable<KeyValuePair<string, string>> topicConfig)
+        public Producer(IEnumerable<KeyValuePair<string, object>> config)
         {
-            this.topicConfig = topicConfig;
-            var rdKafkaConfig = new Config(config.Where(a => a.Key != "bootstrap.servers"));
-            var bootstrapServers = config.FirstOrDefault(a => a.Key == "bootstrap.servers").Value;
+            this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            var rdKafkaConfig = new Config(config.Where(prop => prop.Key != "default.topic.config"));
 
             // TODO: If serializers aren't specified in config, then we could use defaults associated with TKey, TValue if
             //       we have matching Confluent.Kafka.Serialization serializers available.
@@ -39,11 +37,6 @@ namespace Confluent.Kafka
             IntPtr cfgPtr = rdKafkaConfig.handle.Dup();
             LibRdKafka.conf_set_dr_msg_cb(cfgPtr, DeliveryReportDelegate);
             Init(RdKafkaType.Producer, cfgPtr, rdKafkaConfig.Logger);
-
-            if (bootstrapServers != null)
-            {
-                handle.AddBrokers(bootstrapServers);
-            }
         }
 
         private Topic getKafkaTopic(string topic)

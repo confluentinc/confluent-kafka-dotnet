@@ -12,12 +12,12 @@ namespace Confluent.Kafka
     {
         internal readonly SafeConfigHandle handle;
 
-        public Config(IEnumerable<KeyValuePair<string, string>> config)
+        public Config(IEnumerable<KeyValuePair<string, object>> config)
         {
             handle = SafeConfigHandle.Create();
             if (config != null)
             {
-                config.ToList().ForEach((kvp) => { this[kvp.Key] = kvp.Value; });
+                config.ToList().ForEach((kvp) => { this[kvp.Key] = kvp.Value.ToString(); });
             }
         }
 

@@ -12,7 +12,7 @@ namespace Confluent.Kafka.SimpleProducer
             string brokerList = args[0];
             var topics = args.Skip(1).ToList();
 
-            var config = new Dictionary<string, string>
+            var config = new Dictionary<string, object>
             {
                 { "group.id", "simple-csharp-consumer" },
                 { "bootstrap.servers", brokerList }

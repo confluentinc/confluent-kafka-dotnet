@@ -28,7 +28,7 @@ namespace Confluent.Kafka
         internal readonly SafeTopicHandle handle;
         readonly LibRdKafka.PartitionerCallback PartitionerDelegate;
 
-        internal Topic(SafeKafkaHandle kafkaHandle, string topic, IEnumerable<KeyValuePair<string, string>> config)
+        internal Topic(SafeKafkaHandle kafkaHandle, string topic, IEnumerable<KeyValuePair<string, object>> config)
         {
             var rdKafkaTopicConfig = new TopicConfig(config);
             rdKafkaTopicConfig["produce.offset.report"] = "true";

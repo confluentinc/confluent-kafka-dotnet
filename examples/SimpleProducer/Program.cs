@@ -12,9 +12,9 @@ namespace Confluent.Kafka.SimpleProducer
             string brokerList = args[0];
             string topicName = args[1];
 
-            var config = new Dictionary<string, string> { { "bootstrap.servers", brokerList } };
+            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<Null, string>(config, null))
+            using (var producer = new Producer<Null, string>(config))
             {
                 // TODO: figure out why the cast below is necessary and how to avoid it.
                 // TODO: There should be no need to specify a serializer for common types like string - I think it should default to the UTF8 serializer.
