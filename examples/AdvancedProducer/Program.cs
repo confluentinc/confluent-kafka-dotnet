@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -45,11 +46,29 @@ namespace Confluent.Kafka.AdvancedProducer
                 Console.WriteLine("> key value<Enter>");
                 Console.WriteLine("To create a kafka message with empty key and UTF-8 encoded value:");
                 Console.WriteLine("> value<enter>");
-                Console.WriteLine("'q' to quit.\n");
+                Console.WriteLine("Ctrl-C to quit.\n");
 
-                string text;
-                while ((text = Console.ReadLine()) != "q")
+                var cancelled = false;
+                Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) => {
+                    e.Cancel = true; // prevent the process from terminating.
+                    cancelled = true;
+                };
+
+                while (!cancelled)
                 {
+                    Console.Write("> ");
+
+                    string text;
+                    try
+                    {
+                       text = Console.ReadLine();
+                    }
+                    catch (IOException)
+                    {
+                        // IO exception is thrown when ConsoleCancelEventArgs.Cancel == true.
+                        break;
+                    }
+
                     var key = "";
                     var val = text;
 

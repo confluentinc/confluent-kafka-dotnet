@@ -1,16 +1,16 @@
-using System;
-
 
 namespace Confluent.Kafka.Serialization
 {
     public class IntDeserializer : IDeserializer<int>
     {
-        /// <remark>
-        ///     Endianness depends on architecture
-        /// </remark>
         public int Deserialize(byte[] data)
         {
-            return BitConverter.ToInt32(data, 0);
+            // network byte order -> big endian -> most significant byte in the smallest address.
+            return
+                (((int)data[0]) << 24) +
+                (((int)data[1]) << 16) +
+                (((int)data[2]) << 8) +
+                (int)data[3];
         }
     }
 }

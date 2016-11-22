@@ -145,8 +145,6 @@ namespace Confluent.Kafka
             serializingProducer = producer.Wrap(keySerializer, valueSerializer);
         }
 
-        public bool FlushOnDispose => producer.FlushOnDispose;
-
         public void Flush() => producer.Flush();
 
         public void Dispose() => producer.Dispose();

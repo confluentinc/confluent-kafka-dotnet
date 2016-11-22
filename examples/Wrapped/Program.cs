@@ -28,18 +28,22 @@ namespace Confluent.Kafka.Wrapped
                 // sProducer2 is another lightweight wrapper around kafkaProducer that adds
                 // (null, int) serialization. When you do not wish to write any data to a key
                 // or value, the Null type should be used.
-                var sProducer2 = producer.Wrap<Null, int>(null, new IntSerializer());
+                var sProducer2 = producer.Wrap<Null, int>(new NullSerializer(), new IntSerializer());
 
                 // write (string, string) data to topic "first-topic", statically type checked.
                 sProducer1.ProduceAsync("first-topic", "my-key-value", "my-value");
 
                 // write (null, int) data to topic "second-data". statically type checked, using
-                //  the same underlying producer as the producer1.
+                // the same underlying producer as the producer1.
                 sProducer2.ProduceAsync("second-topic", null, 42);
 
                 // producers are NOT tied to topics. Although it's unusual that you might want to
-                //  do so, you can use different serializing producers to write to the same topic.
+                // do so, you can use different serializing producers to write to the same topic.
                 sProducer2.ProduceAsync("first-topic", null, 107);
+
+                // ProducerAsync tasks are not waited on - there is a good chance they are still
+                // in flight.
+                producer.Flush();
             }
         }
     }

@@ -6,11 +6,6 @@ namespace Confluent.Kafka.Serialization
     {
         Encoding encoding;
 
-        StringDeserializer()
-        {
-            encoding = Encoding.UTF8;
-        }
-
         StringDeserializer(Encoding encoding)
         {
             this.encoding = encoding;

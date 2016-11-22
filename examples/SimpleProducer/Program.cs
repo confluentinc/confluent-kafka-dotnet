@@ -28,6 +28,9 @@ namespace Confluent.Kafka.SimpleProducer
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");
                     });
                 }
+
+                // Tasks are not waited on, it's possible they may still in progress here.
+                producer.Flush();
             }
         }
     }
