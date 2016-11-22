@@ -12,10 +12,6 @@ namespace Confluent.Kafka
 
         ISerializer<TValue> ValueSerializer { get; }
 
-        Task<DeliveryReport> ProduceAsync(string topic, TValue val, int? partition, bool blockIfQueueFull);
-
-        Task<DeliveryReport> ProduceAsync(string topic, TKey key, TValue val, int? partition, bool blockIfQueueFull);
-
-        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler deliveryHandler, int? partition, bool blockIfQueueFull);
+        Task<DeliveryReport> ProduceAsync(string topic, TKey key, TValue val, int? partition = null, bool blockIfQueueFull = true);
     }
 }

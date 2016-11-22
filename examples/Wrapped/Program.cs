@@ -1,6 +1,5 @@
-using System;
+using System.Text;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka.Wrapped
@@ -22,26 +21,25 @@ namespace Confluent.Kafka.Wrapped
             using (var producer = new Producer(config))
             {
                 // sProducer1 is a lightweight wrapper around a Producer instance that adds
-                //  (string, string) serialization.
-                // Note that sProducer1 does not need to be (and cannot be) disposed.
-                var sProducer1 = producer.Wrap<string, string>(new StringSerializer(), new StringSerializer());
+                // (string, string) serialization. Note that sProducer1 does not need to be
+                // (and cannot be) disposed.
+                var sProducer1 = producer.Wrap<string, string>(new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8));
 
                 // sProducer2 is another lightweight wrapper around kafkaProducer that adds
-                //  (null, int) serialization.
-                // When you do not wish to write any data to a key or value, the Null type should be
-                //  used.
-                var sProducer2 = producer.Wrap<Null, int>(new NullSerializer(), new IntSerializer());
+                // (null, int) serialization. When you do not wish to write any data to a key
+                // or value, the Null type should be used.
+                var sProducer2 = producer.Wrap<Null, int>(null, new IntSerializer());
 
                 // write (string, string) data to topic "first-topic", statically type checked.
                 sProducer1.ProduceAsync("first-topic", "my-key-value", "my-value");
 
                 // write (null, int) data to topic "second-data". statically type checked, using
                 //  the same underlying producer as the producer1.
-                sProducer2.ProduceAsync("second-topic", 42);
+                sProducer2.ProduceAsync("second-topic", null, 42);
 
                 // producers are NOT tied to topics. Although it's unusual that you might want to
                 //  do so, you can use different serializing producers to write to the same topic.
-                sProducer2.ProduceAsync("first-topic", 107);
+                sProducer2.ProduceAsync("first-topic", null, 107);
             }
         }
     }

@@ -10,51 +10,8 @@ namespace Confluent.Kafka.Benchmark
 {
     public class Program
     {
-
         public class BenchmarkProducer
         {
-            class DeliveryHandler : IDeliveryHandler
-            {
-                private static long startTime;
-                private static int messageCount;
-                private static AutoResetEvent autoEvent;
-
-                public static void Init(int numberOfMessagesToProduce)
-                {
-                    startTime = 0;
-                    messageCount = numberOfMessagesToProduce;
-                    autoEvent = new AutoResetEvent(false);
-                }
-
-                public static void WaitForAllDeliveryReports()
-                {
-                    autoEvent.WaitOne();
-                }
-
-                public static long Duration { get; private set; }
-
-                public void SetException(Exception exception)
-                {
-                    throw exception;
-                }
-
-                public void SetResult(DeliveryReport deliveryReport)
-                {
-                    messageCount -= 1;
-
-                    if (startTime == 0)
-                    {
-                        startTime = DateTime.Now.Ticks;
-                    }
-
-                    if (messageCount == 0)
-                    {
-                        Duration = DateTime.Now.Ticks - startTime;
-                        autoEvent.Set();
-                    }
-                }
-            }
-
             public static void Run(string broker, string topicName, int numberOfMessagesToProduce, int numberOfTests)
             {
                 // mirrors the librdkafka performance test example.
@@ -64,11 +21,8 @@ namespace Confluent.Kafka.Benchmark
                     { "queue.buffering.max.messages", 500000 },
                     { "message.send.max.retries", 3 },
                     { "retry.backoff.ms", 500 },
-                    { "queued.min.messages", 1000000 },
                     { "session.timeout.ms", 6000 }
                 };
-
-                var deliveryHandler = new DeliveryHandler();
 
                 using (var producer = new Producer(config))
                 {
@@ -76,28 +30,26 @@ namespace Confluent.Kafka.Benchmark
                     {
                         Console.WriteLine($"{producer.Name} producing on {topicName}");
 
-                        DeliveryHandler.Init(numberOfMessagesToProduce);
-
                         byte cnt = 0;
                         var val = new byte[100].Select(a => ++cnt).ToArray();
-                        var key = new byte[0];
 
+                        var startTime = DateTime.Now.Ticks;
+                        var tasks = new Task[numberOfMessagesToProduce];
                         for (int i = 0; i < numberOfMessagesToProduce; i++)
                         {
-                            producer.ProduceAsync(topicName, key, val, deliveryHandler);
+                            tasks[i] = producer.ProduceAsync(topicName, null, val);
                         }
+                        Task.WaitAll(tasks);
+                        var duration = DateTime.Now.Ticks - startTime;
 
-                        DeliveryHandler.WaitForAllDeliveryReports();
-
-                        Console.WriteLine($"Produced {numberOfMessagesToProduce} in {DeliveryHandler.Duration/10000.0:F0}ms");
-                        Console.WriteLine($"{numberOfMessagesToProduce / (DeliveryHandler.Duration/10000.0):F0} messages/ms");
+                        Console.WriteLine($"Produced {numberOfMessagesToProduce} in {duration/10000.0:F0}ms");
+                        Console.WriteLine($"{numberOfMessagesToProduce / (duration/10000.0):F0} messages/ms");
                     }
 
                     Console.WriteLine("Disposing producer");
                 }
             }
         }
-
 
         // TODO: Update Consumer benchmark for new Consumer when it's written.
         public static async Task<long> Consume(string broker, string topic)

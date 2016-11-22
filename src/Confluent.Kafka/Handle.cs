@@ -69,6 +69,16 @@ namespace Confluent.Kafka
             callbackTask = StartCallbackTask(callbackCts.Token);
         }
 
+        public bool FlushOnDispose { get; set; } = true;
+
+        public void Flush()
+        {
+            while (OutQueueLength > 0)
+            {
+                handle.Poll((IntPtr) 100);
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -83,12 +93,10 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
-                // Wait until all outstanding sends have completed.
-                while (OutQueueLength > 0)
+                if (FlushOnDispose)
                 {
-                    handle.Poll((IntPtr) 100);
+                    Flush();
                 }
-
                 handle.Dispose();
             }
         }

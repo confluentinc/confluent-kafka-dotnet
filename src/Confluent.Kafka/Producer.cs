@@ -25,7 +25,9 @@ namespace Confluent.Kafka
             // setup the rdkafka config object, including pointer to the delivery report callback.
             var rdKafkaConfig = new Config(config.Where(prop => prop.Key != "default.topic.config"));
             IntPtr rdKafkaConfigPtr = rdKafkaConfig.handle.Dup();
-            // TODO: we might want to defer setting the report callback until we know we actually need it.
+
+            // TODO: some use cases may never need DeliveryReport callbacks. In this case, we may
+            // be able to avoid setting this callback entirely.
             LibRdKafka.conf_set_dr_msg_cb(rdKafkaConfigPtr, DeliveryReportCallback);
 
             Init(RdKafkaType.Producer, rdKafkaConfigPtr, rdKafkaConfig.Logger);
@@ -48,11 +50,6 @@ namespace Confluent.Kafka
 
         private static void DeliveryReportCallbackImpl(IntPtr rk, ref rd_kafka_message rkmessage, IntPtr opaque)
         {
-            if (rkmessage._private == IntPtr.Zero)
-            {
-                return;
-            }
-
             // msg_opaque was set by Topic.Produce
             var gch = GCHandle.FromIntPtr(rkmessage._private);
             var deliveryHandler = (IDeliveryHandler) gch.Target;
@@ -81,31 +78,18 @@ namespace Confluent.Kafka
             return new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
         }
 
-        public Task<DeliveryReport> ProduceAsync(string topic, byte[] val, int? partition = null, bool blockIfQueueFull = true)
-            => getKafkaTopic(topic).Produce(val, 0, val.Length, null, 0, 0, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull);
-
         public Task<DeliveryReport> ProduceAsync(string topic, byte[] key, byte[] val, int? partition = null, bool blockIfQueueFull = true)
-            => getKafkaTopic(topic).Produce(val, 0, val.Length, key, 0, key.Length, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull);
+            => getKafkaTopic(topic).Produce(val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull);
 
         public Task<DeliveryReport> ProduceAsync(string topic, ArraySegment<byte> key, ArraySegment<byte> val, int? partition = null, bool blockIfQueueFull = true)
             => getKafkaTopic(topic).Produce(val.Array, val.Offset, val.Count, key.Array, key.Offset, key.Count, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull);
 
-        // There are (or have been) 3 different patterns for doing async requests in .NET (two of them depreciated).
-        // https://msdn.microsoft.com/en-us/library/jj152938(v=vs.110).aspx
-        // None of them are to use a callback (as below), but I believe this makes the most sense in the current situation.
-        // A reason we might want these methods is the callbacks all happen on the same thread, whereas the Task completion ones don't.
-        // This is used by the benchmark example to avoid locking the counter (maybe this is a common thing we want to do?)
-        public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler = null, int? partition = null, bool blockIfQueueFull = true)
-            => getKafkaTopic(topic).Produce(val, 0, val.Length, deliveryHandler, key, 0, key.Length, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull);
-
-        public void ProduceAsync(string topic, ArraySegment<byte> key, ArraySegment<byte> val, IDeliveryHandler deliveryHandler = null, int? partition = null, bool blockIfQueueFull = true)
-            => getKafkaTopic(topic).Produce(val.Array, val.Offset, val.Count, deliveryHandler, key.Array, key.Offset, key.Count, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull);
     }
 
 
     internal class SerializingProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>
     {
-        protected Producer producer;
+        protected readonly Producer producer;
 
         public ISerializer<TKey> KeySerializer { get; }
 
@@ -117,7 +101,7 @@ namespace Confluent.Kafka
             KeySerializer = keySerializer;
             ValueSerializer = valueSerializer;
 
-            // TODO: specify serializers via config file as well? In which case, default keySerializer and valueSerizlizer params to null.
+            // TODO: allow serializers to be set in the producer config IEnumerable<KeyValuePair<string, object>>.
 
             if (KeySerializer == null)
             {
@@ -130,14 +114,8 @@ namespace Confluent.Kafka
             }
         }
 
-        public Task<DeliveryReport> ProduceAsync(string topic, TValue val, int? partition = null, bool blockIfQueueFull = true)
-            => producer.ProduceAsync(topic, ValueSerializer.Serialize(val), partition, blockIfQueueFull);
-
         public Task<DeliveryReport> ProduceAsync(string topic, TKey key, TValue val, int? partition = null, bool blockIfQueueFull = true)
-            => producer.ProduceAsync(topic, KeySerializer.Serialize(key), ValueSerializer.Serialize(val), partition, blockIfQueueFull);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler deliveryHandler = null, int? partition = null, bool blockIfQueueFull = true)
-            => producer.ProduceAsync(topic, KeySerializer.Serialize(key), ValueSerializer.Serialize(val), deliveryHandler, partition, blockIfQueueFull);
+            => producer.ProduceAsync(topic, KeySerializer?.Serialize(key), ValueSerializer?.Serialize(val), partition, blockIfQueueFull);
 
         public string Name => producer.Name;
     }
@@ -145,8 +123,8 @@ namespace Confluent.Kafka
 
     public class Producer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable
     {
-        private Producer producer;
-        private ISerializingProducer<TKey, TValue> serializingProducer;
+        private readonly Producer producer;
+        private readonly ISerializingProducer<TKey, TValue> serializingProducer;
 
 
         public ISerializer<TKey> KeySerializer => serializingProducer.KeySerializer;
@@ -155,14 +133,8 @@ namespace Confluent.Kafka
 
         public string Name => serializingProducer.Name;
 
-        public Task<DeliveryReport> ProduceAsync(string topic, TValue val, int? partition = null, bool blockIfQueueFull = true)
-            => serializingProducer.ProduceAsync(topic, val, partition, blockIfQueueFull);
-
         public Task<DeliveryReport> ProduceAsync(string topic, TKey key, TValue val, int? partition = null, bool blockIfQueueFull = true)
             => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler deliveryHandler = null, int? partition = null, bool blockIfQueueFull = true)
-            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, partition, blockIfQueueFull);
 
         public Producer(
             IEnumerable<KeyValuePair<string, object>> config,
@@ -173,9 +145,11 @@ namespace Confluent.Kafka
             serializingProducer = producer.Wrap(keySerializer, valueSerializer);
         }
 
-        public void Dispose()
-        {
-            producer.Dispose();
-        }
+        public bool FlushOnDispose => producer.FlushOnDispose;
+
+        public void Flush() => producer.Flush();
+
+        public void Dispose() => producer.Dispose();
+
     }
 }

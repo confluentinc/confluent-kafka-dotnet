@@ -19,11 +19,6 @@ namespace Confluent.Kafka.Serialization
     {
         private Encoding encoding;
 
-        public StringSerializer()
-        {
-            encoding = Encoding.UTF8;
-        }
-
         public StringSerializer(Encoding encoding)
         {
             this.encoding = encoding;

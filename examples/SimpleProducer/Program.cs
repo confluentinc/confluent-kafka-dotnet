@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
@@ -14,14 +15,14 @@ namespace Confluent.Kafka.SimpleProducer
 
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<Null, string>(config, new NullSerializer(), new StringSerializer()))
+            using (var producer = new Producer<Null, string>(config, new NullSerializer(), new StringSerializer(Encoding.UTF8)))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
 
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    Task<DeliveryReport> deliveryReport = producer.ProduceAsync(topicName, text);
+                    Task<DeliveryReport> deliveryReport = producer.ProduceAsync(topicName, null, text);
                     var unused = deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");

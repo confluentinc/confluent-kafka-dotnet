@@ -36,7 +36,7 @@ namespace Confluent.Kafka.AdvancedProducer
 
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<string, string>(config, new StringSerializer(), new StringSerializer()))
+            using (var producer = new Producer<string, string>(config, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
                 Console.WriteLine("\n-----------------------------------------------------------------------");
                 Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");
@@ -45,29 +45,11 @@ namespace Confluent.Kafka.AdvancedProducer
                 Console.WriteLine("> key value<Enter>");
                 Console.WriteLine("To create a kafka message with empty key and UTF-8 encoded value:");
                 Console.WriteLine("> value<enter>");
-                Console.WriteLine("Ctrl-C to quit.\n");
+                Console.WriteLine("'q' to quit.\n");
 
-                var cancelled = false;
-                Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) => {
-                    e.Cancel = true; // prevent the process from terminating.
-                    cancelled = true;
-                };
-
-                while (!cancelled)
+                string text;
+                while ((text = Console.ReadLine()) != "q")
                 {
-                    Console.Write("> ");
-
-                    string text;
-                    try
-                    {
-                       text = Console.ReadLine();
-                    }
-                    catch
-                    {
-                        // IO exception is thrown when ConsoleCancelEventArgs.Cancel == true.
-                        break;
-                    }
-
                     var key = "";
                     var val = text;
 
