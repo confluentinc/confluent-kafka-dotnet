@@ -1,5 +1,7 @@
 using System.Text;
 
+// TODO: Serializer needs to be able to handle nulls and differentiate between null and empty string.
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>

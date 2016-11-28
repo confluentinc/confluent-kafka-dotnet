@@ -50,6 +50,9 @@ namespace Confluent.Kafka.Impl
 
             try
             {
+                // TODO: when refactor complete, reassess the below note.
+                // Note: since the message queue threshold limit also includes delivery reports, it is important that another
+                // thread of the application calls poll() for a blocking produce() to ever unblock.
                 return (long) LibRdKafka.produce(
                         handle,
                         partition,

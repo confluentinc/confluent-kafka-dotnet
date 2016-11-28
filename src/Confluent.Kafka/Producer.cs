@@ -133,6 +133,10 @@ namespace Confluent.Kafka
 
         public string Name => serializingProducer.Name;
 
+        // TODO: In the future, we can introduce a new overload that takes a Message<K,V>
+        // rather than T, V and add timestamp, headers etc into that.
+        // TODO: put partition in there also and implement in this version.
+
         public Task<DeliveryReport> ProduceAsync(string topic, TKey key, TValue val, int? partition = null, bool blockIfQueueFull = true)
             => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
 

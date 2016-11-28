@@ -1,5 +1,8 @@
 using System.Text;
 
+// TODO: Deserializer needs to be able to handle nulls and differentiate between null and empty string.
+
+
 namespace Confluent.Kafka.Serialization
 {
     public class StringDeserializer : IDeserializer<string>
