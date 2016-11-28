@@ -341,14 +341,14 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
 
-        private static Func<IntPtr, int, IntPtr, byte[], UIntPtr, byte[], UIntPtr,
+        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr,
                 IntPtr, IntPtr> _produce;
         internal static IntPtr produce(
                 IntPtr rkt,
                 int partition,
                 IntPtr msgflags,
-                byte[] val, UIntPtr len,
-                byte[] key, UIntPtr keylen,
+                IntPtr val, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
                 IntPtr msg_opaque)
             => _produce(rkt, partition, msgflags, val, len, key, keylen, msg_opaque);
 
@@ -607,8 +607,8 @@ namespace Confluent.Kafka.Impl
                     IntPtr rkt,
                     int partition,
                     IntPtr msgflags,
-                    byte[] val, UIntPtr len,
-                    byte[] key, UIntPtr keylen,
+                    IntPtr val, UIntPtr len,
+                    IntPtr key, UIntPtr keylen,
                     IntPtr msg_opaque);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -644,5 +644,6 @@ namespace Confluent.Kafka.Impl
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_wait_destroyed(IntPtr timeout_ms);
         }
+
     }
 }

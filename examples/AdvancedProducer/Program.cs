@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -36,14 +37,8 @@ namespace Confluent.Kafka.AdvancedProducer
 
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer<string, string>(config))
+            using (var producer = new Producer<string, string>(config, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                // TODO: work out why explicit cast is needed here.
-                // TODO: remove need to explicitly specify string serializers - assume Utf8StringSerializer in Producer as default.
-                // TODO: allow be be set only in constructor. make readonly.
-                producer.KeySerializer = (ISerializer<string>)new Confluent.Kafka.Serialization.Utf8StringSerializer();
-                producer.ValueSerializer = producer.KeySerializer;
-
                 Console.WriteLine("\n-----------------------------------------------------------------------");
                 Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");
                 Console.WriteLine("-----------------------------------------------------------------------");
@@ -68,7 +63,7 @@ namespace Confluent.Kafka.AdvancedProducer
                     {
                        text = Console.ReadLine();
                     }
-                    catch
+                    catch (IOException)
                     {
                         // IO exception is thrown when ConsoleCancelEventArgs.Cancel == true.
                         break;
@@ -82,10 +77,10 @@ namespace Confluent.Kafka.AdvancedProducer
                     if (index != -1)
                     {
                         key = text.Substring(0, index);
-                        val = text.Substring(index);
+                        val = text.Substring(index + 1);
                     }
 
-                    Task<DeliveryReport> deliveryReport = producer.Produce(topicName, key, val);
+                    Task<DeliveryReport> deliveryReport = producer.ProduceAsync(topicName, key, val);
                     var result = deliveryReport.Result; // synchronously waits for message to be produced.
                     Console.WriteLine($"Partition: {result.Partition}, Offset: {result.Offset}");
                 }

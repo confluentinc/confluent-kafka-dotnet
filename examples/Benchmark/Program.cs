@@ -1,50 +1,56 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Benchmark
 {
     public class Program
     {
-        public class DeliveryHandler : IDeliveryHandler
+        public class BenchmarkProducer
         {
-            public void SetException(Exception exception)
+            public static void Run(string broker, string topicName, int numberOfMessagesToProduce, int numberOfTests)
             {
-                throw exception;
-            }
-
-            public void SetResult(DeliveryReport deliveryReport)
-            {
-            }
-        }
-
-        public static void Produce(string broker, string topicName, long numMessages)
-        {
-            var deliveryHandler = new DeliveryHandler();
-
-            var config = new Dictionary<string, object> { { "bootstrap.servers", broker } };
-
-            using (var producer = new Producer<Null, byte[]>(config))
-            {
-                // TODO: remove need to explicitly specify this serializer.
-                producer.ValueSerializer = (ISerializer<byte[]>)new ByteArraySerializer();
-
-                Console.WriteLine($"{producer.Name} producing on {topicName}");
-                // TODO: think more about exactly what we want to benchmark.
-                var payload = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-                for (int i = 0; i < numMessages; i++)
+                // mirrors the librdkafka performance test example.
+                var config = new Dictionary<string, object>
                 {
-                    producer.ProduceWithDeliveryReport(topicName, payload, deliveryHandler);
-                }
+                    { "bootstrap.servers", broker },
+                    { "queue.buffering.max.messages", 500000 },
+                    { "message.send.max.retries", 3 },
+                    { "retry.backoff.ms", 500 },
+                    { "session.timeout.ms", 6000 }
+                };
 
-                Console.WriteLine("Shutting down");
+                using (var producer = new Producer(config))
+                {
+                    for (var j=0; j<numberOfTests; ++j)
+                    {
+                        Console.WriteLine($"{producer.Name} producing on {topicName}");
+
+                        byte cnt = 0;
+                        var val = new byte[100].Select(a => ++cnt).ToArray();
+
+                        var startTime = DateTime.Now.Ticks;
+                        var tasks = new Task[numberOfMessagesToProduce];
+                        for (int i = 0; i < numberOfMessagesToProduce; i++)
+                        {
+                            tasks[i] = producer.ProduceAsync(topicName, null, val);
+                        }
+                        Task.WaitAll(tasks);
+                        var duration = DateTime.Now.Ticks - startTime;
+
+                        Console.WriteLine($"Produced {numberOfMessagesToProduce} in {duration/10000.0:F0}ms");
+                        Console.WriteLine($"{numberOfMessagesToProduce / (duration/10000.0):F0} messages/ms");
+                    }
+
+                    Console.WriteLine("Disposing producer");
+                }
             }
         }
 
+        // TODO: Update Consumer benchmark for new Consumer when it's written.
         public static async Task<long> Consume(string broker, string topic)
         {
             long n = 0;
@@ -86,24 +92,7 @@ namespace Confluent.Kafka.Benchmark
             string brokerList = args[0];
             string topic = args[1];
 
-            long numMessages = 1000000;
-
-            var stopwatch = new Stopwatch();
-
-            // TODO: we really want time from first ack. as it is, this includes producer startup time.
-            stopwatch.Start();
-            Produce(brokerList, topic, numMessages);
-            stopwatch.Stop();
-
-            Console.WriteLine($"Sent {numMessages} messages in {stopwatch.Elapsed}");
-            Console.WriteLine($"{numMessages / stopwatch.Elapsed.TotalSeconds:F0} messages/second");
-
-            stopwatch.Restart();
-            long n = Consume(brokerList, topic).Result;
-            stopwatch.Stop();
-
-            Console.WriteLine($"Received {n} messages in {stopwatch.Elapsed}");
-            Console.WriteLine($"{n / stopwatch.Elapsed.TotalSeconds:F0} messages/second");
+            BenchmarkProducer.Run(brokerList, topic, 5000000, 4);
         }
     }
 }

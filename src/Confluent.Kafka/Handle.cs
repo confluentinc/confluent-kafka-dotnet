@@ -69,6 +69,16 @@ namespace Confluent.Kafka
             callbackTask = StartCallbackTask(callbackCts.Token);
         }
 
+        // TODO: Add timout parameter (with default option == block indefinitely) when use rd_kafka_flush.
+        public void Flush()
+        {
+            // TODO: use rd_kafka_flush here instead..
+            while (OutQueueLength > 0)
+            {
+                handle.Poll((IntPtr) 100);
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -83,12 +93,6 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
-                // Wait until all outstanding sends have completed.
-                while (OutQueueLength > 0)
-                {
-                    handle.Poll((IntPtr) 100);
-                }
-
                 handle.Dispose();
             }
         }
