@@ -20,10 +20,10 @@ namespace Confluent.Kafka.AdvancedConsumer
                 { "bootstrap.servers", brokerList }
             };
 
-            using (var consumer = new EventConsumer(config))
+            using (var consumer = new Consumer(config))
             {
-                consumer.OnMessage += (obj, msg) => {
-                    string text = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
+                consumer.OnMessage += (_, msg) => {
+                    var text = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
                     Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {text}");
 
                     if (!enableAutoCommit && msg.Offset % 10 == 0)
@@ -34,22 +34,17 @@ namespace Confluent.Kafka.AdvancedConsumer
                     }
                 };
 
-                consumer.OnConsumerError += (obj, errorCode) =>
-                {
-                    Console.WriteLine($"Consumer Error: {errorCode}");
-                };
-
-                consumer.OnEndReached += (obj, end) => {
+                consumer.OnEndReached += (_, end) => {
                     Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
                 };
 
-                consumer.OnError += (obj, error) => {
+                consumer.OnError += (_, error) => {
                     Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
                 };
 
                 if (enableAutoCommit)
                 {
-                    consumer.OnOffsetCommit += (obj, commit) => {
+                    consumer.OnOffsetCommit += (_, commit) => {
                         if (commit.Error != ErrorCode.NO_ERROR)
                         {
                             Console.WriteLine($"Failed to commit offsets: {commit.Error}");
@@ -58,17 +53,17 @@ namespace Confluent.Kafka.AdvancedConsumer
                     };
                 }
 
-                consumer.OnPartitionsAssigned += (obj, partitions) => {
+                consumer.OnPartitionsAssigned += (_, partitions) => {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
                     consumer.Assign(partitions);
                 };
 
-                consumer.OnPartitionsRevoked += (obj, partitions) => {
+                consumer.OnPartitionsRevoked += (_, partitions) => {
                     Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
                     consumer.Unassign();
                 };
 
-                consumer.OnStatistics += (obj, json) => {
+                consumer.OnStatistics += (_, json) => {
                     Console.WriteLine($"Statistics: {json}");
                 };
 

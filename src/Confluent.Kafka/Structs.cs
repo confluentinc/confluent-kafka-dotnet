@@ -1,22 +1,66 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Metadata pertaining to a single Kafka cluster
+    /// </summary>
     public struct Metadata
     {
+        /// <summary>
+        ///     Information about each constituent broker of the cluster.
+        /// </summary>
         public List<BrokerMetadata> Brokers { get; set; }
+
+        /// <summary>
+        ///     Information about every topic managed by in the cluster.
+        /// </summary>
         public List<TopicMetadata> Topics { get; set; }
+
+        /// <summary>
+        /// </summary>
         public int OriginatingBrokerId { get; set; }
+
+        /// <summary>
+        /// </summary>
         public string OriginatingBrokerName { get; set; }
+
+        public override string ToString()
+        {
+            return $@"
+OriginatingBrokerId: {OriginatingBrokerId}
+OriginatingBrokerName: {OriginatingBrokerName}
+
+--- BROKERS ---
+{Brokers.Aggregate("", (accum, next) => accum + next.ToString())}
+
+--- TOPICS ---
+{Topics.Aggregate("", (accum, next) => accum + next.ToString())}";
+        }
     }
 
+    /// <summary>
+    ///     Metadata pertaining to a single Kafka broker.
+    /// </summary>
     public struct BrokerMetadata
     {
         public int BrokerId { get; set; }
         public string Host { get; set; }
         public int Port { get; set; }
+
+        public override string ToString()
+        {
+            return $@"
+BrokderId: {BrokerId}
+Host: {Host}
+Port: {Port}";
+        }
     }
 
+    /// <summary>
+    ///     Metadata pertaining to a single Kafka topic partition.
+    /// </summary>
     public struct PartitionMetadata
     {
         public int PartitionId { get; set; }
@@ -24,14 +68,37 @@ namespace Confluent.Kafka
         public int[] Replicas { get; set; }
         public int[] InSyncReplicas { get; set; }
         public ErrorCode Error { get; set; }
+
+        public override string ToString()
+        {
+            return $@" PartitionId: {PartitionId}
+ Leader: {Leader}
+ Replicas: {Replicas.Aggregate("", (accum, next) => accum + next.ToString() + " ")}
+ InSyncReplicas: {InSyncReplicas.Aggregate("", (accum, next) => accum + next.ToString() + " ")}
+ PartitionMetadata Error: {Error}";
+        }
     }
 
+    /// <summary>
+    ///     Metadata pertaining to a single Kafka topic.
+    /// </summary>
     public struct TopicMetadata
     {
         public string Topic { get; set; }
         public List<PartitionMetadata> Partitions { get; set; }
         public ErrorCode Error { get; set; }
+
+        public override string ToString()
+        {
+            return $@"
+Topic: {Topic}
+Partitions:
+{Partitions.Aggregate("", (accum, next) => accum + next.ToString())}
+TopicMetadata Error: {Error}
+";
+        }
     }
+
 
     public struct TopicPartition
     {
@@ -59,6 +126,18 @@ namespace Confluent.Kafka
         public string Topic { get; set; }
         public int Partition { get; set; }
         public long Offset { get; set; }
+
+        public TopicPartition TopicPartition
+        {
+            get
+            {
+                return new TopicPartition
+                {
+                    Topic = Topic,
+                    Partition = Partition
+                };
+            }
+        }
 
         public override string ToString() => Topic + " " + Partition + " " + Offset;
     }
@@ -89,4 +168,25 @@ namespace Confluent.Kafka
         public byte[] MemberAssignment { get; set; }    /**< Member assignment (binary),
                                                          *   format depends on \p protocol_type. */
     }
+
+    public struct ErrorArgs
+    {
+        public ErrorCode ErrorCode { get; set; }
+        public string Reason { get; set; }
+    }
+
+    public struct LogArgs
+    {
+        public string Name { get; set; }
+        public int Level { get; set; }
+        public string Facility { get; set; }
+        public string Message { get; set; }
+    }
+
+    public struct OffsetCommitArgs
+    {
+        public ErrorCode Error { get; set; }
+        public IList<TopicPartitionOffset> Offsets { get; set; }
+    }
+
 }

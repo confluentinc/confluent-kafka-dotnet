@@ -1,6 +1,7 @@
 using System;
-using System.Runtime.InteropServices;
+using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl;
+
 
 // TODO: probably move this to Confluent.Kafka.Internal and also create Conflunet.Kafka.KafkaException.
 namespace Confluent.Kafka
@@ -13,7 +14,7 @@ namespace Confluent.Kafka
             ErrorCode = errorCode;
         }
 
-        internal static string ErrorToString(ErrorCode errorCode) => Marshal.PtrToStringAnsi(LibRdKafka.err2str(errorCode));
+        internal static string ErrorToString(ErrorCode errorCode) => Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(errorCode));
 
         internal static RdKafkaException FromErr(ErrorCode err, string message)
         {

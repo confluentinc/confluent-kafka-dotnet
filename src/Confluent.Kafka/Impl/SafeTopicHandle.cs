@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using Confluent.Kafka.Internal;
+
 
 namespace Confluent.Kafka.Impl
 {
@@ -26,7 +28,7 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal string GetName() => Marshal.PtrToStringAnsi(LibRdKafka.topic_name(handle));
+        internal string GetName() => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
 
         internal long Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, IntPtr opaque, bool blockIfQueueFull)
         {

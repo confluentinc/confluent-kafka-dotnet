@@ -18,19 +18,20 @@ namespace Confluent.Kafka.SimpleProducer
                 { "bootstrap.servers", brokerList }
             };
 
-            using (var consumer = new EventConsumer(config))
+            using (var consumer = new Consumer(config))
             {
-                consumer.OnMessage += (obj, msg) =>
-                {
-                    string text = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
-                    Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {text}");
-                };
-
                 consumer.Assign(new List<TopicPartitionOffset> {new TopicPartitionOffset(topics.First(), 0, 5)});
-                consumer.Start();
 
-                Console.WriteLine("Started consumer, press enter to stop consuming");
-                Console.ReadLine();
+                while (true)
+                {
+                    var msgMaybe = consumer.Consume(TimeSpan.FromSeconds(1));
+                    if (msgMaybe != null)
+                    {
+                        var msg = msgMaybe.Value;
+                        string msgText = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
+                        Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msgText}");
+                    }
+                }
             }
         }
     }
