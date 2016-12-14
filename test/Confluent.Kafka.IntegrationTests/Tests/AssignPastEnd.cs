@@ -12,13 +12,15 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public static partial class Tests
     {
-        [IntegrationTest]
+        [Theory, MemberData(nameof(KafkaParameters))]
         public static void AssignPastEnd(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", "u-bute-group" },
-                { "bootstrap.servers", bootstrapServers }
+                { "bootstrap.servers", bootstrapServers },
+                // TODO: Confirm that setting this timeout is really necessary here.
+                { "session.timeout.ms", 6000 }
             };
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
@@ -28,7 +30,6 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
-                var md = producer.GetMetadata();
                 producer.Flush();
             }
 

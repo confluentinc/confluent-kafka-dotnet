@@ -10,7 +10,7 @@ namespace Confluent.Kafka
     {
         bool MarshalData { get; }
 
-        void SetDeliveryReport(MessageInfo messageInfo);
+        void HandleDeliveryReport(MessageInfo messageInfo);
     }
 
     /// <remarks>
@@ -21,7 +21,7 @@ namespace Confluent.Kafka
     {
         bool MarshalData { get; }
 
-        void SetDeliveryReport(MessageInfo<TKey, TValue> messageInfo);
+        void HandleDeliveryReport(MessageInfo<TKey, TValue> messageInfo);
     }
 
 }

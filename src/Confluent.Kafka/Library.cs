@@ -1,4 +1,3 @@
-using System;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl;
 
@@ -35,25 +34,5 @@ namespace Confluent.Kafka
         public static string[] DebugContexts =>
             Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
 
-        /// <summary>
-        ///     Wait for all rdkafka objects to be destroyed.
-        ///
-        ///     Returns if all kafka objects are now destroyed,
-        ///     or throws TimeoutException if the timeout was reached.
-        ///
-        ///     Since RdKafka handle deletion is an async operation the
-        ///     WaitDestroyed() function can be used for applications where
-        ///     a clean shutdown is required.
-        /// </summary>
-        /// <exception cref="System.TimeoutException">
-        ///     Timeout was reached before all objects were destroyed.
-        /// </exception>
-        public static void WaitDestroyed(TimeSpan timeout)
-        {
-            if ((long) LibRdKafka.wait_destroyed((IntPtr) timeout.TotalMilliseconds) != 0)
-            {
-                throw new TimeoutException();
-            }
-        }
     }
 }

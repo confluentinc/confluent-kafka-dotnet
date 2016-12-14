@@ -18,7 +18,7 @@ namespace Confluent.Kafka
         private bool manualPoll;
         private bool disableDeliveryReports;
 
-        private const int RD_KAFKA_PARTITION_UA = -1;
+        const int RD_KAFKA_PARTITION_UA = -1;
 
         private IEnumerable<KeyValuePair<string, object>> topicConfig;
 
@@ -29,7 +29,7 @@ namespace Confluent.Kafka
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
 
-        private const int POLL_TIMEOUT_MS = 1000;
+        private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -47,7 +47,7 @@ namespace Confluent.Kafka
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
-            return 0; // TODO: What's this for?
+            return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
@@ -66,6 +66,8 @@ namespace Confluent.Kafka
 
         private SafeTopicHandle getKafkaTopicHandle(string topic)
         {
+            // TODO: We should consider getting rid of these and add proper support in librdkafka itself
+            //       (producev() with RD_KAFKA_V_TOPIC() is one step closer)
             if (topicHandles.ContainsKey(topic))
             {
                 return topicHandles[topic];
@@ -87,19 +89,25 @@ namespace Confluent.Kafka
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
 
-        private static void DeliveryReportCallbackImpl(IntPtr rk, ref rd_kafka_message rkmessage, IntPtr opaque)
+        /// <param name="opaque">
+        ///     this property is set to that defined in rd_kafka_conf
+        ///     (which is never used by confluent-kafka-dotnet).
+        /// </param>
+        private static void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
-            // msg_opaque was set by Topic.Produce to be an IDeliveryHandler.
-            // TODO: why rkmessage._private and not opaque here?
+            var msg = Marshal.PtrToStructure<rd_kafka_message>(rkmessage);
 
-            if (rkmessage._private == IntPtr.Zero)
+            // the msg._private property has dual purpose. Here, it is an opaque pointer set
+            // by Topic.Produce to be an IDeliveryHandler. When Consuming, it's for internal
+            // use (hence the name).
+            if (msg._private == IntPtr.Zero)
             {
                 // Note: this can occur if the ProduceAsync overload that accepts a DeliveryHandler
                 // was used and the delivery handler was set to null.
                 return;
             }
 
-            var gch = GCHandle.FromIntPtr(rkmessage._private);
+            var gch = GCHandle.FromIntPtr(msg._private);
             var deliveryHandler = (IDeliveryHandler) gch.Target;
             gch.Free();
 
@@ -107,32 +115,44 @@ namespace Confluent.Kafka
             byte[] val = null;
             if (deliveryHandler.MarshalData)
             {
-                if (rkmessage.key != IntPtr.Zero)
+                if (msg.key != IntPtr.Zero)
                 {
-                    key = new byte[(int)rkmessage.key_len];
-                    System.Runtime.InteropServices.Marshal.Copy(rkmessage.key, key, 0, (int)rkmessage.key_len);
+                    key = new byte[(int)msg.key_len];
+                    System.Runtime.InteropServices.Marshal.Copy(msg.key, key, 0, (int)msg.key_len);
                 }
-                if (rkmessage.val != IntPtr.Zero)
+                if (msg.val != IntPtr.Zero)
                 {
-                    val = new byte[(int)rkmessage.len];
-                    System.Runtime.InteropServices.Marshal.Copy(rkmessage.val, val, 0, (int)rkmessage.len);
+                    val = new byte[(int)msg.len];
+                    System.Runtime.InteropServices.Marshal.Copy(msg.val, val, 0, (int)msg.len);
                 }
             }
 
-            deliveryHandler.SetDeliveryReport(
+            IntPtr timestampType;
+            long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType) / 1000;
+            var dateTime = new DateTime(0);
+            if ((TimestampType)timestampType != TimestampType.NotAvailable)
+            {
+                // TODO: is timestamp guarenteed to be in valid range if type == NotAvailable? if so, remove this conditional.
+                dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
+            }
+
+            deliveryHandler.HandleDeliveryReport(
                 new MessageInfo
                 {
                     // TODO: tracking handle -> topicName in addition to topicName -> handle could
                     //       avoid this marshalling / memory allocation cost.
-                    Topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(rkmessage.rkt)),
-                    Offset = rkmessage.offset,
-                    Partition = rkmessage.partition,
-                    ErrorCode = rkmessage.err,
-                    ErrorMessage = rkmessage.err == ErrorCode.NO_ERROR
-                        ? null
-                        : Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(rkmessage.err)),
+                    Topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)),
+                    Offset = msg.offset,
+                    Partition = msg.partition,
+                    Error = new Error(
+                        msg.err,
+                        msg.err == ErrorCode.NO_ERROR
+                            ? null
+                            : Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(msg.err))
+                    ),
                     Key = key,
-                    Value = val
+                    Value = val,
+                    Timestamp = new Timestamp(dateTime, (TimestampType)timestampType)
                 }
             );
         }
@@ -141,16 +161,9 @@ namespace Confluent.Kafka
         {
             public bool MarshalData { get { return true; } }
 
-            public void SetDeliveryReport(MessageInfo messageInfo)
+            public void HandleDeliveryReport(MessageInfo messageInfo)
             {
-                if (messageInfo.ErrorCode == ErrorCode.NO_ERROR)
-                {
-                    SetResult(messageInfo);
-                }
-                else
-                {
-                    SetException(new DeliveryException(messageInfo));
-                }
+                SetResult(messageInfo);
             }
         }
 
@@ -158,6 +171,7 @@ namespace Confluent.Kafka
             string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
+            long? timestamp,
             Int32 partition, bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
@@ -170,7 +184,7 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, ptr, blockIfQueueFull) != 0)
+                if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp, ptr, blockIfQueueFull) != 0)
                 {
                     var err = LibRdKafka.last_error();
                     gch.Free();
@@ -180,7 +194,7 @@ namespace Confluent.Kafka
                 return;
             }
 
-            if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, IntPtr.Zero, blockIfQueueFull) != 0)
+            if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp, IntPtr.Zero, blockIfQueueFull) != 0)
             {
                 var err = LibRdKafka.last_error();
                 throw RdKafkaException.FromErr(err, "Could not produce message");
@@ -261,27 +275,60 @@ namespace Confluent.Kafka
         public Task<MessageInfo> ProduceAsync(string topic, byte[] key, byte[] val, int? partition = null, bool blockIfQueueFull = true)
         {
             var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
+            Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
             return deliveryCompletionSource.Task;
         }
 
-        public Task<MessageInfo> ProduceAsync(string topic, ArraySegment<byte> key, ArraySegment<byte> val, int? partition = null, bool blockIfQueueFull = true)
+        public Task<MessageInfo> ProduceAsync(string topic, ArraySegment<byte>? key, ArraySegment<byte>? val, int? partition = null, bool blockIfQueueFull = true)
         {
             var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(topic, val.Array, val.Offset, val.Count, key.Array, key.Offset, key.Count, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
+            Produce(topic, val == null ? null : val.Value.Array, val == null ? 0 : val.Value.Offset, val == null ? 0 : val.Value.Count, key == null ? null : key.Value.Array, key == null ? 0 : key.Value.Offset, key == null ? 0 : key.Value.Count, null, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
+            return deliveryCompletionSource.Task;
+        }
+
+        public Task<MessageInfo> ProduceAsync(string topic, Message message, int? partition = null, bool blockIfQueueFull = true)
+        {
+            var deliveryCompletionSource = new TaskDeliveryHandler();
+            // TODO: optimize this
+            Produce(
+                topic,
+                message.Value == null ? null : message.Value.Value.Array,
+                message.Value == null ? 0 : message.Value.Value.Offset,
+                message.Value == null ? 0 : message.Value.Value.Count,
+                message.Key == null ? null : message.Key.Value.Array,
+                message.Key == null ? 0 : message.Key.Value.Offset,
+                message.Key == null ? 0 : message.Key.Value.Count,
+                message.Timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(message.Timestamp.Value),
+                partition ?? RD_KAFKA_PARTITION_UA,
+                blockIfQueueFull, deliveryCompletionSource);
             return deliveryCompletionSource.Task;
         }
 
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
         {
-            Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
+            Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
         }
 
-        public void ProduceAsync(string topic, ArraySegment<byte> key, ArraySegment<byte> val, IDeliveryHandler deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
+        public void ProduceAsync(string topic, ArraySegment<byte>? key, ArraySegment<byte>? val, IDeliveryHandler deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
         {
-            Produce(topic, val.Array, val.Offset, val.Count, key.Array, key.Offset, key.Count, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
+            Produce(topic, val == null ? null : val.Value.Array, val == null ? 0 : val.Value.Offset, val == null ? 0 : val.Value.Count, key == null ? null : key.Value.Array, key == null ? 0 : key.Value.Offset, key == null ? 0 : key.Value.Count, null, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
         }
 
+        public void ProduceAsync(string topic, Message message, IDeliveryHandler deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
+        {
+            // TODO: optimize this
+            Produce(
+                topic,
+                message.Value == null ? null : message.Value.Value.Array,
+                message.Value == null ? 0 : message.Value.Value.Offset,
+                message.Value == null ? 0 : message.Value.Value.Count,
+                message.Key == null ? null : message.Key.Value.Array,
+                message.Key == null ? 0 : message.Key.Value.Offset,
+                message.Key == null ? 0 : message.Key.Value.Count,
+                message.Timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(message.Timestamp.Value),
+                partition ?? RD_KAFKA_PARTITION_UA,
+                blockIfQueueFull, deliveryHandler);
+        }
 
 
         /// <summary>
@@ -304,7 +351,6 @@ namespace Confluent.Kafka
         public long OutQueueLength => kafkaHandle.OutQueueLength;
 
 
-        // TODO: Question - does librdkafka make sure these messages are removed after a timeout (even on failure)
         public void Flush(int timeoutMilliseconds = int.MaxValue) => Flush(TimeSpan.FromMilliseconds(timeoutMilliseconds));
 
         /// <summary>
@@ -345,8 +391,8 @@ namespace Confluent.Kafka
         public Offsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-        public Metadata GetMetadata(string topic = null, bool includeInternal = false, TimeSpan? timeout = null)
-            => kafkaHandle.GetMetadata(topic == null ? null : getKafkaTopicHandle(topic), includeInternal, timeout);
+        public Metadata GetMetadata(bool allTopics = true, string topic = null, TimeSpan? timeout = null)
+            => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), timeout);
     }
 
 
@@ -401,28 +447,20 @@ namespace Confluent.Kafka
 
             public bool MarshalData { get { return false; } }
 
-            public void SetDeliveryReport(MessageInfo messageInfo)
+            public void HandleDeliveryReport(MessageInfo messageInfo)
             {
                 var mi = new MessageInfo<TKey, TValue>()
                 {
                     Topic = messageInfo.Topic,
                     Partition = messageInfo.Partition,
                     Offset = messageInfo.Offset,
-                    ErrorCode = messageInfo.ErrorCode,
-                    ErrorMessage = messageInfo.ErrorMessage,
+                    Error = messageInfo.Error,
                     Timestamp = messageInfo.Timestamp,
                     Key = Key,
                     Value = Value
                 };
 
-                if (messageInfo.ErrorCode == ErrorCode.NO_ERROR)
-                {
-                    SetResult(mi);
-                }
-                else
-                {
-                    SetException(new DeliveryException<TKey, TValue>(mi));
-                }
+                SetResult(mi);
             }
         }
 
@@ -430,6 +468,13 @@ namespace Confluent.Kafka
         {
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
             producer.ProduceAsync(topic, KeySerializer?.Serialize(key), ValueSerializer?.Serialize(val), handler, partition, blockIfQueueFull);
+            return handler.Task;
+        }
+
+        public Task<MessageInfo<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message, int? partition = null, bool blockIfQueueFull = true)
+        {
+            var handler = new TypedTaskDeliveryHandlerShim(message.Key, message.Value);
+            producer.ProduceAsync(topic, new Message(KeySerializer?.Serialize(message.Key), ValueSerializer?.Serialize(message.Value), message.Timestamp), handler, partition, blockIfQueueFull);
             return handler.Task;
         }
 
@@ -450,15 +495,14 @@ namespace Confluent.Kafka
 
             public IDeliveryHandler<TKey, TValue> Handler;
 
-            public void SetDeliveryReport(MessageInfo messageInfo)
+            public void HandleDeliveryReport(MessageInfo messageInfo)
             {
-                Handler.SetDeliveryReport(new MessageInfo<TKey, TValue>()
+                Handler.HandleDeliveryReport(new MessageInfo<TKey, TValue>()
                     {
                         Topic = messageInfo.Topic,
                         Partition = messageInfo.Partition,
                         Offset = messageInfo.Offset,
-                        ErrorCode = messageInfo.ErrorCode,
-                        ErrorMessage = messageInfo.ErrorMessage,
+                        Error = messageInfo.Error,
                         Timestamp = messageInfo.Timestamp,
                         Key = Key,
                         Value = Value
@@ -470,6 +514,12 @@ namespace Confluent.Kafka
         {
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
             producer.ProduceAsync(topic, KeySerializer?.Serialize(key), ValueSerializer?.Serialize(val), handler, partition, blockIfQueueFull);
+        }
+
+        public void ProduceAsync(string topic, Message<TKey, TValue> message, IDeliveryHandler<TKey, TValue> deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
+        {
+            var handler = new TypedDeliveryHandlerShim(message.Key, message.Value, deliveryHandler);
+            producer.ProduceAsync(topic, new Message(KeySerializer?.Serialize(message.Key), ValueSerializer?.Serialize(message.Value), message.Timestamp), handler, partition, blockIfQueueFull);
         }
 
 
@@ -512,9 +562,19 @@ namespace Confluent.Kafka
             return serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
         }
 
+        public Task<MessageInfo<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message, int? partition = null, bool blockIfQueueFull = true)
+        {
+            return serializingProducer.ProduceAsync(topic, message, partition, blockIfQueueFull);
+        }
+
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
         {
             serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, partition, blockIfQueueFull);
+        }
+
+        public void ProduceAsync(string topic, Message<TKey, TValue> message, IDeliveryHandler<TKey, TValue> deliveryHandler, int? partition = null, bool blockIfQueueFull = true)
+        {
+            serializingProducer.ProduceAsync(topic, message, deliveryHandler, partition, blockIfQueueFull);
         }
 
 
@@ -542,7 +602,12 @@ namespace Confluent.Kafka
         public Offsets GetWatermarkOffsets(TopicPartition topicPartition)
             => producer.GetWatermarkOffsets(topicPartition);
 
-        public Metadata GetMetadata(string topic = null, bool includeInternal = false, TimeSpan? timeout = null)
-            => producer.GetMetadata(topic, includeInternal, timeout);
+        /// <summary>
+        ///     - allTopics=true - request all topics from cluster
+        ///     - allTopics=false, topic=null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
+        ///     - allTopics=false, topic=valid - request specific topic
+        /// </summary>
+        public Metadata GetMetadata(bool allTopics = true, string topic = null, TimeSpan? timeout = null)
+            => producer.GetMetadata(allTopics, topic, timeout);
     }
 }

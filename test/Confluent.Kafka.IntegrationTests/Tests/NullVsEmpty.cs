@@ -10,17 +10,17 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that null and byte[0] keys and values are produced / consumed
         ///     as expected.
         /// </summary>
-        [IntegrationTest]
+        [Theory, MemberData(nameof(KafkaParameters))]
         public static void NullVsEmpty(string bootstrapServers, string topic)
         {
-            var consumerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers }};
+            var consumerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
             MessageInfo dr;
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(topic, null, null).Result;
+                dr = producer.ProduceAsync(topic, (byte[])null, null).Result;
                 producer.ProduceAsync(topic, null, new byte[0]).Wait();
                 producer.ProduceAsync(topic, new byte[0], null).Wait();
                 producer.ProduceAsync(topic, new byte[0], new byte[0]).Wait();

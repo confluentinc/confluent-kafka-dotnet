@@ -9,9 +9,8 @@ namespace Confluent.Kafka
         public long Offset { get; set; }
         public TKey Key { get; set; }
         public TValue Value { get; set; }
-        public DateTime Timestamp { get; set; }
-        public ErrorCode ErrorCode { get; set; }
-        public string ErrorMessage { get; set; }
+        public Timestamp Timestamp { get; set; }
+        public Error Error { get; set; }
 
         public TopicPartitionOffset TopicPartitionOffset
         {
@@ -48,9 +47,8 @@ namespace Confluent.Kafka
         public long Offset { get; set; }
         public byte[] Value { get; set; }
         public byte[] Key { get; set; }
-        public DateTime Timestamp { get; set; }
-        public ErrorCode ErrorCode { get; set; }
-        public string ErrorMessage { get; set; }
+        public Timestamp Timestamp { get; set; }
+        public Error Error { get; set; }
 
         public TopicPartitionOffset TopicPartitionOffset
         {

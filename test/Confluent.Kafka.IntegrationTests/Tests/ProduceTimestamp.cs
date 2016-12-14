@@ -9,19 +9,12 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that produces a message then consumes it.
+        ///     Test that a speicific user specified timestamp on produce is consumed.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SimpleProduceConsume(string bootstrapServers, string topic)
+        public static void ProduceTimestamp(string bootstrapServers, string topic)
         {
-            // This test assumes broker v0.10.0 or higher:
-            // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
-
-            var producerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
-            };
+            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
             var consumerConfig = new Dictionary<string, object>
             {
@@ -32,14 +25,17 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             var testString = "hello world";
+            var testTime = new DateTime(2010, 1, 1, 0, 0, 0);
 
+            var s = Library.VersionString;
             MessageInfo<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(topic, null, testString).Result;
+                dr = producer.ProduceAsync(topic, new Message<Null, string>(null, testString, testTime)).Result;
                 Assert.Equal(topic, dr.Topic);
                 Assert.NotEqual<long>(dr.Offset, Offset.Invalid);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.Equal(dr.Timestamp.DateTime, testTime);
+                Assert.True(false); // TODO: check timestamp type. what should it be?
                 producer.Flush();
             }
 
@@ -49,10 +45,8 @@ namespace Confluent.Kafka.IntegrationTests
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.True(result.HasValue);
                 var message = result.Value;
-                Assert.Equal(testString, Encoding.UTF8.GetString(message.Value, 0, message.Value.Length));
-                Assert.Equal(null, message.Key);
-                Assert.Equal(message.Timestamp.Type, dr.Timestamp.Type);
-                Assert.Equal(message.Timestamp.DateTime, dr.Timestamp.DateTime);
+                Assert.Equal(message.Timestamp.DateTime, testTime);
+                Assert.True(false); // TODO: check timestamp type. what should it be?
             }
         }
 

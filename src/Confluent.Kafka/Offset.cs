@@ -1,31 +1,46 @@
-
 namespace Confluent.Kafka
 {
-
-    // TODO: Is it possible to get rid of this? have Seek methods instead?
-    // Maybe various methods could be overloaded to take enum or int?
-
-    public static class Offset
+    public struct Offset
     {
-        /// <summary>
-        ///     Start consuming from beginning of kafka partition queue: oldest msg
-        /// </summary>
-        public const long Beginning = -2;
+        private const long RD_KAFKA_OFFSET_BEGINNING = -2;
+        private const long RD_KAFKA_OFFSET_END = -1;
+        private const long RD_KAFKA_OFFSET_STORED = -1000;
+        private const long RD_KAFKA_OFFSET_INVALID = -1001;
 
-        /// <summary>
-        ///     Start consuming from end of kafka partition queue: next msg
-        /// </summary>
-        public const long End = -1;
+        public static Offset Invalid { get { return new Offset(RD_KAFKA_OFFSET_INVALID); } }
+        public static Offset Beginning { get { return new Offset(RD_KAFKA_OFFSET_BEGINNING); } }
+        public static Offset End { get { return new Offset(RD_KAFKA_OFFSET_END); } }
+        public static Offset Stored { get { return new Offset(RD_KAFKA_OFFSET_STORED); } }
 
-        /// <summary>
-        ///     Start consuming from offset retrieved from offset store
-        /// </summary>
-        public const long Stored = -1000;
+        public Offset(long offset)
+        {
+            Value = offset;
+        }
 
-        /// <summary>
-        ///     Invalid offset
-        /// </summary>
-        public const long Invalid = -1001;
+        public long Value { get; private set; }
+
+        // implicit cast between long and Offset struct.
+        public static implicit operator Offset(long v)
+        {
+            return new Offset(v);
+        }
+
+        // implicit cast between Offset struct and long.
+        public static implicit operator long(Offset o)
+        {
+            return o.Value;
+        }
+
+        public bool IsSpecial
+        {
+            get
+            {
+                return
+                    Value == RD_KAFKA_OFFSET_BEGINNING ||
+                    Value == RD_KAFKA_OFFSET_END ||
+                    Value == RD_KAFKA_OFFSET_INVALID ||
+                    Value == RD_KAFKA_OFFSET_STORED;
+            }
+        }
     }
-
 }

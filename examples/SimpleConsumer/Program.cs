@@ -24,7 +24,7 @@ namespace Confluent.Kafka.SimpleProducer
 
                 while (true)
                 {
-                    var msgMaybe = consumer.Consume(TimeSpan.FromSeconds(1));
+                    var msgMaybe = consumer.Consume();
                     if (msgMaybe != null)
                     {
                         var msg = msgMaybe.Value;

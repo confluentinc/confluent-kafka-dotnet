@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
+using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -15,13 +16,14 @@ namespace Confluent.Kafka.IntegrationTests
     /// </remarks>
     public static partial class Tests
     {
-        [IntegrationTest]
+        [Theory, MemberData(nameof(KafkaParameters))]
         public static void DuplicateConsumerAssign(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", "u-bute-group" },
-                { "bootstrap.servers", bootstrapServers }
+                { "bootstrap.servers", bootstrapServers },
+                { "session.timeout.ms", 6000 }
             };
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
@@ -31,7 +33,6 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
-                var md = producer.GetMetadata(null, false, TimeSpan.FromSeconds(10));
                 producer.Flush();
             }
 
@@ -42,6 +43,11 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
                 var result1 = consumer1.Consume(TimeSpan.FromSeconds(10));
                 var result2 = consumer2.Consume(TimeSpan.FromSeconds(10));
+
+                // NOTE: two consumers from the same group should never be assigned to the same
+                // topic / partition. This 'test' is here because I was curios to see what happened
+                // in practice if this did occure. Because this is not expected usage, no validation
+                // has been included in this test.
             }
         }
 

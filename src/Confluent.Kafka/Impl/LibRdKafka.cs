@@ -39,6 +39,7 @@ namespace Confluent.Kafka.Impl
             _topic_partition_list_new = NativeMethods.rd_kafka_topic_partition_list_new;
             _topic_partition_list_destroy = NativeMethods.rd_kafka_topic_partition_list_destroy;
             _topic_partition_list_add = NativeMethods.rd_kafka_topic_partition_list_add;
+            _message_timestamp = NativeMethods.rd_kafka_message_timestamp;
             _message_destroy = NativeMethods.rd_kafka_message_destroy;
             _conf_new = NativeMethods.rd_kafka_conf_new;
             _conf_destroy = NativeMethods.rd_kafka_conf_destroy;
@@ -84,6 +85,7 @@ namespace Confluent.Kafka.Impl
             _committed = NativeMethods.rd_kafka_committed;
             _position = NativeMethods.rd_kafka_position;
             _produce = NativeMethods.rd_kafka_produce;
+            _producev = NativeMethods.rd_kafka_producev;
             _flush = NativeMethods.rd_kafka_flush;
             _metadata = NativeMethods.rd_kafka_metadata;
             _metadata_destroy = NativeMethods.rd_kafka_metadata_destroy;
@@ -101,7 +103,8 @@ namespace Confluent.Kafka.Impl
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
         internal delegate void DeliveryReportDelegate(
                 IntPtr rk,
-                /* const rd_kafka_message_t * */ ref rd_kafka_message rkmessage,
+                /* const rd_kafka_message_t * */ IntPtr rkmessage,
+                // ref rd_kafka_message rkmessage,
                 IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
@@ -163,6 +166,10 @@ namespace Confluent.Kafka.Impl
 
         private static Func<ErrorCode> _last_error;
         internal static ErrorCode last_error() => _last_error();
+
+        internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
+        private static messageTimestampDelegate _message_timestamp;
+        internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
 
         private static Action<IntPtr> _message_destroy;
         internal static void message_destroy(IntPtr rkmessage) => _message_destroy(rkmessage);
@@ -341,8 +348,7 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
 
-        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr,
-                IntPtr, IntPtr> _produce;
+        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, IntPtr, IntPtr> _produce;
         internal static IntPtr produce(
                 IntPtr rkt,
                 int partition,
@@ -351,6 +357,17 @@ namespace Confluent.Kafka.Impl
                 IntPtr key, UIntPtr keylen,
                 IntPtr msg_opaque)
             => _produce(rkt, partition, msgflags, val, len, key, keylen, msg_opaque);
+
+        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, long, IntPtr, IntPtr> _producev;
+        internal static IntPtr producev(
+                IntPtr rkt,
+                int partition,
+                IntPtr msgflags,
+                IntPtr val, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
+                long timestamp,
+                IntPtr msg_opaque)
+            => _producev(rkt, partition, msgflags, val, len, key, keylen, timestamp, msg_opaque);
 
         internal delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
         internal static Flush _flush;
@@ -422,6 +439,11 @@ namespace Confluent.Kafka.Impl
             rd_kafka_topic_partition_list_add(
                     /* rd_kafka_topic_partition_list_t * */ IntPtr rktparlist,
                     string topic, int partition);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern /* int64_t */ long rd_kafka_message_timestamp(
+                    /* rd_kafka_message_t * */ IntPtr rkmessage,
+                    /* r_kafka_timestamp_type_t * */ out IntPtr tstype);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_message_destroy(
@@ -611,6 +633,16 @@ namespace Confluent.Kafka.Impl
                     IntPtr val, UIntPtr len,
                     IntPtr key, UIntPtr keylen,
                     IntPtr msg_opaque);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr rd_kafka_producev(
+                IntPtr rkt,
+                int partition,
+                IntPtr msgflags,
+                IntPtr val, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
+                long timestamp,
+                IntPtr msg_opaque);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_flush(

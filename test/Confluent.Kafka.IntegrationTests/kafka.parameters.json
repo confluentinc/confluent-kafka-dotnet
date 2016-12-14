@@ -1,0 +1,4 @@
+{
+   "bootstrapServers": "localhost:9092",
+   "topic": "test-topic-1"
+}

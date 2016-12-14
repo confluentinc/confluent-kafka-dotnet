@@ -1,23 +1,14 @@
 {
   "version": "1.0.0-*",
-
   "buildOptions": {
     "debugType": "portable",
-    "emitEntryPoint": true,
-    "copyToOutput": {
-      "include": [ "kafka.parameters.json" ]
-    }
+    "emitEntryPoint": true
   },
-
   "dependencies": {
     "Confluent.Kafka": {
       "target": "project"
-    },
-    "xunit": "2.2.0-beta4-build3444",
-    "dotnet-test-xunit": "2.2.0-preview2-build1029",
-    "Newtonsoft.Json": "9.0.1"
+    }
   },
-
   "frameworks": {
     "netcoreapp1.0": {
       "dependencies": {
@@ -27,11 +18,9 @@
         }
       },
       "imports": [
-        "dnxcore50",
-        "portable-net45+win8"
+          "dnxcore50",
+          "portable-net45+win8"
       ]
     }
-  },
-
-  "testRunner":"xunit"
+  }
 }

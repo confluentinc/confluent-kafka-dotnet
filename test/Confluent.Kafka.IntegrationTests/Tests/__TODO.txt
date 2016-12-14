@@ -3,3 +3,4 @@ test UTF-8 in various places
  - snowman test
  - turkey test
  - logging
+

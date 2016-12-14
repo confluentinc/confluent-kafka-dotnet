@@ -9,7 +9,5 @@ namespace Confluent.Kafka
             var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             Console.Error.WriteLine($"{logInfo.Level}|{now}|{logInfo.Name}|{logInfo.Facility}| {logInfo.Message}");
         }
-
-        public static void NullLogger(object obj, LogArgs logInfo) {}
     }
 }

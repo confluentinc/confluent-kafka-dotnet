@@ -9,7 +9,7 @@ namespace Confluent.Kafka.Tests
     {
         private static readonly int[] toTest = new int[]
         {
-            0, 1, -1, 42, -42, 127, 128, 128, -127, -128, -129,
+            0, 1, -1, 42, -42, 127, 128, 129, -127, -128, -129,
             254, 255, 256, 257, -254, -255, -256, -257,
             (int)short.MinValue-1, (int)short.MinValue, (int)short.MinValue+1,
             (int)short.MaxValue-1, (int)short.MaxValue, (int)short.MaxValue+1,

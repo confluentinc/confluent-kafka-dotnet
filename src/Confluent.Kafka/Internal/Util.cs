@@ -12,6 +12,7 @@ namespace Confluent.Kafka.Internal
             /// </summary>
             public static string PtrToStringUTF8(IntPtr strPtr)
             {
+                // TODO: Is there a built in / vectorized / better way to implement this?
                 var length = 0;
                 unsafe
                 {

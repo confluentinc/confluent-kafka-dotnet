@@ -24,7 +24,7 @@ namespace Confluent.Kafka
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
-            return 0; // TODO: What's this for?
+            return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
@@ -49,7 +49,7 @@ namespace Confluent.Kafka
             /* rd_kafka_topic_partition_list_t * */ IntPtr partitions,
             IntPtr opaque)
         {
-            var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetList(partitions);
+            var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
             if (err == ErrorCode._ASSIGN_PARTITIONS)
             {
                 var handler = OnPartitionsAssigned;
@@ -59,7 +59,7 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    Assign(partitionList);
+                    Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
                 }
             }
             if (err == ErrorCode._REVOKE_PARTITIONS)
@@ -87,7 +87,8 @@ namespace Confluent.Kafka
             OnOffsetCommit?.Invoke(this, new OffsetCommitArgs()
                 {
                     Error = err,
-                    Offsets = SafeKafkaHandle.GetTopicPartitionOffsetList(offsets)
+                    // TODO: check to see whether errors can ever be present here. If so, expose TPOE, not TPO.
+                    Offsets = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets).Select(tp => tp.TopicPartitionOffset).ToList()
                 });
         }
 
@@ -138,7 +139,7 @@ namespace Confluent.Kafka
         ///     TODO: entire assignment, or only new partitions?
         ///     On poll thread
         /// </remarks>
-        public event EventHandler<List<TopicPartitionOffset>> OnPartitionsAssigned;
+        public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
         /// <summary>
         ///     Raised when a partition assignment is revoked.
@@ -148,10 +149,11 @@ namespace Confluent.Kafka
         ///     TODO: always everything unassigned? Reassignment
         ///     On poll thread.
         /// </remarks>
-        public event EventHandler<List<TopicPartitionOffset>> OnPartitionsRevoked;
+        public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
         /// <summary>
         ///     TODO: when exactly is this called?
+        ///     I belive this is only called
         ///     On poll thread.
         /// </summary>
         public event EventHandler<OffsetCommitArgs> OnOffsetCommit;
@@ -190,7 +192,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///
         /// </summary>
-        public event EventHandler<TopicPartitionOffset> OnEndReached;
+        public event EventHandler<TopicPartitionOffset> PartitionEOF;
 
 
         /// <summary>
@@ -230,7 +232,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     blocks
         /// </remarks>
-        public void Assign(ICollection<TopicPartitionOffset> partitions) => kafkaHandle.Assign(partitions);
+        public void Assign(IEnumerable<TopicPartitionOffset> partitions) => kafkaHandle.Assign(partitions.ToList());
 
         /// <summary>
         ///     Stop consumption and remove the current assignment.
@@ -243,15 +245,26 @@ namespace Confluent.Kafka
         ///     Will invoke events for OnPartitionsAssigned/Revoked,
         ///     OnOffsetCommit, etc. on the calling thread.
         /// </summary>
-        public MessageInfo? Consume(TimeSpan timeout)
+        public MessageInfo? Consume(TimeSpan? timeout = null)
         {
-            var consumerPollResult = kafkaHandle.ConsumerPoll((IntPtr)timeout.TotalMilliseconds);
+            int timeoutMs = -1;
+            if (timeout.HasValue)
+            {
+                timeoutMs = int.MaxValue;
+                double _timeoutMs = (double)timeout.Value.TotalMilliseconds;
+                if (_timeoutMs < int.MaxValue)
+                {
+                    timeoutMs = (int)_timeoutMs;
+                }
+            }
+
+            var consumerPollResult = kafkaHandle.ConsumerPoll((IntPtr)timeoutMs);
 
             if (consumerPollResult != null)
             {
                 var cpr = consumerPollResult.Value;
 
-                if (cpr.ErrorCode == ErrorCode.NO_ERROR)
+                if (cpr.Error.Code == ErrorCode.NO_ERROR)
                 {
                     return new MessageInfo()
                     {
@@ -259,13 +272,14 @@ namespace Confluent.Kafka
                         Partition = cpr.Partition,
                         Offset = cpr.Offset,
                         Value = cpr.Value,
-                        Key = cpr.Key
+                        Key = cpr.Key,
+                        Timestamp = cpr.Timestamp
                     };
                 }
 
-                else if (cpr.ErrorCode == ErrorCode._PARTITION_EOF)
+                else if (cpr.Error.Code == ErrorCode._PARTITION_EOF)
                 {
-                    OnEndReached?.Invoke(
+                    PartitionEOF?.Invoke(
                         this,
                         new TopicPartitionOffset()
                         {
@@ -277,13 +291,14 @@ namespace Confluent.Kafka
 
                 else
                 {
-                    OnError?.Invoke(this, new ErrorArgs { ErrorCode = cpr.ErrorCode, Reason = null });
+                    OnError?.Invoke(this, new ErrorArgs { ErrorCode = cpr.Error.Code, Reason = null });
                 }
             }
 
             return null;
         }
 
+        // TODO: probably remove this and incorporate this functionality in the constructor.
         public void Start()
         {
             if (consumerTask != null)
@@ -330,15 +345,15 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Commit offset for a single topic+partition based on message.
+        ///     Commit offset for a single topic + partition based on message.
         /// </summary>
         public Task Commit(MessageInfo message)
         {
             var tpo = message.TopicPartitionOffset;
             Commit(new List<TopicPartitionOffset>()
-                   {
-                       new TopicPartitionOffset(tpo.Topic, tpo.Partition, tpo.Offset + 1)
-                   });
+                {
+                    new TopicPartitionOffset(tpo.Topic, tpo.Partition, tpo.Offset + 1)
+                });
             return Task.FromResult(false);
         }
 
@@ -352,22 +367,31 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Retrieve committed offsets for topics+partitions.
+        ///     Retrieve current committed offsets for topics + partitions.
+        ///
+        ///     The offset field of each requested partition will be set to the offset
+        ///     of the last consumed message, or RD_KAFKA_OFFSET_INVALID in case there was
+        ///     no previous message, or, alternately a partition specific error may also be
+        ///     returned.
+        ///
+        ///     throws RdKafkaException if there was a problem retrieving the above information.
         /// </summary>
-        public Task<List<TopicPartitionOffset>> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
+        public List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
         {
-            var result = kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMilliseconds);
-            return Task.FromResult(result);
+            return kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMilliseconds);
         }
 
         /// <summary>
-        ///     Retrieve current positions (offsets) for topics+partitions.
+        ///     Retrieve current positions (offsets) for topics + partitions.
         ///
         ///     The offset field of each requested partition will be set to the offset
         ///     of the last consumed message + 1, or RD_KAFKA_OFFSET_INVALID in case there was
-        ///     no previous message.
+        ///     no previous message, or, alternately a partition specific error may also be
+        ///     returned.
+        ///
+        ///     throws RdKafkaException if there was a problem retrieving the above information.
         /// </summary>
-        public List<TopicPartitionOffset> Position(ICollection<TopicPartition> partitions)
+        public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
             => kafkaHandle.Position(partitions);
 
         public void Dispose()
@@ -380,8 +404,7 @@ namespace Confluent.Kafka
 
         public void Flush()
         {
-            // implementation?
-            // rd_kafka_flush
+            // TODO: implementation with rd_kafka_flush?
         }
 
         public string MemberId => kafkaHandle.MemberId;
@@ -408,14 +431,21 @@ namespace Confluent.Kafka
         public Offsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout);
 
-        public Metadata GetMetadata(string topic = null, bool includeInternal = false, TimeSpan? timeout = null)
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="allTopics">
+        ///     true - request all topics from cluster
+        ///     false - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
+        /// </param>
+        /// <remarks>
+        ///     TODO: Topic handles are not exposed to users of the library (they are internal to producer).
+        ///           Is it possible to get a topic handle given a topic name?
+        ///           If so, include topic parameter in this method.
+        /// </remaarks>
+        public Metadata GetMetadata(bool allTopics, TimeSpan? timeout = null)
         {
-            if (topic != null)
-            {
-                // TODO: does it make sense to ever support this case on Consumer?
-                throw new NotImplementedException("topic must be null when calling GetMetadataAsync on Consumer.");
-            }
-            return kafkaHandle.GetMetadata(null, includeInternal, timeout);
+            return kafkaHandle.GetMetadata(allTopics, null, timeout);
         }
 
     }
