@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
             MessageInfo<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(topic, new Message<Null, string>(null, testString, testTime)).Result;
+                dr = producer.ProduceAsync(topic, null, testString, testTime).Result;
                 Assert.Equal(topic, dr.Topic);
                 Assert.NotEqual<long>(dr.Offset, Offset.Invalid);
                 Assert.Equal(dr.Timestamp.DateTime, testTime);
