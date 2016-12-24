@@ -4,3 +4,4 @@ test UTF-8 in various places
  - turkey test
  - logging
 
+check what happens with exceptions thrown in OnMessage etc callbacks.

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Confluent.Kafka.Serialization;
 
-namespace Confluent.Kafka.SimpleProducer
+
+namespace Confluent.Kafka.SimpleConsumer
 {
     public class Program
     {
@@ -18,9 +20,9 @@ namespace Confluent.Kafka.SimpleProducer
                 { "bootstrap.servers", brokerList }
             };
 
-            using (var consumer = new Consumer(config))
+            using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(new List<TopicPartitionOffset> {new TopicPartitionOffset(topics.First(), 0, 5)});
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topics.First(), 0, 0) });
 
                 while (true)
                 {
@@ -28,8 +30,7 @@ namespace Confluent.Kafka.SimpleProducer
                     if (msgMaybe != null)
                     {
                         var msg = msgMaybe.Value;
-                        string msgText = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
-                        Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msgText}");
+                        Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
                     }
                 }
             }

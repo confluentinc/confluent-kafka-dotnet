@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.AdvancedConsumer
@@ -26,22 +27,21 @@ namespace Confluent.Kafka.AdvancedConsumer
                 }
             };
 
-            using (var consumer = new Consumer(config))
+            using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.OnMessage += (_, msg) =>
                 {
-                    var text = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
-                    Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {text}");
+                    Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
 
                     if (!enableAutoCommit && msg.Offset % 10 == 0)
                     {
                         Console.WriteLine($"Committing offset");
-                        consumer.Commit(msg).Wait();
+                        consumer.Commit(msg);
                         Console.WriteLine($"Committed offset");
                     }
                 };
 
-                consumer.PartitionEOF += (_, end) =>
+                consumer.OnPartitionEOF += (_, end) =>
                 {
                     Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
                 };
