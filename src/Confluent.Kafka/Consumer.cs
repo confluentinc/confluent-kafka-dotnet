@@ -95,12 +95,14 @@ namespace Confluent.Kafka
             };
         }
 
-        // TODO: probably move this to constructor analogous to producer.
-        public void Start()
-            => consumer.Start();
-
-        public async void Stop()
-            => await consumer.Stop();
+        public void Poll(TimeSpan? timeout = null)
+        {
+            var msg = Consume(timeout);
+            if (msg != null)
+            {
+                OnMessage?.Invoke(this, msg.Value);
+            }
+        }
 
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
@@ -253,9 +255,6 @@ namespace Confluent.Kafka
 
     public class Consumer : IDisposable
     {
-        Task consumerTask;
-        CancellationTokenSource consumerCts;
-
         private SafeKafkaHandle kafkaHandle;
 
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
@@ -498,6 +497,8 @@ namespace Confluent.Kafka
             int timeoutMs = -1;
             if (timeout.HasValue)
             {
+                // TODO: is it worth having this check? It's on *EVERY* consume?
+                // TODO: also investigate perf improvement if this method takes an int c.f. Timespan?
                 timeoutMs = int.MaxValue;
                 double _timeoutMs = (double)timeout.Value.TotalMilliseconds;
                 if (_timeoutMs < int.MaxValue)
@@ -506,80 +507,32 @@ namespace Confluent.Kafka
                 }
             }
 
-            var consumerPollResult = kafkaHandle.ConsumerPoll((IntPtr)timeoutMs);
+            var pollResult = kafkaHandle.ConsumerPoll((IntPtr)timeoutMs);
 
-            if (consumerPollResult != null)
+            if (pollResult.HasValue)
             {
-                var cpr = consumerPollResult.Value;
-
-                if (cpr.Error.Code == ErrorCode.NO_ERROR)
+                switch (pollResult.Value.Error.Code)
                 {
-                    return new MessageInfo()
-                    {
-                        Topic = cpr.Topic,
-                        Partition = cpr.Partition,
-                        Offset = cpr.Offset,
-                        Value = cpr.Value,
-                        Key = cpr.Key,
-                        Timestamp = cpr.Timestamp
-                    };
-                }
-
-                else if (cpr.Error.Code == ErrorCode._PARTITION_EOF)
-                {
-                    OnPartitionEOF?.Invoke(
-                        this,
-                        new TopicPartitionOffset()
-                        {
-                            Topic = cpr.Topic,
-                            Partition = cpr.Partition,
-                            Offset = cpr.Offset,
-                        });
-                }
-
-                else
-                {
-                    OnError?.Invoke(this, new ErrorArgs { ErrorCode = cpr.Error.Code, Reason = null });
+                    case ErrorCode.NO_ERROR:
+                        return pollResult;
+                    case ErrorCode._PARTITION_EOF:
+                        OnPartitionEOF?.Invoke(this, pollResult.Value.TopicPartitionOffset);
+                        return null;
+                    default:
+                        OnError?.Invoke(this, new ErrorArgs { ErrorCode = pollResult.Value.Error.Code, Reason = null });
+                        return null;
                 }
             }
 
             return null;
         }
 
-        // TODO: probably remove this and incorporate this functionality in the constructor.
-        public void Start()
+        public void Poll(TimeSpan? timeout)
         {
-            if (consumerTask != null)
+            var msg = Consume(timeout);
+            if (msg != null)
             {
-                throw new InvalidOperationException("Consumer task already running");
-            }
-
-            consumerCts = new CancellationTokenSource();
-            var ct = consumerCts.Token;
-            consumerTask = Task.Factory.StartNew(() =>
-                {
-                    while (!ct.IsCancellationRequested)
-                    {
-                        var msg = Consume(TimeSpan.FromSeconds(1));
-                        if (msg != null)
-                        {
-                            OnMessage?.Invoke(this, msg.Value);
-                        }
-                    }
-                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
-
-        public async Task Stop()
-        {
-            consumerCts.Cancel();
-            try
-            {
-                await consumerTask;
-            }
-            finally
-            {
-                consumerTask = null;
-                consumerCts = null;
+                OnMessage?.Invoke(this, msg.Value);
             }
         }
 
