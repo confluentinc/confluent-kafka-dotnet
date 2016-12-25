@@ -35,10 +35,20 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer(consumerConfig))
             {
-                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, dr.Offset+1) });
-                var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.False(result.HasValue);
+                // Consume API
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
+                MessageInfo msg;
+                Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+
+                // Poll API
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
+                consumer.OnMessage += (_, message) =>
+                {
+                    Assert.True(false);
+                };
+                consumer.Poll(TimeSpan.FromSeconds(10));
             }
+
         }
 
     }

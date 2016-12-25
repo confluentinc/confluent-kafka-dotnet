@@ -45,14 +45,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer(consumerConfig))
             {
-                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, dr.Offset) });
-                var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.True(result.HasValue);
-                var message = result.Value;
-                Assert.Equal(testString, Encoding.UTF8.GetString(message.Value, 0, message.Value.Length));
-                Assert.Equal(null, message.Key);
-                Assert.Equal(message.Timestamp.Type, dr.Timestamp.Type);
-                Assert.Equal(message.Timestamp.DateTime, dr.Timestamp.DateTime);
+                consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
+                MessageInfo msg;
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.Equal(testString, Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length));
+                Assert.Equal(null, msg.Key);
+                Assert.Equal(msg.Timestamp.Type, dr.Timestamp.Type);
+                Assert.Equal(msg.Timestamp.DateTime, dr.Timestamp.DateTime);
             }
         }
 

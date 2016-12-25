@@ -41,11 +41,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer(consumerConfig))
             {
-                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, dr.Offset) });
-                var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.True(result.HasValue);
-                var message = result.Value;
-                Assert.Equal(message.Timestamp.DateTime, testTime);
+                consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
+                MessageInfo msg;
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.Equal(msg.Timestamp.DateTime, testTime);
                 Assert.True(false); // TODO: check timestamp type. what should it be?
             }
         }

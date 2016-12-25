@@ -13,8 +13,16 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void NullVsEmpty(string bootstrapServers, string topic)
         {
-            var consumerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var consumerConfig = new Dictionary<string, object>
+            {
+                { "group.id", "u-bute-group" },
+                { "bootstrap.servers", bootstrapServers }
+            };
+
+            var producerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers }
+            };
 
             MessageInfo dr;
             using (var producer = new Producer(producerConfig))
@@ -29,31 +37,24 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer(consumerConfig))
             {
-                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, dr.Offset) });
+                consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                var result = consumer.Consume(TimeSpan.FromMinutes(1));
-                Assert.True(result.HasValue);
-                var message = result.Value;
-                Assert.Null(message.Key);
-                Assert.Null(message.Value);
+                MessageInfo msg;
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.Null(msg.Key);
+                Assert.Null(msg.Value);
 
-                result = consumer.Consume(TimeSpan.FromMinutes(1));
-                Assert.True(result.HasValue);
-                message = result.Value;
-                Assert.Null(message.Key);
-                Assert.Equal(message.Value, new byte[0]);
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.Null(msg.Key);
+                Assert.Equal(msg.Value, new byte[0]);
 
-                result = consumer.Consume(TimeSpan.FromMinutes(1));
-                Assert.True(result.HasValue);
-                message = result.Value;
-                Assert.Equal(message.Key, new byte[0]);
-                Assert.Null(message.Value);
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.Equal(msg.Key, new byte[0]);
+                Assert.Null(msg.Value);
 
-                result = consumer.Consume(TimeSpan.FromMinutes(1));
-                Assert.True(result.HasValue);
-                message = result.Value;
-                Assert.Equal(message.Key, new byte[0]);
-                Assert.Equal(message.Value, new byte[0]);
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.Equal(msg.Key, new byte[0]);
+                Assert.Equal(msg.Value, new byte[0]);
             }
         }
 

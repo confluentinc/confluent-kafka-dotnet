@@ -41,12 +41,13 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
-                var result1 = consumer1.Consume(TimeSpan.FromSeconds(10));
-                var result2 = consumer2.Consume(TimeSpan.FromSeconds(10));
+                MessageInfo msg;
+                var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
+                var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
 
                 // NOTE: two consumers from the same group should never be assigned to the same
-                // topic / partition. This 'test' is here because I was curios to see what happened
-                // in practice if this did occure. Because this is not expected usage, no validation
+                // topic / partition. This 'test' is here because I was curious to see what happened
+                // in practice if this did occur. Because this is not expected usage, no validation
                 // has been included in this test.
             }
         }

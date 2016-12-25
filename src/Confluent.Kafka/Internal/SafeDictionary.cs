@@ -47,7 +47,8 @@ namespace Confluent.Kafka.Internal
             }
         }
 
-        public bool ContainsKey(TKey key) => readDictionary.ContainsKey(key);
+        public bool ContainsKey(TKey key)
+            => readDictionary.ContainsKey(key);
 
         public void Dispose()
         {

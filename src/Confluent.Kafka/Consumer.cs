@@ -70,37 +70,38 @@ namespace Confluent.Kafka
             consumer.OnPartitionEOF += (sender, e) => OnPartitionEOF?.Invoke(sender, e);
         }
 
-        public MessageInfo<TKey, TValue>? Consume(TimeSpan? timeout = null)
+        public bool Consume(out MessageInfo<TKey, TValue> message, TimeSpan? timeout = null)
         {
             // TODO: kafkaHandle on Consumer could be made internal, and we could potentially
             //       bypass the non-desrializing consumer completely here for efficiency.
 
-            var result = consumer.Consume(timeout);
-            if (!result.HasValue)
+            MessageInfo msg;
+            if (!consumer.Consume(out msg, timeout))
             {
-                return null;
+                message = new MessageInfo<TKey, TValue>();
+                return false;
             }
 
-            var message = result.Value;
-
-            return new MessageInfo<TKey, TValue>
+            message = new MessageInfo<TKey, TValue>
             {
-                Topic = message.Topic,
-                Partition = message.Partition,
-                Offset = message.Offset,
-                Key = KeyDeserializer.Deserialize(message.Key),
-                Value = ValueDeserializer.Deserialize(message.Value),
-                Timestamp = message.Timestamp,
-                Error = message.Error
+                Topic = msg.Topic,
+                Partition = msg.Partition,
+                Offset = msg.Offset,
+                Key = KeyDeserializer.Deserialize(msg.Key),
+                Value = ValueDeserializer.Deserialize(msg.Value),
+                Timestamp = msg.Timestamp,
+                Error = msg.Error
             };
+
+            return true;
         }
 
         public void Poll(TimeSpan? timeout = null)
         {
-            var msg = Consume(timeout);
-            if (msg != null)
+            MessageInfo<TKey,TValue> msg;
+            if (Consume(out msg, timeout))
             {
-                OnMessage?.Invoke(this, msg.Value);
+                OnMessage?.Invoke(this, msg);
             }
         }
 
@@ -492,7 +493,7 @@ namespace Confluent.Kafka
         ///     Will invoke events for OnPartitionsAssigned/Revoked,
         ///     OnOffsetCommit, etc. on the calling thread.
         /// </summary>
-        public MessageInfo? Consume(TimeSpan? timeout = null)
+        public bool Consume(out MessageInfo message, TimeSpan? timeout = null)
         {
             int timeoutMs = -1;
             if (timeout.HasValue)
@@ -507,6 +508,8 @@ namespace Confluent.Kafka
                 }
             }
 
+            // TODO: Nullable can be avoided below, and probably should be if Consume no longer
+            //       returns a MessageInfo?
             var pollResult = kafkaHandle.ConsumerPoll((IntPtr)timeoutMs);
 
             if (pollResult.HasValue)
@@ -514,25 +517,29 @@ namespace Confluent.Kafka
                 switch (pollResult.Value.Error.Code)
                 {
                     case ErrorCode.NO_ERROR:
-                        return pollResult;
+                        message = pollResult.Value;
+                        return true;
                     case ErrorCode._PARTITION_EOF:
                         OnPartitionEOF?.Invoke(this, pollResult.Value.TopicPartitionOffset);
-                        return null;
+                        message = new MessageInfo();
+                        return false;
                     default:
                         OnError?.Invoke(this, new ErrorArgs { ErrorCode = pollResult.Value.Error.Code, Reason = null });
-                        return null;
+                        message = new MessageInfo();
+                        return false;
                 }
             }
 
-            return null;
+            message = new MessageInfo();
+            return false;
         }
 
         public void Poll(TimeSpan? timeout)
         {
-            var msg = Consume(timeout);
-            if (msg != null)
+            MessageInfo msg;
+            if (Consume(out msg, timeout))
             {
-                OnMessage?.Invoke(this, msg.Value);
+                OnMessage?.Invoke(this, msg);
             }
         }
 

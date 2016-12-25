@@ -37,7 +37,7 @@ namespace Confluent.Kafka.AdvancedConsumer
 
             using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                // Note: All events are called on the same thread (the consumer.Poll thread started below).
+                // Note: All events are called on the same thread (the same thread as the consumer.Poll method call).
 
                 consumer.OnMessage += (_, msg) =>
                 {
@@ -83,6 +83,9 @@ namespace Confluent.Kafka.AdvancedConsumer
                 };
 
                 consumer.Subscribe(topics);
+                Console.WriteLine($"Subscribed to: [{string.Join(", ", consumer.Subscription)}]");
+
+                // start poll loop in a background thread:
 
                 Task consumerTask;
                 var consumerCts = new CancellationTokenSource();
@@ -95,14 +98,24 @@ namespace Confluent.Kafka.AdvancedConsumer
                     }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-                Console.WriteLine($"Assigned to: [{string.Join(", ", consumer.Assignment)}]");
-                Console.WriteLine($"Subscribed to: [{string.Join(", ", consumer.Subscription)}]");
-
                 Console.WriteLine($"Started consumer, press enter to stop consuming");
                 Console.ReadLine();
 
                 consumerCts.Cancel();
                 consumerTask.Wait();
+
+                // alternate poll loop (no additional thread):
+                //
+                // var cancelled = false;
+                // Console.CancelKeyPress += (_, e) => {
+                //     e.Cancel = true; // prevent the process from terminating.
+                //     cancelled = true;
+                // };
+                //
+                // while(!cancelled)
+                // {
+                //     consumer.Poll(Timespan.FromMilliseconds(100));
+                // }
             }
         }
 
@@ -146,6 +159,17 @@ namespace Confluent.Kafka.AdvancedConsumer
                     Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
                 };
 
+                consumer.OnOffsetCommit += (_, commit) =>
+                {
+                    Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
+
+                    if (commit.Error != ErrorCode.NO_ERROR)
+                    {
+                        Console.WriteLine($"Failed to commit offsets: {commit.Error}");
+                    }
+                    Console.WriteLine($"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]");
+                };
+
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
@@ -175,13 +199,11 @@ namespace Confluent.Kafka.AdvancedConsumer
 
                 while (!cancelled)
                 {
-                    // Note: This is more awkward than using consumer.Poll / OnMessage, but it's also more efficient.
-                    var msgMaybe = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                    if (!msgMaybe.HasValue)
+                    MessageInfo<Null, string> msg;
+                    if (!consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
                         continue;
                     }
-                    var msg = msgMaybe.Value;
 
                     Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
 
