@@ -216,6 +216,11 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal ErrorCode PollSetConsumer()
+        {
+            return LibRdKafka.poll_set_consumer(handle);
+        }
+
         internal Offsets QueryWatermarkOffsets(string topic, int partition, TimeSpan? timeout)
         {
             int timeoutMs = (int)(timeout?.TotalMilliseconds ?? -1);

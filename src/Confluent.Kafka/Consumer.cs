@@ -371,6 +371,12 @@ namespace Confluent.Kafka
             LibRdKafka.conf_set_stats_cb(cfgPtr, StatsCallback);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, cfgPtr);
+
+            var pollSetConsumerError = kafkaHandle.PollSetConsumer();
+            if (pollSetConsumerError != ErrorCode.NO_ERROR)
+            {
+                throw new RdKafkaException("Failed to redirect the poll queue to consumer_poll queue", pollSetConsumerError);
+            }
         }
 
         /// <summary>

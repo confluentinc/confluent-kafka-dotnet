@@ -71,6 +71,7 @@ namespace Confluent.Kafka.Impl
             _topic_destroy = NativeMethods.rd_kafka_topic_destroy;
             _topic_name = NativeMethods.rd_kafka_topic_name;
             _poll = NativeMethods.rd_kafka_poll;
+            _poll_set_consumer = NativeMethods.rd_kafka_poll_set_consumer;
             _query_watermark_offsets = NativeMethods.rd_kafka_query_watermark_offsets;
             _get_watermark_offsets = NativeMethods.rd_kafka_get_watermark_offsets;
             _mem_free = NativeMethods.rd_kafka_mem_free;
@@ -287,6 +288,9 @@ namespace Confluent.Kafka.Impl
 
         private static Func<IntPtr, IntPtr> _topic_name;
         internal static IntPtr topic_name(IntPtr rkt) => _topic_name(rkt);
+
+        private static Func<IntPtr, ErrorCode> _poll_set_consumer;
+        internal static ErrorCode poll_set_consumer(IntPtr rk) => _poll_set_consumer(rk);
 
         private static Func<IntPtr, IntPtr, IntPtr> _poll;
         internal static IntPtr poll(IntPtr rk, IntPtr timeout_ms) => _poll(rk, timeout_ms);
@@ -568,6 +572,9 @@ namespace Confluent.Kafka.Impl
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern /* const char * */ IntPtr rd_kafka_topic_name(IntPtr rkt);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_poll_set_consumer (IntPtr rk);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_poll(IntPtr rk, IntPtr timeout_ms);
