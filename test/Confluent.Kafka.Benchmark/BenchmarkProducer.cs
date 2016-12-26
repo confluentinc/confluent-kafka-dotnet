@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Benchmark
             }
         }
 
-        private static void BenchmarkProducerImpl(string bootstrapServers, string topic, bool useDeliveryHandler)
+        private static long BenchmarkProducerImpl(string bootstrapServers, string topic, int nMessages, int nTests, bool useDeliveryHandler)
         {
             // mirrors the librdkafka performance test example.
             var config = new Dictionary<string, object>
@@ -42,28 +42,27 @@ namespace Confluent.Kafka.Benchmark
                 { "retry.backoff.ms", 500 }
             };
 
-            const int NUMBER_OF_TESTS = 5;
-            const int NUMBER_OF_MESSAGES_TO_PRODUCE = 5000000;
+            MessageInfo firstDeliveryReport = default(MessageInfo);
 
             using (var producer = new Producer(config))
             {
-                for (var j=0; j<NUMBER_OF_TESTS; ++j)
+                for (var j=0; j<nTests; ++j)
                 {
-                    Console.WriteLine($"{producer.Name} producing on {topic}");
+                    Console.WriteLine($"{producer.Name} producing on {topic} " + (useDeliveryHandler ? "[DeliveryHandler]" : "[Task]"));
 
                     byte cnt = 0;
                     var val = new byte[100].Select(a => ++cnt).ToArray();
 
-                    // this is here to avoid calculating connection setup, topic creation, etc..
-                    producer.ProduceAsync(topic, null, val).Wait();
+                    // this avoids including connection setup, topic creation time, etc.. in result.
+                    firstDeliveryReport = producer.ProduceAsync(topic, null, val).Result;
 
                     var startTime = DateTime.Now.Ticks;
 
                     if (useDeliveryHandler)
                     {
-                        var deliveryHandler = new BenchmarkProducerDeliveryHandler(NUMBER_OF_MESSAGES_TO_PRODUCE);
+                        var deliveryHandler = new BenchmarkProducerDeliveryHandler(nMessages);
 
-                        for (int i = 0; i < NUMBER_OF_MESSAGES_TO_PRODUCE; i++)
+                        for (int i = 0; i < nMessages; i++)
                         {
                             producer.ProduceAsync(topic, null, val, deliveryHandler);
                         }
@@ -72,8 +71,8 @@ namespace Confluent.Kafka.Benchmark
                     }
                     else
                     {
-                        var tasks = new Task[NUMBER_OF_MESSAGES_TO_PRODUCE];
-                        for (int i = 0; i < NUMBER_OF_MESSAGES_TO_PRODUCE; i++)
+                        var tasks = new Task[nMessages];
+                        for (int i = 0; i < nMessages; i++)
                         {
                             tasks[i] = producer.ProduceAsync(topic, null, val);
                         }
@@ -82,27 +81,28 @@ namespace Confluent.Kafka.Benchmark
 
                     var duration = DateTime.Now.Ticks - startTime;
 
-                    Console.WriteLine($"Produced {NUMBER_OF_MESSAGES_TO_PRODUCE} in {duration/10000.0:F0}ms");
-                    Console.WriteLine($"{NUMBER_OF_MESSAGES_TO_PRODUCE / (duration/10000.0):F0} messages/ms");
+                    Console.WriteLine($"Produced {nMessages} in {duration/10000.0:F0}ms");
+                    Console.WriteLine($"{nMessages / (duration/10000.0):F0} messages/ms");
                 }
 
                 producer.Flush();
-                Console.WriteLine("Disposing producer");
             }
+
+            return firstDeliveryReport.Offset;
         }
 
         /// <summary>
         ///     Producer benchmark masquarading as an integration test.
         ///     Uses Task based produce method.
         /// </summary>
-        public static void TaskProduce(string bootstrapServers, string topic)
-            => BenchmarkProducerImpl(bootstrapServers, topic, false);
+        public static long TaskProduce(string bootstrapServers, string topic, int nMessages, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, false);
 
         /// <summary>
         ///     Producer benchmark (with custom delivery handler) masquarading
         ///     as an integration test. Uses Task based produce method.
         /// </summary>
-        public static void DeliveryHandlerProduce(string bootstrapServers, string topic)
-            => BenchmarkProducerImpl(bootstrapServers, topic, true);
+        public static long DeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, true);
     }
 }

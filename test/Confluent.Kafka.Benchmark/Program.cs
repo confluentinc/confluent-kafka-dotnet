@@ -7,8 +7,15 @@ namespace Confluent.Kafka.Benchmark
         {
             var bootstrapServers = args[0];
             var topic = args[1];
-            BenchmarkProducer.TaskProduce(bootstrapServers, topic);
-            BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topic);
+
+            const int NUMBER_OF_MESSAGES = 500000;
+            const int NUMBER_OF_TESTS = 1;
+
+            BenchmarkProducer.TaskProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);
+            var firstMessageOffset = BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);
+
+            BenchmarkConsumer.Poll(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);
+            BenchmarkConsumer.Consume(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);
         }
     }
 }
