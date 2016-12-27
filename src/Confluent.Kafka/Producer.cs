@@ -350,10 +350,10 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group, TimeSpan? timeout = null)
             => kafkaHandle.ListGroup(group, timeout);
 
-        public Offsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout);
 
-        public Offsets GetWatermarkOffsets(TopicPartition topicPartition)
+        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
         public Metadata GetMetadata(bool allTopics = true, string topic = null, TimeSpan? timeout = null)
@@ -537,10 +537,10 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group, TimeSpan? timeout = null)
             => producer.ListGroup(group, timeout);
 
-        public Offsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
             => producer.QueryWatermarkOffsets(topicPartition, timeout);
 
-        public Offsets GetWatermarkOffsets(TopicPartition topicPartition)
+        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => producer.GetWatermarkOffsets(topicPartition);
 
         /// <summary>
