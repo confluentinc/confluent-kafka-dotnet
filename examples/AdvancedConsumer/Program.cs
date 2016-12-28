@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Confluent.Kafka.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 /// <summary>
 ///     Demonstrates use of the deserializing Consumer.
@@ -13,18 +12,11 @@ namespace Confluent.Kafka.AdvancedConsumer
 {
     public class Program
     {
-        /// <summary>
-        //      In this example:
-        ///         - offsets are auto commited.
-        ///         - consumer.Poll / OnMessage is used to consume messages.
-        ///         - the poll loop is performed on a separate thread.
-        /// </summary>
-        public static void Run_Poll(string brokerList, List<string> topics)
-        {
-            var config = new Dictionary<string, object>
+        private static Dictionary<string, object> constructConfig(string brokerList, bool enableAutoCommit) =>
+            new Dictionary<string, object>
             {
                 { "group.id", "advanced-csharp-consumer" },
-                { "enable.auto.commit", true },
+                { "enable.auto.commit", enableAutoCommit },
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },
                 { "bootstrap.servers", brokerList },
@@ -35,24 +27,26 @@ namespace Confluent.Kafka.AdvancedConsumer
                 }
             };
 
-            using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
+        /// <summary>
+        //      In this example:
+        ///         - offsets are auto commited.
+        ///         - OnMessage is used to consume messages.
+        ///         - the poll loop is performed on a background thread started using Consumer.Start().
+        /// </summary>
+        public static void Run_Background(string brokerList, List<string> topics)
+        {
+            using (var consumer = new Consumer<Null, string>(constructConfig(brokerList, true), null, new StringDeserializer(Encoding.UTF8)))
             {
-                // Note: All events are called on the same thread (the same thread as the consumer.Poll method call).
+                // Note: All event handlers are executed on the same thread (the one created/started by the Consumer.Start())
 
-                consumer.OnMessage += (_, msg) =>
-                {
-                    Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
-                };
+                consumer.OnMessage += (_, msg)
+                    => Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
 
-                consumer.OnPartitionEOF += (_, end) =>
-                {
-                    Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
-                };
+                consumer.OnPartitionEOF += (_, end)
+                    => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
-                consumer.OnError += (_, error) =>
-                {
-                    Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
-                };
+                consumer.OnError += (_, error)
+                    => Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
@@ -77,45 +71,84 @@ namespace Confluent.Kafka.AdvancedConsumer
                     consumer.Unassign();
                 };
 
-                consumer.OnStatistics += (_, json) =>
-                {
-                    Console.WriteLine($"Statistics: {json}");
-                };
+                consumer.OnStatistics += (_, json)
+                    => Console.WriteLine($"Statistics: {json}");
 
                 consumer.Subscribe(topics);
+
                 Console.WriteLine($"Subscribed to: [{string.Join(", ", consumer.Subscription)}]");
 
-                // start poll loop in a background thread:
-
-                Task consumerTask;
-                var consumerCts = new CancellationTokenSource();
-                var ct = consumerCts.Token;
-                consumerTask = Task.Factory.StartNew(() =>
-                {
-                    while (!ct.IsCancellationRequested)
-                    {
-                        consumer.Poll(TimeSpan.FromMilliseconds(100));
-                    }
-                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                consumer.Start();
 
                 Console.WriteLine($"Started consumer, press enter to stop consuming");
                 Console.ReadLine();
 
-                consumerCts.Cancel();
-                consumerTask.Wait();
+                consumer.Stop();
+            }
+        }
 
-                // alternate poll loop (no additional thread):
-                //
-                // var cancelled = false;
-                // Console.CancelKeyPress += (_, e) => {
-                //     e.Cancel = true; // prevent the process from terminating.
-                //     cancelled = true;
-                // };
-                //
-                // while(!cancelled)
-                // {
-                //     consumer.Poll(Timespan.FromMilliseconds(100));
-                // }
+        /// <summary>
+        //      In this example:
+        ///         - offsets are auto commited.
+        ///         - consumer.Poll / OnMessage is used to consume messages.
+        ///         - the poll loop is performed on a separate thread.
+        /// </summary>
+        public static void Run_Poll(string brokerList, List<string> topics)
+        {
+            using (var consumer = new Consumer<Null, string>(constructConfig(brokerList, true), null, new StringDeserializer(Encoding.UTF8)))
+            {
+                // Note: All event handlers are called on the main thread.
+
+                consumer.OnMessage += (_, msg)
+                    => Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
+
+                consumer.OnPartitionEOF += (_, end)
+                    => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
+
+                consumer.OnError += (_, error)
+                    => Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
+
+                consumer.OnOffsetCommit += (_, commit) =>
+                {
+                    Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
+
+                    if (commit.Error != ErrorCode.NO_ERROR)
+                    {
+                        Console.WriteLine($"Failed to commit offsets: {commit.Error}");
+                    }
+                    Console.WriteLine($"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]");
+                };
+
+                consumer.OnPartitionsAssigned += (_, partitions) =>
+                {
+                    Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
+                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                };
+
+                consumer.OnPartitionsRevoked += (_, partitions) =>
+                {
+                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
+                    consumer.Unassign();
+                };
+
+                consumer.OnStatistics += (_, json)
+                    => Console.WriteLine($"Statistics: {json}");
+
+                consumer.Subscribe(topics);
+
+                Console.WriteLine($"Subscribed to: [{string.Join(", ", consumer.Subscription)}]");
+
+                var cancelled = false;
+                Console.CancelKeyPress += (_, e) => {
+                    e.Cancel = true; // prevent the process from terminating.
+                    cancelled = true;
+                };
+
+                Console.WriteLine("Ctrl-C to exit.");
+                while(!cancelled)
+                {
+                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                }
             }
         }
 
@@ -126,38 +159,17 @@ namespace Confluent.Kafka.AdvancedConsumer
         ///             (all other events are still handled by event handlers)
         ///         - no extra thread is created for the Poll (Consume) loop.
         /// </summary>
-        /// <remarks>
-        ///     TODO: we may remove consumer.Consume method if, after performance
-        ///     tuning, the performance hit in using C# events for message
-        ///     consumption is deemed insignificant compared to other factors.
-        /// </remarks>
         public static void Run_Consume(string brokerList, List<string> topics)
         {
-            var config = new Dictionary<string, object>
+            using (var consumer = new Consumer<Null, string>(constructConfig(brokerList, false), null, new StringDeserializer(Encoding.UTF8)))
             {
-                { "group.id", "advanced-csharp-consumer" },
-                { "enable.auto.commit", false },
-                { "auto.commit.interval.ms", 5000 },
-                { "statistics.interval.ms", 60000 },
-                { "bootstrap.servers", brokerList },
-                { "default.topic.config", new Dictionary<string, object>()
-                    {
-                        { "auto.offset.reset", "smallest" }
-                    }
-                }
-            };
+                // Note: All event handlers are called on the main thread.
 
-            using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
-            {
-                consumer.OnPartitionEOF += (_, end) =>
-                {
-                    Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
-                };
+                consumer.OnPartitionEOF += (_, end)
+                    => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
-                consumer.OnError += (_, error) =>
-                {
-                    Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
-                };
+                consumer.OnError += (_, error)
+                    => Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
@@ -182,10 +194,8 @@ namespace Confluent.Kafka.AdvancedConsumer
                     consumer.Unassign();
                 };
 
-                consumer.OnStatistics += (_, json) =>
-                {
-                    Console.WriteLine($"Statistics: {json}");
-                };
+                consumer.OnStatistics += (_, json)
+                    => Console.WriteLine($"Statistics: {json}");
 
                 consumer.Subscribe(topics);
 
@@ -219,13 +229,20 @@ namespace Confluent.Kafka.AdvancedConsumer
 
         public static void Main(string[] args)
         {
-            if (args[0] == "poll")
+            var mode = args[1];
+            var topics = args.Skip(2).ToList();
+
+            switch (args[0])
             {
-                Run_Poll(args[1], args.Skip(2).ToList());
-            }
-            else
-            {
-                Run_Consume(args[1], args.Skip(2).ToList());
+                case "poll":
+                    Run_Poll(mode, topics);
+                    break;
+                case "consume":
+                    Run_Consume(mode, topics);
+                    break;
+                case "background":
+                    Run_Background(mode, topics);
+                    break;
             }
         }
     }

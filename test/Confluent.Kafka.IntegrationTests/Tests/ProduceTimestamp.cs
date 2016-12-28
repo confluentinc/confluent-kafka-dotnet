@@ -11,7 +11,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test that a speicific user specified timestamp on produce is consumed.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory (Skip="currently no rd_kafka_producev in referenced librdkafka"), MemberData(nameof(KafkaParameters))]
         public static void ProduceTimestamp(string bootstrapServers, string topic)
         {
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };

@@ -105,6 +105,12 @@ namespace Confluent.Kafka
             }
         }
 
+        public void Start()
+            => consumer.StartPollLoop(Poll);
+
+        public void Stop()
+            => consumer.Stop();
+
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
@@ -149,6 +155,14 @@ namespace Confluent.Kafka
             => consumer.Subscribe(topics);
 
         /// <summary>
+        ///     Update the subscription set to a single topic.
+        ///
+        ///     Any previous subscription will be unassigned and unsubscribed first.
+        /// </summary>
+        public void Subscribe(string topic)
+            => consumer.Subscribe(new List<string> { topic });
+
+        /// <summary>
         ///     Unsubscribe from the current subscription set.
         /// </summary>
         public void Unsubscribe()
@@ -170,7 +184,7 @@ namespace Confluent.Kafka
         ///     Stop consumption and remove the current assignment.
         /// </summary>
         public void Unassign()
-            => consumer.Assign(null);
+            => consumer.Unassign();
 
         /// <summary>
         ///     Commit offsets for the current assignment.
@@ -256,6 +270,9 @@ namespace Confluent.Kafka
 
     public class Consumer : IDisposable
     {
+        private CancellationTokenSource consumerCts = null;
+        private Task consumerTask = null;
+
         private SafeKafkaHandle kafkaHandle;
 
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
@@ -542,11 +559,50 @@ namespace Confluent.Kafka
 
         public void Poll(TimeSpan? timeout)
         {
+            if (consumerCts != null)
+            {
+                throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
+            }
+
             MessageInfo msg;
             if (Consume(out msg, timeout))
             {
                 OnMessage?.Invoke(this, msg);
             }
+        }
+
+        internal void StartPollLoop(Action<TimeSpan?> pollMethod)
+        {
+            if (consumerCts != null)
+            {
+                throw new Exception("Consumer background poll loop cannot be started twice.");
+            }
+
+            consumerCts = new CancellationTokenSource();
+            var ct = consumerCts.Token;
+            consumerTask = Task.Factory.StartNew(() =>
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    pollMethod(TimeSpan.FromMilliseconds(100));
+                }
+            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+
+        public void Start()
+            => StartPollLoop(Poll);
+
+        public void Stop()
+        {
+            if (consumerCts == null)
+            {
+                throw new Exception("Consumer background poll loop not started - cannot stop.");
+            }
+
+            consumerCts.Cancel();
+            consumerTask.Wait();
+            consumerCts = null;
+            consumerTask = null;
         }
 
         /// <summary>

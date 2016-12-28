@@ -1,6 +1,6 @@
 using System;
 
-namespace Confluent.Kafka.Benchmark
+namespace Confluent.Kafka.IntegrationTests
 {
     public class Program
     {
