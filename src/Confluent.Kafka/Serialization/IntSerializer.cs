@@ -1,6 +1,3 @@
-
-// TODO: Consider whether we want to allow this serializer to handle nulls. Perhaps a separate serialzer that can?
-
 namespace Confluent.Kafka.Serialization
 {
     public class IntSerializer : ISerializer<int>

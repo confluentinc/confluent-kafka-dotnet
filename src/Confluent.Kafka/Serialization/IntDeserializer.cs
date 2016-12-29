@@ -1,4 +1,3 @@
-
 namespace Confluent.Kafka.Serialization
 {
     public class IntDeserializer : IDeserializer<int>

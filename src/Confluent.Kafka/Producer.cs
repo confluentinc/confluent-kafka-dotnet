@@ -22,7 +22,8 @@ namespace Confluent.Kafka
 
         private IEnumerable<KeyValuePair<string, object>> topicConfig;
 
-        private SafeDictionary<string, SafeTopicHandle> topicHandles = new SafeDictionary<string, SafeTopicHandle>();
+        private SafeDictionary<string, SafeTopicHandle> topicHandles
+            = new SafeDictionary<string, SafeTopicHandle>();
 
         private SafeKafkaHandle kafkaHandle;
 
@@ -90,7 +91,7 @@ namespace Confluent.Kafka
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
 
         /// <param name="opaque">
-        ///     this property is set to that defined in rd_kafka_conf
+        ///     note: this property is set to that defined in rd_kafka_conf
         ///     (which is never used by confluent-kafka-dotnet).
         /// </param>
         private static void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
@@ -203,6 +204,22 @@ namespace Confluent.Kafka
             return;
         }
 
+        /// <summary>
+        ///     Initializes a new Producer instance.
+        /// </summary>
+        /// <param name="config">
+        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     TODO: Link to confluent-kafka-dotnet page with dotnet specific parameters also (i.e. default.topic.config).
+        /// </param>
+        /// <param name="manualPoll">
+        ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
+        ///     you must call the Poll method periodically instead.
+        /// </param>
+        /// <param name="disableDeliveryReports">
+        ///     If true, disables notification of delivery reports. Note: if set to true and you use a ProduceAsync variant that return
+        ///     a Task, the Tasks will never complete. Generally you should leave this parameter as false. Set it to true for "fire and
+        ///     forget" semantics and a small boost in performance.
+        /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll = false, bool disableDeliveryReports = false)
         {
             this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
@@ -267,10 +284,8 @@ namespace Confluent.Kafka
         /// </remarks>
         public event EventHandler<LogArgs> OnLog;
 
-        public ISerializingProducer<TKey, TValue> Wrap<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
-        {
-            return new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
-        }
+        public ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
+            => new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
 
         public Task<MessageInfo> ProduceAsync(string topic, byte[] key, byte[] val, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true)
         {
@@ -287,14 +302,21 @@ namespace Confluent.Kafka
         }
 
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true)
-        {
-            Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp?.Ticks, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-        }
+            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp?.Ticks, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
 
         public void ProduceAsync(string topic, ArraySegment<byte>? key, ArraySegment<byte>? val, IDeliveryHandler deliveryHandler, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true)
-        {
-            Produce(topic, val == null ? null : val.Value.Array, val == null ? 0 : val.Value.Offset, val == null ? 0 : val.Value.Count, key == null ? null : key.Value.Array, key == null ? 0 : key.Value.Offset, key == null ? 0 : key.Value.Count, timestamp?.Ticks, partition ?? RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-        }
+            => Produce(
+                topic,
+                val == null ? null : val.Value.Array,
+                val == null ? 0 : val.Value.Offset,
+                val == null ? 0 : val.Value.Count,
+                key == null ? null : key.Value.Array,
+                key == null ? 0 : key.Value.Offset,
+                key == null ? 0 : key.Value.Count,
+                timestamp?.Ticks,
+                partition ?? RD_KAFKA_PARTITION_UA,
+                blockIfQueueFull,
+                deliveryHandler);
 
         /// <summary>
         ///     Check if partition is available (has a leader broker).
@@ -305,18 +327,18 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     This function must only be called from inside a partitioner function.
         /// </remarks>
-        public bool PartitionAvailable(string topic, int partition) => getKafkaTopicHandle(topic).PartitionAvailable(partition);
+        public bool PartitionAvailable(string topic, int partition)
+            => getKafkaTopicHandle(topic).PartitionAvailable(partition);
 
-        public string Name => kafkaHandle.Name;
+        public string Name
+            => kafkaHandle.Name;
 
         /// <summary>
         ///     The number of messages and requests waiting to be sent to,
         ///     or acknowledged by the broker.
         /// </summary>
-        public long OutQueueLength => kafkaHandle.OutQueueLength;
-
-
-        public void Flush(int timeoutMilliseconds = int.MaxValue) => Flush(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+        public long OutQueueLength
+            => kafkaHandle.OutQueueLength;
 
         /// <summary>
         ///     Wait until all outstanding produce requests, et.al, are completed. This should typically be done prior
@@ -324,9 +346,7 @@ namespace Confluent.Kafka
         //      before terminating.
         /// </summary>
         public void Flush(TimeSpan timeout)
-        {
-            kafkaHandle.Flush(timeout);
-        }
+            => kafkaHandle.Flush(timeout);
 
         public void Dispose()
         {
@@ -474,7 +494,8 @@ namespace Confluent.Kafka
             producer.ProduceAsync(topic, KeySerializer?.Serialize(key), ValueSerializer?.Serialize(val), handler, timestamp, partition, blockIfQueueFull);
         }
 
-        public string Name => producer.Name;
+        public string Name
+            => producer.Name;
 
         public event EventHandler<LogArgs> OnLog;
 
@@ -496,27 +517,26 @@ namespace Confluent.Kafka
             bool manualPoll = false, bool disableDeliveryReports = false)
         {
             producer = new Producer(config, manualPoll, disableDeliveryReports);
-            serializingProducer = producer.Wrap(keySerializer, valueSerializer);
+            serializingProducer = producer.GetSerializingProducer(keySerializer, valueSerializer);
             producer.OnLog += (sender, e) => OnLog?.Invoke(sender, e);
             producer.OnError += (sender, e) => OnError?.Invoke(sender, e);
             producer.OnStatistics += (sender, e) => OnStatistics?.Invoke(sender, e);
         }
 
-        public ISerializer<TKey> KeySerializer => serializingProducer.KeySerializer;
+        public ISerializer<TKey> KeySerializer
+            => serializingProducer.KeySerializer;
 
-        public ISerializer<TValue> ValueSerializer => serializingProducer.ValueSerializer;
+        public ISerializer<TValue> ValueSerializer
+            => serializingProducer.ValueSerializer;
 
-        public string Name => serializingProducer.Name;
+        public string Name
+            => serializingProducer.Name;
 
         public Task<MessageInfo<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true)
-        {
-            return serializingProducer.ProduceAsync(topic, key, val, timestamp, partition, blockIfQueueFull);
-        }
+            => serializingProducer.ProduceAsync(topic, key, val, timestamp, partition, blockIfQueueFull);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true)
-        {
-            serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
-        }
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
 
 
         public event EventHandler<LogArgs> OnLog;
@@ -525,10 +545,14 @@ namespace Confluent.Kafka
 
         public event EventHandler<ErrorArgs> OnError;
 
-        public void Flush(int timeoutMilliseconds = int.MaxValue) => producer.Flush(TimeSpan.FromMilliseconds(timeoutMilliseconds));
-        public void Flush(TimeSpan timeout) => producer.Flush(timeout);
+        public void Flush(int timeoutMilliseconds = int.MaxValue)
+            => producer.Flush(TimeSpan.FromMilliseconds(timeoutMilliseconds));
 
-        public void Dispose() => producer.Dispose();
+        public void Flush(TimeSpan timeout)
+            => producer.Flush(timeout);
+
+        public void Dispose()
+            => producer.Dispose();
 
 
         public List<GroupInfo> ListGroups(TimeSpan? timeout = null)

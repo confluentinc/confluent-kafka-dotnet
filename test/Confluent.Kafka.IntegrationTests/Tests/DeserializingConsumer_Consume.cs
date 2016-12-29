@@ -1,7 +1,7 @@
+using System;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-using System.Threading;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
@@ -11,10 +11,10 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic DeserializingConsumer test (background poll mode).
+        ///     Basic DeserializingConsumer test (consume mode).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DeserializingConsumer_I(string bootstrapServers, string topic)
+        public static void DeserializingConsumer_Consume(string bootstrapServers, string topic)
         {
             int N = 2;
             var firstProducedMessage = Util.ProduceMessages(bootstrapServers, topic, 100, N);
@@ -28,17 +28,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                int msgCnt = 0;
-                AutoResetEvent are = new AutoResetEvent(false);
-
-                consumer.OnMessage += (_, msg) =>
-                {
-                    Assert.Equal(msg.Error.Code, ErrorCode.NO_ERROR);
-                    msgCnt += 1;
-                };
+                bool done = false;
 
                 consumer.OnPartitionEOF += (_, partition)
-                    => are.Set();
+                    => done = true;
 
                 consumer.OnPartitionsAssigned += (_, partitions)
                     => consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProducedMessage)));
@@ -48,9 +41,15 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(topic);
 
-                consumer.Start();
-                are.WaitOne();
-                consumer.Stop();
+                int msgCnt = 0;
+                while (!done)
+                {
+                    MessageInfo<Null, string> msg;
+                    if (consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
+                    {
+                        msgCnt += 1;
+                    }
+                }
 
                 Assert.Equal(msgCnt, N);
             }

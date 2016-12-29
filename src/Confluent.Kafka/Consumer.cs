@@ -34,7 +34,7 @@ namespace Confluent.Kafka
                 {
                     throw new ArgumentNullException("Key deserializer must be specified.");
                 }
-                // TKey == Null -> cast always valid.
+                // TKey == Null -> cast is always valid.
                 KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
             }
 
@@ -44,7 +44,7 @@ namespace Confluent.Kafka
                 {
                     throw new ArgumentNullException("Value deserializer must be specified.");
                 }
-                // TValue == Null -> cast always valid.
+                // TValue == Null -> cast is always valid.
                 ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
             }
 
@@ -160,7 +160,7 @@ namespace Confluent.Kafka
         ///     Any previous subscription will be unassigned and unsubscribed first.
         /// </summary>
         public void Subscribe(string topic)
-            => consumer.Subscribe(new List<string> { topic });
+            => consumer.Subscribe(topic);
 
         /// <summary>
         ///     Unsubscribe from the current subscription set.
@@ -193,10 +193,15 @@ namespace Confluent.Kafka
             => consumer.Commit();
 
         /// <summary>
-        ///     Commit offset for specific topic/partition.
+        ///     Commits an offset based on the topic/partition/offset of a message.
+        ///     The next message to be read will be that following <param name="message" />.
         /// </summary>
+        /// <remarks>
+        ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
+        ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
+        /// </remarks>
         public void Commit(MessageInfo<TKey, TValue> message)
-            => consumer.Commit(new List<TopicPartitionOffset> { message.TopicPartitionOffset });
+            => consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <summary>
         ///     Commit explicit list of offsets.
@@ -298,6 +303,7 @@ namespace Confluent.Kafka
             }
 
             OnLog?.Invoke(this, new LogArgs() { Name = name, Level = level, Facility = fac, Message = buf });
+
         }
 
         // Explicitly keep reference to delegate so it stays alive
@@ -398,65 +404,72 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Raised on new partition assignment.
+        ///     You should typically call the Consumer.Assign method in this handler.
         /// </summary>
         /// <remarks>
-        ///     Typically call Assign() method.
-        ///     TODO: entire assignment, or only new partitions?
-        ///     On poll thread
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
         /// <summary>
         ///     Raised when a partition assignment is revoked.
+        ///     You should typically call the Consumer.Unassign method in this handler.
+        ///     TODO: can a partial revokation ever happen? What happens in this case?
         /// </summary>
         /// <remarks>
-        ///     Typically call Unassign() method
-        ///     TODO: always everything unassigned? Reassignment
-        ///     On poll thread.
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
         /// <summary>
-        ///     TODO: when exactly is this called?
-        ///     I belive this is only called
-        ///     On poll thread.
+        ///     An event used to report on the result of offset commits - all commits, whether manual or automatic.
         /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<OffsetCommitArgs> OnOffsetCommit;
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
-        ///     On poll thread.
         /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<ErrorArgs> OnError;
 
         /// <summary>
-        ///     Raised on librdkafka stats events.
+        ///     Raised on librdkafka statistics events. These can be enabled by setting the statistics.interval.ms configuration parameter.
         /// </summary>
         /// <remarks>
-        ///     librdkafka statistics can be set using the statistics.interval.ms parameter.
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
         public event EventHandler<string> OnStatistics;
 
         /// <summary>
-        ///     Raised when there is information that should be to be logged.
+        ///     Raised when there is information that should be logged.
+        ///     You can set the log severity level using the "log_level" configuration parameter
         /// </summary>
         /// <remarks>
-        ///     Specify which log level with the log_level configuration property.
-        ///     Potentially on internal librdkafka thread. don't call librdkafka methods.
+        ///     Executes on potentially any internal librdkafka thread.
+        ///     Do not call any librdkafka methods from within handlers of this event.
         /// </remarks>
         public event EventHandler<LogArgs> OnLog;
 
         /// <summary>
-        ///
+        ///     Raised when a new message is avaiable for consumption. NOT raised when Consumer.Consume
+        ///     is used for polling.
         /// </summary>
         /// <remarks>
-        ///
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
         public event EventHandler<MessageInfo> OnMessage;
 
         /// <summary>
-        ///
+        ///     Raised when the consumer reaches the end of a topic/partition it is reading from.
         /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
 
@@ -467,7 +480,7 @@ namespace Confluent.Kafka
             => kafkaHandle.GetAssignment();
 
         /// <summary>
-        ///     Returns the current partition subscription as set by Subscribe.
+        ///     Returns the current topic subscription as set by Subscribe.
         /// </summary>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
@@ -485,6 +498,14 @@ namespace Confluent.Kafka
         /// </summary>
         public void Subscribe(ICollection<string> topics)
             => kafkaHandle.Subscribe(topics);
+
+        /// <summary>
+        ///     Update the subscription set to a single topic.
+        ///
+        ///     Any previous subscription will be unassigned and unsubscribed first.
+        /// </summary>
+        public void Subscribe(string topic)
+            => Subscribe(new List<string> { topic });
 
         /// <summary>
         ///     Unsubscribe from the current subscription set.
