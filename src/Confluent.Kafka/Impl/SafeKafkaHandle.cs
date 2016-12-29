@@ -109,9 +109,9 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void Flush(TimeSpan timeout)
+        internal void Flush(int timeoutMs)
         {
-            LibRdKafka.flush(handle, new IntPtr((int)timeout.TotalMilliseconds));
+            LibRdKafka.flush(handle, new IntPtr(timeoutMs));
         }
 
         internal long AddBrokers(string brokers) => (long)LibRdKafka.brokers_add(handle, brokers);

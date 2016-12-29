@@ -239,6 +239,8 @@ namespace Confluent.Kafka
                 LibRdKafka.conf_set_dr_msg_cb(rdKafkaConfigPtr, DeliveryReportCallback);
             }
 
+            // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
+            //       such time as event handlers have had a chance to be registered.
             LibRdKafka.conf_set_error_cb(rdKafkaConfigPtr, ErrorCallback);
             LibRdKafka.conf_set_log_cb(rdKafkaConfigPtr, LogCallback);
             LibRdKafka.conf_set_stats_cb(rdKafkaConfigPtr, StatsCallback);
@@ -340,13 +342,22 @@ namespace Confluent.Kafka
         public long OutQueueLength
             => kafkaHandle.OutQueueLength;
 
+        public void Flush()
+        {
+            kafkaHandle.Flush(-1);
+        }
+
         /// <summary>
         ///     Wait until all outstanding produce requests, et.al, are completed. This should typically be done prior
         //      to destroying a producer instance to make sure all queued and in-flight produce requests are completed
         //      before terminating.
         /// </summary>
         public void Flush(TimeSpan timeout)
-            => kafkaHandle.Flush(timeout);
+        {
+            int timeoutMs;
+            checked { timeoutMs = (int)timeout.TotalMilliseconds; }
+            kafkaHandle.Flush(timeoutMs);
+        }
 
         public void Dispose()
         {
@@ -545,8 +556,8 @@ namespace Confluent.Kafka
 
         public event EventHandler<ErrorArgs> OnError;
 
-        public void Flush(int timeoutMilliseconds = int.MaxValue)
-            => producer.Flush(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+        public void Flush()
+            => producer.Flush();
 
         public void Flush(TimeSpan timeout)
             => producer.Flush(timeout);
