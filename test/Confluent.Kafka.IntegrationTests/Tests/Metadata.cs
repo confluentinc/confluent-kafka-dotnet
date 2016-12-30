@@ -21,7 +21,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(metadata.Brokers);
                 Assert.True(metadata.Brokers.Count > 0);
 
-                var deserialized = JsonConvert.DeserializeObject<Metadata>(metadata.ToString());
+                var metadataAsJson = metadata.ToString();
+                var deserialized = JsonConvert.DeserializeObject<Metadata>(metadataAsJson);
 
                 Assert.Equal(metadata.OriginatingBrokerId, deserialized.OriginatingBrokerId);
                 Assert.Equal(metadata.OriginatingBrokerName, deserialized.OriginatingBrokerName);

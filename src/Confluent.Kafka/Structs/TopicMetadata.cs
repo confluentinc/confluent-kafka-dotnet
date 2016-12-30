@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 
@@ -17,20 +18,9 @@ namespace Confluent.Kafka
         public override string ToString()
         {
             var result = new StringBuilder();
-
             result.Append($"{{ \"Topic\": \"{Topic}\", \"Partitions\": [");
-
-            for (int i=0; i<Partitions.Count; ++i)
-            {
-                result.Append($" {Partitions[i].ToString()}");
-                if (i != Partitions.Count-1)
-                {
-                    result.Append(",");
-                }
-            }
-
+            result.Append(string.Join(",", Partitions.Select(p => $" {p.ToString()}")));
             result.Append($" ], \"Error\": \"{Error.ToString()}\" }}");
-
             return result.ToString();
         }
     }

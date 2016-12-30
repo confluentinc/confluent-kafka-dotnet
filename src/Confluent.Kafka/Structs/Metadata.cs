@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
-
+using System.Linq;
 
 namespace Confluent.Kafka
 {
@@ -30,31 +30,11 @@ namespace Confluent.Kafka
         public override string ToString()
         {
             var result = new StringBuilder();
-
             result.Append($"{{ \"OriginatingBrokerId\": {OriginatingBrokerId}, \"OriginatingBrokerName\": \"{OriginatingBrokerName}\", \"Brokers\": [");
-
-            for (int i=0; i<Brokers.Count; ++i)
-            {
-                result.Append($" {Brokers[i].ToString()}");
-                if (i != Brokers.Count-1)
-                {
-                    result.Append(",");
-                }
-            }
-
+            result.Append(string.Join(",", Brokers.Select(b => $" {b.ToString()}")));
             result.Append($" ], \"Topics\": [");
-
-            for (int i=0; i<Topics.Count; ++i)
-            {
-                result.Append($" {Topics[i].ToString()}");
-                if (i != Topics.Count-1)
-                {
-                    result.Append(",");
-                }
-            }
-
+            result.Append(string.Join(",", Topics.Select(t => $" {t.ToString()}")));
             result.Append("] }");
-
             return result.ToString();
         }
     }
