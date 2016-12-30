@@ -9,11 +9,21 @@ namespace Confluent.Kafka
     /// </summary>
     public struct PartitionMetadata
     {
-        public int PartitionId { get; set; }
-        public int Leader { get; set; }
-        public int[] Replicas { get; set; }
-        public int[] InSyncReplicas { get; set; }
-        public ErrorCode Error { get; set; }
+        public PartitionMetadata(int partitionId, int leader, int[] replicas, int[] inSyncReplicas, ErrorCode errorCode)
+        {
+            PartitionId = partitionId;
+            Leader = leader;
+            Replicas = replicas;
+            InSyncReplicas = inSyncReplicas;
+            Error = errorCode;
+        }
+
+        public int PartitionId { get; }
+        public int Leader { get; }
+        public int[] Replicas { get; }
+        public int[] InSyncReplicas { get; }
+        // TODO: Make this an instance of Error rather than ErrorCode.
+        public ErrorCode Error { get; }
 
         public override string ToString()
         {

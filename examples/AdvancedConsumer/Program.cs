@@ -46,7 +46,7 @@ namespace Confluent.Kafka.AdvancedConsumer
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
                 consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
+                    => Console.WriteLine($"Error: {error.Code} {error.Message}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
@@ -106,7 +106,7 @@ namespace Confluent.Kafka.AdvancedConsumer
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
                 consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
+                    => Console.WriteLine($"Error: {error.Code} {error.Message}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
@@ -169,7 +169,7 @@ namespace Confluent.Kafka.AdvancedConsumer
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
                 consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error.ErrorCode} {error.Reason}");
+                    => Console.WriteLine($"Error: {error.Code} {error.Message}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {

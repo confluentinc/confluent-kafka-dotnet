@@ -42,7 +42,7 @@ namespace Confluent.Kafka
 
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            OnError?.Invoke(this, new ErrorArgs() { ErrorCode = err, Reason = reason });
+            OnError?.Invoke(this, new Error(err, reason));
         }
 
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
@@ -58,11 +58,11 @@ namespace Confluent.Kafka
             if (OnLog == null)
             {
                 // Log to stderr by default if no logger is specified.
-                Loggers.ConsoleLogger(this, new LogArgs() { Name = name, Level = level, Facility = fac, Message = buf });
+                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf ));
                 return;
             }
 
-            OnLog.Invoke(this, new LogArgs() { Name = name, Level = level, Facility = fac, Message = buf });
+            OnLog.Invoke(this, new LogMessage(name, level, fac, buf ));
         }
 
         private SafeTopicHandle getKafkaTopicHandle(string topic)
@@ -138,23 +138,22 @@ namespace Confluent.Kafka
             }
 
             deliveryHandler.HandleDeliveryReport(
-                new MessageInfo
-                {
+                new MessageInfo (
                     // TODO: tracking handle -> topicName in addition to topicName -> handle could
                     //       avoid this marshalling / memory allocation cost.
-                    Topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)),
-                    Offset = msg.offset,
-                    Partition = msg.partition,
-                    Error = new Error(
+                    Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)),
+                    msg.partition,
+                    msg.offset,
+                    key,
+                    val,
+                    new Timestamp(dateTime, (TimestampType)timestampType),
+                    new Error(
                         msg.err,
                         msg.err == ErrorCode.NO_ERROR
                             ? null
                             : Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(msg.err))
-                    ),
-                    Key = key,
-                    Value = val,
-                    Timestamp = new Timestamp(dateTime, (TimestampType)timestampType)
-                }
+                    )
+                )
             );
         }
 
@@ -267,7 +266,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
         /// </summary>
-        public event EventHandler<ErrorArgs> OnError;
+        public event EventHandler<Error> OnError;
 
         /// <summary>
         ///     Raised on librdkafka stats events.
@@ -284,7 +283,7 @@ namespace Confluent.Kafka
         ///     Specify which log level with the log_level configuration property.
         ///     can happen on any thread.
         /// </remarks>
-        public event EventHandler<LogArgs> OnLog;
+        public event EventHandler<LogMessage> OnLog;
 
         public ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
             => new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
@@ -445,16 +444,15 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(MessageInfo messageInfo)
             {
-                var mi = new MessageInfo<TKey, TValue>()
-                {
-                    Topic = messageInfo.Topic,
-                    Partition = messageInfo.Partition,
-                    Offset = messageInfo.Offset,
-                    Error = messageInfo.Error,
-                    Timestamp = messageInfo.Timestamp,
-                    Key = Key,
-                    Value = Value
-                };
+                var mi = new MessageInfo<TKey, TValue>(
+                    messageInfo.Topic,
+                    messageInfo.Partition,
+                    messageInfo.Offset,
+                    Key,
+                    Value,
+                    messageInfo.Timestamp,
+                    messageInfo.Error
+                );
 
                 SetResult(mi);
             }
@@ -486,16 +484,15 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(MessageInfo messageInfo)
             {
-                Handler.HandleDeliveryReport(new MessageInfo<TKey, TValue>()
-                    {
-                        Topic = messageInfo.Topic,
-                        Partition = messageInfo.Partition,
-                        Offset = messageInfo.Offset,
-                        Error = messageInfo.Error,
-                        Timestamp = messageInfo.Timestamp,
-                        Key = Key,
-                        Value = Value
-                    });
+                Handler.HandleDeliveryReport(new MessageInfo<TKey, TValue>(
+                    messageInfo.Topic,
+                    messageInfo.Partition,
+                    messageInfo.Offset,
+                    Key,
+                    Value,
+                    messageInfo.Timestamp,
+                    messageInfo.Error
+                ));
             }
         }
 
@@ -508,11 +505,11 @@ namespace Confluent.Kafka
         public string Name
             => producer.Name;
 
-        public event EventHandler<LogArgs> OnLog;
+        public event EventHandler<LogMessage> OnLog;
 
         public event EventHandler<string> OnStatistics;
 
-        public event EventHandler<ErrorArgs> OnError;
+        public event EventHandler<Error> OnError;
     }
 
 
@@ -550,11 +547,11 @@ namespace Confluent.Kafka
             => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
 
 
-        public event EventHandler<LogArgs> OnLog;
+        public event EventHandler<LogMessage> OnLog;
 
         public event EventHandler<string> OnStatistics;
 
-        public event EventHandler<ErrorArgs> OnError;
+        public event EventHandler<Error> OnError;
 
         public void Flush()
             => producer.Flush();

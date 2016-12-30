@@ -23,22 +23,37 @@ namespace Confluent.Kafka
             Offset = offset;
         }
 
-        public string Topic { get; set; }
-        public int Partition { get; set; }
-        public Offset Offset { get; set; }
+        public string Topic { get; }
+        public int Partition { get; }
+        public Offset Offset { get; }
 
         public TopicPartition TopicPartition
         {
-            get
-            {
-                return new TopicPartition
-                {
-                    Topic = Topic,
-                    Partition = Partition
-                };
-            }
+            get { return new TopicPartition(Topic, Partition); }
         }
 
-        public override string ToString() => $"{Topic} {Partition} {Offset}";
+        public override bool Equals(object obj)
+        {
+            if (!(obj is TopicPartitionOffset))
+            {
+                return false;
+            }
+
+            var tp = (TopicPartitionOffset)obj;
+            return tp.Partition == Partition && tp.Topic == Topic && tp.Offset == Offset;
+        }
+
+        // x by prime number is quick and gives decent distribution.
+        public override int GetHashCode()
+            => (Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode();
+
+        public static bool operator ==(TopicPartitionOffset a, TopicPartitionOffset b)
+            => a.Equals(b);
+
+        public static bool operator !=(TopicPartitionOffset a, TopicPartitionOffset b)
+            => !(a == b);
+
+        public override string ToString()
+            => $"{Topic} {Partition} {Offset}";
     }
 }

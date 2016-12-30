@@ -6,9 +6,16 @@ namespace Confluent.Kafka
     /// </summary>
     public struct BrokerMetadata
     {
-        public int BrokerId { get; set; }
-        public string Host { get; set; }
-        public int Port { get; set; }
+        public BrokerMetadata(int brokerId, string host, int port)
+        {
+            BrokerId = brokerId;
+            Host = host;
+            Port = port;
+        }
+
+        public int BrokerId { get; }
+        public string Host { get; }
+        public int Port { get; }
 
         public override string ToString()
         {

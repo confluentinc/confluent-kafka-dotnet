@@ -1,80 +1,68 @@
-using System;
-
 namespace Confluent.Kafka
 {
     public struct MessageInfo<TKey, TValue>
     {
-        public string Topic { get; set; }
-        public int Partition { get; set; }
-        public long Offset { get; set; }
-        public TKey Key { get; set; }
-        public TValue Value { get; set; }
-        public Timestamp Timestamp { get; set; }
-        public Error Error { get; set; }
+        public MessageInfo(string topic, int partition, long offset, TKey key, TValue val, Timestamp timestamp, Error error)
+        {
+            Topic = topic;
+            Partition = partition;
+            Offset = offset;
+            Key = key;
+            Value = val;
+            Timestamp = timestamp;
+            Error = error;
+        }
+
+        public string Topic { get; }
+        public int Partition { get; }
+        public long Offset { get; }
+        public TKey Key { get; }
+        public TValue Value { get; }
+        public Timestamp Timestamp { get; }
+        public Error Error { get; }
 
         public TopicPartitionOffset TopicPartitionOffset
         {
-            get
-            {
-                return new TopicPartitionOffset
-                {
-                    Topic = Topic,
-                    Partition = Partition,
-                    Offset = Offset
-                };
-            }
+            get { return new TopicPartitionOffset(Topic, Partition, Offset); }
         }
 
         public TopicPartition TopicPartition
         {
-            get
-            {
-                return new TopicPartition
-                {
-                    Topic = Topic,
-                    Partition = Partition
-                };
-            }
+            get { return new TopicPartition(Topic, Partition); }
         }
-
     }
 
 
     public struct MessageInfo
     {
-        public string Topic { get; set; }
-        public int Partition { get; set; }
-        public long Offset { get; set; }
-        public byte[] Value { get; set; }
-        public byte[] Key { get; set; }
-        public Timestamp Timestamp { get; set; }
-        public Error Error { get; set; }
+        public MessageInfo(string topic, int partition, long offset, byte[] key, byte[] val, Timestamp timestamp, Error error)
+        {
+            Topic = topic;
+            Partition = partition;
+            Offset = offset;
+            Key = key;
+            Value = val;
+            Timestamp = timestamp;
+            Error = error;
+        }
+
+        public string Topic { get; }
+        public int Partition { get; }
+        public long Offset { get; }
+        public byte[] Value { get; }
+        public byte[] Key { get; }
+        public Timestamp Timestamp { get; }
+        public Error Error { get; }
 
         public TopicPartitionOffset TopicPartitionOffset
         {
-            get
-            {
-                return new TopicPartitionOffset
-                {
-                    Topic = Topic,
-                    Partition = Partition,
-                    Offset = Offset
-                };
-            }
+            get { return new TopicPartitionOffset(Topic, Partition, Offset); }
         }
 
         public TopicPartition TopicPartition
         {
-            get
-            {
-                return new TopicPartition
-                {
-                    Topic = Topic,
-                    Partition = Partition
-                };
-            }
+            get { return new TopicPartition(Topic, Partition); }
         }
-
     }
 
 }

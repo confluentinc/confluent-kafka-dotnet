@@ -17,9 +17,9 @@ namespace Confluent.Kafka
 
         void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true);
 
-        event EventHandler<LogArgs> OnLog;
+        event EventHandler<LogMessage> OnLog;
 
-        event EventHandler<ErrorArgs> OnError;
+        event EventHandler<Error> OnError;
 
         event EventHandler<string> OnStatistics;
 

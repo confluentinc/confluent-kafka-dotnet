@@ -17,7 +17,7 @@ namespace Confluent.Kafka
             Value = offset;
         }
 
-        public long Value { get; private set; }
+        public long Value { get; }
 
         public bool IsSpecial
         {

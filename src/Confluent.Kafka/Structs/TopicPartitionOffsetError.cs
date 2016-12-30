@@ -17,36 +17,43 @@ namespace Confluent.Kafka
             Error = error;
         }
 
-        public string Topic { get; set; }
-        public int Partition { get; set; }
-        public Offset Offset { get; set; }
-        public Error Error { get; set; }
+        public string Topic { get; }
+        public int Partition { get; }
+        public Offset Offset { get; }
+        public Error Error { get; }
 
         public TopicPartition TopicPartition
         {
-            get
-            {
-                return new TopicPartition
-                {
-                    Topic = Topic,
-                    Partition = Partition
-                };
-            }
+            get { return new TopicPartition(Topic, Partition); }
         }
 
         public TopicPartitionOffset TopicPartitionOffset
         {
-            get
-            {
-                return new TopicPartitionOffset
-                {
-                    Topic = Topic,
-                    Partition = Partition,
-                    Offset = Offset
-                };
-            }
+            get { return new TopicPartitionOffset(Topic, Partition, Offset); }
         }
 
-        public override string ToString() => $"{Topic} {Partition} {Offset} {Error}";
+        public override bool Equals(object obj)
+        {
+            if (!(obj is TopicPartitionOffsetError))
+            {
+                return false;
+            }
+
+            var tp = (TopicPartitionOffsetError)obj;
+            return tp.Partition == Partition && tp.Topic == Topic && tp.Offset == Offset && tp.Error == Error;
+        }
+
+        // x by prime number is quick and gives decent distribution.
+        public override int GetHashCode()
+            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode();
+
+        public static bool operator ==(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
+            => a.Equals(b);
+
+        public static bool operator !=(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
+            => !(a == b);
+
+        public override string ToString()
+            => $"{Topic} {Partition} {Offset} {Error}";
     }
 }

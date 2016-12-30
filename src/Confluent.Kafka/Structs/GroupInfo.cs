@@ -5,12 +5,24 @@ namespace Confluent.Kafka
 {
     public struct GroupInfo
     {
-        public BrokerMetadata Broker { get; set; } /**< Originating broker info */
-        public string Group { get; set; }          /**< Group name */
-        public ErrorCode Error { get; set; }       /**< Broker-originated error */
-        public string State { get; set; }          /**< Group state */
-        public string ProtocolType { get; set; }   /**< Group protocol type */
-        public string Protocol { get; set; }       /**< Group protocol */
-        public List<GroupMemberInfo> Members { get; set; } /**< Group members */
+        public GroupInfo(BrokerMetadata broker, string grp, ErrorCode error, string state, string protocolType, string protocol, List<GroupMemberInfo> members)
+        {
+            Broker = broker;
+            Group = grp;
+            Error = error;
+            State = state;
+            ProtocolType = protocolType;
+            Protocol = protocol;
+            Members = members;
+        }
+
+        public BrokerMetadata Broker { get; } /**< Originating broker info */
+        public string Group { get; }          /**< Group name */
+        // TODO: make this an instance of Error rather than ErrorCode.
+        public ErrorCode Error { get; }       /**< Broker-originated error */
+        public string State { get; }          /**< Group state */
+        public string ProtocolType { get; }   /**< Group protocol type */
+        public string Protocol { get; }       /**< Group protocol */
+        public List<GroupMemberInfo> Members { get; } /**< Group members */
     }
 }

@@ -15,7 +15,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <returns>
         ///     The offset of the first produced message.
         /// </returns>
-        public static long ProduceMessages(string bootstrapServers, string topic, int size, int number)
+        public static TopicPartitionOffset ProduceMessages(string bootstrapServers, string topic, int size, int number)
         {
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush();
             }
 
-            return firstDeliveryReport.Offset;
+            return firstDeliveryReport.TopicPartitionOffset;
         }
     }
 }

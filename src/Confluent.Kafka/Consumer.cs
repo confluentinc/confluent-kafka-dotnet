@@ -57,16 +57,16 @@ namespace Confluent.Kafka
             consumer.OnOffsetCommit += (sender, e) => OnOffsetCommit?.Invoke(sender, e);
             // TODO: bypass this.consumer for this event to optimize perf.
             consumer.OnMessage += (sender, e) => OnMessage?.Invoke(sender,
-                new MessageInfo<TKey, TValue>
-                {
-                    Topic = e.Topic,
-                    Partition = e.Partition,
-                    Offset = e.Offset,
-                    Key = KeyDeserializer.Deserialize(e.Key),
-                    Value = ValueDeserializer.Deserialize(e.Value),
-                    Timestamp = e.Timestamp,
-                    Error = e.Error
-                });
+                new MessageInfo<TKey, TValue> (
+                    e.Topic,
+                    e.Partition,
+                    e.Offset,
+                    KeyDeserializer.Deserialize(e.Key),
+                    ValueDeserializer.Deserialize(e.Value),
+                    e.Timestamp,
+                    e.Error
+                )
+            );
             consumer.OnPartitionEOF += (sender, e) => OnPartitionEOF?.Invoke(sender, e);
         }
 
@@ -82,16 +82,15 @@ namespace Confluent.Kafka
                 return false;
             }
 
-            message = new MessageInfo<TKey, TValue>
-            {
-                Topic = msg.Topic,
-                Partition = msg.Partition,
-                Offset = msg.Offset,
-                Key = KeyDeserializer.Deserialize(msg.Key),
-                Value = ValueDeserializer.Deserialize(msg.Value),
-                Timestamp = msg.Timestamp,
-                Error = msg.Error
-            };
+            message = new MessageInfo<TKey, TValue> (
+                msg.Topic,
+                msg.Partition,
+                msg.Offset,
+                KeyDeserializer.Deserialize(msg.Key),
+                ValueDeserializer.Deserialize(msg.Value),
+                msg.Timestamp,
+                msg.Error
+            );
 
             return true;
         }
@@ -115,13 +114,13 @@ namespace Confluent.Kafka
 
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
-        public event EventHandler<OffsetCommitArgs> OnOffsetCommit;
+        public event EventHandler<CommittedOffsets> OnOffsetCommit;
 
-        public event EventHandler<LogArgs> OnLog;
+        public event EventHandler<LogMessage> OnLog;
 
         public event EventHandler<string> OnStatistics;
 
-        public event EventHandler<ErrorArgs> OnError;
+        public event EventHandler<Error> OnError;
 
         public event EventHandler<MessageInfo<TKey, TValue>> OnMessage;
 
@@ -282,7 +281,7 @@ namespace Confluent.Kafka
 
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            OnError?.Invoke(this, new ErrorArgs() { ErrorCode = err, Reason = reason });
+            OnError?.Invoke(this, new Error(err, reason));
         }
 
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
@@ -298,11 +297,11 @@ namespace Confluent.Kafka
             if (OnLog == null)
             {
                 // A stderr logger is used by default if none is specified.
-                Loggers.ConsoleLogger(this, new LogArgs() { Name = name, Level = level, Facility = fac, Message = buf });
+                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf ));
                 return;
             }
 
-            OnLog?.Invoke(this, new LogArgs() { Name = name, Level = level, Facility = fac, Message = buf });
+            OnLog?.Invoke(this, new LogMessage(name, level, fac, buf ));
 
         }
 
@@ -349,12 +348,11 @@ namespace Confluent.Kafka
             /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
             IntPtr opaque)
         {
-            OnOffsetCommit?.Invoke(this, new OffsetCommitArgs()
-                {
-                    Error = err,
-                    // TODO: check to see whether errors can ever be present here. If so, expose TPOE, not TPO.
-                    Offsets = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets).Select(tp => tp.TopicPartitionOffset).ToList()
-                });
+            OnOffsetCommit?.Invoke(this, new CommittedOffsets(
+                // TODO: check to see whether errors can ever be present here. If so, expose TPOE, not TPO.
+                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets).Select(tp => tp.TopicPartitionOffset).ToList(),
+                err
+            ));
         }
 
         /// <summary>
@@ -427,7 +425,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
-        public event EventHandler<OffsetCommitArgs> OnOffsetCommit;
+        public event EventHandler<CommittedOffsets> OnOffsetCommit;
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
@@ -435,7 +433,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
-        public event EventHandler<ErrorArgs> OnError;
+        public event EventHandler<Error> OnError;
 
         /// <summary>
         ///     Raised on librdkafka statistics events. These can be enabled by setting the statistics.interval.ms configuration parameter.
@@ -453,7 +451,7 @@ namespace Confluent.Kafka
         ///     Executes on potentially any internal librdkafka thread.
         ///     Do not call any librdkafka methods from within handlers of this event.
         /// </remarks>
-        public event EventHandler<LogArgs> OnLog;
+        public event EventHandler<LogMessage> OnLog;
 
         /// <summary>
         ///     Raised when a new message is avaiable for consumption. NOT raised when Consumer.Consume
@@ -568,7 +566,8 @@ namespace Confluent.Kafka
                         message = new MessageInfo();
                         return false;
                     default:
-                        OnError?.Invoke(this, new ErrorArgs { ErrorCode = pollResult.Value.Error.Code, Reason = null });
+                        // TODO: populate errror message
+                        OnError?.Invoke(this, new Error(pollResult.Value.Error.Code, null));
                         message = new MessageInfo();
                         return false;
                 }

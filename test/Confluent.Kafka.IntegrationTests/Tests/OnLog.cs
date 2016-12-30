@@ -34,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
             int logCount = 0;
             using (var producer = new Producer(producerConfig))
             {
-                producer.OnLog += (_, logArgs)
+                producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
                 producer.ProduceAsync(topic, null, (byte[])null).Wait();
@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             logCount = 0;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                producer.OnLog += (_, logArgs)
+                producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
                 dr = producer.ProduceAsync(topic, null, "test value").Result;
@@ -61,7 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
 
-                sProducer.OnLog += (_, logArgs)
+                sProducer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
                 sProducer.ProduceAsync(topic, null, "test value").Wait();
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
             logCount = 0;
             using (var consumer = new Consumer(consumerConfig))
             {
-                consumer.OnLog += (_, logArgs)
+                consumer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
                 consumer.Poll(TimeSpan.FromMilliseconds(100));
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.IntegrationTests
             logCount = 0;
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.OnLog += (_, logArgs)
+                consumer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
                 consumer.Poll(TimeSpan.FromMilliseconds(100));

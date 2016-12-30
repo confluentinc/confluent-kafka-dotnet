@@ -17,7 +17,7 @@ namespace Confluent.Kafka.IntegrationTests
         public static void DeserializingConsumer_Background(string bootstrapServers, string topic)
         {
             int N = 2;
-            var firstProducedMessage = Util.ProduceMessages(bootstrapServers, topic, 100, N);
+            var firstProduced = Util.ProduceMessages(bootstrapServers, topic, 100, N);
 
             var consumerConfig = new Dictionary<string, object>
             {
@@ -40,8 +40,12 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionEOF += (_, partition)
                     => are.Set();
 
-                consumer.OnPartitionsAssigned += (_, partitions)
-                    => consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProducedMessage)));
+                consumer.OnPartitionsAssigned += (_, partitions) =>
+                {
+                    Assert.Equal(partitions.Count, 1);
+                    Assert.Equal(partitions[0], firstProduced.TopicPartition);
+                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                };
 
                 consumer.OnPartitionsRevoked += (_, partitions)
                     => consumer.Unassign();

@@ -23,12 +23,12 @@ namespace Confluent.Kafka.Wrapped
                 // sProducer1 is a lightweight wrapper around a Producer instance that adds
                 // (string, string) serialization. Note that sProducer1 does not need to be
                 // (and cannot be) disposed.
-                var sProducer1 = producer.Wrap<string, string>(new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8));
+                var sProducer1 = producer.GetSerializingProducer<string, string>(new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8));
 
                 // sProducer2 is another lightweight wrapper around kafkaProducer that adds
                 // (null, int) serialization. When you do not wish to write any data to a key
                 // or value, the Null type should be used.
-                var sProducer2 = producer.Wrap<Null, int>(new NullSerializer(), new IntSerializer());
+                var sProducer2 = producer.GetSerializingProducer<Null, int>(new NullSerializer(), new IntSerializer());
 
                 // write (string, string) data to topic "first-topic", statically type checked.
                 sProducer1.ProduceAsync("first-topic", "my-key-value", "my-value");

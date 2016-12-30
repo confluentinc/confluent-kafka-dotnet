@@ -11,9 +11,17 @@ namespace Confluent.Kafka
     /// </summary>
     public struct TopicMetadata
     {
-        public string Topic { get; set; }
-        public List<PartitionMetadata> Partitions { get; set; }
-        public ErrorCode Error { get; set; }
+        public TopicMetadata(string topic, List<PartitionMetadata> partitions, ErrorCode errorCode)
+        {
+            Topic = topic;
+            Error = errorCode;
+            Partitions = partitions;
+        }
+
+        public string Topic { get; }
+        public List<PartitionMetadata> Partitions { get; }
+        // TODO: Make this an instance of Error rather than ErrorCode.
+        public ErrorCode Error { get; }
 
         public override string ToString()
         {
