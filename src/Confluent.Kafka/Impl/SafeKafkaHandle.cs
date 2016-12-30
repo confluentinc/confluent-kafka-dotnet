@@ -277,14 +277,14 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal MessageInfo? ConsumerPoll(IntPtr timeoutMs)
+        internal bool ConsumerPoll(out MessageInfo message, IntPtr timeoutMs)
         {
-            // TODO: This actually triggers rebalance callbacks etc.
-            // There is an alternative interface now, which returns these separately as events.
+            // TODO: There is a newer librdkafka interface for this now. Use that.
             IntPtr msgPtr = LibRdKafka.consumer_poll(handle, timeoutMs);
             if (msgPtr == IntPtr.Zero)
             {
-                return null;
+                message = default(MessageInfo);
+                return false;
             }
 
             var msg = Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
@@ -324,7 +324,7 @@ namespace Confluent.Kafka.Impl
 
             LibRdKafka.message_destroy(msgPtr);
 
-            return new MessageInfo(
+            message = new MessageInfo(
                 topic,
                 msg.partition,
                 msg.offset,
@@ -333,6 +333,8 @@ namespace Confluent.Kafka.Impl
                 new Timestamp(dateTime, (TimestampType)timestampType),
                 error
             );
+
+            return true;
         }
 
         internal void ConsumerClose()

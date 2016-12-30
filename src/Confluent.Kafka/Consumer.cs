@@ -537,11 +537,10 @@ namespace Confluent.Kafka
         /// </summary>
         public bool Consume(out MessageInfo message, TimeSpan? timeout = null)
         {
+            // TODO: This check would be avoided if we have an overloaded interface analogous to Producer.Flush.
             int timeoutMs = -1;
             if (timeout.HasValue)
             {
-                // TODO: is it worth having this check? It's on *EVERY* consume?
-                // TODO: also investigate perf improvement if this method takes an int c.f. Timespan?
                 timeoutMs = int.MaxValue;
                 double _timeoutMs = (double)timeout.Value.TotalMilliseconds;
                 if (_timeoutMs < int.MaxValue)
@@ -550,30 +549,25 @@ namespace Confluent.Kafka
                 }
             }
 
-            // TODO: Nullable can be avoided below, and probably should be if Consume no longer
-            //       returns a MessageInfo?
-            var pollResult = kafkaHandle.ConsumerPoll((IntPtr)timeoutMs);
-
-            if (pollResult.HasValue)
+            if (kafkaHandle.ConsumerPoll(out message, (IntPtr)timeoutMs))
             {
-                switch (pollResult.Value.Error.Code)
+                switch (message.Error.Code)
                 {
                     case ErrorCode.NO_ERROR:
-                        message = pollResult.Value;
                         return true;
                     case ErrorCode._PARTITION_EOF:
-                        OnPartitionEOF?.Invoke(this, pollResult.Value.TopicPartitionOffset);
-                        message = new MessageInfo();
+                        OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:
-                        // TODO: populate errror message
-                        OnError?.Invoke(this, new Error(pollResult.Value.Error.Code, null));
-                        message = new MessageInfo();
+                        OnError?.Invoke(this,
+                            new Error(
+                                message.Error.Code,
+                                Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(message.Error.Code)))
+                        );
                         return false;
                 }
             }
 
-            message = new MessageInfo();
             return false;
         }
 
