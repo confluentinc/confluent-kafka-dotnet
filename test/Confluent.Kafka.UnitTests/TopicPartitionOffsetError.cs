@@ -9,27 +9,24 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void Constuctor()
         {
-            var tpoe = new TopicPartitionOffsetError(
-                "mytopic", 42, 107,
-                new Error(ErrorCode._BAD_MSG, "Bad Message")
-            );
+            var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode._BAD_MSG);
 
             Assert.Equal(tpoe.Topic, "mytopic");
             Assert.Equal(tpoe.Partition, 42);
             Assert.Equal(tpoe.Offset, 107);
-            Assert.Equal(tpoe.Error, new Error(ErrorCode._BAD_MSG, "Bad Message"));
+            Assert.Equal(tpoe.Error, new Error(ErrorCode._BAD_MSG));
         }
 
         [Fact]
         public void Equality()
         {
-            var a = new TopicPartitionOffsetError("a", 31, 55, new Error(ErrorCode.NO_ERROR, null));
-            var a2 = new TopicPartitionOffsetError("a", 31, 55, new Error(ErrorCode.NO_ERROR, null));
+            var a = new TopicPartitionOffsetError("a", 31, 55, ErrorCode.NO_ERROR);
+            var a2 = new TopicPartitionOffsetError("a", 31, 55, ErrorCode.NO_ERROR);
             var nes = new List<TopicPartitionOffsetError> {
-                new TopicPartitionOffsetError("b", 31, 55, new Error(ErrorCode.NO_ERROR, null)),
-                new TopicPartitionOffsetError("a", 32, 55, new Error(ErrorCode.NO_ERROR, null)),
-                new TopicPartitionOffsetError("a", 31, 56, new Error(ErrorCode.NO_ERROR, null)),
-                new TopicPartitionOffsetError("a", 31, 55, new Error(ErrorCode._CONFLICT, null)),
+                new TopicPartitionOffsetError("b", 31, 55, ErrorCode.NO_ERROR),
+                new TopicPartitionOffsetError("a", 32, 55, ErrorCode.NO_ERROR),
+                new TopicPartitionOffsetError("a", 31, 56, ErrorCode.NO_ERROR),
+                new TopicPartitionOffsetError("a", 31, 55, ErrorCode._CONFLICT),
             };
 
             Assert.Equal(a, a2);
@@ -49,10 +46,7 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void ToStringTest()
         {
-            var tpoe = new TopicPartitionOffsetError(
-                "mytopic", 42, 107,
-                new Error(ErrorCode._BAD_MSG, "Bad Message")
-            );
+            var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode._BAD_MSG);
 
             Assert.True(tpoe.ToString().Contains(tpoe.Topic));
             Assert.True(tpoe.ToString().Contains(tpoe.Partition.ToString()));
@@ -64,10 +58,7 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void Properties()
         {
-            var tpoe = new TopicPartitionOffsetError(
-                "mytopic", 42, 107,
-                new Error(ErrorCode.NO_ERROR, null)
-            );
+            var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.NO_ERROR);
 
             Assert.Equal(tpoe.TopicPartition, new TopicPartition("mytopic", 42));
             Assert.Equal(tpoe.TopicPartitionOffset, new TopicPartitionOffset("mytopic", 42, 107));

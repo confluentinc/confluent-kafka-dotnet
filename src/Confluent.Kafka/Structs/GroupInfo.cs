@@ -5,7 +5,7 @@ namespace Confluent.Kafka
 {
     public struct GroupInfo
     {
-        public GroupInfo(BrokerMetadata broker, string grp, ErrorCode error, string state, string protocolType, string protocol, List<GroupMemberInfo> members)
+        public GroupInfo(BrokerMetadata broker, string grp, Error error, string state, string protocolType, string protocol, List<GroupMemberInfo> members)
         {
             Broker = broker;
             Group = grp;
@@ -18,8 +18,7 @@ namespace Confluent.Kafka
 
         public BrokerMetadata Broker { get; } /**< Originating broker info */
         public string Group { get; }          /**< Group name */
-        // TODO: make this an instance of Error rather than ErrorCode.
-        public ErrorCode Error { get; }       /**< Broker-originated error */
+        public Error Error { get; }       /**< Broker-originated error */
         public string State { get; }          /**< Group state */
         public string ProtocolType { get; }   /**< Group protocol type */
         public string Protocol { get; }       /**< Group protocol */

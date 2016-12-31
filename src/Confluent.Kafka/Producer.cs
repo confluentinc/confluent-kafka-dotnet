@@ -42,7 +42,9 @@ namespace Confluent.Kafka
 
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            OnError?.Invoke(this, new Error(err, reason));
+            // TODO: Is reason ever different from that returned by err2str?
+            //       If so, sort something else out here.
+            OnError?.Invoke(this, err);
         }
 
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
@@ -58,11 +60,11 @@ namespace Confluent.Kafka
             if (OnLog == null)
             {
                 // Log to stderr by default if no logger is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf ));
+                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
                 return;
             }
 
-            OnLog.Invoke(this, new LogMessage(name, level, fac, buf ));
+            OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
         private SafeTopicHandle getKafkaTopicHandle(string topic)
@@ -147,12 +149,7 @@ namespace Confluent.Kafka
                     key,
                     val,
                     new Timestamp(dateTime, (TimestampType)timestampType),
-                    new Error(
-                        msg.err,
-                        msg.err == ErrorCode.NO_ERROR
-                            ? null
-                            : Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(msg.err))
-                    )
+                    msg.err
                 )
             );
         }
@@ -188,7 +185,7 @@ namespace Confluent.Kafka
                 {
                     var err = LibRdKafka.last_error();
                     gch.Free();
-                    throw RdKafkaException.FromErr(err, "Could not produce message");
+                    throw new KafkaException(err, "Could not produce message");
                 }
 
                 return;
@@ -197,7 +194,7 @@ namespace Confluent.Kafka
             if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp, IntPtr.Zero, blockIfQueueFull) != 0)
             {
                 var err = LibRdKafka.last_error();
-                throw RdKafkaException.FromErr(err, "Could not produce message");
+                throw new KafkaException(err, "Could not produce message");
             }
 
             return;

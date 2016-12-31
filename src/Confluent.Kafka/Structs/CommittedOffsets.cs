@@ -5,14 +5,13 @@ namespace Confluent.Kafka
 {
     public struct CommittedOffsets
     {
-        public CommittedOffsets(IList<TopicPartitionOffset> offsets, ErrorCode error)
+        public CommittedOffsets(IList<TopicPartitionOffset> offsets, Error error)
         {
             Offsets = offsets;
             Error = error;
         }
 
-        // TODO: This should probably be Error (and include a message version of ErrorCode).
-        public ErrorCode Error { get; }
+        public Error Error { get; }
         public IList<TopicPartitionOffset> Offsets { get; }
     }
 }

@@ -1,18 +1,35 @@
 namespace Confluent.Kafka
 {
-    // TODO: ErrorCode (and by extension Error) are closely tied to RdKafka concepts but do not have Rd in the name.
-    //       RdKafkaException has the same properties as Error but it does have Rd in the name.
-    //       TODO: Work out what is best and be consistent (probably no Rd).
     public struct Error
     {
-        public Error(ErrorCode code, string message)
+        public Error(ErrorCode code)
         {
-            Message = message;
             Code = code;
         }
 
-        public string Message { get; }
         public ErrorCode Code { get; }
+
+        public string Message
+        {
+            get
+            {
+                // Note: In most practical scenarios there is no benefit to caching this +
+                //       significant cost in keeping the extra string reference around.
+                return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(Code));
+            }
+        }
+
+        public bool HasError { get { return Code != ErrorCode.NO_ERROR; }}
+
+        // TODO: questionably too tricky?
+        public static implicit operator bool(Error e)
+            => e.HasError;
+
+        public static implicit operator ErrorCode(Error e)
+            => e.Code;
+
+        public static implicit operator Error(ErrorCode c)
+            => new Error(c);
 
         public override bool Equals(object obj)
         {
@@ -21,7 +38,6 @@ namespace Confluent.Kafka
                 return false;
             }
 
-            // TODO: think carefully about whether not considering .Message here is a flawed idea (i don't think so).
             return ((Error)obj).Code == Code;
         }
 
@@ -36,5 +52,6 @@ namespace Confluent.Kafka
 
         public override string ToString()
             => $"[{(int)Code}] {Message}";
+
     }
 }

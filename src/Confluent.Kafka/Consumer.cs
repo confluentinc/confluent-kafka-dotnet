@@ -281,7 +281,9 @@ namespace Confluent.Kafka
 
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            OnError?.Invoke(this, new Error(err, reason));
+            // TODO: Is reason ever different from that returned by err2str?
+            //       If so, sort something else out here.
+            OnError?.Invoke(this, err);
         }
 
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
@@ -297,11 +299,11 @@ namespace Confluent.Kafka
             if (OnLog == null)
             {
                 // A stderr logger is used by default if none is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf ));
+                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
                 return;
             }
 
-            OnLog?.Invoke(this, new LogMessage(name, level, fac, buf ));
+            OnLog?.Invoke(this, new LogMessage(name, level, fac, buf));
 
         }
 
@@ -396,7 +398,7 @@ namespace Confluent.Kafka
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
             if (pollSetConsumerError != ErrorCode.NO_ERROR)
             {
-                throw new RdKafkaException("Failed to redirect the poll queue to consumer_poll queue", pollSetConsumerError);
+                throw new KafkaException(pollSetConsumerError, "Failed to redirect the poll queue to consumer_poll queue");
             }
         }
 
@@ -559,11 +561,7 @@ namespace Confluent.Kafka
                         OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:
-                        OnError?.Invoke(this,
-                            new Error(
-                                message.Error.Code,
-                                Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(message.Error.Code)))
-                        );
+                        OnError?.Invoke(this, message.Error);
                         return false;
                 }
             }

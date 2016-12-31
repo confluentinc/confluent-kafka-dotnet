@@ -15,7 +15,7 @@ namespace Confluent.Kafka.Tests
             Assert.Equal(pm.Leader, 1);
             Assert.Same(pm.Replicas, replicas);
             Assert.Same(pm.InSyncReplicas, inSyncReplicas);
-            Assert.Equal(pm.Error, ErrorCode._ALL_BROKERS_DOWN);
+            Assert.Equal(pm.Error, new Error(ErrorCode._ALL_BROKERS_DOWN));
         }
 
         // TODO: ToString() tests. Note: there is coverage of this already in the Metdata integration test.

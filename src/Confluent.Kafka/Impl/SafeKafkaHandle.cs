@@ -134,7 +134,7 @@ namespace Confluent.Kafka.Impl
             if (topicHandle.IsInvalid)
             {
                 DangerousRelease();
-                throw RdKafkaException.FromErr(LibRdKafka.last_error(), "Failed to create topic");
+                throw new KafkaException(LibRdKafka.last_error(), "Failed to create topic");
             }
             topicHandle.kafkaHandle = this;
             return topicHandle;
@@ -171,7 +171,7 @@ namespace Confluent.Kafka.Impl
                     var brokers = Enumerable.Range(0, meta.broker_cnt)
                         .Select(i => Marshal.PtrToStructure<rd_kafka_metadata_broker>(
                                     meta.brokers + i * Marshal.SizeOf<rd_kafka_metadata_broker>()))
-                        .Select(b => new BrokerMetadata(b.id, b.host, b.port ))
+                        .Select(b => new BrokerMetadata(b.id, b.host, b.port))
                         .ToList();
 
                     var topics = Enumerable.Range(0, meta.topic_cnt)
@@ -208,7 +208,7 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw RdKafkaException.FromErr(err, "Could not retrieve metadata");
+                throw new KafkaException(err, "Could not retrieve metadata");
             }
         }
 
@@ -227,7 +227,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr) timeoutMs);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to query watermark offsets");
+                throw new KafkaException(err, "Failed to query watermark offsets");
             }
 
             return new WatermarkOffsets(low,  high);
@@ -241,13 +241,12 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out low, out high);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to get watermark offsets");
+                throw new KafkaException(err, "Failed to get watermark offsets");
             }
 
             return new WatermarkOffsets(low, high);
         }
 
-        // Consumer API
         internal void Subscribe(ICollection<string> topics)
         {
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) topics.Count);
@@ -264,7 +263,7 @@ namespace Confluent.Kafka.Impl
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to subscribe to topics");
+                throw new KafkaException(err, "Failed to subscribe to topics");
             }
         }
 
@@ -273,7 +272,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.unsubscribe(handle);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to unsubscribe");
+                throw new KafkaException(err, "Failed to unsubscribe");
             }
         }
 
@@ -317,11 +316,6 @@ namespace Confluent.Kafka.Impl
                 dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
             }
 
-            var error = new Error(
-                msg.err,
-                Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(msg.err))
-            );
-
             LibRdKafka.message_destroy(msgPtr);
 
             message = new MessageInfo(
@@ -331,7 +325,7 @@ namespace Confluent.Kafka.Impl
                 key,
                 val,
                 new Timestamp(dateTime, (TimestampType)timestampType),
-                error
+                msg.err
             );
 
             return true;
@@ -342,7 +336,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.consumer_close(handle);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to close consumer");
+                throw new KafkaException(err, "Failed to close consumer");
             }
         }
 
@@ -352,7 +346,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.assignment(handle, out listPtr);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to get assignment");
+                throw new KafkaException(err, "Failed to get assignment");
             }
             // TODO: need to free anything here?
             return GetTopicPartitionOffsetErrorList(listPtr).Select(a => a.TopicPartition).ToList();
@@ -364,7 +358,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.subscription(handle, out listPtr);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to get subscription");
+                throw new KafkaException(err, "Failed to get subscription");
             }
             // TODO: need to free anything here?
             return GetTopicPartitionOffsetErrorList(listPtr).Select(a => a.Topic).ToList();
@@ -397,7 +391,7 @@ namespace Confluent.Kafka.Impl
             }
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to assign partitions");
+                throw new KafkaException(err, "Failed to assign partitions");
             }
         }
 
@@ -406,7 +400,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.commit(handle, IntPtr.Zero, false);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to commit offsets");
+                throw new KafkaException(err, "Failed to commit offsets");
             }
         }
 
@@ -429,7 +423,7 @@ namespace Confluent.Kafka.Impl
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to commit offsets");
+                throw new KafkaException(err, "Failed to commit offsets");
             }
         }
 
@@ -455,7 +449,7 @@ namespace Confluent.Kafka.Impl
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to fetch committed offsets");
+                throw new KafkaException(err, "Failed to fetch committed offsets");
             }
             return result;
         }
@@ -482,7 +476,7 @@ namespace Confluent.Kafka.Impl
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to fetch position");
+                throw new KafkaException(err, "Failed to fetch position");
             }
             return result;
         }
@@ -518,10 +512,7 @@ namespace Confluent.Kafka.Impl
                         ktp.topic,
                         ktp.partition,
                         ktp.offset,
-                        new Error(
-                            ktp.err,
-                            Util.Marshal.PtrToStringUTF8(LibRdKafka.err2str(ktp.err))
-                        )
+                        ktp.err
                     ))
                 .ToList();
         }
@@ -592,7 +583,7 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw RdKafkaException.FromErr(err, "Failed to fetch group list");
+                throw new KafkaException(err, "Failed to fetch group list");
             }
         }
     }

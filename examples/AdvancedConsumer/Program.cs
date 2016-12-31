@@ -46,13 +46,13 @@ namespace Confluent.Kafka.AdvancedConsumer
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
                 consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error.Code} {error.Message}");
+                    => Console.WriteLine($"Error: {error}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
 
-                    if (commit.Error != ErrorCode.NO_ERROR)
+                    if (commit.Error)
                     {
                         Console.WriteLine($"Failed to commit offsets: {commit.Error}");
                     }
@@ -106,13 +106,13 @@ namespace Confluent.Kafka.AdvancedConsumer
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
                 consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error.Code} {error.Message}");
+                    => Console.WriteLine($"Error: {error}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
 
-                    if (commit.Error != ErrorCode.NO_ERROR)
+                    if (commit.Error)
                     {
                         Console.WriteLine($"Failed to commit offsets: {commit.Error}");
                     }
@@ -169,13 +169,13 @@ namespace Confluent.Kafka.AdvancedConsumer
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
                 consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error.Code} {error.Message}");
+                    => Console.WriteLine($"Error: {error}");
 
                 consumer.OnOffsetCommit += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
 
-                    if (commit.Error != ErrorCode.NO_ERROR)
+                    if (commit.Error)
                     {
                         Console.WriteLine($"Failed to commit offsets: {commit.Error}");
                     }

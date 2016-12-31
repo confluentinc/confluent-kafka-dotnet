@@ -26,3 +26,4 @@ namespace Confluent.Kafka.Tests
         }
     }
 }
+

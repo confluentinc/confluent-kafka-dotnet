@@ -9,21 +9,20 @@ namespace Confluent.Kafka
     /// </summary>
     public struct PartitionMetadata
     {
-        public PartitionMetadata(int partitionId, int leader, int[] replicas, int[] inSyncReplicas, ErrorCode errorCode)
+        public PartitionMetadata(int partitionId, int leader, int[] replicas, int[] inSyncReplicas, Error error)
         {
             PartitionId = partitionId;
             Leader = leader;
             Replicas = replicas;
             InSyncReplicas = inSyncReplicas;
-            Error = errorCode;
+            Error = error;
         }
 
         public int PartitionId { get; }
         public int Leader { get; }
         public int[] Replicas { get; }
         public int[] InSyncReplicas { get; }
-        // TODO: Make this an instance of Error rather than ErrorCode.
-        public ErrorCode Error { get; }
+        public Error Error { get; }
 
         public override string ToString()
         {
@@ -32,7 +31,7 @@ namespace Confluent.Kafka
             result.Append(string.Join(",", Replicas.Select(r => $" {r.ToString()}")));
             result.Append(" ], \"InSyncReplicas\": [");
             result.Append(string.Join(",", InSyncReplicas.Select(r => $" {r.ToString()}")));
-            result.Append($" ], \"Error\": \"{Error.ToString()}\" }}");
+            result.Append($" ], \"Error\": \"{Error.Code.ToString()}\" }}");
             return result.ToString();
         }
     }

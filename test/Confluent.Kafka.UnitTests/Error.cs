@@ -8,17 +8,17 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void Constuctor()
         {
-            var e = new Error(ErrorCode._BAD_COMPRESSION, "bad compression");
+            var e = new Error(ErrorCode._BAD_COMPRESSION);
             Assert.Equal(e.Code, ErrorCode._BAD_COMPRESSION);
-            Assert.Equal(e.Message, "bad compression");
+            Assert.NotNull(e.Message);
         }
 
         [Fact]
         public void Equality()
         {
-            var e1 = new Error(ErrorCode._ALL_BROKERS_DOWN, null);
-            var e2 = new Error(ErrorCode._ALL_BROKERS_DOWN, "all brokers down");
-            var e3 = new Error(ErrorCode._IN_PROGRESS, null);
+            var e1 = new Error(ErrorCode._ALL_BROKERS_DOWN);
+            var e2 = new Error(ErrorCode._ALL_BROKERS_DOWN);
+            var e3 = new Error(ErrorCode._IN_PROGRESS);
 
             Assert.Equal(e1, e2);
             Assert.True(e1.Equals(e2));
@@ -34,9 +34,35 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void ToStringTest()
         {
-            var e = new Error(ErrorCode._ASSIGN_PARTITIONS, "assign partitions");
+            var e = new Error(ErrorCode._ASSIGN_PARTITIONS);
             Assert.True(e.ToString().Contains(((int)ErrorCode._ASSIGN_PARTITIONS).ToString()));
-            Assert.True(e.ToString().Contains("assign partitions"));
+        }
+
+        [Fact]
+        public void HasError()
+        {
+            var e1 = new Error(ErrorCode.NO_ERROR);
+            var e2 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
+
+            Assert.False(e1.HasError);
+            Assert.True(e2.HasError);
+        }
+
+        [Fact]
+        public void BoolCast()
+        {
+            Assert.False(e1);
+            Assert.True(e2);
+        }
+
+        [Fact]
+        public void ErrorCodeCast()
+        {
+            var e1 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
+            var ec1 = ErrorCode.NOT_COORDINATOR_FOR_GROUP;
+
+            Assert.Equal(e1, ec1);
+            Assert.Equal(ec1, e1);
         }
     }
 }
