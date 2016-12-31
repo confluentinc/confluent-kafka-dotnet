@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            MessageInfo<Null, string> dr;
+            Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
-                MessageInfo msg;
+                Message msg;
                 var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
                 var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
 

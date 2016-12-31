@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
             var testTime = new DateTime(2010, 1, 1, 0, 0, 0);
 
             var s = Library.VersionString;
-            MessageInfo<Null, string> dr;
+            Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString, testTime).Result;
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
-                MessageInfo msg;
+                Message msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
                 Assert.Equal(msg.Timestamp.DateTime, testTime);
                 Assert.True(false); // TODO: check timestamp type. what should it be?

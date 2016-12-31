@@ -209,7 +209,7 @@ namespace Confluent.Kafka.AdvancedConsumer
 
                 while (!cancelled)
                 {
-                    MessageInfo<Null, string> msg;
+                    Message<Null, string> msg;
                     if (!consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
                         continue;

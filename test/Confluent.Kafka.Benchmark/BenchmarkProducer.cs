@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Benchmark
 
             public bool MarshalData { get { return false; } }
 
-            public void HandleDeliveryReport(MessageInfo deliveryReport)
+            public void HandleDeliveryReport(Message deliveryReport)
             {
                 if (--NumberOfMessages == 0)
                 {
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Benchmark
                 { "retry.backoff.ms", 500 }
             };
 
-            MessageInfo firstDeliveryReport = default(MessageInfo);
+            Message firstDeliveryReport = default(Message);
 
             using (var producer = new Producer(config))
             {

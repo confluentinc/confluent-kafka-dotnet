@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 while (!done)
                 {
-                    MessageInfo<Null, string> msg;
+                    Message<Null, string> msg;
                     if (consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
                         msgCnt += 1;

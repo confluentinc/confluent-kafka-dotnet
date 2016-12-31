@@ -26,7 +26,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            MessageInfo<Null, string> dr;
+            Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                MessageInfo msg;
+                Message msg;
                 Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
 
                 // Poll API

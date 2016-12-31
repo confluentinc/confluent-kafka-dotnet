@@ -276,13 +276,13 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out MessageInfo message, IntPtr timeoutMs)
+        internal bool ConsumerPoll(out Message message, IntPtr timeoutMs)
         {
             // TODO: There is a newer librdkafka interface for this now. Use that.
             IntPtr msgPtr = LibRdKafka.consumer_poll(handle, timeoutMs);
             if (msgPtr == IntPtr.Zero)
             {
-                message = default(MessageInfo);
+                message = default(Message);
                 return false;
             }
 
@@ -318,7 +318,7 @@ namespace Confluent.Kafka.Impl
 
             LibRdKafka.message_destroy(msgPtr);
 
-            message = new MessageInfo(
+            message = new Message(
                 topic,
                 msg.partition,
                 msg.offset,

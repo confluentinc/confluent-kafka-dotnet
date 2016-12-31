@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Benchmark
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    MessageInfo msg;
+                    Message msg;
                     consumer.Consume(out msg);
 
                     long startTime = DateTime.Now.Ticks;

@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(logCount > 0);
 
             // serializing producer.
-            MessageInfo<Null, string> dr;
+            Message<Null, string> dr;
             logCount = 0;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {

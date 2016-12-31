@@ -1,8 +1,8 @@
 namespace Confluent.Kafka
 {
-    public struct MessageInfo<TKey, TValue>
+    public struct Message<TKey, TValue>
     {
-        public MessageInfo(string topic, int partition, long offset, TKey key, TValue val, Timestamp timestamp, Error error)
+        public Message(string topic, int partition, long offset, TKey key, TValue val, Timestamp timestamp, Error error)
         {
             Topic = topic;
             Partition = partition;
@@ -33,9 +33,9 @@ namespace Confluent.Kafka
     }
 
 
-    public struct MessageInfo
+    public struct Message
     {
-        public MessageInfo(string topic, int partition, long offset, byte[] key, byte[] val, Timestamp timestamp, Error error)
+        public Message(string topic, int partition, long offset, byte[] key, byte[] val, Timestamp timestamp, Error error)
         {
             Topic = topic;
             Partition = partition;

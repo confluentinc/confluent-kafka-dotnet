@@ -26,7 +26,7 @@ namespace Confluent.Kafka.SimpleConsumer
 
                 while (true)
                 {
-                    MessageInfo<Null, string> msg;
+                    Message<Null, string> msg;
                     if (consumer.Consume(out msg))
                     {
                         Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");

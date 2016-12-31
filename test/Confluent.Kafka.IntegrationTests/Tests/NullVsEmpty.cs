@@ -24,7 +24,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            MessageInfo dr;
+            Message dr;
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                MessageInfo msg;
+                Message msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
                 Assert.Null(msg.Key);
                 Assert.Null(msg.Value);

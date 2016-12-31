@@ -57,7 +57,7 @@ namespace Confluent.Kafka
             consumer.OnOffsetCommit += (sender, e) => OnOffsetCommit?.Invoke(sender, e);
             // TODO: bypass this.consumer for this event to optimize perf.
             consumer.OnMessage += (sender, e) => OnMessage?.Invoke(sender,
-                new MessageInfo<TKey, TValue> (
+                new Message<TKey, TValue> (
                     e.Topic,
                     e.Partition,
                     e.Offset,
@@ -70,19 +70,19 @@ namespace Confluent.Kafka
             consumer.OnPartitionEOF += (sender, e) => OnPartitionEOF?.Invoke(sender, e);
         }
 
-        public bool Consume(out MessageInfo<TKey, TValue> message, TimeSpan? timeout = null)
+        public bool Consume(out Message<TKey, TValue> message, TimeSpan? timeout = null)
         {
             // TODO: kafkaHandle on Consumer could be made internal, and we could potentially
             //       bypass the non-desrializing consumer completely here for efficiency.
 
-            MessageInfo msg;
+            Message msg;
             if (!consumer.Consume(out msg, timeout))
             {
-                message = new MessageInfo<TKey, TValue>();
+                message = new Message<TKey, TValue>();
                 return false;
             }
 
-            message = new MessageInfo<TKey, TValue> (
+            message = new Message<TKey, TValue> (
                 msg.Topic,
                 msg.Partition,
                 msg.Offset,
@@ -97,7 +97,7 @@ namespace Confluent.Kafka
 
         public void Poll(TimeSpan? timeout = null)
         {
-            MessageInfo<TKey,TValue> msg;
+            Message<TKey,TValue> msg;
             if (Consume(out msg, timeout))
             {
                 OnMessage?.Invoke(this, msg);
@@ -122,7 +122,7 @@ namespace Confluent.Kafka
 
         public event EventHandler<Error> OnError;
 
-        public event EventHandler<MessageInfo<TKey, TValue>> OnMessage;
+        public event EventHandler<Message<TKey, TValue>> OnMessage;
 
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
@@ -199,7 +199,7 @@ namespace Confluent.Kafka
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
         /// </remarks>
-        public void Commit(MessageInfo<TKey, TValue> message)
+        public void Commit(Message<TKey, TValue> message)
             => consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <summary>
@@ -462,7 +462,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
-        public event EventHandler<MessageInfo> OnMessage;
+        public event EventHandler<Message> OnMessage;
 
         /// <summary>
         ///     Raised when the consumer reaches the end of a topic/partition it is reading from.
@@ -537,7 +537,7 @@ namespace Confluent.Kafka
         ///     Will invoke events for OnPartitionsAssigned/Revoked,
         ///     OnOffsetCommit, etc. on the calling thread.
         /// </summary>
-        public bool Consume(out MessageInfo message, TimeSpan? timeout = null)
+        public bool Consume(out Message message, TimeSpan? timeout = null)
         {
             // TODO: This check would be avoided if we have an overloaded interface analogous to Producer.Flush.
             int timeoutMs = -1;
@@ -576,7 +576,7 @@ namespace Confluent.Kafka
                 throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
             }
 
-            MessageInfo msg;
+            Message msg;
             if (Consume(out msg, timeout))
             {
                 OnMessage?.Invoke(this, msg);
@@ -633,7 +633,7 @@ namespace Confluent.Kafka
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
         /// </remarks>
-        public void Commit(MessageInfo message)
+        public void Commit(Message message)
         {
             Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
