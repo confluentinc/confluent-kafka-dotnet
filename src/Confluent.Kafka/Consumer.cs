@@ -70,42 +70,52 @@ namespace Confluent.Kafka
             consumer.OnPartitionEOF += (sender, e) => OnPartitionEOF?.Invoke(sender, e);
         }
 
-        public bool Consume(out Message<TKey, TValue> message, TimeSpan? timeout = null)
-        {
-            // TODO: kafkaHandle on Consumer could be made internal, and we could potentially
-            //       bypass the non-desrializing consumer completely here for efficiency.
 
+        public bool Consume(out Message<TKey, TValue> message, int millisecondsTimeout)
+        {
             Message msg;
-            if (!consumer.Consume(out msg, timeout))
+            if (!consumer.Consume(out msg, millisecondsTimeout))
             {
-                message = new Message<TKey, TValue>();
+                message = default(Message<TKey, TValue>);
                 return false;
             }
 
-            message = new Message<TKey, TValue> (
-                msg.Topic,
-                msg.Partition,
-                msg.Offset,
-                KeyDeserializer.Deserialize(msg.Key),
-                ValueDeserializer.Deserialize(msg.Value),
-                msg.Timestamp,
-                msg.Error
-            );
-
+            message = msg.Deserialize(KeyDeserializer, ValueDeserializer);
             return true;
         }
 
-        public void Poll(TimeSpan? timeout = null)
+        public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
+            => Consume(out message, timeout.TotalMillisecondsAsInt());
+
+        public bool Consume(out Message<TKey, TValue> message)
         {
-            Message<TKey,TValue> msg;
+            return Consume(out message, -1);
+        }
+
+
+        public void Poll(int millisecondsTimeout)
+        {
+            Message<TKey, TValue> msg;
+            if (Consume(out msg, millisecondsTimeout))
+            {
+                OnMessage?.Invoke(this, msg);
+            }
+        }
+
+        public void Poll(TimeSpan timeout)
+        {
+            Message<TKey, TValue> msg;
             if (Consume(out msg, timeout))
             {
                 OnMessage?.Invoke(this, msg);
             }
         }
 
+        public void Poll()
+            => Poll(-1);
+
         public void Start()
-            => consumer.StartPollLoop(Poll);
+            => consumer.StartBackgroundPollLoop((Action<int>)Poll);
 
         public void Stop()
             => consumer.Stop();
@@ -256,20 +266,37 @@ namespace Confluent.Kafka
         public long OutQueueLength
             => consumer.OutQueueLength;
 
-        public List<GroupInfo> ListGroups(TimeSpan? timeout = null)
+
+        public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
 
-        public GroupInfo ListGroup(string group, TimeSpan? timeout = null)
+        public List<GroupInfo> ListGroups()
+            => consumer.ListGroups();
+
+
+        public GroupInfo ListGroup(string group, TimeSpan timeout)
             => consumer.ListGroup(group, timeout);
+
+        public GroupInfo ListGroup(string group)
+            => consumer.ListGroup(group);
+
 
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => consumer.GetWatermarkOffsets(topicPartition);
 
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => consumer.QueryWatermarkOffsets(topicPartition, timeout);
 
-        public Metadata GetMetadata(bool allTopics, TimeSpan? timeout = null)
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
+            => consumer.QueryWatermarkOffsets(topicPartition);
+
+
+        public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => consumer.GetMetadata(allTopics, timeout);
+
+        public Metadata GetMetadata(bool allTopics)
+            => consumer.GetMetadata(allTopics);
     }
 
     public class Consumer : IDisposable
@@ -537,21 +564,9 @@ namespace Confluent.Kafka
         ///     Will invoke events for OnPartitionsAssigned/Revoked,
         ///     OnOffsetCommit, etc. on the calling thread.
         /// </summary>
-        public bool Consume(out Message message, TimeSpan? timeout = null)
+        public bool Consume(out Message message, int millisecondsTimeout)
         {
-            // TODO: This check would be avoided if we have an overloaded interface analogous to Producer.Flush.
-            int timeoutMs = -1;
-            if (timeout.HasValue)
-            {
-                timeoutMs = int.MaxValue;
-                double _timeoutMs = (double)timeout.Value.TotalMilliseconds;
-                if (_timeoutMs < int.MaxValue)
-                {
-                    timeoutMs = (int)_timeoutMs;
-                }
-            }
-
-            if (kafkaHandle.ConsumerPoll(out message, (IntPtr)timeoutMs))
+            if (kafkaHandle.ConsumerPoll(out message, (IntPtr)millisecondsTimeout))
             {
                 switch (message.Error.Code)
                 {
@@ -569,7 +584,13 @@ namespace Confluent.Kafka
             return false;
         }
 
-        public void Poll(TimeSpan? timeout)
+        public bool Consume(out Message message, TimeSpan timeout)
+            => Consume(out message, timeout.TotalMillisecondsAsInt());
+
+        public bool Consume(out Message message)
+            => Consume(out message, -1);
+
+        public void Poll(TimeSpan timeout)
         {
             if (consumerCts != null)
             {
@@ -583,7 +604,25 @@ namespace Confluent.Kafka
             }
         }
 
-        internal void StartPollLoop(Action<TimeSpan?> pollMethod)
+        public void Poll(int millisecondsTimeout)
+        {
+            if (consumerCts != null)
+            {
+                throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
+            }
+
+            Message msg;
+            if (Consume(out msg, millisecondsTimeout))
+            {
+                OnMessage?.Invoke(this, msg);
+            }
+        }
+
+        public void Poll()
+            => Poll(-1);
+
+
+        internal void StartBackgroundPollLoop(Action<int> pollMethod)
         {
             if (consumerCts != null)
             {
@@ -596,13 +635,13 @@ namespace Confluent.Kafka
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    pollMethod(TimeSpan.FromMilliseconds(100));
+                    pollMethod(100);
                 }
             }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         public void Start()
-            => StartPollLoop(Poll);
+            => StartBackgroundPollLoop((Action<int>)Poll);
 
         public void Stop()
         {
@@ -621,9 +660,7 @@ namespace Confluent.Kafka
         ///     Commit offsets for the current assignment.
         /// </summary>
         public void Commit()
-        {
-            kafkaHandle.Commit();
-        }
+            => kafkaHandle.Commit();
 
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
@@ -657,7 +694,7 @@ namespace Confluent.Kafka
         ///     throws RdKafkaException if there was a problem retrieving the above information.
         /// </summary>
         public List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
-            => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMilliseconds);
+            => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMillisecondsAsInt());
 
         /// <summary>
         ///     Retrieve current positions (offsets) for topics + partitions.
@@ -700,17 +737,31 @@ namespace Confluent.Kafka
             => kafkaHandle.OutQueueLength;
 
 
-        public List<GroupInfo> ListGroups(TimeSpan? timeout = null)
-            => kafkaHandle.ListGroups(timeout);
+        public List<GroupInfo> ListGroups(TimeSpan timeout)
+            => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-        public GroupInfo ListGroup(string group, TimeSpan? timeout = null)
-            => kafkaHandle.ListGroup(group, timeout);
+        // TODO: is a version of this with infinite timeout really required? (same question elsewhere)
+        public List<GroupInfo> ListGroups()
+            => kafkaHandle.ListGroups(-1);
+
+
+        public GroupInfo ListGroup(string group, TimeSpan timeout)
+            => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
+
+        public GroupInfo ListGroup(string group)
+            => kafkaHandle.ListGroup(group, -1);
+
 
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout);
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
+            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
+            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
+
 
         /// <summary>
         ///
@@ -724,8 +775,10 @@ namespace Confluent.Kafka
         ///           Is it possible to get a topic handle given a topic name?
         ///           If so, include topic parameter in this method.
         /// </remaarks>
-        public Metadata GetMetadata(bool allTopics, TimeSpan? timeout = null)
-            => kafkaHandle.GetMetadata(allTopics, null, timeout);
+        public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
+            => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
 
+        public Metadata GetMetadata(bool allTopics)
+            => kafkaHandle.GetMetadata(allTopics, null, -1);
     }
 }

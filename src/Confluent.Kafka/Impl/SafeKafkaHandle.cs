@@ -109,14 +109,14 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void Flush(int timeoutMs)
+        internal void Flush(int millisecondsTimeout)
         {
-            LibRdKafka.flush(handle, new IntPtr(timeoutMs));
+            LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
         }
 
         internal long AddBrokers(string brokers) => (long)LibRdKafka.brokers_add(handle, brokers);
 
-        internal long Poll(IntPtr timeoutMs) => (long)LibRdKafka.poll(handle, timeoutMs);
+        internal long Poll(IntPtr millisecondsTimeout) => (long)LibRdKafka.poll(handle, millisecondsTimeout);
 
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
@@ -152,16 +152,14 @@ namespace Confluent.Kafka.Impl
         ///     - allTopics=false, topic=null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
         ///     - allTopics=false, topic=valid - request specific topic
         /// </summary>
-        internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, TimeSpan? timeout)
+        internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
         {
-            int timeoutMs = (int)(timeout?.TotalMilliseconds ?? -1);
-
             IntPtr metaPtr;
             ErrorCode err = LibRdKafka.metadata(
                 handle, allTopics,
                 topic?.DangerousGetHandle() ?? IntPtr.Zero,
                 /* const struct rd_kafka_metadata ** */ out metaPtr,
-                (IntPtr) timeoutMs);
+                (IntPtr) millisecondsTimeout);
 
             if (err == ErrorCode.NO_ERROR)
             {
@@ -217,14 +215,12 @@ namespace Confluent.Kafka.Impl
             return LibRdKafka.poll_set_consumer(handle);
         }
 
-        internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, TimeSpan? timeout)
+        internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)
         {
-            int timeoutMs = (int)(timeout?.TotalMilliseconds ?? -1);
-
             long low;
             long high;
 
-            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr) timeoutMs);
+            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr) millisecondsTimeout);
             if (err != ErrorCode.NO_ERROR)
             {
                 throw new KafkaException(err, "Failed to query watermark offsets");
@@ -276,10 +272,10 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out Message message, IntPtr timeoutMs)
+        internal bool ConsumerPoll(out Message message, IntPtr millisecondsTimeout)
         {
             // TODO: There is a newer librdkafka interface for this now. Use that.
-            IntPtr msgPtr = LibRdKafka.consumer_poll(handle, timeoutMs);
+            IntPtr msgPtr = LibRdKafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
                 message = default(Message);
@@ -528,22 +524,20 @@ namespace Confluent.Kafka.Impl
             return data;
         }
 
-        internal GroupInfo ListGroup(string group, TimeSpan? timeout)
+        internal GroupInfo ListGroup(string group, int millisecondsTimeout)
         {
-            return ListGroupsImpl(group, timeout).Single();
+            return ListGroupsImpl(group, millisecondsTimeout).Single();
         }
 
-        internal List<GroupInfo> ListGroups(TimeSpan? timeout)
+        internal List<GroupInfo> ListGroups(int millisecondsTimeout)
         {
-            return ListGroupsImpl(null, timeout);
+            return ListGroupsImpl(null, millisecondsTimeout);
         }
 
-        private List<GroupInfo> ListGroupsImpl(string group, TimeSpan? timeout)
+        private List<GroupInfo> ListGroupsImpl(string group, int millisecondsTimeout)
         {
-            int timeoutMs = (int)(timeout?.TotalMilliseconds ?? -1);
-
             IntPtr grplistPtr;
-            ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)timeoutMs);
+            ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)millisecondsTimeout);
             if (err == ErrorCode.NO_ERROR)
             {
                 var list = Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);

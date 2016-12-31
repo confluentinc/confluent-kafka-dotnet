@@ -37,7 +37,10 @@ namespace Confluent.Kafka
 
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
         {
-            return (long)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)).TotalMilliseconds;
+            checked
+            {
+                return (long)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)).TotalMilliseconds;
+            }
         }
 
         public static DateTime UnixTimestampMsToDateTime(long timestamp)

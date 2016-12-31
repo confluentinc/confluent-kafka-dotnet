@@ -250,15 +250,23 @@ namespace Confluent.Kafka
             }
         }
 
-        // TODO: think about this and flushing.
-        public void Poll(TimeSpan timeout)
+        // TODO: think about Poll and flushing.
+
+        public void Poll(int millisecondsTimeout)
         {
             if (!manualPoll)
             {
                 throw new InvalidOperationException("Poll method called when manualPoll not enabled.");
             }
-            this.kafkaHandle.Poll((IntPtr)((int)timeout.TotalMilliseconds));
+            this.kafkaHandle.Poll((IntPtr)millisecondsTimeout);
         }
+
+        public void Poll(TimeSpan timeout)
+            => Poll(timeout.TotalMillisecondsAsInt());
+
+        public void Poll()
+            => Poll(-1);
+
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
@@ -338,10 +346,6 @@ namespace Confluent.Kafka
         public long OutQueueLength
             => kafkaHandle.OutQueueLength;
 
-        public void Flush()
-        {
-            kafkaHandle.Flush(-1);
-        }
 
         /// <summary>
         ///     Wait until all outstanding produce requests, et.al, are completed. This should typically be done prior
@@ -349,11 +353,10 @@ namespace Confluent.Kafka
         //      before terminating.
         /// </summary>
         public void Flush(TimeSpan timeout)
-        {
-            int timeoutMs;
-            checked { timeoutMs = (int)timeout.TotalMilliseconds; }
-            kafkaHandle.Flush(timeoutMs);
-        }
+            => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+
+        public void Flush()
+            => kafkaHandle.Flush(-1);
 
         public void Dispose()
         {
@@ -371,20 +374,39 @@ namespace Confluent.Kafka
 
         // TODO: potentially use interface to avoid duplicate method docs.
 
-        public List<GroupInfo> ListGroups(TimeSpan? timeout = null)
-            => kafkaHandle.ListGroups(timeout);
+        public List<GroupInfo> ListGroups(TimeSpan timeout)
+            => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-        public GroupInfo ListGroup(string group, TimeSpan? timeout = null)
-            => kafkaHandle.ListGroup(group, timeout);
+        public List<GroupInfo> ListGroups()
+            => kafkaHandle.ListGroups(-1);
 
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout);
+
+        public GroupInfo ListGroup(string group, TimeSpan timeout)
+            => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
+
+        public GroupInfo ListGroup(string group)
+            => kafkaHandle.ListGroup(group, -1);
+
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
+            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
+            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
+
 
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-        public Metadata GetMetadata(bool allTopics = true, string topic = null, TimeSpan? timeout = null)
-            => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), timeout);
+
+        private Metadata GetMetadata(bool allTopics, string topic, int millisecondsTimeout)
+            => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), millisecondsTimeout);
+
+        public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
+            => GetMetadata(allTopics, topic, timeout.TotalMillisecondsAsInt());
+
+        public Metadata GetMetadata(bool allTopics, string topic)
+            => GetMetadata(allTopics, topic, -1);
     }
 
 
@@ -550,34 +572,52 @@ namespace Confluent.Kafka
 
         public event EventHandler<Error> OnError;
 
-        public void Flush()
-            => producer.Flush();
 
         public void Flush(TimeSpan timeout)
             => producer.Flush(timeout);
+
+        public void Flush()
+            => producer.Flush();
+
 
         public void Dispose()
             => producer.Dispose();
 
 
-        public List<GroupInfo> ListGroups(TimeSpan? timeout = null)
+        public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
 
-        public GroupInfo ListGroup(string group, TimeSpan? timeout = null)
+        public List<GroupInfo> ListGroups()
+            => producer.ListGroups();
+
+
+        public GroupInfo ListGroup(string group, TimeSpan timeout)
             => producer.ListGroup(group, timeout);
 
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan? timeout = null)
+        public GroupInfo ListGroup(string group)
+            => producer.ListGroup(group);
+
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => producer.QueryWatermarkOffsets(topicPartition, timeout);
+
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
+            => producer.QueryWatermarkOffsets(topicPartition);
+
 
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => producer.GetWatermarkOffsets(topicPartition);
+
 
         /// <summary>
         ///     - allTopics=true - request all topics from cluster
         ///     - allTopics=false, topic=null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
         ///     - allTopics=false, topic=valid - request specific topic
         /// </summary>
-        public Metadata GetMetadata(bool allTopics = true, string topic = null, TimeSpan? timeout = null)
+        public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
             => producer.GetMetadata(allTopics, topic, timeout);
+
+        public Metadata GetMetadata(bool allTopics, string topic)
+            => producer.GetMetadata(allTopics, topic);
     }
 }
