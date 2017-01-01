@@ -44,10 +44,7 @@ namespace Confluent.Kafka
         }
 
         public static DateTime UnixTimestampMsToDateTime(long timestamp)
-        {
-            return
-                new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Unspecified)
+            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Unspecified)
                 + TimeSpan.FromMilliseconds(timestamp);
-        }
     }
 }

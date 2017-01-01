@@ -16,9 +16,7 @@ namespace Confluent.Kafka.Impl
 
     class SafeConfigHandle : SafeHandleZeroIsInvalid
     {
-        private SafeConfigHandle()
-        {
-        }
+        private SafeConfigHandle() {}
 
         internal static SafeConfigHandle Create()
         {
@@ -36,7 +34,8 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal IntPtr Dup() => LibRdKafka.conf_dup(handle);
+        internal IntPtr Dup()
+            => LibRdKafka.conf_dup(handle);
 
         internal Dictionary<string, string> Dump()
         {

@@ -18,8 +18,6 @@ namespace Confluent.Kafka
         public int Port { get; }
 
         public override string ToString()
-        {
-            return $"{{ \"BrokerId\": {BrokerId}, \"Host\": \"{Host}\", \"Port\": {Port} }}";
-        }
+            => $"{{ \"BrokerId\": {BrokerId}, \"Host\": \"{Host}\", \"Port\": {Port} }}";
     }
 }

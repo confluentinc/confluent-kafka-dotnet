@@ -22,14 +22,10 @@ namespace Confluent.Kafka
         public Error Error { get; }
 
         public TopicPartitionOffset TopicPartitionOffset
-        {
-            get { return new TopicPartitionOffset(Topic, Partition, Offset); }
-        }
+            => new TopicPartitionOffset(Topic, Partition, Offset);
 
         public TopicPartition TopicPartition
-        {
-            get { return new TopicPartition(Topic, Partition); }
-        }
+            => new TopicPartition(Topic, Partition);
     }
 
 
@@ -55,14 +51,10 @@ namespace Confluent.Kafka
         public Error Error { get; }
 
         public TopicPartitionOffset TopicPartitionOffset
-        {
-            get { return new TopicPartitionOffset(Topic, Partition, Offset); }
-        }
+            => new TopicPartitionOffset(Topic, Partition, Offset);
 
         public TopicPartition TopicPartition
-        {
-            get { return new TopicPartition(Topic, Partition); }
-        }
+            => new TopicPartition(Topic, Partition);
     }
 
 }

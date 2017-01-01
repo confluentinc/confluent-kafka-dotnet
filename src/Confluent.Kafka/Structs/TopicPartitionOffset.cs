@@ -3,18 +3,10 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates a Topic / Partition / Offset tuple.
     /// </summary>
-    /// <remarks>
-    ///     Partition must be defined.
-    ///     Offset may be special value.
-    /// </remarks>
     public struct TopicPartitionOffset
     {
         public TopicPartitionOffset(TopicPartition tp, Offset offset)
-        {
-            Topic = tp.Topic;
-            Partition = tp.Partition;
-            Offset = offset;
-        }
+            : this(tp.Topic, tp.Partition, offset) {}
 
         public TopicPartitionOffset(string topic, int partition, Offset offset)
         {
@@ -28,9 +20,7 @@ namespace Confluent.Kafka
         public Offset Offset { get; }
 
         public TopicPartition TopicPartition
-        {
-            get { return new TopicPartition(Topic, Partition); }
-        }
+            => new TopicPartition(Topic, Partition);
 
         public override bool Equals(object obj)
         {

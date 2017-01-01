@@ -88,9 +88,7 @@ namespace Confluent.Kafka
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
         public bool Consume(out Message<TKey, TValue> message)
-        {
-            return Consume(out message, -1);
-        }
+            => Consume(out message, -1);
 
 
         public void Poll(int millisecondsTimeout)
@@ -671,17 +669,13 @@ namespace Confluent.Kafka
         ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
         /// </remarks>
         public void Commit(Message message)
-        {
-            Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
-        }
+            => Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <summary>
         ///     Commit explicit list of offsets.
         /// </summary>
         public void Commit(ICollection<TopicPartitionOffset> offsets)
-        {
-            kafkaHandle.Commit(offsets);
-        }
+            => kafkaHandle.Commit(offsets);
 
         /// <summary>
         ///     Retrieve current committed offsets for topics + partitions.

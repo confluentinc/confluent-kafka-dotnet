@@ -3,12 +3,14 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates a Topic / Partition / Offset / Error tuple.
     /// </summary>
-    /// <remarks>
-    ///     Partition must be defined.
-    ///     Offset may be special value.
-    /// </remarks>
     public struct TopicPartitionOffsetError
     {
+        public TopicPartitionOffsetError(TopicPartition tp, Offset offset, Error error)
+            : this(tp.Topic, tp.Partition, offset, error) {}
+
+        public TopicPartitionOffsetError(TopicPartitionOffset tpo, Error error)
+            : this(tpo.Topic, tpo.Partition, tpo.Offset, error) {}
+
         public TopicPartitionOffsetError(string topic, int partition, Offset offset, Error error)
         {
             Topic = topic;
@@ -23,14 +25,10 @@ namespace Confluent.Kafka
         public Error Error { get; }
 
         public TopicPartition TopicPartition
-        {
-            get { return new TopicPartition(Topic, Partition); }
-        }
+            => new TopicPartition(Topic, Partition);
 
         public TopicPartitionOffset TopicPartitionOffset
-        {
-            get { return new TopicPartitionOffset(Topic, Partition, Offset); }
-        }
+            => new TopicPartitionOffset(Topic, Partition, Offset);
 
         public override bool Equals(object obj)
         {

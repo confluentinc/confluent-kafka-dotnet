@@ -18,7 +18,7 @@ namespace Confluent.Kafka.Impl
 
         internal SafeKafkaHandle kafkaHandle;
 
-        private SafeTopicHandle() { }
+        private SafeTopicHandle() {}
 
         protected override bool ReleaseHandle()
         {
@@ -28,7 +28,8 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal string GetName() => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
+        internal string GetName()
+            => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
 
         internal long Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long? timestamp, IntPtr opaque, bool blockIfQueueFull)
         {
@@ -91,6 +92,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool PartitionAvailable(int partition) => LibRdKafka.topic_partition_available(handle, partition);
+        internal bool PartitionAvailable(int partition)
+            => LibRdKafka.topic_partition_available(handle, partition);
     }
 }

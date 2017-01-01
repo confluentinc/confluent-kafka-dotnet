@@ -102,21 +102,16 @@ namespace Confluent.Kafka.Impl
         }
 
         internal long OutQueueLength
-        {
-            get
-            {
-                return (long)LibRdKafka.outq_len(handle);
-            }
-        }
+            => (long)LibRdKafka.outq_len(handle);
 
         internal void Flush(int millisecondsTimeout)
-        {
-            LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
-        }
+            => LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
 
-        internal long AddBrokers(string brokers) => (long)LibRdKafka.brokers_add(handle, brokers);
+        internal long AddBrokers(string brokers)
+            => (long)LibRdKafka.brokers_add(handle, brokers);
 
-        internal long Poll(IntPtr millisecondsTimeout) => (long)LibRdKafka.poll(handle, millisecondsTimeout);
+        internal long Poll(IntPtr millisecondsTimeout)
+            => (long)LibRdKafka.poll(handle, millisecondsTimeout);
 
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
@@ -211,9 +206,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal ErrorCode PollSetConsumer()
-        {
-            return LibRdKafka.poll_set_consumer(handle);
-        }
+            => LibRdKafka.poll_set_consumer(handle);
 
         internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)
         {
@@ -525,14 +518,10 @@ namespace Confluent.Kafka.Impl
         }
 
         internal GroupInfo ListGroup(string group, int millisecondsTimeout)
-        {
-            return ListGroupsImpl(group, millisecondsTimeout).Single();
-        }
+            =>  ListGroupsImpl(group, millisecondsTimeout).Single();
 
         internal List<GroupInfo> ListGroups(int millisecondsTimeout)
-        {
-            return ListGroupsImpl(null, millisecondsTimeout);
-        }
+            => ListGroupsImpl(null, millisecondsTimeout);
 
         private List<GroupInfo> ListGroupsImpl(string group, int millisecondsTimeout)
         {

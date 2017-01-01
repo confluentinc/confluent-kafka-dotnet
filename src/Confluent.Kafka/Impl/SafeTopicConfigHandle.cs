@@ -10,9 +10,7 @@ namespace Confluent.Kafka.Impl
 {
     internal sealed class SafeTopicConfigHandle : SafeHandleZeroIsInvalid
     {
-        private SafeTopicConfigHandle()
-        {
-        }
+        private SafeTopicConfigHandle() {}
 
         internal static SafeTopicConfigHandle Create()
         {
@@ -30,7 +28,8 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal IntPtr Dup() => LibRdKafka.topic_conf_dup(handle);
+        internal IntPtr Dup()
+            => LibRdKafka.topic_conf_dup(handle);
 
         // TODO: deduplicate, merge with other one
         internal Dictionary<string, string> Dump()

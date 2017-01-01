@@ -18,7 +18,7 @@ namespace Confluent.Kafka
 
         public BrokerMetadata Broker { get; } /**< Originating broker info */
         public string Group { get; }          /**< Group name */
-        public Error Error { get; }       /**< Broker-originated error */
+        public Error Error { get; }           /**< Broker-originated error */
         public string State { get; }          /**< Group state */
         public string ProtocolType { get; }   /**< Group protocol type */
         public string Protocol { get; }       /**< Group protocol */

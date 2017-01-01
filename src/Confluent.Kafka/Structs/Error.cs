@@ -9,17 +9,13 @@ namespace Confluent.Kafka
 
         public ErrorCode Code { get; }
 
+        // Note: In most practical scenarios there is no benefit to caching this +
+        //       significant cost in keeping the extra string reference around.
         public string Message
-        {
-            get
-            {
-                // Note: In most practical scenarios there is no benefit to caching this +
-                //       significant cost in keeping the extra string reference around.
-                return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(Code));
-            }
-        }
+            => Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(Code));
 
-        public bool HasError { get { return Code != ErrorCode.NO_ERROR; }}
+        public bool HasError
+            => Code != ErrorCode.NO_ERROR;
 
         // TODO: questionably too tricky?
         public static implicit operator bool(Error e)
