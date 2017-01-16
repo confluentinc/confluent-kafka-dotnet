@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Benchmark
             var config = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
-                { "queue.buffering.max.messages", 500000 },
+                { "queue.buffering.max.messages", 2000000 },
                 { "message.send.max.retries", 3 },
                 { "retry.backoff.ms", 500 }
             };

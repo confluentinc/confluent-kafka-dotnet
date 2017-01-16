@@ -227,7 +227,7 @@ namespace Confluent.Kafka
         ///     no previous message, or, alternately a partition specific error may also be
         ///     returned.
         ///
-        ///     throws RdKafkaException if there was a problem retrieving the above information.
+        ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
         public List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
             => consumer.Committed(partitions, timeout);
@@ -240,7 +240,7 @@ namespace Confluent.Kafka
         ///     no previous message, or, alternately a partition specific error may also be
         ///     returned.
         ///
-        ///     throws RdKafkaException if there was a problem retrieving the above information.
+        ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
         public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
             => consumer.Position(partitions);
@@ -396,14 +396,14 @@ namespace Confluent.Kafka
                 .Where(prop => prop.Key != "default.topic.config")
                 .ToList()
                 .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
-            // TODO: figure out what Dup is exactly and if we need it.
-            IntPtr cfgPtr = configHandle.Dup();
 
             rebalanceDelegate = RebalanceCallback;
             commitDelegate = CommitCallback;
 
-            LibRdKafka.conf_set_rebalance_cb(cfgPtr, rebalanceDelegate);
-            LibRdKafka.conf_set_offset_commit_cb(cfgPtr, commitDelegate);
+            IntPtr configPtr = configHandle.DangerousGetHandle();
+
+            LibRdKafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
+            LibRdKafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
             if (defaultTopicConfig != null)
             {
                 var topicHandle = SafeTopicConfigHandle.Create();
@@ -411,14 +411,14 @@ namespace Confluent.Kafka
                 {
                     defaultTopicConfig.ToList().ForEach((kvp) => { topicHandle.Set(kvp.Key, kvp.Value.ToString()); });
                 }
-                LibRdKafka.conf_set_default_topic_conf(cfgPtr, topicHandle.Dup());
+                LibRdKafka.conf_set_default_topic_conf(configPtr, topicHandle.Dup());
             }
 
-            LibRdKafka.conf_set_error_cb(cfgPtr, ErrorCallback);
-            LibRdKafka.conf_set_log_cb(cfgPtr, LogCallback);
-            LibRdKafka.conf_set_stats_cb(cfgPtr, StatsCallback);
+            LibRdKafka.conf_set_error_cb(configPtr, ErrorCallback);
+            LibRdKafka.conf_set_log_cb(configPtr, LogCallback);
+            LibRdKafka.conf_set_stats_cb(configPtr, StatsCallback);
 
-            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, cfgPtr);
+            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr);
 
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
             if (pollSetConsumerError != ErrorCode.NO_ERROR)
@@ -685,7 +685,7 @@ namespace Confluent.Kafka
         ///     no previous message, or, alternately a partition specific error may also be
         ///     returned.
         ///
-        ///     throws RdKafkaException if there was a problem retrieving the above information.
+        ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
         public List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
             => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMillisecondsAsInt());
@@ -698,7 +698,7 @@ namespace Confluent.Kafka
         ///     no previous message, or, alternately a partition specific error may also be
         ///     returned.
         ///
-        ///     throws RdKafkaException if there was a problem retrieving the above information.
+        ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
         public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
             => kafkaHandle.Position(partitions);

@@ -5,7 +5,7 @@ using System.Text;
 using Confluent.Kafka.Serialization;
 
 
-namespace Confluent.Kafka.SimpleConsumer
+namespace Confluent.Kafka.Examples.SimpleConsumer
 {
     public class Program
     {

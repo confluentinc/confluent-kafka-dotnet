@@ -19,7 +19,6 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "group.id", "u-bute-group" },
                 { "bootstrap.servers", bootstrapServers },
-                // TODO: Confirm that setting this timeout is really necessary here.
                 { "session.timeout.ms", 6000 }
             };
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };

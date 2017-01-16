@@ -301,7 +301,6 @@ namespace Confluent.Kafka.Impl
             var dateTime = new DateTime(0);
             if ((TimestampType)timestampType != TimestampType.NotAvailable)
             {
-                // TODO: is timestamp guarenteed to be in valid range if type == NotAvailable? if so, remove this conditional.
                 dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
             }
 
@@ -420,7 +419,7 @@ namespace Confluent.Kafka.Impl
         ///     for each topic/partition returns the current committed offset
         ///     or a partition specific error. if no stored offset, Offset.Invalid.
         ///
-        ///     throws RdKafakException if the above information cannot be got.
+        ///     throws KafakException if the above information cannot be retrieved.
         /// </summary>
         internal List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, IntPtr timeout_ms)
         {
@@ -444,10 +443,10 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
-        ///     for each topic/partition returns the current position (last commited offset + 1)
+        ///     for each topic/partition returns the current position (last consumed offset + 1)
         ///     or a partition specific error.
         ///
-        ///     throws RdKafakException if the above information cannot be got.
+        ///     throws KafkaException if the above information cannot be retrieved.
         /// </summary>
         internal List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
         {

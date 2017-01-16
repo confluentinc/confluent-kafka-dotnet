@@ -1,3 +1,5 @@
+using System;
+
 
 namespace Confluent.Kafka.Benchmark
 {
@@ -5,10 +7,16 @@ namespace Confluent.Kafka.Benchmark
     {
         public static void Main(string[] args)
         {
+            if (args.Length != 2)
+            {
+                Console.WriteLine($"Usage: dotnet run <broker,broker..> <topic>");
+                return;
+            }
+
             var bootstrapServers = args[0];
             var topic = args[1];
 
-            const int NUMBER_OF_MESSAGES = 500000;
+            const int NUMBER_OF_MESSAGES = 5000000;
             const int NUMBER_OF_TESTS = 1;
 
             BenchmarkProducer.TaskProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);

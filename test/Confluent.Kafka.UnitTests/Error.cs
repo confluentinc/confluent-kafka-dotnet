@@ -51,6 +51,9 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void BoolCast()
         {
+            var e1 = new Error(ErrorCode.NO_ERROR);
+            var e2 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
+
             Assert.False(e1);
             Assert.True(e2);
         }
@@ -61,8 +64,8 @@ namespace Confluent.Kafka.Tests
             var e1 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
             var ec1 = ErrorCode.NOT_COORDINATOR_FOR_GROUP;
 
-            Assert.Equal(e1, ec1);
-            Assert.Equal(ec1, e1);
+            Assert.Equal((ErrorCode)e1, ec1);
+            Assert.Equal(ec1, (ErrorCode)e1);
         }
     }
 }

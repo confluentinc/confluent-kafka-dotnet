@@ -9,7 +9,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that a speicific user specified timestamp on produce is consumed.
+        ///     Test that a specific user specified timestamp on produce is consumed.
         /// </summary>
         [Theory (Skip="currently no rd_kafka_producev in referenced librdkafka"), MemberData(nameof(KafkaParameters))]
         public static void ProduceTimestamp(string bootstrapServers, string topic)

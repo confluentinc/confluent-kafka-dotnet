@@ -2,7 +2,7 @@ using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
 
-namespace Confluent.Kafka.Wrapped
+namespace Confluent.Kafka.Examples.MultiProducer
 {
     /// <summary>
     ///     An example showing how to wrap a single Producer to produce messages using

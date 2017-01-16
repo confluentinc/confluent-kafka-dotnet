@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Confluent.Kafka.Misc
+namespace Confluent.Kafka.Examples.Misc
 {
     public class Program
     {

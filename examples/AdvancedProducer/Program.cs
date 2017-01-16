@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 
-namespace Confluent.Kafka.AdvancedProducer
+namespace Confluent.Kafka.Examples.AdvancedProducer
 {
     public class Program
     {

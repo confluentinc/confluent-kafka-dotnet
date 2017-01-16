@@ -8,7 +8,7 @@ using Confluent.Kafka.Serialization;
 /// <summary>
 ///     Demonstrates use of the deserializing Consumer.
 /// </summary>
-namespace Confluent.Kafka.AdvancedConsumer
+namespace Confluent.Kafka.Examples.AdvancedConsumer
 {
     public class Program
     {

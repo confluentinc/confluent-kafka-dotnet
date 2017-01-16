@@ -135,7 +135,6 @@ namespace Confluent.Kafka
             var dateTime = new DateTime(0);
             if ((TimestampType)timestampType != TimestampType.NotAvailable)
             {
-                // TODO: is timestamp guarenteed to be in valid range if type == NotAvailable? if so, remove this conditional.
                 dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
             }
 
@@ -227,21 +226,21 @@ namespace Confluent.Kafka
                 .Where(prop => prop.Key != "default.topic.config")
                 .ToList()
                 .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
-            // TODO: What's dup do exactly? do we need it?
-            IntPtr rdKafkaConfigPtr = configHandle.Dup();
+
+            IntPtr configPtr = configHandle.DangerousGetHandle();
 
             if (!disableDeliveryReports)
             {
-                LibRdKafka.conf_set_dr_msg_cb(rdKafkaConfigPtr, DeliveryReportCallback);
+                LibRdKafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
             }
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
-            LibRdKafka.conf_set_error_cb(rdKafkaConfigPtr, ErrorCallback);
-            LibRdKafka.conf_set_log_cb(rdKafkaConfigPtr, LogCallback);
-            LibRdKafka.conf_set_stats_cb(rdKafkaConfigPtr, StatsCallback);
+            LibRdKafka.conf_set_error_cb(configPtr, ErrorCallback);
+            LibRdKafka.conf_set_log_cb(configPtr, LogCallback);
+            LibRdKafka.conf_set_stats_cb(configPtr, StatsCallback);
 
-            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, rdKafkaConfigPtr);
+            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
 
             if (!manualPoll)
             {
