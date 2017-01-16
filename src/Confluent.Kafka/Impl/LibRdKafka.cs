@@ -39,6 +39,7 @@ namespace Confluent.Kafka.Impl
             _topic_partition_list_new = NativeMethods.rd_kafka_topic_partition_list_new;
             _topic_partition_list_destroy = NativeMethods.rd_kafka_topic_partition_list_destroy;
             _topic_partition_list_add = NativeMethods.rd_kafka_topic_partition_list_add;
+            _message_timestamp = NativeMethods.rd_kafka_message_timestamp;
             _message_destroy = NativeMethods.rd_kafka_message_destroy;
             _conf_new = NativeMethods.rd_kafka_conf_new;
             _conf_destroy = NativeMethods.rd_kafka_conf_destroy;
@@ -70,6 +71,7 @@ namespace Confluent.Kafka.Impl
             _topic_destroy = NativeMethods.rd_kafka_topic_destroy;
             _topic_name = NativeMethods.rd_kafka_topic_name;
             _poll = NativeMethods.rd_kafka_poll;
+            _poll_set_consumer = NativeMethods.rd_kafka_poll_set_consumer;
             _query_watermark_offsets = NativeMethods.rd_kafka_query_watermark_offsets;
             _get_watermark_offsets = NativeMethods.rd_kafka_get_watermark_offsets;
             _mem_free = NativeMethods.rd_kafka_mem_free;
@@ -84,12 +86,13 @@ namespace Confluent.Kafka.Impl
             _committed = NativeMethods.rd_kafka_committed;
             _position = NativeMethods.rd_kafka_position;
             _produce = NativeMethods.rd_kafka_produce;
+            _producev = NativeMethods.rd_kafka_producev;
+            _flush = NativeMethods.rd_kafka_flush;
             _metadata = NativeMethods.rd_kafka_metadata;
             _metadata_destroy = NativeMethods.rd_kafka_metadata_destroy;
             _list_groups = NativeMethods.rd_kafka_list_groups;
             _group_list_destroy = NativeMethods.rd_kafka_group_list_destroy;
             _brokers_add = NativeMethods.rd_kafka_brokers_add;
-            _set_log_level = NativeMethods.rd_kafka_set_log_level;
             _outq_len = NativeMethods.rd_kafka_outq_len;
             _wait_destroyed = NativeMethods.rd_kafka_wait_destroyed;
 
@@ -99,35 +102,36 @@ namespace Confluent.Kafka.Impl
         }
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate void DeliveryReportCallback(
+        internal delegate void DeliveryReportDelegate(
                 IntPtr rk,
-                /* const rd_kafka_message_t * */ ref rd_kafka_message rkmessage,
+                /* const rd_kafka_message_t * */ IntPtr rkmessage,
+                // ref rd_kafka_message rkmessage,
                 IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate void CommitCallback(IntPtr rk,
+        internal delegate void CommitDelegate(IntPtr rk,
                 ErrorCode err,
                 /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
                 IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate void ErrorCallback(IntPtr rk,
+        internal delegate void ErrorDelegate(IntPtr rk,
                 ErrorCode err, string reason, IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate void RebalanceCallback(IntPtr rk,
+        internal delegate void RebalanceDelegate(IntPtr rk,
                 ErrorCode err,
                 /* rd_kafka_topic_partition_list_t * */ IntPtr partitions,
                 IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate void LogCallback(IntPtr rk, int level, string fac, string buf);
+        internal delegate void LogDelegate(IntPtr rk, int level, string fac, string buf);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque);
+        internal delegate int StatsDelegate(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate int PartitionerCallback(
+        internal delegate int PartitionerDelegate(
             /* const rd_kafka_topic_t * */ IntPtr rkt,
             IntPtr keydata,
             UIntPtr keylen,
@@ -164,6 +168,10 @@ namespace Confluent.Kafka.Impl
         private static Func<ErrorCode> _last_error;
         internal static ErrorCode last_error() => _last_error();
 
+        internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
+        private static messageTimestampDelegate _message_timestamp;
+        internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
+
         private static Action<IntPtr> _message_destroy;
         internal static void message_destroy(IntPtr rkmessage) => _message_destroy(rkmessage);
 
@@ -181,28 +189,28 @@ namespace Confluent.Kafka.Impl
                 string value, StringBuilder errstr, UIntPtr errstr_size)
             => _conf_set(conf, name, value, errstr, errstr_size);
 
-        private static Action<IntPtr, DeliveryReportCallback> _conf_set_dr_msg_cb;
-        internal static void conf_set_dr_msg_cb(IntPtr conf, DeliveryReportCallback dr_msg_cb)
+        private static Action<IntPtr, DeliveryReportDelegate> _conf_set_dr_msg_cb;
+        internal static void conf_set_dr_msg_cb(IntPtr conf, DeliveryReportDelegate dr_msg_cb)
             => _conf_set_dr_msg_cb(conf, dr_msg_cb);
 
-        private static Action<IntPtr, RebalanceCallback> _conf_set_rebalance_cb;
-        internal static void conf_set_rebalance_cb(IntPtr conf, RebalanceCallback rebalance_cb)
+        private static Action<IntPtr, RebalanceDelegate> _conf_set_rebalance_cb;
+        internal static void conf_set_rebalance_cb(IntPtr conf, RebalanceDelegate rebalance_cb)
             => _conf_set_rebalance_cb(conf, rebalance_cb);
 
-        private static Action<IntPtr, CommitCallback> _conf_set_offset_commit_cb;
-        internal static void conf_set_offset_commit_cb(IntPtr conf, CommitCallback commit_cb)
+        private static Action<IntPtr, CommitDelegate> _conf_set_offset_commit_cb;
+        internal static void conf_set_offset_commit_cb(IntPtr conf, CommitDelegate commit_cb)
             => _conf_set_offset_commit_cb(conf, commit_cb);
 
-        private static Action<IntPtr, ErrorCallback> _conf_set_error_cb;
-        internal static void conf_set_error_cb(IntPtr conf, ErrorCallback error_cb)
+        private static Action<IntPtr, ErrorDelegate> _conf_set_error_cb;
+        internal static void conf_set_error_cb(IntPtr conf, ErrorDelegate error_cb)
             => _conf_set_error_cb(conf, error_cb);
 
-        private static Action<IntPtr, LogCallback> _conf_set_log_cb;
-        internal static void conf_set_log_cb(IntPtr conf, LogCallback log_cb)
+        private static Action<IntPtr, LogDelegate> _conf_set_log_cb;
+        internal static void conf_set_log_cb(IntPtr conf, LogDelegate log_cb)
             => _conf_set_log_cb(conf, log_cb);
 
-        private static Action<IntPtr, StatsCallback> _conf_set_stats_cb;
-        internal static void conf_set_stats_cb(IntPtr conf, StatsCallback stats_cb)
+        private static Action<IntPtr, StatsDelegate> _conf_set_stats_cb;
+        internal static void conf_set_stats_cb(IntPtr conf, StatsDelegate stats_cb)
             => _conf_set_stats_cb(conf, stats_cb);
 
         private static Action<IntPtr, IntPtr> _conf_set_default_topic_conf;
@@ -248,9 +256,9 @@ namespace Confluent.Kafka.Impl
                 string value, StringBuilder errstr, UIntPtr errstr_size)
             => _topic_conf_set(conf, name, value, errstr, errstr_size);
 
-        private static Action<IntPtr, PartitionerCallback> _topic_conf_set_partitioner_cb;
+        private static Action<IntPtr, PartitionerDelegate> _topic_conf_set_partitioner_cb;
         internal static void topic_conf_set_partitioner_cb(
-                IntPtr topic_conf, PartitionerCallback partitioner_cb)
+                IntPtr topic_conf, PartitionerDelegate partitioner_cb)
             => _topic_conf_set_partitioner_cb(topic_conf, partitioner_cb);
 
         private static Func<IntPtr, int, bool> _topic_partition_available;
@@ -280,6 +288,9 @@ namespace Confluent.Kafka.Impl
 
         private static Func<IntPtr, IntPtr> _topic_name;
         internal static IntPtr topic_name(IntPtr rkt) => _topic_name(rkt);
+
+        private static Func<IntPtr, ErrorCode> _poll_set_consumer;
+        internal static ErrorCode poll_set_consumer(IntPtr rk) => _poll_set_consumer(rk);
 
         private static Func<IntPtr, IntPtr, IntPtr> _poll;
         internal static IntPtr poll(IntPtr rk, IntPtr timeout_ms) => _poll(rk, timeout_ms);
@@ -341,8 +352,7 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
 
-        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr,
-                IntPtr, IntPtr> _produce;
+        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, IntPtr, IntPtr> _produce;
         internal static IntPtr produce(
                 IntPtr rkt,
                 int partition,
@@ -351,6 +361,22 @@ namespace Confluent.Kafka.Impl
                 IntPtr key, UIntPtr keylen,
                 IntPtr msg_opaque)
             => _produce(rkt, partition, msgflags, val, len, key, keylen, msg_opaque);
+
+        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, long, IntPtr, IntPtr> _producev;
+        internal static IntPtr producev(
+                IntPtr rkt,
+                int partition,
+                IntPtr msgflags,
+                IntPtr val, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
+                long timestamp,
+                IntPtr msg_opaque)
+            => _producev(rkt, partition, msgflags, val, len, key, keylen, timestamp, msg_opaque);
+
+        internal delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
+        internal static Flush _flush;
+        internal static ErrorCode flush(IntPtr rk, IntPtr timeout_ms)
+            => _flush(rk, timeout_ms);
 
         private delegate ErrorCode Metadata(IntPtr rk, bool all_topics,
                 IntPtr only_rkt, out IntPtr metadatap, IntPtr timeout_ms);
@@ -377,10 +403,6 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, string, IntPtr> _brokers_add;
         internal static IntPtr brokers_add(IntPtr rk, string brokerlist)
             => _brokers_add(rk, brokerlist);
-
-        private static Action<IntPtr, IntPtr> _set_log_level;
-        internal static void set_log_level(IntPtr rk, IntPtr level)
-            => _set_log_level(rk, level);
 
         private static Func<IntPtr, IntPtr> _outq_len;
         internal static IntPtr outq_len(IntPtr rk) => _outq_len(rk);
@@ -423,6 +445,11 @@ namespace Confluent.Kafka.Impl
                     string topic, int partition);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern /* int64_t */ long rd_kafka_message_timestamp(
+                    /* rd_kafka_message_t * */ IntPtr rkmessage,
+                    /* r_kafka_timestamp_type_t * */ out IntPtr tstype);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_message_destroy(
                     /* rd_kafka_message_t * */ IntPtr rkmessage);
 
@@ -446,25 +473,25 @@ namespace Confluent.Kafka.Impl
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_conf_set_dr_msg_cb(
                     IntPtr conf,
-                    DeliveryReportCallback dr_msg_cb);
+                    DeliveryReportDelegate dr_msg_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_conf_set_rebalance_cb(
-                    IntPtr conf, RebalanceCallback rebalance_cb);
+                    IntPtr conf, RebalanceDelegate rebalance_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_conf_set_offset_commit_cb(
-                    IntPtr conf, CommitCallback commit_cb);
+                    IntPtr conf, CommitDelegate commit_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_conf_set_error_cb(
-                    IntPtr conf, ErrorCallback error_cb);
+                    IntPtr conf, ErrorDelegate error_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, LogCallback log_cb);
+            internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, LogDelegate log_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_stats_cb(IntPtr conf, StatsCallback stats_cb);
+            internal static extern void rd_kafka_conf_set_stats_cb(IntPtr conf, StatsDelegate stats_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_conf_set_default_topic_conf(
@@ -513,7 +540,7 @@ namespace Confluent.Kafka.Impl
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_topic_conf_set_partitioner_cb(
-                    IntPtr topic_conf, PartitionerCallback partitioner_cb);
+                    IntPtr topic_conf, PartitionerDelegate partitioner_cb);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern bool rd_kafka_topic_partition_available(
@@ -545,6 +572,9 @@ namespace Confluent.Kafka.Impl
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern /* const char * */ IntPtr rd_kafka_topic_name(IntPtr rkt);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_poll_set_consumer (IntPtr rk);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_poll(IntPtr rk, IntPtr timeout_ms);
@@ -612,6 +642,21 @@ namespace Confluent.Kafka.Impl
                     IntPtr msg_opaque);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr rd_kafka_producev(
+                IntPtr rkt,
+                int partition,
+                IntPtr msgflags,
+                IntPtr val, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
+                long timestamp,
+                IntPtr msg_opaque);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_flush(
+                IntPtr rk,
+                IntPtr timeout_ms);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_metadata(
                 IntPtr rk, bool all_topics,
                 /* rd_kafka_topic_t * */ IntPtr only_rkt,
@@ -634,9 +679,6 @@ namespace Confluent.Kafka.Impl
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_brokers_add(IntPtr rk,
                     [MarshalAs(UnmanagedType.LPStr)] string brokerlist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_set_log_level(IntPtr rk, IntPtr level);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_outq_len(IntPtr rk);

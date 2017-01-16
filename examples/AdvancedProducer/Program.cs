@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 
-namespace Confluent.Kafka.AdvancedProducer
+namespace Confluent.Kafka.Examples.AdvancedProducer
 {
     public class Program
     {
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.AdvancedProducer
                 Console.WriteLine("Ctrl-C to quit.\n");
 
                 var cancelled = false;
-                Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) => {
+                Console.CancelKeyPress += (_, e) => {
                     e.Cancel = true; // prevent the process from terminating.
                     cancelled = true;
                 };
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.AdvancedProducer
                         val = text.Substring(index + 1);
                     }
 
-                    Task<DeliveryReport> deliveryReport = producer.ProduceAsync(topicName, key, val);
+                    var deliveryReport = producer.ProduceAsync(topicName, key, val);
                     var result = deliveryReport.Result; // synchronously waits for message to be produced.
                     Console.WriteLine($"Partition: {result.Partition}, Offset: {result.Offset}");
                 }

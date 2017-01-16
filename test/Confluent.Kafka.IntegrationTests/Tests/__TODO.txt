@@ -1,0 +1,7 @@
+
+test UTF-8 in various places
+ - snowman test
+ - turkey test
+ - logging
+
+check what happens with exceptions thrown in OnMessage etc callbacks.

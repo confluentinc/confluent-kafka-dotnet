@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
+using Confluent.Kafka.Internal;
+
 
 namespace Confluent.Kafka.Impl
 {
@@ -15,29 +17,29 @@ namespace Confluent.Kafka.Impl
     [StructLayout(LayoutKind.Sequential)]
     struct rd_kafka_message
     {
-        internal ErrorCode err; /* Non-zero for error signaling. */
+        internal ErrorCode err;                       /* Non-zero for error signaling. */
         internal /* rd_kafka_topic_t * */ IntPtr rkt; /* Topic */
-        internal int partition;                 /* Partition */
-        internal /* void   * */ IntPtr val; /* err==0: Message val
-                                        * err!=0: Error string */
-        internal UIntPtr  len;                  /* err==0: Message val length
-                                        * err!=0: Error string length */
-        internal /* void   * */ IntPtr key;     /* err==0: Optional message key */
-        internal UIntPtr  key_len;              /* err==0: Optional message key length */
-        internal long offset;                  /* Consume:
-                                        *   Message offset (or offset for error
-                                        *   if err!=0 if applicable).
-                                        * dr_msg_cb:
-                                        *   Message offset assigned by broker.
-                                        *   If produce.offset.report is set then
-                                        *   each message will have this field set,
-                                        *   otherwise only the last message in
-                                        *   each produced internal batch will
-                                        *   have this field set, otherwise 0. */
-        internal /* void  * */ IntPtr _private; /* Consume:
-                                        *   rdkafka private pointer: DO NOT MODIFY
-                                        * dr_msg_cb:
-                                        *   mgs_opaque from produce() call */
+        internal int partition;                       /* Partition */
+        internal /* void   * */ IntPtr val;           /* err==0: Message val
+                                                       * err!=0: Error string */
+        internal UIntPtr  len;                        /* err==0: Message val length
+                                                       * err!=0: Error string length */
+        internal /* void   * */ IntPtr key;           /* err==0: Optional message key */
+        internal UIntPtr  key_len;                    /* err==0: Optional message key length */
+        internal long offset;                         /* Consume:
+                                                       *   Message offset (or offset for error
+                                                       *   if err!=0 if applicable).
+                                                       * dr_msg_cb:
+                                                       *   Message offset assigned by broker.
+                                                       *   If produce.offset.report is set then
+                                                       *   each message will have this field set,
+                                                       *   otherwise only the last message in
+                                                       *   each produced internal batch will
+                                                       *   have this field set, otherwise 0. */
+        internal /* void  * */ IntPtr _private;       /* Consume:
+                                                       *   rdkafka private pointer: DO NOT MODIFY
+                                                       * dr_msg_cb:
+                                                       *   mgs_opaque from produce() call */
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -46,12 +48,12 @@ namespace Confluent.Kafka.Impl
         internal string topic;
         internal int partition;
         internal long offset;
-        /* void * */ IntPtr metadata;
-        UIntPtr metadata_size;
-        /* void * */ IntPtr opaque;
-        ErrorCode err; /* Error code, depending on use. */
-        /* void * */ IntPtr _private; /* INTERNAL USE ONLY,
-                                       * INITIALIZE TO ZERO, DO NOT TOUCH */
+        internal /* void * */ IntPtr metadata;
+        internal UIntPtr metadata_size;
+        internal /* void * */ IntPtr opaque;
+        internal ErrorCode err; /* Error code, depending on use. */
+        internal /* void * */ IntPtr _private; /* INTERNAL USE ONLY,
+                                                * INITIALIZE TO ZERO, DO NOT TOUCH */
     };
 
     [StructLayout(LayoutKind.Sequential)]
@@ -64,11 +66,11 @@ namespace Confluent.Kafka.Impl
 
     internal sealed class SafeKafkaHandle : SafeHandleZeroIsInvalid
     {
-        const int RD_KAFKA_PARTITION_UA = -1;
+        private const int RD_KAFKA_PARTITION_UA = -1;
 
-        private SafeKafkaHandle() {}
+        public SafeKafkaHandle() {}
 
-        internal static SafeKafkaHandle Create(RdKafkaType type, IntPtr config)
+        public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config)
         {
             var errorStringBuilder = new StringBuilder(512);
             var skh = LibRdKafka.kafka_new(type, config, errorStringBuilder,
@@ -86,13 +88,30 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal string GetName() => Marshal.PtrToStringAnsi(LibRdKafka.name(handle));
+        private string name;
+        internal string Name
+        {
+            get
+            {
+                if (name == null)
+                {
+                    name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(handle));
+                }
+                return name;
+            }
+        }
 
-        internal long GetOutQueueLength() => (long)LibRdKafka.outq_len(handle);
+        internal long OutQueueLength
+            => (long)LibRdKafka.outq_len(handle);
 
-        internal long AddBrokers(string brokers) => (long)LibRdKafka.brokers_add(handle, brokers);
+        internal void Flush(int millisecondsTimeout)
+            => LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
 
-        internal long Poll(IntPtr timeoutMs) => (long)LibRdKafka.poll(handle, timeoutMs);
+        internal long AddBrokers(string brokers)
+            => (long)LibRdKafka.brokers_add(handle, brokers);
+
+        internal long Poll(IntPtr millisecondsTimeout)
+            => (long)LibRdKafka.poll(handle, millisecondsTimeout);
 
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
@@ -110,7 +129,7 @@ namespace Confluent.Kafka.Impl
             if (topicHandle.IsInvalid)
             {
                 DangerousRelease();
-                throw RdKafkaException.FromErr(LibRdKafka.last_error(), "Failed to create topic");
+                throw new KafkaException(LibRdKafka.last_error(), "Failed to create topic");
             }
             topicHandle.kafkaHandle = this;
             return topicHandle;
@@ -123,28 +142,19 @@ namespace Confluent.Kafka.Impl
             return res;
         }
 
-        /*
-         *  allTopics  - if true: request info about all topics in cluster,
-         *               else: only request info about locally known topics.
-         *  onlyTopic  - only request info about this topic
-         *  timeout    - maximum response time before failing.
-         */
-        internal Metadata Metadata(bool allTopics,
-                SafeTopicHandle onlyTopic,
-                bool includeInternal,
-                TimeSpan timeout)
+        /// <summary>
+        ///     - allTopics=true - request all topics from cluster
+        ///     - allTopics=false, topic=null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
+        ///     - allTopics=false, topic=valid - request specific topic
+        /// </summary>
+        internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
         {
-            if (timeout == default(TimeSpan))
-            {
-                timeout = TimeSpan.FromSeconds(10);
-            }
-
             IntPtr metaPtr;
             ErrorCode err = LibRdKafka.metadata(
                 handle, allTopics,
-                onlyTopic?.DangerousGetHandle() ?? IntPtr.Zero,
+                topic?.DangerousGetHandle() ?? IntPtr.Zero,
                 /* const struct rd_kafka_metadata ** */ out metaPtr,
-                (IntPtr) timeout.TotalMilliseconds);
+                (IntPtr) millisecondsTimeout);
 
             if (err == ErrorCode.NO_ERROR)
             {
@@ -154,41 +164,35 @@ namespace Confluent.Kafka.Impl
                     var brokers = Enumerable.Range(0, meta.broker_cnt)
                         .Select(i => Marshal.PtrToStructure<rd_kafka_metadata_broker>(
                                     meta.brokers + i * Marshal.SizeOf<rd_kafka_metadata_broker>()))
-                        .Select(b => new BrokerMetadata() { BrokerId = b.id, Host = b.host, Port = b.port })
+                        .Select(b => new BrokerMetadata(b.id, b.host, b.port))
                         .ToList();
 
-                    // TODO: filter our topics starting with __, as those are internal. Maybe add a flag to not ignore them.
                     var topics = Enumerable.Range(0, meta.topic_cnt)
                         .Select(i => Marshal.PtrToStructure<rd_kafka_metadata_topic>(
                                     meta.topics + i * Marshal.SizeOf<rd_kafka_metadata_topic>()))
-                        .Where(t => includeInternal || !t.topic.StartsWith("__"))
-                        .Select(t => new TopicMetadata()
-                                {
-                                    Topic = t.topic,
-                                    Error = t.err,
-                                    Partitions =
-                                        Enumerable.Range(0, t.partition_cnt)
-                                        .Select(j => Marshal.PtrToStructure<rd_kafka_metadata_partition>(
-                                                    t.partitions + j * Marshal.SizeOf<rd_kafka_metadata_partition>()))
-                                        .Select(p => new PartitionMetadata()
-                                                {
-                                                    PartitionId = p.id,
-                                                    Error = p.err,
-                                                    Leader = p.leader,
-                                                    Replicas = MarshalCopy(p.replicas, p.replica_cnt),
-                                                    InSyncReplicas = MarshalCopy(p.isrs, p.isr_cnt)
-                                                })
-                                        .ToList()
-                                })
+                        .Select(t => new TopicMetadata(
+                                t.topic,
+                                Enumerable.Range(0, t.partition_cnt)
+                                    .Select(j => Marshal.PtrToStructure<rd_kafka_metadata_partition>(
+                                                t.partitions + j * Marshal.SizeOf<rd_kafka_metadata_partition>()))
+                                    .Select(p => new PartitionMetadata(
+                                            p.id,
+                                            p.leader,
+                                            MarshalCopy(p.replicas, p.replica_cnt),
+                                            MarshalCopy(p.isrs, p.isr_cnt),
+                                            p.err
+                                        ))
+                                    .ToList(),
+                                t.err
+                            ))
                         .ToList();
 
-                    return new Metadata()
-                    {
-                        Brokers = brokers,
-                        Topics = topics,
-                        OriginatingBrokerId = meta.orig_broker_id,
-                        OriginatingBrokerName = meta.orig_broker_name
-                    };
+                    return new Metadata(
+                        brokers,
+                        topics,
+                        meta.orig_broker_id,
+                        meta.orig_broker_name
+                    );
                 }
                 finally
                 {
@@ -197,26 +201,28 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw RdKafkaException.FromErr(err, "Could not retrieve metadata");
+                throw new KafkaException(err, "Could not retrieve metadata");
             }
         }
 
-        internal Offsets QueryWatermarkOffsets(string topic, int partition, TimeSpan timeout)
+        internal ErrorCode PollSetConsumer()
+            => LibRdKafka.poll_set_consumer(handle);
+
+        internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)
         {
             long low;
             long high;
 
-            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high,
-                    timeout == default(TimeSpan) ?  new IntPtr(-1) : (IntPtr) timeout.TotalMilliseconds);
+            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr) millisecondsTimeout);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to query watermark offsets");
+                throw new KafkaException(err, "Failed to query watermark offsets");
             }
 
-            return new Offsets { Low = low, High = high };
+            return new WatermarkOffsets(low,  high);
         }
 
-        internal Offsets GetWatermarkOffsets(string topic, int partition)
+        internal WatermarkOffsets GetWatermarkOffsets(string topic, int partition)
         {
             long low;
             long high;
@@ -224,13 +230,12 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out low, out high);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to get watermark offsets");
+                throw new KafkaException(err, "Failed to get watermark offsets");
             }
 
-            return new Offsets { Low = low, High = high };
+            return new WatermarkOffsets(low, high);
         }
 
-        // Consumer API
         internal void Subscribe(ICollection<string> topics)
         {
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) topics.Count);
@@ -247,7 +252,7 @@ namespace Confluent.Kafka.Impl
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to subscribe to topics");
+                throw new KafkaException(err, "Failed to subscribe to topics");
             }
         }
 
@@ -256,52 +261,62 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.unsubscribe(handle);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to unsubscribe");
+                throw new KafkaException(err, "Failed to unsubscribe");
             }
         }
 
-        internal MessageAndError? ConsumerPoll(IntPtr timeoutMs)
+        internal bool ConsumerPoll(out Message message, IntPtr millisecondsTimeout)
         {
-            IntPtr msgPtr = LibRdKafka.consumer_poll(handle, timeoutMs);
+            // TODO: There is a newer librdkafka interface for this now. Use that.
+            IntPtr msgPtr = LibRdKafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
-                return null;
+                message = default(Message);
+                return false;
             }
+
             var msg = Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
+
             byte[] val = null;
-            byte[] key = null;
             if (msg.val != IntPtr.Zero)
             {
-                // TODO: is it possible to avoid the allocation / copy here (and elsewhere)?
                 val = new byte[(int) msg.len];
                 Marshal.Copy(msg.val, val, 0, (int) msg.len);
             }
+            byte[] key = null;
             if (msg.key != IntPtr.Zero)
             {
                 key = new byte[(int) msg.key_len];
                 Marshal.Copy(msg.key, key, 0, (int) msg.key_len);
             }
+
             string topic = null;
             if (msg.rkt != IntPtr.Zero)
             {
-                topic = Marshal.PtrToStringAnsi(LibRdKafka.topic_name(msg.rkt));
+                topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt));
             }
+
+            IntPtr timestampType;
+            long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType) / 1000;
+            var dateTime = new DateTime(0);
+            if ((TimestampType)timestampType != TimestampType.NotAvailable)
+            {
+                dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
+            }
+
             LibRdKafka.message_destroy(msgPtr);
 
-            var message = new Message()
-            {
-                Topic = topic,
-                Partition = msg.partition,
-                Offset = msg.offset,
-                Value = val,
-                Key = key
-            };
+            message = new Message(
+                topic,
+                msg.partition,
+                msg.offset,
+                key,
+                val,
+                new Timestamp(dateTime, (TimestampType)timestampType),
+                msg.err
+            );
 
-            return new MessageAndError()
-            {
-                Message = message,
-                Error = msg.err
-            };
+            return true;
         }
 
         internal void ConsumerClose()
@@ -309,7 +324,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.consumer_close(handle);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to close consumer");
+                throw new KafkaException(err, "Failed to close consumer");
             }
         }
 
@@ -319,10 +334,10 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.assignment(handle, out listPtr);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to get assignment");
+                throw new KafkaException(err, "Failed to get assignment");
             }
             // TODO: need to free anything here?
-            return GetTopicPartitionList(listPtr);
+            return GetTopicPartitionOffsetErrorList(listPtr).Select(a => a.TopicPartition).ToList();
         }
 
         internal List<string> GetSubscription()
@@ -331,10 +346,10 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.subscription(handle, out listPtr);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to get subscription");
+                throw new KafkaException(err, "Failed to get subscription");
             }
             // TODO: need to free anything here?
-            return GetTopicList(listPtr);
+            return GetTopicPartitionOffsetErrorList(listPtr).Select(a => a.Topic).ToList();
         }
 
         internal void Assign(ICollection<TopicPartitionOffset> partitions)
@@ -350,9 +365,10 @@ namespace Confluent.Kafka.Impl
                 foreach (var partition in partitions)
                 {
                     IntPtr ptr = LibRdKafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
-                    Marshal.WriteInt64(ptr,
-                            (int) Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
-                            partition.Offset);
+                    Marshal.WriteInt64(
+                        ptr,
+                        (int) Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        partition.Offset);
                 }
             }
 
@@ -363,7 +379,7 @@ namespace Confluent.Kafka.Impl
             }
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to assign partitions");
+                throw new KafkaException(err, "Failed to assign partitions");
             }
         }
 
@@ -372,7 +388,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.commit(handle, IntPtr.Zero, false);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to commit offsets");
+                throw new KafkaException(err, "Failed to commit offsets");
             }
         }
 
@@ -386,19 +402,26 @@ namespace Confluent.Kafka.Impl
             foreach (var offset in offsets)
             {
                 IntPtr ptr = LibRdKafka.topic_partition_list_add(list, offset.Topic, offset.Partition);
-                Marshal.WriteInt64(ptr,
-                        (int) Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
-                        offset.Offset);
+                Marshal.WriteInt64(
+                    ptr,
+                    (int) Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                    offset.Offset);
             }
             ErrorCode err = LibRdKafka.commit(handle, list, false);
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to commit offsets");
+                throw new KafkaException(err, "Failed to commit offsets");
             }
         }
 
-        internal List<TopicPartitionOffset> Committed(ICollection<TopicPartition> partitions, IntPtr timeout_ms)
+        /// <summary>
+        ///     for each topic/partition returns the current committed offset
+        ///     or a partition specific error. if no stored offset, Offset.Invalid.
+        ///
+        ///     throws KafakException if the above information cannot be retrieved.
+        /// </summary>
+        internal List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, IntPtr timeout_ms)
         {
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count);
             if (list == IntPtr.Zero)
@@ -410,16 +433,22 @@ namespace Confluent.Kafka.Impl
                 LibRdKafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
             ErrorCode err = LibRdKafka.committed(handle, list, timeout_ms);
-            var result = GetTopicPartitionOffsetList(list);
+            var result = GetTopicPartitionOffsetErrorList(list);
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to fetch committed offsets");
+                throw new KafkaException(err, "Failed to fetch committed offsets");
             }
             return result;
         }
 
-        internal List<TopicPartitionOffset> Position(ICollection<TopicPartition> partitions)
+        /// <summary>
+        ///     for each topic/partition returns the current position (last consumed offset + 1)
+        ///     or a partition specific error.
+        ///
+        ///     throws KafkaException if the above information cannot be retrieved.
+        /// </summary>
+        internal List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
         {
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count);
             if (list == IntPtr.Zero)
@@ -431,84 +460,48 @@ namespace Confluent.Kafka.Impl
                 LibRdKafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
             ErrorCode err = LibRdKafka.position(handle, list);
-            var result = GetTopicPartitionOffsetList(list);
+            var result = GetTopicPartitionOffsetErrorList(list);
             LibRdKafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw RdKafkaException.FromErr(err, "Failed to fetch position");
+                throw new KafkaException(err, "Failed to fetch position");
             }
             return result;
         }
 
-        internal string MemberId()
+        internal string MemberId
         {
-            IntPtr strPtr = LibRdKafka.memberid(handle);
-            if (strPtr == null)
+            get
             {
-                return null;
+                IntPtr strPtr = LibRdKafka.memberid(handle);
+                if (strPtr == null)
+                {
+                    return null;
+                }
+
+                string memberId = Util.Marshal.PtrToStringUTF8(strPtr);
+                LibRdKafka.mem_free(handle, strPtr);
+                return memberId;
             }
-
-            string memberId = Marshal.PtrToStringAnsi(strPtr);
-            LibRdKafka.mem_free(handle, strPtr);
-            return memberId;
         }
 
-        internal void SetLogLevel(int level)
-        {
-            LibRdKafka.set_log_level(handle, (IntPtr) level);
-        }
-
-        internal static List<string> GetTopicList(IntPtr listPtr)
+        internal static List<TopicPartitionOffsetError> GetTopicPartitionOffsetErrorList(IntPtr listPtr)
         {
             if (listPtr == IntPtr.Zero)
             {
-                return new List<string>();
+                return new List<TopicPartitionOffsetError>();
             }
 
             var list = Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
             return Enumerable.Range(0, list.cnt)
                 .Select(i => Marshal.PtrToStructure<rd_kafka_topic_partition>(
                     list.elems + i * Marshal.SizeOf<rd_kafka_topic_partition>()))
-                .Select(ktp => ktp.topic)
-                .ToList();
-        }
-
-        internal static List<TopicPartition> GetTopicPartitionList(IntPtr listPtr)
-        {
-            if (listPtr == IntPtr.Zero)
-            {
-                return new List<TopicPartition>();
-            }
-
-            var list = Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
-            return Enumerable.Range(0, list.cnt)
-                .Select(i => Marshal.PtrToStructure<rd_kafka_topic_partition>(
-                    list.elems + i * Marshal.SizeOf<rd_kafka_topic_partition>()))
-                .Select(ktp => new TopicPartition()
-                        {
-                            Topic = ktp.topic,
-                            Partition = ktp.partition,
-                        })
-                .ToList();
-        }
-
-        internal static List<TopicPartitionOffset> GetTopicPartitionOffsetList(IntPtr listPtr)
-        {
-            if (listPtr == IntPtr.Zero)
-            {
-                return new List<TopicPartitionOffset>();
-            }
-
-            var list = Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
-            return Enumerable.Range(0, list.cnt)
-                .Select(i => Marshal.PtrToStructure<rd_kafka_topic_partition>(
-                    list.elems + i * Marshal.SizeOf<rd_kafka_topic_partition>()))
-                .Select(ktp => new TopicPartitionOffset()
-                        {
-                            Topic = ktp.topic,
-                            Partition = ktp.partition,
-                            Offset = ktp.offset
-                        })
+                .Select(ktp => new TopicPartitionOffsetError(
+                        ktp.topic,
+                        ktp.partition,
+                        ktp.offset,
+                        ktp.err
+                    ))
                 .ToList();
         }
 
@@ -523,51 +516,56 @@ namespace Confluent.Kafka.Impl
             return data;
         }
 
-        internal List<GroupInfo> ListGroups(string group, IntPtr timeoutMs)
+        internal GroupInfo ListGroup(string group, int millisecondsTimeout)
+            =>  ListGroupsImpl(group, millisecondsTimeout).Single();
+
+        internal List<GroupInfo> ListGroups(int millisecondsTimeout)
+            => ListGroupsImpl(null, millisecondsTimeout);
+
+        private List<GroupInfo> ListGroupsImpl(string group, int millisecondsTimeout)
         {
             IntPtr grplistPtr;
-            ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, timeoutMs);
+            ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)millisecondsTimeout);
             if (err == ErrorCode.NO_ERROR)
             {
                 var list = Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
                 var groups = Enumerable.Range(0, list.group_cnt)
                     .Select(i => Marshal.PtrToStructure<rd_kafka_group_info>(
                         list.groups + i * Marshal.SizeOf<rd_kafka_group_info>()))
-                    .Select(gi => new GroupInfo()
-                            {
-                                Broker = new BrokerMetadata()
-                                {
-                                    BrokerId = gi.broker.id,
-                                    Host = gi.broker.host,
-                                    Port = gi.broker.port
-                                },
-                                Group = gi.group,
-                                Error = gi.err,
-                                State = gi.state,
-                                ProtocolType = gi.protocol_type,
-                                Protocol = gi.protocol,
-                                Members = Enumerable.Range(0, gi.member_cnt)
-                                    .Select(j => Marshal.PtrToStructure<rd_kafka_group_member_info>(
-                                        gi.members + j * Marshal.SizeOf<rd_kafka_group_member_info>()))
-                                    .Select(mi => new GroupMemberInfo()
-                                            {
-                                                MemberId = mi.member_id,
-                                                ClientId = mi.client_id,
-                                                ClientHost = mi.client_host,
-                                                MemberMetadata = CopyBytes(mi.member_metadata,
-                                                        mi.member_metadata_size),
-                                                MemberAssignment = CopyBytes(mi.member_assignment,
-                                                        mi.member_assignment_size)
-                                            })
-                                    .ToList()
-                            })
+                    .Select(gi => new GroupInfo(
+                            new BrokerMetadata(
+                                gi.broker.id,
+                                gi.broker.host,
+                                gi.broker.port
+                            ),
+                            gi.group,
+                            gi.err,
+                            gi.state,
+                            gi.protocol_type,
+                            gi.protocol,
+                            Enumerable.Range(0, gi.member_cnt)
+                                .Select(j => Marshal.PtrToStructure<rd_kafka_group_member_info>(
+                                    gi.members + j * Marshal.SizeOf<rd_kafka_group_member_info>()))
+                                .Select(mi => new GroupMemberInfo(
+                                        mi.member_id,
+                                        mi.client_id,
+                                        mi.client_host,
+                                        CopyBytes(
+                                            mi.member_metadata,
+                                            mi.member_metadata_size),
+                                        CopyBytes(
+                                            mi.member_assignment,
+                                            mi.member_assignment_size)
+                                    ))
+                                .ToList()
+                        ))
                     .ToList();
                 LibRdKafka.group_list_destroy(grplistPtr);
                 return groups;
             }
             else
             {
-                throw RdKafkaException.FromErr(err, "Failed to fetch group list");
+                throw new KafkaException(err, "Failed to fetch group list");
             }
         }
     }

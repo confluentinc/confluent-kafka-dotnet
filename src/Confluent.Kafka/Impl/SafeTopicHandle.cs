@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using Confluent.Kafka.Internal;
+
 
 namespace Confluent.Kafka.Impl
 {
@@ -16,7 +18,7 @@ namespace Confluent.Kafka.Impl
 
         internal SafeKafkaHandle kafkaHandle;
 
-        private SafeTopicHandle() { }
+        private SafeTopicHandle() {}
 
         protected override bool ReleaseHandle()
         {
@@ -26,9 +28,10 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal string GetName() => Marshal.PtrToStringAnsi(LibRdKafka.topic_name(handle));
+        internal string GetName()
+            => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
 
-        internal long Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, IntPtr opaque, bool blockIfQueueFull)
+        internal long Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long? timestamp, IntPtr opaque, bool blockIfQueueFull)
         {
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
@@ -53,13 +56,27 @@ namespace Confluent.Kafka.Impl
                 // TODO: when refactor complete, reassess the below note.
                 // Note: since the message queue threshold limit also includes delivery reports, it is important that another
                 // thread of the application calls poll() for a blocking produce() to ever unblock.
-                return (long) LibRdKafka.produce(
+                if (timestamp == null)
+                {
+                    return (long) LibRdKafka.produce(
                         handle,
                         partition,
                         (IntPtr) (MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
                         pValue, (UIntPtr) valLength,
                         pKey, (UIntPtr) keyLength,
                         opaque);
+                }
+                else
+                {
+                    return (long) LibRdKafka.producev(
+                        handle,
+                        partition,
+                        (IntPtr) (MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
+                        pValue, (UIntPtr) valLength,
+                        pKey, (UIntPtr) keyLength,
+                        timestamp.Value,
+                        opaque);
+                }
             }
             finally
             {
@@ -75,6 +92,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool PartitionAvailable(int partition) => LibRdKafka.topic_partition_available(handle, partition);
+        internal bool PartitionAvailable(int partition)
+            => LibRdKafka.topic_partition_available(handle, partition);
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Confluent.Kafka.Internal;
+
 
 namespace Confluent.Kafka.Impl
 {
@@ -14,9 +16,7 @@ namespace Confluent.Kafka.Impl
 
     class SafeConfigHandle : SafeHandleZeroIsInvalid
     {
-        private SafeConfigHandle()
-        {
-        }
+        private SafeConfigHandle() {}
 
         internal static SafeConfigHandle Create()
         {
@@ -34,7 +34,8 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
-        internal IntPtr Dup() => LibRdKafka.conf_dup(handle);
+        internal IntPtr Dup()
+            => LibRdKafka.conf_dup(handle);
 
         internal Dictionary<string, string> Dump()
         {
@@ -57,8 +58,8 @@ namespace Confluent.Kafka.Impl
                 var dict = new Dictionary<string, string>();
                 for (int i = 0; i < (int) cntp / 2; i++)
                 {
-                    dict.Add(Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(data, 2 * i * Marshal.SizeOf<IntPtr>())),
-                             Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(data, (2 * i + 1) * Marshal.SizeOf<IntPtr>())));
+                    dict.Add(Util.Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(data, 2 * i * Marshal.SizeOf<IntPtr>())),
+                             Util.Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(data, (2 * i + 1) * Marshal.SizeOf<IntPtr>())));
                 }
                 // Filter out callback pointers
                 return dict.Where(kv => !kv.Key.EndsWith("_cb")).ToDictionary(kv => kv.Key, kv => kv.Value);

@@ -9,7 +9,7 @@ namespace Confluent.Kafka.Serialization
     {
         Encoding encoding;
 
-        StringDeserializer(Encoding encoding)
+        public StringDeserializer(Encoding encoding)
         {
             this.encoding = encoding;
         }

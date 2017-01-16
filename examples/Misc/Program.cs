@@ -3,19 +3,19 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Confluent.Kafka.Misc
+namespace Confluent.Kafka.Examples.Misc
 {
     public class Program
     {
         static string ToString(int[] array) => $"[{string.Join(", ", array)}]";
 
-        static async Task ListGroups(string brokerList)
+        static void ListGroups(string brokerList)
         {
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
             using (var producer = new Producer(config))
             {
-                var groups = await producer.ListGroups(TimeSpan.FromSeconds(10));
+                var groups = producer.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
                 foreach (var g in groups)
                 {
@@ -33,12 +33,12 @@ namespace Confluent.Kafka.Misc
             }
         }
 
-        static async Task PrintMetadata(string brokerList)
+        static void PrintMetadata(string brokerList)
         {
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
             using (var producer = new Producer(config))
             {
-                var meta = await producer.Metadata();
+                var meta = producer.GetMetadata();
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
                 meta.Brokers.ForEach(broker =>
                     Console.WriteLine($"Broker: {broker.BrokerId} {broker.Host}:{broker.Port}"));
@@ -65,20 +65,12 @@ namespace Confluent.Kafka.Misc
 
             if (args.Contains("--list-groups"))
             {
-                ListGroups(args[0]).Wait();
+                ListGroups(args[0]);
             }
 
             if (args.Contains("--metadata"))
             {
-                PrintMetadata(args[0]).Wait();
-            }
-
-            if (args.Contains("--dump-config"))
-            {
-                foreach (var kv in new Config(new Dictionary<string, object>()).Dump())
-                {
-                    Console.WriteLine($"\"{kv.Key}\": \"{kv.Value}\"");
-                }
+                PrintMetadata(args[0]);
             }
         }
     }

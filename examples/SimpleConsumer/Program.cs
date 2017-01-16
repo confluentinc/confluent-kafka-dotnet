@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Confluent.Kafka.Serialization;
 
-namespace Confluent.Kafka.SimpleProducer
+
+namespace Confluent.Kafka.Examples.SimpleConsumer
 {
     public class Program
     {
@@ -18,19 +20,18 @@ namespace Confluent.Kafka.SimpleProducer
                 { "bootstrap.servers", brokerList }
             };
 
-            using (var consumer = new EventConsumer(config))
+            using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.OnMessage += (obj, msg) =>
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topics.First(), 0, 0) });
+
+                while (true)
                 {
-                    string text = Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length);
-                    Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {text}");
-                };
-
-                consumer.Assign(new List<TopicPartitionOffset> {new TopicPartitionOffset(topics.First(), 0, 5)});
-                consumer.Start();
-
-                Console.WriteLine("Started consumer, press enter to stop consuming");
-                Console.ReadLine();
+                    Message<Null, string> msg;
+                    if (consumer.Consume(out msg))
+                    {
+                        Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
+                    }
+                }
             }
         }
     }
