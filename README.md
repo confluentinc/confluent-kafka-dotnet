@@ -8,7 +8,7 @@ Derived from Andreas Heider's [rdkafka-dotnet](https://github.com/ah-/rdkafka-do
 
 *****beta quality*****
 
-- Not production ready
+- Only limited testing was performed
 - Minor API changes anticipated
 - Feedback encouraged
 
@@ -18,14 +18,17 @@ Derived from Andreas Heider's [rdkafka-dotnet](https://github.com/ah-/rdkafka-do
 
 Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.2-beta).
 
-In Visual Studio, search for and select the "Confluent.Kafka" package in the NuGet package manager. You will need to check the
-"Include prerelease" checkbox in order for the beta package to be found.
+To install Confluent.Kafka from within Visual Studio, run the following command in the Package Manager Console:
+
+```
+Install-Package Confluent.Kafka -Pre -Version 0.9.2-beta
+```
 
 To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.2-beta"` to the dependencies section of the project.json file.
 
 ## Examples
 
-Checkout the [examples](examples) directory. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
+Take a look in the [examples](examples) directory. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
 
 
 ## Build
@@ -56,4 +59,4 @@ dotnet pack
 ```
 
 
-Copyright (c) 2016-2017 [Confluent Inc.](https://www.confluent.io), 2015-2017, [Andreas Heider](mailto:andreas@heider.io)
+Copyright (c) 2016-2017 [Confluent Inc.](https://www.confluent.io), 2015-2016, [Andreas Heider](mailto:andreas@heider.io)
