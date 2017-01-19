@@ -1,16 +1,35 @@
-confluent-kafka-dotnet - .NET Apache Kafka client
-=================================================
+Confluent.Kafka - Apache Kafka .NET client library
+==================================================
 
-**confluent-kafka-dotnet** is a .NET client for [Apache Kafka](http://kafka.apache.org/) based on [librdkafka](https://github.com/edenhill/librdkafka).
+**Confluent.Kafka** is a .NET client for [Apache Kafka](http://kafka.apache.org/) based on
+[librdkafka](https://github.com/edenhill/librdkafka).
 
-Forked from [rdkafka-dotnet](https://github.com/ah-/rdkafka-dotnet) by Andreas Heider
+Derived from Andreas Heider's [rdkafka-dotnet](https://github.com/ah-/rdkafka-dotnet).
 
-Copyright (c) 2016-2017 [Confluent Inc.](https://www.confluent.io), 2015-2017, [Andreas Heider](mailto:andreas@heider.io)
+*****beta quality*****
 
+- Only limited testing was performed
+- Minor API changes anticipated
+- Feedback encouraged
+
+*****beta quality*****
 
 ## Usage
 
-Just reference the [confluent-kafka-dotnet NuGet package](https://www.nuget.org/packages/confluent-kafka-dotnet)
+Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.2-beta).
+
+To install Confluent.Kafka from within Visual Studio, run the following command in the Package Manager Console:
+
+```
+Install-Package Confluent.Kafka -Pre -Version 0.9.2-beta
+```
+
+To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.2-beta"` to the dependencies section of the project.json file.
+
+## Examples
+
+Take a look in the [examples](examples) directory. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
+
 
 ## Build
 
@@ -21,26 +40,23 @@ dotnet restore
 dotnet build
 ```
 
-To run one of the examples, use the following from within the relevant project directory:
+To run an example project, run the following from within the example's project directory:
 
 ```
-dotnet run <command line args>
+dotnet run <args>
 ```
 
-To run the integration or unit tests, use the following from within the relevant project directory:
+To run the integration or unit tests, run the following from within the relevant project directory:
 
 ```
 dotnet test
 ```
 
-To create a nuget package, use the following from wihin `src/Confluent.Kafka`:
+To create a nuget package, run the following from wihin `src/Confluent.Kafka`:
 
 ```
 dotnet pack
 ```
 
-## Examples
 
-## Documentation
-
-## Supported Platforms and .NET Releases
+Copyright (c) 2016-2017 [Confluent Inc.](https://www.confluent.io), 2015-2016, [Andreas Heider](mailto:andreas@heider.io)
