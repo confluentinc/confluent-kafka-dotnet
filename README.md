@@ -6,25 +6,25 @@ Confluent.Kafka - Apache Kafka .NET client library
 
 Derived from Andreas Heider's [rdkafka-dotnet](https://github.com/ah-/rdkafka-dotnet).
 
-*****beta quality*****
+*****developer preview*****
 
 - Only limited testing was performed
 - Minor API changes anticipated
 - Feedback encouraged
 
-*****beta quality*****
+*****developer preview*****
 
 ## Usage
 
-Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.2-beta).
+Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.2-preview).
 
 To install Confluent.Kafka from within Visual Studio, run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Pre -Version 0.9.2-beta
+Install-Package Confluent.Kafka -Pre -Version 0.9.2-preview
 ```
 
-To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.2-beta"` to the dependencies section of the project.json file.
+To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.2-preview"` to the dependencies section of the project.json file.
 
 ## Examples
 
