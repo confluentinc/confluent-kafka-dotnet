@@ -30,6 +30,9 @@ To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.2-beta"` to 
 
 Take a look in the [examples](examples) directory. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
 
+## Security
+
+Experimental support for Windows SASL if you use a librdkafka that includes the following PR: https://github.com/edenhill/librdkafka/pull/1003
 
 ## Build
 
