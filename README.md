@@ -6,13 +6,13 @@ Confluent.Kafka - Apache Kafka .NET client library
 
 Derived from Andreas Heider's [rdkafka-dotnet](https://github.com/ah-/rdkafka-dotnet).
 
-*****beta quality*****
+*****developer preview*****
 
 - Only limited testing was performed
 - Minor API changes anticipated
 - Feedback encouraged
 
-*****beta quality*****
+*****developer preview*****
 
 ## Usage
 
