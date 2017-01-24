@@ -24,78 +24,77 @@ namespace Confluent.Kafka
     public enum ErrorCode
     {
         /// <summary>Begin internal error codes</summary>
-        _BEGIN = -200,
+        RD_BEGIN = -200,
         /// <summary>Received message is incorrect</summary>
-        _BAD_MSG = -199,
+        RD_BAD_MSG = -199,
         /// <summary>Bad/unknown compression</summary>
-        _BAD_COMPRESSION = -198,
+        RD_BAD_COMPRESSION = -198,
         /// <summary>Broker is going away</summary>
-        _DESTROY = -197,
+        RD_DESTROY = -197,
         /// <summary>Generic failure</summary>
-        _FAIL = -196,
+        RD_FAIL = -196,
         /// <summary>Broker transport failure</summary>
-        _TRANSPORT = -195,
+        RD_TRANSPORT = -195,
         /// <summary>Critical system resource</summary>
-        _CRIT_SYS_RESOURCE = -194,
+        RD_CRIT_SYS_RESOURCE = -194,
         /// <summary>Failed to resolve broker</summary>
-        _RESOLVE = -193,
+        RD_RESOLVE = -193,
         /// <summary>Produced message timed out</summary>
-        _MSG_TIMED_OUT = -192,
+        RD_MSG_TIMED_OUT = -192,
         /// <summary>Reached the end of the topic+partition queue on the broker. Not really an error.</summary>
-        _PARTITION_EOF = -191,
+        RD_PARTITION_EOF = -191,
         /// <summary>Permanent: Partition does not exist in cluster.</summary>
-        _UNKNOWN_PARTITION = -190,
+        RD_UNKNOWN_PARTITION = -190,
         /// <summary>File or filesystem error</summary>
-        _FS = -189,
+        RD_FS = -189,
          /// <summary>Permanent: Topic does not exist in cluster.</summary>
-        _UNKNOWN_TOPIC = -188,
+        RD_UNKNOWN_TOPIC = -188,
         /// <summary>All broker connections are down.</summary>
-        _ALL_BROKERS_DOWN = -187,
+        RD_ALL_BROKERS_DOWN = -187,
         /// <summary>Invalid argument, or invalid configuration</summary>
-        _INVALID_ARG = -186,
+        RD_INVALID_ARG = -186,
         /// <summary>Operation timed out</summary>
-        _TIMED_OUT = -185,
+        RD_TIMED_OUT = -185,
         /// <summary>Queue is full</summary>
-        _QUEUE_FULL = -184,
+        RD_QUEUE_FULL = -184,
         /// <summary>ISR count &lt; required.acks</summary>
-        _ISR_INSUFF = -183,
+        RD_ISR_INSUFF = -183,
         /// <summary>Broker node update</summary>
-        _NODE_UPDATE = -182,
+        RD_NODE_UPDATE = -182,
         /// <summary>SSL error</summary>
-        _SSL = -181,
+        RD_SSL = -181,
         /// <summary>Waiting for coordinator to become available.</summary>
-        _WAIT_COORD = -180,
+        RD_WAIT_COORD = -180,
         /// <summary>Unknown client group</summary>
-        _UNKNOWN_GROUP = -179,
+        RD_UNKNOWN_GROUP = -179,
         /// <summary>Operation in progress</summary>
-        _IN_PROGRESS = -178,
-         /// <summary>Previous operation in progress, wait for it to finish.</summary>
-        _PREV_IN_PROGRESS = -177,
-         /// <summary>This operation would interfere with an existing subscription</summary>
-        _EXISTING_SUBSCRIPTION = -176,
+        RD_IN_PROGRESS = -178,
+        /// <summary>Previous operation in progress, wait for it to finish.</summary>
+        RD_PREV_IN_PROGRESS = -177,
+        /// <summary>This operation would interfere with an existing subscription</summary>
+        RD_EXISTING_SUBSCRIPTION = -176,
         /// <summary>Assigned partitions (rebalance_cb)</summary>
-        _ASSIGN_PARTITIONS = -175,
+        RD_ASSIGN_PARTITIONS = -175,
         /// <summary>Revoked partitions (rebalance_cb)</summary>
-        _REVOKE_PARTITIONS = -174,
+        RD_REVOKE_PARTITIONS = -174,
         /// <summary>Conflicting use</summary>
-        _CONFLICT = -173,
+        RD_CONFLICT = -173,
         /// <summary>Wrong state</summary>
-        _STATE = -172,
+        RD_STATE = -172,
         /// <summary>Unknown protocol</summary>
-        _UNKNOWN_PROTOCOL = -171,
+        RD_UNKNOWN_PROTOCOL = -171,
         /// <summary>Not implemented</summary>
-        _NOT_IMPLEMENTED = -170,
+        RD_NOT_IMPLEMENTED = -170,
         /// <summary>Authentication failure</summary>
-        _AUTHENTICATION = -169,
+        RD_AUTHENTICATION = -169,
         /// <summary>No stored offset</summary>
-        _NO_OFFSET = -168,
+        RD_NO_OFFSET = -168,
         ///<summary>Outdated</summary>
-        _OUTDATED = -167,
+        RD_OUTDATED = -167,
         /// <summary>Timed out in queue</summary>
-        _TIMED_OUT_QUEUE = -166,
+        RD_TIMED_OUT_QUEUE = -166,
         /// <summary>End internal error codes</summary>
-
-        _END = -100,
+        RD_END = -100,
 
         // Kafka broker errors:
         /// <summary>Unknown broker error</summary>

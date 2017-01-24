@@ -46,7 +46,12 @@ namespace Confluent.Kafka
         public bool HasError
             => Code != ErrorCode.NO_ERROR;
 
-        // TODO: questionably too tricky?
+        public bool IsLocalError
+            => (int)Code < -1;
+
+        public bool IsBrokerError
+            => (int)Code > 0;
+
         public static implicit operator bool(Error e)
             => e.HasError;
 
