@@ -382,12 +382,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Wait until all outstanding produce requests, et.al, are completed. This should typically be done prior
         //      to destroying a producer instance to make sure all queued and in-flight produce requests are completed
-        //      before terminating.
+        //      before terminating. The wait is limited by the optional millisecondsTimeout parameter.
+        //      Returns the number of remaining messages and requests in queue.
         /// </summary>
-        public void Flush(TimeSpan timeout)
-            => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+        public long Flush(int millisecondsTimeout)
+            => kafkaHandle.Flush(millisecondsTimeout);
 
-        public void Flush()
+        public long Flush()
             => kafkaHandle.Flush(-1);
 
         public void Dispose()
@@ -605,10 +606,10 @@ namespace Confluent.Kafka
         public event EventHandler<Error> OnError;
 
 
-        public void Flush(TimeSpan timeout)
+        public long Flush(int timeout)
             => producer.Flush(timeout);
 
-        public void Flush()
+        public long Flush()
             => producer.Flush();
 
 

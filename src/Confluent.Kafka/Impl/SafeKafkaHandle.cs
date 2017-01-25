@@ -123,8 +123,11 @@ namespace Confluent.Kafka.Impl
         internal long OutQueueLength
             => (long)LibRdKafka.outq_len(handle);
 
-        internal void Flush(int millisecondsTimeout)
-            => LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
+        internal long Flush(int millisecondsTimeout)
+        {
+            LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
+            return OutQueueLength;
+        }
 
         internal long AddBrokers(string brokers)
             => (long)LibRdKafka.brokers_add(handle, brokers);
