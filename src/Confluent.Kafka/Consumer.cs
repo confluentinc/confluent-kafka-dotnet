@@ -493,7 +493,8 @@ namespace Confluent.Kafka
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
             if (pollSetConsumerError != ErrorCode.NO_ERROR)
             {
-                throw new KafkaException(pollSetConsumerError, "Failed to redirect the poll queue to consumer_poll queue");
+                throw new KafkaException(new Error(pollSetConsumerError,
+                    $"Failed to redirect the poll queue to consumer_poll queue: {Error.ErrorCode2String(pollSetConsumerError)}"));
             }
         }
 

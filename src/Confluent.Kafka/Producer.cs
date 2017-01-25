@@ -212,7 +212,7 @@ namespace Confluent.Kafka
                 {
                     var err = LibRdKafka.last_error();
                     gch.Free();
-                    throw new KafkaException(err, "Could not produce message");
+                    throw new KafkaException(err);
                 }
 
                 return;
@@ -220,8 +220,7 @@ namespace Confluent.Kafka
 
             if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp, IntPtr.Zero, blockIfQueueFull) != 0)
             {
-                var err = LibRdKafka.last_error();
-                throw new KafkaException(err, "Could not produce message");
+                throw new KafkaException(LibRdKafka.last_error());
             }
 
             return;
