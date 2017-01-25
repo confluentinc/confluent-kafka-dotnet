@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0-*",
+  "authors": ["Confluent Inc"],
+
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+
+  "dependencies": {
+    "Microsoft.NETCore.App": {
+      "type": "platform",
+      "version": "1.0.1"
+    },
+	"Confluent.Kafka": {
+		"target": "project"
+    },
+    "Newtonsoft.Json": "9.0.1"
+  },
+
+  "frameworks": {
+	 "netcoreapp1.0": {
+		"dependencies": {
+			"Microsoft.NETCore.App": {
+				"type": "platform",
+                "version": "1.0.1"
+             }
+           }
+        }
+    }
+}
