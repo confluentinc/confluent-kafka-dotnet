@@ -56,10 +56,13 @@ namespace Confluent.Kafka.Internal
                     throw new InvalidOperationException("Attempting to add an item to SafeDictionary which has been disposed.");
                 }
 
-                Dictionary<TKey, TValue> writeDictionary = new Dictionary<TKey, TValue>(readDictionary);
-                writeDictionary.Add(key, val);
-                // this is atomic.
-                readDictionary = writeDictionary;
+                if (!readDictionary.ContainsKey(key))
+                {
+                    Dictionary<TKey, TValue> writeDictionary = new Dictionary<TKey, TValue>(readDictionary);
+                    writeDictionary.Add(key, val);
+                    // this is atomic.
+                    readDictionary = writeDictionary;
+                }
             }
         }
 

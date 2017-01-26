@@ -103,9 +103,15 @@ namespace Confluent.Kafka
                     .ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
             }
             topicConfigHandle.Set("produce.offset.report", "true");
-            IntPtr configPtr = topicConfigHandle.Dup();
+            IntPtr configPtr = topicConfigHandle.DangerousGetHandle();
+
+            // note: there is a possible (benign) race condition here - topicHandle could have already
+            // been created for the topic (and possibly added to topicHandles). If the topicHandle has
+            // already been created, rdkafka will return it and not create another. the call to rdkafka
+            // is threadsafe.
             var topicHandle = kafkaHandle.Topic(topic, configPtr);
             topicHandles.Add(topic, topicHandle);
+
             return topicHandle;
         }
 
