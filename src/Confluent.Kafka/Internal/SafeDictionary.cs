@@ -23,7 +23,7 @@ namespace Confluent.Kafka.Internal
     /// <summary>
     ///     A minimal Dictionary implementation with the following properties:
     ///         1. all access is thread safe.
-    ///         2. grows unbounded (elements cannot be removed).
+    ///         2. grows unbounded (elements cannot be removed or overwritten).
     ///         3. reads are fast (no locking).
     ///         4. writes are slow (locking).
     ///         5. is Disposable (+ values must themselves be Disposable).
