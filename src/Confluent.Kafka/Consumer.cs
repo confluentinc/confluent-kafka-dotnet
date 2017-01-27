@@ -424,12 +424,12 @@ namespace Confluent.Kafka
             LibRdKafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
             if (defaultTopicConfig != null)
             {
-                var topicHandle = SafeTopicConfigHandle.Create();
+                var topicConfigHandle = SafeTopicConfigHandle.Create();
                 if (config != null)
                 {
-                    defaultTopicConfig.ToList().ForEach((kvp) => { topicHandle.Set(kvp.Key, kvp.Value.ToString()); });
+                    defaultTopicConfig.ToList().ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
                 }
-                LibRdKafka.conf_set_default_topic_conf(configPtr, topicHandle.Dup());
+                LibRdKafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
             }
 
             LibRdKafka.conf_set_error_cb(configPtr, ErrorCallback);
