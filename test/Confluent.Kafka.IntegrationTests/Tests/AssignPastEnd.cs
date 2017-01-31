@@ -23,12 +23,12 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    /// <summary>
-    ///     Test functionality of Consumer.Consume when assigned to offest
-    ///     higher than the offset of the last message on a partition.
-    /// </summary>
     public static partial class Tests
     {
+        /// <summary>
+        ///     Test functionality of Consumer.Consume when assigned to offest
+        ///     higher than the offset of the last message on a partition.
+        /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void AssignPastEnd(string bootstrapServers, string topic)
         {

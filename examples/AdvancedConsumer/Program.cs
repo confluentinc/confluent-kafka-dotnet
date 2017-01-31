@@ -80,7 +80,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                    consumer.Assign(partitions);
                 };
 
                 consumer.OnPartitionsRevoked += (_, partitions) =>
@@ -140,7 +140,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                    consumer.Assign(partitions);
                 };
 
                 consumer.OnPartitionsRevoked += (_, partitions) =>
@@ -203,7 +203,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                    consumer.Assign(partitions);
                 };
 
                 consumer.OnPartitionsRevoked += (_, partitions) =>
