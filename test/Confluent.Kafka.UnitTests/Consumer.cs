@@ -29,9 +29,9 @@ namespace Confluent.Kafka.Tests
         public void Constuctor()
         {
             var config = new Dictionary<string, object>();
-            var e = Assert.Throws<Exception>(() => { var c = new Consumer(config); });
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
             Assert.True(e.Message.Contains("group.id"));
-            e = Assert.Throws<Exception>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
             Assert.True(e.Message.Contains("group.id"));
         }
     }
