@@ -408,6 +408,11 @@ namespace Confluent.Kafka
         /// </remarks>
         public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
+            if (config.FirstOrDefault(prop => prop.Key == "group.id").Value == null)
+            {
+                throw new Exception("'group.id' configuration parameter is required and was not specified.");
+            }
+
             var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             var configHandle = SafeConfigHandle.Create();
             config
