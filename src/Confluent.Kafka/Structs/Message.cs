@@ -33,7 +33,7 @@ namespace Confluent.Kafka
 
         public string Topic { get; }
         public int Partition { get; }
-        public long Offset { get; }
+        public Offset Offset { get; }
         public TKey Key { get; }
         public TValue Value { get; }
         public Timestamp Timestamp { get; }
@@ -62,7 +62,7 @@ namespace Confluent.Kafka
 
         public string Topic { get; }
         public int Partition { get; }
-        public long Offset { get; }
+        public Offset Offset { get; }
         public byte[] Value { get; }
         public byte[] Key { get; }
         public Timestamp Timestamp { get; }

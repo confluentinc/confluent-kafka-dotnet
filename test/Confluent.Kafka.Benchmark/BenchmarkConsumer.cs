@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Benchmark
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "u-bute-group" },
+                { "group.id", "benchmark-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

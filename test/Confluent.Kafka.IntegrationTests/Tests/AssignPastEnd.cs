@@ -34,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "u-bute-group" },
+                { "group.id", "test-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };
@@ -46,14 +46,19 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
+                Assert.NotEqual(dr.Offset, Offset.Invalid);
                 producer.Flush();
             }
 
+            consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "latest" } };
             using (var consumer = new Consumer(consumerConfig))
             {
+                Message msg;
+
                 // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                Message msg;
+                Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
                 Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
 
                 // Poll API
@@ -63,8 +68,19 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(false);
                 };
                 consumer.Poll(TimeSpan.FromSeconds(10));
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
+                consumer.Poll(TimeSpan.FromSeconds(10));
             }
 
+            consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "earliest" } };
+            using (var consumer = new Consumer(consumerConfig))
+            {
+                Message msg;
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
+                Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+            }
         }
 
     }
