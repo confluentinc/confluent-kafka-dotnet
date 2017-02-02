@@ -201,7 +201,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="partitions">
         ///     The set of partitions to consume from. If an offset value of
-        ///     -1001 (Offset.Invalid) is specified for a partition, consumption
+        ///     Offset.Invalid (-1001) is specified for a partition, consumption
         ///     will resume from the last committed offset on that partition, or
         ///     according to the 'auto.offset.reset' configuration parameter if
         ///     no offsets have been committed yet.
@@ -583,7 +583,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="partitions">
         ///     The set of partitions to consume from. If an offset value of
-        ///     -1001 (Offset.Invalid) is specified for a partition, consumption
+        ///     Offset.Invalid (-1001) is specified for a partition, consumption
         ///     will resume from the last committed offset on that partition, or
         ///     according to the 'auto.offset.reset' configuration parameter
         ///     if no offsets have been committed yet.
