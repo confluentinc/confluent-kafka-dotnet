@@ -59,6 +59,7 @@ namespace Confluent.Kafka
                     }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
+        private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // TODO: Is reason ever different from that returned by err2str?
@@ -66,12 +67,14 @@ namespace Confluent.Kafka
             OnError?.Invoke(this, err);
         }
 
+        private LibRdKafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
+        private LibRdKafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
@@ -259,11 +262,16 @@ namespace Confluent.Kafka
                 LibRdKafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
             }
 
+            // Explicitly keep references to delegates so they are not reclaimed by the GC.
+            errorDelegate = ErrorCallback;
+            logDelegate = LogCallback;
+            statsDelegate = StatsCallback;
+
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
-            LibRdKafka.conf_set_error_cb(configPtr, ErrorCallback);
-            LibRdKafka.conf_set_log_cb(configPtr, LogCallback);
-            LibRdKafka.conf_set_stats_cb(configPtr, StatsCallback);
+            LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
+            LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
+            LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
 
