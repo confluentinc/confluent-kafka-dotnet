@@ -78,6 +78,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Message msg;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
                 Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                // Note: dr.Offset+2 is an invalid (c.f. dr.Offset+1 which is valid), so auto.offset.reset will come
+                // into play here to determine which offset to start from (earliest). Due to the the produce call above,
+                // there is guarenteed to be a message on the topic, so consumer.Consume will return true.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
             }
