@@ -25,6 +25,12 @@ namespace Confluent.Kafka.Tests
 {
     public class ConsumerTests
     {
+        /// <summary>
+        ///     Test that the Consumer constructor throws an exception if
+        ///     the group.id configuration parameter is not set and that
+        ///     the message of the exception mentions group.id (i.e. is
+        ///     not some unrelated exception).
+        /// </summary>
         [Fact]
         public void Constuctor()
         {
@@ -33,6 +39,8 @@ namespace Confluent.Kafka.Tests
             Assert.True(e.Message.Contains("group.id"));
             e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
             Assert.True(e.Message.Contains("group.id"));
+
+            // positve case covered by integration tests. here, avoiding creating a rd_kafka_t instance.
         }
     }
 }

@@ -250,7 +250,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
 
         public static void Main(string[] args)
         {
-            if (args.Length != 3)
+            if (args.Length < 3)
             {
                 PrintUsage();
                 return;
