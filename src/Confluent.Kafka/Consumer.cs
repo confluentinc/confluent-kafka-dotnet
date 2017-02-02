@@ -67,12 +67,7 @@ namespace Confluent.Kafka
             }
 
             consumer = new Consumer(config);
-            consumer.OnLog += (sender, e) => OnLog?.Invoke(sender, e);
-            consumer.OnError += (sender, e) => OnError?.Invoke(sender, e);
-            consumer.OnStatistics += (sender, e) => OnStatistics?.Invoke(sender, e);
-            consumer.OnPartitionsAssigned += (sender, e) => OnPartitionsAssigned?.Invoke(sender, e);
-            consumer.OnPartitionsRevoked += (sender, e) => OnPartitionsRevoked?.Invoke(sender, e);
-            consumer.OnOffsetCommit += (sender, e) => OnOffsetCommit?.Invoke(sender, e);
+
             // TODO: bypass this.consumer for this event to optimize perf.
             consumer.OnMessage += (sender, e) => OnMessage?.Invoke(sender,
                 new Message<TKey, TValue> (
@@ -85,7 +80,6 @@ namespace Confluent.Kafka
                     e.Error
                 )
             );
-            consumer.OnPartitionEOF += (sender, e) => OnPartitionEOF?.Invoke(sender, e);
         }
 
 
@@ -136,22 +130,49 @@ namespace Confluent.Kafka
         public void Stop()
             => consumer.Stop();
 
-        public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
+        public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
+        {
+            add { consumer.OnPartitionsAssigned += value; }
+            remove { consumer.OnPartitionsRevoked -= value; }
+        }
 
-        public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
+        public event EventHandler<List<TopicPartition>> OnPartitionsRevoked
+        {
+            add { consumer.OnPartitionsRevoked += value; }
+            remove { consumer.OnPartitionsRevoked -= value; }
+        }
 
-        public event EventHandler<CommittedOffsets> OnOffsetCommit;
+        public event EventHandler<CommittedOffsets> OnOffsetCommit
+        {
+            add { consumer.OnOffsetCommit += value; }
+            remove { consumer.OnOffsetCommit -= value; }
+        }
 
-        public event EventHandler<LogMessage> OnLog;
+        public event EventHandler<LogMessage> OnLog
+        {
+            add { consumer.OnLog += value; }
+            remove { consumer.OnLog -= value; }
+        }
 
-        public event EventHandler<string> OnStatistics;
+        public event EventHandler<string> OnStatistics
+        {
+            add { consumer.OnStatistics += value; }
+            remove { consumer.OnStatistics -= value; }
+        }
 
-        public event EventHandler<Error> OnError;
+        public event EventHandler<Error> OnError
+        {
+            add { consumer.OnError += value; }
+            remove { consumer.OnError -= value; }
+        }
+
+        public event EventHandler<TopicPartitionOffset> OnPartitionEOF
+        {
+            add { consumer.OnPartitionEOF += value; }
+            remove { consumer.OnPartitionEOF -= value; }
+        }
 
         public event EventHandler<Message<TKey, TValue>> OnMessage;
-
-        public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
-
 
         /// <summary>
         ///     Returns the current partition assignment as set by Assign.
