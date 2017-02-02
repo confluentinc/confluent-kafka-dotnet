@@ -26,9 +26,16 @@ using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka.Impl
 {
-    internal sealed class SafeTopicConfigHandle : SafeHandleZeroIsInvalid
+    internal sealed class SafeTopicConfigHandle : SafeHandle
     {
-        private SafeTopicConfigHandle() {}
+        public SafeTopicConfigHandle()
+            : base(IntPtr.Zero, false) { }
+
+        public override bool IsInvalid
+            => handle == IntPtr.Zero;
+
+        protected override bool ReleaseHandle()
+            => true;
 
         internal static SafeTopicConfigHandle Create()
         {
@@ -38,12 +45,6 @@ namespace Confluent.Kafka.Impl
                 throw new Exception("Failed to create TopicConfig");
             }
             return ch;
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            LibRdKafka.topic_conf_destroy(handle);
-            return true;
         }
 
         internal IntPtr Dup()

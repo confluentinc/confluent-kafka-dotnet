@@ -26,15 +26,34 @@ using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka.Impl
 {
-    enum ConfRes {
-        Unknown = -2, /* Unknown configuration name. */
-        Invalid = -1, /* Invalid configuration value. */
-        Ok = 0        /* Configuration okay */
+    enum ConfRes
+    {
+        /// <summary>
+        ///     Unknown configuration name.
+        /// </summary>
+        Unknown = -2,
+
+        /// <summary>
+        ///     Invalid configuration value.
+        /// </summary>
+        Invalid = -1,
+
+        /// <summary>
+        ///     Configuration okay
+        /// </summary>
+        Ok = 0
     }
 
-    class SafeConfigHandle : SafeHandleZeroIsInvalid
+    class SafeConfigHandle : SafeHandle
     {
-        private SafeConfigHandle() {}
+        public SafeConfigHandle()
+            : base(IntPtr.Zero, false) { }
+
+        public override bool IsInvalid
+            => handle == IntPtr.Zero;
+
+        protected override bool ReleaseHandle()
+            => true;
 
         internal static SafeConfigHandle Create()
         {
@@ -44,12 +63,6 @@ namespace Confluent.Kafka.Impl
                 throw new Exception("Failed to create config");
             }
             return ch;
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            LibRdKafka.conf_destroy(handle);
-            return true;
         }
 
         internal IntPtr Dup()

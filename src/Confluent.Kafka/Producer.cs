@@ -266,6 +266,7 @@ namespace Confluent.Kafka
             LibRdKafka.conf_set_stats_cb(configPtr, StatsCallback);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
+            configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             if (!manualPoll)
             {
