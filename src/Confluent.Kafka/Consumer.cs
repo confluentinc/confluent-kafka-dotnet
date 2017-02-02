@@ -194,15 +194,34 @@ namespace Confluent.Kafka
             => consumer.Unsubscribe();
 
         /// <summary>
-        ///     Update the assignment set to \p partitions.
+        ///     Update the assignment set to <param name="partitions" />.
         ///
-        ///     The assignment set is the set of partitions actually being consumed
-        ///     by the KafkaConsumer.
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
         /// </summary>
-        /// <remarks>
-        ///     blocks
-        /// </remarks>
+        /// <param name="partitions">
+        ///     The set of partitions to consume from. If an offset value of
+        ///     Offset.Invalid (-1001) is specified for a partition, consumption
+        ///     will resume from the last committed offset on that partition, or
+        ///     according to the 'auto.offset.reset' configuration parameter if
+        ///     no offsets have been committed yet.
+        /// </param>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
+            => consumer.Assign(partitions);
+
+        /// <summary>
+        ///     Update the assignment set to <param name="partitions" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of partitions to consume from. Consumption will resume
+        ///     from the last committed offset on each partition, or according
+        ///     to the 'auto.offset.reset' configuration parameter if no offsets
+        ///     have been committed yet.
+        /// </param>
+        public void Assign(IEnumerable<TopicPartition> partitions)
             => consumer.Assign(partitions);
 
         /// <summary>
@@ -557,19 +576,38 @@ namespace Confluent.Kafka
             => kafkaHandle.Unsubscribe();
 
         /// <summary>
-        ///     Update the assignment set to \p partitions.
+        ///     Update the assignment set to <param name="partitions" />.
         ///
-        ///     The assignment set is the set of partitions actually being consumed
-        ///     by the KafkaConsumer.
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
         /// </summary>
-        /// <remarks>
-        ///     blocks
-        /// </remarks>
+        /// <param name="partitions">
+        ///     The set of partitions to consume from. If an offset value of
+        ///     Offset.Invalid (-1001) is specified for a partition, consumption
+        ///     will resume from the last committed offset on that partition, or
+        ///     according to the 'auto.offset.reset' configuration parameter
+        ///     if no offsets have been committed yet.
+        /// </param>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
             => kafkaHandle.Assign(partitions.ToList());
 
         /// <summary>
-        ///     Stop consumption and remove the current assignment.
+        ///     Update the assignment set to <param name="partitions" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of partitions to consume from. Consumption will resume
+        ///     from the last committed offset on each partition, or according
+        ///     to the 'auto.offset.reset' configuration parameter if no offsets
+        ///     have been committed yet.
+        /// </param>
+        public void Assign(IEnumerable<TopicPartition> partitions)
+            => kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+
+        /// <summary>
+        ///     Stop consumption and remove the current topic/partition assignment.
         /// </summary>
         public void Unassign()
             => kafkaHandle.Assign(null);

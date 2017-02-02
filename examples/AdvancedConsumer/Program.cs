@@ -80,7 +80,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                    consumer.Assign(partitions);
                 };
 
                 consumer.OnPartitionsRevoked += (_, partitions) =>
@@ -109,7 +109,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
         //      In this example:
         ///         - offsets are auto commited.
         ///         - consumer.Poll / OnMessage is used to consume messages.
-        ///         - the poll loop is performed on a separate thread.
+        ///         - no extra thread is created for the Poll loop.
         /// </summary>
         public static void Run_Poll(string brokerList, List<string> topics)
         {
@@ -140,7 +140,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                    consumer.Assign(partitions);
                 };
 
                 consumer.OnPartitionsRevoked += (_, partitions) =>
@@ -163,7 +163,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 };
 
                 Console.WriteLine("Ctrl-C to exit.");
-                while(!cancelled)
+                while (!cancelled)
                 {
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
@@ -203,7 +203,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                    consumer.Assign(partitions);
                 };
 
                 consumer.OnPartitionsRevoked += (_, partitions) =>

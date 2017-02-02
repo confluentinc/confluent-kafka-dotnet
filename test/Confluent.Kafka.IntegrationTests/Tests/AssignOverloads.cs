@@ -26,14 +26,10 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     This is an experiment to see what happens when two consumers in the
-        ///     same group read from the same topic/partition.
+        ///     Simple test of both Consumer.Assign overloads.
         /// </summary>
-        /// <remarks>
-        ///     You should never do this, but the brokers don't actually prevent it.
-        /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DuplicateConsumerAssign(string bootstrapServers, string topic)
+        public static void AssignOverloads(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -44,27 +40,31 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
             var testString = "hello world";
+            var testString2 = "hello world 2";
 
             Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
+                Assert.False(dr.Error.HasError);
+                var dr2 = producer.ProduceAsync(topic, null, testString2).Result;
+                Assert.False(dr2.Error.HasError);
                 producer.Flush();
             }
 
-            using (var consumer1 = new Consumer(consumerConfig))
-            using (var consumer2 = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
-                consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
-                Message msg;
-                var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
-                var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
+                // Explicitly specify partition offset.
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });
+                Message<Null, string> msg;
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.Equal(msg.Value, testString);
+                consumer.Commit();
 
-                // NOTE: two consumers from the same group should never be assigned to the same
-                // topic / partition. This 'test' is here because I was curious to see what happened
-                // in practice if this did occur. Because this is not expected usage, no validation
-                // has been included in this test.
+                // Determine offset to consume from automatically.
+                consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.Equal(msg.Value, testString2);
             }
         }
 
