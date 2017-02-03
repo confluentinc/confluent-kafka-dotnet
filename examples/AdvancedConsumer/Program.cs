@@ -66,7 +66,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
-                consumer.OnOffsetCommit += (_, commit) =>
+                consumer.OnOffsetsCommitted += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
 
@@ -126,7 +126,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
-                consumer.OnOffsetCommit += (_, commit) =>
+                consumer.OnOffsetsCommitted += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
 
@@ -189,7 +189,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
-                consumer.OnOffsetCommit += (_, commit) =>
+                consumer.OnOffsetsCommitted += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
 

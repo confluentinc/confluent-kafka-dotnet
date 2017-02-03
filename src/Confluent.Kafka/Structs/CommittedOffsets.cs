@@ -23,13 +23,13 @@ namespace Confluent.Kafka
 {
     public struct CommittedOffsets
     {
-        public CommittedOffsets(IList<TopicPartitionOffset> offsets, Error error)
+        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets, Error error)
         {
             Offsets = offsets;
             Error = error;
         }
 
         public Error Error { get; }
-        public IList<TopicPartitionOffset> Offsets { get; }
+        public IList<TopicPartitionOffsetError> Offsets { get; }
     }
 }

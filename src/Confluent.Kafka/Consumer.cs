@@ -142,10 +142,10 @@ namespace Confluent.Kafka
             remove { consumer.OnPartitionsRevoked -= value; }
         }
 
-        public event EventHandler<CommittedOffsets> OnOffsetCommit
+        public event EventHandler<CommittedOffsets> OnOffsetsCommitted
         {
-            add { consumer.OnOffsetCommit += value; }
-            remove { consumer.OnOffsetCommit -= value; }
+            add { consumer.OnOffsetsCommitted += value; }
+            remove { consumer.OnOffsetsCommitted -= value; }
         }
 
         public event EventHandler<LogMessage> OnLog
@@ -434,10 +434,9 @@ namespace Confluent.Kafka
             /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
             IntPtr opaque)
         {
-            OnOffsetCommit?.Invoke(this, new CommittedOffsets(
-                // TODO: check to see whether errors can ever be present here. If so, expose TPOE, not TPO.
-                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets).Select(tp => tp.TopicPartitionOffset).ToList(),
-                err
+            OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
+                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
+                new Error(err)
             ));
         }
 
@@ -523,7 +522,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
-        public event EventHandler<CommittedOffsets> OnOffsetCommit;
+        public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
@@ -650,7 +649,7 @@ namespace Confluent.Kafka
         ///     Manually consume message or triggers events.
         ///
         ///     Will invoke events for OnPartitionsAssigned/Revoked,
-        ///     OnOffsetCommit, etc. on the calling thread.
+        ///     OnOffsetsCommitted, etc. on the calling thread.
         /// </summary>
         public bool Consume(out Message message, int millisecondsTimeout)
         {
