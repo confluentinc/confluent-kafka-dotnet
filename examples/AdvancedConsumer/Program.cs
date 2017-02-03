@@ -245,21 +245,34 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
             }
         }
 
+        private static void PrintUsage()
+            => Console.WriteLine("usage: <poll|consume|background> <broker,broker,..> <topic> [topic..]");
+
         public static void Main(string[] args)
         {
-            var mode = args[1];
+            if (args.Length < 3)
+            {
+                PrintUsage();
+                return;
+            }
+
+            var mode = args[0];
+            var brokerList = args[1];
             var topics = args.Skip(2).ToList();
 
-            switch (args[0])
+            switch (mode)
             {
                 case "poll":
-                    Run_Poll(mode, topics);
+                    Run_Poll(brokerList, topics);
                     break;
                 case "consume":
-                    Run_Consume(mode, topics);
+                    Run_Consume(brokerList, topics);
                     break;
                 case "background":
-                    Run_Background(mode, topics);
+                    Run_Background(brokerList, topics);
+                    break;
+                default:
+                    PrintUsage();
                     break;
             }
         }
