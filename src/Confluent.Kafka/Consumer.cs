@@ -480,6 +480,7 @@ namespace Confluent.Kafka
                     defaultTopicConfig.ToList().ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
                 }
                 LibRdKafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
+                topicConfigHandle.SetHandleAsInvalid(); // topic config object is no longer useable.
             }
 
             LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
@@ -487,6 +488,7 @@ namespace Confluent.Kafka
             LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr);
+            configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
             if (pollSetConsumerError != ErrorCode.NO_ERROR)
