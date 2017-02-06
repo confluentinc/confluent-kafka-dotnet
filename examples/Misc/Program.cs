@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Examples.Misc
 
             using (var producer = new Producer(config))
             {
-                var groups = producer.ListGroups(TimeSpan.FromSeconds(10));
+                var groups = producer.ClientInstance.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
                 foreach (var g in groups)
                 {
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.Examples.Misc
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
             using (var producer = new Producer(config))
             {
-                var meta = producer.GetMetadata();
+                var meta = producer.ClientInstance.GetMetadata();
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
                 meta.Brokers.ForEach(broker =>
                     Console.WriteLine($"Broker: {broker.BrokerId} {broker.Host}:{broker.Port}"));
