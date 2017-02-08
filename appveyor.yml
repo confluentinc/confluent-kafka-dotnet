@@ -17,14 +17,14 @@ build_script:
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
   - dotnet test test/Confluent.Kafka.Tests
 
-test: off
+test: on
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin/Release/*.nupkg
 
-deploy:
-  provider: NuGet
-  api_key:
-    secure: qbl3uvq1riFSNeRw6/MHnaDbJ0Ft9evEcz3nQp061pKEhXn0ex4eI56dwUOO2fWF
-  skip_symbols: true
-  artifact: /.*\.nupkg/
+#deploy:
+#  provider: NuGet
+#  api_key:
+#    secure: qbl3uvq1riFSNeRw6/MHnaDbJ0Ft9evEcz3nQp061pKEhXn0ex4eI56dwUOO2fWF
+#  skip_symbols: true
+#  artifact: /.*\.nupkg/
