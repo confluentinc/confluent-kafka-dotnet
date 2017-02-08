@@ -38,6 +38,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },
                 { "bootstrap.servers", brokerList },
+                { "session.timeout.ms", 6000 },
                 { "default.topic.config", new Dictionary<string, object>()
                     {
                         { "auto.offset.reset", "smallest" }

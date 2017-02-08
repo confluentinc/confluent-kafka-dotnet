@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Tests for GetWatermarkOffsets and QueryWatermarkOffsets on producer and consumer.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void WatermarkOffsets(string bootstrapServers, string topic)
         {
             var producerConfig = new Dictionary<string, object>
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "watermark-offset-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };
@@ -80,12 +80,13 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
                 Assert.Equal(getOffsets.Low, Offset.Invalid);
-                // the offset of the next message to be read.
-                Assert.Equal((long)getOffsets.High, dr.Offset + 1);
+                // the offset of the next message to be read
+                Assert.Equal(dr.Offset + 1, (long)getOffsets.High);
 
                 var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition);
-                Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
+                Assert.NotEqual(Offset.Invalid, queryOffsets.Low);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
+                Assert.True(queryOffsets.Low < queryOffsets.High);
             }
         }
 

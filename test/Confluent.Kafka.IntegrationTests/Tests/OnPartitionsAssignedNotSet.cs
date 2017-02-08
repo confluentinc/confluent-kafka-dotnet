@@ -30,12 +30,12 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public static partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void OnPartitionsAssignedNotSet(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "on-partitions-assigned-not-set-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

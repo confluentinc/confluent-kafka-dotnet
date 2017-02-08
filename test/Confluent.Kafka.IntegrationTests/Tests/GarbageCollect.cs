@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Force a garbage collection.
         ///     Segfault?
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void GarbageCollect(string bootstrapServers, string topic)
         {
             var producerConfig = new Dictionary<string, object>
@@ -41,8 +41,9 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
-                { "bootstrap.servers", bootstrapServers }
+                { "group.id", "garbage-collect-cg" },
+                { "bootstrap.servers", bootstrapServers },
+                { "session.timeout.ms", 6000 }
             };
 
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))

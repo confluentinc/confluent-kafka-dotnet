@@ -29,12 +29,12 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of Consumer.Consume when assigned to offest
         ///     higher than the offset of the last message on a partition.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void AssignPastEnd(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "assign-past-end-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

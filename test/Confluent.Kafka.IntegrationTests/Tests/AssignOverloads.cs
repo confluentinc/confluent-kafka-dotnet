@@ -28,12 +28,12 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Simple test of both Consumer.Assign overloads.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void AssignOverloads(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "assign-overloads-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

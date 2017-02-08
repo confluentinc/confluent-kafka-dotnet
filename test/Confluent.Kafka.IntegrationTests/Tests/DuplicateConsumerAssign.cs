@@ -32,12 +32,12 @@ namespace Confluent.Kafka.IntegrationTests
         /// <remarks>
         ///     You should never do this, but the brokers don't actually prevent it.
         /// </remarks>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void DuplicateConsumerAssign(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "duplicate-consumer-assign-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

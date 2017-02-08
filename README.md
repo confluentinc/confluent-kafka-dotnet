@@ -52,6 +52,14 @@ To run the integration or unit tests, run the following from within the relevant
 dotnet test
 ```
 
+Before running the integration tests you should start a kafka broker at address `localhost:9092` (or update the `kafka.parameters.json`
+file in the `Confluent.Kafka.IntegrationTests` project to specify the address of your test broker). You should also create a topic
+`test-topic-1` as follows:
+
+```
+./kafka-topics --zookeeper <zookeper host> --create --topic test-topic-1 --partitions 1 --replication-factor 1
+```
+
 To create a nuget package, run the following from wihin `src/Confluent.Kafka`:
 
 ```
