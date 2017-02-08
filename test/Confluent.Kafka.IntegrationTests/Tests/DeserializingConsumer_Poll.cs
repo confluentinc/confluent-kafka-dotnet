@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Basic DeserializingConsumer test (poll mode).
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void DeserializingConsumer_Poll(string bootstrapServers, string topic)
         {
             int N = 2;
@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "deserializing-consumer-poll-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

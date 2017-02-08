@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
-
 namespace Confluent.Kafka.IntegrationTests
 {
     public static class Util

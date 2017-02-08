@@ -28,12 +28,12 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Tests that log messages are received by OnLog on all Producer and Consumer variants.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void OnLog(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "on-log-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "log_level", 7 },
                 { "debug", "all" }

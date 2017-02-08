@@ -28,12 +28,12 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Tests various
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void Consumer_OperationalScenarios(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "consumer-operational-scenarios-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };
@@ -49,6 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
             // no problem expected.
 
+
             // start then stop then start a deserializing Consumer
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
@@ -58,33 +59,32 @@ namespace Confluent.Kafka.IntegrationTests
             }
             // no problem expected.
 
-
             // ERROR Scenarios
 
             // start a Consumer twice
             using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Start();
-                Assert.Throws<Exception>(() => consumer.Start());
+                Assert.Throws<InvalidOperationException>(() => consumer.Start());
             }
 
             // start a deserializing Consumer twice
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Start();
-                Assert.Throws<Exception>(() => consumer.Start());
+                Assert.Throws<InvalidOperationException>(() => consumer.Start());
             }
 
             // stop an unstarted Consumer.
             using (var consumer = new Consumer(consumerConfig))
             {
-                Assert.Throws<Exception>(() => consumer.Stop());
+                Assert.Throws<InvalidOperationException>(() => consumer.Stop());
             }
 
             // stop an unstarted deserializing Consumer.
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                Assert.Throws<Exception>(() => consumer.Stop());
+                Assert.Throws<InvalidOperationException>(() => consumer.Stop());
             }
 
             // stop a Consumer twice.
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Start();
                 consumer.Stop();
-                Assert.Throws<Exception>(() => consumer.Stop());
+                Assert.Throws<InvalidOperationException>(() => consumer.Stop());
             }
 
             // stop a deserializing Consumer twice
@@ -100,21 +100,21 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Start();
                 consumer.Stop();
-                Assert.Throws<Exception>(() => consumer.Stop());
+                Assert.Throws<InvalidOperationException>(() => consumer.Stop());
             }
 
             // start a Consumer then attempt to Poll.
             using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Start();
-                Assert.Throws<Exception>(() => consumer.Poll(100));
+                Assert.Throws<InvalidOperationException>(() => consumer.Poll(100));
             }
 
             // start a deserializing Consumer then attempt to Poll.
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Start();
-                Assert.Throws<Exception>(() => consumer.Poll(100));
+                Assert.Throws<InvalidOperationException>(() => consumer.Poll(100));
             }
 
             // start a Consumer then attempt to call Consume.
@@ -122,7 +122,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Start();
                 Message msg;
-                Assert.Throws<Exception>(() => consumer.Consume(out msg, 100));
+                Assert.Throws<InvalidOperationException>(() => consumer.Consume(out msg, 100));
             }
 
             // start a deserializing Consumer then attempt to call Consume.
@@ -130,7 +130,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Start();
                 Message<Null, string> msg;
-                Assert.Throws<Exception>(() => consumer.Consume(out msg, 100));
+                Assert.Throws<InvalidOperationException>(() => consumer.Consume(out msg, 100));
             }
 
         }

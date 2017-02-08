@@ -34,29 +34,42 @@ namespace Confluent.Kafka
             this.millisecondsTimeout = millisecondsTimeout;
         }
 
-        public void Start(Action<int> pollMethod)
+        public void Start(Action<int> pollMethod, Action<AggregateException> exceptionHandler)
         {
             lock (startStopLock)
             {
                 if (consumerCts != null)
                 {
-                    throw new Exception("Poll loop cannot be started twice.");
+                    throw new InvalidOperationException("Poll loop cannot be started twice.");
                 }
 
                 consumerCts = new CancellationTokenSource();
                 var ct = consumerCts.Token;
-                consumerTask = Task.Factory.StartNew(() =>
-                {
-                    while (!ct.IsCancellationRequested)
+                consumerTask = Task.Run(() =>
                     {
-                        pollMethod(millisecondsTimeout);
-                    }
-                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                        while (!ct.IsCancellationRequested)
+                        {
+                            pollMethod(millisecondsTimeout);
+                        }
+                    },
+                    ct
+                ).ContinueWith(t =>
+                    {
+                        lock (startStopLock)
+                        {
+                            consumerCts.Dispose();
+                            consumerCts = null;
+                            consumerTask = null;
+                        }
+                        exceptionHandler(t.Exception);
+                    },
+                    TaskContinuationOptions.OnlyOnFaulted
+                );
             }
         }
 
         public bool IsStarted
-          => consumerTask != null;
+            => consumerTask != null;
 
         public void Stop(bool throwIfNotStarted)
         {
@@ -66,7 +79,7 @@ namespace Confluent.Kafka
                 {
                     if (throwIfNotStarted)
                     {
-                        throw new Exception("Poll loop not started - cannot stop.");
+                        throw new InvalidOperationException("Poll loop not started - cannot stop.");
                     }
                     else
                     {
@@ -75,7 +88,24 @@ namespace Confluent.Kafka
                 }
 
                 consumerCts.Cancel();
-                consumerTask.Wait();
+
+                try
+                {
+                    consumerTask.Wait();
+                }
+                catch (AggregateException ae)
+                {
+                    foreach (var e in ae.InnerExceptions)
+                    {
+                        if (e is TaskCanceledException)
+                        {
+                            continue;
+                        }
+                        throw ae;
+                    }
+                }
+
+                consumerCts.Dispose();
                 consumerCts = null;
                 consumerTask = null;
             }

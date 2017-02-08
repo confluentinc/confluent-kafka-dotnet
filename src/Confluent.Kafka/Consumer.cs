@@ -87,7 +87,7 @@ namespace Confluent.Kafka
         {
             if (backgroundPollThread.IsStarted)
             {
-                throw new Exception("Poll/Consume cannot be called on a Consumer when a background poll thread running.");
+                throw new InvalidOperationException("Poll/Consume cannot be called on a Consumer when a background poll thread is running.");
             }
 
             Message msg;
@@ -127,16 +127,18 @@ namespace Confluent.Kafka
         public void Start()
         {
             backgroundPollThread.Start((int millisecondsTimeout) =>
-            {
-                Message msg;
-                if (consumer.ConsumeImpl(out msg, millisecondsTimeout))
                 {
-                    OnMessage?.Invoke(
-                        this,
-                        msg.Deserialize(KeyDeserializer, ValueDeserializer)
-                    );
-                }
-            });
+                    Message msg;
+                    if (consumer.ConsumeImpl(out msg, millisecondsTimeout))
+                    {
+                        OnMessage?.Invoke(
+                            this,
+                            msg.Deserialize(KeyDeserializer, ValueDeserializer)
+                        );
+                    }
+                },
+                handleBackgroundPollException
+            );
         }
 
         public void Stop()
@@ -183,6 +185,11 @@ namespace Confluent.Kafka
             add { consumer.OnPartitionEOF += value; }
             remove { consumer.OnPartitionEOF -= value; }
         }
+
+        public event EventHandler<AggregateException> OnBackgroundPollException;
+
+        public void handleBackgroundPollException(AggregateException e)
+            => OnBackgroundPollException?.Invoke(this, e);
 
         public event EventHandler<Message<TKey, TValue>> OnMessage;
 
@@ -581,6 +588,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
+        public event EventHandler<AggregateException> OnBackgroundPollException;
+
+        public void handleBackgroundPollException(AggregateException e)
+            => OnBackgroundPollException?.Invoke(this, e);
 
         /// <summary>
         ///     Returns the current partition assignment as set by Assign.
@@ -690,7 +701,7 @@ namespace Confluent.Kafka
         {
             if (backgroundPollThread.IsStarted)
             {
-                throw new Exception("Poll/Consume cannot be called on a Consumer when a background poll thread running.");
+                throw new InvalidOperationException("Poll/Consume cannot be called on a Consumer when a background poll thread is running.");
             }
 
             return ConsumeImpl(out message, millisecondsTimeout);
@@ -722,13 +733,15 @@ namespace Confluent.Kafka
         public void Start()
         {
             backgroundPollThread.Start((int millisecondsTimeout) =>
-            {
-                Message msg;
-                if (ConsumeImpl(out msg, millisecondsTimeout))
                 {
-                    OnMessage?.Invoke(this, msg);
-                }
-            });
+                    Message msg;
+                    if (ConsumeImpl(out msg, millisecondsTimeout))
+                    {
+                        OnMessage?.Invoke(this, msg);
+                    }
+                },
+                handleBackgroundPollException
+            );
         }
 
         public void Stop()

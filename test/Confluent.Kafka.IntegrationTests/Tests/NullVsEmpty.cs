@@ -27,12 +27,12 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that null and byte[0] keys and values are produced / consumed
         ///     as expected.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void NullVsEmpty(string bootstrapServers, string topic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "null-vs-empty-cg" },
                 { "bootstrap.servers", bootstrapServers }
             };
 

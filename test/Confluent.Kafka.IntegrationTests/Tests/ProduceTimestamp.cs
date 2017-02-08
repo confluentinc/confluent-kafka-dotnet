@@ -28,14 +28,14 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test that a specific user specified timestamp on produce is consumed.
         /// </summary>
-        [Theory (Skip="currently no rd_kafka_producev in referenced librdkafka"), MemberData(nameof(KafkaParameters))]
+        [Theory (Skip="currently no rd_kafka_producev in referenced librdkafka"), ClassData(typeof(KafkaParameters))]
         public static void ProduceTimestamp(string bootstrapServers, string topic)
         {
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "produce-timestamp-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
                 { "api.version.request", true }

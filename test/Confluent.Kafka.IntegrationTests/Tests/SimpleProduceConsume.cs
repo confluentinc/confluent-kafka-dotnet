@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test that produces a message then consumes it.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void SimpleProduceConsume(string bootstrapServers, string topic)
         {
             // This test assumes broker v0.10.0 or higher:
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "simple-produce-consume-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
                 { "api.version.request", true }

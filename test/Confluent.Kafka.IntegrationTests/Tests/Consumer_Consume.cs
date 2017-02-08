@@ -27,7 +27,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Basic Consumer test (consume mode).
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void Consumer_Consume(string bootstrapServers, string topic)
         {
             int N = 2;
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "consumer-consume-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

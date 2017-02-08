@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 using Xunit;
 using Newtonsoft.Json.Linq;
@@ -27,7 +26,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Basic test that metadata request + serialization works.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, ClassData(typeof(KafkaParameters))]
         public static void Metadata(string bootstrapServers, string topic)
         {
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };

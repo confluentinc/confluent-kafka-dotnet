@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Xunit;
 
 
@@ -25,38 +26,40 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic Consumer test (poll mode).
+        ///     Test behavior when the background consumer poll loop throws an exception.
         /// </summary>
         [Theory, ClassData(typeof(KafkaParameters))]
-        public static void Consumer_Poll(string bootstrapServers, string topic)
+        public static void Consumer_ExceptionInBackgroundPoll(string bootstrapServers, string topic)
         {
             int N = 2;
             var firstProduced = Util.ProduceMessages(bootstrapServers, topic, 100, N);
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "consumer-poll-cg" },
+                { "group.id", "deserializing-consumer-exception-in-background-poll-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };
 
+            string exceptionText = "test exception";
+
             using (var consumer = new Consumer(consumerConfig))
             {
-                int msgCnt = 0;
-                bool done = false;
+                AutoResetEvent are = new AutoResetEvent(false);
 
                 consumer.OnMessage += (_, msg) =>
                 {
-                    Assert.Equal(msg.Error.Code, ErrorCode.NO_ERROR);
-                    msgCnt += 1;
+                    throw new MemberAccessException(exceptionText);
                 };
 
-                consumer.OnPartitionEOF += (_, partition)
-                    => done = true;
+                consumer.OnPartitionEOF += (_, partition) =>
+                {
+                    Assert.True(false);
+                };
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(1, partitions.Count);
+                    Assert.Equal(partitions.Count, 1);
                     Assert.Equal(partitions[0], firstProduced.TopicPartition);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
@@ -64,14 +67,18 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionsRevoked += (_, partitions)
                     => consumer.Unassign();
 
+                consumer.OnBackgroundPollException += (_, e) =>
+                {
+                    Assert.Equal(1, e.InnerExceptions.Count);
+                    Assert.Equal(typeof(MemberAccessException), e.InnerExceptions[0].GetType());
+                    Assert.Equal(exceptionText, e.InnerExceptions[0].Message);
+                    are.Set();
+                };
+
                 consumer.Subscribe(topic);
 
-                while (!done)
-                {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
-                }
-
-                Assert.Equal(msgCnt, N);
+                consumer.Start();
+                are.WaitOne();
             }
         }
 
