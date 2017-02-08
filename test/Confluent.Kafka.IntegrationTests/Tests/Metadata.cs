@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -25,7 +25,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic test that metadata request works.
+        ///     Basic test that metadata request + serialization works.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Metadata(string bootstrapServers, string topic)
@@ -39,37 +39,45 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(metadata.Brokers.Count > 0);
 
                 var metadataAsJson = metadata.ToString();
-                var deserialized = JsonConvert.DeserializeObject<Metadata>(metadataAsJson);
+                var deserialized = (JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(metadataAsJson);
 
-                Assert.Equal(metadata.OriginatingBrokerId, deserialized.OriginatingBrokerId);
-                Assert.Equal(metadata.OriginatingBrokerName, deserialized.OriginatingBrokerName);
-                Assert.Equal(metadata.Topics.Count, deserialized.Topics.Count);
+                Assert.Equal(deserialized.Value<int>("OriginatingBrokerId"), metadata.OriginatingBrokerId);
+                Assert.Equal(deserialized.Value<string>("OriginatingBrokerName"), metadata.OriginatingBrokerName);
+                var topics = new List<JToken>(deserialized["Topics"].Children());
+                Assert.Equal(metadata.Topics.Count, topics.Count);
                 for (int i=0; i<metadata.Topics.Count; ++i)
                 {
-                    Assert.Equal(metadata.Topics[i].Error, deserialized.Topics[i].Error);
-                    Assert.Equal(metadata.Topics[i].Topic, deserialized.Topics[i].Topic);
+                    Assert.Equal(topics[i].Value<string>("Error"), metadata.Topics[i].Error.Code.ToString());
+                    Assert.Equal(topics[i].Value<string>("Topic"), metadata.Topics[i].Topic);
+                    var partitions = new List<JToken>(topics[i]["Partitions"].Children());
+                    Assert.Equal(partitions.Count, metadata.Topics[i].Partitions.Count);
                     for (int j=0; j<metadata.Topics[i].Partitions.Count; ++j)
                     {
-                        Assert.Equal(metadata.Topics[i].Partitions[j].Error, deserialized.Topics[i].Partitions[j].Error);
-                        Assert.Equal(metadata.Topics[i].Partitions[j].Leader, deserialized.Topics[i].Partitions[j].Leader);
-                        Assert.Equal(metadata.Topics[i].Partitions[j].PartitionId, deserialized.Topics[i].Partitions[j].PartitionId);
+                        Assert.Equal(partitions[j].Value<string>("Error"), metadata.Topics[i].Partitions[j].Error.Code.ToString());
+                        Assert.Equal(partitions[j].Value<int>("Leader"), metadata.Topics[i].Partitions[j].Leader);
+                        Assert.Equal(partitions[j].Value<int>("PartitionId"), metadata.Topics[i].Partitions[j].PartitionId);
+                        var replicas = new List<JToken>(partitions[j]["Replicas"].Children());
+                        Assert.Equal(replicas.Count, metadata.Topics[i].Partitions[j].Replicas.Length);
                         for (int k=0; k<metadata.Topics[i].Partitions[j].Replicas.Length; ++k)
                         {
-                            Assert.Equal(metadata.Topics[i].Partitions[j].Replicas[k], deserialized.Topics[i].Partitions[j].Replicas[k]);
+                            Assert.Equal(replicas[k].Value<int>(), metadata.Topics[i].Partitions[j].Replicas[k]);
                         }
+                        var inSyncReplicas = new List<JToken>(partitions[j]["InSyncReplicas"].Children());
+                        Assert.Equal(inSyncReplicas.Count, metadata.Topics[i].Partitions[j].InSyncReplicas.Length);
                         for (int k=0; k<metadata.Topics[i].Partitions[j].InSyncReplicas.Length; ++k)
                         {
-                            Assert.Equal(metadata.Topics[i].Partitions[j].InSyncReplicas[k], deserialized.Topics[i].Partitions[j].InSyncReplicas[k]);
+                            Assert.Equal(inSyncReplicas[k].Value<int>(), metadata.Topics[i].Partitions[j].InSyncReplicas[k]);
                         }
                     }
                 }
 
-                Assert.Equal(metadata.Brokers.Count, deserialized.Brokers.Count);
+                var brokers = new List<JToken>(deserialized["Brokers"].Children());
+                Assert.Equal(metadata.Brokers.Count, brokers.Count);
                 for (int i=0; i<metadata.Brokers.Count; ++i)
                 {
-                    Assert.Equal(metadata.Brokers[i].BrokerId, deserialized.Brokers[i].BrokerId);
-                    Assert.Equal(metadata.Brokers[i].Host, deserialized.Brokers[i].Host);
-                    Assert.Equal(metadata.Brokers[i].Port, deserialized.Brokers[i].Port);
+                    Assert.Equal(metadata.Brokers[i].BrokerId, brokers[i].Value<int>("BrokerId"));
+                    Assert.Equal(metadata.Brokers[i].Host, brokers[i].Value<string>("Host"));
+                    Assert.Equal(metadata.Brokers[i].Port, brokers[i].Value<int>("Port"));
                 }
             }
         }
