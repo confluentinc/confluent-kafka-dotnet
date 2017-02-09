@@ -59,13 +59,6 @@ namespace Confluent.Kafka.Tests
         }
 
         [Fact]
-        public void ToStringTest()
-        {
-            var e = new Error(ErrorCode._ASSIGN_PARTITIONS);
-            Assert.True(e.ToString().Contains(((int)ErrorCode._ASSIGN_PARTITIONS).ToString()));
-        }
-
-        [Fact]
         public void HasError()
         {
             var e1 = new Error(ErrorCode.NO_ERROR);
@@ -73,6 +66,8 @@ namespace Confluent.Kafka.Tests
 
             Assert.False(e1.HasError);
             Assert.True(e2.HasError);
+            Assert.False(e1);
+            Assert.True(e2);
         }
 
         [Fact]
