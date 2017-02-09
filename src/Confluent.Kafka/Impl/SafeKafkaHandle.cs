@@ -22,7 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-
+using System.Threading.Tasks;
 
 namespace Confluent.Kafka.Impl
 {
@@ -408,37 +408,60 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void Commit()
+        /// <summary>
+        ///  Dummy commit callback that does nothing but prohibits
+        ///  triggering the global offset_commit_cb.
+        ///  Used by manual commits.
+        /// </summary>
+        static void dummyOffsetCommitCb (IntPtr rk, ErrorCode err, IntPtr offsets, IntPtr opaque)
         {
-            ErrorCode err = LibRdKafka.commit(handle, IntPtr.Zero, false);
-            if (err != ErrorCode.NO_ERROR)
-            {
-                throw new KafkaException(err);
-            }
+            return;
         }
 
-        internal void Commit(ICollection<TopicPartitionOffset> offsets)
+        /// <summary>
+        /// Manual sync commit, will block indefinately.
+        /// </summary>
+        /// <param name="offsets">Offsets to commit, or null for current assignment.</param>
+        /// <returns>CommittedOffsets with global or per-partition errors.</returns>
+        private CommittedOffsets commitSync (ICollection<TopicPartitionOffset> offsets)
         {
-            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) offsets.Count);
-            if (list == IntPtr.Zero)
-            {
-                throw new Exception("Failed to create offset commit list");
-            }
-            foreach (var offset in offsets)
-            {
-                IntPtr ptr = LibRdKafka.topic_partition_list_add(list, offset.Topic, offset.Partition);
-                Marshal.WriteInt64(
-                    ptr,
-                    (int) Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
-                    offset.Offset);
-            }
-            ErrorCode err = LibRdKafka.commit(handle, list, false);
-            LibRdKafka.topic_partition_list_destroy(list);
+            // Create temporary queue so we can get the offset commit results
+            // as an event instead of a callback.
+            // We still need to specify a dummy callback (that does nothing)
+            // to prevent the global offset_commit_cb to kick in.
+            IntPtr cQueue = LibRdKafka.queue_new(handle);
+            IntPtr cOffsets = GetCTopicPartitionList(offsets);
+            ErrorCode err = LibRdKafka.commit_queue(handle, cOffsets, cQueue, dummyOffsetCommitCb, IntPtr.Zero);
+            if (cOffsets != IntPtr.Zero)
+                LibRdKafka.topic_partition_list_destroy(cOffsets);
             if (err != ErrorCode.NO_ERROR)
             {
-                throw new KafkaException(err);
+                LibRdKafka.queue_destroy(cQueue);
+                return new CommittedOffsets(new Error(err));
             }
+
+            // Wait for commit to finish
+            IntPtr rkev = LibRdKafka.queue_poll(cQueue, -1/*infinite*/);
+            LibRdKafka.queue_destroy(cQueue);
+            if (rkev == IntPtr.Zero)
+            {
+                // This shouldn't happen since timoeut is infinite
+                return new CommittedOffsets(new Error(ErrorCode._TIMED_OUT));
+            }
+
+            CommittedOffsets committedOffsets =
+                new CommittedOffsets(GetTopicPartitionOffsetErrorList(LibRdKafka.event_topic_partition_list(rkev)),
+                new Error(LibRdKafka.event_error(rkev), LibRdKafka.event_error_string(rkev)));
+
+            LibRdKafka.event_destroy(rkev);
+            return committedOffsets;
         }
+
+        internal async Task<CommittedOffsets> CommitAsync()
+            => await Task.Run(() => commitSync(null));
+
+        internal async Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
+            => await Task.Run(() => commitSync(offsets));
 
         /// <summary>
         ///     for each topic/partition returns the current committed offset
@@ -529,6 +552,31 @@ namespace Confluent.Kafka.Impl
                     ))
                 .ToList();
         }
+
+        /// <summary>
+        /// Creates and returns a C rd_kafka_topic_partition_list_t * populated by offsets.
+        /// </summary>
+        /// <returns>
+        /// If offsets is null a null IntPtr will be returned, else a IntPtr
+        /// which must destroyed with LibRdKafka.topic_partition_list_destroy()
+        /// </returns>
+        internal static IntPtr GetCTopicPartitionList(ICollection<TopicPartitionOffset> offsets)
+        {
+            if (offsets == null)
+                return IntPtr.Zero;
+
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr)offsets.Count);
+            if (list == IntPtr.Zero)
+                throw new OutOfMemoryException("Failed to create topic partition list");
+
+            foreach (var p in offsets)
+            {
+                IntPtr ptr = LibRdKafka.topic_partition_list_add(list, p.Topic, p.Partition);
+                Marshal.WriteInt64(ptr, (int)Marshal.OffsetOf<rd_kafka_topic_partition>("offset"), p.Offset);
+            }
+            return list;
+        }
+
 
         static byte[] CopyBytes(IntPtr ptr, IntPtr len)
         {

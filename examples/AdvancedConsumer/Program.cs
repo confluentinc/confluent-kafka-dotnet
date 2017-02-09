@@ -238,8 +238,8 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                     if (msg.Offset % 5 == 0)
                     {
                         Console.WriteLine($"Committing offset");
-                        consumer.Commit(msg);
-                        Console.WriteLine($"Committed offset");
+                        var committedOffsets = consumer.CommitAsync(msg).Result;
+                        Console.WriteLine($"Committed offset: {committedOffsets}");
                     }
                 }
             }

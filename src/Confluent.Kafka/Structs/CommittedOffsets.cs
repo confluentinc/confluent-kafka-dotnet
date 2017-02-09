@@ -29,6 +29,19 @@ namespace Confluent.Kafka
             Error = error;
         }
 
+        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets)
+        {
+            Offsets = offsets;
+            Error = new Error(ErrorCode.NO_ERROR);
+        }
+
+        public CommittedOffsets(Error error)
+        {
+            Offsets = new List<TopicPartitionOffsetError>();
+            Error = error;
+        }
+
+
         public Error Error { get; }
         public IList<TopicPartitionOffsetError> Offsets { get; }
     }
