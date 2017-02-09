@@ -440,6 +440,9 @@ namespace Confluent.Kafka
 
         public Metadata GetMetadata(bool allTopics, string topic)
             => GetMetadata(allTopics, topic, -1);
+
+        public Metadata GetMetadata()
+            => GetMetadata(true, null, -1);
     }
 
 
