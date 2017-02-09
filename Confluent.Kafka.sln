@@ -27,6 +27,10 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AdvancedProducer", "example
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.VerifiableClient", "test\Confluent.Kafka.VerifiableClient\Confluent.Kafka.VerifiableClient.xproj", "{C3607ECF-7A8B-488C-B7D5-00388F1318A7}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.IntegrationTests", "test\Confluent.Kafka.IntegrationTests\Confluent.Kafka.IntegrationTests.xproj", "{BAB88872-01A1-41E7-98EC-95C240D076E8}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.Benchmark", "test\Confluent.Kafka.Benchmark\Confluent.Kafka.Benchmark.xproj", "{D6053A17-99FA-4164-A8E1-8D24E196BED9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +73,14 @@ Global
 		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -83,5 +95,7 @@ Global
 		{9EA27B93-4714-453C-9319-1920945CEB78} = {5E1F754C-FCE9-4B80-B13D-5F9ACE13305A}
 		{DDCE9F6B-6A9D-4B05-BAD0-E77D6359B1FB} = {5E1F754C-FCE9-4B80-B13D-5F9ACE13305A}
 		{C3607ECF-7A8B-488C-B7D5-00388F1318A7} = {03D93818-5A54-4913-A5CD-CA0C373CEE05}
+		{BAB88872-01A1-41E7-98EC-95C240D076E8} = {03D93818-5A54-4913-A5CD-CA0C373CEE05}
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9} = {03D93818-5A54-4913-A5CD-CA0C373CEE05}
 	EndGlobalSection
 EndGlobal
