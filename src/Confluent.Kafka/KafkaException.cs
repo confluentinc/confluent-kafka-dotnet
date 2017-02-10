@@ -24,13 +24,13 @@ namespace Confluent.Kafka
     public class KafkaException : Exception
     {
         public KafkaException(Error error)
-            :base(error.ToString())
+            : base(error.ToString())
         {
             Error = error;
         }
 
         public KafkaException(ErrorCode code)
-            :base(Error.ErrorCode2String(code))
+            : base(ErrorCodeExtensions.GetReason(code))
         {
             Error = new Error(code);
         }

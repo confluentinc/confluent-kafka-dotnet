@@ -68,7 +68,7 @@ namespace Confluent.Kafka.Tests
             Assert.True(tpoe.ToString().Contains(tpoe.Partition.ToString()));
             Assert.True(tpoe.ToString().Contains(tpoe.Offset.ToString()));
             Assert.True(tpoe.ToString().Contains(tpoe.Error.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Error.Message));
+            Assert.True(tpoe.ToString().Contains(tpoe.Error.Reason));
         }
 
         [Fact]

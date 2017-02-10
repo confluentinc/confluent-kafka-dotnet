@@ -26,12 +26,12 @@ namespace Confluent.Kafka.Tests
         {
             var e = new Error(ErrorCode._BAD_COMPRESSION);
             Assert.Equal(e.Code, ErrorCode._BAD_COMPRESSION);
-            Assert.NotNull(e.Message);
-            Assert.Equal(e.Message, "Local: Invalid compressed data");
+            Assert.NotNull(e.Reason);
+            Assert.Equal(e.Reason, "Local: Invalid compressed data");
 
             var e2 = new Error(ErrorCode._BAD_MSG, "Dummy message");
             Assert.Equal(e2.Code, ErrorCode._BAD_MSG);
-            Assert.Equal(e2.Message, "Dummy message");
+            Assert.Equal(e2.Reason, "Dummy message");
         }
 
         [Fact]

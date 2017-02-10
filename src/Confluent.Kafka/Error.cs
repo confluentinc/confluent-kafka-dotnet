@@ -18,27 +18,30 @@
 
 namespace Confluent.Kafka
 {
-    public struct Error
+    public class Error
     {
         public Error(ErrorCode code)
         {
             Code = code;
-            String = null;
+            reason = null;
         }
 
         public Error(ErrorCode code, string reason)
         {
             Code = code;
-            String = reason;
+            this.reason = reason;
         }
 
         public ErrorCode Code { get; }
 
-        private string String; // Rich error string, will be empty for APIs
-                               // where there was just an ErrorCode. See ToString()
+        private string reason;
 
-        public string Message
-            => ToString();
+        // Rich error string, will be empty for APIs
+        // where there was just an ErrorCode. See ToString()
+        public string Reason
+        {
+            get { return ToString(); }
+        }
 
         public bool HasError
             => Code != ErrorCode.NO_ERROR;
@@ -77,14 +80,10 @@ namespace Confluent.Kafka
         // back to librdkafka's static error code to string conversion.
         public override string ToString()
         {
-            if (!string.IsNullOrEmpty(String))
-                return String;
+            if (!string.IsNullOrEmpty(reason))
+                return reason;
             else
-                return ErrorCode2String(Code);
+                return ErrorCodeExtensions.GetReason(Code);
         }
-
-
-        // Return the human readable representation of a (librdkafka) error code
-        static public string ErrorCode2String(ErrorCode code) => Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
     }
 }

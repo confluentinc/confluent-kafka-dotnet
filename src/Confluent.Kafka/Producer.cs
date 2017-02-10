@@ -62,9 +62,7 @@ namespace Confluent.Kafka
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            // TODO: Is reason ever different from that returned by err2str?
-            //       If so, sort something else out here.
-            OnError?.Invoke(this, err);
+            OnError?.Invoke(this, new Error(err, reason));
         }
 
         private LibRdKafka.StatsDelegate statsDelegate;
