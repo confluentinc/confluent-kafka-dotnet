@@ -44,7 +44,7 @@ namespace Confluent.Kafka
         }
 
         public bool HasError
-            => Code != ErrorCode.NO_ERROR;
+            => Code != ErrorCode.NoError;
 
         public bool IsLocalError
             => (int)Code < -1;
