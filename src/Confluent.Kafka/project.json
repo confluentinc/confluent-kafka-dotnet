@@ -14,8 +14,7 @@
     },
 
     "frameworks": {
-        "net451": { },
-        "netstandard1.3": {
+        "netcoreapp1.0": {
             "dependencies": {
                 "System.Console": "4.0.0",
                 "System.Linq": "4.1.0",
