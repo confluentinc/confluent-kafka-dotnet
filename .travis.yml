@@ -18,10 +18,13 @@ matrix:
     mono: none
     env: DOTNETCORE=1
 
+before_install:
+   - sed -i 's/^.*\"net451\":.*$//g' src/Confluent.Kafka/project.json
+
 install:
    - dotnet restore
 
 script:
    - make build
-   - dotnet pack ./src/Confluent.Kafka
+   - dotnet pack src/Confluent.Kafka
    - make test
