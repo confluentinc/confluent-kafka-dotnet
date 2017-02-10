@@ -29,8 +29,8 @@ namespace Confluent.Kafka.Tests
             Assert.NotNull(e.Reason);
             Assert.Equal(e.Reason, "Local: Invalid compressed data");
 
-            var e2 = new Error(ErrorCode._BAD_MSG, "Dummy message");
-            Assert.Equal(e2.Code, ErrorCode._BAD_MSG);
+            var e2 = new Error(ErrorCode.Local_BadMsg, "Dummy message");
+            Assert.Equal(e2.Code, ErrorCode.Local_BadMsg);
             Assert.Equal(e2.Reason, "Dummy message");
         }
 
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Tests
         public void HasError()
         {
             var e1 = new Error(ErrorCode.NoError);
-            var e2 = new Error(ErrorCode.Broker_NotCoordinatorForGroup);
+            var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
             Assert.False(e1.HasError);
             Assert.True(e2.HasError);
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.Tests
         public void BoolCast()
         {
             var e1 = new Error(ErrorCode.NoError);
-            var e2 = new Error(ErrorCode.Broker_NotCoordinatorForGroup);
+            var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
             Assert.False(e1);
             Assert.True(e2);
@@ -83,8 +83,8 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void ErrorCodeCast()
         {
-            var e1 = new Error(ErrorCode.Broker_NotCoordinatorForGroup);
-            var ec1 = ErrorCode.Broker_NotCoordinatorForGroup;
+            var e1 = new Error(ErrorCode.NotCoordinatorForGroup);
+            var ec1 = ErrorCode.NotCoordinatorForGroup;
 
             Assert.Equal((ErrorCode)e1, ec1);
             Assert.Equal(ec1, (ErrorCode)e1);

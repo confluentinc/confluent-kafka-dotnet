@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", "garbage-collect-cg" },
                 { "bootstrap.servers", bootstrapServers }
             };
 

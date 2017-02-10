@@ -32,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "null-vs-empty-cg" },
                 { "bootstrap.servers", bootstrapServers }
             };
 

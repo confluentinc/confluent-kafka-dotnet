@@ -657,7 +657,7 @@ namespace Confluent.Kafka
                 {
                     case ErrorCode.NoError:
                         return true;
-                    case ErrorCode.Local_PartitionEof:
+                    case ErrorCode.Local_PartitionEOF:
                         OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:
@@ -761,8 +761,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public async Task<CommittedOffsets> CommitAsync(Message message)
         {
-            if (message.Error.Code != ErrorCode.NO_ERROR)
+            if (message.Error.Code != ErrorCode.NoError)
+            {
                 throw new InvalidOperationException("Must not commit offset for errored message");
+            }
             return await CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 

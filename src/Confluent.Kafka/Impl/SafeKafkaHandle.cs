@@ -434,7 +434,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.commit_queue(handle, cOffsets, cQueue, dummyOffsetCommitCb, IntPtr.Zero);
             if (cOffsets != IntPtr.Zero)
                 LibRdKafka.topic_partition_list_destroy(cOffsets);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 LibRdKafka.queue_destroy(cQueue);
                 return new CommittedOffsets(new Error(err));
@@ -446,7 +446,7 @@ namespace Confluent.Kafka.Impl
             if (rkev == IntPtr.Zero)
             {
                 // This shouldn't happen since timoeut is infinite
-                return new CommittedOffsets(new Error(ErrorCode._TIMED_OUT));
+                return new CommittedOffsets(new Error(ErrorCode.Local_TimedOut));
             }
 
             CommittedOffsets committedOffsets =

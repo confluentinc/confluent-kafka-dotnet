@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "on-log-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "log_level", 7 },
                 { "debug", "all" }

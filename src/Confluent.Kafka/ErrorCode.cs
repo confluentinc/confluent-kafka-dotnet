@@ -67,7 +67,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Reached the end of the topic+partition queue on the broker. Not really an error.
         /// </summary>
-        Local_PartitionEof = -191,
+        Local_PartitionEOF = -191,
 
         /// <summary>
         ///     Permanent: Partition does not exist in cluster.
@@ -208,177 +208,177 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Offset out of range
         /// </summary>
-        Broker_OffsetOutOfRange = 1,
+        OffsetOutOfRange = 1,
 
         /// <summary>
         ///     Invalid message
         /// </summary>
-        Broker_InvalidMsg = 2,
+        InvalidMsg = 2,
 
         /// <summary>
         ///     Unknown topic or partition
         /// </summary>
-        Broker_UnknownTopicOrPart = 3,
+        UnknownTopicOrPart = 3,
 
         /// <summary>
         ///     Invalid message size
         /// </summary>
-        Broker_InvalidMsgSize = 4,
+        InvalidMsgSize = 4,
 
         /// <summary>
         ///     Leader not available
         /// </summary>
-        Broker_LeaderNotAvailable = 5,
+        LeaderNotAvailable = 5,
 
         /// <summary>
         ///     Not leader for partition
         /// </summary>
-        Broker_NotLeaderForPartition = 6,
+        NotLeaderForPartition = 6,
 
         /// <summary>
         ///     Request timed out
         /// </summary>
-        Broker_RequestTimedOut = 7,
+        RequestTimedOut = 7,
 
         /// <summary>
         ///     Broker not available
         /// </summary>
-        Broker_BrokerNotAvailable = 8,
+        BrokerNotAvailable = 8,
 
         /// <summary>
         ///     Replica not available
         /// </summary>
-        Broker_ReplicaNotAvailable = 9,
+        ReplicaNotAvailable = 9,
 
         /// <summary>
         ///     Message size too large
         /// </summary>
-        Broker_MsgSizeTooLarge = 10,
+        MsgSizeTooLarge = 10,
 
         /// <summary>
         ///     StaleControllerEpochCode
         /// </summary>
-        Broker_StaleCtrlEpoch = 11,
+        StaleCtrlEpoch = 11,
 
         /// <summary>
         ///     Offset metadata string too large
         /// </summary>
-        Broker_OffsetMetadataTooLarge = 12,
+        OffsetMetadataTooLarge = 12,
 
         /// <summary>
         ///     Broker disconnected before response received
         /// </summary>
-        Broker_NetworkException = 13,
+        NetworkException = 13,
 
         /// <summary>
         ///     Group coordinator load in progress
         /// </summary>
-        Broker_GroupLoadInProress = 14,
+        GroupLoadInProress = 14,
 
         /// <summary>
         /// Group coordinator not available
         /// </summary>
-        Broker_GroupCoordinatorNotAvailable = 15,
+        GroupCoordinatorNotAvailable = 15,
 
         /// <summary>
         ///     Not coordinator for group
         /// </summary>
-        Broker_NotCoordinatorForGroup = 16,
+        NotCoordinatorForGroup = 16,
 
         /// <summary>
         ///     Invalid topic
         /// </summary>
-        Broker_TopicException = 17,
+        TopicException = 17,
 
         /// <summary>
         ///     Message batch larger than configured server segment size
         /// </summary>
-        Broker_RecordListTooLarge = 18,
+        RecordListTooLarge = 18,
 
         /// <summary>
         ///     Not enough in-sync replicas
         /// </summary>
-        Broker_NotEnoughReplicas = 19,
+        NotEnoughReplicas = 19,
 
         /// <summary>
         ///     Message(s) written to insufficient number of in-sync replicas
         /// </summary>
-        Broker_NotEnoughReplicasAfterAppend = 20,
+        NotEnoughReplicasAfterAppend = 20,
 
         /// <summary>
         ///     Invalid required acks value
         /// </summary>
-        Broker_InvalidRequiredAcks = 21,
+        InvalidRequiredAcks = 21,
 
         /// <summary>
         ///     Specified group generation id is not valid
         /// </summary>
-        Broker_IllegalGeneration = 22,
+        IllegalGeneration = 22,
 
         /// <summary>
         ///     Inconsistent group protocol
         /// </summary>
-        Broker_InconsistentGroupProtocol = 23,
+        InconsistentGroupProtocol = 23,
 
         /// <summary>
         ///     Invalid group.id
         /// </summary>
-        Broker_InvalidGroupId = 24,
+        InvalidGroupId = 24,
 
         /// <summary>
         ///     Unknown member
         /// </summary>
-        Broker_UnknownMemberId = 25,
+        UnknownMemberId = 25,
 
         /// <summary>
         ///     Invalid session timeout
         /// </summary>
-        Broker_InvalidSessionTimeout = 26,
+        InvalidSessionTimeout = 26,
 
         /// <summary>
         ///     Group rebalance in progress
         /// </summary>
-        Broker_RebalanceInProgress = 27,
+        RebalanceInProgress = 27,
 
         /// <summary>
         ///     Commit offset data size is not valid
         /// </summary>
-        Broker_InvalidCommitOffsetSize = 28,
+        InvalidCommitOffsetSize = 28,
 
         /// <summary>
         ///     Topic authorization failed
         /// </summary>
-        Broker_TopicAuthorizationFailed = 29,
+        TopicAuthorizationFailed = 29,
 
         /// <summary>
         ///     Group authorization failed
         /// </summary>
-        Broker_GroupAuthorizationFailed = 30,
+        GroupAuthorizationFailed = 30,
 
         /// <summary>
         ///     Cluster authorization failed
         /// </summary>
-        Broker_ClusterAuthorizationFailed = 31,
+        ClusterAuthorizationFailed = 31,
 
         /// <summary>
         ///     Invalid timestamp
         /// </summary>
-        Broker_InvalidTimestamp = 32,
+        InvalidTimestamp = 32,
 
         /// <summary>
         ///     Unsupported SASL mechanism
         /// </summary>
-        Broker_UnsupportedSaslMechanism = 33,
+        UnsupportedSaslMechanism = 33,
 
         /// <summary>
         ///     Illegal SASL state
         /// </summary>
-        Broker_IllegalSaslState = 34,
+        IllegalSaslState = 34,
 
         /// <summary>
         ///     Unuspported version
         /// </summary>
-        Broker_UnsupportedVersion = 35
+        UnsupportedVersion = 35
     };
 
     public static class ErrorCodeExtensions

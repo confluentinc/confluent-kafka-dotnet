@@ -562,7 +562,7 @@ namespace Confluent.Kafka
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
 
