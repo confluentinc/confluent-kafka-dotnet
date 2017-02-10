@@ -7,6 +7,9 @@
 
 DIRS=$(shell find . -name project.json -exec dirname {} \;)
 OS=$(shell uname -s)
+LINUX_FRAMEWORK=netcoreapp1.0
+DEFAULT_FRAMEWORK=$(LINUX_FRAMEWORK)
+
 
 all:
 	@echo "Usage:   make <dotnet-command>"
@@ -20,11 +23,11 @@ all:
 build:
 	# Assuming .NET Core on Linux (net451 will not work).
 	@(if [ "$(OS)" = "Linux" ]] ; then \
-		for d in $(DIRS) ; do dotnet $@ -f netcoreapp1.0 $$d; done ; \
+		for d in $(DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
 	else \
 		for d in $(DIRS) ; do dotnet $@ $$d; done ; \
 	fi)
 
 test:
-	dotnet test test/Confluent.Kafka.UnitTests
+	dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests
 
