@@ -312,13 +312,13 @@ namespace Confluent.Kafka
         public string MemberId
             => consumer.MemberId;
 
-        /// <summary>
+        /// <returns>
         ///     The current librdkafka out queue length.
-        /// </summary>
+        /// </returns>
         /// <remarks>
-        ///     The out queue contains messages and requests waiting to be sent to,
+        ///     The out queue contains requests waiting to be sent,
         ///     or acknowledged by, the broker.
-        /// </summary>
+        /// </remarks>
         public long OutQueueLength
             => consumer.OutQueueLength;
 
@@ -817,13 +817,13 @@ namespace Confluent.Kafka
         public string MemberId
             => kafkaHandle.MemberId;
 
-        /// <summary>
+        /// <returns>
         ///     The current librdkafka out queue length.
-        /// </summary>
+        /// </returns>
         /// <remarks>
-        ///     The out queue contains messages and requests waiting to be sent to,
+        ///     The out queue contains requests waiting to be sent,
         ///     or acknowledged by, the broker.
-        /// </summary>
+        /// </remarks>
         public long OutQueueLength
             => kafkaHandle.OutQueueLength;
 

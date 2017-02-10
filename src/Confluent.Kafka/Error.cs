@@ -75,11 +75,16 @@ namespace Confluent.Kafka
         public static bool operator !=(Error a, Error b)
             => !(a == b);
 
-        // Returns the string representation of the error.
-        // If a rich error string is available return that, otherwise fall
-        // back to librdkafka's static error code to string conversion.
+        /// <summary>
+        ///   Returns the string representation of the error.
+        ///   Depending on error source this might be a rich
+        ///   contextual error message, or a simple static
+        ///   string representation of the error Code.
+        /// </summary>
         public override string ToString()
         {
+            // If a rich error string is available return that, otherwise fall
+            // back to librdkafka's static error code to string conversion.
             if (!string.IsNullOrEmpty(reason))
                 return reason;
             else

@@ -369,10 +369,13 @@ namespace Confluent.Kafka
         public string Name
             => kafkaHandle.Name;
 
-        /// <summary>
-        ///     The number of messages and requests waiting to be sent to,
-        ///     or acknowledged by the broker.
-        /// </summary>
+        /// <returns>
+        ///     The current librdkafka out queue length.
+        /// </returns>
+        /// <remarks>
+        ///     The out queue contains the messages and requests waiting to be sent,
+        ///     or acknowledged by, the broker.
+        /// </remarks>
         public long OutQueueLength
             => kafkaHandle.OutQueueLength;
 
