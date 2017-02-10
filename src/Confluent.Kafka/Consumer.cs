@@ -657,7 +657,7 @@ namespace Confluent.Kafka
                 {
                     case ErrorCode.NoError:
                         return true;
-                    case ErrorCode.Local_PartitionEOF:
+                    case ErrorCode.Local_PartitionEof:
                         OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:

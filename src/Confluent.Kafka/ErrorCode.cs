@@ -67,7 +67,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Reached the end of the topic+partition queue on the broker. Not really an error.
         /// </summary>
-        Local_PartitionEOF = -191,
+        Local_PartitionEof = -191,
 
         /// <summary>
         ///     Permanent: Partition does not exist in cluster.
@@ -82,7 +82,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Permanent: Topic does not exist in cluster.
         /// </summary>
-        Local_UnknownTOpic = -188,
+        Local_UnknownTopic = -188,
 
         /// <summary>
         ///     All broker connections are down.
@@ -107,7 +107,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     ISR count &lt; required.acks
         /// </summary>
-        Local_ISRInsuff = -183,
+        Local_IsrInsuff = -183,
 
         /// <summary>
         ///     Broker node update
@@ -117,7 +117,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     SSL error
         /// </summary>
-        Local_SSL = -181,
+        Local_Ssl = -181,
 
         /// <summary>
         ///     Waiting for coordinator to become available.
@@ -368,12 +368,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Unsupported SASL mechanism
         /// </summary>
-        Broker_UnsupportedSASLMechanism = 33,
+        Broker_UnsupportedSaslMechanism = 33,
 
         /// <summary>
         ///     Illegal SASL state
         /// </summary>
-        Broker_IllegalSASLState = 34,
+        Broker_IllegalSaslState = 34,
 
         /// <summary>
         ///     Unuspported version
