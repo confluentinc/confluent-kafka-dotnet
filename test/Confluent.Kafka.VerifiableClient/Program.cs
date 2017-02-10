@@ -111,6 +111,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             this.Conf = new Dictionary<string, object>
                 { { "log.thread.name", true },
+                  { "api.version.request", true },
                   { "default.topic.config", new Dictionary<string, object>() } };
         }
     }
