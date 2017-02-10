@@ -47,6 +47,8 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 AutoResetEvent are = new AutoResetEvent(false);
 
+                consumer.ClientInstance.QueryWatermarkOffsets();
+
                 consumer.OnMessage += (_, msg) =>
                 {
                     Assert.Equal(msg.Error.Code, ErrorCode.NO_ERROR);

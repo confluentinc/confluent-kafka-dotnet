@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 dr = producer.ProduceAsync(topic, null, testString).Result;
                 producer.Flush();
 
-                var getOffsets = producer.GetWatermarkOffsets(new TopicPartition(topic, 0));
+                var getOffsets = producer.ClientInstance.GetWatermarkOffsets(new TopicPartition(topic, 0));
 
                 // statistics.interval.ms is not set, so this should always be invalid.
                 Assert.Equal(getOffsets.Low, Offset.Invalid);
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // no message has been consumed from broker (this is a producer), so this should always be invalid.
                 Assert.Equal(getOffsets.High, Offset.Invalid);
 
-                var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(topic, 0));
+                var queryOffsets = producer.ClientInstance.QueryWatermarkOffsets(new TopicPartition(topic, 0));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.NotEqual(queryOffsets.High, Offset.Invalid);
 
@@ -78,12 +78,12 @@ namespace Confluent.Kafka.IntegrationTests
                 Message msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
 
-                var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
+                var getOffsets = consumer.ClientInstance.GetWatermarkOffsets(dr.TopicPartition);
                 Assert.Equal(getOffsets.Low, Offset.Invalid);
                 // the offset of the next message to be read.
                 Assert.Equal((long)getOffsets.High, dr.Offset + 1);
 
-                var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition);
+                var queryOffsets = consumer.ClientInstance.QueryWatermarkOffsets(dr.TopicPartition);
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
             }
