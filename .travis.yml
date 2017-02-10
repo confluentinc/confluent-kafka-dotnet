@@ -1,21 +1,12 @@
-# Origin: https://github.com/confluentinc/confluent-kafka-dotnet
-
 language: csharp
-sudo: required
-dist: trusty
+mono: none
+dotnet: 1.0.0-preview2-003131
 
 os:
    - linux
 #   - osx  - osx is currently broken on travis
 
-env:
-    - PATH
-
 install:
-   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get install libunwind8; fi
-   - wget https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.sh
-   - sudo bash dotnet-install.sh --version latest
-   - export PATH=$HOME/.dotnet:$PATH
    - dotnet restore
 
 script:
