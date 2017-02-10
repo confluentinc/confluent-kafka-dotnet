@@ -20,6 +20,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
+using Confluent.Kafka.Internal;
 #if NET451
 using System.Reflection;
 #endif
