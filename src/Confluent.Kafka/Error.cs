@@ -88,7 +88,7 @@ namespace Confluent.Kafka
             if (!string.IsNullOrEmpty(reason))
                 return reason;
             else
-                return ErrorCodeExtensions.GetReason(Code);
+                return Code.GetReason();
         }
     }
 }
