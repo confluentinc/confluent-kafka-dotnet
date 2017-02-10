@@ -110,7 +110,8 @@ namespace Confluent.Kafka.VerifiableClient
         public VerifiableClientConfig()
         {
             this.Conf = new Dictionary<string, object>
-                { { "default.topic.config", new Dictionary<string, object>() } };
+                { { "log.thread.name", true },
+                  { "default.topic.config", new Dictionary<string, object>() } };
         }
     }
 
@@ -293,6 +294,7 @@ namespace Confluent.Kafka.VerifiableClient
         private int consumedMsgs;
         private int consumedMsgsLastReported;
         private int consumedMsgsAtLastCommit;
+        private const int commitEvery = 1000; // commit interval (messages)
 
         private class AssignedPartition
         {
@@ -313,6 +315,7 @@ namespace Confluent.Kafka.VerifiableClient
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
             Handle = new Consumer<Null, string>(Config.Conf, new NullDeserializer(), new StringDeserializer(Encoding.UTF8));
+            consumedMsgsAtLastCommit = 0;
             Dbg($"Created Consumer {Handle.Name} with AutoCommit={Config.AutoCommit}");
         }
 
@@ -367,6 +370,9 @@ namespace Confluent.Kafka.VerifiableClient
                 ap.MinOffset = -1;
             }
 
+            if (alist.Count == 0)
+                return;
+
             var d = new Dictionary<string, object>
             {
                 { "count", consumedMsgs - consumedMsgsLastReported  },
@@ -384,7 +390,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// <param name="offsets">Committed offsets</param>
         private void SendOffsetsCommitted (CommittedOffsets offsets)
         {
-            Dbg($"OffsetCommit {offsets.Error}: {offsets.Offsets.ToString()}");
+            Dbg($"OffsetCommit {offsets.Error}: {string.Join(", ", offsets.Offsets)}");
             if (offsets.Error.Code == ErrorCode._NO_OFFSET)
                 return; // no offsets to commit, ignore
             var d = new Dictionary<string, object>{
@@ -397,14 +403,14 @@ namespace Confluent.Kafka.VerifiableClient
         }
 
         /// <summary>
-        /// Commit offsets every 1000 messages or when immediate is true.
+        /// Commit offsets every commitEvery messages or when immediate is true.
         /// </summary>
         /// <param name="immediate"></param>
         private void Commit (bool immediate)
         {
             if (!immediate &&
                 (Config.AutoCommit ||
-                consumedMsgsAtLastCommit + 1000 > consumedMsgs))
+                consumedMsgsAtLastCommit + commitEvery > consumedMsgs))
                 return;
 
             Dbg($"Committing {consumedMsgs - consumedMsgsAtLastCommit} messages");
@@ -482,6 +488,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// <param name="partitions"></param>
         private void HandleAssign (ICollection<TopicPartition> partitions)
         {
+            Dbg($"New assignment: {string.Join(", ", partitions)}");
             if (currentAssignment != null)
                 Fatal($"Received new assignment {partitions} with already existing assignment in place: {currentAssignment}");
 
@@ -500,6 +507,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// </summary>
         private void HandleRevoke (ICollection<TopicPartition> partitions)
         {
+            Dbg($"Revoked assignment: {string.Join(", ", partitions)}");
             if (currentAssignment == null)
                 Fatal($"Received revoke of {partitions} with no current assignment");
 
@@ -630,6 +638,8 @@ Consumer options:
             {
                 var key = args[i];
                 var val = args[i + 1];
+
+                // It is helpful to see the passed arguments from system test logs
                 Console.Error.WriteLine($"{mode} Arg: {key} {val}");
                 switch (key)
                 {
@@ -701,7 +711,7 @@ Consumer options:
             if (conf.Topic.Length == 0)
                 Usage(1, "Missing --topic ..");
 
-            Console.Error.WriteLine($"Running {mode} using librdkafka {Confluent.Kafka.Library.VersionString} ({Confluent.Kafka.Library.Version})");
+            Console.Error.WriteLine($"Running {mode} using librdkafka {Confluent.Kafka.Library.VersionString} ({Confluent.Kafka.Library.Version:x})");
             if (mode.Equals("--producer"))
                 return new VerifiableProducer(((VerifiableProducerConfig)conf));
             else
