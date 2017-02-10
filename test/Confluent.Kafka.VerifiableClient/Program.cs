@@ -44,7 +44,7 @@ namespace Confluent.Kafka.VerifiableClient
     public class VerifiableClient : IDisposable
     {
         public bool Running; // Continue to run, set to false to terminate
-        private ManualResetEvent TerminateEvent; // Termination wake-up event
+        public ManualResetEvent TerminateEvent; // Termination wake-up event
 
         public VerifiableClient()
         {
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.VerifiableClient
             throw new NotImplementedException();
         }
 
-        public void WaitTerm ()
+        public virtual void WaitTerm ()
         {
             do
             {
@@ -156,7 +156,10 @@ namespace Confluent.Kafka.VerifiableClient
         public override void Dispose()
         {
             Dbg("Disposing of producer");
-            Handle.Dispose();
+            if (Handle != null)
+            {
+                Handle.Dispose();
+            }
         }
 
 
@@ -259,6 +262,10 @@ namespace Confluent.Kafka.VerifiableClient
             var remain = Handle.Flush(10000);
             Dbg($"{remain} messages remain in queue after flush");
 
+            // Explicitly handle dispose to catch hang-on-dispose errors
+            Handle.Dispose();
+            Handle = null;
+
             Send("shutdown_complete", new Dictionary<string, object>());
         }
 
@@ -309,6 +316,26 @@ namespace Confluent.Kafka.VerifiableClient
             Dbg($"Created Consumer {Handle.Name} with AutoCommit={Config.AutoCommit}");
         }
 
+        /// <summary>
+        ///   Override WaitTerm to periodically send records_consumed stats to driver
+        /// </summary>
+        public override void WaitTerm ()
+        {
+            do
+            {
+                SendRecordsConsumed(true);
+                TerminateEvent.WaitOne(1000);
+            } while (Running);
+        }
+
+        public override void Dispose()
+        {
+            Dbg($"Disposing of Consumer {Handle}");
+            if (Handle != null)
+            {
+                Handle.Dispose();
+            }
+        }
 
         /// <summary>
         /// Send "records_consumed" to test driver
@@ -513,8 +540,10 @@ namespace Confluent.Kafka.VerifiableClient
             // Wait for termination
             WaitTerm();
 
+            // Explicitly handle dispose to catch hang-on-dispose errors
             Dbg("Closing Consumer");
             Handle.Dispose();
+            Handle = null;
 
             Send("shutdown_complete", new Dictionary<string, object>());
         }
@@ -699,6 +728,7 @@ Consumer options:
 
                 client.Run();
             }
+
             return;
         }
     }
