@@ -732,7 +732,11 @@ namespace Confluent.Kafka
         {
             if (consumerCts == null)
             {
-                throw new Exception("Consumer background poll loop not started - cannot stop.");
+                // Consumer background poll loop not started - cannot stop.
+                // While this might be considered an error there is no point
+                // in throwing an exception here since there are no side-effects
+                // of not being able to stop a non-Started instance.
+                return;
             }
 
             consumerCts.Cancel();
@@ -796,6 +800,8 @@ namespace Confluent.Kafka
 
         public void Dispose()
         {
+            // Make sure background poller is stopped (no-op if already stopped, or not started)
+            Stop();
             kafkaHandle.ConsumerClose();
             kafkaHandle.Dispose();
         }
