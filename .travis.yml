@@ -19,6 +19,6 @@ install:
    - dotnet restore
 
 script:
-   - dotnet build ./src/Confluent.Kafka/project.json
-   - dotnet pack ./src/Confluent.Kafka/project.json
-   - dotnet test ./test/Confluent.Kafka.Tests/
+   - dotnet build ./src/Confluent.Kafka
+   - dotnet pack ./src/Confluent.Kafka
+   - dotnet test ./test/Confluent.Kafka.UnitTests
