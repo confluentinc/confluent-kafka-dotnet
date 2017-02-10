@@ -6,6 +6,7 @@
 
 
 DIRS=$(shell find . -name project.json -exec dirname {} \;)
+OS=$(shell uname -s)
 
 all:
 	@echo "Usage:   make <dotnet-command>"
@@ -15,6 +16,14 @@ all:
 
 %:
 	for d in $(DIRS) ; do dotnet $@ $$d; done
+
+build:
+	# Assuming .NET Core on Linux (net451 will not work).
+	@(if [ "$(OS)" = "Linux" ]] ; then \
+		for d in $(DIRS) ; do dotnet $@ -f netcoreapp1.0 $$d; done ; \
+	else \
+		for d in $(DIRS) ; do dotnet $@ $$d; done ; \
+	fi)
 
 test:
 	dotnet test test/Confluent.Kafka.UnitTests
