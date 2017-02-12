@@ -227,7 +227,7 @@ namespace Confluent.Kafka
             return;
         }
 
-        internal Task<Message> Produce(
+        private Task<Message> Produce(
             string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
