@@ -37,7 +37,7 @@ namespace Confluent.Kafka
         private bool manualPoll;
         private bool disableDeliveryReports;
 
-        const int RD_KAFKA_PARTITION_UA = -1;
+        internal const int RD_KAFKA_PARTITION_UA = -1;
 
         private IEnumerable<KeyValuePair<string, object>> topicConfig;
 
@@ -486,8 +486,6 @@ namespace Confluent.Kafka
 
     internal class SerializingProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>
     {
-        const int RD_KAFKA_PARTITION_UA = -1;
-
         protected readonly Producer producer;
 
         public ISerializer<TKey> KeySerializer { get; }
@@ -553,12 +551,12 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, DateTime? timestamp, int? partition, bool blockIfQueueFull)
+        private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull)
         {
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition == null ? RD_KAFKA_PARTITION_UA : partition.Value, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
 
@@ -569,10 +567,10 @@ namespace Confluent.Kafka
             => Produce(topic, key, val, timestamp, partition, true);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp)
-            => Produce(topic, key, val, timestamp, null, true);
+            => Produce(topic, key, val, timestamp, Producer.RD_KAFKA_PARTITION_UA, true);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => Produce(topic, key, val, null, null, true);
+            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
             => Produce(topic, key, val, null, partition, blockIfQueueFull);
@@ -581,7 +579,7 @@ namespace Confluent.Kafka
             => Produce(topic, key, val, null, partition, true);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => Produce(topic, key, val, null, null, blockIfQueueFull);
+            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull);
 
 
         private class TypedDeliveryHandlerShim : IDeliveryHandler
@@ -615,12 +613,12 @@ namespace Confluent.Kafka
             }
         }
 
-        private void Produce(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime? timestamp, int? partition, bool blockIfQueueFull)
+        private void Produce(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime? timestamp, int partition, bool blockIfQueueFull)
         {
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition == null ? RD_KAFKA_PARTITION_UA : partition.Value, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
         }
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition, bool blockIfQueueFull)
@@ -630,10 +628,10 @@ namespace Confluent.Kafka
             => Produce(topic, key, val, deliveryHandler, timestamp, partition, true);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp)
-            => Produce(topic, key, val, deliveryHandler, timestamp, null, true);
+            => Produce(topic, key, val, deliveryHandler, timestamp, Producer.RD_KAFKA_PARTITION_UA, true);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, deliveryHandler, null, null, true);
+            => Produce(topic, key, val, deliveryHandler, null, Producer.RD_KAFKA_PARTITION_UA, true);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition, bool blockIfQueueFull)
             => Produce(topic, key, val, deliveryHandler, null, partition, blockIfQueueFull);
@@ -642,7 +640,7 @@ namespace Confluent.Kafka
             => Produce(topic, key, val, deliveryHandler, null, partition, true);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, bool blockIfQueueFull)
-            => Produce(topic, key, val, deliveryHandler, null, null, blockIfQueueFull);
+            => Produce(topic, key, val, deliveryHandler, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull);
 
         public string Name
             => producer.Name;
