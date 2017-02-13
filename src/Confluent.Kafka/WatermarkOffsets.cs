@@ -16,33 +16,17 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
-
-
 namespace Confluent.Kafka
 {
-    public struct CommittedOffsets
+    public class WatermarkOffsets
     {
-        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets, Error error)
+        public WatermarkOffsets(Offset low, Offset high)
         {
-            Offsets = offsets;
-            Error = error;
+            Low = low;
+            High = high;
         }
 
-        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets)
-        {
-            Offsets = offsets;
-            Error = new Error(ErrorCode.NO_ERROR);
-        }
-
-        public CommittedOffsets(Error error)
-        {
-            Offsets = new List<TopicPartitionOffsetError>();
-            Error = error;
-        }
-
-
-        public Error Error { get; }
-        public IList<TopicPartitionOffsetError> Offsets { get; }
+        public Offset Low { get; }
+        public Offset High { get; }
     }
 }

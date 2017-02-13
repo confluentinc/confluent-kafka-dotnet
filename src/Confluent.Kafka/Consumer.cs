@@ -88,7 +88,7 @@ namespace Confluent.Kafka
             Message msg;
             if (!consumer.Consume(out msg, millisecondsTimeout))
             {
-                message = default(Message<TKey, TValue>);
+                message = null;
                 return false;
             }
 

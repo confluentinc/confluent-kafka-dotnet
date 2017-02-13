@@ -16,37 +16,25 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-
 namespace Confluent.Kafka
 {
-
     /// <summary>
-    ///     Metadata pertaining to a single Kafka topic.
+    ///     Metadata pertaining to a single Kafka broker.
     /// </summary>
-    public struct TopicMetadata
+    public class BrokerMetadata
     {
-        public TopicMetadata(string topic, List<PartitionMetadata> partitions, Error error)
+        public BrokerMetadata(int brokerId, string host, int port)
         {
-            Topic = topic;
-            Error = error;
-            Partitions = partitions;
+            BrokerId = brokerId;
+            Host = host;
+            Port = port;
         }
 
-        public string Topic { get; }
-        public List<PartitionMetadata> Partitions { get; }
-        public Error Error { get; }
+        public int BrokerId { get; }
+        public string Host { get; }
+        public int Port { get; }
 
         public override string ToString()
-        {
-            var result = new StringBuilder();
-            result.Append($"{{ \"Topic\": \"{Topic}\", \"Partitions\": [");
-            result.Append(string.Join(",", Partitions.Select(p => $" {p.ToString()}")));
-            result.Append($" ], \"Error\": \"{Error.Code.ToString()}\" }}");
-            return result.ToString();
-        }
+            => $"{{ \"BrokerId\": {BrokerId}, \"Host\": \"{Host}\", \"Port\": {Port} }}";
     }
 }

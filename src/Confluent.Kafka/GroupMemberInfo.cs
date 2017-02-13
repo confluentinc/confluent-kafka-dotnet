@@ -18,7 +18,7 @@
 
 namespace Confluent.Kafka
 {
-    public struct GroupMemberInfo {
+    public class GroupMemberInfo {
 
         public GroupMemberInfo(string memberId, string clientId, string clientHost, byte[] memberMetadata, byte[] memberAssignment)
         {

@@ -18,15 +18,19 @@
 
 namespace Confluent.Kafka
 {
-    public struct WatermarkOffsets
+    public class LogMessage
     {
-        public WatermarkOffsets(Offset low, Offset high)
+        public LogMessage(string name, int level, string facility, string message)
         {
-            Low = low;
-            High = high;
+            Name = name;
+            Level = level;
+            Facility = facility;
+            Message = message;
         }
 
-        public Offset Low { get; }
-        public Offset High { get; }
+        public string Name { get; }
+        public int Level { get; }
+        public string Facility { get; }
+        public string Message { get; }
     }
 }

@@ -16,21 +16,33 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka
 {
-    public struct LogMessage
+    public class CommittedOffsets
     {
-        public LogMessage(string name, int level, string facility, string message)
+        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets, Error error)
         {
-            Name = name;
-            Level = level;
-            Facility = facility;
-            Message = message;
+            Offsets = offsets;
+            Error = error;
         }
 
-        public string Name { get; }
-        public int Level { get; }
-        public string Facility { get; }
-        public string Message { get; }
+        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets)
+        {
+            Offsets = offsets;
+            Error = new Error(ErrorCode.NO_ERROR);
+        }
+
+        public CommittedOffsets(Error error)
+        {
+            Offsets = new List<TopicPartitionOffsetError>();
+            Error = error;
+        }
+
+
+        public Error Error { get; }
+        public IList<TopicPartitionOffsetError> Offsets { get; }
     }
 }

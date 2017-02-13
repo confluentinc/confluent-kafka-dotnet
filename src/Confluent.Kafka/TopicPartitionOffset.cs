@@ -21,7 +21,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates a Topic / Partition / Offset tuple.
     /// </summary>
-    public struct TopicPartitionOffset
+    public class TopicPartitionOffset
     {
         public TopicPartitionOffset(TopicPartition tp, Offset offset)
             : this(tp.Topic, tp.Partition, offset) {}
