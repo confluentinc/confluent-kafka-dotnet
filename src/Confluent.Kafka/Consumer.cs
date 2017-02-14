@@ -19,7 +19,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
@@ -124,11 +123,6 @@ namespace Confluent.Kafka
         public void Poll()
             => Poll(-1);
 
-        public void Start()
-            => consumer.StartBackgroundPollLoop((Action<int>)Poll);
-
-        public void Stop()
-            => consumer.Stop();
 
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
         {
@@ -357,9 +351,6 @@ namespace Confluent.Kafka
 
     public class Consumer : IDisposable
     {
-        private CancellationTokenSource consumerCts = null;
-        private Task consumerTask = null;
-
         private SafeKafkaHandle kafkaHandle;
 
         private LibRdKafka.ErrorDelegate errorDelegate;
@@ -677,11 +668,6 @@ namespace Confluent.Kafka
 
         public void Poll(TimeSpan timeout)
         {
-            if (consumerCts != null)
-            {
-                throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
-            }
-
             Message msg;
             if (Consume(out msg, timeout))
             {
@@ -691,11 +677,6 @@ namespace Confluent.Kafka
 
         public void Poll(int millisecondsTimeout)
         {
-            if (consumerCts != null)
-            {
-                throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
-            }
-
             Message msg;
             if (Consume(out msg, millisecondsTimeout))
             {
@@ -706,44 +687,6 @@ namespace Confluent.Kafka
         public void Poll()
             => Poll(-1);
 
-
-        internal void StartBackgroundPollLoop(Action<int> pollMethod)
-        {
-            if (consumerCts != null)
-            {
-                throw new Exception("Consumer background poll loop cannot be started twice.");
-            }
-
-            consumerCts = new CancellationTokenSource();
-            var ct = consumerCts.Token;
-            consumerTask = Task.Factory.StartNew(() =>
-            {
-                while (!ct.IsCancellationRequested)
-                {
-                    pollMethod(100);
-                }
-            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
-
-        public void Start()
-            => StartBackgroundPollLoop((Action<int>)Poll);
-
-        public void Stop()
-        {
-            if (consumerCts == null)
-            {
-                // Consumer background poll loop not started - cannot stop.
-                // While this might be considered an error there is no point
-                // in throwing an exception here since there are no side-effects
-                // of not being able to stop a non-Started instance.
-                return;
-            }
-
-            consumerCts.Cancel();
-            consumerTask.Wait();
-            consumerCts = null;
-            consumerTask = null;
-        }
 
         /// <summary>
         ///     Commit offsets for the current assignment.
@@ -802,8 +745,6 @@ namespace Confluent.Kafka
 
         public void Dispose()
         {
-            // Make sure background poller is stopped (no-op if already stopped, or not started)
-            Stop();
             kafkaHandle.ConsumerClose();
             kafkaHandle.Dispose();
         }
