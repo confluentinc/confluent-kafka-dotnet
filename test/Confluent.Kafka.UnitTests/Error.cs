@@ -26,7 +26,12 @@ namespace Confluent.Kafka.Tests
         {
             var e = new Error(ErrorCode._BAD_COMPRESSION);
             Assert.Equal(e.Code, ErrorCode._BAD_COMPRESSION);
-            Assert.NotNull(e.Message);
+            Assert.NotNull(e.Reason);
+            Assert.Equal(e.Reason, "Local: Invalid compressed data");
+
+            var e2 = new Error(ErrorCode._BAD_MSG, "Dummy message");
+            Assert.Equal(e2.Code, ErrorCode._BAD_MSG);
+            Assert.Equal(e2.Reason, "Dummy message");
         }
 
         [Fact]
@@ -35,6 +40,7 @@ namespace Confluent.Kafka.Tests
             var e1 = new Error(ErrorCode._ALL_BROKERS_DOWN);
             var e2 = new Error(ErrorCode._ALL_BROKERS_DOWN);
             var e3 = new Error(ErrorCode._IN_PROGRESS);
+            var e4 = new Error(ErrorCode._IN_PROGRESS, "Dummy message");
 
             Assert.Equal(e1, e2);
             Assert.True(e1.Equals(e2));
@@ -45,13 +51,11 @@ namespace Confluent.Kafka.Tests
             Assert.False(e1.Equals(e3));
             Assert.False(e1 == e3);
             Assert.True(e1 != e3);
-        }
 
-        [Fact]
-        public void ToStringTest()
-        {
-            var e = new Error(ErrorCode._ASSIGN_PARTITIONS);
-            Assert.True(e.ToString().Contains(((int)ErrorCode._ASSIGN_PARTITIONS).ToString()));
+            Assert.Equal(e3, e4);
+            Assert.True(e3 == e4);
+            Assert.NotEqual(e2, e4);
+            Assert.False(e2 == e4);
         }
 
         [Fact]
@@ -62,6 +66,8 @@ namespace Confluent.Kafka.Tests
 
             Assert.False(e1.HasError);
             Assert.True(e2.HasError);
+            Assert.False(e1);
+            Assert.True(e2);
         }
 
         [Fact]

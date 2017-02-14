@@ -1,24 +1,27 @@
-# Origin: https://github.com/confluentinc/confluent-kafka-dotnet
-
 language: csharp
-sudo: required
-dist: trusty
-
-os:
-   - osx
-   - linux
 
 env:
-    - PATH
+  global:
+    - CONFIGURATION=Release
+
+matrix:
+  include:
+  - os: linux
+    dist: trusty # Ubuntu 14.04
+    dotnet: 1.0.0-preview2-1-003177
+    mono: none
+    env: DOTNETCORE=1
+    sudo: required
+  - os: osx
+    osx_image: xcode7.3 # macOS 10.11
+    dotnet: 1.0.0-preview2-1-003177
+    mono: none
+    env: DOTNETCORE=1
 
 install:
-   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get install libunwind8; fi
-   - wget https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh
-   - sudo bash dotnet-install.sh --version 1.0.0-preview2-003121
-   - export PATH=$HOME/.dotnet:$PATH
+   - sed -i 's/^.*\"net451\":.*$//g' src/Confluent.Kafka/project.json
    - dotnet restore
 
 script:
-   - dotnet build ./src/Confluent.Kafka/project.json
-   - dotnet pack ./src/Confluent.Kafka/project.json
-   - dotnet test ./test/Confluent.Kafka.Tests/
+   - make build
+   - make test

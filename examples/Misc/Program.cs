@@ -57,7 +57,7 @@ namespace Confluent.Kafka.Examples.Misc
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
             using (var producer = new Producer(config))
             {
-                var meta = producer.GetMetadata();
+                var meta = producer.GetMetadata(true, null);
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
                 meta.Brokers.ForEach(broker =>
                     Console.WriteLine($"Broker: {broker.BrokerId} {broker.Host}:{broker.Port}"));

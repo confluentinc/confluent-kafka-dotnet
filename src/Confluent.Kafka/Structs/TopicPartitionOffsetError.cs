@@ -70,6 +70,6 @@ namespace Confluent.Kafka
             => !(a == b);
 
         public override string ToString()
-            => $"{Topic} {Partition} {Offset} {Error}";
+            => $"{Topic} [{Partition}] @{Offset}: {Error}";
     }
 }

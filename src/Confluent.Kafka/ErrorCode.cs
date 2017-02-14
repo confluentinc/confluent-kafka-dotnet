@@ -173,4 +173,12 @@ namespace Confluent.Kafka
         /// <summary>Unuspported version</summary>
         UNSUPPORTED_VERSION = 35,
     };
+
+    public static class ErrorCodeExtensions
+    {
+        public static string GetReason(this ErrorCode code)
+        {
+            return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
+        }
+    }
 }

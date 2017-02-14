@@ -20,6 +20,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
+using Confluent.Kafka.Internal;
 #if NET451
 using System.Reflection;
 #endif
@@ -102,6 +103,7 @@ namespace Confluent.Kafka.Impl
             _assign = NativeMethods.rd_kafka_assign;
             _assignment = NativeMethods.rd_kafka_assignment;
             _commit = NativeMethods.rd_kafka_commit;
+            _commit_queue = NativeMethods.rd_kafka_commit_queue;
             _committed = NativeMethods.rd_kafka_committed;
             _position = NativeMethods.rd_kafka_position;
             _produce = NativeMethods.rd_kafka_produce;
@@ -113,7 +115,14 @@ namespace Confluent.Kafka.Impl
             _group_list_destroy = NativeMethods.rd_kafka_group_list_destroy;
             _brokers_add = NativeMethods.rd_kafka_brokers_add;
             _outq_len = NativeMethods.rd_kafka_outq_len;
-            _wait_destroyed = NativeMethods.rd_kafka_wait_destroyed;
+            _queue_new = NativeMethods.rd_kafka_queue_new;
+            _queue_destroy = NativeMethods.rd_kafka_queue_destroy;
+            _event_type = NativeMethods.rd_kafka_event_type;
+            _event_error = NativeMethods.rd_kafka_event_error;
+            _event_error_string = NativeMethods.rd_kafka_event_error_string;
+            _event_topic_partition_list = NativeMethods.rd_kafka_event_topic_partition_list;
+            _event_destroy = NativeMethods.rd_kafka_event_destroy;
+            _queue_poll = NativeMethods.rd_kafka_queue_poll;
 
             if ((long) version() < minVersion) {
                 throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
@@ -363,6 +372,11 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode commit(IntPtr rk, IntPtr offsets, bool async)
             => _commit(rk, offsets, async);
 
+        private static Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode> _commit_queue;
+        internal static ErrorCode commit_queue(IntPtr rk, IntPtr offsets, IntPtr rkqu,
+            CommitDelegate cb, IntPtr opaque)
+            => _commit_queue(rk, offsets, rkqu, cb, opaque);
+
         private static Func<IntPtr, IntPtr, IntPtr, ErrorCode> _committed;
         internal static ErrorCode committed(IntPtr rk, IntPtr partitions, IntPtr timeout_ms)
             => _committed(rk, partitions, timeout_ms);
@@ -423,12 +437,48 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr brokers_add(IntPtr rk, string brokerlist)
             => _brokers_add(rk, brokerlist);
 
-        private static Func<IntPtr, IntPtr> _outq_len;
-        internal static IntPtr outq_len(IntPtr rk) => _outq_len(rk);
+        private static Func<IntPtr, int> _outq_len;
+        internal static int outq_len(IntPtr rk) => _outq_len(rk);
 
-        private static Func<IntPtr, IntPtr> _wait_destroyed;
-        internal static IntPtr wait_destroyed(IntPtr timeout_ms)
-            => _wait_destroyed(timeout_ms);
+        //
+        // Queues
+        //
+        private static Func<IntPtr, IntPtr> _queue_new;
+        internal static IntPtr queue_new(IntPtr rk)
+            => _queue_new(rk);
+
+        private static Action<IntPtr> _queue_destroy;
+        internal static void queue_destroy(IntPtr rkqu)
+            => _queue_destroy(rkqu);
+
+        private static Func<IntPtr, int, IntPtr> _queue_poll;
+        internal static IntPtr queue_poll(IntPtr rkqu, int timeout_ms)
+            => _queue_poll(rkqu, timeout_ms);
+
+        //
+        // Events
+        //
+        private static Action<IntPtr> _event_destroy;
+        internal static void event_destroy(IntPtr rkev)
+            => _event_destroy(rkev);
+
+        private static Func<IntPtr, int> _event_type;
+        internal static int event_type(IntPtr rkev)
+            => _event_type(rkev);
+
+        private static Func<IntPtr, ErrorCode> _event_error;
+        internal static ErrorCode event_error(IntPtr rkev)
+            => _event_error(rkev);
+
+        private static Func<IntPtr, IntPtr> _event_error_string;
+        internal static string event_error_string(IntPtr rkev)
+            => Util.Marshal.PtrToStringUTF8(_event_error_string(rkev));
+
+        private static Func<IntPtr, IntPtr> _event_topic_partition_list;
+        internal static IntPtr event_topic_partition_list(IntPtr rkev)
+            => _event_topic_partition_list(rkev);
+
+
 
         private class NativeMethods
         {
@@ -644,6 +694,14 @@ namespace Confluent.Kafka.Impl
                     bool async);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_commit_queue(
+                    IntPtr rk,
+                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
+                    /* rd_kafka_queue_t * */ IntPtr rkqu,
+                    /* offset_commit_cb * */ CommitDelegate cb,
+                    /* void * */ IntPtr opaque);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_committed(
                     IntPtr rk, IntPtr partitions, IntPtr timeout_ms);
 
@@ -700,10 +758,37 @@ namespace Confluent.Kafka.Impl
                     [MarshalAs(UnmanagedType.LPStr)] string brokerlist);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_outq_len(IntPtr rk);
+            internal static extern int rd_kafka_outq_len(IntPtr rk);
+
+            //
+            // Queues
+            //
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr rd_kafka_queue_new(IntPtr rk);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_wait_destroyed(IntPtr timeout_ms);
+            internal static extern void rd_kafka_queue_destroy(IntPtr rkqu);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, int timeout_ms);
+
+            //
+            // Events
+            //
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern void rd_kafka_event_destroy(IntPtr rkev);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern int rd_kafka_event_type(IntPtr rkev);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_event_error(IntPtr rkev);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr rd_kafka_event_error_string(IntPtr rkev);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr rd_kafka_event_topic_partition_list(IntPtr rkev);
         }
 
     }

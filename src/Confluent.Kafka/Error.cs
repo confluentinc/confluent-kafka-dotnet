@@ -18,19 +18,30 @@
 
 namespace Confluent.Kafka
 {
-    public struct Error
+    public class Error
     {
         public Error(ErrorCode code)
         {
             Code = code;
+            reason = null;
+        }
+
+        public Error(ErrorCode code, string reason)
+        {
+            Code = code;
+            this.reason = reason;
         }
 
         public ErrorCode Code { get; }
 
-        // Note: In most practical scenarios there is no benefit to caching this +
-        //       significant cost in keeping the extra string reference around.
-        public string Message
-            => Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(Code));
+        private string reason;
+
+        // Rich error string, will be empty for APIs
+        // where there was just an ErrorCode. See ToString()
+        public string Reason
+        {
+            get { return ToString(); }
+        }
 
         public bool HasError
             => Code != ErrorCode.NO_ERROR;
@@ -64,8 +75,20 @@ namespace Confluent.Kafka
         public static bool operator !=(Error a, Error b)
             => !(a == b);
 
+        /// <summary>
+        ///   Returns the string representation of the error.
+        ///   Depending on error source this might be a rich
+        ///   contextual error message, or a simple static
+        ///   string representation of the error Code.
+        /// </summary>
         public override string ToString()
-            => $"[{(int)Code}] {Message}";
-
+        {
+            // If a rich error string is available return that, otherwise fall
+            // back to librdkafka's static error code to string conversion.
+            if (!string.IsNullOrEmpty(reason))
+                return reason;
+            else
+                return Code.GetReason();
+        }
     }
 }
