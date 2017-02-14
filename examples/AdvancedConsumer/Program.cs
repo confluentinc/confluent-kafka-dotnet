@@ -48,66 +48,6 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
         /// <summary>
         //      In this example:
         ///         - offsets are auto commited.
-        ///         - OnMessage is used to consume messages.
-        ///         - the poll loop is performed on a background thread started using Consumer.Start().
-        /// </summary>
-        public static void Run_Background(string brokerList, List<string> topics)
-        {
-            using (var consumer = new Consumer<Null, string>(constructConfig(brokerList, true), null, new StringDeserializer(Encoding.UTF8)))
-            {
-                // Note: All event handlers are executed on the same thread (the one created/started by the Consumer.Start())
-
-                consumer.OnMessage += (_, msg)
-                    => Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
-
-                consumer.OnPartitionEOF += (_, end)
-                    => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
-
-                consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error}");
-
-                consumer.OnOffsetsCommitted += (_, commit) =>
-                {
-                    Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
-
-                    if (commit.Error)
-                    {
-                        Console.WriteLine($"Failed to commit offsets: {commit.Error}");
-                    }
-                    Console.WriteLine($"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]");
-                };
-
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    consumer.Assign(partitions);
-                };
-
-                consumer.OnPartitionsRevoked += (_, partitions) =>
-                {
-                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
-                    consumer.Unassign();
-                };
-
-                consumer.OnStatistics += (_, json)
-                    => Console.WriteLine($"Statistics: {json}");
-
-                consumer.Subscribe(topics);
-
-                Console.WriteLine($"Subscribed to: [{string.Join(", ", consumer.Subscription)}]");
-
-                consumer.Start();
-
-                Console.WriteLine($"Started consumer, press enter to stop consuming");
-                Console.ReadLine();
-
-                consumer.Stop();
-            }
-        }
-
-        /// <summary>
-        //      In this example:
-        ///         - offsets are auto commited.
         ///         - consumer.Poll / OnMessage is used to consume messages.
         ///         - no extra thread is created for the Poll loop.
         /// </summary>
@@ -189,17 +129,6 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
-                consumer.OnOffsetsCommitted += (_, commit) =>
-                {
-                    Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
-
-                    if (commit.Error)
-                    {
-                        Console.WriteLine($"Failed to commit offsets: {commit.Error}");
-                    }
-                    Console.WriteLine($"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]");
-                };
-
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
@@ -246,7 +175,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
         }
 
         private static void PrintUsage()
-            => Console.WriteLine("usage: <poll|consume|background> <broker,broker,..> <topic> [topic..]");
+            => Console.WriteLine("usage: <poll|consume> <broker,broker,..> <topic> [topic..]");
 
         public static void Main(string[] args)
         {
@@ -267,9 +196,6 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                     break;
                 case "consume":
                     Run_Consume(brokerList, topics);
-                    break;
-                case "background":
-                    Run_Background(brokerList, topics);
                     break;
                 default:
                     PrintUsage();

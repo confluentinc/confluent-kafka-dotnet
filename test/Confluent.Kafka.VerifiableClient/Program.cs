@@ -15,11 +15,11 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
-using System.Linq;
 using Confluent.Kafka.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Confluent.Kafka.VerifiableClient
 {
@@ -392,7 +392,7 @@ namespace Confluent.Kafka.VerifiableClient
         private void SendOffsetsCommitted (CommittedOffsets offsets)
         {
             Dbg($"OffsetCommit {offsets.Error}: {string.Join(", ", offsets.Offsets)}");
-            if (offsets.Error.Code == ErrorCode._NO_OFFSET)
+            if (offsets.Error.Code == ErrorCode.Local_NoOffset)
                 return; // no offsets to commit, ignore
             var d = new Dictionary<string, object>{
                     { "success", (bool)!offsets.Error },
@@ -436,7 +436,7 @@ namespace Confluent.Kafka.VerifiableClient
                 return;
             }
 
-            if (m.Error.Code != ErrorCode.NO_ERROR)
+            if (m.Error.Code != ErrorCode.NoError)
             {
                 Dbg($"Message error {m.Error} at {m.TopicPartitionOffset}");
                 return;
@@ -543,11 +543,23 @@ namespace Confluent.Kafka.VerifiableClient
             Handle.OnOffsetsCommitted += (_, offsets)
                 => SendOffsetsCommitted(offsets);
 
-            Handle.Start();
             Handle.Subscribe(Config.Topic);
+
+            var cts = new CancellationTokenSource();
+            var ct = cts.Token;
+            var consumerTask = Task.Factory.StartNew(() =>
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    Handle.Poll(100);
+                }
+            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
             // Wait for termination
             WaitTerm();
+
+            cts.Cancel();
+            consumerTask.Wait();
 
             // Explicitly handle dispose to catch hang-on-dispose errors
             Dbg("Closing Consumer");
