@@ -399,7 +399,7 @@ namespace Confluent.Kafka
             IntPtr opaque)
         {
             var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
-            if (err == ErrorCode._ASSIGN_PARTITIONS)
+            if (err == ErrorCode.Local_AssignPartitions)
             {
                 var handler = OnPartitionsAssigned;
                 if (handler != null && handler.GetInvocationList().Length > 0)
@@ -411,7 +411,7 @@ namespace Confluent.Kafka
                     Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
                 }
             }
-            if (err == ErrorCode._REVOKE_PARTITIONS)
+            if (err == ErrorCode.Local_RevokePartitions)
             {
                 var handler = OnPartitionsRevoked;
                 if (handler != null && handler.GetInvocationList().Length > 0)
@@ -488,7 +488,7 @@ namespace Confluent.Kafka
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
-            if (pollSetConsumerError != ErrorCode.NO_ERROR)
+            if (pollSetConsumerError != ErrorCode.NoError)
             {
                 throw new KafkaException(new Error(pollSetConsumerError,
                     $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
@@ -655,9 +655,9 @@ namespace Confluent.Kafka
             {
                 switch (message.Error.Code)
                 {
-                    case ErrorCode.NO_ERROR:
+                    case ErrorCode.NoError:
                         return true;
-                    case ErrorCode._PARTITION_EOF:
+                    case ErrorCode.Local_PartitionEOF:
                         OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:
@@ -761,8 +761,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public async Task<CommittedOffsets> CommitAsync(Message message)
         {
-            if (message.Error.Code != ErrorCode.NO_ERROR)
+            if (message.Error.Code != ErrorCode.NoError)
+            {
                 throw new InvalidOperationException("Must not commit offset for errored message");
+            }
             return await CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 

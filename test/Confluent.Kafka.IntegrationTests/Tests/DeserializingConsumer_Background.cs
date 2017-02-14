@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnMessage += (_, msg) =>
                 {
-                    Assert.Equal(msg.Error.Code, ErrorCode.NO_ERROR);
+                    Assert.Equal(msg.Error.Code, ErrorCode.NoError);
                     msgCnt += 1;
                 };
 

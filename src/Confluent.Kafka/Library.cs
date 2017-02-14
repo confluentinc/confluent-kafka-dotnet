@@ -16,8 +16,11 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl;
+
+[assembly:CLSCompliant(true)]
 
 
 namespace Confluent.Kafka

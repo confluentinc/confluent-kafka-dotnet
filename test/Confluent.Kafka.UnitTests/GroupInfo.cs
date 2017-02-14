@@ -27,10 +27,10 @@ namespace Confluent.Kafka.Tests
         {
             var bmd = new BrokerMetadata(1, "host", 42);
             var members = new List<GroupMemberInfo>();
-            var gi = new GroupInfo(bmd, "mygroup", new Error(ErrorCode.NO_ERROR), "mystate", "myprotocoltype", "myprotocol", members);
+            var gi = new GroupInfo(bmd, "mygroup", new Error(ErrorCode.NoError), "mystate", "myprotocoltype", "myprotocol", members);
             Assert.Equal(gi.Broker, bmd);
             Assert.Equal(gi.Group, "mygroup");
-            Assert.Equal(gi.Error, new Error(ErrorCode.NO_ERROR));
+            Assert.Equal(gi.Error, new Error(ErrorCode.NoError));
             Assert.Equal(gi.State, "mystate");
             Assert.Equal(gi.ProtocolType, "myprotocoltype");
             Assert.Equal(gi.Protocol, "myprotocol");
