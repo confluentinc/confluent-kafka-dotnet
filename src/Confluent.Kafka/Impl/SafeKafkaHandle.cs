@@ -590,7 +590,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal GroupInfo ListGroup(string group, int millisecondsTimeout)
-            =>  ListGroupsImpl(group, millisecondsTimeout).Single();
+            =>  ListGroupsImpl(group, millisecondsTimeout).FirstOrDefault();
 
         internal List<GroupInfo> ListGroups(int millisecondsTimeout)
             => ListGroupsImpl(null, millisecondsTimeout);

@@ -21,7 +21,7 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
-    public struct GroupInfo
+    public class GroupInfo
     {
         public GroupInfo(BrokerMetadata broker, string grp, Error error, string state, string protocolType, string protocol, List<GroupMemberInfo> members)
         {
