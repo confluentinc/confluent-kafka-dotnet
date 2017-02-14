@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Benchmark
                 { "retry.backoff.ms", 500 }
             };
 
-            Message firstDeliveryReport = default(Message);
+            Message firstDeliveryReport = null;
 
             using (var producer = new Producer(config))
             {

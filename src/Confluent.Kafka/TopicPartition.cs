@@ -18,7 +18,7 @@
 
 namespace Confluent.Kafka
 {
-    public struct TopicPartition
+    public class TopicPartition
     {
         public TopicPartition(string topic, int partition)
         {

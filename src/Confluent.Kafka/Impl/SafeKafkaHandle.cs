@@ -293,7 +293,7 @@ namespace Confluent.Kafka.Impl
             IntPtr msgPtr = LibRdKafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
-                message = default(Message);
+                message = null;
                 return false;
             }
 

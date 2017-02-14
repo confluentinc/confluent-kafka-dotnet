@@ -49,6 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
+                Assert.NotNull(dr);
                 producer.Flush();
             }
 
@@ -59,7 +60,9 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
                 Message msg;
                 var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
+                Assert.NotNull(msg);
                 var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
+                Assert.NotNull(msg);
 
                 // NOTE: two consumers from the same group should never be assigned to the same
                 // topic / partition. This 'test' is here because I was curious to see what happened
