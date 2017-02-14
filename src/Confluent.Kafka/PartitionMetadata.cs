@@ -25,7 +25,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Metadata pertaining to a single Kafka topic partition.
     /// </summary>
-    public struct PartitionMetadata
+    public class PartitionMetadata
     {
         public PartitionMetadata(int partitionId, int leader, int[] replicas, int[] inSyncReplicas, Error error)
         {

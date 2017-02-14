@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Tests
         public void Constuctor()
         {
             var tpos = new List<TopicPartitionOffsetError>();
-            var err = new Error(ErrorCode.UNKNOWN_TOPIC_OR_PART);
+            var err = new Error(ErrorCode.UnknownTopicOrPart);
             var co = new CommittedOffsets(tpos, err);
             Assert.Same(co.Offsets, tpos);
             Assert.Equal(co.Error, err);

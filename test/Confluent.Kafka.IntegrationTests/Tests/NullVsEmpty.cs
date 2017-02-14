@@ -32,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "null-vs-empty-cg" },
                 { "bootstrap.servers", bootstrapServers }
             };
 
@@ -58,10 +58,12 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Message msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(msg);
                 Assert.Null(msg.Key);
                 Assert.Null(msg.Value);
 
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(msg);
                 Assert.Null(msg.Key);
                 Assert.Equal(msg.Value, new byte[0]);
 

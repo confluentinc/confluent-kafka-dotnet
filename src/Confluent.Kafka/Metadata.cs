@@ -26,7 +26,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Metadata pertaining to a single Kafka cluster
     /// </summary>
-    public struct Metadata
+    public class Metadata
     {
         public Metadata(List<BrokerMetadata> brokers, List<TopicMetadata> topics, int originatingBrokerId, string originatingBrokerName)
         {

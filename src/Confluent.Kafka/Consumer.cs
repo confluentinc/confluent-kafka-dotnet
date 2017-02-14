@@ -19,7 +19,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
@@ -88,7 +87,7 @@ namespace Confluent.Kafka
             Message msg;
             if (!consumer.Consume(out msg, millisecondsTimeout))
             {
-                message = default(Message<TKey, TValue>);
+                message = null;
                 return false;
             }
 
@@ -124,11 +123,6 @@ namespace Confluent.Kafka
         public void Poll()
             => Poll(-1);
 
-        public void Start()
-            => consumer.StartBackgroundPollLoop((Action<int>)Poll);
-
-        public void Stop()
-            => consumer.Stop();
 
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
         {
@@ -357,9 +351,6 @@ namespace Confluent.Kafka
 
     public class Consumer : IDisposable
     {
-        private CancellationTokenSource consumerCts = null;
-        private Task consumerTask = null;
-
         private SafeKafkaHandle kafkaHandle;
 
         private LibRdKafka.ErrorDelegate errorDelegate;
@@ -399,7 +390,7 @@ namespace Confluent.Kafka
             IntPtr opaque)
         {
             var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
-            if (err == ErrorCode._ASSIGN_PARTITIONS)
+            if (err == ErrorCode.Local_AssignPartitions)
             {
                 var handler = OnPartitionsAssigned;
                 if (handler != null && handler.GetInvocationList().Length > 0)
@@ -411,7 +402,7 @@ namespace Confluent.Kafka
                     Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
                 }
             }
-            if (err == ErrorCode._REVOKE_PARTITIONS)
+            if (err == ErrorCode.Local_RevokePartitions)
             {
                 var handler = OnPartitionsRevoked;
                 if (handler != null && handler.GetInvocationList().Length > 0)
@@ -488,7 +479,7 @@ namespace Confluent.Kafka
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
-            if (pollSetConsumerError != ErrorCode.NO_ERROR)
+            if (pollSetConsumerError != ErrorCode.NoError)
             {
                 throw new KafkaException(new Error(pollSetConsumerError,
                     $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
@@ -655,9 +646,9 @@ namespace Confluent.Kafka
             {
                 switch (message.Error.Code)
                 {
-                    case ErrorCode.NO_ERROR:
+                    case ErrorCode.NoError:
                         return true;
-                    case ErrorCode._PARTITION_EOF:
+                    case ErrorCode.Local_PartitionEOF:
                         OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:
@@ -677,11 +668,6 @@ namespace Confluent.Kafka
 
         public void Poll(TimeSpan timeout)
         {
-            if (consumerCts != null)
-            {
-                throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
-            }
-
             Message msg;
             if (Consume(out msg, timeout))
             {
@@ -691,11 +677,6 @@ namespace Confluent.Kafka
 
         public void Poll(int millisecondsTimeout)
         {
-            if (consumerCts != null)
-            {
-                throw new Exception("Cannot call Poll on Consumer with background poll thread running.");
-            }
-
             Message msg;
             if (Consume(out msg, millisecondsTimeout))
             {
@@ -706,44 +687,6 @@ namespace Confluent.Kafka
         public void Poll()
             => Poll(-1);
 
-
-        internal void StartBackgroundPollLoop(Action<int> pollMethod)
-        {
-            if (consumerCts != null)
-            {
-                throw new Exception("Consumer background poll loop cannot be started twice.");
-            }
-
-            consumerCts = new CancellationTokenSource();
-            var ct = consumerCts.Token;
-            consumerTask = Task.Factory.StartNew(() =>
-            {
-                while (!ct.IsCancellationRequested)
-                {
-                    pollMethod(100);
-                }
-            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
-
-        public void Start()
-            => StartBackgroundPollLoop((Action<int>)Poll);
-
-        public void Stop()
-        {
-            if (consumerCts == null)
-            {
-                // Consumer background poll loop not started - cannot stop.
-                // While this might be considered an error there is no point
-                // in throwing an exception here since there are no side-effects
-                // of not being able to stop a non-Started instance.
-                return;
-            }
-
-            consumerCts.Cancel();
-            consumerTask.Wait();
-            consumerCts = null;
-            consumerTask = null;
-        }
 
         /// <summary>
         ///     Commit offsets for the current assignment.
@@ -761,8 +704,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public async Task<CommittedOffsets> CommitAsync(Message message)
         {
-            if (message.Error.Code != ErrorCode.NO_ERROR)
+            if (message.Error.Code != ErrorCode.NoError)
+            {
                 throw new InvalidOperationException("Must not commit offset for errored message");
+            }
             return await CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 
@@ -800,8 +745,6 @@ namespace Confluent.Kafka
 
         public void Dispose()
         {
-            // Make sure background poller is stopped (no-op if already stopped, or not started)
-            Stop();
             kafkaHandle.ConsumerClose();
             kafkaHandle.Dispose();
         }

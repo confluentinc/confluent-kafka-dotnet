@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var g = consumer.ListGroup("list-group-cg");
                 Assert.NotNull(g);
-                Assert.Equal(ErrorCode.NO_ERROR, g.Error.Code);
+                Assert.Equal(ErrorCode.NoError, g.Error.Code);
                 Assert.Equal("list-group-cg", g.Group);
                 Assert.Equal("consumer", g.ProtocolType);
                 Assert.Equal(1, g.Members.Count);

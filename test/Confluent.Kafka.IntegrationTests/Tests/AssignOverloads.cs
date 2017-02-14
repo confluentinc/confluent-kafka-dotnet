@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "test-consumer-group" },
+                { "group.id", "assign-overloads-cg" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };
@@ -59,8 +59,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Message<Null, string> msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
                 Assert.Equal(msg.Value, testString);
-                var committedOffsets = consumer.CommitAsync().Result;
-                Assert.True(!committedOffsets.Error);
 
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });

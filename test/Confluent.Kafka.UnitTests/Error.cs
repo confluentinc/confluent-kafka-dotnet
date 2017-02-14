@@ -24,23 +24,23 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void Constuctor()
         {
-            var e = new Error(ErrorCode._BAD_COMPRESSION);
-            Assert.Equal(e.Code, ErrorCode._BAD_COMPRESSION);
+            var e = new Error(ErrorCode.Local_BadCompression);
+            Assert.Equal(e.Code, ErrorCode.Local_BadCompression);
             Assert.NotNull(e.Reason);
             Assert.Equal(e.Reason, "Local: Invalid compressed data");
 
-            var e2 = new Error(ErrorCode._BAD_MSG, "Dummy message");
-            Assert.Equal(e2.Code, ErrorCode._BAD_MSG);
+            var e2 = new Error(ErrorCode.Local_BadMsg, "Dummy message");
+            Assert.Equal(e2.Code, ErrorCode.Local_BadMsg);
             Assert.Equal(e2.Reason, "Dummy message");
         }
 
         [Fact]
         public void Equality()
         {
-            var e1 = new Error(ErrorCode._ALL_BROKERS_DOWN);
-            var e2 = new Error(ErrorCode._ALL_BROKERS_DOWN);
-            var e3 = new Error(ErrorCode._IN_PROGRESS);
-            var e4 = new Error(ErrorCode._IN_PROGRESS, "Dummy message");
+            var e1 = new Error(ErrorCode.Local_AllBrokersDown);
+            var e2 = new Error(ErrorCode.Local_AllBrokersDown);
+            var e3 = new Error(ErrorCode.Local_InProgress);
+            var e4 = new Error(ErrorCode.Local_InProgress, "Dummy message");
 
             Assert.Equal(e1, e2);
             Assert.True(e1.Equals(e2));
@@ -61,8 +61,8 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void HasError()
         {
-            var e1 = new Error(ErrorCode.NO_ERROR);
-            var e2 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
+            var e1 = new Error(ErrorCode.NoError);
+            var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
             Assert.False(e1.HasError);
             Assert.True(e2.HasError);
@@ -73,8 +73,8 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void BoolCast()
         {
-            var e1 = new Error(ErrorCode.NO_ERROR);
-            var e2 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
+            var e1 = new Error(ErrorCode.NoError);
+            var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
             Assert.False(e1);
             Assert.True(e2);
@@ -83,8 +83,8 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void ErrorCodeCast()
         {
-            var e1 = new Error(ErrorCode.NOT_COORDINATOR_FOR_GROUP);
-            var ec1 = ErrorCode.NOT_COORDINATOR_FOR_GROUP;
+            var e1 = new Error(ErrorCode.NotCoordinatorForGroup);
+            var ec1 = ErrorCode.NotCoordinatorForGroup;
 
             Assert.Equal((ErrorCode)e1, ec1);
             Assert.Equal(ec1, (ErrorCode)e1);

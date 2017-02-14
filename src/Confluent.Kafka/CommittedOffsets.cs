@@ -21,7 +21,7 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
-    public struct CommittedOffsets
+    public class CommittedOffsets
     {
         public CommittedOffsets(IList<TopicPartitionOffsetError> offsets, Error error)
         {
@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         public CommittedOffsets(IList<TopicPartitionOffsetError> offsets)
         {
             Offsets = offsets;
-            Error = new Error(ErrorCode.NO_ERROR);
+            Error = new Error(ErrorCode.NoError);
         }
 
         public CommittedOffsets(Error error)

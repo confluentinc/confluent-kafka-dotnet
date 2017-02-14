@@ -21,7 +21,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates a Topic / Partition / Offset / Error tuple.
     /// </summary>
-    public struct TopicPartitionOffsetError
+    public class TopicPartitionOffsetError
     {
         public TopicPartitionOffsetError(TopicPartition tp, Offset offset, Error error)
             : this(tp.Topic, tp.Partition, offset, error) {}

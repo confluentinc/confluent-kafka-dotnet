@@ -178,7 +178,7 @@ namespace Confluent.Kafka.Impl
                 /* const struct rd_kafka_metadata ** */ out metaPtr,
                 (IntPtr) millisecondsTimeout);
 
-            if (err == ErrorCode.NO_ERROR)
+            if (err == ErrorCode.NoError)
             {
                 try {
                     var meta = (rd_kafka_metadata) Marshal.PtrToStructure<rd_kafka_metadata>(metaPtr);
@@ -236,7 +236,7 @@ namespace Confluent.Kafka.Impl
             long high;
 
             ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr) millisecondsTimeout);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -250,7 +250,7 @@ namespace Confluent.Kafka.Impl
             long high;
 
             ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out low, out high);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -272,7 +272,7 @@ namespace Confluent.Kafka.Impl
 
             ErrorCode err = LibRdKafka.subscribe(handle, list);
             LibRdKafka.topic_partition_list_destroy(list);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -281,7 +281,7 @@ namespace Confluent.Kafka.Impl
         internal void Unsubscribe()
         {
             ErrorCode err = LibRdKafka.unsubscribe(handle);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -293,7 +293,7 @@ namespace Confluent.Kafka.Impl
             IntPtr msgPtr = LibRdKafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
-                message = default(Message);
+                message = null;
                 return false;
             }
 
@@ -344,7 +344,7 @@ namespace Confluent.Kafka.Impl
         internal void ConsumerClose()
         {
             ErrorCode err = LibRdKafka.consumer_close(handle);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -354,7 +354,7 @@ namespace Confluent.Kafka.Impl
         {
             IntPtr listPtr = IntPtr.Zero;
             ErrorCode err = LibRdKafka.assignment(handle, out listPtr);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -368,7 +368,7 @@ namespace Confluent.Kafka.Impl
         {
             IntPtr listPtr = IntPtr.Zero;
             ErrorCode err = LibRdKafka.subscription(handle, out listPtr);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -402,7 +402,7 @@ namespace Confluent.Kafka.Impl
             {
                 LibRdKafka.topic_partition_list_destroy(list);
             }
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -434,7 +434,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.commit_queue(handle, cOffsets, cQueue, dummyOffsetCommitCb, IntPtr.Zero);
             if (cOffsets != IntPtr.Zero)
                 LibRdKafka.topic_partition_list_destroy(cOffsets);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 LibRdKafka.queue_destroy(cQueue);
                 return new CommittedOffsets(new Error(err));
@@ -446,7 +446,7 @@ namespace Confluent.Kafka.Impl
             if (rkev == IntPtr.Zero)
             {
                 // This shouldn't happen since timoeut is infinite
-                return new CommittedOffsets(new Error(ErrorCode._TIMED_OUT));
+                return new CommittedOffsets(new Error(ErrorCode.Local_TimedOut));
             }
 
             CommittedOffsets committedOffsets =
@@ -483,7 +483,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.committed(handle, list, timeout_ms);
             var result = GetTopicPartitionOffsetErrorList(list);
             LibRdKafka.topic_partition_list_destroy(list);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -510,7 +510,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.position(handle, list);
             var result = GetTopicPartitionOffsetErrorList(list);
             LibRdKafka.topic_partition_list_destroy(list);
-            if (err != ErrorCode.NO_ERROR)
+            if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
@@ -599,7 +599,7 @@ namespace Confluent.Kafka.Impl
         {
             IntPtr grplistPtr;
             ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)millisecondsTimeout);
-            if (err == ErrorCode.NO_ERROR)
+            if (err == ErrorCode.NoError)
             {
                 var list = Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
                 var groups = Enumerable.Range(0, list.group_cnt)
