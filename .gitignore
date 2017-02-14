@@ -15,3 +15,7 @@ packages/
 doc/api/
 doc/_site/
 doc/src
+UpgradeLog*.htm
+*~
+\#*
+core

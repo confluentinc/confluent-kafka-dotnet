@@ -23,10 +23,16 @@ namespace Confluent.Kafka
 {
     public class KafkaException : Exception
     {
-        public KafkaException(Error error, string message)
-            : base(message)
+        public KafkaException(Error error)
+            : base(error.ToString())
         {
             Error = error;
+        }
+
+        public KafkaException(ErrorCode code)
+            : base(ErrorCodeExtensions.GetReason(code))
+        {
+            Error = new Error(code);
         }
 
         public Error Error { get; }

@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.xproj", "{B2DDB635-4423-45D7-B3DC-F701E6010868}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.Tests", "test\Confluent.Kafka.Tests\Confluent.Kafka.Tests.xproj", "{33151BE2-C10B-41BC-8C5E-E55211A1722D}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.Test", "test\Confluent.Kafka.UnitTests\Confluent.Kafka.Test.xproj", "{33151BE2-C10B-41BC-8C5E-E55211A1722D}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "SimpleProducer", "examples\SimpleProducer\SimpleProducer.xproj", "{A7BF0A75-D3E7-4024-8597-5FCCC567D372}"
 EndProject
@@ -24,6 +24,12 @@ EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Benchmark", "examples\Benchmark\Benchmark.xproj", "{9EA27B93-4714-453C-9319-1920945CEB78}"
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AdvancedProducer", "examples\AdvancedProducer\AdvancedProducer.xproj", "{DDCE9F6B-6A9D-4B05-BAD0-E77D6359B1FB}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.VerifiableClient", "test\Confluent.Kafka.VerifiableClient\Confluent.Kafka.VerifiableClient.xproj", "{C3607ECF-7A8B-488C-B7D5-00388F1318A7}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.IntegrationTests", "test\Confluent.Kafka.IntegrationTests\Confluent.Kafka.IntegrationTests.xproj", "{BAB88872-01A1-41E7-98EC-95C240D076E8}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Confluent.Kafka.Benchmark", "test\Confluent.Kafka.Benchmark\Confluent.Kafka.Benchmark.xproj", "{D6053A17-99FA-4164-A8E1-8D24E196BED9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +69,18 @@ Global
 		{DDCE9F6B-6A9D-4B05-BAD0-E77D6359B1FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDCE9F6B-6A9D-4B05-BAD0-E77D6359B1FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DDCE9F6B-6A9D-4B05-BAD0-E77D6359B1FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3607ECF-7A8B-488C-B7D5-00388F1318A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAB88872-01A1-41E7-98EC-95C240D076E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -76,5 +94,8 @@ Global
 		{0A3DD19C-3A80-47DB-83B0-A1EF6078C9EE} = {5E1F754C-FCE9-4B80-B13D-5F9ACE13305A}
 		{9EA27B93-4714-453C-9319-1920945CEB78} = {5E1F754C-FCE9-4B80-B13D-5F9ACE13305A}
 		{DDCE9F6B-6A9D-4B05-BAD0-E77D6359B1FB} = {5E1F754C-FCE9-4B80-B13D-5F9ACE13305A}
+		{C3607ECF-7A8B-488C-B7D5-00388F1318A7} = {03D93818-5A54-4913-A5CD-CA0C373CEE05}
+		{BAB88872-01A1-41E7-98EC-95C240D076E8} = {03D93818-5A54-4913-A5CD-CA0C373CEE05}
+		{D6053A17-99FA-4164-A8E1-8D24E196BED9} = {03D93818-5A54-4913-A5CD-CA0C373CEE05}
 	EndGlobalSection
 EndGlobal

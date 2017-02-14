@@ -62,9 +62,7 @@ namespace Confluent.Kafka
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            // TODO: Is reason ever different from that returned by err2str?
-            //       If so, sort something else out here.
-            OnError?.Invoke(this, err);
+            OnError?.Invoke(this, new Error(err, reason));
         }
 
         private LibRdKafka.StatsDelegate statsDelegate;
@@ -212,7 +210,7 @@ namespace Confluent.Kafka
                 {
                     var err = LibRdKafka.last_error();
                     gch.Free();
-                    throw new KafkaException(err, "Could not produce message");
+                    throw new KafkaException(err);
                 }
 
                 return;
@@ -220,8 +218,7 @@ namespace Confluent.Kafka
 
             if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp, IntPtr.Zero, blockIfQueueFull) != 0)
             {
-                var err = LibRdKafka.last_error();
-                throw new KafkaException(err, "Could not produce message");
+                throw new KafkaException(LibRdKafka.last_error());
             }
 
             return;
@@ -372,23 +369,29 @@ namespace Confluent.Kafka
         public string Name
             => kafkaHandle.Name;
 
-        /// <summary>
-        ///     The number of messages and requests waiting to be sent to,
-        ///     or acknowledged by the broker.
-        /// </summary>
+        /// <returns>
+        ///     The current librdkafka out queue length.
+        /// </returns>
+        /// <remarks>
+        ///     The out queue contains the messages and requests waiting to be sent,
+        ///     or acknowledged by, the broker.
+        /// </remarks>
         public long OutQueueLength
             => kafkaHandle.OutQueueLength;
 
 
         /// <summary>
         ///     Wait until all outstanding produce requests, et.al, are completed. This should typically be done prior
-        //      to destroying a producer instance to make sure all queued and in-flight produce requests are completed
-        //      before terminating.
+        ///     to destroying a producer instance to make sure all queued and in-flight produce requests are completed
+        ///     before terminating. The wait is limited by the optional millisecondsTimeout parameter.
         /// </summary>
-        public void Flush(TimeSpan timeout)
-            => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+        /// <returns>
+        ///     Returns the number of remaining messages and requests in queue.
+        /// </returns>
+        public long Flush(int millisecondsTimeout)
+            => kafkaHandle.Flush(millisecondsTimeout);
 
-        public void Flush()
+        public long Flush()
             => kafkaHandle.Flush(-1);
 
         public void Dispose()
@@ -440,6 +443,9 @@ namespace Confluent.Kafka
 
         public Metadata GetMetadata(bool allTopics, string topic)
             => GetMetadata(allTopics, topic, -1);
+
+        public Metadata GetMetadata()
+            => GetMetadata(true, null, -1);
     }
 
 
@@ -606,10 +612,10 @@ namespace Confluent.Kafka
         public event EventHandler<Error> OnError;
 
 
-        public void Flush(TimeSpan timeout)
+        public long Flush(int timeout)
             => producer.Flush(timeout);
 
-        public void Flush()
+        public long Flush()
             => producer.Flush();
 
 

@@ -142,10 +142,10 @@ namespace Confluent.Kafka
             remove { consumer.OnPartitionsRevoked -= value; }
         }
 
-        public event EventHandler<CommittedOffsets> OnOffsetCommit
+        public event EventHandler<CommittedOffsets> OnOffsetsCommitted
         {
-            add { consumer.OnOffsetCommit += value; }
-            remove { consumer.OnOffsetCommit -= value; }
+            add { consumer.OnOffsetsCommitted += value; }
+            remove { consumer.OnOffsetsCommitted -= value; }
         }
 
         public event EventHandler<LogMessage> OnLog
@@ -254,8 +254,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit offsets for the current assignment.
         /// </summary>
-        public void Commit()
-            => consumer.Commit();
+        public Task<CommittedOffsets> CommitAsync()
+            => consumer.CommitAsync();
 
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
@@ -265,14 +265,14 @@ namespace Confluent.Kafka
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
         /// </remarks>
-        public void Commit(Message<TKey, TValue> message)
-            => consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+        public Task<CommittedOffsets> CommitAsync(Message<TKey, TValue> message)
+            => consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <summary>
         ///     Commit explicit list of offsets.
         /// </summary>
-        public void Commit(ICollection<TopicPartitionOffset> offsets)
-            => consumer.Commit(offsets);
+        public Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
+            => consumer.CommitAsync(offsets);
 
         public void Dispose()
             => consumer.Dispose();
@@ -312,13 +312,13 @@ namespace Confluent.Kafka
         public string MemberId
             => consumer.MemberId;
 
-        /// <summary>
+        /// <returns>
         ///     The current librdkafka out queue length.
-        /// </summary>
+        /// </returns>
         /// <remarks>
-        ///     The out queue contains messages and requests waiting to be sent to,
+        ///     The out queue contains requests waiting to be sent,
         ///     or acknowledged by, the broker.
-        /// </summary>
+        /// </remarks>
         public long OutQueueLength
             => consumer.OutQueueLength;
 
@@ -365,9 +365,7 @@ namespace Confluent.Kafka
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            // TODO: Is reason ever different from that returned by err2str?
-            //       If so, sort something else out here.
-            OnError?.Invoke(this, err);
+            OnError?.Invoke(this, new Error(err, reason));
         }
 
         private LibRdKafka.StatsDelegate statsDelegate;
@@ -434,10 +432,9 @@ namespace Confluent.Kafka
             /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
             IntPtr opaque)
         {
-            OnOffsetCommit?.Invoke(this, new CommittedOffsets(
-                // TODO: check to see whether errors can ever be present here. If so, expose TPOE, not TPO.
-                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets).Select(tp => tp.TopicPartitionOffset).ToList(),
-                err
+            OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
+                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
+                new Error(err)
             ));
         }
 
@@ -493,7 +490,8 @@ namespace Confluent.Kafka
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();
             if (pollSetConsumerError != ErrorCode.NO_ERROR)
             {
-                throw new KafkaException(pollSetConsumerError, "Failed to redirect the poll queue to consumer_poll queue");
+                throw new KafkaException(new Error(pollSetConsumerError,
+                    $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
             }
         }
 
@@ -522,7 +520,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
-        public event EventHandler<CommittedOffsets> OnOffsetCommit;
+        public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
@@ -649,7 +647,7 @@ namespace Confluent.Kafka
         ///     Manually consume message or triggers events.
         ///
         ///     Will invoke events for OnPartitionsAssigned/Revoked,
-        ///     OnOffsetCommit, etc. on the calling thread.
+        ///     OnOffsetsCommitted, etc. on the calling thread.
         /// </summary>
         public bool Consume(out Message message, int millisecondsTimeout)
         {
@@ -734,7 +732,11 @@ namespace Confluent.Kafka
         {
             if (consumerCts == null)
             {
-                throw new Exception("Consumer background poll loop not started - cannot stop.");
+                // Consumer background poll loop not started - cannot stop.
+                // While this might be considered an error there is no point
+                // in throwing an exception here since there are no side-effects
+                // of not being able to stop a non-Started instance.
+                return;
             }
 
             consumerCts.Cancel();
@@ -746,8 +748,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit offsets for the current assignment.
         /// </summary>
-        public void Commit()
-            => kafkaHandle.Commit();
+        public async Task<CommittedOffsets> CommitAsync()
+            => await kafkaHandle.CommitAsync();
 
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
@@ -757,14 +759,18 @@ namespace Confluent.Kafka
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
         /// </remarks>
-        public void Commit(Message message)
-            => Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+        public async Task<CommittedOffsets> CommitAsync(Message message)
+        {
+            if (message.Error.Code != ErrorCode.NO_ERROR)
+                throw new InvalidOperationException("Must not commit offset for errored message");
+            return await CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+        }
 
         /// <summary>
         ///     Commit explicit list of offsets.
         /// </summary>
-        public void Commit(ICollection<TopicPartitionOffset> offsets)
-            => kafkaHandle.Commit(offsets);
+        public async Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
+            => await kafkaHandle.CommitAsync(offsets);
 
         /// <summary>
         ///     Retrieve current committed offsets for topics + partitions.
@@ -794,6 +800,8 @@ namespace Confluent.Kafka
 
         public void Dispose()
         {
+            // Make sure background poller is stopped (no-op if already stopped, or not started)
+            Stop();
             kafkaHandle.ConsumerClose();
             kafkaHandle.Dispose();
         }
@@ -809,13 +817,13 @@ namespace Confluent.Kafka
         public string MemberId
             => kafkaHandle.MemberId;
 
-        /// <summary>
+        /// <returns>
         ///     The current librdkafka out queue length.
-        /// </summary>
+        /// </returns>
         /// <remarks>
-        ///     The out queue contains messages and requests waiting to be sent to,
+        ///     The out queue contains requests waiting to be sent,
         ///     or acknowledged by, the broker.
-        /// </summary>
+        /// </remarks>
         public long OutQueueLength
             => kafkaHandle.OutQueueLength;
 

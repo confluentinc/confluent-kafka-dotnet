@@ -15,9 +15,9 @@ build_script:
   - dotnet build **/project.json -c %CONFIGURATION%
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
-  - dotnet test test/Confluent.Kafka.Tests
 
-test: on
+test_script:
+ - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin/Release/*.nupkg
