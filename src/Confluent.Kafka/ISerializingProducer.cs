@@ -29,15 +29,26 @@ namespace Confluent.Kafka
 
         ISerializer<TValue> ValueSerializer { get; }
 
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp, int partition, bool blockIfQueueFull);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp, int partition);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
 
-        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime? timestamp = null, int? partition = null, bool blockIfQueueFull = true);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition, bool blockIfQueueFull);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition, bool blockIfQueueFull);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition);
+        void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, bool blockIfQueueFull);
 
         event EventHandler<LogMessage> OnLog;
 
         event EventHandler<Error> OnError;
 
         event EventHandler<string> OnStatistics;
-
     }
 }
