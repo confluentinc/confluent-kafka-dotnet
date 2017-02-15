@@ -562,7 +562,7 @@ namespace Confluent.Kafka
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
 
@@ -624,7 +624,7 @@ namespace Confluent.Kafka
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
         }
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition, bool blockIfQueueFull)
@@ -709,25 +709,25 @@ namespace Confluent.Kafka
 
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition, bool blockIfQueueFull)
-            => ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition)
-            => ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp)
-            => ProduceAsync(topic, key, val, deliveryHandler, timestamp);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, timestamp);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceAsync(topic, key, val, deliveryHandler);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition, bool blockIfQueueFull)
-            => ProduceAsync(topic, key, val, deliveryHandler, partition, blockIfQueueFull);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, partition, blockIfQueueFull);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition)
-            => ProduceAsync(topic, key, val, deliveryHandler, partition);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, partition);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, bool blockIfQueueFull)
-            => ProduceAsync(topic, key, val, deliveryHandler, blockIfQueueFull);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler, blockIfQueueFull);
 
 
         public event EventHandler<LogMessage> OnLog;
