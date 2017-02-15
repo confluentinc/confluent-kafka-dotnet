@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that produces a message then consumes it.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SimpleProduceConsume(string bootstrapServers, string topic)
+        public static void SimpleProduceConsume(string bootstrapServers, string topic, string partitionedTopic)
         {
             // This test assumes broker v0.10.0 or higher:
             // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
