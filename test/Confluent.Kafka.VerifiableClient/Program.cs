@@ -37,7 +37,12 @@ namespace Confluent.Kafka.VerifiableClient
         public class LowercaseContractResolver : DefaultContractResolver
         {
             protected override string ResolvePropertyName(string propertyName)
-                => propertyName.ToLower();
+            {
+                if (propertyName.Equals("minOffset") || propertyName.Equals("maxOffset"))
+                    return propertyName;
+                else
+                    return propertyName.ToLower();
+            }
         }
     }
 
@@ -392,14 +397,33 @@ namespace Confluent.Kafka.VerifiableClient
         private void SendOffsetsCommitted (CommittedOffsets offsets)
         {
             Dbg($"OffsetCommit {offsets.Error}: {string.Join(", ", offsets.Offsets)}");
-            if (offsets.Error.Code == ErrorCode.Local_NoOffset)
+            if (offsets.Error.Code == ErrorCode.Local_NoOffset ||
+                offsets.Offsets.Count == 0)
                 return; // no offsets to commit, ignore
+
+            var olist = new List<Dictionary<string, object>>();
+            foreach (var o in offsets.Offsets)
+            {
+                var pd = new Dictionary<string, object>{
+                    { "topic", o.TopicPartition.Topic },
+                    { "partition", o.TopicPartition.Partition },
+                    { "offset", o.Offset.Value }
+                };
+                if (o.Error)
+                    pd["error"] = o.Error.ToString();
+                olist.Add(pd);
+            }
+            if (olist.Count == 0)
+                return;
+
             var d = new Dictionary<string, object>{
                     { "success", (bool)!offsets.Error },
-                    { "offsets", offsets.Offsets },
-                };
+                    { "offsets", olist }
+            };
+
             if (offsets.Error)
                 d["error"] = offsets.Error.ToString();
+
             Send("offsets_committed", d);
         }
 
@@ -413,6 +437,16 @@ namespace Confluent.Kafka.VerifiableClient
                 (Config.AutoCommit ||
                 consumedMsgsAtLastCommit + commitEvery > consumedMsgs))
                 return;
+
+            if (consumedMsgsAtLastCommit == consumedMsgs)
+            {
+                return;
+            }
+
+            // Offset commits must reference higher offsets than those
+            // reported to be consumed.
+            if (consumedMsgsLastReported < consumedMsgs)
+                SendRecordsConsumed(true);
 
             Dbg($"Committing {consumedMsgs - consumedMsgsAtLastCommit} messages");
 
