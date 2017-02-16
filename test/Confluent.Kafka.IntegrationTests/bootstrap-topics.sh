@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ "$#" -ne 2 ]; then
     echo "usage: bootstrap-topics.sh <confluent platform path> <zookeeper>"
     exit 1

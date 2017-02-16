@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -45,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal(0, dr.Partition);
                 Assert.Equal(Topic, dr.Topic);
-                Assert.NotEqual(Offset.Invalid, dr.Offset);
+                Assert.True(dr.Offset >= 0);
                 Assert.Null(dr.Key);
                 Assert.Null(dr.Value);
                 Count += 1;
@@ -66,11 +67,11 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, true, dh);
                 producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, dh);
                 producer.ProduceAsync(topic, null, null, dh);
-                producer.ProduceAsync(topic, null, -123, int.MinValue, null, int.MaxValue, 44, dh); // offset and length are ignored.
+                Assert.Throws<ArgumentException>(() => producer.ProduceAsync(topic, null, -123, int.MinValue, null, int.MaxValue, 44, dh));
                 producer.Flush();
             }
 
-            Assert.Equal(6, dh.Count);
+            Assert.Equal(5, dh.Count);
         }
     }
 }

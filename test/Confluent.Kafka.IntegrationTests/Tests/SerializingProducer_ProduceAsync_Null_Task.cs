@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal(partitionedTopic, dr.Topic);
-                Assert.NotEqual(Offset.Invalid, dr.Offset);
+                Assert.True(dr.Offset >= 0);
                 Assert.Null(dr.Key);
                 Assert.Null(dr.Value);
             }

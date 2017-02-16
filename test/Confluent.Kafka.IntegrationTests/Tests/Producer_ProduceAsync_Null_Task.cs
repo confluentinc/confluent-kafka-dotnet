@@ -14,9 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
-using Xunit;
 using System.Threading.Tasks;
+using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -41,16 +42,16 @@ namespace Confluent.Kafka.IntegrationTests
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, true));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 8, 100, null, -33, int.MaxValue)); // offset and length are ignored.
+                Assert.Throws<ArgumentException>(() => { producer.ProduceAsync(partitionedTopic, null, 8, 100, null, -33, int.MaxValue); });
                 producer.Flush();
             }
 
-            for (int i=0; i<6; ++i)
+            for (int i=0; i<5; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal(partitionedTopic, dr.Topic);
-                Assert.NotEqual(Offset.Invalid, dr.Offset);
+                Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Null(dr.Key);
                 Assert.Null(dr.Value);

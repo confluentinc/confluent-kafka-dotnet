@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal(partitionedTopic, dr.Topic);
-                Assert.NotEqual(Offset.Invalid, dr.Offset);
+                Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal($"test key {i}", dr.Key);
                 Assert.Equal($"test val {i}", dr.Value);
