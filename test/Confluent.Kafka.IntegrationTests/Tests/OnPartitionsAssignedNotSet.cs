@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void OnPartitionsAssignedNotSet(string bootstrapServers, string topic)
+        public static void OnPartitionsAssignedNotSet(string bootstrapServers, string topic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {

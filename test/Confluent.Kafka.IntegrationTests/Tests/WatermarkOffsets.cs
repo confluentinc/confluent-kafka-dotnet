@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests for GetWatermarkOffsets and QueryWatermarkOffsets on producer and consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void WatermarkOffsets(string bootstrapServers, string topic)
+        public static void WatermarkOffsets(string bootstrapServers, string topic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object>
             {

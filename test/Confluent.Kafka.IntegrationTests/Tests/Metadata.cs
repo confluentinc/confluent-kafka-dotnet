@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic test that metadata request + serialization works.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Metadata(string bootstrapServers, string topic)
+        public static void Metadata(string bootstrapServers, string topic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 

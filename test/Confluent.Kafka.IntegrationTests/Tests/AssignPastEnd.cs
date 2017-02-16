@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     higher than the offset of the last message on a partition.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AssignPastEnd(string bootstrapServers, string topic)
+        public static void AssignPastEnd(string bootstrapServers, string topic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {

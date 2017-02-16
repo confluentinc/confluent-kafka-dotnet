@@ -340,21 +340,9 @@ namespace Confluent.Kafka
         public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val)
             => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true);
 
-        public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val, DateTime timestamp)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp, RD_KAFKA_PARTITION_UA, true);
-
 
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true);
-
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime timestamp)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, RD_KAFKA_PARTITION_UA, true);
-
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime timestamp, int partition)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, true);
-
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime timestamp, int partition, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, blockIfQueueFull);
 
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true);
@@ -369,21 +357,9 @@ namespace Confluent.Kafka
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
 
-        public void ProduceAsync(string topic, byte[] key, byte[] val, DateTime timestamp, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
 
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime timestamp, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime timestamp, int partition, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, blockIfQueueFull, deliveryHandler);
 
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true, deliveryHandler);
@@ -562,18 +538,9 @@ namespace Confluent.Kafka
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp, int partition, bool blockIfQueueFull)
-            => Produce(topic, key, val, timestamp, partition, blockIfQueueFull);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp, int partition)
-            => Produce(topic, key, val, timestamp, partition, true);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp)
-            => Produce(topic, key, val, timestamp, Producer.RD_KAFKA_PARTITION_UA, true);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
             => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true);
@@ -619,34 +586,25 @@ namespace Confluent.Kafka
             }
         }
 
-        private void Produce(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime? timestamp, int partition, bool blockIfQueueFull)
+        private void Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
         {
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes.Length, keyBytes, 0, keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
         }
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition, bool blockIfQueueFull)
-            => Produce(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition)
-            => Produce(topic, key, val, deliveryHandler, timestamp, partition, true);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp)
-            => Produce(topic, key, val, deliveryHandler, timestamp, Producer.RD_KAFKA_PARTITION_UA, true);
-
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, deliveryHandler, null, Producer.RD_KAFKA_PARTITION_UA, true);
+            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true, deliveryHandler);
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition, bool blockIfQueueFull)
-            => Produce(topic, key, val, deliveryHandler, null, partition, blockIfQueueFull);
+        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => Produce(topic, key, val, null, partition, blockIfQueueFull, deliveryHandler);
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition)
-            => Produce(topic, key, val, deliveryHandler, null, partition, true);
+        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => Produce(topic, key, val, null, partition, true, deliveryHandler);
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, bool blockIfQueueFull)
-            => Produce(topic, key, val, deliveryHandler, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull);
+        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
 
         public string Name
             => producer.Name;
@@ -686,14 +644,6 @@ namespace Confluent.Kafka
         public string Name
             => serializingProducer.Name;
 
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp, int partition, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, timestamp, partition, blockIfQueueFull);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp, int partition)
-            => serializingProducer.ProduceAsync(topic, key, val, timestamp, partition);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime timestamp)
-            => serializingProducer.ProduceAsync(topic, key, val, timestamp);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
             => serializingProducer.ProduceAsync(topic, key, val);
@@ -708,26 +658,17 @@ namespace Confluent.Kafka
             => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull);
 
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition, bool blockIfQueueFull)
-            => ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition, blockIfQueueFull);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp, int partition)
-            => ProduceAsync(topic, key, val, deliveryHandler, timestamp, partition);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, DateTime timestamp)
-            => ProduceAsync(topic, key, val, deliveryHandler, timestamp);
-
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceAsync(topic, key, val, deliveryHandler);
+            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler);
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition, bool blockIfQueueFull)
-            => ProduceAsync(topic, key, val, deliveryHandler, partition, blockIfQueueFull);
+        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull, deliveryHandler);
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, int partition)
-            => ProduceAsync(topic, key, val, deliveryHandler, partition);
+        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => serializingProducer.ProduceAsync(topic, key, val, partition, deliveryHandler);
 
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler, bool blockIfQueueFull)
-            => ProduceAsync(topic, key, val, deliveryHandler, blockIfQueueFull);
+        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull, deliveryHandler);
 
 
         public event EventHandler<LogMessage> OnLog;

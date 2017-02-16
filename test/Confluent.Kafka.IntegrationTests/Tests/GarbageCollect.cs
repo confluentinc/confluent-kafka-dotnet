@@ -32,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Segfault?
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void GarbageCollect(string bootstrapServers, string topic)
+        public static void GarbageCollect(string bootstrapServers, string topic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object>
             {
