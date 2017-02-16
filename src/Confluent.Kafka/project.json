@@ -1,5 +1,5 @@
 {
-    "version": "0.9.4-preview-*",
+    "version": "0.9.4-preview2-*",
 
     "packOptions": {
         "description": ".NET Apache Kafka client",

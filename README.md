@@ -16,15 +16,15 @@ Derived from Andreas Heider's [rdkafka-dotnet](https://github.com/ah-/rdkafka-do
 
 ## Usage
 
-Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.2-preview).
+Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.4-preview2).
 
 To install Confluent.Kafka from within Visual Studio, run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Pre -Version 0.9.2-preview
+Install-Package Confluent.Kafka -Pre -Version 0.9.4-preview2
 ```
 
-To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.2-preview"` to the dependencies section of the project.json file.
+To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.4-preview2"` to the dependencies section of the project.json file.
 
 ## Examples
 
