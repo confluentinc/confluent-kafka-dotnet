@@ -19,7 +19,7 @@ matrix:
     env: DOTNETCORE=1
 
 install:
-   - sed -i 's/^.*\"net451\":.*$//g' src/Confluent.Kafka/project.json
+   - sed -i.bak 's/^.*\"net451\":.*$//g' src/Confluent.Kafka/project.json
    - dotnet restore
 
 script:
