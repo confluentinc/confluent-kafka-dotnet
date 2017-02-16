@@ -307,11 +307,13 @@ namespace Confluent.Kafka.VerifiableClient
             public int ConsumedMsgs;
             public Int64 MinOffset;
             public Int64 MaxOffset;
+            public Int64 LastOffset;
 
             public AssignedPartition()
             {
                 MinOffset = -1;
                 MaxOffset = -1;
+                LastOffset = -1;
             }
         };
 
@@ -476,6 +478,12 @@ namespace Confluent.Kafka.VerifiableClient
                 return;
             }
 
+            if (ap.LastOffset != -1 &&
+                ap.LastOffset + 1 != m.Offset)
+                Dbg($"Message at {m.TopicPartitionOffset}, expected offset {ap.LastOffset+1}");
+
+
+            ap.LastOffset = m.Offset;
             consumedMsgs++;
             ap.ConsumedMsgs++;
 
