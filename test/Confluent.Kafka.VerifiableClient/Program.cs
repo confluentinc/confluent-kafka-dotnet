@@ -644,7 +644,7 @@ Producer options:
 Consumer options:
    --group <group>              Consumer group (required)
    --session-timeout <ms>       Group session timeout
-   --enable-autocommit <bool>   Enable/disable auto commit (false)
+   --enable-autocommit          Enable auto commit (false)
    --assignment-strategy <jcls> Java assignment strategy class name
    --consumer.config <file>     Ignored (compatibility)
 
@@ -674,6 +674,14 @@ Consumer options:
                 Usage(1, $"{key} is a consumer property");
         }
 
+        static private void AssertValue(string mode, string key, string val)
+        {
+                if (val == null)
+                {
+                        Usage(1, $"{key} requires a value");
+                 }
+        }
+
         static private VerifiableClient NewClientFromArgs(string[] args)
         {
             VerifiableClientConfig conf = null; // avoid warning
@@ -689,10 +697,14 @@ Consumer options:
             else
                 Usage(1, "--consumer or --producer must be the first argument");
 
-            for (var i = 1; i + 1 < args.Length; i += 2)
+            for (var i = 1; i < args.Length; i += 2)
             {
                 var key = args[i];
-                var val = args[i + 1];
+                string val = null;
+                if (i + 1 < args.Length)
+                {
+                        val = args[i + 1];
+                }
 
                 // It is helpful to see the passed arguments from system test logs
                 Console.Error.WriteLine($"{mode} Arg: {key} {val}");
@@ -700,18 +712,23 @@ Consumer options:
                 {
                     /* Generic options */
                     case "--topic":
+                        AssertValue(mode, key, val);
                         conf.Topic = val;
                         break;
                     case "--broker-list":
+                        AssertValue(mode, key, val);
                         conf.Conf["bootstrap.servers"] = val;
                         break;
                     case "--max-messages":
+                        AssertValue(mode, key, val);
                         conf.MaxMsgs = int.Parse(val);
                         break;
                     case "--debug":
+                        AssertValue(mode, key, val);
                         conf.Conf["debug"] = val;
                         break;
                     case "--property":
+                        AssertValue(mode, key, val);
                         foreach (var kv in val.Split(','))
                         {
                             var kva = kv.Split('=');
@@ -724,14 +741,17 @@ Consumer options:
 
                     /* Producer options */
                     case "--throughput":
+                        AssertValue(mode, key, val);
                         AssertProducer(mode, key);
                         ((VerifiableProducerConfig)conf).MsgRate = double.Parse(val);
                         break;
                     case "--value-prefix":
+                        AssertValue(mode, key, val);
                         AssertProducer(mode, key);
-                        ((VerifiableProducerConfig)conf).ValuePrefix = val;
+                        ((VerifiableProducerConfig)conf).ValuePrefix = val + ".";
                         break;
                     case "--acks":
+                        AssertValue(mode, key, val);
                         AssertProducer(mode, key);
                         ((Dictionary<string,object>)conf.Conf["default.topic.config"])["acks"] = val;
                         break;
@@ -741,20 +761,27 @@ Consumer options:
 
                     /* Consumer options */
                     case "--group-id":
+                        AssertValue(mode, key, val);
                         AssertConsumer(mode, key);
                         conf.Conf["group.id"] = val;
                         break;
                     case "--session-timeout":
+                        AssertValue(mode, key, val);
                         AssertConsumer(mode, key);
                         conf.Conf["session.timeout.ms"] = int.Parse(val);
                         break;
                     case "--enable-autocommit":
                         AssertConsumer(mode, key);
-                        ((VerifiableConsumerConfig)conf).AutoCommit = bool.Parse(val);
+                        i--; // dont consume value part
+                        ((VerifiableConsumerConfig)conf).AutoCommit = true;
                         break;
                     case "--assignment-strategy":
+                        AssertValue(mode, key, val);
                         AssertConsumer(mode, key);
                         conf.Conf["partition.assignment.strategy"] = JavaAssignmentStrategyParse(val);
+                        break;
+                    case "--consumer.config":
+                        /* Ignored */
                         break;
 
                     default:
