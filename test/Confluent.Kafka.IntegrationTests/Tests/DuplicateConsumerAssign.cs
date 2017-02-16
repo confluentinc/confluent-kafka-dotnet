@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     You should never do this, but the brokers don't actually prevent it.
         /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DuplicateConsumerAssign(string bootstrapServers, string topic)
+        public static void DuplicateConsumerAssign(string bootstrapServers, string topic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {

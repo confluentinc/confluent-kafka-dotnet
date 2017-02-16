@@ -57,13 +57,27 @@ namespace Confluent.Kafka.Impl
             var gchValue = default(GCHandle);
             var gchKey = default(GCHandle);
 
-            if (val != null)
+            if (val == null)
+            {
+                if (valOffset != 0 || valLength != 0)
+                {
+                    throw new ArgumentException("valOffset and valLength parameters must be 0 when producing null values.");
+                }
+            }
+            else
             {
                 gchValue = GCHandle.Alloc(val, GCHandleType.Pinned);
                 pValue = Marshal.UnsafeAddrOfPinnedArrayElement(val, valOffset);
             }
 
-            if (key != null)
+            if (key == null)
+            {
+                if (keyOffset != 0 || keyLength != 0)
+                {
+                    throw new ArgumentException("keyOffset and keyLength parameters must be 0 when producing null key values.");
+                }
+            }
+            else
             {
                 gchKey = GCHandle.Alloc(key, GCHandleType.Pinned);
                 pKey = Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset);

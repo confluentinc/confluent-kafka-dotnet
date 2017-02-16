@@ -1,4 +1,5 @@
 {
    "bootstrapServers": "localhost:9092",
-   "topic": "test-topic-1"
+   "topic": "test-topic-1",
+   "partitionedTopic": "test-topic-2"
 }

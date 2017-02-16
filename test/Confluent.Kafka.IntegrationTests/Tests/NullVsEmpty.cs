@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void NullVsEmpty(string bootstrapServers, string topic)
+        public static void NullVsEmpty(string bootstrapServers, string topic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {

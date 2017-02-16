@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple test of both Consumer.Assign overloads.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AssignOverloads(string bootstrapServers, string topic)
+        public static void AssignOverloads(string bootstrapServers, string topic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {

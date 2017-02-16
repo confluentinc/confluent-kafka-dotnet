@@ -46,17 +46,38 @@ To run an example project, run the following from within the example's project d
 dotnet run <args>
 ```
 
-To run the integration or unit tests, run the following from within the relevant project directory:
+## Tests
+
+### Unit Tests
+
+From within the test/Confluent.Kafka.UnitTests directory, run:
 
 ```
 dotnet test
 ```
 
-To create a nuget package, run the following from wihin `src/Confluent.Kafka`:
+### Integration Tests
+
+From within the [Confluent Platform](https://www.confluent.io/product/compare/) (or Apache Kafka) distribution directory,
+run the following two commands (in separate terminal windows) to set up a single broker test Kafka cluster:
 
 ```
-dotnet pack
+./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties
+
+./bin/kafka-server-start ./etc/kafka/server.properties
 ```
 
+Now use the `bootstrap-topics.sh` script in the test/Confleunt.Kafka.IntegrationTests directory to set up the
+prerequisite topics:
+
+```
+./bootstrap-topics.sh <confluent platform path> <zookeeper>
+```
+
+then:
+
+```
+dotnet test
+```
 
 Copyright (c) 2016-2017 [Confluent Inc.](https://www.confluent.io), 2015-2016, [Andreas Heider](mailto:andreas@heider.io)
