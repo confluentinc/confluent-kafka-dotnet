@@ -573,7 +573,7 @@ namespace Confluent.Kafka.VerifiableClient
                 => HandleMessage(msg);
 
             Handle.OnError += (_, error)
-                => Fatal($"Error: {error}");
+                => Dbg($"Error: {error}");
 
             Handle.OnPartitionsAssigned += (_, partitions)
                 => HandleAssign(partitions);
