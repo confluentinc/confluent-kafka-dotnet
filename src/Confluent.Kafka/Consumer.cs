@@ -209,7 +209,7 @@ namespace Confluent.Kafka
             => consumer.Unsubscribe();
 
         /// <summary>
-        ///     Update the assignment set to <param name="partitions" />.
+        ///     Update the assignment set to <paramref name="partitions" />.
         ///
         ///     The assignment set is the complete set of partitions to consume
         ///     from and will replace any previous assignment.
@@ -225,7 +225,7 @@ namespace Confluent.Kafka
             => consumer.Assign(partitions);
 
         /// <summary>
-        ///     Update the assignment set to <param name="partitions" />.
+        ///     Update the assignment set to <paramref name="partitions" />.
         ///
         ///     The assignment set is the complete set of partitions to consume
         ///     from and will replace any previous assignment.
@@ -251,13 +251,16 @@ namespace Confluent.Kafka
         public Task<CommittedOffsets> CommitAsync()
             => consumer.CommitAsync();
 
+        /// <param name="message">
+        ///     The message used to determine the committed offset.
+        /// </param>
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
-        ///     The next message to be read will be that following <param name="message" />.
+        ///     The next message to be read will be that following <paramref name="message" />.
         /// </summary>
         /// <remarks>
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
-        ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
+        ///     Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
         /// </remarks>
         public Task<CommittedOffsets> CommitAsync(Message<TKey, TValue> message)
             => consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
@@ -694,13 +697,16 @@ namespace Confluent.Kafka
         public async Task<CommittedOffsets> CommitAsync()
             => await kafkaHandle.CommitAsync();
 
+        /// <param name="message">
+        ///     The message used to determine the committed offset.
+        /// </param>
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
-        ///     The next message to be read will be that following <param name="message" />.
+        ///     The next message to be read will be that following <paramref name="message" />.
         /// </summary>
         /// <remarks>
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
-        ///     Hence, this method commits an offset of <param name="message">.Offset + 1.
+        ///     Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
         /// </remarks>
         public async Task<CommittedOffsets> CommitAsync(Message message)
         {
@@ -797,18 +803,6 @@ namespace Confluent.Kafka
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
 
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="allTopics">
-        ///     true - request all topics from cluster
-        ///     false - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
-        /// </param>
-        /// <remarks>
-        ///     TODO: Topic handles are not exposed to users of the library (they are internal to producer).
-        ///           Is it possible to get a topic handle given a topic name?
-        ///           If so, include topic parameter in this method.
-        /// </remaarks>
         public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
 

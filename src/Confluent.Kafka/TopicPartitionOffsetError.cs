@@ -37,6 +37,9 @@ namespace Confluent.Kafka
             Error = error;
         }
 
+        /// <summary>
+        ///     A kafka topic
+        /// </summary>
         public string Topic { get; }
         public int Partition { get; }
         public Offset Offset { get; }
@@ -59,9 +62,8 @@ namespace Confluent.Kafka
             return tp.Partition == Partition && tp.Topic == Topic && tp.Offset == Offset && tp.Error == Error;
         }
 
-        // x by prime number is quick and gives decent distribution.
         public override int GetHashCode()
-            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode();
+            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode(); // x by prime number is quick and gives decent distribution.
 
         public static bool operator ==(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
             => a.Equals(b);
