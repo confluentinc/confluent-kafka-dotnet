@@ -21,6 +21,9 @@ using System;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Encapsulates a Kafka timestamp
+    /// </summary>
     public struct Timestamp
     {
         public Timestamp(DateTime dateTime, TimestampType type)
@@ -43,9 +46,8 @@ namespace Confluent.Kafka
             return ts.Type == Type && ts.DateTime == DateTime;
         }
 
-        // x by prime number is quick and gives decent distribution.
         public override int GetHashCode()
-            => Type.GetHashCode()*251 + DateTime.GetHashCode();
+            => Type.GetHashCode()*251 + DateTime.GetHashCode();  // x by prime number is quick and gives decent distribution.
 
         public static bool operator ==(Timestamp a, Timestamp b)
             => a.Equals(b);

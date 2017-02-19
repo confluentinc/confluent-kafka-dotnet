@@ -142,6 +142,10 @@ namespace Confluent.Kafka
             remove { consumer.OnOffsetsCommitted -= value; }
         }
 
+        /// <summary>
+        ///     Raised on critical errors, e.g. connection failures or
+        ///     all brokers down.
+        /// </summary>
         public event EventHandler<LogMessage> OnLog
         {
             add { consumer.OnLog += value; }

@@ -355,13 +355,20 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all brokers down.
         /// </summary>
+        /// <remarks>
+        ///     Called on the Producer poll thread.
+        /// </remarks>
         public event EventHandler<Error> OnError;
 
         /// <summary>
         ///     Raised on librdkafka stats events.
         /// </summary>
         /// <remarks>
-        ///     The statistics interval can be set using the statistics.interval.ms parameter.
+        ///     You can enable statistics and set the statistics interval
+        ///     using the statistics.interval.ms configuration parameter
+        ///     (disabled by default).
+        ///
+        ///     Called on the Producer poll thread.
         /// </remarks>
         public event EventHandler<string> OnStatistics;
 
@@ -369,7 +376,10 @@ namespace Confluent.Kafka
         ///     Raised when there is information that should be logged.
         /// </summary>
         /// <remarks>
-        ///     Specify the log level with the log_level configuration property.
+        ///     You can specify the log level with the 'log_level' configuration
+        ///     property. You also probably want to specify one or more debug
+        ///     contexts using the 'debug' configuration property.
+        ///
         ///     This event can potentially be raised on any thread.
         /// </remarks>
         public event EventHandler<LogMessage> OnLog;
@@ -910,11 +920,36 @@ namespace Confluent.Kafka
     }
 
 
+    /// <summary>
+    ///     Implements a high-level Apache Kafka producer instance with key
+    ///     and value serialization.
+    /// </summary>
     public class Producer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable
     {
         private readonly Producer producer;
         private readonly ISerializingProducer<TKey, TValue> serializingProducer;
 
+        /// <summary>
+        ///     Initializes a new Producer instance.
+        /// </summary>
+        /// <param name="config">
+        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        /// </param>
+        /// <param name="keySerializer">
+        ///     An ISerializer implementation instance that will be used to serialize keys.
+        /// </param>
+        /// <param name="valueSerializer">
+        ///     An ISerializer implementation instance that will be used to serialize values.
+        /// </param>
+        /// <param name="manualPoll">
+        ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
+        ///     you must call the Poll method periodically instead. Typically you should set this parameter to false.
+        /// </param>
+        /// <param name="disableDeliveryReports">
+        ///     If true, disables delivery report notification. Note: if set to true and you use a ProduceAsync variant that returns
+        ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
+        ///     forget" semantics and a small boost in performance.
+        /// </param>
         public Producer(
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
@@ -934,25 +969,82 @@ namespace Confluent.Kafka
             ISerializer<TValue> valueSerializer
         ) : this(config, keySerializer, valueSerializer, false, false) {}
 
+
+        /// <summary>
+        ///     The ISerializer implementation instance used to serialize keys.
+        /// </summary>
         public ISerializer<TKey> KeySerializer
             => serializingProducer.KeySerializer;
 
+        /// <summary>
+        ///     The ISerializer implementation instance used to serialize values.
+        /// </summary>
         public ISerializer<TValue> ValueSerializer
             => serializingProducer.ValueSerializer;
 
         public string Name
             => serializingProducer.Name;
 
-
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        ///     Refer to <see cref="ProduceAsync{TKey, TValue}(string,TKey,TValue)" />
+        /// </summary>
+        /// <remarks>
+        ///     Partitioner is used to determine partition message is produced to.
+        ///     Blocks if the send queue is full.
+        /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
             => serializingProducer.ProduceAsync(topic, key, val);
 
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        /// </summary>
+        /// <param name="topic">
+        ///     The target topic.
+        /// </param>
+        /// <param name="partition">
+        ///     The target partition (if -1, this is determined by the partitioner
+        ///     configured for the topic).
+        /// </param>
+        /// <param name="key">
+        ///     the message key (possibly null if allowed by the key serializer).
+        /// </param>
+        /// <param name="val">
+        ///     the message value (possibly null if allowed by the value serializer).
+        /// </param>
+        /// <param name="blockIfQueueFull">
+        ///     Whether or not to block if the send queue is full.
+        ///     If false, and exception will be thrown in the event.
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with the corresponding delivery report
+        ///     for this request.
+        /// </returns>
+        /// <remarks>
+        ///     If you require strict delivery report ordering to be maintained, you
+        ///     should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     parameter, not a variant that returns a Task&lt;Message&gt;
+        /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
             => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
 
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        ///     Refer to <see cref="ProduceAsync{TKey, TValue}(string,TKey,TValue)" />
+        /// </summary>
+        /// <remarks>
+        ///     Blocks if the send queue is full.
+        /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
             => serializingProducer.ProduceAsync(topic, key, val, partition);
 
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        ///     Refer to <see cref="ProduceAsync{TKey, TValue}(string,TKey,TValue)" />
+        /// </summary>
+        /// <remarks>
+        ///     Partitioner is used to determine partition message is produced to.
+        /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
             => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull);
 
@@ -970,17 +1062,43 @@ namespace Confluent.Kafka
             => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull, deliveryHandler);
 
 
+        /// <summary>
+        ///     Raised when there is information that should be logged.
+        /// </summary>
+        /// <remarks>
+        ///     You can specify the log level with the 'log_level' configuration
+        ///     property. You also probably want to specify one or more debug
+        ///     contexts using the 'debug' configuration property.
+        ///
+        ///     This event can potentially be raised on any thread.
+        /// </remarks>
         public event EventHandler<LogMessage> OnLog;
 
+        /// <summary>
+        ///     Raised on librdkafka stats events.
+        /// </summary>
+        /// <remarks>
+        ///     You can enable statistics and set the statistics interval
+        ///     using the statistics.interval.ms configuration parameter
+        ///     (disabled by default).
+        ///
+        ///     Called on the Producer poll thread.
+        /// </remarks>
         public event EventHandler<string> OnStatistics;
 
+        /// <summary>
+        ///     Raised on critical errors, e.g. connection failures or all brokers down.
+        /// </summary>
+        /// <remarks>
+        ///     Called on the Producer poll thread.
+        /// </remarks>
         public event EventHandler<Error> OnError;
 
 
-        public long Flush(int timeout)
+        public int Flush(int timeout)
             => producer.Flush(timeout);
 
-        public long Flush()
+        public int Flush()
             => producer.Flush();
 
 

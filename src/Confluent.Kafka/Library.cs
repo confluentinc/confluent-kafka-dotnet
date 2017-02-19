@@ -26,7 +26,7 @@ using Confluent.Kafka.Impl;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Methods that relate to the RdKafka library itself.
+    ///     Methods that relate to the RdKafka library itself
     ///     (do not require a Producer or Consumer broker connection).
     /// </summary>
     public static class Library
