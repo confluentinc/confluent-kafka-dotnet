@@ -33,8 +33,9 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka producer instance (without serialization).
     ///
     ///     [UNSTABLE-API] We are considering making this class private in a future version of
-    ///     confluent-kafka-dotnet. Prefer to use the serializing producer <see cref="Confluent.Kafka.Producer{TKey,TValue}" />
-    ///     where possible. Please let us know if you find the GetSerializingProducer method useful.
+    ///     confluent-kafka-dotnet to limit API surface area. Prefer to use the serializing producer
+    ///     <see cref="Confluent.Kafka.Producer{TKey,TValue}" /> where possible. Please let us know
+    ///     if you find the GetSerializingProducer method on this class useful.
     /// </summary>
     public class Producer : IDisposable
     {
@@ -246,6 +247,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     topic configuration parameters should be specified via the "default.topic.config" config parameter.
         /// </param>
         /// <param name="manualPoll">
         ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
@@ -301,6 +303,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     topic configuration parameters should be specified via the "default.topic.config" config parameter.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
             : this(config, false, false) {}
@@ -527,41 +530,17 @@ namespace Confluent.Kafka
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
 
-
         /// <summary>
-        ///     Check if a partition is available (has a leader broker).
+        ///     The name of this producer instance.
+        ///     Contains (but is not equal to) the client.id configuration parameter.
         /// </summary>
-        /// <returns>
-        ///     true if the partition is available, else false.
-        /// </returns>
         /// <remarks>
-        ///     This function must only be called from inside a partitioner function.
+        ///     This name will be unique across all producer instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding Producer.
         /// </remarks>
-        public bool PartitionAvailable(string topic, int partition)
-            => getKafkaTopicHandle(topic).PartitionAvailable(partition);
-
         public string Name
             => kafkaHandle.Name;
-
-        /// <returns>
-        ///     The current librdkafka out queue length. This should be interpreted
-        ///     as a rough indication of the number of messages waiting to be sent
-        ///     to or acknowledged by the broker. If OutQueueLength is zero, there
-        ///     are no outstanding messages or callbacks.
-        ///
-        ///     [UNSTABLE-API] - This property may be removed or replaced by
-        ///     something that does not expose librdkafka internal implementation
-        ///     details in the future.
-        /// </returns>
-        /// <remarks>
-        ///     Specifically, the value is equal to the sum of the number of produced
-        ///     messages for which a delivery report has not yet been handled
-        ///     and a number which is less than or equal to the number of pending
-        ///     delivery report callback events (as determined by an internal librdkafka
-        ///     implementation detail).
-        /// </remarks>
-        public int OutQueueLength
-            => kafkaHandle.OutQueueLength;
 
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
@@ -571,9 +550,14 @@ namespace Confluent.Kafka
         ///     The maximum time to block in milliseconds.
         /// </param>
         /// <returns>
-        ///     The current value of <see cref="OutQueueLength" />.
-        ///     If the returned value is 0, then all outstanding produce requests have
-        ///     completed.
+        ///     The current librdkafka out queue length. This should be interpreted
+        ///     as a rough indication of the number of messages waiting to be sent
+        ///     to or acknowledged by the broker. If zero, there are no outstanding
+        ///     messages or callbacks. Specifically, the value is equal to the sum
+        ///     of the number of produced messages for which a delivery report has
+        ///     not yet been handled and a number which is less than or equal to the
+        ///     number of pending delivery report callback events (as determined by
+        ///     an internal librdkafka implementation detail).
         ///
         ///     [UNSTABLE-API] - the semantics and/or type of the return value is
         ///     subject to change.
@@ -593,17 +577,11 @@ namespace Confluent.Kafka
             => kafkaHandle.Flush(millisecondsTimeout);
 
         /// <summary>
-        ///     Refer to <see cref="Flush(int)" />. This overload
-        ///     blocks indefinitely until the value of OutQueueLength is zero.
-        /// </summary>
-        /// <remarks>
-        ///     The current value of <see cref="OutQueueLength" />.
-        ///     If the returned value is 0, then all outstanding produce requests have
-        ///     completed.
+        ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
         ///
         ///     [UNSTABLE-API] - the semantics and/or type of the return value is
         ///     subject to change.
-        /// </remarks>
+        /// </summary>
         public int Flush()
             => kafkaHandle.Flush(-1);
 
@@ -611,7 +589,7 @@ namespace Confluent.Kafka
         ///     Releases all resources used by this Producer.
         /// </summary>
         /// <remarks>
-        ///     You will usually want to call <see cref="Flush()" />
+        ///     You will often want to call <see cref="Flush()" />
         ///     before disposing a Producer instance.
         /// </remarks>
         public void Dispose()
@@ -687,6 +665,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -703,6 +683,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -712,27 +694,6 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
-
-        /// <summary>
-        ///     Get last known low (oldest/beginning) and high (newest/end)
-        ///     offsets for a topic/partition.
-        /// </summary>
-        /// <remarks>
-        ///     The low offset is updated periodically (if statistics.interval.ms is set)
-        ///     while the high offset is updated on each fetched message set from the broker.
-        ///
-        ///     If there is no cached offset (either low or high, or both) then
-        ///     Offset.Invalid will be returned for the respective offset.
-        /// </remarks>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets.
-        /// </returns>
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
-
 
         /// <summary>
         ///     Query the cluster for metadata
@@ -982,6 +943,15 @@ namespace Confluent.Kafka
         public ISerializer<TValue> ValueSerializer
             => serializingProducer.ValueSerializer;
 
+        /// <summary>
+        ///     The name of this producer instance.
+        ///     Contains (but is not equal to) the client.id configuration parameter.
+        /// </summary>
+        /// <remarks>
+        ///     This name will be unique across all producer instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding Producer.
+        /// </remarks>
         public string Name
             => serializingProducer.Name;
 
@@ -1095,40 +1065,151 @@ namespace Confluent.Kafka
         public event EventHandler<Error> OnError;
 
 
-        public int Flush(int timeout)
-            => producer.Flush(timeout);
 
+        /// <summary>
+        ///     Wait until all outstanding produce requests and delievery report
+        ///     callbacks are completed.
+        /// </summary>
+        /// <param name="millisecondsTimeout">
+        ///     The maximum time to block in milliseconds.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. This should be interpreted
+        ///     as a rough indication of the number of messages waiting to be sent
+        ///     to or acknowledged by the broker. If zero, there are no outstanding
+        ///     messages or callbacks. Specifically, the value is equal to the sum
+        ///     of the number of produced messages for which a delivery report has
+        ///     not yet been handled and a number which is less than or equal to the
+        ///     number of pending delivery report callback events (as determined by
+        ///     an internal librdkafka implementation detail).
+        ///
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
+        /// </returns>
+        /// <remarks>
+        ///     This method should typically be called prior to destroying a producer
+        ///     instance to make sure all queued and in-flight produce requests are
+        ///     completed before terminating. The wait time is bounded by the
+        ///     millisecondsTimeout parameter.
+        ///
+        ///     A related default.topic.config configuration parameter is message.timeout.ms
+        ///     which determines the maximum length of time librdkafka attempts to deliver
+        ///     the message before giving up and so also affects the maximum time a call
+        ///     to Flush may block.
+        /// </remarks>
+        public int Flush(int millisecondsTimeout)
+            => producer.Flush(millisecondsTimeout);
+
+        /// <summary>
+        ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
+        ///
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
+        /// </summary>
         public int Flush()
             => producer.Flush();
 
 
+        /// <summary>
+        ///     Releases all resources used by this Producer.
+        /// </summary>
+        /// <remarks>
+        ///     You will often want to call <see cref="Flush()" />
+        ///     before disposing a Producer instance.
+        /// </remarks>
         public void Dispose()
             => producer.Dispose();
 
 
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
 
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka
+        ///     cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
         public List<GroupInfo> ListGroups()
             => producer.ListGroups();
 
 
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => producer.ListGroup(group, timeout);
 
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group)
             => producer.ListGroup(group);
 
 
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => producer.QueryWatermarkOffsets(topicPartition, timeout);
 
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => producer.QueryWatermarkOffsets(topicPartition);
-
-
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-            => producer.GetWatermarkOffsets(topicPartition);
 
 
         /// <summary>

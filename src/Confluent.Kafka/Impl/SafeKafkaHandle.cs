@@ -120,8 +120,8 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal int OutQueueLength
-            => (int)LibRdKafka.outq_len(handle);
+        private int OutQueueLength
+            => LibRdKafka.outq_len(handle);
 
         internal int Flush(int millisecondsTimeout)
         {

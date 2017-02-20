@@ -304,24 +304,27 @@ namespace Confluent.Kafka
         public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
             => consumer.Position(partitions);
 
+        /// <summary>
+        ///     The name of this consumer instance.
+        ///     Contains (but is not equal to) the client.id configuration parameter.
+        /// </summary>
+        /// <remarks>
+        ///     This name will be unique across all consumer instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding Consumer.
+        /// </remarks>
         public string Name
             => consumer.Name;
 
         public void Flush()
             => consumer.Flush();
 
+        /// <summary>
+        ///     The (dynamic) group member id of this consumer (as set by
+        ///     the broker).
+        /// </summary>
         public string MemberId
             => consumer.MemberId;
-
-        /// <returns>
-        ///     The current librdkafka out queue length.
-        /// </returns>
-        /// <remarks>
-        ///     The out queue contains requests waiting to be sent,
-        ///     or acknowledged by, the broker.
-        /// </remarks>
-        public long OutQueueLength
-            => consumer.OutQueueLength;
 
 
         public List<GroupInfo> ListGroups(TimeSpan timeout)
@@ -338,6 +341,23 @@ namespace Confluent.Kafka
             => consumer.ListGroup(group);
 
 
+        /// <summary>
+        ///     Get last known low (oldest/beginning) and high (newest/end)
+        ///     offsets for a topic/partition.
+        /// </summary>
+        /// <remarks>
+        ///     The low offset is updated periodically (if statistics.interval.ms is set)
+        ///     while the high offset is updated on each fetched message set from the broker.
+        ///
+        ///     If there is no cached offset (either low or high, or both) then
+        ///     Offset.Invalid will be returned for the respective offset.
+        /// </remarks>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => consumer.GetWatermarkOffsets(topicPartition);
 
@@ -759,6 +779,15 @@ namespace Confluent.Kafka
             kafkaHandle.Dispose();
         }
 
+        /// <summary>
+        ///     The name of this consumer instance.
+        ///     Contains (but is not equal to) the client.id configuration parameter.
+        /// </summary>
+        /// <remarks>
+        ///     This name will be unique across all consumer instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding Consumer.
+        /// </remarks>
         public string Name
             => kafkaHandle.Name;
 
@@ -767,18 +796,12 @@ namespace Confluent.Kafka
             // TODO: implementation with rd_kafka_flush?
         }
 
+        /// <summary>
+        ///     The (dynamic) group member id of this consumer (as set by
+        ///     the broker).
+        /// </summary>
         public string MemberId
             => kafkaHandle.MemberId;
-
-        /// <returns>
-        ///     The current librdkafka out queue length.
-        /// </returns>
-        /// <remarks>
-        ///     The out queue contains requests waiting to be sent,
-        ///     or acknowledged by, the broker.
-        /// </remarks>
-        public long OutQueueLength
-            => kafkaHandle.OutQueueLength;
 
 
         public List<GroupInfo> ListGroups(TimeSpan timeout)
@@ -795,7 +818,23 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => kafkaHandle.ListGroup(group, -1);
 
-
+        /// <summary>
+        ///     Get last known low (oldest/beginning) and high (newest/end)
+        ///     offsets for a topic/partition.
+        /// </summary>
+        /// <remarks>
+        ///     The low offset is updated periodically (if statistics.interval.ms is set)
+        ///     while the high offset is updated on each fetched message set from the broker.
+        ///
+        ///     If there is no cached offset (either low or high, or both) then
+        ///     Offset.Invalid will be returned for the respective offset.
+        /// </remarks>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 

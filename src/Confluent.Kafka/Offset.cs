@@ -18,6 +18,9 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents and offset into a Kafka partition.
+    /// </summary>
     public struct Offset
     {
         private const long RD_KAFKA_OFFSET_BEGINNING = -2;

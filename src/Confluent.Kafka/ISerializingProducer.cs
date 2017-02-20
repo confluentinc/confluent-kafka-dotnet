@@ -23,6 +23,9 @@ namespace Confluent.Kafka
 {
     public interface ISerializingProducer<TKey, TValue>
     {
+        /// <summary>
+        ///     The name of the underlying producer instance.
+        /// </summary>
         string Name { get; }
 
         ISerializer<TKey> KeySerializer { get; }
