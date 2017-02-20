@@ -27,14 +27,36 @@ using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Implements a high-level Apache Kafka consumer (with 
+    ///     deserialization).
+    /// </summary>
     public class Consumer<TKey, TValue> : IDisposable
     {
         protected readonly Consumer consumer;
 
+        /// <summary>
+        ///     The IDeserializer implementation instance used to deserialize keys.
+        /// </summary>
         public IDeserializer<TKey> KeyDeserializer { get; }
 
+        /// <summary>
+        ///     The IDeserializer implementation instance used to deserialize values.
+        /// </summary>
         public IDeserializer<TValue> ValueDeserializer { get; }
 
+        /// <summary>
+        ///     Creates a new Consumer instance.
+        /// </summary>
+        /// <param name="config">
+        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        /// </param>
+        /// <param name="keyDeserializer">
+        ///     An IDeserializer implementation instance for deserializing keys.
+        /// </param>
+        /// <param name="valueDeserializer">
+        ///     An IDeserializer implementation instance for deserializing values.
+        /// </param>
         public Consumer(
             IEnumerable<KeyValuePair<string, object>> config,
             IDeserializer<TKey> keyDeserializer,
@@ -81,7 +103,32 @@ namespace Confluent.Kafka
             );
         }
 
-
+        /// <summary>
+        ///     Consume messages / trigger events.
+        ///     
+        ///     [UNSTABLE-API] - prefer to use Poll/OnMessage over
+        ///     Consume. We may remove this method in the future
+        ///     to limit API surface area. Please let us know if 
+        ///     you have a use case where Consume more convenient 
+        ///     than Poll.
+        /// </summary>
+        /// <param name="message">
+        ///     A consumed message, or null if no messages are 
+        ///     available for consumption.
+        /// </param>
+        /// <param name="millisecondsTimeout">
+        ///     The maximum time to block for messages to become
+        ///     available for consumption.
+        /// </param>
+        /// <returns>
+        ///     true: a message (with non-error state) was consumed.
+        ///     false: no message was available for consumption.
+        /// </returns>
+        /// <remarks>
+        ///     Will invoke events for OnPartitionsAssigned/Revoked,
+        ///     OnOffsetsCommitted, OnConsumeError etc. on the calling 
+        ///     thread.
+        /// </remarks>
         public bool Consume(out Message<TKey, TValue> message, int millisecondsTimeout)
         {
             Message msg;
@@ -95,13 +142,28 @@ namespace Confluent.Kafka
             return true;
         }
 
+        /// <summary>
+        ///     Refer to <see cref="Consume{TKey,TValue}(out Message,int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
+        /// <summary>
+        ///     Refer to <see cref="Consume{TKey,TValue}(out Message,int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public bool Consume(out Message<TKey, TValue> message)
             => Consume(out message, -1);
 
-
+        /// <summary>
+        ///     Poll for new consumer events, including new messages
+        ///     ready to be consumed (which will trigger the OnMessage
+        ///     event).
+        /// </summary>
+        /// <param name="millisecondsTimeout"> 
+        ///     The maximum time to block (in milliseconds).
+        /// </param>
         public void Poll(int millisecondsTimeout)
         {
             Message<TKey, TValue> msg;
@@ -111,6 +173,14 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Poll for new consumer events, including new messages
+        ///     ready to be consumed (which will trigger the OnMessage
+        ///     event).
+        /// </summary>
+        /// <param name="timeout"> 
+        ///     The maximum time to block.
+        /// </param>
         public void Poll(TimeSpan timeout)
         {
             Message<TKey, TValue> msg;
@@ -120,22 +190,51 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Poll for new consumer events, including new messages
+        ///     ready to be consumed(which will trigger the OnMessage
+        ///     event).
+        /// </summary> 
+        /// <remarks>
+        ///     Blocks indefinitely until a new event is ready.
+        /// </remarks>
         public void Poll()
             => Poll(-1);
 
 
+        /// <summary>
+        ///     Raised on new partition assignment.
+        ///     You should typically call the Consumer.Assign method in this handler.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
         {
             add { consumer.OnPartitionsAssigned += value; }
             remove { consumer.OnPartitionsRevoked -= value; }
         }
 
+        /// <summary>
+        ///     Raised when a partition assignment is revoked.
+        ///     You should typically call the Consumer.Unassign method in this handler.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked
         {
             add { consumer.OnPartitionsRevoked += value; }
             remove { consumer.OnPartitionsRevoked -= value; }
         }
 
+        /// <summary>
+        ///     Raised to report the result of (automatic) offset commits.
+        ///     Not raised as a result of the use of the CommitAsync method.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted
         {
             add { consumer.OnOffsetsCommitted += value; }
@@ -143,33 +242,77 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or
-        ///     all brokers down.
+        ///     Raised when there is information that should be logged.
         /// </summary>
+        /// <remarks>
+        ///     You can specify the log level with the 'log_level' configuration
+        ///     property. You also probably want to specify one or more debug
+        ///     contexts using the 'debug' configuration property.
+        ///
+        ///     This event can potentially be raised on any thread.
+        /// </remarks>
         public event EventHandler<LogMessage> OnLog
         {
             add { consumer.OnLog += value; }
             remove { consumer.OnLog -= value; }
         }
 
+        /// <summary>
+        ///     Raised on librdkafka statistics events. These can be enabled by setting the statistics.interval.ms configuration parameter.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<string> OnStatistics
         {
             add { consumer.OnStatistics += value; }
             remove { consumer.OnStatistics -= value; }
         }
 
+        /// <summary>
+        ///     Raised when a consumed message has an error != NoError (both when Consume or Poll is used for polling).
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
+        public event EventHandler<Message> OnConsumeError
+        {
+            add { consumer.OnConsumeError += value; }
+            remove { consumer.OnConsumeError -= value; }
+        }
+
+        /// <summary>
+        ///     Raised on critical errors, e.g. connection failures or all brokers down.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<Error> OnError
         {
             add { consumer.OnError += value; }
             remove { consumer.OnError -= value; }
         }
 
+        /// <summary>
+        ///     Raised when the consumer reaches the end of a topic/partition it is reading from.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF
         {
             add { consumer.OnPartitionEOF += value; }
             remove { consumer.OnPartitionEOF -= value; }
         }
 
+        /// <summary>
+        ///     Raised when a new message is avaiable for consumption. NOT raised when Consumer.Consume
+        ///     is used for polling (only when Consmer.Poll is used for polling). NOT raised when the 
+        ///     message has an Error (OnConsumeError is raised in that case).
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<Message<TKey, TValue>> OnMessage;
 
         /// <summary>
@@ -255,13 +398,13 @@ namespace Confluent.Kafka
         public Task<CommittedOffsets> CommitAsync()
             => consumer.CommitAsync();
 
-        /// <param name="message">
-        ///     The message used to determine the committed offset.
-        /// </param>
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
         ///     The next message to be read will be that following <paramref name="message" />.
         /// </summary>
+        /// <param name="message">
+        ///     The message used to determine the committed offset.
+        /// </param>
         /// <remarks>
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
@@ -270,11 +413,21 @@ namespace Confluent.Kafka
             => consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <summary>
-        ///     Commit explicit list of offsets.
+        ///     Commit an explicit list of offsets.
         /// </summary>
         public Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
             => consumer.CommitAsync(offsets);
 
+        /// <summary>
+        ///     Releases all resources used by this Consumer.
+        /// 
+        ///     This call will block until the consumer has revoked its assignment, 
+        ///     calling the rebalance event if it is configured, committed offsets to 
+        ///     broker, and left the consumer group.
+        /// 
+        ///     [UNSTABLE-API] - The Dispose method should not block. We will
+        ///     separate out consumer close functionality from this method.
+        /// </summary>
         public void Dispose()
             => consumer.Dispose();
 
@@ -311,13 +464,10 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     This name will be unique across all consumer instances
         ///     in a given application which allows log messages to be
-        ///     associated with the corresponding Consumer.
+        ///     associated with the corresponding instance.
         /// </remarks>
         public string Name
             => consumer.Name;
-
-        public void Flush()
-            => consumer.Flush();
 
         /// <summary>
         ///     The (dynamic) group member id of this consumer (as set by
@@ -327,16 +477,57 @@ namespace Confluent.Kafka
             => consumer.MemberId;
 
 
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
 
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
         public List<GroupInfo> ListGroups()
             => consumer.ListGroups();
 
-
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => consumer.ListGroup(group, timeout);
 
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group)
             => consumer.ListGroup(group);
 
@@ -344,10 +535,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Get last known low (oldest/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
+        /// 
+        ///     [UNSTABLE-API]
         /// </summary>
         /// <remarks>
         ///     The low offset is updated periodically (if statistics.interval.ms is set)
-        ///     while the high offset is updated on each fetched message set from the broker.
+        ///     while the high offset is updated on each fetched message set from the 
+        ///     broker.
         ///
         ///     If there is no cached offset (either low or high, or both) then
         ///     Offset.Invalid will be returned for the respective offset.
@@ -362,20 +556,61 @@ namespace Confluent.Kafka
             => consumer.GetWatermarkOffsets(topicPartition);
 
 
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => consumer.QueryWatermarkOffsets(topicPartition, timeout);
 
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => consumer.QueryWatermarkOffsets(topicPartition);
 
-
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => consumer.GetMetadata(allTopics, timeout);
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public Metadata GetMetadata(bool allTopics)
             => consumer.GetMetadata(allTopics);
     }
 
+    /// <summary>
+    ///     Implements a high-level Apache Kafka consumer (without deserialization).
+    /// 
+    ///     [UNSTABLE-API] We are considering making this class private in a future version of
+    ///     confluent-kafka-dotnet to limit API surface area. Prefer to use the deserializing 
+    ///     consumer <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> where possible.
+    /// </summary>
     public class Consumer : IDisposable
     {
         private SafeKafkaHandle kafkaHandle;
@@ -406,7 +641,6 @@ namespace Confluent.Kafka
             }
 
             OnLog?.Invoke(this, new LogMessage(name, level, fac, buf));
-
         }
 
         private LibRdKafka.RebalanceDelegate rebalanceDelegate;
@@ -525,7 +759,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Raised when a partition assignment is revoked.
         ///     You should typically call the Consumer.Unassign method in this handler.
-        ///     TODO: can a partial revokation ever happen? What happens in this case?
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -533,7 +766,8 @@ namespace Confluent.Kafka
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
         /// <summary>
-        ///     An event used to report on the result of offset commits - all commits, whether manual or automatic.
+        ///     Raised to report the result of (automatic) offset commits.
+        ///     Not raised as a result of the use of the CommitAsync method.
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -549,6 +783,14 @@ namespace Confluent.Kafka
         public event EventHandler<Error> OnError;
 
         /// <summary>
+        ///     Raised when a consumed message has an error != NoError (both when Consume or Poll is used for polling).
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
+        public event EventHandler<Message> OnConsumeError;
+
+        /// <summary>
         ///     Raised on librdkafka statistics events. These can be enabled by setting the statistics.interval.ms configuration parameter.
         /// </summary>
         /// <remarks>
@@ -558,17 +800,20 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Raised when there is information that should be logged.
-        ///     You can set the log severity level using the "log_level" configuration parameter
         /// </summary>
         /// <remarks>
-        ///     Executes on potentially any internal librdkafka thread.
-        ///     Do not call any librdkafka methods from within handlers of this event.
+        ///     You can specify the log level with the 'log_level' configuration
+        ///     property. You also probably want to specify one or more debug
+        ///     contexts using the 'debug' configuration property.
+        ///
+        ///     This event can potentially be raised on any thread.
         /// </remarks>
         public event EventHandler<LogMessage> OnLog;
 
         /// <summary>
         ///     Raised when a new message is avaiable for consumption. NOT raised when Consumer.Consume
-        ///     is used for polling.
+        ///     is used for polling (only when Consmer.Poll is used for polling). NOT raised when the 
+        ///     message has an Error (OnConsumeError is raised in that case).
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -662,11 +907,31 @@ namespace Confluent.Kafka
             => kafkaHandle.Assign(null);
 
         /// <summary>
-        ///     Manually consume message or triggers events.
-        ///
-        ///     Will invoke events for OnPartitionsAssigned/Revoked,
-        ///     OnOffsetsCommitted, etc. on the calling thread.
+        ///     Consume message / trigger events.
+        ///     
+        ///     [UNSTABLE-API] - prefer to use Poll/OnMessage over
+        ///     Consume. We may remove this method in the future
+        ///     to limit API surface area. Please let us know if 
+        ///     you have a use case where Consume more convenient 
+        ///     than Poll.
         /// </summary>
+        /// <param name="message">
+        ///     A consumed message, or null if no messages are 
+        ///     available for consumption.
+        /// </param>
+        /// <param name="millisecondsTimeout">
+        ///     The maximum time to block for messages to become
+        ///     available for consumption.
+        /// </param>
+        /// <returns>
+        ///     true: a message (with non-error state) was consumed.
+        ///     false: no message was available for consumption.
+        /// </returns>
+        /// <remarks>
+        ///     Will invoke events for OnPartitionsAssigned/Revoked,
+        ///     OnOffsetsCommitted, OnConsumeError etc. on the calling 
+        ///     thread.
+        /// </remarks>
         public bool Consume(out Message message, int millisecondsTimeout)
         {
             if (kafkaHandle.ConsumerPoll(out message, (IntPtr)millisecondsTimeout))
@@ -679,7 +944,7 @@ namespace Confluent.Kafka
                         OnPartitionEOF?.Invoke(this, message.TopicPartitionOffset);
                         return false;
                     default:
-                        OnError?.Invoke(this, message.Error);
+                        OnConsumeError?.Invoke(this, message);
                         return false;
                 }
             }
@@ -687,12 +952,28 @@ namespace Confluent.Kafka
             return false;
         }
 
+        /// <summary>
+        ///     Refer to <see cref="Consume(our Message, int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public bool Consume(out Message message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
+        /// <summary>
+        ///     Refer to <see cref="Consume(our Message, int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public bool Consume(out Message message)
             => Consume(out message, -1);
 
+        /// <summary>
+        ///     Poll for new consumer events, including new messages
+        ///     ready to be consumed (which will trigger the OnMessage
+        ///     event).
+        /// </summary>
+        /// <param name="timeout"> 
+        ///     The maximum time to block.
+        /// </param>
         public void Poll(TimeSpan timeout)
         {
             Message msg;
@@ -702,6 +983,14 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Poll for new consumer events, including new messages
+        ///     ready to be consumed (which will trigger the OnMessage
+        ///     event).
+        /// </summary>
+        /// <param name="millisecondsTimeout"> 
+        ///     The maximum time to block (in milliseconds)
+        /// </param>
         public void Poll(int millisecondsTimeout)
         {
             Message msg;
@@ -711,6 +1000,14 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Poll for new consumer events, including new messages
+        ///     ready to be consumed (which will trigger the OnMessage
+        ///     event).
+        /// </summary> 
+        /// <remarks>
+        ///     Blocks indefinitely until a new event is ready.
+        /// </remarks>
         public void Poll()
             => Poll(-1);
 
@@ -721,13 +1018,13 @@ namespace Confluent.Kafka
         public async Task<CommittedOffsets> CommitAsync()
             => await kafkaHandle.CommitAsync();
 
-        /// <param name="message">
-        ///     The message used to determine the committed offset.
-        /// </param>
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
         ///     The next message to be read will be that following <paramref name="message" />.
         /// </summary>
+        /// <param name="message">
+        ///     The message used to determine the committed offset.
+        /// </param>
         /// <remarks>
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
@@ -742,7 +1039,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Commit explicit list of offsets.
+        ///     Commit an explicit list of offsets.
         /// </summary>
         public async Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
             => await kafkaHandle.CommitAsync(offsets);
@@ -773,6 +1070,16 @@ namespace Confluent.Kafka
         public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
             => kafkaHandle.Position(partitions);
 
+        /// <summary>
+        ///     Releases all resources used by this Consumer.
+        /// 
+        ///     This call will block until the consumer has revoked its assignment, 
+        ///     calling the rebalance event if it is configured, committed offsets to 
+        ///     broker, and left the consumer group.
+        /// 
+        ///     [UNSTABLE-API] - The Dispose method should not block. We will
+        ///     separate out consumer close functionality from this method.
+        /// </summary>
         public void Dispose()
         {
             kafkaHandle.ConsumerClose();
@@ -786,15 +1093,10 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     This name will be unique across all consumer instances
         ///     in a given application which allows log messages to be
-        ///     associated with the corresponding Consumer.
+        ///     associated with the corresponding instance.
         /// </remarks>
         public string Name
             => kafkaHandle.Name;
-
-        public void Flush()
-        {
-            // TODO: implementation with rd_kafka_flush?
-        }
 
         /// <summary>
         ///     The (dynamic) group member id of this consumer (as set by
@@ -804,23 +1106,67 @@ namespace Confluent.Kafka
             => kafkaHandle.MemberId;
 
 
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-        // TODO: is a version of this with infinite timeout really required? (same question elsewhere)
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka
+        ///     cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
         public List<GroupInfo> ListGroups()
             => kafkaHandle.ListGroups(-1);
 
 
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
 
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group)
             => kafkaHandle.ListGroup(group, -1);
 
         /// <summary>
         ///     Get last known low (oldest/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
+        ///     
+        ///     [UNSTABLE-API]
         /// </summary>
         /// <remarks>
         ///     The low offset is updated periodically (if statistics.interval.ms is set)
@@ -838,17 +1184,54 @@ namespace Confluent.Kafka
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition.
+        ///
+        ///     [UNSTABLE-API]
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call should block.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
 
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
+        ///     [UNSTABLE-API]
+        /// </summary>
         public Metadata GetMetadata(bool allTopics)
             => kafkaHandle.GetMetadata(allTopics, null, -1);
     }

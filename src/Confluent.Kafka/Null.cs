@@ -16,6 +16,11 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     A type that allows null key or values to be 
+    ///     enforced on serializing producers and 
+    ///     deserializing consumers.
+    /// </summary>
     public sealed class Null
     {
         private Null() {}

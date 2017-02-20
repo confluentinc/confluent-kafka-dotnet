@@ -30,7 +30,7 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Implements a high-level Apache Kafka producer instance (without serialization).
+    ///     Implements a high-level Apache Kafka producer (without serialization).
     ///
     ///     [UNSTABLE-API] We are considering making this class private in a future version of
     ///     confluent-kafka-dotnet to limit API surface area. Prefer to use the serializing producer
@@ -356,7 +356,8 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all brokers down.
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down.
         /// </summary>
         /// <remarks>
         ///     Called on the Producer poll thread.
@@ -479,8 +480,8 @@ namespace Confluent.Kafka
         ///     for this request.
         /// </returns>
         /// <remarks>
-        ///     If you require strict delivery report ordering to be maintained, you
-        ///     should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     If you require strict ordering of delivery reports to be maintained, 
+        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
         ///     parameter, not a variant that returns a Task&lt;Message&gt;
         /// </remarks>
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull)
@@ -495,7 +496,7 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Asynchronously send a single message to the broker.
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
@@ -503,28 +504,33 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Asynchronously send a single message to the broker.
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
 
         /// <summary>
-        ///     Asynchronously send a single message to the broker.
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true, deliveryHandler);
 
         /// <summary>
-        ///     Asynchronously send a single message to the broker.
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
         /// </summary>
+        /// <remarks>
+        ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
+        ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
+        ///     acknowledged by the broker / failed (failure may be via broker or local).
+        /// </remarks>
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull, deliveryHandler);
 
         /// <summary>
-        ///     Asynchronously send a single message to the broker.
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
@@ -537,7 +543,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     This name will be unique across all producer instances
         ///     in a given application which allows log messages to be
-        ///     associated with the corresponding Producer.
+        ///     associated with the corresponding instance.
         /// </remarks>
         public string Name
             => kafkaHandle.Name;
@@ -545,6 +551,9 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
         ///     callbacks are completed.
+        /// 
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
         /// </summary>
         /// <param name="millisecondsTimeout">
         ///     The maximum time to block in milliseconds.
@@ -558,9 +567,6 @@ namespace Confluent.Kafka
         ///     not yet been handled and a number which is less than or equal to the
         ///     number of pending delivery report callback events (as determined by
         ///     an internal librdkafka implementation detail).
-        ///
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
         /// </returns>
         /// <remarks>
         ///     This method should typically be called prior to destroying a producer
@@ -709,6 +715,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Refer to <see cref="GetMetadata(bool,string,int)" />
+        /// 
         ///     [UNSTABLE-API]
         /// </summary>
         public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
@@ -716,6 +723,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Refer to <see cref="GetMetadata(bool,string,int)" />
+        /// 
         ///     [UNSTABLE-API]
         /// </summary>
         public Metadata GetMetadata(bool allTopics, string topic)
@@ -723,6 +731,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Refer to <see cref="GetMetadata(bool,string,int)" />
+        /// 
         ///     [UNSTABLE-API]
         /// </summary>
         public Metadata GetMetadata()
@@ -882,7 +891,7 @@ namespace Confluent.Kafka
 
 
     /// <summary>
-    ///     Implements a high-level Apache Kafka producer instance with key
+    ///     Implements a high-level Apache Kafka producer with key
     ///     and value serialization.
     /// </summary>
     public class Producer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable
@@ -891,10 +900,11 @@ namespace Confluent.Kafka
         private readonly ISerializingProducer<TKey, TValue> serializingProducer;
 
         /// <summary>
-        ///     Initializes a new Producer instance.
+        ///     Creates a new Producer instance.
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     topic configuration parameters should be specified via the "default.topic.config" config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -924,6 +934,19 @@ namespace Confluent.Kafka
             producer.OnStatistics += (sender, e) => OnStatistics?.Invoke(sender, e);
         }
 
+        /// <summary>
+        ///     Initializes a new Producer instance.
+        /// </summary>
+        /// <param name="config">
+        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     topic configuration parameters should be specified via the "default.topic.config" config parameter.
+        /// </param>
+        /// <param name="keySerializer">
+        ///     An ISerializer implementation instance that will be used to serialize keys.
+        /// </param>
+        /// <param name="valueSerializer">
+        ///     An ISerializer implementation instance that will be used to serialize values.
+        /// </param>
         public Producer(
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
@@ -950,7 +973,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     This name will be unique across all producer instances
         ///     in a given application which allows log messages to be
-        ///     associated with the corresponding Producer.
+        ///     associated with the corresponding instance.
         /// </remarks>
         public string Name
             => serializingProducer.Name;
@@ -960,7 +983,8 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="ProduceAsync{TKey, TValue}(string,TKey,TValue)" />
         /// </summary>
         /// <remarks>
-        ///     Partitioner is used to determine partition message is produced to.
+        ///     The configured partitioner is used to determine partition 
+        ///     message is produced to.
         ///     Blocks if the send queue is full.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
@@ -1013,7 +1037,8 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="ProduceAsync{TKey, TValue}(string,TKey,TValue)" />
         /// </summary>
         /// <remarks>
-        ///     Partitioner is used to determine partition message is produced to.
+        ///     The configured partitioner is used to determine partition message 
+        ///     is produced to.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
             => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull);
@@ -1069,6 +1094,9 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
         ///     callbacks are completed.
+        /// 
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
         /// </summary>
         /// <param name="millisecondsTimeout">
         ///     The maximum time to block in milliseconds.
@@ -1082,9 +1110,6 @@ namespace Confluent.Kafka
         ///     not yet been handled and a number which is less than or equal to the
         ///     number of pending delivery report callback events (as determined by
         ///     an internal librdkafka implementation detail).
-        ///
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
         /// </returns>
         /// <remarks>
         ///     This method should typically be called prior to destroying a producer

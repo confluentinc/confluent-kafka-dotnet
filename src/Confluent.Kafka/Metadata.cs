@@ -24,7 +24,7 @@ using System.Linq;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Metadata pertaining to a single Kafka cluster
+    ///     Kafka cluster metadata.
     /// </summary>
     public class Metadata
     {
