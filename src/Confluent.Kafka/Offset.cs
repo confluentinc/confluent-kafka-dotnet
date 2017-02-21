@@ -52,7 +52,7 @@ namespace Confluent.Kafka
         public static Offset Stored { get { return new Offset(RD_KAFKA_OFFSET_STORED); } }
 
         /// <summary>
-        ///     A special value that refers to an invalid or unassigned partition offset.
+        ///     A special value that refers to an invalid, unassigned or default partition offset.
         /// </summary>
         public static Offset Invalid { get { return new Offset(RD_KAFKA_OFFSET_INVALID); } }
 

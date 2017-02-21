@@ -35,7 +35,7 @@ namespace Confluent.Kafka
         ///     Information about each constituent broker of the cluster.
         /// </param>
         /// <param name="topics">
-        ///     Information about each topic in the cluster.
+        ///     Information about requested topics in the cluster.
         /// </param>
         /// <param name="originatingBrokerId">
         ///     The id of the broker that provided this metadata.
@@ -57,7 +57,7 @@ namespace Confluent.Kafka
         public List<BrokerMetadata> Brokers { get; }
 
         /// <summary>
-        ///     Information about each topic in the cluster.
+        ///     Information about requested topics in the cluster.
         /// </summary>
         public List<TopicMetadata> Topics { get; }
 
