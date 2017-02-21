@@ -22,7 +22,9 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     
+    ///     This interface describes the minimum functionality
+    ///     to be provided by a high level (serializing) Kafka 
+    ///     producer.
     /// </summary>
     public interface ISerializingProducer<TKey, TValue>
     {

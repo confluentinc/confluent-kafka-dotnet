@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         /// <param name="offset">
         ///     A Kafka offset value.
         /// </param>
-        /// <param name="error"> <summary>
+        /// <param name="error">
         ///     A Kafka error.
         /// </param>
         public TopicPartitionOffsetError(TopicPartition tp, Offset offset, Error error)
@@ -62,7 +62,7 @@ namespace Confluent.Kafka
         /// <param name="offset">
         ///     A Kafka offset value.
         /// </param>
-        /// <param name="error"> <summary>
+        /// <param name="error">
         ///     A Kafka error.
         /// </param>
         public TopicPartitionOffsetError(string topic, int partition, Offset offset, Error error)

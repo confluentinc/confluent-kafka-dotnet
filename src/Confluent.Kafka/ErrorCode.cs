@@ -22,6 +22,10 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Enumeration of local and broker generated error codes.
     /// </summary>
+    /// <remarks>
+    ///     Error codes that relate to locally produced errors in 
+    ///     librdkafka are prefixed with Local_
+    /// </remarks>
     public enum ErrorCode
     {
         /// <summary>

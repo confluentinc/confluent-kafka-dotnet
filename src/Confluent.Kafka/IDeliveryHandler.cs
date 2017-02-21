@@ -21,9 +21,8 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     This interface is implmented by types that handle delivery report
-    ///     callbacks on relevant ProduceAsync method overloads on the
-    ///     non-serializing Producer class.
-    /// </summart>
+    ///     callbacks as a result of calls to Confluent.Kafka.Producer.ProduceAsync().
+    /// </summary>
     /// <remarks>
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
@@ -40,7 +39,7 @@ namespace Confluent.Kafka
         bool MarshalData { get; }
 
         /// <summary>
-        ///     This method gets called when the delivery report
+        ///     This method is called when the delivery report
         ///     is available
         /// </summary>
         /// <param name="message">
@@ -51,9 +50,8 @@ namespace Confluent.Kafka
 
     /// <summary>
     ///     This interface is implmented by types that handle delivery report
-    ///     callbacks on relevant ProduceAsync method overloads on the
-    ///     serializing Producer class.
-    /// </summart>
+    ///     callbacks as a result of calls to Confluent.Kafka.Producer&lt;TKey,TValue&gt;.ProduceAsync().
+    /// </summary>
     /// <remarks>
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
@@ -70,7 +68,7 @@ namespace Confluent.Kafka
         bool MarshalData { get; }
 
         /// <summary>
-        ///     This method gets called when the delivery report
+        ///     This method is called when the delivery report
         ///     is available
         /// </summary>
         /// <param name="message">

@@ -44,7 +44,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The timestamp type.
         /// </summary>
-        /// <returns>
         public TimestampType Type { get; }
 
         /// <summary>
@@ -72,6 +71,15 @@ namespace Confluent.Kafka
         public static bool operator !=(Timestamp a, Timestamp b)
             => !(a == b);
 
+        /// <summary>
+        ///     Convert a DateTime instance to a unix timestamp.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The DateTime value to convert.
+        /// </param>
+        /// <returns>
+        ///     The unix timestamp corresponding to <paramref name="dateTime"/>
+        /// </returns>
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
         {
             checked
@@ -80,6 +88,15 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Convert a unix timestamp to a DateTime value.
+        /// </summary>
+        /// <param name="timestamp">
+        ///     The unix timestamp to convert.
+        /// </param>
+        /// <returns>
+        ///     The DateTime value associated with <paramref name="timestamp"/>
+        /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long timestamp)
             => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Unspecified)
                 + TimeSpan.FromMilliseconds(timestamp);

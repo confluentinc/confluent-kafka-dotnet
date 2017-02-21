@@ -33,7 +33,7 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : IDisposable
     {
-        protected readonly Consumer consumer;
+        private readonly Consumer consumer;
 
         /// <summary>
         ///     The IDeserializer implementation instance used to deserialize keys.
@@ -104,10 +104,11 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Consume messages / trigger events.
+        ///     Poll for new messages / consumer events.
         ///     
-        ///     [UNSTABLE-API] - prefer to use Poll/OnMessage over
-        ///     Consume. We may remove this method in the future
+        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / 
+        ///     <see cref="OnMessage"/> instead of Consume. We may remove
+        ///     this method in the future
         ///     to limit API surface area. Please let us know if 
         ///     you have a use case where Consume more convenient 
         ///     than Poll.
@@ -143,15 +144,17 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Consume{TKey,TValue}(out Message,int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Consume(out Message{TKey, TValue}, int)" />.
+        ///     
+        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
         /// <summary>
-        ///     Refer to <see cref="Consume{TKey,TValue}(out Message,int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Consume(out Message{TKey, TValue}, int)" />.
+        ///     
+        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message<TKey, TValue> message)
             => Consume(out message, -1);
@@ -316,13 +319,13 @@ namespace Confluent.Kafka
         public event EventHandler<Message<TKey, TValue>> OnMessage;
 
         /// <summary>
-        ///     Returns the current partition assignment as set by Assign.
+        ///     The current partition assignment as set by Assign.
         /// </summary>
         public List<TopicPartition> Assignment
             => consumer.Assignment;
 
         /// <summary>
-        ///     Returns the current partition subscription as set by Subscribe.
+        ///     The current partition subscription as set by Subscribe.
         /// </summary>
         public List<string> Subscription
             => consumer.Subscription;
@@ -480,7 +483,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="timeout">
         ///     The maximum period of time the call should block.
@@ -491,7 +494,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         public List<GroupInfo> ListGroups()
             => consumer.ListGroups();
@@ -500,7 +503,7 @@ namespace Confluent.Kafka
         ///     Get information pertaining to a particular group in the
         ///     Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="group">
         ///     The group of interest.
@@ -519,7 +522,7 @@ namespace Confluent.Kafka
         ///     Get information pertaining to a particular group in the
         ///     Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="group">
         ///     The group of interest.
@@ -536,7 +539,7 @@ namespace Confluent.Kafka
         ///     Get last known low (oldest/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
         /// 
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <remarks>
         ///     The low offset is updated periodically (if statistics.interval.ms is set)
@@ -560,7 +563,7 @@ namespace Confluent.Kafka
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -578,7 +581,7 @@ namespace Confluent.Kafka
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -590,15 +593,17 @@ namespace Confluent.Kafka
             => consumer.QueryWatermarkOffsets(topicPartition);
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
+        ///     
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => consumer.GetMetadata(allTopics, timeout);
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
+        ///     
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         public Metadata GetMetadata(bool allTopics)
             => consumer.GetMetadata(allTopics);
@@ -830,13 +835,13 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Returns the current partition assignment as set by Assign.
+        ///     The current partition assignment as set by Assign.
         /// </summary>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
         /// <summary>
-        ///     Returns the current topic subscription as set by Subscribe.
+        ///     The current topic subscription as set by Subscribe.
         /// </summary>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
@@ -870,7 +875,7 @@ namespace Confluent.Kafka
             => kafkaHandle.Unsubscribe();
 
         /// <summary>
-        ///     Update the assignment set to <param name="partitions" />.
+        ///     Update the assignment set to <paramref name="partitions" />.
         ///
         ///     The assignment set is the complete set of partitions to consume
         ///     from and will replace any previous assignment.
@@ -886,7 +891,7 @@ namespace Confluent.Kafka
             => kafkaHandle.Assign(partitions.ToList());
 
         /// <summary>
-        ///     Update the assignment set to <param name="partitions" />.
+        ///     Update the assignment set to <paramref name="partitions" />.
         ///
         ///     The assignment set is the complete set of partitions to consume
         ///     from and will replace any previous assignment.
@@ -907,10 +912,11 @@ namespace Confluent.Kafka
             => kafkaHandle.Assign(null);
 
         /// <summary>
-        ///     Consume message / trigger events.
+        ///     Poll for new messages / consumer events.
         ///     
-        ///     [UNSTABLE-API] - prefer to use Poll/OnMessage over
-        ///     Consume. We may remove this method in the future
+        ///     [UNSTABLE-API] -  prefer to use <see cref="Poll()"/> / 
+        ///     <see cref="OnMessage"/> instead of Consume. We may 
+        ///     remove this method in the future
         ///     to limit API surface area. Please let us know if 
         ///     you have a use case where Consume more convenient 
         ///     than Poll.
@@ -953,15 +959,17 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Consume(our Message, int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Consume(out Message, int)" />
+        ///     
+        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
         /// <summary>
-        ///     Refer to <see cref="Consume(our Message, int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Consume(out Message, int)" />
+        ///     
+        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message message)
             => Consume(out message, -1);
@@ -1109,7 +1117,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="timeout">
         ///     The maximum period of time the call should block.
@@ -1121,7 +1129,7 @@ namespace Confluent.Kafka
         ///     Get information pertaining to all groups in the Kafka
         ///     cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         public List<GroupInfo> ListGroups()
             => kafkaHandle.ListGroups(-1);
@@ -1131,7 +1139,7 @@ namespace Confluent.Kafka
         ///     Get information pertaining to a particular group in the
         ///     Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="group">
         ///     The group of interest.
@@ -1150,7 +1158,7 @@ namespace Confluent.Kafka
         ///     Get information pertaining to a particular group in the
         ///     Kafka cluster.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="group">
         ///     The group of interest.
@@ -1166,7 +1174,7 @@ namespace Confluent.Kafka
         ///     Get last known low (oldest/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
         ///     
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <remarks>
         ///     The low offset is updated periodically (if statistics.interval.ms is set)
@@ -1188,7 +1196,7 @@ namespace Confluent.Kafka
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -1206,7 +1214,7 @@ namespace Confluent.Kafka
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition.
         ///
-        ///     [UNSTABLE-API]
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -1222,15 +1230,17 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
+        ///     
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" />
-        ///     [UNSTABLE-API]
+        ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
+        ///     
+        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         public Metadata GetMetadata(bool allTopics)
             => kafkaHandle.GetMetadata(allTopics, null, -1);
