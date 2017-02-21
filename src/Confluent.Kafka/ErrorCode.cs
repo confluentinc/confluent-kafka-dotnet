@@ -381,8 +381,15 @@ namespace Confluent.Kafka
         UnsupportedVersion = 35
     };
 
+    /// <summary>
+    ///     Provides extension methods on the ErrorCode enumeration.
+    /// </summary>
     public static class ErrorCodeExtensions
     {
+        /// <summary>
+        ///     Returns the static error string associated with 
+        ///     the particular ErrorCode value.
+        /// </summary>
         public static string GetReason(this ErrorCode code)
         {
             return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));

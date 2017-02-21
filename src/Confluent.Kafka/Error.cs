@@ -18,6 +18,10 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents an error that occured when interacting with a
+    ///     Kafka broker or the referenced librdkafka library.
+    /// </summary>
     public class Error
     {
         public Error(ErrorCode code)

@@ -18,6 +18,10 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Encapsulates information provided to the 
+    ///     Producer/Consumer OnLog event.
+    /// </summary>
     public class LogMessage
     {
         public LogMessage(string name, int level, string facility, string message)

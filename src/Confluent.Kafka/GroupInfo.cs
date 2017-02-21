@@ -22,7 +22,8 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents a Kafka group.
+    ///     Encapsulates information describing a particular
+    ///     Kafka group.
     /// </summary>
     public class GroupInfo
     {

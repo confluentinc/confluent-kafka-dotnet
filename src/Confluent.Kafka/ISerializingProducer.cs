@@ -21,6 +21,9 @@ using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     
+    /// </summary>
     public interface ISerializingProducer<TKey, TValue>
     {
         /// <summary>
@@ -28,8 +31,14 @@ namespace Confluent.Kafka
         /// </summary>
         string Name { get; }
 
+        /// <summary>
+        ///     The ISerializer implementation instance used to serialize keys.
+        /// </summary>
         ISerializer<TKey> KeySerializer { get; }
 
+        /// <summary>
+        ///     The ISerializer implementation instance used to serialize values.
+        /// </summary>
         ISerializer<TValue> ValueSerializer { get; }
 
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);

@@ -19,25 +19,63 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     This interface is implmented by types that handle delivery report
+    ///     callbacks on relevant ProduceAsync method overloads on the
+    ///     non-serializing Producer class.
+    /// </summart>
     /// <remarks>
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
     /// </remarks>
     public interface IDeliveryHandler
     {
+        /// <summary>
+        ///     Whether or not to marshal key and value data 
+        ///     from librdkafka when the delivery report is 
+        ///     available. Usually this should return true.
+        ///     Return false for a small performance improvement
+        ///     if you don't need this information.
+        /// </summary>
         bool MarshalData { get; }
 
+        /// <summary>
+        ///     This method gets called when the delivery report
+        ///     is available
+        /// </summary>
+        /// <param name="message">
+        ///     The delivery report.
+        /// </param>
         void HandleDeliveryReport(Message message);
     }
 
+    /// <summary>
+    ///     This interface is implmented by types that handle delivery report
+    ///     callbacks on relevant ProduceAsync method overloads on the
+    ///     serializing Producer class.
+    /// </summart>
     /// <remarks>
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
     /// </remarks>
     public interface IDeliveryHandler<TKey, TValue>
     {
+        /// <summary>
+        ///     Whether or not to marshal key and value data 
+        ///     from librdkafka when the delivery report is 
+        ///     available. Usually this should return true.
+        ///     Return false for a small performance improvement
+        ///     if you don't need this information.
+        /// </summary>
         bool MarshalData { get; }
 
+        /// <summary>
+        ///     This method gets called when the delivery report
+        ///     is available
+        /// </summary>
+        /// <param name="message">
+        ///     The delivery report.
+        /// </param>
         void HandleDeliveryReport(Message<TKey, TValue> message);
     }
 

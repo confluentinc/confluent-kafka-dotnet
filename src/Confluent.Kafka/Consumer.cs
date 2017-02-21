@@ -29,7 +29,7 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer (with 
-    ///     deserialization).
+    ///     key and value deserialization).
     /// </summary>
     public class Consumer<TKey, TValue> : IDisposable
     {
@@ -607,9 +607,9 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer (without deserialization).
     /// 
-    ///     [UNSTABLE-API] We are considering making this class private in a future version of
-    ///     confluent-kafka-dotnet to limit API surface area. Prefer to use the deserializing 
-    ///     consumer <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> where possible.
+    ///     [UNSTABLE-API] We are considering making this class private in a future version 
+    ///     so as to limit API surface area. Prefer to use the deserializing consumer
+    ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> where possible.
     /// </summary>
     public class Consumer : IDisposable
     {

@@ -21,6 +21,10 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Encapsulates information provided to a Consumer's OnOffsetsCommitted
+    ///     event.
+    /// </summary>
     public class CommittedOffsets
     {
         public CommittedOffsets(IList<TopicPartitionOffsetError> offsets, Error error)
@@ -43,6 +47,7 @@ namespace Confluent.Kafka
 
 
         public Error Error { get; }
+
         public IList<TopicPartitionOffsetError> Offsets { get; }
     }
 }

@@ -18,6 +18,10 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Encapsulates information describing a particular
+    ///     member of a Kafka group.
+    /// </summary>
     public class GroupMemberInfo {
 
         public GroupMemberInfo(string memberId, string clientId, string clientHost, byte[] memberMetadata, byte[] memberAssignment)
