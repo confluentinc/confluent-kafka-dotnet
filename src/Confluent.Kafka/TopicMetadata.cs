@@ -23,7 +23,6 @@ using System.Text;
 
 namespace Confluent.Kafka
 {
-
     /// <summary>
     ///     Metadata pertaining to a single Kafka topic.
     /// </summary>

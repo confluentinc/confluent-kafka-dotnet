@@ -19,13 +19,34 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates a Topic / Partition / Offset tuple.
+    ///     Represents a Kafka (topic, partition, offset) tuple.
     /// </summary>
     public class TopicPartitionOffset
     {
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffset instance.
+        /// </summary>
+        /// <param name="tp">
+        ///     Kafka topic name and partition.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
         public TopicPartitionOffset(TopicPartition tp, Offset offset)
             : this(tp.Topic, tp.Partition, offset) {}
 
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffset instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     A Kafka topic name.
+        /// </param>
+        /// <param name="partition">
+        ///     A Kafka partition.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
         public TopicPartitionOffset(string topic, int partition, Offset offset)
         {
             Topic = topic;
@@ -33,10 +54,24 @@ namespace Confluent.Kafka
             Offset = offset;
         }
 
+        /// <summary>
+        ///     The Kafka topic name.
+        /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     The Kafka partition.
+        /// </summary>
         public int Partition { get; }
+
+        /// <summary>
+        ///     The Kafka offset value.
+        /// </summary>
         public Offset Offset { get; }
 
+        /// <summary>
+        ///     The TopicPartition component of this TopicPartitionOffset instance.
+        /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
 

@@ -22,17 +22,34 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates a Kafka timestamp
+    ///     Encapsulates a Kafka timestamp and its type.
     /// </summary>
     public struct Timestamp
     {
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The timestamp.
+        /// </param>
+        /// <param name="type">
+        ///     The type of the timestamp.
+        /// </param>
         public Timestamp(DateTime dateTime, TimestampType type)
         {
             Type = type;
             DateTime = dateTime;
         }
 
+        /// <summary>
+        ///     The timestamp type.
+        /// </summary>
+        /// <returns>
         public TimestampType Type { get; }
+
+        /// <summary>
+        ///     The timestamp value.
+        /// </summary>
         public DateTime DateTime { get; }
 
         public override bool Equals(object obj)

@@ -19,16 +19,52 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates a Topic / Partition / Offset / Error tuple.
+    ///     Represents a Kafka (topic, partition, offset, error) tuple.
     /// </summary>
     public class TopicPartitionOffsetError
     {
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffsetError instance.
+        /// </summary>
+        /// <param name="tp">
+        ///     Kafka topic name and partition values.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
+        /// <param name="error"> <summary>
+        ///     A Kafka error.
+        /// </param>
         public TopicPartitionOffsetError(TopicPartition tp, Offset offset, Error error)
             : this(tp.Topic, tp.Partition, offset, error) {}
 
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffsetError instance.
+        /// </summary>
+        /// <param name="tpo">
+        ///     Kafka topic name, partition and offset values.
+        /// </param>
+        /// <param name="error">
+        ///     A Kafka error.
+        /// </param>
         public TopicPartitionOffsetError(TopicPartitionOffset tpo, Error error)
             : this(tpo.Topic, tpo.Partition, tpo.Offset, error) {}
 
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffsetError instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     A Kafka topic name.
+        /// </param>
+        /// <param name="partition">
+        ///     A Kafka partition value.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
+        /// <param name="error"> <summary>
+        ///     A Kafka error.
+        /// </param>
         public TopicPartitionOffsetError(string topic, int partition, Offset offset, Error error)
         {
             Topic = topic;
@@ -38,16 +74,34 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     A kafka topic
+        ///     The Kafka topic name.
         /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     The Kafka partition.
+        /// </summary>
         public int Partition { get; }
+
+        /// <summary>
+        ///     The Kafka offset value.
+        /// </summary>
         public Offset Offset { get; }
+
+        /// <summary>
+        ///     The Kafka error.
+        /// </summary>
         public Error Error { get; }
 
+        /// <summary>
+        ///     The TopicPartition component of this TopicPartitionOffsetError instance.
+        /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
 
+        /// <summary>
+        ///     The TopicPartitionOffset component of this TopicPartitionOffsetError instance.
+        /// </summary>>
         public TopicPartitionOffset TopicPartitionOffset
             => new TopicPartitionOffset(Topic, Partition, Offset);
 

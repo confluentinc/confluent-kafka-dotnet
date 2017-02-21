@@ -19,8 +19,13 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents and offset into a Kafka partition.
-    /// </summary>
+    ///     Represents a Kafka partition offset value.
+    /// </summary>  
+    /// <remarks>
+    ///     This structure is the same size as a long - 
+    ///     its purpose is to add some syntactical sugar 
+    ///     related to special values.
+    /// </remarks>
     public struct Offset
     {
         private const long RD_KAFKA_OFFSET_BEGINNING = -2;
@@ -28,18 +33,49 @@ namespace Confluent.Kafka
         private const long RD_KAFKA_OFFSET_STORED = -1000;
         private const long RD_KAFKA_OFFSET_INVALID = -1001;
 
+        /// <summary>
+        ///     A special value that refers to the beginning of a partition.
+        /// </summary>
+        /// <returns></returns>
         public static Offset Beginning { get { return new Offset(RD_KAFKA_OFFSET_BEGINNING); } }
+
+        /// <summary>
+        ///     A special value that refers to the end of a partition.
+        /// </summary>
+        /// <returns></returns>
         public static Offset End { get { return new Offset(RD_KAFKA_OFFSET_END); } }
+
+        /// <summary>
+        ///     A special value thet refers to the stored offset for a partition.
+        /// </summary>
+        /// <returns></returns>
         public static Offset Stored { get { return new Offset(RD_KAFKA_OFFSET_STORED); } }
+
+        /// <summary>
+        ///     A special value that refers to an invalid or unassigned partition offset.
+        /// </summary>
         public static Offset Invalid { get { return new Offset(RD_KAFKA_OFFSET_INVALID); } }
 
+        /// <summary>
+        ///     Initializes a new instance of the Offset structure.
+        /// </summary>
+        /// <param name="offset">
+        ///     The offset value
+        /// </param>
         public Offset(long offset)
         {
             Value = offset;
         }
 
+        /// <summary>
+        ///     The long value corresponding to this offset.
+        /// </summary>
         public long Value { get; }
 
+        /// <summary>
+        ///     Whether or not this is one of the four special 
+        ///     offset values.
+        /// </summary>
         public bool IsSpecial
         {
             get

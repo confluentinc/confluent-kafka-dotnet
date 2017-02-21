@@ -20,7 +20,7 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Enumeration of client and server generated error codes.
+    ///     Enumeration of local and broker generated error codes.
     /// </summary>
     public enum ErrorCode
     {

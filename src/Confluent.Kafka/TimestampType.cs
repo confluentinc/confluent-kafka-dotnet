@@ -16,6 +16,9 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Enumerates the different meanings of a message timestamp value.
+    /// </summary>
     public enum TimestampType
     {
         NotAvailable,

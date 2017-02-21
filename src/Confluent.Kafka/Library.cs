@@ -26,7 +26,7 @@ using Confluent.Kafka.Impl;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Methods that relate to the RdKafka library itself
+    ///     Methods that relate to the native librdkafka library itself
     ///     (do not require a Producer or Consumer broker connection).
     /// </summary>
     public static class Library
@@ -52,7 +52,7 @@ namespace Confluent.Kafka
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.version_str());
 
         /// <summary>
-        ///     List of the supported debug contexts.
+        ///     A list of the supported debug contexts.
         /// </summary>
         public static string[] DebugContexts
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
