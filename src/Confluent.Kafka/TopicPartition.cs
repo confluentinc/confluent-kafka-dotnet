@@ -39,12 +39,12 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The Kafka topic name.
+        ///     Gets the Kafka topic name.
         /// </summary>
         public string Topic { get; }
 
         /// <summary>
-        ///     The Kafka partition.
+        ///     Gets the Kafka partition.
         /// </summary>
         public int Partition { get; }
 

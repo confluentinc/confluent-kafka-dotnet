@@ -42,12 +42,12 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The timestamp type.
+        ///     Gets the timestamp type.
         /// </summary>
         public TimestampType Type { get; }
 
         /// <summary>
-        ///     The timestamp value.
+        ///     Gets the timestamp value.
         /// </summary>
         public DateTime DateTime { get; }
 

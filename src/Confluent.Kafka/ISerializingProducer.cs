@@ -29,17 +29,17 @@ namespace Confluent.Kafka
     public interface ISerializingProducer<TKey, TValue>
     {
         /// <summary>
-        ///     The name of the underlying producer instance.
+        ///     Gets the name of the underlying producer instance.
         /// </summary>
         string Name { get; }
 
         /// <summary>
-        ///     The ISerializer implementation instance used to serialize keys.
+        ///     Gets the ISerializer implementation instance used to serialize keys.
         /// </summary>
         ISerializer<TKey> KeySerializer { get; }
 
         /// <summary>
-        ///     The ISerializer implementation instance used to serialize values.
+        ///     Gets the ISerializer implementation instance used to serialize values.
         /// </summary>
         ISerializer<TValue> ValueSerializer { get; }
 

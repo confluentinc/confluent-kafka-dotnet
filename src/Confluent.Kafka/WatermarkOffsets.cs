@@ -42,12 +42,12 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The offset of the earlist message in the topic/partition.
+        ///     Gets the offset of the earlist message in the topic/partition.
         /// </summary>
         public Offset Low { get; }
 
         /// <summary>
-        ///     The offset of the last stored message in the topic/partition.
+        ///     Gets the offset of the last stored message in the topic/partition.
         /// </summary>
         public Offset High { get; }
     }

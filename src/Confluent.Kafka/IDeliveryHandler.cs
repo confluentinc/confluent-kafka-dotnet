@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     public interface IDeliveryHandler
     {
         /// <summary>
-        ///     Whether or not to marshal key and value data 
+        ///     Gets whether or not to marshal key and value data 
         ///     from librdkafka when the delivery report is 
         ///     available. Usually this should return true.
         ///     Return false for a small performance improvement
@@ -59,7 +59,7 @@ namespace Confluent.Kafka
     public interface IDeliveryHandler<TKey, TValue>
     {
         /// <summary>
-        ///     Whether or not to marshal key and value data 
+        ///     Gets whether or not to marshal key and value data 
         ///     from librdkafka when the delivery report is 
         ///     available. Usually this should return true.
         ///     Return false for a small performance improvement

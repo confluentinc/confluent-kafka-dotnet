@@ -74,33 +74,33 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The Kafka topic name.
+        ///     Gets the Kafka topic name.
         /// </summary>
         public string Topic { get; }
 
         /// <summary>
-        ///     The Kafka partition.
+        ///     Gets the Kafka partition.
         /// </summary>
         public int Partition { get; }
 
         /// <summary>
-        ///     The Kafka offset value.
+        ///     Gets the Kafka partition offset value.
         /// </summary>
         public Offset Offset { get; }
 
         /// <summary>
-        ///     The Kafka error.
+        ///     Gets the Kafka error.
         /// </summary>
         public Error Error { get; }
 
         /// <summary>
-        ///     The TopicPartition component of this TopicPartitionOffsetError instance.
+        ///     Gets the TopicPartition component of this TopicPartitionOffsetError instance.
         /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
 
         /// <summary>
-        ///     The TopicPartitionOffset component of this TopicPartitionOffsetError instance.
+        ///     Gets the TopicPartitionOffset component of this TopicPartitionOffsetError instance.
         /// </summary>>
         public TopicPartitionOffset TopicPartitionOffset
             => new TopicPartitionOffset(Topic, Partition, Offset);
