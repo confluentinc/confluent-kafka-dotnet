@@ -61,14 +61,14 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The ErrorCode associated with this Error.
+        ///     Gets the ErrorCode associated with this Error.
         /// </summary>
         public ErrorCode Code { get; }
 
         private string reason;
 
         /// <summary>
-        ///     A human readable reason string associated with this error.
+        ///     Gets a human readable reason string associated with this error.
         /// </summary>
         public string Reason
         {
@@ -82,13 +82,13 @@ namespace Confluent.Kafka
             => Code != ErrorCode.NoError;
 
         /// <summary>
-        ///     true if this is error originated locally (within librdkafka). false otherwise.
+        ///     true if this is error originated locally (within librdkafka), false otherwise.
         /// </summary>
         public bool IsLocalError
             => (int)Code < -1;
 
         /// <summary>
-        ///     true if this error originated on a broker. false otherwise.
+        ///     true if this error originated on a broker, false otherwise.
         /// </summary>
         public bool IsBrokerError
             => (int)Code > 0;

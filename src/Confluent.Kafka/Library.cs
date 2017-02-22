@@ -32,7 +32,7 @@ namespace Confluent.Kafka
     public static class Library
     {
         /// <summary>
-        ///     Returns the librdkafka version as an integer.
+        ///     Gets the librdkafka version as an integer.
         ///
         ///     Interpreted as hex MM.mm.rr.xx:
         ///         - MM = Major
@@ -46,13 +46,13 @@ namespace Confluent.Kafka
             => (int) LibRdKafka.version();
 
         /// <summary>
-        ///     The librdkafka version as string.
+        ///     Gets the librdkafka version as string.
         /// </summary>
         public static string VersionString
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.version_str());
 
         /// <summary>
-        ///     A list of the supported debug contexts.
+        ///     Gets a list of the supported debug contexts.
         /// </summary>
         public static string[] DebugContexts
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');

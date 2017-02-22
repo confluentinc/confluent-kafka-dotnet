@@ -319,13 +319,13 @@ namespace Confluent.Kafka
         public event EventHandler<Message<TKey, TValue>> OnMessage;
 
         /// <summary>
-        ///     The current partition assignment as set by Assign.
+        ///     Gets the current partition assignment as set by Assign.
         /// </summary>
         public List<TopicPartition> Assignment
             => consumer.Assignment;
 
         /// <summary>
-        ///     The current partition subscription as set by Subscribe.
+        ///     Gets the current partition subscription as set by Subscribe.
         /// </summary>
         public List<string> Subscription
             => consumer.Subscription;
@@ -461,7 +461,7 @@ namespace Confluent.Kafka
             => consumer.Position(partitions);
 
         /// <summary>
-        ///     The name of this consumer instance.
+        ///     Gets the name of this consumer instance.
         ///     Contains (but is not equal to) the client.id configuration parameter.
         /// </summary>
         /// <remarks>
@@ -473,7 +473,7 @@ namespace Confluent.Kafka
             => consumer.Name;
 
         /// <summary>
-        ///     The (dynamic) group member id of this consumer (as set by
+        ///     Gets the (dynamic) group member id of this consumer (as set by
         ///     the broker).
         /// </summary>
         public string MemberId
@@ -835,13 +835,13 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     The current partition assignment as set by Assign.
+        ///     Gets the current partition assignment as set by Assign.
         /// </summary>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
         /// <summary>
-        ///     The current topic subscription as set by Subscribe.
+        ///     Gets the current topic subscription as set by Subscribe.
         /// </summary>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
@@ -1095,7 +1095,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The name of this consumer instance.
+        ///     Gets the name of this consumer instance.
         ///     Contains (but is not equal to) the client.id configuration parameter.
         /// </summary>
         /// <remarks>
@@ -1107,7 +1107,7 @@ namespace Confluent.Kafka
             => kafkaHandle.Name;
 
         /// <summary>
-        ///     The (dynamic) group member id of this consumer (as set by
+        ///     Gets the (dynamic) group member id of this consumer (as set by
         ///     the broker).
         /// </summary>
         public string MemberId

@@ -72,13 +72,14 @@ namespace Confluent.Kafka
             => !(a == b);
 
         /// <summary>
-        ///     Convert a DateTime instance to a unix timestamp.
+        ///     Convert a DateTime instance to a milliseconds unix timestamp.
+        ///     Note: <paramref name="dateTime" is first converted to UTC if it is not already.
         /// </summary>
         /// <param name="dateTime">
         ///     The DateTime value to convert.
         /// </param>
         /// <returns>
-        ///     The unix timestamp corresponding to <paramref name="dateTime"/>
+        ///     The milliseconds unix timestamp corresponding to <paramref name="dateTime"/>
         /// </returns>
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
         {
@@ -89,16 +90,16 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Convert a unix timestamp to a DateTime value.
+        ///     Convert a milliseconds unix timestamp to a DateTime value.
         /// </summary>
-        /// <param name="timestamp">
-        ///     The unix timestamp to convert.
+        /// <param name="unixMillisecondsTimestamp">
+        ///     The milliseconds unix timestamp to convert.
         /// </param>
         /// <returns>
-        ///     The DateTime value associated with <paramref name="timestamp"/>
+        ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
         /// </returns>
-        public static DateTime UnixTimestampMsToDateTime(long timestamp)
-            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Unspecified)
-                + TimeSpan.FromMilliseconds(timestamp);
+        public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
+            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)
+                + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
     }
 }

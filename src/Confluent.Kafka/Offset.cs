@@ -68,12 +68,12 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The long value corresponding to this offset.
+        ///     Gets the long value corresponding to this offset.
         /// </summary>
         public long Value { get; }
 
         /// <summary>
-        ///     Whether or not this is one of the four special 
+        ///     Gets whether or not this is one of the four special 
         ///     offset values.
         /// </summary>
         public bool IsSpecial

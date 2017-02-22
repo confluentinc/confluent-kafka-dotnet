@@ -212,7 +212,12 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp?.Ticks, ptr, blockIfQueueFull) != 0)
+                if (topicHandle.Produce(
+                    val, valOffset, valLength, 
+                    key, keyOffset, keyLength, 
+                    partition, 
+                    timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
+                    ptr, blockIfQueueFull) != 0)
                 {
                     var err = LibRdKafka.last_error();
                     gch.Free();
@@ -222,7 +227,12 @@ namespace Confluent.Kafka
                 return;
             }
 
-            if (topicHandle.Produce(val, valOffset, valLength, key, keyOffset, keyLength, partition, timestamp?.Ticks, IntPtr.Zero, blockIfQueueFull) != 0)
+            if (topicHandle.Produce(
+                val, valOffset, valLength, 
+                key, keyOffset, keyLength, 
+                partition, 
+                timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
+                IntPtr.Zero, blockIfQueueFull) != 0)
             {
                 throw new KafkaException(LibRdKafka.last_error());
             }
@@ -248,7 +258,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters should be specified via the "default.topic.config" config parameter.
+        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="manualPoll">
         ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
@@ -304,7 +314,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters should be specified via the "default.topic.config" config parameter.
+        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
             : this(config, false, false) {}
@@ -478,6 +488,10 @@ namespace Confluent.Kafka
         /// <param name="blockIfQueueFull">
         ///     Whether or not to block if the send queue is full.
         ///     If false, and exception will be thrown in the event.
+        /// 
+        ///     Note: blockIfQueueFull is set to true, background polling is 
+        ///     disabled and Poll is not being called in another thread, this
+        ///     will block indefinitely.
         /// </param>
         /// <returns>
         ///     A Task which will complete with the corresponding delivery report
@@ -548,7 +562,7 @@ namespace Confluent.Kafka
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
 
         /// <summary>
-        ///     The name of this producer instance.
+        ///     Gets the name of this producer instance.
         ///     Contains (but is not equal to) the client.id configuration parameter.
         /// </summary>
         /// <remarks>
@@ -913,7 +927,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters should be specified via the "default.topic.config" config parameter.
+        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -948,7 +962,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters should be specified via the "default.topic.config" config parameter.
+        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -964,19 +978,19 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     The ISerializer implementation instance used to serialize keys.
+        ///     Gets the ISerializer implementation instance used to serialize keys.
         /// </summary>
         public ISerializer<TKey> KeySerializer
             => serializingProducer.KeySerializer;
 
         /// <summary>
-        ///     The ISerializer implementation instance used to serialize values.
+        ///     Gets the ISerializer implementation instance used to serialize values.
         /// </summary>
         public ISerializer<TValue> ValueSerializer
             => serializingProducer.ValueSerializer;
 
         /// <summary>
-        ///     The name of this producer instance.
+        ///     Gets the name of this producer instance.
         ///     Contains (but is not equal to) the client.id configuration parameter.
         /// </summary>
         /// <remarks>
@@ -994,7 +1008,8 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     The partition the message is produced to is determined using the configured partitioner.
         ///     
-        ///     Blocks if the send queue is full.
+        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
             => serializingProducer.ProduceAsync(topic, key, val);
@@ -1018,6 +1033,11 @@ namespace Confluent.Kafka
         /// <param name="blockIfQueueFull">
         ///     Whether or not to block if the send queue is full.
         ///     If false, and exception will be thrown in the event.
+        ///      
+        ///     Note: blockIfQueueFull is set to true, background polling is 
+        ///     disabled and Poll is not being called in another thread, 
+        ///     this will block indefinitely.
+        /// </remarks>
         /// </param>
         /// <returns>
         ///     A Task which will complete with the corresponding delivery report
@@ -1036,7 +1056,8 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
         /// </summary>
         /// <remarks>
-        ///     Blocks if the send queue is full.
+        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
             => serializingProducer.ProduceAsync(topic, key, val, partition);
@@ -1059,7 +1080,8 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     The partition the message is produced to is determined using the configured partitioner.
         ///     
-        ///     Blocks if the send queue is full.
+        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler);
@@ -1083,7 +1105,8 @@ namespace Confluent.Kafka
         ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
         /// </summary>
         /// <remarks>
-        ///     Blocks if the send queue is full.
+        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => serializingProducer.ProduceAsync(topic, key, val, partition, deliveryHandler);

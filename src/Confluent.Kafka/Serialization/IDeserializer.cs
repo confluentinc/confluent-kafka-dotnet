@@ -17,7 +17,7 @@
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     Implement this interface to define a de-serializer 
+    ///     Implement this interface to define a deserializer 
     ///     for a particular type T.
     /// </summary>
     public interface IDeserializer<T>

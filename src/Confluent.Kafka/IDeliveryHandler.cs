@@ -20,7 +20,7 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     This interface is implmented by types that handle delivery report
+    ///     This interface is implemented by types that handle delivery report
     ///     callbacks as a result of calls to Confluent.Kafka.Producer.ProduceAsync().
     /// </summary>
     /// <remarks>
@@ -49,7 +49,7 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
-    ///     This interface is implmented by types that handle delivery report
+    ///     This interface is implemented by types that handle delivery report
     ///     callbacks as a result of calls to Confluent.Kafka.Producer&lt;TKey,TValue&gt;.ProduceAsync().
     /// </summary>
     /// <remarks>

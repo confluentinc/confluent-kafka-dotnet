@@ -53,7 +53,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The Error associated with this KafkaException.
+        ///     Gets the Error associated with this KafkaException.
         /// </summary>
         public Error Error { get; }
     }

@@ -52,22 +52,22 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Information about each constituent broker of the cluster.
+        ///     Gets information about each constituent broker of the cluster.
         /// </summary>
         public List<BrokerMetadata> Brokers { get; }
 
         /// <summary>
-        ///     Information about requested topics in the cluster.
+        ///     Gets information about requested topics in the cluster.
         /// </summary>
         public List<TopicMetadata> Topics { get; }
 
         /// <summary>
-        ///     The id of the broker that provided this metadata.
+        ///     Gets the id of the broker that provided this metadata.
         /// </summary>
         public int OriginatingBrokerId { get; }
 
         /// <summary>
-        ///     The name of the broker that provided this metadata.
+        ///     Gets the name of the broker that provided this metadata.
         /// </summary>
         public string OriginatingBrokerName { get; }
 
