@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         ///     The offset of the earlist message in the topic/partition.
         /// </param>
         /// <param name="high">
-        ///     The offset of the last committed message in the topic/partition.
+        ///     The offset of the last stored message in the topic/partition.
         /// </param>
         public WatermarkOffsets(Offset low, Offset high)
         {
@@ -47,7 +47,7 @@ namespace Confluent.Kafka
         public Offset Low { get; }
 
         /// <summary>
-        ///     The offset of the last committed message in the topic/partition.
+        ///     The offset of the last stored message in the topic/partition.
         /// </summary>
         public Offset High { get; }
     }
