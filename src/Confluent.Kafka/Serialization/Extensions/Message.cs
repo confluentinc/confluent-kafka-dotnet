@@ -16,6 +16,9 @@
 
 namespace Confluent.Kafka.Serialization
 {
+    /// <summary>
+    ///     Provides extension methods on the <see cref="Confluent.Kafka.Message" /> class.
+    /// </summary>
     public static class MessageExtensions
     {
         public static Message<TKey, TValue> Deserialize<TKey, TValue>(this Message message, IDeserializer<TKey> keyDeserializer, IDeserializer<TValue> valueDeserializer)

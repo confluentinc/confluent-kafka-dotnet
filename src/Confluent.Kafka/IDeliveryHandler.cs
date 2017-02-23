@@ -19,25 +19,61 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     This interface is implemented by types that handle delivery report
+    ///     callbacks as a result of calls to Confluent.Kafka.Producer.ProduceAsync().
+    /// </summary>
     /// <remarks>
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
     /// </remarks>
     public interface IDeliveryHandler
     {
+        /// <summary>
+        ///     Gets whether or not to marshal key and value data 
+        ///     from librdkafka when the delivery report is 
+        ///     available. Usually this should return true.
+        ///     Return false for a small performance improvement
+        ///     if you don't need this information.
+        /// </summary>
         bool MarshalData { get; }
 
+        /// <summary>
+        ///     This method is called when the delivery report
+        ///     is available
+        /// </summary>
+        /// <param name="message">
+        ///     The delivery report.
+        /// </param>
         void HandleDeliveryReport(Message message);
     }
 
+    /// <summary>
+    ///     This interface is implemented by types that handle delivery report
+    ///     callbacks as a result of calls to Confluent.Kafka.Producer&lt;TKey,TValue&gt;.ProduceAsync().
+    /// </summary>
     /// <remarks>
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
     /// </remarks>
     public interface IDeliveryHandler<TKey, TValue>
     {
+        /// <summary>
+        ///     Gets whether or not to marshal key and value data 
+        ///     from librdkafka when the delivery report is 
+        ///     available. Usually this should return true.
+        ///     Return false for a small performance improvement
+        ///     if you don't need this information.
+        /// </summary>
         bool MarshalData { get; }
 
+        /// <summary>
+        ///     This method is called when the delivery report
+        ///     is available
+        /// </summary>
+        /// <param name="message">
+        ///     The delivery report.
+        /// </param>
         void HandleDeliveryReport(Message<TKey, TValue> message);
     }
 

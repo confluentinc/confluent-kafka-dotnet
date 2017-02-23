@@ -16,17 +16,39 @@
 //
 // Refer to LICENSE for more information.
 
+
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents the low and high watermark offsets of
+    ///     a Kafka topic/partition.
+    /// </summary>
     public class WatermarkOffsets
     {
+        /// <summary>
+        ///     Initializes a new instance of the WatermarkOffsets class
+        ///     with the specified offsets.
+        /// </summary>
+        /// <param name="low">
+        ///     The offset of the earlist message in the topic/partition.
+        /// </param>
+        /// <param name="high">
+        ///     The offset of the last stored message in the topic/partition.
+        /// </param>
         public WatermarkOffsets(Offset low, Offset high)
         {
             Low = low;
             High = high;
         }
 
+        /// <summary>
+        ///     Gets the offset of the earlist message in the topic/partition.
+        /// </summary>
         public Offset Low { get; }
+
+        /// <summary>
+        ///     Gets the offset of the last stored message in the topic/partition.
+        /// </summary>
         public Offset High { get; }
     }
 }

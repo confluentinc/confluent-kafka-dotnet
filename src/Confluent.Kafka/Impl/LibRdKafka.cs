@@ -451,9 +451,9 @@ namespace Confluent.Kafka.Impl
         internal static void queue_destroy(IntPtr rkqu)
             => _queue_destroy(rkqu);
 
-        private static Func<IntPtr, int, IntPtr> _queue_poll;
+        private static Func<IntPtr, IntPtr, IntPtr> _queue_poll;
         internal static IntPtr queue_poll(IntPtr rkqu, int timeout_ms)
-            => _queue_poll(rkqu, timeout_ms);
+            => _queue_poll(rkqu, (IntPtr)timeout_ms);
 
         //
         // Events
@@ -770,7 +770,7 @@ namespace Confluent.Kafka.Impl
             internal static extern void rd_kafka_queue_destroy(IntPtr rkqu);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, int timeout_ms);
+            internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, IntPtr timeout_ms);
 
             //
             // Events

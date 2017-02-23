@@ -20,8 +20,12 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Enumeration of client and server generated error codes.
+    ///     Enumeration of local and broker generated error codes.
     /// </summary>
+    /// <remarks>
+    ///     Error codes that relate to locally produced errors in 
+    ///     librdkafka are prefixed with Local_
+    /// </remarks>
     public enum ErrorCode
     {
         /// <summary>
@@ -381,8 +385,15 @@ namespace Confluent.Kafka
         UnsupportedVersion = 35
     };
 
+    /// <summary>
+    ///     Provides extension methods on the ErrorCode enumeration.
+    /// </summary>
     public static class ErrorCodeExtensions
     {
+        /// <summary>
+        ///     Returns the static error string associated with 
+        ///     the particular ErrorCode value.
+        /// </summary>
         public static string GetReason(this ErrorCode code)
         {
             return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));

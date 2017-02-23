@@ -16,10 +16,24 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Enumerates the different meanings of a message timestamp value.
+    /// </summary>
     public enum TimestampType
     {
+        /// <summary>
+        ///     Timestamp type is unknown.
+        /// </summary>
         NotAvailable,
+
+        /// <summary>
+        ///     Timestamp relates to message creation time as set by a Kafka client.
+        /// </summary>
         CreateTime,
+
+        /// <summary>
+        ///     Timestamp relates to the time a message was appended to a Kafka log.
+        /// </summary>
         LogAppendTime
     }
 }

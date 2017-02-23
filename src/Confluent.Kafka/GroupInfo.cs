@@ -21,6 +21,10 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Encapsulates information describing a particular
+    ///     Kafka group.
+    /// </summary>
     public class GroupInfo
     {
         public GroupInfo(BrokerMetadata broker, string grp, Error error, string state, string protocolType, string protocol, List<GroupMemberInfo> members)
@@ -34,12 +38,39 @@ namespace Confluent.Kafka
             Members = members;
         }
 
-        public BrokerMetadata Broker { get; } /**< Originating broker info */
-        public string Group { get; }          /**< Group name */
-        public Error Error { get; }           /**< Broker-originated error */
-        public string State { get; }          /**< Group state */
-        public string ProtocolType { get; }   /**< Group protocol type */
-        public string Protocol { get; }       /**< Group protocol */
-        public List<GroupMemberInfo> Members { get; } /**< Group members */
+        /// <summary>
+        ///     Originating-broker info.
+        /// </summary>
+        public BrokerMetadata Broker { get; }
+
+        /// <summary>
+        ///     Group name
+        /// </summary>
+        public string Group { get; }
+
+        /// <summary>
+        ///     Broker-originated error
+        /// </summary>
+        public Error Error { get; }
+
+        /// <summary>
+        ///     Group state
+        /// </summary>
+        public string State { get; }
+
+        /// <summary>
+        ///     Group protocol type
+        /// </summary>
+        public string ProtocolType { get; }
+
+        /// <summary>
+        ///     Group protocol
+        /// </summary>
+        public string Protocol { get; }
+
+        /// <summary>
+        ///     Group members
+        /// </summary>
+        public List<GroupMemberInfo> Members { get; }
     }
 }

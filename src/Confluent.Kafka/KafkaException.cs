@@ -21,20 +21,40 @@ using System;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents an error that occured during an interaction with Kafka.
+    /// </summary>
     public class KafkaException : Exception
     {
+        /// <summary>
+        ///     Initialize a new instance of KafkaException based on 
+        ///     an existing Error instance.
+        /// </summary>
+        /// <param name="error"> 
+        ///     The Kafka Error.
+        /// </param>
         public KafkaException(Error error)
             : base(error.ToString())
         {
             Error = error;
         }
 
+        /// <summary>
+        ///     Initialize a new instance of KafkaException based on 
+        ///     an existing ErrorCode value.
+        /// </summary>
+        /// <param name="error"> 
+        ///     The Kafka ErrorCode.
+        /// </param>
         public KafkaException(ErrorCode code)
             : base(ErrorCodeExtensions.GetReason(code))
         {
             Error = new Error(code);
         }
 
+        /// <summary>
+        ///     Gets the Error associated with this KafkaException.
+        /// </summary>
         public Error Error { get; }
     }
 }

@@ -24,10 +24,25 @@ using System.Linq;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Metadata pertaining to a single Kafka cluster
+    ///     Kafka cluster metadata.
     /// </summary>
     public class Metadata
     {
+        /// <summary>
+        ///     Instantiates a new Metadata class instance.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Information about each constituent broker of the cluster.
+        /// </param>
+        /// <param name="topics">
+        ///     Information about requested topics in the cluster.
+        /// </param>
+        /// <param name="originatingBrokerId">
+        ///     The id of the broker that provided this metadata.
+        /// </param>
+        /// <param name="originatingBrokerName">
+        ///     The name of the broker that provided this metadata.
+        /// </param>
         public Metadata(List<BrokerMetadata> brokers, List<TopicMetadata> topics, int originatingBrokerId, string originatingBrokerName)
         {
             Brokers = brokers;
@@ -37,20 +52,22 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Information about each constituent broker of the cluster.
+        ///     Gets information about each constituent broker of the cluster.
         /// </summary>
         public List<BrokerMetadata> Brokers { get; }
 
         /// <summary>
-        ///     Information about every topic managed by in the cluster.
+        ///     Gets information about requested topics in the cluster.
         /// </summary>
         public List<TopicMetadata> Topics { get; }
 
         /// <summary>
+        ///     Gets the id of the broker that provided this metadata.
         /// </summary>
         public int OriginatingBrokerId { get; }
 
         /// <summary>
+        ///     Gets the name of the broker that provided this metadata.
         /// </summary>
         public string OriginatingBrokerName { get; }
 

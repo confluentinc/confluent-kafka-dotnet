@@ -21,8 +21,19 @@ using System;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     OnLog callback event handler implementations.
+    /// </summary>
+    /// <remarks>
+    ///     Warning: Log handlers are called spontaneously from internal librdkafka 
+    ///     threads and the application must not call any Confluent.Kafka APIs from 
+    ///     within a log handler or perform any prolonged operations.
+    /// </remarks>
     public static class Loggers
     {
+        /// <summary>
+        ///     The method used to log messages by default.
+        /// </summary>
         public static void ConsoleLogger(object obj, LogMessage logInfo)
         {
             var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
