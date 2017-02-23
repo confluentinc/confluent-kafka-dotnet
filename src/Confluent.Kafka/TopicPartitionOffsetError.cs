@@ -19,16 +19,52 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates a Topic / Partition / Offset / Error tuple.
+    ///     Represents a Kafka (topic, partition, offset, error) tuple.
     /// </summary>
     public class TopicPartitionOffsetError
     {
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffsetError instance.
+        /// </summary>
+        /// <param name="tp">
+        ///     Kafka topic name and partition values.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
+        /// <param name="error">
+        ///     A Kafka error.
+        /// </param>
         public TopicPartitionOffsetError(TopicPartition tp, Offset offset, Error error)
             : this(tp.Topic, tp.Partition, offset, error) {}
 
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffsetError instance.
+        /// </summary>
+        /// <param name="tpo">
+        ///     Kafka topic name, partition and offset values.
+        /// </param>
+        /// <param name="error">
+        ///     A Kafka error.
+        /// </param>
         public TopicPartitionOffsetError(TopicPartitionOffset tpo, Error error)
             : this(tpo.Topic, tpo.Partition, tpo.Offset, error) {}
 
+        /// <summary>
+        ///     Initializes a new TopicPartitionOffsetError instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     A Kafka topic name.
+        /// </param>
+        /// <param name="partition">
+        ///     A Kafka partition value.
+        /// </param>
+        /// <param name="offset">
+        ///     A Kafka offset value.
+        /// </param>
+        /// <param name="error">
+        ///     A Kafka error.
+        /// </param>
         public TopicPartitionOffsetError(string topic, int partition, Offset offset, Error error)
         {
             Topic = topic;
@@ -37,14 +73,35 @@ namespace Confluent.Kafka
             Error = error;
         }
 
+        /// <summary>
+        ///     Gets the Kafka topic name.
+        /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     Gets the Kafka partition.
+        /// </summary>
         public int Partition { get; }
+
+        /// <summary>
+        ///     Gets the Kafka partition offset value.
+        /// </summary>
         public Offset Offset { get; }
+
+        /// <summary>
+        ///     Gets the Kafka error.
+        /// </summary>
         public Error Error { get; }
 
+        /// <summary>
+        ///     Gets the TopicPartition component of this TopicPartitionOffsetError instance.
+        /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
 
+        /// <summary>
+        ///     Gets the TopicPartitionOffset component of this TopicPartitionOffsetError instance.
+        /// </summary>>
         public TopicPartitionOffset TopicPartitionOffset
             => new TopicPartitionOffset(Topic, Partition, Offset);
 
@@ -59,9 +116,8 @@ namespace Confluent.Kafka
             return tp.Partition == Partition && tp.Topic == Topic && tp.Offset == Offset && tp.Error == Error;
         }
 
-        // x by prime number is quick and gives decent distribution.
         public override int GetHashCode()
-            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode();
+            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode(); // x by prime number is quick and gives decent distribution.
 
         public static bool operator ==(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
             => a.Equals(b);

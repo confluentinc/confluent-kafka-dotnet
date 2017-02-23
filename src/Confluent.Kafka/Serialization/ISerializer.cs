@@ -16,9 +16,21 @@
 
 namespace Confluent.Kafka.Serialization
 {
-    // TODO: Consider not having this. Consider replacing with Func<T, TResult>. This would be more normal, and I don't think we need the flexibility provided by having an interface.
+    /// <summary>
+    ///     Implement this interface to define a serializer 
+    ///     for a particular type T.
+    /// </summary>
     public interface ISerializer<T>
     {
+        /// <summary>
+        ///     Serialize an instance of type T to a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     The object to serialize
+        /// </param>
+        /// <returns>
+        ///     <paramref name="data" /> serialized as a byte array.
+        /// </returns>
         byte[] Serialize(T data);
     }
 }

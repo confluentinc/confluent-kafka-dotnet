@@ -18,37 +18,78 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents an error that occured when interacting with a
+    ///     Kafka broker or the librdkafka library.
+    /// </summary>
     public class Error
     {
+        /// <summary>
+        ///     Initialize a new Error instance from a particular
+        ///     ErrorCode value.
+        /// </summary>
+        /// <param name="code">
+        ///     The ErrorCode value associated with this Error.
+        /// </param>
+        /// <remarks>
+        ///     The reason string associated with this Error will
+        ///     be a static value associated with the ErrorCode.
+        /// </remarks>
         public Error(ErrorCode code)
         {
             Code = code;
             reason = null;
         }
 
+        /// <summary>
+        ///     Initialize a new Error instance from a particular
+        ///     ErrorCode value and custom <paramref name="reason"/>
+        ///     string.
+        /// </summary>
+        /// <param name="code">
+        ///     The ErrorCode value associated with this Error.
+        /// </param>
+        /// <param name="reason">
+        ///     A custom reason string associated with the error
+        ///     (overriding the static string associated with 
+        ///     <paramref name="code"/>).
+        /// </param>
         public Error(ErrorCode code, string reason)
         {
             Code = code;
             this.reason = reason;
         }
 
+        /// <summary>
+        ///     Gets the ErrorCode associated with this Error.
+        /// </summary>
         public ErrorCode Code { get; }
 
         private string reason;
 
-        // Rich error string, will be empty for APIs
-        // where there was just an ErrorCode. See ToString()
+        /// <summary>
+        ///     Gets a human readable reason string associated with this error.
+        /// </summary>
         public string Reason
         {
             get { return ToString(); }
         }
 
+        /// <summary>
+        ///     true if Code != ErrorCode.NoError.
+        /// </summary>
         public bool HasError
             => Code != ErrorCode.NoError;
 
+        /// <summary>
+        ///     true if this is error originated locally (within librdkafka), false otherwise.
+        /// </summary>
         public bool IsLocalError
             => (int)Code < -1;
 
+        /// <summary>
+        ///     true if this error originated on a broker, false otherwise.
+        /// </summary>
         public bool IsBrokerError
             => (int)Code > 0;
 
@@ -81,10 +122,10 @@ namespace Confluent.Kafka
             => !(a == b);
 
         /// <summary>
-        ///   Returns the string representation of the error.
-        ///   Depending on error source this might be a rich
-        ///   contextual error message, or a simple static
-        ///   string representation of the error Code.
+        ///     Returns the string representation of the error.
+        ///     Depending on error source this might be a rich
+        ///     contextual error message, or a simple static
+        ///     string representation of the error Code.
         /// </summary>
         public override string ToString()
         {

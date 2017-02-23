@@ -21,28 +21,67 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Encapsulates information provided to a Consumer's OnOffsetsCommitted
+    ///     event - per-partition offsets and success/error together with overall 
+    ///     success/error of the commit operation.
+    /// </summary> 
+    /// <remarks>
+    ///     Possible error conditions:
+    ///     - Entire request failed: Error is set, but not per-partition errors.
+    ///     - All partitions failed: Error is set to the value of the last failed partition, but each partition may have different errors.
+    ///     - Some partitions failed: global error is success.
+    /// </remarks>
     public class CommittedOffsets
     {
+        /// <summary>
+        ///     Initializes a new instance of CommittedOffsets.
+        /// </summary>
+        /// <param name="offsets">
+        ///     per-partition offsets and success/error.
+        /// </param>
+        /// <param name="error">
+        ///     overall operation success/error.
+        /// </param>
         public CommittedOffsets(IList<TopicPartitionOffsetError> offsets, Error error)
         {
             Offsets = offsets;
             Error = error;
         }
 
+        /// <summary>
+        ///     Initializes a new instance of CommittedOffsets with
+        ///     overall operation success.
+        /// </summary>
+        /// <param name="offsets">
+        ///     per-partition offsets and success/error.
+        /// </param>
         public CommittedOffsets(IList<TopicPartitionOffsetError> offsets)
         {
             Offsets = offsets;
             Error = new Error(ErrorCode.NoError);
         }
 
+        /// <summary>
+        ///     Initializes a new instance of CommittedOffsets with
+        ///     an empty per-partition list and the overall 
+        ///     success/error <paramref name="error" />.
+        /// </summary>
+        /// <param name="error"></param>
         public CommittedOffsets(Error error)
         {
             Offsets = new List<TopicPartitionOffsetError>();
             Error = error;
         }
 
-
+        /// <summary>
+        ///     Gets the overall operation success/error.
+        /// </summary>
         public Error Error { get; }
+
+        /// <summary>
+        ///     Gets the per-partition offsets and success/error.
+        /// </summary>
         public IList<TopicPartitionOffsetError> Offsets { get; }
     }
 }

@@ -7,7 +7,7 @@
            <span class="icon-bar"></span>
            <span class="icon-bar"></span>
          </button>
-         <a class="navbar-brand" href="{{_rel}}"><span class="dotnet">RdKafka .NET</span></a>
+         <a class="navbar-brand" href="{{_rel}}"><span class="dotnet">confluent-kafka-dotnet</span></a>
        </div>
        <div id="navbar" class="collapse navbar-collapse">
        </div><!--/.nav-collapse -->

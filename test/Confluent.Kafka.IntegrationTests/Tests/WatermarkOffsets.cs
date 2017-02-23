@@ -45,14 +45,6 @@ namespace Confluent.Kafka.IntegrationTests
                 dr = producer.ProduceAsync(topic, null, testString).Result;
                 producer.Flush();
 
-                var getOffsets = producer.GetWatermarkOffsets(new TopicPartition(topic, 0));
-
-                // statistics.interval.ms is not set, so this should always be invalid.
-                Assert.Equal(getOffsets.Low, Offset.Invalid);
-
-                // no message has been consumed from broker (this is a producer), so this should always be invalid.
-                Assert.Equal(getOffsets.High, Offset.Invalid);
-
                 var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(topic, 0));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.NotEqual(queryOffsets.High, Offset.Invalid);

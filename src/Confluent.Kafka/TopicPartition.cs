@@ -18,15 +18,34 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents a Kafka (topic, partition) tuple.
+    /// </summary>
     public class TopicPartition
     {
+        /// <summary>
+        ///     Initializes a new TopicPartition instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     A Kafka topic name.
+        /// </param>
+        /// <param name="partition">
+        ///     A Kafka partition.
+        /// </param>
         public TopicPartition(string topic, int partition)
         {
             Topic = topic;
             Partition = partition;
         }
 
+        /// <summary>
+        ///     Gets the Kafka topic name.
+        /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     Gets the Kafka partition.
+        /// </summary>
         public int Partition { get; }
 
         public override bool Equals(object obj)

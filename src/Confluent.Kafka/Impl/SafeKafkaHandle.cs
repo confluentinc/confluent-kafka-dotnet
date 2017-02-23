@@ -120,10 +120,10 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal long OutQueueLength
-            => (long)LibRdKafka.outq_len(handle);
+        private int OutQueueLength
+            => LibRdKafka.outq_len(handle);
 
-        internal long Flush(int millisecondsTimeout)
+        internal int Flush(int millisecondsTimeout)
         {
             LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
             return OutQueueLength;
@@ -132,8 +132,8 @@ namespace Confluent.Kafka.Impl
         internal long AddBrokers(string brokers)
             => (long)LibRdKafka.brokers_add(handle, brokers);
 
-        internal long Poll(IntPtr millisecondsTimeout)
-            => (long)LibRdKafka.poll(handle, millisecondsTimeout);
+        internal int Poll(IntPtr millisecondsTimeout)
+            => (int)LibRdKafka.poll(handle, millisecondsTimeout);
 
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
