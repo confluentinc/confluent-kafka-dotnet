@@ -248,11 +248,16 @@ namespace Confluent.Kafka
         ///     Raised when there is information that should be logged.
         /// </summary>
         /// <remarks>
-        ///     You can specify the log level with the 'log_level' configuration
-        ///     property. You also probably want to specify one or more debug
-        ///     contexts using the 'debug' configuration property.
+        ///     Note: By default not many log messages are generated.
+        /// 
+        ///     You can specify one or more debug contexts using the 'debug'
+        ///     configuration property and a log level using the 'log_level'
+        ///     configuration property to enable more verbose logging,
+        ///     however you shouldn't typically need to do this.
         ///
-        ///     This event can potentially be raised on any thread.
+        ///     Warning: Log handlers are called spontaneously from internal librdkafka 
+        ///     threads and the application must not call any Confluent.Kafka APIs from 
+        ///     within a log handler or perform any prolonged operations.
         /// </remarks>
         public event EventHandler<LogMessage> OnLog
         {
@@ -261,7 +266,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Raised on librdkafka statistics events. These can be enabled by setting the statistics.interval.ms configuration parameter.
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -285,7 +291,10 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all brokers down.
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -481,18 +490,18 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///     Get information pertaining to all groups in the Kafka cluster (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
 
         /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///     Get information pertaining to all groups in the Kafka cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -501,7 +510,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -509,7 +518,7 @@ namespace Confluent.Kafka
         ///     The group of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     Returns information pertaining to the specified group
@@ -520,7 +529,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -561,7 +570,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -569,7 +578,7 @@ namespace Confluent.Kafka
         ///     The topic/partition of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     The requested WatermarkOffsets.
@@ -579,7 +588,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -780,7 +789,10 @@ namespace Confluent.Kafka
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
         /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all brokers down.
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -796,7 +808,8 @@ namespace Confluent.Kafka
         public event EventHandler<Message> OnConsumeError;
 
         /// <summary>
-        ///     Raised on librdkafka statistics events. These can be enabled by setting the statistics.interval.ms configuration parameter.
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
@@ -807,11 +820,16 @@ namespace Confluent.Kafka
         ///     Raised when there is information that should be logged.
         /// </summary>
         /// <remarks>
-        ///     You can specify the log level with the 'log_level' configuration
-        ///     property. You also probably want to specify one or more debug
-        ///     contexts using the 'debug' configuration property.
-        ///
-        ///     This event can potentially be raised on any thread.
+        ///     Note: By default not many log messages are generated.
+        /// 
+        ///     You can specify one or more debug contexts using the 'debug'
+        ///     configuration property and a log level using the 'log_level'
+        ///     configuration property to enable more verbose logging,
+        ///     however you shouldn't typically need to do this.
+        /// 
+        ///     Warning: Log handlers are called spontaneously from internal librdkafka 
+        ///     threads and the application must not call any Confluent.Kafka APIs from 
+        ///     within a log handler or perform any prolonged operations.
         /// </remarks>
         public event EventHandler<LogMessage> OnLog;
 
@@ -1115,19 +1133,19 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///     Get information pertaining to all groups in the Kafka cluster (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka
-        ///     cluster.
+        ///     cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1137,7 +1155,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1145,7 +1163,7 @@ namespace Confluent.Kafka
         ///     The group of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     Returns information pertaining to the specified group
@@ -1156,7 +1174,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1194,7 +1212,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocking)
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1202,7 +1220,7 @@ namespace Confluent.Kafka
         ///     The topic/partition of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     The requested WatermarkOffsets.
@@ -1212,7 +1230,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1220,7 +1238,7 @@ namespace Confluent.Kafka
         ///     The topic/partition of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     The requested WatermarkOffsets.

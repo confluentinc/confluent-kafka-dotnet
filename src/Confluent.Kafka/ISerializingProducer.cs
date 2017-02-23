@@ -74,7 +74,8 @@ namespace Confluent.Kafka
         event EventHandler<Error> OnError;
 
         /// <summary>
-        ///     Raised on librdkafka stats events.
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
         /// </summary>
         /// <remarks>
         ///     You can enable statistics and set the statistics interval

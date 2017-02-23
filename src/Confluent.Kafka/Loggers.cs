@@ -24,6 +24,11 @@ namespace Confluent.Kafka
     /// <summary>
     ///     OnLog callback event handler implementations.
     /// </summary>
+    /// <remarks>
+    ///     Warning: Log handlers are called spontaneously from internal librdkafka 
+    ///     threads and the application must not call any Confluent.Kafka APIs from 
+    ///     within a log handler or perform any prolonged operations.
+    /// </remarks>
     public static class Loggers
     {
         /// <summary>

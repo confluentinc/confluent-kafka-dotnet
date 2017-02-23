@@ -19,7 +19,7 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represetns a (deserialized) Kafka Message - what, where and when.
+    ///     Represents a (deserialized) Kafka Message
     /// </summary>
     public class Message<TKey, TValue>
     {
@@ -51,7 +51,7 @@ namespace Confluent.Kafka
 
 
     /// <summary>
-    ///     Represents a Kafka Message - what, where and when.
+    ///     Represents a Kafka Message
     /// </summary>
     public class Message
     {

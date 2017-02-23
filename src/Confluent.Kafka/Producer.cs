@@ -323,7 +323,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Poll for callback events. You will not typically need
         ///     to call this method. Only call on producer instances 
-        ///     where background polling has been disabled.
+        ///     where background polling is not enabled.
         /// </summary>
         /// <param name="millisecondsTimeout">
         ///     The maximum period of time to block (in milliseconds) if no
@@ -344,7 +344,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Poll for callback events. You will not typically need
         ///     to call this method. Only call on producer instances 
-        ///     where background polling has been disabled.
+        ///     where background polling is not enabled.
         /// </summary>
         /// <param name="timeout">
         ///     The maximum period of time to block if no callback events
@@ -359,7 +359,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Poll for callback events. You will not typically need
         ///     to call this method. Only call on producer
-        ///     instances where background polling has been disabled.
+        ///     instances where background polling is not enabled.
         ///     Blocks until there is a callback event ready to be served.
         /// </summary>
         /// <returns>
@@ -371,7 +371,9 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all 
-        ///     brokers down.
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic
         /// </summary>
         /// <remarks>
         ///     Called on the Producer poll thread.
@@ -379,7 +381,8 @@ namespace Confluent.Kafka
         public event EventHandler<Error> OnError;
 
         /// <summary>
-        ///     Raised on librdkafka stats events.
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
         /// </summary>
         /// <remarks>
         ///     You can enable statistics and set the statistics interval
@@ -394,11 +397,16 @@ namespace Confluent.Kafka
         ///     Raised when there is information that should be logged.
         /// </summary>
         /// <remarks>
-        ///     You can specify the log level with the 'log_level' configuration
-        ///     property. You also probably want to specify one or more debug
-        ///     contexts using the 'debug' configuration property.
+        ///     Note: By default not many log messages are generated.
+        /// 
+        ///     You can specify one or more debug contexts using the 'debug'
+        ///     configuration property and a log level using the 'log_level'
+        ///     configuration property to enable more verbose logging,
+        ///     however you shouldn't typically need to do this.
         ///
-        ///     This event can potentially be raised on any thread.
+        ///     Warning: Log handlers are called spontaneously from internal librdkafka 
+        ///     threads and the application must not call any Confluent.Kafka APIs from 
+        ///     within a log handler or perform any prolonged operations.
         /// </remarks>
         public event EventHandler<LogMessage> OnLog;
 
@@ -487,9 +495,11 @@ namespace Confluent.Kafka
         /// </param>
         /// <param name="blockIfQueueFull">
         ///     Whether or not to block if the send queue is full.
-        ///     If false, and exception will be thrown in the event.
+        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
+        ///     will be thrown if an attempt is made to produce a message
+        ///     and the send queue is full.
         /// 
-        ///     Note: blockIfQueueFull is set to true, background polling is 
+        ///     Warning: blockIfQueueFull is set to true, background polling is 
         ///     disabled and Poll is not being called in another thread, this
         ///     will block indefinitely.
         /// </param>
@@ -500,7 +510,9 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     If you require strict ordering of delivery reports to be maintained, 
         ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
-        ///     parameter, not a variant that returns a Task&lt;Message&gt;
+        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
+        ///     Tasks are completed on arbitrary thread pool threads and can 
+        ///     be executed out of order.
         /// </remarks>
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull);
@@ -545,7 +557,8 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
         ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
-        ///     acknowledged by the broker / failed (failure may be via broker or local).
+        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
+        ///     callbacks are executed on the Poll thread.
         ///     
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
         ///     for more information.
@@ -641,19 +654,19 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///     Get information pertaining to all groups in the Kafka cluster (blocking)
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka
-        ///     cluster.
+        ///     cluster (blocks, potentially indefinitely)
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -662,7 +675,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -670,7 +683,7 @@ namespace Confluent.Kafka
         ///     The group of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     Returns information pertaining to the specified group
@@ -681,7 +694,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -698,7 +711,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -706,7 +719,7 @@ namespace Confluent.Kafka
         ///     The topic/partition of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     The requested WatermarkOffsets.
@@ -716,7 +729,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -733,10 +746,10 @@ namespace Confluent.Kafka
             => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), millisecondsTimeout);
 
         /// <summary>
-        ///     Query the cluster for metadata
+        ///     Query the cluster for metadata (blocking).
         ///
         ///     - allTopics = true - request all topics from cluster
-        ///     - allTopics = false, topic = null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
+        ///     - allTopics = false, topic = null - request only locally known topics.
         ///     - allTopics = false, topic = valid - request specific topic
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
@@ -1008,7 +1021,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     The partition the message is produced to is determined using the configured partitioner.
         ///     
-        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
         ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
@@ -1032,9 +1045,11 @@ namespace Confluent.Kafka
         /// </param>
         /// <param name="blockIfQueueFull">
         ///     Whether or not to block if the send queue is full.
-        ///     If false, and exception will be thrown in the event.
+        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
+        ///     will be thrown if an attempt is made to produce a message
+        ///     and the send queue is full.
         ///      
-        ///     Note: blockIfQueueFull is set to true, background polling is 
+        ///     Warning: blockIfQueueFull is set to true, background polling is 
         ///     disabled and Poll is not being called in another thread, 
         ///     this will block indefinitely.
         /// </remarks>
@@ -1044,9 +1059,11 @@ namespace Confluent.Kafka
         ///     for this request.
         /// </returns>
         /// <remarks>
-        ///     If you require strict delivery report ordering to be maintained, you
-        ///     should use a variant of ProduceAsync that takes an IDeliveryHandler
-        ///     parameter, not a variant that returns a Task&lt;Message&gt;
+        ///     If you require strict ordering of delivery reports to be maintained, 
+        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
+        ///     Tasks are completed on arbitrary thread pool threads and can 
+        ///     be executed out of order.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
             => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
@@ -1056,7 +1073,7 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
         /// </summary>
         /// <remarks>
-        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
         ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
@@ -1080,7 +1097,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     The partition the message is produced to is determined using the configured partitioner.
         ///     
-        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
         ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
@@ -1092,7 +1109,8 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
         ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
-        ///     acknowledged by the broker / failed (failure may be via broker or local).
+        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
+        ///     callbacks are executed on the Poll thread.
         ///     
         ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" />
         ///     for more information.
@@ -1105,7 +1123,7 @@ namespace Confluent.Kafka
         ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
         /// </summary>
         /// <remarks>
-        ///     Blocks if the send queue is full. Note: if background polling is disabled and Poll is
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
         ///     not being called in another thread, this will block indefinitely.
         /// </remarks>
         public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
@@ -1126,16 +1144,22 @@ namespace Confluent.Kafka
         ///     Raised when there is information that should be logged.
         /// </summary>
         /// <remarks>
-        ///     You can specify the log level with the 'log_level' configuration
-        ///     property. You also probably want to specify one or more debug
-        ///     contexts using the 'debug' configuration property.
+        ///     Note: By default not many log messages are generated.
+        /// 
+        ///     You can specify one or more debug contexts using the 'debug'
+        ///     configuration property and a log level using the 'log_level'
+        ///     configuration property to enable more verbose logging,
+        ///     however you shouldn't typically need to do this.
         ///
-        ///     This event can potentially be raised on any thread.
+        ///     Warning: Log handlers are called spontaneously from internal librdkafka 
+        ///     threads and the application must not call any Confluent.Kafka APIs from 
+        ///     within a log handler or perform any prolonged operations.
         /// </remarks>
         public event EventHandler<LogMessage> OnLog;
 
         /// <summary>
-        ///     Raised on librdkafka stats events.
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
         /// </summary>
         /// <remarks>
         ///     You can enable statistics and set the statistics interval
@@ -1147,7 +1171,10 @@ namespace Confluent.Kafka
         public event EventHandler<string> OnStatistics;
 
         /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all brokers down.
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic
         /// </summary>
         /// <remarks>
         ///     Called on the Producer poll thread.
@@ -1212,19 +1239,19 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster.
+        ///     Get information pertaining to all groups in the Kafka cluster (blocking)
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
 
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka
-        ///     cluster.
+        ///     cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1234,7 +1261,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocks)
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1242,7 +1269,7 @@ namespace Confluent.Kafka
         ///     The group of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     Returns information pertaining to the specified group
@@ -1253,7 +1280,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster.
+        ///     Kafka cluster (blocks, potentially indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1270,7 +1297,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocking).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>
@@ -1278,7 +1305,7 @@ namespace Confluent.Kafka
         ///     The topic/partition of interest.
         /// </param>
         /// <param name="timeout">
-        ///     The maximum period of time the call should block.
+        ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     The requested WatermarkOffsets.
@@ -1288,7 +1315,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition.
+        ///     offsets for the specified topic/partition (blocks, potentialy indefinitely).
         ///
         ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
         /// </summary>

@@ -73,7 +73,7 @@ namespace Confluent.Kafka
         public long Value { get; }
 
         /// <summary>
-        ///     Gets whether or not this is one of the four special 
+        ///     Gets whether or not this is one of the special 
         ///     offset values.
         /// </summary>
         public bool IsSpecial
