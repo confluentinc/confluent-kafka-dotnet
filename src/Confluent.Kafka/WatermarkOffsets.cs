@@ -52,6 +52,6 @@ namespace Confluent.Kafka
         public Offset High { get; }
 
         public override string ToString()
-            => $"{Low} -> {High}";
+            => $"{Low} .. {High}";
     }
 }
