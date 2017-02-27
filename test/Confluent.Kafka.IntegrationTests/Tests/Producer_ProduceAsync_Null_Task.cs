@@ -32,7 +32,11 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ProduceAsync_Null_Task(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "api.version.request", true }
+            };
 
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
@@ -55,6 +59,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Null(dr.Key);
                 Assert.Null(dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
             }
 
             Assert.Equal(1, drs[0].Result.Partition);

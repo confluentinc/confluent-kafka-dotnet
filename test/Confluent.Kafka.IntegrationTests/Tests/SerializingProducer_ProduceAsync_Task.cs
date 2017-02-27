@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
@@ -32,7 +33,11 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SerializingProducer_ProduceAsync_Task(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "api.version.request", true }
+            };
 
             var drs = new List<Task<Message<string, string>>>();
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
@@ -53,6 +58,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal($"test key {i}", dr.Key);
                 Assert.Equal($"test val {i}", dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
             }
 
             Assert.Equal(1, drs[0].Result.Partition);

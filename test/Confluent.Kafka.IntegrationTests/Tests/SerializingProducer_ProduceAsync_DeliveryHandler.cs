@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
@@ -49,6 +50,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(dr.Offset >= 0);
                 Assert.Equal($"test key {Count}", dr.Key);
                 Assert.Equal($"test val {Count}", dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
                 Count += 1;
             }
         }
@@ -56,7 +59,11 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SerializingProducer_ProduceAsync_DeliveryHandler(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "api.version.request", true }
+            };
 
             var dh = new DeliveryHandler_SP(topic);
 
