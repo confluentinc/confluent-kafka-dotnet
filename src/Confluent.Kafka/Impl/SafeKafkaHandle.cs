@@ -319,7 +319,7 @@ namespace Confluent.Kafka.Impl
             }
 
             IntPtr timestampType;
-            long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType) / 1000;
+            long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType);
             var dateTime = new DateTime(0);
             if ((TimestampType)timestampType != TimestampType.NotAvailable)
             {
