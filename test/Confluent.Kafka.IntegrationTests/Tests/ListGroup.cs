@@ -36,9 +36,10 @@ namespace Confluent.Kafka.IntegrationTests
             int N = 2;
             var firstProduced = Util.ProduceMessages(bootstrapServers, topic, 100, N);
 
+            var groupId = Guid.NewGuid().ToString();
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "list-group-cg" },
+                { "group.id", groupId },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };
@@ -64,10 +65,10 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                var g = consumer.ListGroup("list-group-cg");
+                var g = consumer.ListGroup(groupId);
                 Assert.NotNull(g);
                 Assert.Equal(ErrorCode.NoError, g.Error.Code);
-                Assert.Equal("list-group-cg", g.Group);
+                Assert.Equal(groupId, g.Group);
                 Assert.Equal("consumer", g.ProtocolType);
                 Assert.Equal(1, g.Members.Count);
 

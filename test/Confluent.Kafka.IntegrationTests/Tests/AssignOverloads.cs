@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "assign-overloads-cg" },
+                { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 }
             };

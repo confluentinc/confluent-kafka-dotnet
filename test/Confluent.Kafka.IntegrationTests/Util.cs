@@ -33,8 +33,12 @@ namespace Confluent.Kafka.IntegrationTests
         /// </returns>
         public static TopicPartitionOffset ProduceMessages(string bootstrapServers, string topic, int size, int number)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
-
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "api.version.request", true }
+            };
+            
             var sb = new StringBuilder(size);
             for (int i=0; i<size; ++i)
             {

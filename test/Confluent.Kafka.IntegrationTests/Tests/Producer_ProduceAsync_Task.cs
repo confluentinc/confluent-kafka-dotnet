@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using Xunit;
 using System.Threading.Tasks;
@@ -30,7 +31,11 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ProduceAsync_Task(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "api.version.request", true }
+            };
 
             var key = new byte[] { 1, 2, 3, 4 };
             var val = new byte[] { 5, 6, 7, 8 };
@@ -56,6 +61,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal(key, dr.Key);
                 Assert.Equal(val, dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
             }
 
             Assert.Equal(new byte[] { 2, 3, 4 }, drs[5].Result.Key);

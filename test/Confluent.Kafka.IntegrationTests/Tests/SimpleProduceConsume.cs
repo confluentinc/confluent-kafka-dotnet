@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume-cg" },
+                { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
                 { "api.version.request", true }
@@ -58,6 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(topic, dr.Topic);
                 Assert.NotEqual<long>(dr.Offset, Offset.Invalid);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
                 producer.Flush();
             }
 
