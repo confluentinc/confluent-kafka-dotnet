@@ -50,5 +50,8 @@ namespace Confluent.Kafka
         ///     Gets the offset of the last stored message in the topic/partition.
         /// </summary>
         public Offset High { get; }
+
+        public override string ToString()
+            => $"{Low} .. {High}";
     }
 }
