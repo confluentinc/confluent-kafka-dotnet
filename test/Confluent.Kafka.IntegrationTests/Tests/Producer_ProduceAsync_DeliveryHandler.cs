@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -48,6 +49,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, dr.Partition);
                 Assert.Equal(Topic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
 
                 if (Count < 5)
                 {
@@ -67,7 +70,11 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ProduceAsync_DeliveryHandler(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "api.version.request", true }
+            };
 
             var dh = new DeliveryHandler_P(topic);
 

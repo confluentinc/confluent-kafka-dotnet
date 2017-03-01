@@ -37,9 +37,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", "simple-produce-consume" },
+                { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                { "session.timeout.ms", 6000 },
+                { "api.version.request", true }
             };
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
@@ -51,8 +52,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(partitions.Count, 1);
-                    Assert.Equal(partitions[0], firstProduced.TopicPartition);
+                    Assert.Equal(1, partitions.Count);
+                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
 
@@ -67,6 +68,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Message<Null, string> msg;
                     if (consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
+                        Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
+                        Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.DateTime).TotalMinutes) < 1.0);
                         msgCnt += 1;
                     }
                 }

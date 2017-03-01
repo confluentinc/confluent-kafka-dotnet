@@ -27,25 +27,17 @@ confluent-kafka-dotnet is derived from Andreas Heider's [rdkafka-dotnet](https:/
 We're fans of his work and were very happy to have been able to leverage rdkafka-dotnet as the basis of this
 client. Thanks Andreas!
 
-*****developer preview*****
-
-- Only limited testing was performed
-- Minor API changes anticipated
-- Feedback encouraged
-
-*****developer preview*****
-
 ## Usage
 
-Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.4-preview8).
+Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.4).
 
 To install confluent-kafka-dotnet from within Visual Studio, run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Pre -Version 0.9.4-preview8
+Install-Package Confluent.Kafka -Pre -Version 0.9.4
 ```
 
-To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.4-preview8"` to the dependencies section of the project.json file.
+To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.4"` to the dependencies section of the project.json file.
 
 ## Examples
 

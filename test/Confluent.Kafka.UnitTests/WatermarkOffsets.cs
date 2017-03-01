@@ -28,5 +28,15 @@ namespace Confluent.Kafka.Tests
             Assert.Equal(wo.Low, new Offset(42));
             Assert.Equal(wo.High, new Offset(43));
         }
+
+        [Fact]
+        public void ToStringTests()
+        {
+            var wo = new WatermarkOffsets(42, 43);
+            var str = wo.ToString();
+            Assert.True(str.Contains("42"));
+            Assert.True(str.Contains("43"));
+            Assert.True(str.IndexOf("43") > str.IndexOf("42"));
+        }
     }
 }

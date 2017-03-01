@@ -1,5 +1,5 @@
 {
-    "version": "0.9.4-preview8-*",
+    "version": "0.9.4-*",
 
     "packOptions": {
         "description": ".NET Apache Kafka client",
@@ -7,10 +7,13 @@
         "tags": ["kafka", "librdkafka", "confluent"]
     },
 
-    "buildOptions": { "allowUnsafe": true },
+    "buildOptions": {
+        "allowUnsafe": true,
+        "xmlDoc": true
+    },
 
     "dependencies": {
-        "librdkafka.redist": "0.9.4-rc1-preview8"
+        "librdkafka.redist": "0.9.4"
     },
 
     "frameworks": {
