@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Authors>Confluent Inc</Authors>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <AssemblyName>MultiProducer</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>MultiProducer</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
+  </ItemGroup>
+
+</Project>
