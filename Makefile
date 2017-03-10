@@ -5,9 +5,9 @@
 #   make build
 
 
-DIRS=$(shell find . -name project.json -exec dirname {} \;)
+DIRS=$(shell find . -name *.csproj -exec dirname {} \;)
 OS=$(shell uname -s)
-LINUX_FRAMEWORK=netcoreapp1.0
+LINUX_FRAMEWORK=netcoreapp1.1
 DEFAULT_FRAMEWORK=$(LINUX_FRAMEWORK)
 
 
@@ -29,5 +29,5 @@ build:
 	fi)
 
 test:
-	dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests
+	dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
 
