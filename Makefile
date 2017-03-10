@@ -22,10 +22,11 @@ all:
 
 build:
 	# Assuming .NET Core on Linux (net451 will not work).
+	dotnet restore
 	@(if [ "$(OS)" = "Linux" ]] ; then \
 		for d in $(DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
 	else \
-		for d in $(DIRS) ; do dotnet $@ $$d; done ; \
+		for d in $(DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
 	fi)
 
 test:

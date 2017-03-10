@@ -17,10 +17,12 @@ matrix:
     dotnet: 1.0.1
     mono: none
     env: DOTNETCORE=1
-
+    sudo: required
+    
 install:
    - sed -i.bak 's/net451;netstandard/netstandard/g' src/Confluent.Kafka/Confluent.Kafka.csproj
-   - dotnet restore
+   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sysctl -w kern.maxfiles=20480            ; fi
+   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sysctl -w kern.maxfilesperproc=18000     ; fi
 
 script:
    - make build
