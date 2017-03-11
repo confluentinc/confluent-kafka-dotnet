@@ -5,6 +5,10 @@
 #   make build
 
 OS=$(shell uname -s)
+
+EXAMPLE_DIRS=$(shell find ./example -name *.csproj -exec dirname {} \;)
+TEST_DIRS==$(shell find ./test -name *.csproj -exec dirname {} \;)
+
 LINUX_FRAMEWORK=netcoreapp1.1
 DEFAULT_FRAMEWORK=$(LINUX_FRAMEWORK)
 
@@ -15,13 +19,14 @@ all:
 .PHONY: test
 
 build:
-	@echo "build skipped - dotnet restore apparently not working"
 	# Assuming .NET Core on Linux (net451 will not work).
-	#@(if [ "$(OS)" = "Linux" ]] ; then \
-	#	dotnet $@ -f $(LINUX_FRAMEWORK) ; \
-	#else \
-	#	dotnet $@ -f $(DEFAULT_FRAMEWORK) ; \
-	#fi)
+	@(if [ "$(OS)" = "Linux" ]] ; then \
+		for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
+		for d in $(TEST_DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
+	else \
+		for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
+		for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
+	fi)
 
 test:
 	@(if [ "$(OS)" = "Linux" ]] ; then \
