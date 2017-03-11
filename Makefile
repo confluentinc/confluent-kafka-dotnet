@@ -16,6 +16,7 @@ all:
 
 build:
 	# Assuming .NET Core on Linux (net451 will not work).
+	dotnet restore
 	@(if [ "$(OS)" = "Linux" ]] ; then \
 		dotnet $@ -f $(LINUX_FRAMEWORK) ; \
 	else \
@@ -23,6 +24,7 @@ build:
 	fi)
 
 test:
+	dotnet restore
 	@(if [ "$(OS)" = "Linux" ]] ; then \
 		dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
 	else \
