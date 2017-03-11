@@ -21,7 +21,7 @@ matrix:
     
 install:
    - sed -i.bak 's/net451;netstandard/netstandard/g' src/Confluent.Kafka/Confluent.Kafka.csproj
-   - dotnet restore
+   - dotnet restore src/Confluent.Kafka/Confluent.Kafka.csproj
 
 script:
    - make build

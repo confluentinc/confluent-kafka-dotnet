@@ -16,15 +16,15 @@ all:
 
 build:
 	# Assuming .NET Core on Linux (net451 will not work).
-	dotnet restore
+	dotnet restore src/Confluent.Kafka/Confluent.Kafka.csproj
 	@(if [ "$(OS)" = "Linux" ]] ; then \
-		dotnet $@ -f $(LINUX_FRAMEWORK) ; \
+		dotnet $@ -f $(LINUX_FRAMEWORK) src/Confluent.Kafka/Confluent.Kafka.csproj ; \
 	else \
-		dotnet $@ -f $(DEFAULT_FRAMEWORK) ; \
+		dotnet $@ -f $(DEFAULT_FRAMEWORK) src/Confluent.Kafka/Confluent.Kafka.csproj ; \
 	fi)
 
 test:
-	dotnet restore
+	dotnet restore test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
 	@(if [ "$(OS)" = "Linux" ]] ; then \
 		dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
 	else \
