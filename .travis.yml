@@ -21,8 +21,7 @@ matrix:
     
 install:
    - sed -i.bak 's/net451;netstandard/netstandard/g' src/Confluent.Kafka/Confluent.Kafka.csproj
-   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sysctl -w kern.maxfiles=20480            ; fi
-   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sysctl -w kern.maxfilesperproc=18000     ; fi
+   - dotnet restore
 
 script:
    - make build

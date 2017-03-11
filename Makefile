@@ -4,12 +4,9 @@
 # Example:
 #   make build
 
-
-DIRS=$(shell find . -name *.csproj -exec dirname {} \;)
 OS=$(shell uname -s)
 LINUX_FRAMEWORK=netcoreapp1.1
 DEFAULT_FRAMEWORK=$(LINUX_FRAMEWORK)
-
 
 all:
 	@echo "Usage:   make <dotnet-command>"
@@ -17,18 +14,17 @@ all:
 
 .PHONY: test
 
-%:
-	for d in $(DIRS) ; do dotnet $@ $$d; done
-
 build:
 	# Assuming .NET Core on Linux (net451 will not work).
-	dotnet restore
 	@(if [ "$(OS)" = "Linux" ]] ; then \
-		for d in $(DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
+		dotnet $@ -f $(LINUX_FRAMEWORK) ; \
 	else \
-		for d in $(DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
+		dotnet $@ -f $(DEFAULT_FRAMEWORK) ; \
 	fi)
 
 test:
-	dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
-
+	@(if [ "$(OS)" = "Linux" ]] ; then \
+		dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
+	else \
+		dotnet test -f $(DEFAULT_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
+	fi)
