@@ -1237,9 +1237,6 @@ namespace Confluent.Kafka
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
         /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
         /// <returns>
         ///     The requested WatermarkOffsets.
         /// </returns>

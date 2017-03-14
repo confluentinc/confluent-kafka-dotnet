@@ -1052,7 +1052,6 @@ namespace Confluent.Kafka
         ///     Warning: blockIfQueueFull is set to true, background polling is 
         ///     disabled and Poll is not being called in another thread, 
         ///     this will block indefinitely.
-        /// </remarks>
         /// </param>
         /// <returns>
         ///     A Task which will complete with the corresponding delivery report
