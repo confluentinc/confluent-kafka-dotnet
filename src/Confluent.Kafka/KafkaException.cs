@@ -43,7 +43,7 @@ namespace Confluent.Kafka
         ///     Initialize a new instance of KafkaException based on 
         ///     an existing ErrorCode value.
         /// </summary>
-        /// <param name="error"> 
+        /// <param name="code"> 
         ///     The Kafka ErrorCode.
         /// </param>
         public KafkaException(ErrorCode code)

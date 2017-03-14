@@ -32,7 +32,7 @@ namespace Confluent.Kafka.Internal
     ///     The container takes ownership of any resources placed in it. This is
     ///     a little atypical, but it avoids the need to expose a means for the
     ///     caller to iterate through the elements, which is difficult to do in
-    //      a thread safe way.
+    ///     a thread safe way.
     /// </remarks>
     internal sealed class SafeDictionary<TKey, TValue> : IDisposable where TValue : IDisposable
     {

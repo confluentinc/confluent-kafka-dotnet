@@ -73,7 +73,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Convert a DateTime instance to a milliseconds unix timestamp.
-        ///     Note: <paramref name="dateTime" is first converted to UTC if it is not already.
+        ///     Note: <paramref name="dateTime"/> is first converted to UTC if it is not already.
         /// </summary>
         /// <param name="dateTime">
         ///     The DateTime value to convert.
