@@ -16,6 +16,7 @@
 
 using System;
 using System.Text;
+using SystemMarshal = System.Runtime.InteropServices.Marshal;
 
 
 namespace Confluent.Kafka.Internal
@@ -33,13 +34,40 @@ namespace Confluent.Kafka.Internal
                 var length = 0;
                 unsafe
                 {
-                    byte* pTraverse = (byte *)strPtr;
+                    byte* pTraverse = (byte*)strPtr;
                     while (*pTraverse != 0) { pTraverse += 1; }
                     length = (int)(pTraverse - (byte*)strPtr);
                 }
                 var strBuffer = new byte[length];
                 System.Runtime.InteropServices.Marshal.Copy(strPtr, strBuffer, 0, length);
                 return Encoding.UTF8.GetString(strBuffer);
+            }
+
+            public static T PtrToStructure<T>(IntPtr ptr)
+            {
+#if NET45
+                return (T)SystemMarshal.PtrToStructure(ptr, typeof(T));
+#else
+                return SystemMarshal.PtrToStructure<T>(ptr);
+#endif
+            }
+
+            public static int SizeOf<T>()
+            {
+#if NET45
+                return SystemMarshal.SizeOf(typeof(T));
+#else
+                return SystemMarshal.SizeOf<T>();
+#endif
+            }
+
+            public static IntPtr OffsetOf<T>(string fieldName)
+            {
+#if NET45
+                return SystemMarshal.OffsetOf(typeof(T), fieldName);
+#else
+                return SystemMarshal.OffsetOf<T>(fieldName);
+#endif
             }
         }
     }

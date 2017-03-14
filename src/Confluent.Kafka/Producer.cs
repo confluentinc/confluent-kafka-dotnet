@@ -130,7 +130,7 @@ namespace Confluent.Kafka
         /// </param>
         private static void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
-            var msg = Marshal.PtrToStructure<rd_kafka_message>(rkmessage);
+            var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(rkmessage);
 
             // the msg._private property has dual purpose. Here, it is an opaque pointer set
             // by Topic.Produce to be an IDeliveryHandler. When Consuming, it's for internal
