@@ -6,11 +6,11 @@
 
 OS=$(shell uname -s)
 
-EXAMPLE_DIRS=$(shell find ./example -name *.csproj -exec dirname {} \;)
-TEST_DIRS==$(shell find ./test -name *.csproj -exec dirname {} \;)
+EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
+TEST_DIRS==$(shell find ./test -name '*.csproj' -exec dirname {} \;)
 
 LINUX_FRAMEWORK=netcoreapp1.1
-DEFAULT_FRAMEWORK=$(LINUX_FRAMEWORK)
+DEFAULT_FRAMEWORK?=$(LINUX_FRAMEWORK)
 
 all:
 	@echo "Usage:   make <dotnet-command>"
