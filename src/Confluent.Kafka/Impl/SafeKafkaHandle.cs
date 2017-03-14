@@ -181,22 +181,22 @@ namespace Confluent.Kafka.Impl
             if (err == ErrorCode.NoError)
             {
                 try {
-                    var meta = (rd_kafka_metadata) Marshal.PtrToStructure<rd_kafka_metadata>(metaPtr);
+                    var meta = Util.Marshal.PtrToStructure<rd_kafka_metadata>(metaPtr);
 
                     var brokers = Enumerable.Range(0, meta.broker_cnt)
-                        .Select(i => Marshal.PtrToStructure<rd_kafka_metadata_broker>(
-                                    meta.brokers + i * Marshal.SizeOf<rd_kafka_metadata_broker>()))
+                        .Select(i => Util.Marshal.PtrToStructure<rd_kafka_metadata_broker>(
+                                    meta.brokers + i * Util.Marshal.SizeOf<rd_kafka_metadata_broker>()))
                         .Select(b => new BrokerMetadata(b.id, b.host, b.port))
                         .ToList();
 
                     var topics = Enumerable.Range(0, meta.topic_cnt)
-                        .Select(i => Marshal.PtrToStructure<rd_kafka_metadata_topic>(
-                                    meta.topics + i * Marshal.SizeOf<rd_kafka_metadata_topic>()))
+                        .Select(i => Util.Marshal.PtrToStructure<rd_kafka_metadata_topic>(
+                                    meta.topics + i * Util.Marshal.SizeOf<rd_kafka_metadata_topic>()))
                         .Select(t => new TopicMetadata(
                                 t.topic,
                                 Enumerable.Range(0, t.partition_cnt)
-                                    .Select(j => Marshal.PtrToStructure<rd_kafka_metadata_partition>(
-                                                t.partitions + j * Marshal.SizeOf<rd_kafka_metadata_partition>()))
+                                    .Select(j => Util.Marshal.PtrToStructure<rd_kafka_metadata_partition>(
+                                                t.partitions + j * Util.Marshal.SizeOf<rd_kafka_metadata_partition>()))
                                     .Select(p => new PartitionMetadata(
                                             p.id,
                                             p.leader,
@@ -297,7 +297,7 @@ namespace Confluent.Kafka.Impl
                 return false;
             }
 
-            var msg = Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
+            var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
 
             byte[] val = null;
             if (msg.val != IntPtr.Zero)
@@ -392,7 +392,7 @@ namespace Confluent.Kafka.Impl
                     IntPtr ptr = LibRdKafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
                     Marshal.WriteInt64(
                         ptr,
-                        (int) Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
+                        (int) Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"),
                         partition.Offset);
                 }
             }
@@ -540,10 +540,10 @@ namespace Confluent.Kafka.Impl
                 return new List<TopicPartitionOffsetError>();
             }
 
-            var list = Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
+            var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
             return Enumerable.Range(0, list.cnt)
-                .Select(i => Marshal.PtrToStructure<rd_kafka_topic_partition>(
-                    list.elems + i * Marshal.SizeOf<rd_kafka_topic_partition>()))
+                .Select(i => Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(
+                    list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>()))
                 .Select(ktp => new TopicPartitionOffsetError(
                         ktp.topic,
                         ktp.partition,
@@ -572,7 +572,7 @@ namespace Confluent.Kafka.Impl
             foreach (var p in offsets)
             {
                 IntPtr ptr = LibRdKafka.topic_partition_list_add(list, p.Topic, p.Partition);
-                Marshal.WriteInt64(ptr, (int)Marshal.OffsetOf<rd_kafka_topic_partition>("offset"), p.Offset);
+                Marshal.WriteInt64(ptr, (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"), p.Offset);
             }
             return list;
         }
@@ -601,10 +601,10 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)millisecondsTimeout);
             if (err == ErrorCode.NoError)
             {
-                var list = Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
+                var list = Util.Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
                 var groups = Enumerable.Range(0, list.group_cnt)
-                    .Select(i => Marshal.PtrToStructure<rd_kafka_group_info>(
-                        list.groups + i * Marshal.SizeOf<rd_kafka_group_info>()))
+                    .Select(i => Util.Marshal.PtrToStructure<rd_kafka_group_info>(
+                        list.groups + i * Util.Marshal.SizeOf<rd_kafka_group_info>()))
                     .Select(gi => new GroupInfo(
                             new BrokerMetadata(
                                 gi.broker.id,
@@ -617,8 +617,8 @@ namespace Confluent.Kafka.Impl
                             gi.protocol_type,
                             gi.protocol,
                             Enumerable.Range(0, gi.member_cnt)
-                                .Select(j => Marshal.PtrToStructure<rd_kafka_group_member_info>(
-                                    gi.members + j * Marshal.SizeOf<rd_kafka_group_member_info>()))
+                                .Select(j => Util.Marshal.PtrToStructure<rd_kafka_group_member_info>(
+                                    gi.members + j * Util.Marshal.SizeOf<rd_kafka_group_member_info>()))
                                 .Select(mi => new GroupMemberInfo(
                                         mi.member_id,
                                         mi.client_id,
