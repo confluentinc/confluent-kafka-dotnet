@@ -21,7 +21,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-#if NET451
+#if NET45
 using System.Reflection;
 #endif
 
@@ -32,14 +32,14 @@ namespace Confluent.Kafka.Impl
     {
         const long minVersion = 0x000901ff;
 
-#if NET451
+#if NET45
         [DllImport("kernel32", SetLastError = true)]
         private static extern IntPtr LoadLibrary(string lpFileName);
 #endif
 
         static LibRdKafka()
         {
-#if NET451
+#if NET45
             var is64 = IntPtr.Size == 8;
             try {
                 var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
