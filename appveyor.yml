@@ -4,20 +4,20 @@ configuration:
 - Release
 
 install:
-- ps: Start-FileDownload 'https://download.microsoft.com/download/A/3/8/A38489F3-9777-41DD-83F8-2CBDFAB2520C/packages/DotNetCore.1.0.0-SDK.Preview2-x64.exe'
-- cmd: DotNetCore.1.0.0-SDK.Preview2-x64.exe /quiet
+- ps: Start-FileDownload 'https://download.microsoft.com/download/8/F/9/8F9659B9-E628-4D1A-B6BF-C3004C8C954B/dotnet-1.1.1-sdk-win-x64.exe'
+- cmd: dotnet-1.1.1-sdk-win-x64.exe /quiet
 
 environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
 
 build_script:
   - appveyor-retry dotnet restore -v Minimal
-  - dotnet build **/project.json -c %CONFIGURATION%
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION%)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/project.json -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - dotnet build Confluent.Kafka.sln -c %CONFIGURATION%
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
 test_script:
- - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/
+ - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin/Release/*.nupkg
