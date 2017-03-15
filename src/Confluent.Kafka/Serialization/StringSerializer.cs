@@ -42,6 +42,10 @@ namespace Confluent.Kafka.Serialization
         /// </remarks>
         public byte[] Serialize(string val)
         {
+            if (val == null)
+            {
+                return null;
+            }
             return encoding.GetBytes(val);
         }
     }

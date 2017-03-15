@@ -32,6 +32,10 @@ namespace Confluent.Kafka.Serialization
 
         public string Deserialize(byte[] data)
         {
+            if (data == null)
+            {
+                return null;
+            }
             return encoding.GetString(data);
         }
     }
