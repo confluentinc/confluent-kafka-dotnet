@@ -36,10 +36,6 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="val" /> encoded in a byte array.
         /// </returns>
-        /// <remarks>
-        ///     <paramref name="val" /> cannot be null.
-        ///     TODO: well it shouldn't be other there is ambiguity on deserialization. check this.
-        /// </remarks>
         public byte[] Serialize(string val)
         {
             if (val == null)
