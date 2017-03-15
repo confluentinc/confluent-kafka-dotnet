@@ -16,9 +16,6 @@
 
 using System.Text;
 
-
-// TODO: Serializer needs to be able to handle nulls and differentiate between null and empty string.
-
 namespace Confluent.Kafka.Serialization
 {
     public class StringSerializer : ISerializer<string>
@@ -34,7 +31,7 @@ namespace Confluent.Kafka.Serialization
         ///     The string value to serialize.
         /// </param>
         /// <returns>
-        ///     <paramref name="val" /> encoded in a byte array.
+        ///     <paramref name="val" /> encoded in a byte array (or null if <paramref name="val" /> is null).
         /// </returns>
         public byte[] Serialize(string val)
         {

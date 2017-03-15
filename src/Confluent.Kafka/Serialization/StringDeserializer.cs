@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Serialization
         ///     The data to deserialize
         /// </param>
         /// <returns>
-        ///     <paramref name="data" />deserialized to a string (or null if data was null).
+        ///     <paramref name="data" /> deserialized to a string (or null if data was null).
         /// </returns>
         public string Deserialize(byte[] data)
         {
