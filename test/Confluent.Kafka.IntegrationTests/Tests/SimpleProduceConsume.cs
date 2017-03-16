@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
             Message msg;
             Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
             Assert.NotNull(msg);
-            Assert.Equal(testString, Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length));
+            Assert.Equal(testString, msg.Value == null ? null : Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length));
             Assert.Equal(null, msg.Key);
             Assert.Equal(msg.Timestamp.Type, dr.Timestamp.Type);
             Assert.Equal(msg.Timestamp.DateTime, dr.Timestamp.DateTime);
