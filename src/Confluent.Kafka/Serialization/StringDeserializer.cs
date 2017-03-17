@@ -16,9 +16,6 @@
 
 using System.Text;
 
-
-// TODO: Deserializer needs to be able to handle nulls and differentiate between null and empty string.
-
 namespace Confluent.Kafka.Serialization
 {
     public class StringDeserializer : IDeserializer<string>
@@ -30,8 +27,18 @@ namespace Confluent.Kafka.Serialization
             this.encoding = encoding;
         }
 
+        /// <param name="data">
+        ///     The data to deserialize
+        /// </param>
+        /// <returns>
+        ///     <paramref name="data" /> deserialized to a string (or null if data was null).
+        /// </returns>
         public string Deserialize(byte[] data)
         {
+            if (data == null)
+            {
+                return null;
+            }
             return encoding.GetString(data);
         }
     }
