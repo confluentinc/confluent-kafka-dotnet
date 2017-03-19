@@ -18,7 +18,7 @@ using Confluent.Kafka.Serialization;
 using Xunit;
 
 namespace Confluent.Kafka.UnitTests
-{   
+{
     public class IntTests
     {
         [Theory]
@@ -27,9 +27,18 @@ namespace Confluent.Kafka.UnitTests
         [InlineData(-1)]
         [InlineData(0)]
         [InlineData(1)]
+        [InlineData(1234567890)]
         public void SerializeDeserialize(int value)
         {
             Assert.Equal(value, new IntDeserializer().Deserialize(new IntSerializer().Serialize(value)));
+        }
+
+        [Theory]
+        [InlineData(new byte[] { 0x12, 0x34, 0x56, 0x78 }, 0x12345678)]
+        public void DeserializeOrder(byte[] data, int value)
+        {
+            var deserializedValue = new IntDeserializer().Deserialize(data);
+            Assert.Equal(value, deserializedValue);
         }
     }
 }
