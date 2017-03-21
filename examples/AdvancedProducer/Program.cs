@@ -29,14 +29,14 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
     {
         public static void Main(string[] args)
         {
-            string brokerList = args[0];
-            string topicName = args[1];
-
             if (args.Length != 2)
             {
                 Console.WriteLine("Usage:  AdvancedProducer brokerList topicName");
                 return;
             }
+
+            string brokerList = args[0];
+            string topicName = args[1];
 
             /*
             // TODO(mhowlett): allow partitioner to be set.
