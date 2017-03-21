@@ -17,15 +17,19 @@
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    /// Serializer for Int64 data
+    ///     System.Int64 serializer. Byte order of serialized data is big endian (network byte order).
     /// </summary>
     public class LongSerializer : ISerializer<long>
     {
         /// <summary>
-        /// Serialize a specified data
+        ///     Serializes the specified System.Int64 value to a byte array of length 8. Byte order is big endian (network byte order).
         /// </summary>
-        /// <param name="val">the specified data</param>
-        /// <returns>the serialize result</returns>
+        /// <param name="val">
+        ///     The System.Int64 value to serialize.
+        /// </param>
+        /// <returns>
+        ///     The System.Int64 value <paramref name="val" /> encoded as a byte array of length 8 (network byte order).
+        /// </returns>
         public byte[] Serialize(long val)
         {
             var result = new byte[8];
