@@ -33,7 +33,7 @@ namespace Confluent.Kafka.Serialization
         {
             if (data == null)
             {
-                // in accordance with java client.
+                //not in accordance with java client.
                 throw new ArgumentException($"Arg [{nameof(data)}] is null");
             }
 
