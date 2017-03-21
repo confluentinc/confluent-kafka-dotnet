@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Serialization
             if (data == null)
             {
                 // in accordance with java client.
-                return default(long);
+                throw new ArgumentException($"Arg [{nameof(data)}] is null");
             }
 
             if (data.Length != 8)
