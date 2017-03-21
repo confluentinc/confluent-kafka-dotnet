@@ -20,28 +20,28 @@ using System;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    /// Derializer for Int64 data
+    ///     A deserializer for big endian encoded (network byte ordered) System.Int64 values.
     /// </summary>
     public class LongDeserializer : IDeserializer<long>
     {
         /// <summary>
-        /// Deserialize data to Int64
+        ///     Deserializes a big endian encoded (network byte ordered) System.Int64 value from a byte array.
         /// </summary>
-        /// <param name="data">input data</param>
-        /// <returns>deserialize result</returns>
+        /// <param name="data">
+        ///     A byte array containing the serialized System.Int64 value (big endian encoding)
+        /// </param>
+        /// <returns>
+        ///     The deserialized System.Int64 value.
+        /// </returns>
         public long Deserialize(byte[] data)
         {
             if (data == null)
             {
-                //not in accordance with java client.
                 throw new ArgumentException($"Arg [{nameof(data)}] is null");
             }
 
             if (data.Length != 8)
             {
-                // partial in accordance with java client.
-                // but not throw SerializationException like java client because NS1.3 lack such exception type
-                // ref https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/serialization/LongDeserializer.java
                 throw new ArgumentException($"Size of {nameof(data)} received by LongDeserializer is not 8");
             }
 
