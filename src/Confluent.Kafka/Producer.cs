@@ -212,32 +212,61 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                if (topicHandle.Produce(
-                    val, valOffset, valLength, 
-                    key, keyOffset, keyLength, 
-                    partition, 
-                    timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                    ptr, blockIfQueueFull) != 0)
+                if (!timestamp.HasValue)
                 {
-                    var err = LibRdKafka.last_error();
-                    gch.Free();
-                    throw new KafkaException(err);
+                    if (topicHandle.Produce(
+                        val, valOffset, valLength,
+                        key, keyOffset, keyLength,
+                        partition,
+                        ptr, blockIfQueueFull) != 0)
+                    {
+                        var err = LibRdKafka.last_error();
+                        gch.Free();
+                        throw new KafkaException(err);
+                    }
+                }
+                else
+                {
+                    ErrorCode err = topicHandle.Producev(
+                        val, valOffset, valLength,
+                        key, keyOffset, keyLength,
+                        partition,
+                        Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
+                        ptr, blockIfQueueFull);
+                    if(err != ErrorCode.NoError)
+                    {
+                        gch.Free();
+                        throw new KafkaException(err);
+                    }
                 }
 
                 return;
             }
 
-            if (topicHandle.Produce(
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                partition, 
-                timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                IntPtr.Zero, blockIfQueueFull) != 0)
+            if (!timestamp.HasValue)
             {
-                throw new KafkaException(LibRdKafka.last_error());
+                if (topicHandle.Produce(
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    IntPtr.Zero, blockIfQueueFull) != 0)
+                {
+                    throw new KafkaException(LibRdKafka.last_error());
+                }
             }
-
-            return;
+            else
+            {
+                ErrorCode err = topicHandle.Producev(
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
+                    IntPtr.Zero, blockIfQueueFull);
+                if(err != ErrorCode.NoError)
+                {
+                    throw new KafkaException(err);
+                }
+            }
         }
 
         private Task<Message> Produce(
