@@ -30,7 +30,7 @@ namespace Confluent.Kafka
         ///     Indicates no timestamp are used for producing
         ///     Librdkafka will use current time
         /// </summary>
-        internal const int NO_PRODUCE_TIMESTAMP = 0;
+        internal const long NO_PRODUCE_TIMESTAMP = 0;
 
         /// <summary>
         ///     Indicates no timestamp are used for producing
