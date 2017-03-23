@@ -27,18 +27,30 @@ namespace Confluent.Kafka
     public struct Timestamp
     {
         /// <summary>
+        ///     Indicates no timestamp are used for producing
+        ///     Librdkafka will use current time
+        /// </summary>
+        public const long NO_PRODUCE_TIMESTAMP = 0;
+
+        /// <summary>
+        ///     Indicates no timestamp are used for producing
+        ///     Librdkafka will use current time
+        /// </summary>
+        public static readonly DateTime EPOCH_DATETIME = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        
+        /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
         /// </summary>
-        /// <param name="dateTime">
+        /// <param name="timestamp">
         ///     The timestamp.
         /// </param>
         /// <param name="type">
         ///     The type of the timestamp.
         /// </param>
-        public Timestamp(DateTime dateTime, TimestampType type)
+        public Timestamp(long timestamp, TimestampType type)
         {
             Type = type;
-            DateTime = dateTime;
+            UnixTimestamp = timestamp;
         }
 
         /// <summary>
@@ -47,9 +59,14 @@ namespace Confluent.Kafka
         public TimestampType Type { get; }
 
         /// <summary>
-        ///     Gets the timestamp value.
+        ///     Gets the timestamp value as a unix millisecond timestamp.
         /// </summary>
-        public DateTime DateTime { get; }
+        public long UnixTimestamp { get; }
+
+        /// <summary>
+        ///     Gets the timestamp value as a datetime.
+        /// </summary>
+        public DateTime DateTime => UnixTimestampMsToDateTime(UnixTimestamp);
 
         public override bool Equals(object obj)
         {
@@ -85,7 +102,7 @@ namespace Confluent.Kafka
         {
             checked
             {
-                return (long)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)).TotalMilliseconds;
+                return (long)(dateTime.ToUniversalTime() - EPOCH_DATETIME).TotalMilliseconds;
             }
         }
 
@@ -99,7 +116,6 @@ namespace Confluent.Kafka
         ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
-            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)
-                + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+            => EPOCH_DATETIME + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
     }
 }

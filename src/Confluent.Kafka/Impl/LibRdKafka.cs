@@ -106,8 +106,8 @@ namespace Confluent.Kafka.Impl
             _commit_queue = NativeMethods.rd_kafka_commit_queue;
             _committed = NativeMethods.rd_kafka_committed;
             _position = NativeMethods.rd_kafka_position;
-            _produce = NativeMethods.rd_kafka_produce;
             _producev = NativeMethods.rd_kafka_producev;
+            _producevTimestamp = NativeMethods.rd_kafka_producevTimestamp;
             _flush = NativeMethods.rd_kafka_flush;
             _metadata = NativeMethods.rd_kafka_metadata;
             _metadata_destroy = NativeMethods.rd_kafka_metadata_destroy;
@@ -384,30 +384,82 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, ErrorCode> _position;
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
+        
+        //Var-arg tag types, used in producev
+        private enum TagType
+            {
+            End, //va-arg sentinel
+            Topic, //(const char *) Topic name
+            Rkt, //(rd_kafka_topic_t *) Topic handle
+            Partition, //(int32_t) Partition
+            Value, //(void *, size_t) Message value (payload)
+            Key, //(void *, size_t) Message key
+            Opaque, //(void *) Application opaque
+            MsgFlags, //(int) RD_KAFKA_MSG_F_.. flags
+            Timstamp, //(int64_t) Milliseconds since epoch UTC
+        }
 
-        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, IntPtr, IntPtr> _produce;
-        internal static IntPtr produce(
-                IntPtr rkt,
-                int partition,
-                IntPtr msgflags,
-                IntPtr val, UIntPtr len,
-                IntPtr key, UIntPtr keylen,
-                IntPtr msg_opaque)
-            => _produce(rkt, partition, msgflags, val, len, key, keylen, msg_opaque);
+        // __arglist is not implemented on .netCore for no
+        // see https://github.com/dotnet/coreclr/issues/9204
+        //for now, we bind to different signature
 
-        private static Func<IntPtr, int, IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, long, IntPtr, IntPtr> _producev;
-        internal static IntPtr producev(
-                IntPtr rkt,
+        private delegate ErrorCode ProducevTimestamp(IntPtr rk,
+                TagType topicType, string topic,
+                TagType partitionType, int partition,
+                TagType vaType, IntPtr val, UIntPtr len,
+                TagType keyType, IntPtr key, UIntPtr keylen,
+                TagType msgflagsType, IntPtr msgflags,
+                TagType msg_opaqueTypoe, IntPtr msg_opaque,
+                TagType timestampType, long timestamp,
+                TagType endType);
+        private static ProducevTimestamp _producevTimestamp;
+        internal static ErrorCode producev(
+                IntPtr rk,
+                string topic,
                 int partition,
                 IntPtr msgflags,
                 IntPtr val, UIntPtr len,
                 IntPtr key, UIntPtr keylen,
                 long timestamp,
                 IntPtr msg_opaque)
-            => _producev(rkt, partition, msgflags, val, len, key, keylen, timestamp, msg_opaque);
+            => _producevTimestamp(rk,
+                    TagType.Topic, topic,
+                    TagType.Partition, partition,
+                    TagType.Value, val, len,
+                    TagType.Key, key, keylen,
+                    TagType.Opaque, msg_opaque,
+                    TagType.MsgFlags, msgflags,
+                    TagType.Timstamp, timestamp,
+                    TagType.End);
 
-        internal delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
-        internal static Flush _flush;
+        private delegate ErrorCode Producev(IntPtr rk,
+                TagType topicType, string topic,
+                TagType partitionType, int partition,
+                TagType vaType, IntPtr val, UIntPtr len,
+                TagType keyType, IntPtr key, UIntPtr keylen,
+                TagType msgflagsType, IntPtr msgflags,
+                TagType msg_opaqueTypoe, IntPtr msg_opaque,
+                TagType endType);
+        private static Producev _producev;
+        internal static ErrorCode producev(
+                IntPtr rk,
+                string topic,
+                int partition,
+                IntPtr msgflags,
+                IntPtr val, UIntPtr len,
+                IntPtr key, UIntPtr keylen,
+                IntPtr msg_opaque)
+            => _producev(rk,
+                    TagType.Topic, topic,
+                    TagType.Partition, partition,
+                    TagType.Value, val, len,
+                    TagType.Key, key, keylen,
+                    TagType.Opaque, msg_opaque,
+                    TagType.MsgFlags, msgflags,
+                    TagType.End);
+
+        private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
+        private static Flush _flush;
         internal static ErrorCode flush(IntPtr rk, IntPtr timeout_ms)
             => _flush(rk, timeout_ms);
 
@@ -710,23 +762,31 @@ namespace Confluent.Kafka.Impl
                     IntPtr rk, IntPtr partitions);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_produce(
-                    IntPtr rkt,
-                    int partition,
-                    IntPtr msgflags,
-                    IntPtr val, UIntPtr len,
-                    IntPtr key, UIntPtr keylen,
-                    IntPtr msg_opaque);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_producev(
-                IntPtr rkt,
-                int partition,
-                IntPtr msgflags,
-                IntPtr val, UIntPtr len,
-                IntPtr key, UIntPtr keylen,
-                long timestamp,
-                IntPtr msg_opaque);
+            internal static extern ErrorCode rd_kafka_producev(
+                IntPtr rk,
+                TagType topicType, string topic,
+                TagType partitionType, int partition,
+                TagType vaType, IntPtr val, UIntPtr len,
+                TagType keyType, IntPtr key, UIntPtr keylen,
+                TagType msgflagsType, IntPtr msgflags,
+                TagType msg_opaqueType, IntPtr msg_opaque,
+                TagType endType);
+            
+            // note: producev signature is rd_kafka_producev(rk, ...)
+            // __arglist is an undocumented keyword which deal with it
+            // but doesn't work on standardlib (and undocumented so don't use)
+            // stay simple with one impl for now
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "rd_kafka_producev")]
+            internal static extern ErrorCode rd_kafka_producevTimestamp(
+                IntPtr rk,
+                TagType topicType, string topic,
+                TagType partitionType, int partition,
+                TagType vaType, IntPtr val, UIntPtr len,
+                TagType keyType, IntPtr key, UIntPtr keylen,
+                TagType msgflagsType, IntPtr msgflags,
+                TagType msg_opaqueType, IntPtr msg_opaque,
+                TagType timestampType, long timestamp,
+                TagType endType);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_flush(

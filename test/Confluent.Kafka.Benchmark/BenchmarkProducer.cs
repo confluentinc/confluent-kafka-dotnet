@@ -19,16 +19,24 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
 using System.Collections.Generic;
-
+using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkProducer
     {
+        public enum Mode
+        {
+            UntypedDeliveryHandler,
+            TypedDeliveryHandler,
+            TypedTask
+        }
+
         private class BenchmarkProducerDeliveryHandler : IDeliveryHandler
         {
             public int NumberOfMessages { get; private set; }
             public AutoResetEvent AutoEvent { get; private set; }
+            public Message LastDeliveryReport { get; private set; }
 
             public BenchmarkProducerDeliveryHandler(int numberOfMessages)
             {
@@ -37,17 +45,42 @@ namespace Confluent.Kafka.Benchmark
             }
 
             public bool MarshalData { get { return false; } }
-
+            
             public void HandleDeliveryReport(Message deliveryReport)
             {
                 if (--NumberOfMessages == 0)
                 {
                     AutoEvent.Set();
+                    LastDeliveryReport = deliveryReport;
                 }
             }
         }
 
-        private static long BenchmarkProducerImpl(string bootstrapServers, string topic, int nMessages, int nTests, bool useDeliveryHandler)
+        private class BenchmarkTypedProducerDeliveryHandler : IDeliveryHandler<Null, byte[]>
+        {
+            public int NumberOfMessages { get; private set; }
+            public AutoResetEvent AutoEvent { get; private set; }
+            public Message<Null, byte[]> LastDeliveryReport { get; private set; }
+
+            public BenchmarkTypedProducerDeliveryHandler(int numberOfMessages)
+            {
+                this.NumberOfMessages = numberOfMessages;
+                this.AutoEvent = new AutoResetEvent(false);
+            }
+            
+            public bool MarshalData { get { return false; } }
+
+            public void HandleDeliveryReport(Message<Null, byte[]> deliveryReport)
+            {
+                if (--NumberOfMessages == 0)
+                {
+                    AutoEvent.Set();
+                    LastDeliveryReport = deliveryReport;
+                }
+            }
+        }
+
+        private static long BenchmarkProducerImpl(string bootstrapServers, string topic, int nMessages, int nTests, Mode benchmarkMode)
         {
             // mirrors the librdkafka performance test example.
             var config = new Dictionary<string, object>
@@ -58,41 +91,64 @@ namespace Confluent.Kafka.Benchmark
                 { "retry.backoff.ms", 500 }
             };
 
-            Message firstDeliveryReport = null;
+            Offset firstOffset = Offset.Invalid;
 
             using (var producer = new Producer(config))
             {
                 for (var j=0; j<nTests; ++j)
                 {
-                    Console.WriteLine($"{producer.Name} producing on {topic} " + (useDeliveryHandler ? "[DeliveryHandler]" : "[Task]"));
+                    Console.WriteLine($"{producer.Name} producing on {topic} [{benchmarkMode.ToString()}]");
 
                     byte cnt = 0;
                     var val = new byte[100].Select(a => ++cnt).ToArray();
 
                     // this avoids including connection setup, topic creation time, etc.. in result.
-                    firstDeliveryReport = producer.ProduceAsync(topic, null, val).Result;
 
                     var startTime = DateTime.Now.Ticks;
 
-                    if (useDeliveryHandler)
+                    if (benchmarkMode == Mode.TypedDeliveryHandler)
                     {
-                        var deliveryHandler = new BenchmarkProducerDeliveryHandler(nMessages);
+                        var serializingProducer = producer.GetSerializingProducer(new NullSerializer(), new ByteArraySerializer());
 
+                        var firstDeliveryHandler = new BenchmarkTypedProducerDeliveryHandler(1);
+                        serializingProducer.ProduceAsync(topic, null, val, firstDeliveryHandler);
+                        firstDeliveryHandler.AutoEvent.WaitOne();
+                        firstOffset = firstDeliveryHandler.LastDeliveryReport.Offset;
+
+                        var deliveryHandler = new BenchmarkTypedProducerDeliveryHandler(nMessages);
                         for (int i = 0; i < nMessages; i++)
                         {
-                            producer.ProduceAsync(topic, null, val, deliveryHandler);
+                            serializingProducer.ProduceAsync(topic, null, val, deliveryHandler);
                         }
 
                         deliveryHandler.AutoEvent.WaitOne();
                     }
-                    else
+                    else if(benchmarkMode == Mode.TypedTask)
                     {
+                        var serializingProducer = producer.GetSerializingProducer<Null, byte[]>(new NullSerializer(), new ByteArraySerializer());
+                        firstOffset = serializingProducer.ProduceAsync(topic, null, val).Result.Offset;
+
                         var tasks = new Task[nMessages];
                         for (int i = 0; i < nMessages; i++)
                         {
-                            tasks[i] = producer.ProduceAsync(topic, null, val);
+                            tasks[i] = serializingProducer.ProduceAsync(topic, null, val);
                         }
                         Task.WaitAll(tasks);
+                    }
+                    else
+                    {
+                        var firstDeliveryHandler = new BenchmarkProducerDeliveryHandler(1);
+                        producer.Produce(topic, null, 0, 0, val, 0, val.Length, 0, -1, true, firstDeliveryHandler);
+                        firstDeliveryHandler.AutoEvent.WaitOne();
+                        firstOffset = firstDeliveryHandler.LastDeliveryReport.Offset;
+
+                        var deliveryHandler = new BenchmarkProducerDeliveryHandler(nMessages);
+
+                        for (int i = 0; i < nMessages; i++)
+                        {
+                            producer.Produce(topic, null, 0, 0, val, 0, val.Length, 0, -1, true, deliveryHandler);
+                        }
+                        deliveryHandler.AutoEvent.WaitOne();
                     }
 
                     var duration = DateTime.Now.Ticks - startTime;
@@ -104,21 +160,27 @@ namespace Confluent.Kafka.Benchmark
                 producer.Flush();
             }
 
-            return firstDeliveryReport.Offset;
+            return firstOffset;
         }
 
         /// <summary>
-        ///     Producer benchmark masquarading as an integration test.
+        ///     Typed Producer benchmark masquarading as an integration test.
         ///     Uses Task based produce method.
         /// </summary>
-        public static long TaskProduce(string bootstrapServers, string topic, int nMessages, int nTests)
-            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, false);
+        public static long TypedTaskProduce(string bootstrapServers, string topic, int nMessages, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, Mode.TypedTask);
 
         /// <summary>
-        ///     Producer benchmark (with custom delivery handler) masquarading
-        ///     as an integration test. Uses Task based produce method.
+        ///     Typed Producer benchmark (with custom delivery handler) masquarading
+        ///     as an integration test.
         /// </summary>
-        public static long DeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nTests)
-            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, true);
+        public static long TypedDeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, Mode.TypedDeliveryHandler);
+
+        /// <summary>
+        ///     Non typed Producer benchmark masquaring as an integration test.
+        /// </summary>
+        public static long UntypedDeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, Mode.UntypedDeliveryHandler);
     }
 }
