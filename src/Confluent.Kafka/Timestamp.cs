@@ -30,13 +30,13 @@ namespace Confluent.Kafka
         ///     Indicates no timestamp are used for producing
         ///     Librdkafka will use current time
         /// </summary>
-        internal const long NO_PRODUCE_TIMESTAMP = 0;
+        public const long NO_PRODUCE_TIMESTAMP = 0;
 
         /// <summary>
         ///     Indicates no timestamp are used for producing
         ///     Librdkafka will use current time
         /// </summary>
-        internal static readonly DateTime EPOCH_DATETIME = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime EPOCH_DATETIME = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.

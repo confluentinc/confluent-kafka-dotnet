@@ -176,6 +176,7 @@ namespace Confluent.Kafka.Impl
                 // thread of the application calls poll() for a blocking produce() to ever unblock.
 
                 // TODO: benchmark if there are any impact between when calling only the second method with 0 timestamp
+                // same with or without opaque, partition, key, value, etc
                 if (timestamp == Timestamp.NO_PRODUCE_TIMESTAMP)
                 {
                     //sending 0 and no timestamp is the same

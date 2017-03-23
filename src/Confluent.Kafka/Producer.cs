@@ -195,11 +195,76 @@ namespace Confluent.Kafka
             }
         }
 
-        internal void Produce(
+        /// <summary>
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
+        ///     Low level api the closest to librdkafka. 
+        ///     Use <see cref="SerializingProducer{TKey, TValue}"/> for high-level producer
+        /// </summary>
+        /// <param name="topic">
+        ///     The target topic.
+        /// </param>
+        /// <param name="partition">
+        ///     The target partition (if -1, this is determined by the partitioner
+        ///     configured for the topic).
+        /// </param>
+        /// <param name="key">
+        ///     null, or a byte array that contains the message key.
+        /// </param>
+        /// <param name="keyOffset">
+        ///     for non-null values, the offset into the key array of the
+        ///     sub-array to use as the message key.
+        ///     if <paramref name="key" />  is null, keyOffset must be 0.
+        /// </param>
+        /// <param name="keyLength">
+        ///     for non-null keys, the length of the sequence of bytes that
+        ///     constitutes the key.
+        ///     if <paramref name="key" />  is null, keyOffset must be 0.
+        /// </param>
+        /// <param name="val">
+        ///     null, or a byte array that contains the message value.
+        /// </param>
+        /// <param name="valOffset">
+        ///     for non-null values, the offset into the val array of the
+        ///     sub-array to use as the message value.
+        ///     if <paramref name="val" /> is null, valOffset must be 0.
+        /// </param>
+        /// <param name="valLength">
+        ///     for non-null values, the length of the sequence of bytes that
+        ///     constitutes the value.
+        ///     if <paramref name="val" /> is null, valLength must be 0.
+        /// </param>
+        /// <param name="timestamp">
+        ///     The millisecond unix timestamp associated to the message
+        ///     (if 0, the current date will be use).
+        /// </param>
+        /// <param name="blockIfQueueFull">
+        ///     Whether or not to block if the send queue is full.
+        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
+        ///     will be thrown if an attempt is made to produce a message
+        ///     and the send queue is full.
+        /// 
+        ///     Warning: blockIfQueueFull is set to true, background polling is 
+        ///     disabled and Poll is not being called in another thread, this
+        ///     will block indefinitely.
+        /// </param>
+        /// <param name="deliveryHandler">
+        /// 
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with the corresponding delivery report
+        ///     for this request.
+        /// </returns>
+        /// <remarks>
+        ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
+        ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
+        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
+        ///     callbacks are executed on the Poll thread.
+        /// </remarks>
+        public void Produce(
             string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
-            DateTime? datetime,
+            long timestamp,
             Int32 partition, bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
@@ -209,84 +274,36 @@ namespace Confluent.Kafka
                 var deliveryCompletionSource = deliveryHandler;
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
-
-                if (!datetime.HasValue)
+                
+                ErrorCode err = kafkaHandle.Produce(
+                    topic,
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    timestamp,
+                    ptr, blockIfQueueFull);
+                if (err != ErrorCode.NoError)
                 {
-                    ErrorCode err = kafkaHandle.Produce(
-                        topic,
-                        val, valOffset, valLength,
-                        key, keyOffset, keyLength,
-                        partition,
-                        Timestamp.NO_PRODUCE_TIMESTAMP,
-                        ptr, blockIfQueueFull);
-                    if (err != ErrorCode.NoError)
-                    {
-                        gch.Free();
-                        throw new KafkaException(err);
-                    }
-                }
-                else
-                {
-                    ErrorCode err = kafkaHandle.Produce(
-                        topic,
-                        val, valOffset, valLength,
-                        key, keyOffset, keyLength,
-                        partition,
-                        Timestamp.DateTimeToUnixTimestampMs(datetime.Value),
-                        ptr, blockIfQueueFull);
-                    if (err != ErrorCode.NoError)
-                    {
-                        gch.Free();
-                        throw new KafkaException(err);
-                    }
+                    gch.Free();
+                    throw new KafkaException(err);
                 }
             }
             else
             {
-                if (!datetime.HasValue)
+                ErrorCode err = kafkaHandle.Produce(
+                    topic,
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    timestamp,
+                    IntPtr.Zero, blockIfQueueFull);
+                if (err != ErrorCode.NoError)
                 {
-                    ErrorCode err = kafkaHandle.Produce(
-                        topic,
-                        val, valOffset, valLength,
-                        key, keyOffset, keyLength,
-                        partition,
-                        Timestamp.NO_PRODUCE_TIMESTAMP,
-                        IntPtr.Zero, blockIfQueueFull);
-                    if (err != ErrorCode.NoError)
-                    {
-                        throw new KafkaException(err);
-                    }
-                }
-                else
-                {
-                    ErrorCode err = kafkaHandle.Produce(
-                        topic,
-                        val, valOffset, valLength,
-                        key, keyOffset, keyLength,
-                        partition,
-                        Timestamp.DateTimeToUnixTimestampMs(datetime.Value),
-                        IntPtr.Zero, blockIfQueueFull);
-                    if (err != ErrorCode.NoError)
-                    {
-                        throw new KafkaException(err);
-                    }
+                    throw new KafkaException(err);
                 }
             }
         }
-
-        private Task<Message> Produce(
-            string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
-            DateTime? datetime,
-            Int32? partition, bool blockIfQueueFull
-        )
-        {
-            var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, datetime, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
-            return deliveryCompletionSource.Task;
-        }
-
+        
         /// <summary>
         ///     Initializes a new Producer instance.
         /// </summary>
@@ -464,164 +481,7 @@ namespace Confluent.Kafka
         /// </typeparam>
         public ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
             => new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
-
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
-        public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
-        public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val, DateTime datetime)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, datetime, RD_KAFKA_PARTITION_UA, true);
         
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        /// </summary>
-        /// <param name="topic">
-        ///     The target topic.
-        /// </param>
-        /// <param name="partition">
-        ///     The target partition (if -1, this is determined by the partitioner
-        ///     configured for the topic).
-        /// </param>
-        /// <param name="key">
-        ///     null, or a byte array that contains the message key.
-        /// </param>
-        /// <param name="keyOffset">
-        ///     for non-null values, the offset into the key array of the
-        ///     sub-array to use as the message key.
-        ///     if <paramref name="key" />  is null, keyOffset must be 0.
-        /// </param>
-        /// <param name="keyLength">
-        ///     for non-null keys, the length of the sequence of bytes that
-        ///     constitutes the key.
-        ///     if <paramref name="key" />  is null, keyOffset must be 0.
-        /// </param>
-        /// <param name="val">
-        ///     null, or a byte array that contains the message value.
-        /// </param>
-        /// <param name="valOffset">
-        ///     for non-null values, the offset into the val array of the
-        ///     sub-array to use as the message value.
-        ///     if <paramref name="val" /> is null, valOffset must be 0.
-        /// </param>
-        /// <param name="valLength">
-        ///     for non-null values, the length of the sequence of bytes that
-        ///     constitutes the value.
-        ///     if <paramref name="val" /> is null, valLength must be 0.
-        /// </param>
-        /// <param name="blockIfQueueFull">
-        ///     Whether or not to block if the send queue is full.
-        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
-        ///     will be thrown if an attempt is made to produce a message
-        ///     and the send queue is full.
-        /// 
-        ///     Warning: blockIfQueueFull is set to true, background polling is 
-        ///     disabled and Poll is not being called in another thread, this
-        ///     will block indefinitely.
-        /// </param>
-        /// <returns>
-        ///     A Task which will complete with the corresponding delivery report
-        ///     for this request.
-        /// </returns>
-        /// <remarks>
-        ///     If you require strict ordering of delivery reports to be maintained, 
-        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
-        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
-        ///     Tasks are completed on arbitrary thread pool threads and can 
-        ///     be executed out of order.
-        /// </remarks>
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
-        ///     for more information.
-        /// </summary>
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull);
-
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
-        public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-        
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
-        public void ProduceAsync(string topic, byte[] key, byte[] val, DateTime datetime, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, datetime, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-        
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" />
-        ///     for more information.
-        /// </summary>
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        /// </summary>
-        /// <remarks>
-        ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
-        ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
-        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
-        ///     callbacks are executed on the Poll thread.
-        ///     
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </remarks>
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-
         /// <summary>
         ///     Gets the name of this producer instance.
         ///     Contains (but is not equal to) the client.id configuration parameter.
@@ -890,30 +750,21 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, DateTime? datetime, int partition, bool blockIfQueueFull)
+        private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, long timestamp, int partition, bool blockIfQueueFull)
         {
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, datetime, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true);
+            => Produce(topic, key, val, Timestamp.NO_PRODUCE_TIMESTAMP, Producer.RD_KAFKA_PARTITION_UA, true);
 
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
-            => Produce(topic, key, val, null, partition, blockIfQueueFull);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
-            => Produce(topic, key, val, null, partition, true);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime datetime)
-            => Produce(topic, key, val, datetime, Producer.RD_KAFKA_PARTITION_UA, true);
-
+        public Task<Message<TKey, TValue>> ProduceAsync(ProduceRecord<TKey, TValue> produceRecord)
+            => Produce(produceRecord.Topic, produceRecord.Key, produceRecord.Value, produceRecord.Timestamp, produceRecord.Partition, produceRecord.BlockIfQueueFull);
+        
 
         private class TypedDeliveryHandlerShim : IDeliveryHandler
         {
@@ -946,28 +797,19 @@ namespace Confluent.Kafka
             }
         }
 
-        private void Produce(string topic, TKey key, TValue val, DateTime? datetime, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
+        private void Produce(string topic, TKey key, TValue val, long timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
         {
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
-            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, datetime, partition, blockIfQueueFull, handler);
+            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
         }
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, partition, blockIfQueueFull, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, partition, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, DateTime datetime, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, datetime, Producer.RD_KAFKA_PARTITION_UA, true, deliveryHandler);
+            => Produce(topic, key, val, Timestamp.NO_PRODUCE_TIMESTAMP, Producer.RD_KAFKA_PARTITION_UA, true, deliveryHandler);
+        
+        public void ProduceAsync(ProduceRecord<TKey, TValue> produceRecord, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => Produce(produceRecord.Topic, produceRecord.Key, produceRecord.Value, produceRecord.Timestamp, produceRecord.Partition, produceRecord.BlockIfQueueFull, deliveryHandler);
 
         public string Name
             => producer.Name;
@@ -1070,26 +912,9 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        ///     
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => serializingProducer.ProduceAsync(topic, key, val);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
         /// </summary>
         /// <param name="topic">
         ///     The target topic.
-        /// </param>
-        /// <param name="partition">
-        ///     The target partition (if -1, this is determined by the partitioner
-        ///     configured for the topic).
         /// </param>
         /// <param name="key">
         ///     the message key (possibly null if allowed by the key serializer).
@@ -1097,15 +922,30 @@ namespace Confluent.Kafka
         /// <param name="val">
         ///     the message value (possibly null if allowed by the value serializer).
         /// </param>
-        /// <param name="blockIfQueueFull">
-        ///     Whether or not to block if the send queue is full.
-        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
-        ///     will be thrown if an attempt is made to produce a message
-        ///     and the send queue is full.
-        ///      
-        ///     Warning: blockIfQueueFull is set to true, background polling is 
-        ///     disabled and Poll is not being called in another thread, 
-        ///     this will block indefinitely.
+        /// <returns>
+        ///     A Task which will complete with the corresponding delivery report
+        ///     for this request.
+        /// </returns>
+        /// <remarks>
+        ///     The partition the message is produced to is determined using the configured partitioner.
+        ///     
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
+        ///     
+        ///     If you require strict ordering of delivery reports to be maintained, 
+        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
+        ///     Tasks are completed on arbitrary thread pool threads and can 
+        ///     be executed out of order.
+        /// </remarks>
+        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
+            => serializingProducer.ProduceAsync(topic, key, val);
+
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        /// </summary>
+        /// <param name="produceRecord">
+        ///     The customizable message.
         /// </param>
         /// <returns>
         ///     A Task which will complete with the corresponding delivery report
@@ -1118,54 +958,51 @@ namespace Confluent.Kafka
         ///     Tasks are completed on arbitrary thread pool threads and can 
         ///     be executed out of order.
         /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
-            => serializingProducer.ProduceAsync(topic, key, val, partition);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull);
-
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        ///     
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime dateTime)
-            => serializingProducer.ProduceAsync(topic, key, val, dateTime);
+        public Task<Message<TKey, TValue>> ProduceAsync(ProduceRecord<TKey, TValue> produceRecord)
+            => serializingProducer.ProduceAsync(produceRecord);
 
 
         /// <summary>
         ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
         /// </summary>
+        ///  <param name="topic">
+        ///     The target topic.
+        /// </param>
+        /// <param name="key">
+        ///     the message key (possibly null if allowed by the key serializer).
+        /// </param>
+        /// <param name="val">
+        ///     the message value (possibly null if allowed by the value serializer).
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with the corresponding delivery report
+        ///     for this request.
+        /// </returns>
         /// <remarks>
         ///     The partition the message is produced to is determined using the configured partitioner.
         ///     
         ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
         ///     not being called in another thread, this will block indefinitely.
+        ///     
+        ///     If you require strict ordering of delivery reports to be maintained, 
+        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
+        ///     Tasks are completed on arbitrary thread pool threads and can 
+        ///     be executed out of order.
+        /// </remarks>
+        /// <remarks>
+        ///     The partition the message is produced to is determined using the configured partitioner.
+        ///     
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
+        ///     
+        ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
+        ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
+        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
+        ///     callbacks are executed on the Poll thread.
         /// </remarks>
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler);
@@ -1173,52 +1010,21 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         /// </summary>
+        /// <param name="produceRecord">
+        ///     The customizable message.
+        /// </param>
+        /// <param name="deliveryHandler">
+        /// 
+        /// </param>
         /// <remarks>
         ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
         ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
         ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
         ///     callbacks are executed on the Poll thread.
-        ///     
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" />
-        ///     for more information.
         /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        ///     
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, DateTime dateTime, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, dateTime, deliveryHandler);
-
+        public void ProduceAsync(ProduceRecord<TKey, TValue> produceRecord, IDeliveryHandler<TKey, TValue> deliveryHandler)
+            => serializingProducer.ProduceAsync(produceRecord, deliveryHandler);
+        
 
         /// <summary>
         ///     Raised when there is information that should be logged.

@@ -44,16 +44,10 @@ namespace Confluent.Kafka
         ISerializer<TValue> ValueSerializer { get; }
 
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, DateTime dateTime);
+        Task<Message<TKey, TValue>> ProduceAsync(ProduceRecord<TKey, TValue> produceRecord);
 
         void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler);
-        void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
-        void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler);
-        void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
-        void ProduceAsync(string topic, TKey key, TValue val, DateTime datetime, IDeliveryHandler<TKey, TValue> deliveryHandler);
+        void ProduceAsync(ProduceRecord<TKey, TValue> produceRecord, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
         /// <summary>
         ///     Raised when there is information that should be logged.
