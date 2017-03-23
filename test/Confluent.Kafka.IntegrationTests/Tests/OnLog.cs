@@ -52,8 +52,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
-
-                producer.ProduceAsync(topic, null, (byte[])null).Wait();
+                
+                producer.Produce(topic, null, 0, 0, null, 0, 0, 0, -1, true, null);
                 producer.Flush();
             }
             Assert.True(logCount > 0);

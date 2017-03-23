@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             public static byte[] TestKey = new byte[] { 1, 2, 3, 4 };
             public static byte[] TestValue = new byte[] { 5, 6, 7, 8 };
-            public static DateTime Now = DateTime.UtcNow;
+            public static long TestTime = 123456789;
 
             public DeliveryHandler_P(string topic)
             {
@@ -52,20 +52,20 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(dr.Offset >= 0);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
 
-                if (Count != 5)
-                {
-                    Assert.Equal(TestKey, dr.Key);
-                    Assert.Equal(TestValue, dr.Value);
-                }
-                else
+                if (Count == 1)
                 {
                     Assert.Equal(new byte[] { 2, 3 }, dr.Key);
                     Assert.Equal(new byte[] { 7 }, dr.Value);
                 }
-
-                if (Count == 6)
+                else
                 {
-                    Assert.True(Math.Abs((Now - dr.Timestamp.DateTime).TotalMilliseconds) < 1.0);
+                    Assert.Equal(TestKey, dr.Key);
+                    Assert.Equal(TestValue, dr.Value);
+                }
+
+                if (Count == 2)
+                {
+                    Assert.Equal(TestTime, dr.Timestamp.UnixTimestamp);
                 }
                 else
                 {
@@ -90,52 +90,28 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 //00
-                producer.ProduceAsync(
+                producer.Produce(
                     topic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    0, true, dh
+                    0, 0, true, dh
                 );
-
+                
                 //01
-                producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    0, dh
-                );
-
-                //02
-                producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    true, dh
-                );
-
-                //03
-                producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    dh
-                );
-
-                //04
-                producer.ProduceAsync(topic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue, dh);
-
-                //05
-                producer.ProduceAsync(
+                producer.Produce(
                     topic,
                     DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length-2,
                     DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length-3,
-                    dh
+                    0, 0, true, dh
                 );
-                
-                //06
-                producer.ProduceAsync(topic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue,
-                    DeliveryHandler_P.Now, dh);
-                
+
+                //02
+                producer.Produce(
+                    topic,
+                    DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length - 2,
+                    DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length - 3,
+                    DeliveryHandler_P.TestTime, 0, true, dh
+                );
                 producer.Flush();
             }
 

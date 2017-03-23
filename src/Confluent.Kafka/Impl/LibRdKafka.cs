@@ -398,7 +398,11 @@ namespace Confluent.Kafka.Impl
             MsgFlags, //(int) RD_KAFKA_MSG_F_.. flags
             Timstamp, //(int64_t) Milliseconds since epoch UTC
         }
-        
+
+        // __arglist is not implemented on .netCore for no
+        // see https://github.com/dotnet/coreclr/issues/9204
+        //for now, we bind to different signature
+
         private delegate ErrorCode ProducevTimestamp(IntPtr rk,
                 TagType topicType, string topic,
                 TagType partitionType, int partition,
@@ -427,7 +431,7 @@ namespace Confluent.Kafka.Impl
                     TagType.MsgFlags, msgflags,
                     TagType.Timstamp, timestamp,
                     TagType.End);
-        
+
         private delegate ErrorCode Producev(IntPtr rk,
                 TagType topicType, string topic,
                 TagType partitionType, int partition,

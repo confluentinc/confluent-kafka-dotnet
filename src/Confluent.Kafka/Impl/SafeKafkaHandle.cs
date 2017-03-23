@@ -134,7 +134,7 @@ namespace Confluent.Kafka.Impl
 
         internal int Poll(IntPtr millisecondsTimeout)
             => (int)LibRdKafka.poll(handle, millisecondsTimeout);
-
+        
         internal ErrorCode Produce(string topic, byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long timestamp, IntPtr opaque, bool blockIfQueueFull)
         {
             var pValue = IntPtr.Zero;
@@ -403,11 +403,6 @@ namespace Confluent.Kafka.Impl
 
             IntPtr timestampType;
             long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType);
-            var dateTime = new DateTime(0);
-            if ((TimestampType)timestampType != TimestampType.NotAvailable)
-            {
-                dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
-            }
 
             LibRdKafka.message_destroy(msgPtr);
 
@@ -417,7 +412,7 @@ namespace Confluent.Kafka.Impl
                 msg.offset,
                 key,
                 val,
-                new Timestamp(dateTime, (TimestampType)timestampType),
+                new Timestamp(timestamp, (TimestampType)timestampType),
                 msg.err
             );
 

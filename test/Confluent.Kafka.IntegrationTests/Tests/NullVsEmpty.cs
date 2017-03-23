@@ -23,6 +23,28 @@ namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
     {
+        class DeliveryHandlerTest : IDeliveryHandler
+        {
+            public DeliveryHandlerTest()
+            {
+            }
+
+            public bool MarshalData { get { return true; } }
+
+            public int Count { get; private set; }
+            
+            public Message FirstDeliveryHandler { get; private set; }
+
+            public void HandleDeliveryReport(Message dr)
+            {
+                if(FirstDeliveryHandler == null)
+                {
+                    FirstDeliveryHandler = dr;
+                }
+                Count += 1;
+            }
+        }
+
         /// <summary>
         ///     Test that null and byte[0] keys and values are produced / consumed
         ///     as expected.
@@ -40,21 +62,21 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "bootstrap.servers", bootstrapServers }
             };
-
-            Message dr;
+            
+            var dh = new DeliveryHandlerTest();
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(topic, (byte[])null, null).Result;
-                producer.ProduceAsync(topic, null, new byte[0]).Wait();
-                producer.ProduceAsync(topic, new byte[0], null).Wait();
-                producer.ProduceAsync(topic, new byte[0], new byte[0]).Wait();
+                producer.Produce(topic, null, 0, 0, null, 0, 0, 0, -1, true, dh);
+                producer.Produce(topic, null, 0, 0, new byte[0], 0, 0, 0, -1, true, dh);
+                producer.Produce(topic, new byte[0], 0, 0, null, 0, 0, 0, -1, true, dh);
+                producer.Produce(topic, new byte[0], 0, 0, new byte[0], 0, 0, 0, -1, true, dh);
                 producer.Flush();
             }
 
             using (var consumer = new Consumer(consumerConfig))
             {
-                consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
+                consumer.Assign(new List<TopicPartitionOffset>() { dh.FirstDeliveryHandler.TopicPartitionOffset });
 
                 Message msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
