@@ -30,7 +30,13 @@ namespace Confluent.Kafka
         ///     Indicates no timestamp are used for producing
         ///     Librdkafka will use current time
         /// </summary>
-        public static readonly int NO_PRODUCE_TIMESTAMP = 0;
+        internal const int NO_PRODUCE_TIMESTAMP = 0;
+
+        /// <summary>
+        ///     Indicates no timestamp are used for producing
+        ///     Librdkafka will use current time
+        /// </summary>
+        internal static readonly DateTime EPOCH_DATETIME = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -91,7 +97,7 @@ namespace Confluent.Kafka
         {
             checked
             {
-                return (long)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)).TotalMilliseconds;
+                return (long)(dateTime.ToUniversalTime() - EPOCH_DATETIME).TotalMilliseconds;
             }
         }
 
@@ -105,7 +111,6 @@ namespace Confluent.Kafka
         ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
-            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)
-                + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+            => EPOCH_DATETIME + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
     }
 }
