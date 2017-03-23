@@ -135,6 +135,88 @@ namespace Confluent.Kafka.Impl
         internal int Poll(IntPtr millisecondsTimeout)
             => (int)LibRdKafka.poll(handle, millisecondsTimeout);
 
+        internal ErrorCode Produce(string topic, byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long timestamp, IntPtr opaque, bool blockIfQueueFull)
+        {
+            var pValue = IntPtr.Zero;
+            var pKey = IntPtr.Zero;
+
+            var gchValue = default(GCHandle);
+            var gchKey = default(GCHandle);
+
+            if (val == null)
+            {
+                if (valOffset != 0 || valLength != 0)
+                {
+                    throw new ArgumentException("valOffset and valLength parameters must be 0 when producing null values.");
+                }
+            }
+            else
+            {
+                gchValue = GCHandle.Alloc(val, GCHandleType.Pinned);
+                pValue = Marshal.UnsafeAddrOfPinnedArrayElement(val, valOffset);
+            }
+
+            if (key == null)
+            {
+                if (keyOffset != 0 || keyLength != 0)
+                {
+                    throw new ArgumentException("keyOffset and keyLength parameters must be 0 when producing null key values.");
+                }
+            }
+            else
+            {
+                gchKey = GCHandle.Alloc(key, GCHandleType.Pinned);
+                pKey = Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset);
+            }
+
+            try
+            {
+                // TODO: when refactor complete, reassess the below note.
+                // Note: since the message queue threshold limit also includes delivery reports, it is important that another
+                // thread of the application calls poll() for a blocking produce() to ever unblock.
+
+                // TODO: benchmark if there are any impact between when calling only the second method with 0 timestamp
+                if (timestamp == Timestamp.NO_PRODUCE_TIMESTAMP)
+                {
+                    //sending 0 and no timestamp is the same
+                    return LibRdKafka.producev(
+                        handle,
+                        topic,
+                        partition,
+                        (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
+                        pValue, (UIntPtr)valLength,
+                        pKey, (UIntPtr)keyLength,
+                        opaque);
+                }
+                else
+                {
+
+                    return LibRdKafka.producev(
+                        handle,
+                        topic,
+                        partition,
+                        (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
+                        pValue, (UIntPtr)valLength,
+                        pKey, (UIntPtr)keyLength,
+                        timestamp,
+                        opaque);
+                }
+            }
+            finally
+            {
+                if (val != null)
+                {
+                    gchValue.Free();
+                }
+
+                if (key != null)
+                {
+                    gchKey.Free();
+                }
+            }
+        }
+
+        //TODO remove this hen Metdata works with a string rather than an rkt
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
             // Increase the refcount to this handle to keep it alive for

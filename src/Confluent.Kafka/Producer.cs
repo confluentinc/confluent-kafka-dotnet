@@ -203,8 +203,6 @@ namespace Confluent.Kafka
             Int32 partition, bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
-            SafeTopicHandle topicHandle = getKafkaTopicHandle(topic);
-
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
@@ -214,57 +212,64 @@ namespace Confluent.Kafka
 
                 if (!datetime.HasValue)
                 {
-                    if (topicHandle.Produce(
+                    ErrorCode err = kafkaHandle.Produce(
+                        topic,
                         val, valOffset, valLength,
                         key, keyOffset, keyLength,
                         partition,
-                        ptr, blockIfQueueFull) != 0)
+                        Timestamp.NO_PRODUCE_TIMESTAMP,
+                        ptr, blockIfQueueFull);
+                    if (err != ErrorCode.NoError)
                     {
-                        var err = LibRdKafka.last_error();
                         gch.Free();
                         throw new KafkaException(err);
                     }
                 }
                 else
                 {
-                    ErrorCode err = topicHandle.Producev(
+                    ErrorCode err = kafkaHandle.Produce(
+                        topic,
                         val, valOffset, valLength,
                         key, keyOffset, keyLength,
                         partition,
                         Timestamp.DateTimeToUnixTimestampMs(datetime.Value),
                         ptr, blockIfQueueFull);
-                    if(err != ErrorCode.NoError)
+                    if (err != ErrorCode.NoError)
                     {
                         gch.Free();
                         throw new KafkaException(err);
                     }
                 }
-
-                return;
-            }
-
-            if (!datetime.HasValue)
-            {
-                if (topicHandle.Produce(
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
-                    partition,
-                    IntPtr.Zero, blockIfQueueFull) != 0)
-                {
-                    throw new KafkaException(LibRdKafka.last_error());
-                }
             }
             else
             {
-                ErrorCode err = topicHandle.Producev(
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
-                    partition,
-                    Timestamp.DateTimeToUnixTimestampMs(datetime.Value),
-                    IntPtr.Zero, blockIfQueueFull);
-                if(err != ErrorCode.NoError)
+                if (!datetime.HasValue)
                 {
-                    throw new KafkaException(err);
+                    ErrorCode err = kafkaHandle.Produce(
+                        topic,
+                        val, valOffset, valLength,
+                        key, keyOffset, keyLength,
+                        partition,
+                        Timestamp.NO_PRODUCE_TIMESTAMP,
+                        IntPtr.Zero, blockIfQueueFull);
+                    if (err != ErrorCode.NoError)
+                    {
+                        throw new KafkaException(err);
+                    }
+                }
+                else
+                {
+                    ErrorCode err = kafkaHandle.Produce(
+                        topic,
+                        val, valOffset, valLength,
+                        key, keyOffset, keyLength,
+                        partition,
+                        Timestamp.DateTimeToUnixTimestampMs(datetime.Value),
+                        IntPtr.Zero, blockIfQueueFull);
+                    if (err != ErrorCode.NoError)
+                    {
+                        throw new KafkaException(err);
+                    }
                 }
             }
         }
