@@ -39,37 +39,59 @@ namespace Confluent.Kafka.IntegrationTests
 
             var key = new byte[] { 1, 2, 3, 4 };
             var val = new byte[] { 5, 6, 7, 8 };
+            var now = DateTime.UtcNow;
 
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, val));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 1, key.Length-1, val, 2, val.Length-2));
+                /* 00 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1, true));
+                /* 01 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1));
+                /* 02 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, true));
+                /* 03 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length));
+                /* 04 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, val));
+                /* 05 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, 1, key.Length-1, val, 2, val.Length-2));
+                /* 06 */ drs.Add(producer.ProduceAsync(partitionedTopic, key, val, now));
                 producer.Flush();
             }
 
-            for (int i=0; i<5; ++i)
+            for(int i=0; i<drs.Count; i++)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.True(dr.Partition == 0 || dr.Partition == 1);
-                Assert.Equal(key, dr.Key);
-                Assert.Equal(val, dr.Value);
+                if (i == 0 || i == 1)
+                {
+                    Assert.True(dr.Partition == 1);
+                }
+                else
+                {
+                    Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                }
+
+                if (i != 5)
+                {
+                    Assert.Equal(key, dr.Key);
+                    Assert.Equal(val, dr.Value);
+                }
+                else
+                {
+                    Assert.Equal(new byte[] { 2, 3, 4 }, dr.Key);
+                    Assert.Equal(new byte[] { 7, 8 }, dr.Value);
+                }
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
+
+                if (i == 6)
+                {
+                    //Datetime are not equal - ticks is more precise than unix timestamp
+                    Assert.True(Math.Abs((now - dr.Timestamp.DateTime).TotalMilliseconds) <= 1.0);
+                }
+                else
+                {
+                    Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
+                }
             }
 
-            Assert.Equal(new byte[] { 2, 3, 4 }, drs[5].Result.Key);
-            Assert.Equal(new byte[] { 7, 8 }, drs[5].Result.Value);
-
-            Assert.Equal(1, drs[0].Result.Partition);
-            Assert.Equal(1, drs[1].Result.Partition);
         }
     }
 }

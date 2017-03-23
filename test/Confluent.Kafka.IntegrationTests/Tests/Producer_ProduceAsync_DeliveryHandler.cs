@@ -31,6 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             public static byte[] TestKey = new byte[] { 1, 2, 3, 4 };
             public static byte[] TestValue = new byte[] { 5, 6, 7, 8 };
+            public static DateTime Now = DateTime.UtcNow;
 
             public DeliveryHandler_P(string topic)
             {
@@ -50,9 +51,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(Topic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
 
-                if (Count < 5)
+                if (Count != 5)
                 {
                     Assert.Equal(TestKey, dr.Key);
                     Assert.Equal(TestValue, dr.Value);
@@ -61,6 +61,15 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     Assert.Equal(new byte[] { 2, 3 }, dr.Key);
                     Assert.Equal(new byte[] { 7 }, dr.Value);
+                }
+
+                if (Count == 6)
+                {
+                    Assert.True(Math.Abs((Now - dr.Timestamp.DateTime).TotalMilliseconds) < 1.0);
+                }
+                else
+                {
+                    Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
                 }
 
                 Count += 1;
@@ -80,6 +89,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer(producerConfig))
             {
+                //00
                 producer.ProduceAsync(
                     topic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
@@ -87,6 +97,7 @@ namespace Confluent.Kafka.IntegrationTests
                     0, true, dh
                 );
 
+                //01
                 producer.ProduceAsync(
                     topic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
@@ -94,6 +105,7 @@ namespace Confluent.Kafka.IntegrationTests
                     0, dh
                 );
 
+                //02
                 producer.ProduceAsync(
                     topic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
@@ -101,6 +113,7 @@ namespace Confluent.Kafka.IntegrationTests
                     true, dh
                 );
 
+                //03
                 producer.ProduceAsync(
                     topic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
@@ -108,15 +121,21 @@ namespace Confluent.Kafka.IntegrationTests
                     dh
                 );
 
+                //04
                 producer.ProduceAsync(topic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue, dh);
 
+                //05
                 producer.ProduceAsync(
                     topic,
                     DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length-2,
                     DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length-3,
                     dh
                 );
-
+                
+                //06
+                producer.ProduceAsync(topic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue,
+                    DeliveryHandler_P.Now, dh);
+                
                 producer.Flush();
             }
 

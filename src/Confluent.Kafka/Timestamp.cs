@@ -27,6 +27,12 @@ namespace Confluent.Kafka
     public struct Timestamp
     {
         /// <summary>
+        ///     Indicates no timestamp are used for producing
+        ///     Librdkafka will use current time
+        /// </summary>
+        public static readonly int NO_PRODUCE_TIMESTAMP = 0;
+
+        /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
         /// </summary>
         /// <param name="dateTime">
