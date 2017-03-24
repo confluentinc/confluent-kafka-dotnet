@@ -68,16 +68,17 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer(producerConfig))
             {
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, 0, true, dh);
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, 0, dh);
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, true, dh);
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, dh);
+                producer.ProduceAsync(new Producer.ProduceRecord(topic, null, 0, 0, null, 0, 0) { Partition = 0, BlockIfQueueFull = true }, dh);
+                producer.ProduceAsync(new Producer.ProduceRecord(topic, null, 0, 0, null, 0, 0) { Partition = 0 }, dh);
+                producer.ProduceAsync(new Producer.ProduceRecord(topic, null, 0, 0, null, 0, 0) { BlockIfQueueFull = true }, dh);
+                producer.ProduceAsync(new Producer.ProduceRecord(topic, null, 0, 0, null, 0, 0), dh);
+                producer.ProduceAsync(new Producer.ProduceRecord(topic, null, null), dh);
                 producer.ProduceAsync(topic, null, null, dh);
-                Assert.Throws<ArgumentException>(() => producer.ProduceAsync(topic, null, -123, int.MinValue, null, int.MaxValue, 44, dh));
+                Assert.Throws<ArgumentException>(() => producer.ProduceAsync(new Producer.ProduceRecord(topic, null, -123, int.MinValue, null, int.MaxValue, 44), dh));
                 producer.Flush();
             }
 
-            Assert.Equal(5, dh.Count);
+            Assert.Equal(6, dh.Count);
         }
     }
 }

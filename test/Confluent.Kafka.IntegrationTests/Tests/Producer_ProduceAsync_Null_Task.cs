@@ -41,16 +41,18 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, null, 0, 0, null, 0, 0) { Partition = 1, BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, null, 0, 0, null, 0, 0) { Partition = 1 }));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, null, 0, 0, null, 0, 0) { BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, null, 0, 0, null, 0, 0)));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, null, null)));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
-                Assert.Throws<ArgumentException>(() => { producer.ProduceAsync(partitionedTopic, null, 8, 100, null, -33, int.MaxValue); });
+                Assert.Throws<ArgumentException>(() => { producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, null, 8, 100, null, -33, int.MaxValue)); });
                 producer.Flush();
             }
 
-            for (int i=0; i<5; ++i)
+            Assert.Equal(6, drs.Count);
+            for (int i = 0; i < drs.Count; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
