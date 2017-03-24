@@ -32,8 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SerializingProducer_ProduceAsync_Null_Task(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> 
-            { 
+            var producerConfig = new Dictionary<string, object>
+            {
                 { "bootstrap.servers", bootstrapServers },
                 { "api.version.request", true }
             };
@@ -41,14 +41,16 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, 0, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, 0));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<Null, Null>(topic, null, null) { Partition = 0, BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<Null, Null>(topic, null, null) { Partition = 0 }));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<Null, Null>(topic, null, null) { BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<Null, Null>(topic, null, null)));
+                drs.Add(producer.ProduceAsync(topic, null, null));
                 producer.Flush();
             }
 
-            for (int i=0; i<4; ++i)
+            Assert.Equal(5, drs.Count);
+            for (int i = 0; i < drs.Count; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -59,12 +61,10 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(dr.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
-
             }
 
             Assert.Equal(0, drs[0].Result.Partition);
             Assert.Equal(0, drs[1].Result.Partition);
         }
-
     }
 }

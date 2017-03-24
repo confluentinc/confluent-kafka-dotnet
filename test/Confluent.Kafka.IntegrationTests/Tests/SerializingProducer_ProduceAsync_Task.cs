@@ -33,8 +33,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SerializingProducer_ProduceAsync_Task(string bootstrapServers, string topic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> 
-            { 
+            var producerConfig = new Dictionary<string, object>
+            {
                 { "bootstrap.servers", bootstrapServers },
                 { "api.version.request", true }
             };
@@ -42,14 +42,16 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message<string, string>>>();
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 0", "test val 0", 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 1", "test val 1", 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 2", "test val 2", true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 3", "test val 3"));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<string, string>(partitionedTopic, "test key 0", "test val 0") { Partition = 1, BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<string, string>(partitionedTopic, "test key 1", "test val 1") { Partition = 1 }));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<string, string>(partitionedTopic, "test key 2", "test val 2") { BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new ProduceRecord<string, string>(partitionedTopic, "test key 3", "test val 3")));
+                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 4", "test val 4"));
                 producer.Flush();
             }
 
-            for (int i=0; i<4; ++i)
+            Assert.Equal(5, drs.Count);
+            for (int i = 0; i < drs.Count; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
