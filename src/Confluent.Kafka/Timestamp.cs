@@ -31,6 +31,8 @@ namespace Confluent.Kafka
         /// </summary>
         public static readonly DateTime UnixEpochUtcDateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        private const long UnixEpochMilliseconds = 62135596800000; // = UnixEpochUtcDateTime.TotalMiliseconds
+
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
         /// </summary>
@@ -85,12 +87,13 @@ namespace Confluent.Kafka
         /// </param>
         /// <returns>
         ///     The milliseconds unix timestamp corresponding to <paramref name="dateTime"/>
+        ///     rounded to the previous millisecond if dateTime precision is below millisecond
         /// </returns>
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
         {
             checked
             {
-                return (long)(dateTime.ToUniversalTime() - UnixEpochUtcDateTime).TotalMilliseconds;
+                return dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixEpochMilliseconds;
             }
         }
 

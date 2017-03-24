@@ -64,5 +64,30 @@ namespace Confluent.Kafka.Tests
             Assert.Equal(ts, ts2);
             Assert.Equal(ts2.Kind, DateTimeKind.Utc);
         }
+
+        [Fact]
+        public void Rounding()
+        {
+            // check is to millisecond accuracy, rounding down the value
+            var dateTimeAfterEpoch = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
+            var afterEpoch1 = dateTimeAfterEpoch.AddTicks(1);
+            var afterEpoch2 = dateTimeAfterEpoch.AddTicks(TimeSpan.TicksPerMillisecond - 1);
+            var unixTimeAfterEpoch1 = Timestamp.DateTimeToUnixTimestampMs(afterEpoch1);
+            var unixTimeAfterEpoch2 = Timestamp.DateTimeToUnixTimestampMs(afterEpoch2);
+            var expectedUnixTimeAfterEpoch = Timestamp.DateTimeToUnixTimestampMs(dateTimeAfterEpoch);
+
+            var dateTimeBeforeEpoch = new DateTime(1950, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
+            var beforeEpoch1 = dateTimeBeforeEpoch.AddTicks(1);
+            var beforeEpoch2 = dateTimeBeforeEpoch.AddTicks(TimeSpan.TicksPerMillisecond - 1);
+            var unixTimeBeforeEpoch1 = Timestamp.DateTimeToUnixTimestampMs(beforeEpoch1);
+            var unixTimeBeforeEpoch2 = Timestamp.DateTimeToUnixTimestampMs(beforeEpoch2);
+            var expectedUnixTimeBeforeEpoch = Timestamp.DateTimeToUnixTimestampMs(dateTimeBeforeEpoch);
+
+            Assert.Equal(expectedUnixTimeAfterEpoch, unixTimeAfterEpoch1);
+            Assert.Equal(expectedUnixTimeAfterEpoch, unixTimeAfterEpoch2);
+
+            Assert.Equal(expectedUnixTimeBeforeEpoch, unixTimeBeforeEpoch1);
+            Assert.Equal(expectedUnixTimeBeforeEpoch, unixTimeBeforeEpoch2);
+        }
     }
 }
