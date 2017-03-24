@@ -38,6 +38,7 @@ namespace Confluent.Kafka
         private bool disableDeliveryReports;
 
         internal const int RD_KAFKA_PARTITION_UA = -1;
+        internal const long RD_KAFKA_NO_TIMESTAMP = 0;
 
         private IEnumerable<KeyValuePair<string, object>> topicConfig;
 
@@ -52,12 +53,12 @@ namespace Confluent.Kafka
         private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
+            {
+                while (!ct.IsCancellationRequested)
                 {
-                    while (!ct.IsCancellationRequested)
-                    {
-                        this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
-                    }
-                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                }
+            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
@@ -200,8 +201,6 @@ namespace Confluent.Kafka
             Int32 partition, bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
-            SafeTopicHandle topicHandle = getKafkaTopicHandle(topic);
-
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
@@ -209,32 +208,33 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                if (topicHandle.Produce(
-                    val, valOffset, valLength, 
-                    key, keyOffset, keyLength, 
-                    partition, 
-                    timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                    ptr, blockIfQueueFull) != 0)
+                var err = kafkaHandle.Produce(
+                    topic,
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    timestamp == null ? RD_KAFKA_NO_TIMESTAMP : Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
+                    ptr, blockIfQueueFull);
+                if (err != ErrorCode.NoError)
                 {
-                    var err = LibRdKafka.last_error();
                     gch.Free();
                     throw new KafkaException(err);
                 }
-
-                return;
             }
-
-            if (topicHandle.Produce(
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                partition, 
-                timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                IntPtr.Zero, blockIfQueueFull) != 0)
+            else
             {
-                throw new KafkaException(LibRdKafka.last_error());
+                var err = kafkaHandle.Produce(
+                    topic,
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    timestamp == null ? RD_KAFKA_NO_TIMESTAMP : Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
+                    IntPtr.Zero, blockIfQueueFull);
+                if (err != ErrorCode.NoError)
+                {
+                    throw new KafkaException(err);
+                }
             }
-
-            return;
         }
 
         private Task<Message> Produce(
