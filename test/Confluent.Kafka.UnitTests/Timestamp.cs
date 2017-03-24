@@ -61,6 +61,7 @@ namespace Confluent.Kafka.Tests
             var ts = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
             var unixTime = Timestamp.DateTimeToUnixTimestampMs(ts);
             var ts2 = Timestamp.UnixTimestampMsToDateTime(unixTime);
+            Assert.Equal(1336305843220, unixTime);
             Assert.Equal(ts, ts2);
             Assert.Equal(ts2.Kind, DateTimeKind.Utc);
         }
