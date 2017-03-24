@@ -27,6 +27,11 @@ namespace Confluent.Kafka
     public struct Timestamp
     {
         /// <summary>
+        ///     Unix epoch as UTC DateTime
+        /// </summary>
+        public static readonly DateTime UnixEpochUtcDateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
         /// </summary>
         /// <param name="dateTime">
@@ -85,7 +90,7 @@ namespace Confluent.Kafka
         {
             checked
             {
-                return (long)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)).TotalMilliseconds;
+                return (long)(dateTime.ToUniversalTime() - UnixEpochUtcDateTime).TotalMilliseconds;
             }
         }
 
@@ -99,7 +104,6 @@ namespace Confluent.Kafka
         ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
-            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)
-                + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+            => UnixEpochUtcDateTime + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
     }
 }
