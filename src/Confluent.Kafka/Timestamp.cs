@@ -36,16 +36,38 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
         /// </summary>
-        /// <param name="dateTime">
-        ///     The timestamp.
+        /// <param name="unixTimestampMs">
+        ///     The unix millisecond timestamp.
         /// </param>
         /// <param name="type">
         ///     The type of the timestamp.
         /// </param>
+        public Timestamp(long unixTimestampMs, TimestampType type)
+        {
+            Type = type;
+            UnixTimestampMs = unixTimestampMs;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        ///     Prefer the (long, TimestampType) overload if possible.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The datetime, which will be converted to
+        ///     the nearest unix millisecond timestamp rounded down
+        ///     via <see cref="DateTimeToUnixTimestampMs"/>.
+        /// </param>
+        /// <param name="type">
+        ///     The type of the timestamp.
+        /// </param>
+        /// <remarks>
+        ///     The <see cref="DateTime"/> property may differ from this datetime
+        ///     (it will be UTC with a millisecond precision)
+        /// </remarks>
         public Timestamp(DateTime dateTime, TimestampType type)
         {
             Type = type;
-            DateTime = dateTime;
+            UnixTimestampMs = DateTimeToUnixTimestampMs(dateTime);
         }
 
         /// <summary>
@@ -54,9 +76,14 @@ namespace Confluent.Kafka
         public TimestampType Type { get; }
 
         /// <summary>
-        ///     Gets the timestamp value.
+        ///     Get the Unix millisecond timestamp.
         /// </summary>
-        public DateTime DateTime { get; }
+        public long UnixTimestampMs { get; }
+
+        /// <summary>
+        ///     Gets the Utc DateTime corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTime DateTime => UnixTimestampMsToDateTime(UnixTimestampMs);
 
         public override bool Equals(object obj)
         {
@@ -66,11 +93,11 @@ namespace Confluent.Kafka
             }
 
             var ts = (Timestamp)obj;
-            return ts.Type == Type && ts.DateTime == DateTime;
+            return ts.Type == Type && ts.UnixTimestampMs == UnixTimestampMs;
         }
 
         public override int GetHashCode()
-            => Type.GetHashCode()*251 + DateTime.GetHashCode();  // x by prime number is quick and gives decent distribution.
+            => Type.GetHashCode()*251 + UnixTimestampMs.GetHashCode();  // x by prime number is quick and gives decent distribution.
 
         public static bool operator ==(Timestamp a, Timestamp b)
             => a.Equals(b);

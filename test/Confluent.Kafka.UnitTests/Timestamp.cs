@@ -23,10 +23,21 @@ namespace Confluent.Kafka.Tests
     public class TimestampTests
     {
         [Fact]
-        public void Constuctor()
+        public void ConstuctorWithDateTime()
         {
             var ts = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            Assert.Equal(ts.DateTime, new DateTime(2010, 3, 4));
+            Assert.Equal(new DateTime(2010, 3, 4).ToUniversalTime(), ts.DateTime);
+            Assert.Equal(Timestamp.DateTimeToUnixTimestampMs(new DateTime(2010, 3, 4).ToUniversalTime()), ts.UnixTimestampMs);
+            Assert.Equal(TimestampType.CreateTime, ts.Type);
+        }
+
+
+        [Fact]
+        public void ConstuctorWithTimestamp()
+        {
+            var ts = new Timestamp(123456789, TimestampType.CreateTime);
+            Assert.Equal(123456789, ts.UnixTimestampMs);
+            Assert.Equal(Timestamp.UnixTimestampMsToDateTime(123456789), ts.DateTime);
             Assert.Equal(ts.Type, TimestampType.CreateTime);
         }
 
