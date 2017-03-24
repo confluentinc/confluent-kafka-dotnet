@@ -43,14 +43,109 @@ namespace Confluent.Kafka
         /// </summary>
         ISerializer<TValue> ValueSerializer { get; }
 
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        /// </summary>
+        /// <param name="topic">
+        ///     The target topic.
+        /// </param>
+        /// <param name="key">
+        ///     The message key (possibly null if allowed by the key serializer).
+        /// </param>
+        /// <param name="val">
+        ///     The message value (possibly null if allowed by the value serializer).
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with the corresponding delivery report
+        ///     for this request.
+        /// </returns>
+        /// <remarks>
+        ///     The partition the message is produced to is determined using the configured partitioner.
+        ///     
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
+        ///     
+        ///     If you require strict ordering of delivery reports to be maintained, 
+        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
+        ///     Tasks are completed on arbitrary thread pool threads and can 
+        ///     be executed out of order.
+        /// </remarks>
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
-        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
-
+        
+        /// <summary>
+        ///     Asynchronously send a single message to the broker.
+        /// </summary>
+        /// <param name="produceRecord">
+        ///     The record informations.
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with the corresponding delivery report
+        ///     for this request.
+        /// </returns>
+        /// <remarks>
+        ///     If you require strict ordering of delivery reports to be maintained, 
+        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
+        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
+        ///     Tasks are completed on arbitrary thread pool threads and can 
+        ///     be executed out of order.
+        /// </remarks>
+        Task<Message<TKey, TValue>> ProduceAsync(ProduceRecord<TKey, TValue> produceRecord);
+        
+        /// <summary>
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
+        /// </summary>
+        /// <param name="topic">
+        ///     The target topic.
+        /// </param>
+        /// <param name="key">
+        ///     The message key (possibly null if allowed by the key serializer).
+        /// </param>
+        /// <param name="val">
+        ///     The message value (possibly null if allowed by the value serializer).
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     The handler where notification of deliverys is reported.
+        ///     The order in which messages were acknowledged by the broker / failed is striclty guaranteed 
+        ///     (failure may be via broker or local). 
+        ///     IDeliveryHandler.HandleDeliveryReport callbacks are executed on the Poll thread.
+        /// </param>
+        /// <remarks>
+        ///     The partition the message is produced to is determined using the configured partitioner.
+        ///     
+        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
+        ///     not being called in another thread, this will block indefinitely.
+        /// </remarks>
         void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler);
+        
+        /// <summary>
+        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
+        /// </summary>
+        /// <param name="produceRecord">
+        ///     The record informations.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     The handler where notification of deliverys is reported.
+        ///     The order in which messages were acknowledged by the broker / failed is striclty guaranteed 
+        ///     (failure may be via broker or local). 
+        ///     IDeliveryHandler.HandleDeliveryReport callbacks are executed on the Poll thread.
+        /// </param>
+        void ProduceAsync(ProduceRecord<TKey, TValue> produceRecord, IDeliveryHandler<TKey, TValue> deliveryHandler);
+
+        // TODO: remove in a later release.
+        // Changing the Confluent.Kafka dll from <=0.9.4 to current without recompiling will then generate runtime exception
+        // Current behavior generates compilation exception to get rid of those API
+        [Obsolete("Use ProduceAsync(ProduceRecord) instead", true)]
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
+        [Obsolete("Use ProduceAsync(ProduceRecord) instead", true)]
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
+        [Obsolete("Use ProduceAsync(ProduceRecord) instead", true)]
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
+        [Obsolete("Use ProduceAsync(ProduceRecord, IDeliveryHandler) instead", true)]
         void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
+        [Obsolete("Use ProduceAsync(ProduceRecord, IDeliveryHandler) instead", true)]
         void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler);
+        [Obsolete("Use ProduceAsync(ProduceRecord, IDeliveryHandler) instead", true)]
         void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
         /// <summary>
