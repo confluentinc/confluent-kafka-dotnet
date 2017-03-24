@@ -81,39 +81,54 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    0, true, dh
+                    new Producer.ProduceRecord(
+                        topic,
+                        DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
+                        DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length)
+                    {
+                        Partition = 0,
+                        BlockIfQueueFull = true
+                    },
+                    dh
                 );
 
                 producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    0, dh
+                    new Producer.ProduceRecord(
+                        topic,
+                        DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
+                        DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length)
+                    {
+                        Partition = 0
+                    },
+                    dh
                 );
 
                 producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    true, dh
+                    new Producer.ProduceRecord(
+                        topic,
+                        DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
+                        DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length)
+                    {
+                        BlockIfQueueFull = true
+                    }, 
+                    dh
                 );
 
                 producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
+                    new Producer.ProduceRecord(
+                        topic,
+                        DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
+                        DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length),
                     dh
                 );
 
                 producer.ProduceAsync(topic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue, dh);
 
                 producer.ProduceAsync(
-                    topic,
-                    DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length-2,
-                    DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length-3,
+                    new Producer.ProduceRecord(
+                        topic,
+                        DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length-2,
+                        DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length-3),
                     dh
                 );
 

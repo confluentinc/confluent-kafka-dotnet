@@ -69,14 +69,15 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                producer.ProduceAsync(topic, "test key 0", "test val 0", 0, true, dh);
-                producer.ProduceAsync(topic, "test key 1", "test val 1", 0, dh);
-                producer.ProduceAsync(topic, "test key 2", "test val 2", true, dh);
-                producer.ProduceAsync(topic, "test key 3", "test val 3", dh);
+                producer.ProduceAsync(new ProduceRecord<string, string>(topic, "test key 0", "test val 0") { Partition = 0, BlockIfQueueFull = true }, dh);
+                producer.ProduceAsync(new ProduceRecord<string, string>(topic, "test key 1", "test val 1") { Partition = 0 }, dh);
+                producer.ProduceAsync(new ProduceRecord<string, string>(topic, "test key 2", "test val 2") { BlockIfQueueFull = true }, dh);
+                producer.ProduceAsync(new ProduceRecord<string, string>(topic, "test key 3", "test val 3"), dh);
+                producer.ProduceAsync(topic, "test key 4", "test val 4", dh);
                 producer.Flush();
             }
 
-            Assert.Equal(4, dh.Count);
+            Assert.Equal(5, dh.Count);
         }
     }
 }

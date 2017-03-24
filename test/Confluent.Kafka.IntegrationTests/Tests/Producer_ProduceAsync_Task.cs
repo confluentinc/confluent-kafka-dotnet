@@ -43,16 +43,18 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, key, 0, key.Length, val, 0, val.Length) { Partition = 1, BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, key, 0, key.Length, val, 0, val.Length) { Partition = 1 }));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, key, 0, key.Length, val, 0, val.Length) { BlockIfQueueFull = true }));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, key, 0, key.Length, val, 0, val.Length)));
                 drs.Add(producer.ProduceAsync(partitionedTopic, key, val));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 1, key.Length-1, val, 2, val.Length-2));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, key, val)));
+                drs.Add(producer.ProduceAsync(new Producer.ProduceRecord(partitionedTopic, key, 1, key.Length - 1, val, 2, val.Length - 2)));
                 producer.Flush();
             }
 
-            for (int i=0; i<5; ++i)
+            Assert.Equal(7, drs.Count);
+            for (int i = 0; i < drs.Count - 1; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -65,8 +67,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal(new byte[] { 2, 3, 4 }, drs[5].Result.Key);
-            Assert.Equal(new byte[] { 7, 8 }, drs[5].Result.Value);
+            Assert.Equal(new byte[] { 2, 3, 4 }, drs[6].Result.Key);
+            Assert.Equal(new byte[] { 7, 8 }, drs[6].Result.Value);
 
             Assert.Equal(1, drs[0].Result.Partition);
             Assert.Equal(1, drs[1].Result.Partition);
