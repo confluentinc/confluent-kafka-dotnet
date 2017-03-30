@@ -17,32 +17,22 @@
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     System.Single serializer. Byte order of serialized data is big endian (network byte order).
+    ///     System.Byte[] serializer. serialized data is original data.
     /// </summary>
-    public class FloatSerializer : ISerializer<float>
+    public class ByteArraySerializer : ISerializer<byte[]>
     {
         /// <summary>
-        ///     Serializes the specified System.Single value to a byte array of length 4. Byte order is big endian (network byte order).
+        ///     Serializes the specified System.Byte[] value to a byte array. Byte order is original order.
         /// </summary>
         /// <param name="data">
-        ///     The System.Single value to serialize.
+        ///     The System.Byte[] value to serialize.
         /// </param>
         /// <returns>
-        ///     The System.Single value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
+        ///     The System.Byte[] value <paramref name="data" /> encoded as a byte array. 
         /// </returns>
-        public byte[] Serialize(float data)
+        public byte[] Serialize(byte[] data)
         {
-            byte[] result = new byte[4];
-            unsafe
-            {
-                byte* p = (byte*)(&data);
-                result[3] = *p++;
-                result[2] = *p++;
-                result[1] = *p++;
-                result[0] = *p++;
-            }
-
-            return result;
+            return data;
         }
     }
 }
