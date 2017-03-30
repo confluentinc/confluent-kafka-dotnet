@@ -51,6 +51,33 @@ namespace Confluent.Kafka.UnitTests
             Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize(new byte[9]));
         }
 
+        [Fact]
+        public void ExplicitSerializationWork()
+        {
+            foreach (string topic in new[] { null, "", "topic" })
+            {
+                var serializer = new LongSerializer();
+                var bytesImplicit = serializer.Serialize(42);
+                var bytesExplicit = ((ISerializer<long>)serializer).Serialize(topic, 42);
+
+                Assert.Equal(bytesImplicit, bytesExplicit);
+            }
+        }
+
+        [Fact]
+        public void ExplicitDeserializationWorks()
+        {
+            var byte42 = new LongSerializer().Serialize(42);
+
+            foreach (string topic in new[] { null, "", "topic" })
+            {
+                var deserializer = new LongDeserializer();
+                var deconstructExplicit = ((IDeserializer<long>)deserializer).Deserialize(topic, byte42);
+
+                Assert.Equal(42, deconstructExplicit);
+            }
+        }
+
         public static IEnumerable<object[]> TestData()
         {
             long[] testData = new long[]
