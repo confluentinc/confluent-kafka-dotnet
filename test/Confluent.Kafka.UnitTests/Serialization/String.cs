@@ -33,5 +33,33 @@ namespace Confluent.Kafka.Serialization.Tests
             // TODO: check some serialize / deserialize operations that are not expected to work, including some
             //       cases where Deserialize can be expected to throw an exception.
         }
+
+
+        [Fact]
+        public void ExplicitSerializationWork()
+        {
+            foreach (string topic in new[] { null, "", "topic" })
+            {
+                var serializer = new StringSerializer(Encoding.UTF8);
+                var bytesImplicit = serializer.Serialize("42");
+                var bytesExplicit = ((ISerializer<string>)serializer).Serialize(topic, "42");
+
+                Assert.Equal(bytesImplicit, bytesExplicit);
+            }
+        }
+
+        [Fact]
+        public void ExplicitDeserializationWorks()
+        {
+            var byte42 = new StringSerializer(Encoding.UTF8).Serialize("42");
+
+            foreach (string topic in new[] { null, "", "topic" })
+            {
+                var deserializer = new StringDeserializer(Encoding.UTF8);
+                var deconstructExplicit = ((IDeserializer<string>)deserializer).Deserialize(topic, byte42);
+
+                Assert.Equal("42", deconstructExplicit);
+            }
+        }
     }
 }
