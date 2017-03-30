@@ -56,5 +56,10 @@ namespace Confluent.Kafka.Serialization
                 (data[7]);
             return result;
         }
+        
+        long IDeserializer<long>.Deserialize(string topic, byte[] data)
+        {
+            return Deserialize(data);
+        }
     }
 }

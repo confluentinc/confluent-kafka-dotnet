@@ -43,5 +43,10 @@ namespace Confluent.Kafka.Serialization
             result[7] = (byte)val;
             return result;
         }
+        
+        byte[] ISerializer<long>.Serialize(string topic, long data)
+        {
+            return Serialize(data);
+        }
     }
 }

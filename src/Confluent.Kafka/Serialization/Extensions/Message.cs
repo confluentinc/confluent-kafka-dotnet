@@ -42,8 +42,8 @@ namespace Confluent.Kafka.Serialization
                 message.Topic,
                 message.Partition,
                 message.Offset,
-                keyDeserializer.Deserialize(message.Key),
-                valueDeserializer.Deserialize(message.Value),
+                keyDeserializer.Deserialize(message.Topic, message.Key),
+                valueDeserializer.Deserialize(message.Topic, message.Value),
                 message.Timestamp,
                 message.Error
             );
