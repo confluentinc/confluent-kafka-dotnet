@@ -258,9 +258,9 @@ namespace Confluent.Kafka.Impl
             return new WatermarkOffsets(low, high);
         }
 
-        internal void Subscribe(ICollection<string> topics)
+        internal void Subscribe(IEnumerable<string> topics)
         {
-            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) topics.Count);
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) topics.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create topic partition list");
@@ -377,12 +377,12 @@ namespace Confluent.Kafka.Impl
             return ret;
         }
 
-        internal void Assign(ICollection<TopicPartitionOffset> partitions)
+        internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
             IntPtr list = IntPtr.Zero;
             if (partitions != null)
             {
-                list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count);
+                list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
                 if (list == IntPtr.Zero)
                 {
                     throw new Exception("Failed to create topic partition list");
@@ -423,7 +423,7 @@ namespace Confluent.Kafka.Impl
         /// </summary>
         /// <param name="offsets">Offsets to commit, or null for current assignment.</param>
         /// <returns>CommittedOffsets with global or per-partition errors.</returns>
-        private CommittedOffsets commitSync (ICollection<TopicPartitionOffset> offsets)
+        private CommittedOffsets commitSync (IEnumerable<TopicPartitionOffset> offsets)
         {
             // Create temporary queue so we can get the offset commit results
             // as an event instead of a callback.
@@ -460,7 +460,7 @@ namespace Confluent.Kafka.Impl
         internal async Task<CommittedOffsets> CommitAsync()
             => await Task.Run(() => commitSync(null));
 
-        internal async Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
+        internal async Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => await Task.Run(() => commitSync(offsets));
 
         /// <summary>
@@ -469,9 +469,9 @@ namespace Confluent.Kafka.Impl
         ///
         ///     throws KafakException if the above information cannot be retrieved.
         /// </summary>
-        internal List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, IntPtr timeout_ms)
+        internal List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, IntPtr timeout_ms)
         {
-            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count);
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create committed partition list");
@@ -496,9 +496,9 @@ namespace Confluent.Kafka.Impl
         ///
         ///     throws KafkaException if the above information cannot be retrieved.
         /// </summary>
-        internal List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
+        internal List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
         {
-            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count);
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create position list");
@@ -560,12 +560,12 @@ namespace Confluent.Kafka.Impl
         /// If offsets is null a null IntPtr will be returned, else a IntPtr
         /// which must destroyed with LibRdKafka.topic_partition_list_destroy()
         /// </returns>
-        internal static IntPtr GetCTopicPartitionList(ICollection<TopicPartitionOffset> offsets)
+        internal static IntPtr GetCTopicPartitionList(IEnumerable<TopicPartitionOffset> offsets)
         {
             if (offsets == null)
                 return IntPtr.Zero;
 
-            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr)offsets.Count);
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr)offsets.Count());
             if (list == IntPtr.Zero)
                 throw new OutOfMemoryException("Failed to create topic partition list");
 
