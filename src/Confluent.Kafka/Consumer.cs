@@ -884,7 +884,7 @@ namespace Confluent.Kafka
         ///     Any previous subscription will be unassigned and unsubscribed first.
         /// </summary>
         public void Subscribe(string topic)
-            => Subscribe(new List<string> { topic });
+            => Subscribe(new[] { topic });
 
         /// <summary>
         ///     Unsubscribe from the current subscription set.
@@ -1061,7 +1061,7 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("Must not commit offset for errored message");
             }
-            return await CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+            return await CommitAsync(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 
         /// <summary>
