@@ -31,5 +31,10 @@ namespace Confluent.Kafka.Serialization
         {
             return null;
         }
+
+        byte[] ISerializer<Null>.Serialize(string topic, Null data)
+        {
+            return null;
+        }
     }
 }

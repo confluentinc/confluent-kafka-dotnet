@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Serialization
 
             try
             {
-                key = keyDeserializer.Deserialize(message.Key);
+                key = keyDeserializer.Deserialize(message.Topic, message.Key);
             }
             catch (Exception ex)
             {
@@ -55,7 +55,7 @@ namespace Confluent.Kafka.Serialization
 
             try
             {
-                val = valueDeserializer.Deserialize(message.Value);
+                val = valueDeserializer.Deserialize(message.Topic, message.Value);
             }
             catch (Exception ex)
             {
