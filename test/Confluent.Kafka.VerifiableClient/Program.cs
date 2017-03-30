@@ -508,7 +508,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// </summary>
         /// <param name="name"></param>
         /// <param name="partitions"></param>
-        private void SendPartitions (string name, ICollection<TopicPartition> partitions)
+        private void SendPartitions (string name, IEnumerable<TopicPartition> partitions)
         {
             var list = new List<Dictionary<string, object>>();
 
@@ -529,7 +529,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// Handle new partition assignment
         /// </summary>
         /// <param name="partitions"></param>
-        private void HandleAssign (ICollection<TopicPartition> partitions)
+        private void HandleAssign (IEnumerable<TopicPartition> partitions)
         {
             Dbg($"New assignment: {string.Join(", ", partitions)}");
             if (currentAssignment != null)
@@ -548,7 +548,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// <summary>
         /// Handle partition revocal
         /// </summary>
-        private void HandleRevoke (ICollection<TopicPartition> partitions)
+        private void HandleRevoke (IEnumerable<TopicPartition> partitions)
         {
             Dbg($"Revoked assignment: {string.Join(", ", partitions)}");
             if (currentAssignment == null)
