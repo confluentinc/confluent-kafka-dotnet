@@ -84,22 +84,34 @@ namespace Confluent.Kafka.Tests
             var dateTimeAfterEpoch = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
             var afterEpoch1 = dateTimeAfterEpoch.AddTicks(1);
             var afterEpoch2 = dateTimeAfterEpoch.AddTicks(TimeSpan.TicksPerMillisecond - 1);
+            var afterEpoch3 = dateTimeAfterEpoch.AddTicks(TimeSpan.TicksPerMillisecond);
+            var afterEpoch4 = dateTimeAfterEpoch.AddTicks(-1);
             var unixTimeAfterEpoch1 = Timestamp.DateTimeToUnixTimestampMs(afterEpoch1);
             var unixTimeAfterEpoch2 = Timestamp.DateTimeToUnixTimestampMs(afterEpoch2);
+            var unixTimeAfterEpoch3 = Timestamp.DateTimeToUnixTimestampMs(afterEpoch3);
+            var unixTimeAfterEpoch4 = Timestamp.DateTimeToUnixTimestampMs(afterEpoch4);
             var expectedUnixTimeAfterEpoch = Timestamp.DateTimeToUnixTimestampMs(dateTimeAfterEpoch);
 
             var dateTimeBeforeEpoch = new DateTime(1950, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
             var beforeEpoch1 = dateTimeBeforeEpoch.AddTicks(1);
             var beforeEpoch2 = dateTimeBeforeEpoch.AddTicks(TimeSpan.TicksPerMillisecond - 1);
+            var beforeEpoch3 = dateTimeBeforeEpoch.AddTicks(TimeSpan.TicksPerMillisecond);
+            var beforeEpoch4 = dateTimeBeforeEpoch.AddTicks(-1);
             var unixTimeBeforeEpoch1 = Timestamp.DateTimeToUnixTimestampMs(beforeEpoch1);
             var unixTimeBeforeEpoch2 = Timestamp.DateTimeToUnixTimestampMs(beforeEpoch2);
+            var unixTimeBeforeEpoch3 = Timestamp.DateTimeToUnixTimestampMs(beforeEpoch3);
+            var unixTimeBeforeEpoch4 = Timestamp.DateTimeToUnixTimestampMs(beforeEpoch4);
             var expectedUnixTimeBeforeEpoch = Timestamp.DateTimeToUnixTimestampMs(dateTimeBeforeEpoch);
 
             Assert.Equal(expectedUnixTimeAfterEpoch, unixTimeAfterEpoch1);
             Assert.Equal(expectedUnixTimeAfterEpoch, unixTimeAfterEpoch2);
+            Assert.Equal(expectedUnixTimeAfterEpoch + 1, unixTimeAfterEpoch3);
+            Assert.Equal(expectedUnixTimeAfterEpoch - 1, unixTimeAfterEpoch4);
 
             Assert.Equal(expectedUnixTimeBeforeEpoch, unixTimeBeforeEpoch1);
             Assert.Equal(expectedUnixTimeBeforeEpoch, unixTimeBeforeEpoch2);
+            Assert.Equal(expectedUnixTimeBeforeEpoch + 1, unixTimeBeforeEpoch3);
+            Assert.Equal(expectedUnixTimeBeforeEpoch - 1, unixTimeBeforeEpoch4);
         }
     }
 }
