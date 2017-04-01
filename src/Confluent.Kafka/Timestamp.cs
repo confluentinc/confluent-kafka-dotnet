@@ -27,9 +27,10 @@ namespace Confluent.Kafka
     public struct Timestamp
     {
         /// <summary>
-        ///     Unix epoch as UTC DateTime
+        ///     Unix epoch as UTC DateTime. Unix time is defined as 
+        ///     the number of seconds past this UTC time, excluding leap seconds
         /// </summary>
-        public static readonly DateTime UnixEpochUtcDateTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime UnixTimeEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private const long UnixEpochMilliseconds = 62135596800000; // = UnixEpochUtcDateTime.TotalMiliseconds
 
@@ -134,6 +135,6 @@ namespace Confluent.Kafka
         ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
-            => UnixEpochUtcDateTime + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+            => UnixTimeEpoch + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
     }
 }
