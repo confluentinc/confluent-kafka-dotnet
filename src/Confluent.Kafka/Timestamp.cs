@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         /// </summary>
         public static readonly DateTime UnixTimeEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private const long UnixEpochMilliseconds = 62135596800000; // = UnixEpochUtcDateTime.TotalMiliseconds
+        private const long UnixEpochMilliseconds = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -84,7 +84,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Utc DateTime corresponding to the <see cref="UnixTimestampMs"/>.
         /// </summary>
-        public DateTime DateTime => UnixTimestampMsToDateTime(UnixTimestampMs);
+        public DateTime DateTime
+            => UnixTimestampMsToDateTime(UnixTimestampMs);
 
         public override bool Equals(object obj)
         {
@@ -98,7 +99,7 @@ namespace Confluent.Kafka
         }
 
         public override int GetHashCode()
-            => Type.GetHashCode()*251 + UnixTimestampMs.GetHashCode();  // x by prime number is quick and gives decent distribution.
+            => Type.GetHashCode() * 251 + UnixTimestampMs.GetHashCode();  // x by prime number is quick and gives decent distribution.
 
         public static bool operator ==(Timestamp a, Timestamp b)
             => a.Equals(b);
@@ -115,15 +116,10 @@ namespace Confluent.Kafka
         /// </param>
         /// <returns>
         ///     The milliseconds unix timestamp corresponding to <paramref name="dateTime"/>
-        ///     rounded to the previous millisecond if dateTime precision is below millisecond
+        ///     rounded down to the previous millisecond.
         /// </returns>
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
-        {
-            checked
-            {
-                return dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixEpochMilliseconds;
-            }
-        }
+            => dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixEpochMilliseconds;
 
         /// <summary>
         ///     Convert a milliseconds unix timestamp to a DateTime value.
