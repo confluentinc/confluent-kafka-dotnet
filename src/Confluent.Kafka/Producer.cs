@@ -806,10 +806,6 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException("Value serializer must be specified.");
                 }
             }
-
-            producer.OnLog += (sender, e) => OnLog?.Invoke(sender, e);
-            producer.OnError += (sender, e) => OnError?.Invoke(sender, e);
-            producer.OnStatistics += (sender, e) => OnStatistics?.Invoke(sender, e);
         }
 
         private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<Message<TKey, TValue>>, IDeliveryHandler
@@ -917,12 +913,6 @@ namespace Confluent.Kafka
 
         public string Name
             => producer.Name;
-
-        public event EventHandler<LogMessage> OnLog;
-
-        public event EventHandler<string> OnStatistics;
-
-        public event EventHandler<Error> OnError;
     }
 
 
@@ -965,9 +955,6 @@ namespace Confluent.Kafka
         {
             producer = new Producer(config, manualPoll, disableDeliveryReports);
             serializingProducer = producer.GetSerializingProducer(keySerializer, valueSerializer);
-            producer.OnLog += (sender, e) => OnLog?.Invoke(sender, e);
-            producer.OnError += (sender, e) => OnError?.Invoke(sender, e);
-            producer.OnStatistics += (sender, e) => OnStatistics?.Invoke(sender, e);
         }
 
         /// <summary>
@@ -1154,7 +1141,11 @@ namespace Confluent.Kafka
         ///     threads and the application must not call any Confluent.Kafka APIs from 
         ///     within a log handler or perform any prolonged operations.
         /// </remarks>
-        public event EventHandler<LogMessage> OnLog;
+        public event EventHandler<LogMessage> OnLog
+        {
+            add { producer.OnLog += value; }
+            remove { producer.OnLog -= value; }
+        }
 
         /// <summary>
         ///     Raised on librdkafka statistics events. JSON formatted
@@ -1167,7 +1158,11 @@ namespace Confluent.Kafka
         ///
         ///     Called on the Producer poll thread.
         /// </remarks>
-        public event EventHandler<string> OnStatistics;
+        public event EventHandler<string> OnStatistics
+        {
+            add { producer.OnStatistics += value; }
+            remove { producer.OnStatistics -= value; }
+        }
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all 
@@ -1178,7 +1173,11 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Called on the Producer poll thread.
         /// </remarks>
-        public event EventHandler<Error> OnError;
+        public event EventHandler<Error> OnError
+        {
+            add { producer.OnError += value; }
+            remove { producer.OnError -= value; }
+        }
 
 
 

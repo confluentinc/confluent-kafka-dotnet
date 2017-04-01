@@ -75,11 +75,11 @@ namespace Confluent.Kafka.IntegrationTests
             logCount = 0;
             using (var producer = new Producer(producerConfig))
             {
-                var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
-
-                sProducer.OnLog += (_, LogMessage)
+                producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
+                var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
+                
                 sProducer.ProduceAsync(topic, null, "test value").Wait();
                 producer.Flush();
             }
