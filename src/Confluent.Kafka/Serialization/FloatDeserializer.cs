@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Serialization
         {
             if (data == null)
             {
-                throw new ArgumentException($"Arg [{nameof(data)}] is null");
+                throw new ArgumentNullException($"Arg {nameof(data)} is null");
             }
 
             if (data.Length != 4)
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                return BitConverter.ToSingle(data);
+                return BitConverter.ToSingle(data, 0);
             }
         }
     }
