@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -32,17 +34,23 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public byte[] Serialize(float data)
         {
-            byte[] result = new byte[4];
-            unsafe
+            if (BitConverter.IsLittleEndian)
             {
-                byte* p = (byte*)(&data);
-                result[3] = *p++;
-                result[2] = *p++;
-                result[1] = *p++;
-                result[0] = *p++;
+                unsafe
+                {
+                    byte[] result = new byte[4];
+                    byte* p = (byte*)(&data);
+                    result[3] = *p++;
+                    result[2] = *p++;
+                    result[1] = *p++;
+                    result[0] = *p++;
+                    return result;
+                }
             }
-
-            return result;
+            else
+            {
+                return BitConverter.GetBytes(data);
+            }
         }
     }
 }

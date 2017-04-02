@@ -14,5 +14,11 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             Assert.Equal(values, new ByteArrayDeserializer().Deserialize(new ByteArraySerializer().Serialize(values)));
         }
+
+        [Fact]
+        public void DeserizerNull()
+        {
+            Assert.Null(new ByteArrayDeserializer().Deserialize(null));
+        }
     }
 }

@@ -44,18 +44,24 @@ namespace Confluent.Kafka.Serialization
                 throw new ArgumentException($"Size of {nameof(data)} received by {nameof(FloatDeserializer)} is not 4");
             }
 
-            float result = default(float);
             // network byte order -> big endian -> most significant byte in the smallest address.
-            unsafe
+            if (BitConverter.IsLittleEndian)
             {
-                byte* p = (byte*)(&result);
-                *p++ = data[3];
-                *p++ = data[2];
-                *p++ = data[1];
-                *p++ = data[0];
+                unsafe
+                {
+                    float result = default(float);
+                    byte* p = (byte*)(&result);
+                    *p++ = data[3];
+                    *p++ = data[2];
+                    *p++ = data[1];
+                    *p++ = data[0];
+                    return result;
+                }
             }
-
-            return result;
+            else
+            {
+                return BitConverter.ToSingle(data);
+            }
         }
     }
 }
