@@ -65,6 +65,7 @@ namespace Confluent.Kafka
         ///     The <see cref="DateTime"/> property may differ from this datetime
         ///     (it will be UTC with a millisecond precision)
         /// </remarks>
+        [Obsolete("Use the (long, TimestampType) constructor instead, this will be removed in future release")]
         public Timestamp(DateTime dateTime, TimestampType type)
         {
             Type = type;
