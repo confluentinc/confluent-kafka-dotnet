@@ -84,8 +84,15 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Utc DateTime corresponding to the <see cref="UnixTimestampMs"/>.
         /// </summary>
+        [Obsolete("Prefer DateTimeOffset to avoid DateTimeKind issue, this may be removed in a future release")]
         public DateTime DateTime
-            => UnixTimestampMsToDateTime(UnixTimestampMs);
+            => DateTimeOffset.UtcDateTime;
+
+        /// <summary>
+        ///     Gets the DateTimeOffset corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTimeOffset DateTimeOffset
+            => new DateTimeOffset(UnixTimestampMsToDateTime(UnixTimestampMs));
 
         public override bool Equals(object obj)
         {
@@ -128,7 +135,7 @@ namespace Confluent.Kafka
         ///     The milliseconds unix timestamp to convert.
         /// </param>
         /// <returns>
-        ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
+        ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/> with Utc Kind.
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
             => UnixTimeEpoch + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
