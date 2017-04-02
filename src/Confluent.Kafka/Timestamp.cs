@@ -28,7 +28,7 @@ namespace Confluent.Kafka
     {
         /// <summary>
         ///     Unix epoch as UTC DateTime. Unix time is defined as 
-        ///     the number of seconds past this UTC time, excluding leap seconds
+        ///     the number of seconds past this UTC time, excluding leap seconds.
         /// </summary>
         public static readonly DateTime UnixTimeEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -47,29 +47,6 @@ namespace Confluent.Kafka
         {
             Type = type;
             UnixTimestampMs = unixTimestampMs;
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the Timestamp structure.
-        ///     Prefer the (long, TimestampType) overload if possible.
-        /// </summary>
-        /// <param name="dateTime">
-        ///     The datetime, which will be converted to
-        ///     the nearest unix millisecond timestamp rounded down
-        ///     via <see cref="DateTimeToUnixTimestampMs"/>.
-        /// </param>
-        /// <param name="type">
-        ///     The type of the timestamp.
-        /// </param>
-        /// <remarks>
-        ///     The <see cref="DateTime"/> property may differ from this datetime
-        ///     (it will be UTC with a millisecond precision)
-        /// </remarks>
-        [Obsolete("Use the (long, TimestampType) constructor instead, this will be removed in future release")]
-        public Timestamp(DateTime dateTime, TimestampType type)
-        {
-            Type = type;
-            UnixTimestampMs = DateTimeToUnixTimestampMs(dateTime);
         }
 
         /// <summary>

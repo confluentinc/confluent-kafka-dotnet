@@ -23,31 +23,20 @@ namespace Confluent.Kafka.Tests
     public class TimestampTests
     {
         [Fact]
-        public void ConstuctorWithDateTime()
-        {
-            var ts = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            Assert.Equal(new DateTime(2010, 3, 4).ToUniversalTime(), ts.DateTime);
-            Assert.Equal(Timestamp.DateTimeToUnixTimestampMs(new DateTime(2010, 3, 4).ToUniversalTime()), ts.UnixTimestampMs);
-            Assert.Equal(TimestampType.CreateTime, ts.Type);
-        }
-
-
-        [Fact]
-        public void ConstuctorWithTimestamp()
+        public void Constuctor()
         {
             var ts = new Timestamp(123456789, TimestampType.CreateTime);
             Assert.Equal(123456789, ts.UnixTimestampMs);
-            Assert.Equal(Timestamp.UnixTimestampMsToDateTime(123456789), ts.DateTime);
             Assert.Equal(ts.Type, TimestampType.CreateTime);
         }
 
         [Fact]
         public void Equality()
         {
-            var ts1 = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            var ts2 = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            var ts3 = new Timestamp(new DateTime(2011, 3, 4), TimestampType.CreateTime);
-            var ts4 = new Timestamp(new DateTime(2010, 3, 4), TimestampType.LogAppendTime);
+            var ts1 = new Timestamp(1, TimestampType.CreateTime);
+            var ts2 = new Timestamp(1, TimestampType.CreateTime);
+            var ts3 = new Timestamp(2, TimestampType.CreateTime);
+            var ts4 = new Timestamp(1, TimestampType.LogAppendTime);
 
             Assert.Equal(ts1, ts2);
             Assert.True(ts1.Equals(ts2));
