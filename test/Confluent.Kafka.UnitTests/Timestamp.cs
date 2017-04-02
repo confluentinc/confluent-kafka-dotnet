@@ -25,9 +25,14 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void Constuctor()
         {
-            var ts = new Timestamp(123456789, TimestampType.CreateTime);
-            Assert.Equal(123456789, ts.UnixTimestampMs);
-            Assert.Equal(ts.Type, TimestampType.CreateTime);
+            var ts1 = new Timestamp(123456789, TimestampType.CreateTime);
+            var ts2 = new Timestamp(-123456789, TimestampType.LogAppendTime);
+
+            Assert.Equal(123456789, ts1.UnixTimestampMs);
+            Assert.Equal(-123456789, ts2.UnixTimestampMs);
+
+            Assert.Equal(ts1.Type, TimestampType.CreateTime);
+            Assert.Equal(ts2.Type, TimestampType.LogAppendTime);
         }
 
         [Fact]
@@ -64,6 +69,27 @@ namespace Confluent.Kafka.Tests
             Assert.Equal(1336305843220, unixTime);
             Assert.Equal(ts, ts2);
             Assert.Equal(ts2.Kind, DateTimeKind.Utc);
+        }
+
+        [Fact]
+        public void UnixTimeEpoch()
+        {
+            Assert.Equal(0, Timestamp.DateTimeToUnixTimestampMs(Timestamp.UnixTimeEpoch));
+            Assert.Equal(DateTimeKind.Utc, Timestamp.UnixTimeEpoch.Kind);
+        }
+        
+        [Fact]
+        public void DateTimeProperties()
+        {
+            var ts = new Timestamp(1, TimestampType.CreateTime);
+            
+            Assert.Equal(DateTimeKind.Utc, ts.UtcDateTime.Kind);
+            Assert.Equal(DateTimeKind.Local, ts.LocalDateTime.Kind);
+
+            Assert.Equal(ts.UtcDateTime, ts.DateTimeOffset.UtcDateTime);
+            Assert.Equal(ts.LocalDateTime, ts.DateTimeOffset.LocalDateTime);
+
+            Assert.Equal(1, (ts.UtcDateTime - Timestamp.UnixTimeEpoch).TotalMilliseconds);
         }
 
         [Fact]

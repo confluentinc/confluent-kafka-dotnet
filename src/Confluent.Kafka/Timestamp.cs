@@ -60,11 +60,16 @@ namespace Confluent.Kafka
         public long UnixTimestampMs { get; }
 
         /// <summary>
+        ///     Gets the local DateTime corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTime UtcDateTime
+            => DateTimeOffset.UtcDateTime;
+
+        /// <summary>
         ///     Gets the Utc DateTime corresponding to the <see cref="UnixTimestampMs"/>.
         /// </summary>
-        [Obsolete("Prefer DateTimeOffset to avoid DateTimeKind issue, this may be removed in a future release")]
-        public DateTime DateTime
-            => DateTimeOffset.UtcDateTime;
+        public DateTime LocalDateTime
+            => DateTimeOffset.LocalDateTime;
 
         /// <summary>
         ///     Gets the DateTimeOffset corresponding to the <see cref="UnixTimestampMs"/>.
