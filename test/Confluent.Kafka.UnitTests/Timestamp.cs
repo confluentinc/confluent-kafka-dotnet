@@ -81,11 +81,8 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void DateTimeProperties()
         {
-            var ts = new Timestamp(1, TimestampType.CreateTime);
-            
+            var ts = new Timestamp(1, TimestampType.CreateTime);            
             Assert.Equal(DateTimeKind.Utc, ts.UtcDateTime.Kind);
-            Assert.Equal(ts.UtcDateTime, ts.DateTimeOffset.UtcDateTime);
-
             Assert.Equal(1, (ts.UtcDateTime - Timestamp.UnixTimeEpoch).TotalMilliseconds);
         }
 

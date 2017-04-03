@@ -66,13 +66,7 @@ namespace Confluent.Kafka
         ///     Gets the UTC DateTime corresponding to the <see cref="UnixTimestampMs"/>.
         /// </summary>
         public DateTime UtcDateTime
-            => DateTimeOffset.UtcDateTime;
-
-        /// <summary>
-        ///     Gets the DateTimeOffset corresponding to the <see cref="UnixTimestampMs"/>.
-        /// </summary>
-        public DateTimeOffset DateTimeOffset
-            => new DateTimeOffset(UnixTimestampMsToDateTime(UnixTimestampMs));
+            => UnixTimestampMsToDateTime(UnixTimestampMs);
 
         /// <summary>
         ///     Determines whether two Timestamps have the same value
