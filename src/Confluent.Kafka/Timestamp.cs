@@ -27,12 +27,15 @@ namespace Confluent.Kafka
     public struct Timestamp
     {
         /// <summary>
-        ///     Unix epoch as UTC DateTime. Unix time is defined as 
-        ///     the number of seconds past this UTC time, excluding leap seconds.
+        ///     Unix epoch as a UTC DateTime. Unix time is defined as 
+        ///     the number of seconds past this UTC time, excluding 
+        ///     leap seconds.
         /// </summary>
-        public static readonly DateTime UnixTimeEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime UnixTimeEpoch 
+            = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private const long UnixEpochMilliseconds = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
+        private const long UnixTimeEpochMilliseconds 
+            = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -60,16 +63,10 @@ namespace Confluent.Kafka
         public long UnixTimestampMs { get; }
 
         /// <summary>
-        ///     Gets the local DateTime corresponding to the <see cref="UnixTimestampMs"/>.
+        ///     Gets the UTC DateTime corresponding to the <see cref="UnixTimestampMs"/>.
         /// </summary>
         public DateTime UtcDateTime
             => DateTimeOffset.UtcDateTime;
-
-        /// <summary>
-        ///     Gets the Utc DateTime corresponding to the <see cref="UnixTimestampMs"/>.
-        /// </summary>
-        public DateTime LocalDateTime
-            => DateTimeOffset.LocalDateTime;
 
         /// <summary>
         ///     Gets the DateTimeOffset corresponding to the <see cref="UnixTimestampMs"/>.
@@ -77,6 +74,18 @@ namespace Confluent.Kafka
         public DateTimeOffset DateTimeOffset
             => new DateTimeOffset(UnixTimestampMsToDateTime(UnixTimestampMs));
 
+        /// <summary>
+        ///     Determines whether two Timestamps have the same value
+        /// </summary>
+        /// <param name="obj">
+        ///     Determines whether this instance and a specified object, 
+        ///     which must also be a Timestamp object, have the same value.
+        /// </param>
+        /// <returns>
+        ///     true if obj is a Timestamp and its value is the same as 
+        ///     this instance; otherwise, false. If obj is null, the method 
+        ///     returns false.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (!(obj is Timestamp))
@@ -88,18 +97,49 @@ namespace Confluent.Kafka
             return ts.Type == Type && ts.UnixTimestampMs == UnixTimestampMs;
         }
 
+        /// <summary>
+        ///     Returns the hashcode for this Timestamp.
+        /// </summary>
+        /// <returns>
+        ///     A 32-bit signed integer hash code.
+        /// </returns>
         public override int GetHashCode()
             => Type.GetHashCode() * 251 + UnixTimestampMs.GetHashCode();  // x by prime number is quick and gives decent distribution.
 
+        /// <summary>
+        ///     Determines whether two specified Timestamps have the same value.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Timestamp to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Timestamp to compare
+        /// </param>
+        /// <returns>
+        ///     true if the value of a is the same as the value of b; otherwise, false.
+        /// </returns>
         public static bool operator ==(Timestamp a, Timestamp b)
             => a.Equals(b);
 
+        /// <summary>
+        ///     Determines whether two specified Timestamps have different values.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Timestamp to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Timestamp to compare
+        /// </param>
+        /// <returns>
+        ///     true if the value of a is different from the value of b; otherwise, false.
+        /// </returns>
         public static bool operator !=(Timestamp a, Timestamp b)
             => !(a == b);
 
         /// <summary>
         ///     Convert a DateTime instance to a milliseconds unix timestamp.
-        ///     Note: <paramref name="dateTime"/> is first converted to UTC if it is not already.
+        ///     Note: <paramref name="dateTime"/> is first converted to UTC 
+        ///     if it is not already.
         /// </summary>
         /// <param name="dateTime">
         ///     The DateTime value to convert.
@@ -109,7 +149,7 @@ namespace Confluent.Kafka
         ///     rounded down to the previous millisecond.
         /// </returns>
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
-            => dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixEpochMilliseconds;
+            => dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixTimeEpochMilliseconds;
 
         /// <summary>
         ///     Convert a milliseconds unix timestamp to a DateTime value.

@@ -84,10 +84,7 @@ namespace Confluent.Kafka.Tests
             var ts = new Timestamp(1, TimestampType.CreateTime);
             
             Assert.Equal(DateTimeKind.Utc, ts.UtcDateTime.Kind);
-            Assert.Equal(DateTimeKind.Local, ts.LocalDateTime.Kind);
-
             Assert.Equal(ts.UtcDateTime, ts.DateTimeOffset.UtcDateTime);
-            Assert.Equal(ts.LocalDateTime, ts.DateTimeOffset.LocalDateTime);
 
             Assert.Equal(1, (ts.UtcDateTime - Timestamp.UnixTimeEpoch).TotalMilliseconds);
         }
@@ -102,7 +99,6 @@ namespace Confluent.Kafka.Tests
 
             foreach (var datetime in new[] { dateTimeAfterEpoch, dateTimeBeforeEpoch })
             {
-
                 var unixTime1 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(1));
                 var unixTime2 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond - 1));
                 var unixTime3 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond));
