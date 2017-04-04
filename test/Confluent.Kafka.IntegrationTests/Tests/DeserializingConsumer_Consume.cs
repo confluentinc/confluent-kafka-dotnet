@@ -69,7 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
                     if (consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
                         Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
-                        Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.DateTime).TotalMinutes) < 1.0);
+                        Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                         msgCnt += 1;
                     }
                 }

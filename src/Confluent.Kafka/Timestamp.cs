@@ -27,18 +27,26 @@ namespace Confluent.Kafka
     public struct Timestamp
     {
         /// <summary>
+        ///     Unix epoch as UTC DateTime. Unix time is defined as 
+        ///     the number of seconds past this UTC time, excluding leap seconds.
+        /// </summary>
+        public static readonly DateTime UnixTimeEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        private const long UnixEpochMilliseconds = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
+
+        /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
         /// </summary>
-        /// <param name="dateTime">
-        ///     The timestamp.
+        /// <param name="unixTimestampMs">
+        ///     The unix millisecond timestamp.
         /// </param>
         /// <param name="type">
         ///     The type of the timestamp.
         /// </param>
-        public Timestamp(DateTime dateTime, TimestampType type)
+        public Timestamp(long unixTimestampMs, TimestampType type)
         {
             Type = type;
-            DateTime = dateTime;
+            UnixTimestampMs = unixTimestampMs;
         }
 
         /// <summary>
@@ -47,9 +55,27 @@ namespace Confluent.Kafka
         public TimestampType Type { get; }
 
         /// <summary>
-        ///     Gets the timestamp value.
+        ///     Get the Unix millisecond timestamp.
         /// </summary>
-        public DateTime DateTime { get; }
+        public long UnixTimestampMs { get; }
+
+        /// <summary>
+        ///     Gets the local DateTime corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTime UtcDateTime
+            => DateTimeOffset.UtcDateTime;
+
+        /// <summary>
+        ///     Gets the Utc DateTime corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTime LocalDateTime
+            => DateTimeOffset.LocalDateTime;
+
+        /// <summary>
+        ///     Gets the DateTimeOffset corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTimeOffset DateTimeOffset
+            => new DateTimeOffset(UnixTimestampMsToDateTime(UnixTimestampMs));
 
         public override bool Equals(object obj)
         {
@@ -59,11 +85,11 @@ namespace Confluent.Kafka
             }
 
             var ts = (Timestamp)obj;
-            return ts.Type == Type && ts.DateTime == DateTime;
+            return ts.Type == Type && ts.UnixTimestampMs == UnixTimestampMs;
         }
 
         public override int GetHashCode()
-            => Type.GetHashCode()*251 + DateTime.GetHashCode();  // x by prime number is quick and gives decent distribution.
+            => Type.GetHashCode() * 251 + UnixTimestampMs.GetHashCode();  // x by prime number is quick and gives decent distribution.
 
         public static bool operator ==(Timestamp a, Timestamp b)
             => a.Equals(b);
@@ -80,14 +106,10 @@ namespace Confluent.Kafka
         /// </param>
         /// <returns>
         ///     The milliseconds unix timestamp corresponding to <paramref name="dateTime"/>
+        ///     rounded down to the previous millisecond.
         /// </returns>
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
-        {
-            checked
-            {
-                return (long)(dateTime.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)).TotalMilliseconds;
-            }
-        }
+            => dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixEpochMilliseconds;
 
         /// <summary>
         ///     Convert a milliseconds unix timestamp to a DateTime value.
@@ -96,10 +118,9 @@ namespace Confluent.Kafka
         ///     The milliseconds unix timestamp to convert.
         /// </param>
         /// <returns>
-        ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/>
+        ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/> with Utc Kind.
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
-            => new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc)
-                + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+            => UnixTimeEpoch + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
     }
 }

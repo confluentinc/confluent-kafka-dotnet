@@ -320,11 +320,6 @@ namespace Confluent.Kafka.Impl
 
             IntPtr timestampType;
             long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType);
-            var dateTime = new DateTime(0);
-            if ((TimestampType)timestampType != TimestampType.NotAvailable)
-            {
-                dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
-            }
 
             LibRdKafka.message_destroy(msgPtr);
 
@@ -334,7 +329,7 @@ namespace Confluent.Kafka.Impl
                 msg.offset,
                 key,
                 val,
-                new Timestamp(dateTime, (TimestampType)timestampType),
+                new Timestamp(timestamp, (TimestampType)timestampType),
                 msg.err
             );
 

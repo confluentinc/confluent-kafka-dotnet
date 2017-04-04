@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(dr.Key);
                 Assert.Null(dr.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.DateTime).TotalMinutes) < 1.0);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
 
             }
 
