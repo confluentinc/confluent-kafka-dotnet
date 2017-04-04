@@ -52,38 +52,5 @@ namespace Confluent.Kafka
         void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
         void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler);
         void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
-
-        /// <summary>
-        ///     Raised when there is information that should be logged.
-        /// </summary>
-        /// <remarks>
-        ///     You can specify the log level with the 'log_level' configuration
-        ///     property. You also probably want to specify one or more debug
-        ///     contexts using the 'debug' configuration property.
-        ///
-        ///     This event can potentially be raised on any thread.
-        /// </remarks>
-        event EventHandler<LogMessage> OnLog;
-
-        /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all brokers down.
-        /// </summary>
-        /// <remarks>
-        ///     Called on the Producer poll thread.
-        /// </remarks>
-        event EventHandler<Error> OnError;
-
-        /// <summary>
-        ///     Raised on librdkafka statistics events. JSON formatted
-        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
-        /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        ///
-        ///     Called on the Producer poll thread.
-        /// </remarks>
-        event EventHandler<string> OnStatistics;
     }
 }
