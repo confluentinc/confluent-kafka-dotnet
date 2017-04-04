@@ -25,18 +25,23 @@ namespace Confluent.Kafka.Tests
         [Fact]
         public void Constuctor()
         {
-            var ts = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            Assert.Equal(ts.DateTime, new DateTime(2010, 3, 4));
-            Assert.Equal(ts.Type, TimestampType.CreateTime);
+            var ts1 = new Timestamp(123456789, TimestampType.CreateTime);
+            var ts2 = new Timestamp(-123456789, TimestampType.LogAppendTime);
+
+            Assert.Equal(123456789, ts1.UnixTimestampMs);
+            Assert.Equal(-123456789, ts2.UnixTimestampMs);
+
+            Assert.Equal(ts1.Type, TimestampType.CreateTime);
+            Assert.Equal(ts2.Type, TimestampType.LogAppendTime);
         }
 
         [Fact]
         public void Equality()
         {
-            var ts1 = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            var ts2 = new Timestamp(new DateTime(2010, 3, 4), TimestampType.CreateTime);
-            var ts3 = new Timestamp(new DateTime(2011, 3, 4), TimestampType.CreateTime);
-            var ts4 = new Timestamp(new DateTime(2010, 3, 4), TimestampType.LogAppendTime);
+            var ts1 = new Timestamp(1, TimestampType.CreateTime);
+            var ts2 = new Timestamp(1, TimestampType.CreateTime);
+            var ts3 = new Timestamp(2, TimestampType.CreateTime);
+            var ts4 = new Timestamp(1, TimestampType.LogAppendTime);
 
             Assert.Equal(ts1, ts2);
             Assert.True(ts1.Equals(ts2));
@@ -61,8 +66,48 @@ namespace Confluent.Kafka.Tests
             var ts = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
             var unixTime = Timestamp.DateTimeToUnixTimestampMs(ts);
             var ts2 = Timestamp.UnixTimestampMsToDateTime(unixTime);
+            Assert.Equal(1336305843220, unixTime);
             Assert.Equal(ts, ts2);
             Assert.Equal(ts2.Kind, DateTimeKind.Utc);
+        }
+
+        [Fact]
+        public void UnixTimeEpoch()
+        {
+            Assert.Equal(0, Timestamp.DateTimeToUnixTimestampMs(Timestamp.UnixTimeEpoch));
+            Assert.Equal(DateTimeKind.Utc, Timestamp.UnixTimeEpoch.Kind);
+        }
+        
+        [Fact]
+        public void DateTimeProperties()
+        {
+            var ts = new Timestamp(1, TimestampType.CreateTime);            
+            Assert.Equal(DateTimeKind.Utc, ts.UtcDateTime.Kind);
+            Assert.Equal(1, (ts.UtcDateTime - Timestamp.UnixTimeEpoch).TotalMilliseconds);
+        }
+
+        [Fact]
+        public void Rounding()
+        {
+            // check is to millisecond accuracy, rounding down the value
+            
+            var dateTimeAfterEpoch = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
+            var dateTimeBeforeEpoch = new DateTime(1950, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
+
+            foreach (var datetime in new[] { dateTimeAfterEpoch, dateTimeBeforeEpoch })
+            {
+                var unixTime1 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(1));
+                var unixTime2 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond - 1));
+                var unixTime3 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond));
+                var unixTime4 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(-1));
+
+                var expectedUnixTime = Timestamp.DateTimeToUnixTimestampMs(datetime);
+                
+                Assert.Equal(expectedUnixTime, unixTime1);
+                Assert.Equal(expectedUnixTime, unixTime2);
+                Assert.Equal(expectedUnixTime + 1, unixTime3);
+                Assert.Equal(expectedUnixTime - 1, unixTime4);
+            }
         }
     }
 }

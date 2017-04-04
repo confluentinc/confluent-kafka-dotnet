@@ -164,11 +164,6 @@ namespace Confluent.Kafka
 
             IntPtr timestampType;
             long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType);
-            var dateTime = new DateTime(0);
-            if ((TimestampType)timestampType != TimestampType.NotAvailable)
-            {
-                dateTime = Timestamp.UnixTimestampMsToDateTime(timestamp);
-            }
 
             deliveryHandler.HandleDeliveryReport(
                 new Message (
@@ -179,7 +174,7 @@ namespace Confluent.Kafka
                     msg.offset,
                     key,
                     val,
-                    new Timestamp(dateTime, (TimestampType)timestampType),
+                    new Timestamp(timestamp, (TimestampType)timestampType),
                     msg.err
                 )
             );
