@@ -3,6 +3,7 @@ language: csharp
 env:
   global:
     - CONFIGURATION=Release
+    - INSTALL_KAFKA=True
 
 matrix:
   include:
@@ -18,9 +19,14 @@ matrix:
     mono: none
     env: DOTNETCORE=1
 
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 1024 ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --with-openssl curl ; fi
+
 install:
    - dotnet restore
 
 script:
    - make build
-   - make test
+   - make unit_test
+   - make integration_test
