@@ -53,12 +53,12 @@ namespace Confluent.Kafka
         private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
-            {
-                while (!ct.IsCancellationRequested)
                 {
-                    this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
-                }
-            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    while (!ct.IsCancellationRequested)
+                    {
+                        this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                    }
+                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
