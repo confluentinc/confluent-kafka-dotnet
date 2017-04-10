@@ -796,7 +796,7 @@ namespace Confluent.Kafka.Impl
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_producev(
                 IntPtr rk,
-                ProduceVarTag topicType, string topic,
+                ProduceVarTag topicType, [MarshalAs(UnmanagedType.LPStr)] string topic,
                 ProduceVarTag partitionType, int partition,
                 ProduceVarTag vaType, IntPtr val, UIntPtr len,
                 ProduceVarTag keyType, IntPtr key, UIntPtr keylen,
