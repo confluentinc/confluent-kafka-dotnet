@@ -350,7 +350,7 @@ namespace Confluent.Kafka
         ///     partition.assignment.strategy to assign the subscription sets's
         ///     topics's partitions to the consumers, depending on their subscription.
         /// </summary>
-        public void Subscribe(ICollection<string> topics)
+        public void Subscribe(IEnumerable<string> topics)
             => consumer.Subscribe(topics);
 
         /// <summary>
@@ -422,12 +422,12 @@ namespace Confluent.Kafka
         ///     Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
         /// </remarks>
         public Task<CommittedOffsets> CommitAsync(Message<TKey, TValue> message)
-            => consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+            => consumer.CommitAsync(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <summary>
         ///     Commit an explicit list of offsets.
         /// </summary>
-        public Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
+        public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => consumer.CommitAsync(offsets);
 
         /// <summary>
@@ -453,7 +453,7 @@ namespace Confluent.Kafka
         ///
         ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
-        public List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
+        public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             => consumer.Committed(partitions, timeout);
 
         /// <summary>
@@ -466,7 +466,7 @@ namespace Confluent.Kafka
         ///
         ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
-        public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
+        public List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
             => consumer.Position(partitions);
 
         /// <summary>
@@ -875,7 +875,7 @@ namespace Confluent.Kafka
         ///     partition.assignment.strategy to assign the subscription sets's
         ///     topics's partitions to the consumers, depending on their subscription.
         /// </summary>
-        public void Subscribe(ICollection<string> topics)
+        public void Subscribe(IEnumerable<string> topics)
             => kafkaHandle.Subscribe(topics);
 
         /// <summary>
@@ -884,7 +884,7 @@ namespace Confluent.Kafka
         ///     Any previous subscription will be unassigned and unsubscribed first.
         /// </summary>
         public void Subscribe(string topic)
-            => Subscribe(new List<string> { topic });
+            => Subscribe(new[] { topic });
 
         /// <summary>
         ///     Unsubscribe from the current subscription set.
@@ -1061,13 +1061,13 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("Must not commit offset for errored message");
             }
-            return await CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+            return await CommitAsync(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 
         /// <summary>
         ///     Commit an explicit list of offsets.
         /// </summary>
-        public async Task<CommittedOffsets> CommitAsync(ICollection<TopicPartitionOffset> offsets)
+        public async Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => await kafkaHandle.CommitAsync(offsets);
 
         /// <summary>
@@ -1080,7 +1080,7 @@ namespace Confluent.Kafka
         ///
         ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
-        public List<TopicPartitionOffsetError> Committed(ICollection<TopicPartition> partitions, TimeSpan timeout)
+        public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMillisecondsAsInt());
 
         /// <summary>
@@ -1093,7 +1093,7 @@ namespace Confluent.Kafka
         ///
         ///     throws KafkaException if there was a problem retrieving the above information.
         /// </summary>
-        public List<TopicPartitionOffsetError> Position(ICollection<TopicPartition> partitions)
+        public List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Position(partitions);
 
         /// <summary>
