@@ -21,7 +21,6 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 1024 ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --with-openssl curl ; fi
 
 install:
    - dotnet restore
