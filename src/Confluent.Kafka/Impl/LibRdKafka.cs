@@ -61,7 +61,8 @@ namespace Confluent.Kafka.Impl
             // in net45, librdkafka.dll is not in the process directory, we have to load it manually
             // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
             var is64 = IntPtr.Size == 8;
-            var baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
+            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
 
             if (LoadLibraryEx(Path.Combine(baseDirectory, is64 ? "x64" : "x86", "librdkafka.dll"),
                 IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
