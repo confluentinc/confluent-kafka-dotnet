@@ -23,6 +23,7 @@ using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
 #if NET45
 using System.Reflection;
+using System.ComponentModel;
 #endif
 
 
@@ -30,25 +31,50 @@ namespace Confluent.Kafka.Impl
 {
     internal static class LibRdKafka
     {
-        const long minVersion = 0x000901ff;
+        //min librdkafka version, to change when binding to new function are added
+        const long minVersion = 0x000904ff;
 
 #if NET45
+        [Flags]
+        public enum LoadLibraryFlags : uint
+        {     
+            DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
+            LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
+            LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
+            LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
+            LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
+            LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
+            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
+            LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
+            LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
+            LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
+            LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
+        }
+
         [DllImport("kernel32", SetLastError = true)]
-        private static extern IntPtr LoadLibrary(string lpFileName);
+        private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
 #endif
 
         static LibRdKafka()
         {
 #if NET45
+            // in net45, librdkafka.dll is not in the process directory, we have to load it manually
+            // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
             var is64 = IntPtr.Size == 8;
-            try {
-                var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
-                var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
+            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
 
-                LoadLibrary(Path.Combine(baseDirectory, is64 ? "x64/zlib.dll" : "x86/zlib.dll"));
-                LoadLibrary(Path.Combine(baseDirectory, is64 ? "x64/librdkafka.dll" : "x86/librdkafka.dll"));
+            if (LoadLibraryEx(Path.Combine(baseDirectory, is64 ? "x64" : "x86", "librdkafka.dll"),
+                IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            {
+                //catch the last win32 error by default and keep the associated default message
+                var win32Exception = new Win32Exception();
+                var additionalMessage = 
+                    $"Error while loading librdkafka.dll or its dependencies from {baseDirectory}. " +
+                    $"Check the directory exists, if not check your deployment process";
+
+                throw new InvalidOperationException(additionalMessage, win32Exception);
             }
-            catch (Exception) { }
 #endif
 
             _version = NativeMethods.rd_kafka_version;
