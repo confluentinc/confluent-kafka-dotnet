@@ -20,8 +20,7 @@ matrix:
     env: DOTNETCORE=1
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 1024 ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install --with-openssl curl ; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ulimit -n 1024 ; fi
 
 install:
    - dotnet restore
@@ -29,4 +28,5 @@ install:
 script:
    - make build
    - make unit_test
+   - make install_kafka
    - make integration_test
