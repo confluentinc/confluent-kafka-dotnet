@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Impl
 #if NET45
         [Flags]
         public enum LoadLibraryFlags : uint
-        {     
+        {
             DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
             LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
             LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
@@ -53,30 +53,58 @@ namespace Confluent.Kafka.Impl
 
         [DllImport("kernel32", SetLastError = true)]
         private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
+
+        [DllImport("kernel32", SetLastError = true)]
+        private static extern IntPtr GetModuleHandle(string lpFileName);
+
+        static void LoadNet45Librdkafka()
+        {
+            // in net45, librdkafka.dll is not in the process directory, we have to load it manually
+            // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
+            var is64 = IntPtr.Size == 8;
+            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
+            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+            var dllDirectory = Path.Combine(baseDirectory, is64 ? "x64" : "x86");
+
+            if (LoadLibraryEx(Path.Combine(dllDirectory, "librdkafka.dll"),
+                IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            {
+                //catch the last win32 error by default and keep the associated default message
+                var win32Exception = new Win32Exception();
+                var additionalMessage =
+                    $"Error while loading librdkafka.dll or its dependencies from {dllDirectory}. " +
+                    $"Check the directory exists, if not check your deployment process. " +
+                    $"You can also load the library and its dependencies by yourself " +
+                    $"before any call to Confluent.Kafka";
+
+                throw new InvalidOperationException(additionalMessage, win32Exception);
+            }
+        }
 #endif
 
         static LibRdKafka()
         {
 #if NET45
-            // in net45, librdkafka.dll is not in the process directory, we have to load it manually
-            // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
-            var is64 = IntPtr.Size == 8;
-            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
-            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-
-            if (LoadLibraryEx(Path.Combine(baseDirectory, is64 ? "x64" : "x86", "librdkafka.dll"),
-                IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            try
             {
-                //catch the last win32 error by default and keep the associated default message
-                var win32Exception = new Win32Exception();
-                var additionalMessage = 
-                    $"Error while loading librdkafka.dll or its dependencies from {baseDirectory}. " +
-                    $"Check the directory exists, if not check your deployment process";
-
-                throw new InvalidOperationException(additionalMessage, win32Exception);
+                // In net45, we don't put the native dlls in the assembly directory
+                // but in subfolders x64 and x86
+                // we have to force the load as it won't be found by the system by itself
+                if (GetModuleHandle(NativeMethods.DllName) == IntPtr.Zero)
+                {
+                    // In some cases, the user might want to load the library by himself
+                    // (if he could not have the folders in the bin directory, or to change the version of the dll)
+                    // If he did it before first call to Confluent.Kafka, GetModuleHandle will be nonZero
+                    // and we don't have to force the load (which would fail and throw otherwise)
+                    LoadNet45Librdkafka();
+                }
+            }
+            catch
+            {
+                // There may be some platforms where GetModuleHandle/LoadLibraryEx do not work
+                // Fail silently so the user can still have the opportunity to load the dll by himself
             }
 #endif
-
             _version = NativeMethods.rd_kafka_version;
             _version_str = NativeMethods.rd_kafka_version_str;
             _get_debug_contexts = NativeMethods.rd_kafka_get_debug_contexts;
@@ -508,7 +536,7 @@ namespace Confluent.Kafka.Impl
 
         private class NativeMethods
         {
-            private const string DllName = "librdkafka";
+            public const string DllName = "librdkafka";
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_version();
