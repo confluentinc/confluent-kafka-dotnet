@@ -71,6 +71,12 @@ namespace Confluent.Kafka
         /// </summary>
         public string OriginatingBrokerName { get; }
 
+        /// <summary>
+        ///     Returns a JSON representation of the Metadata object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of the Metadata object.
+        /// </returns>
         public override string ToString()
         {
             var result = new StringBuilder();

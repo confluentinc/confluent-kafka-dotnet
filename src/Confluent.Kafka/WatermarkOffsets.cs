@@ -51,6 +51,12 @@ namespace Confluent.Kafka
         /// </summary>
         public Offset High { get; }
 
+        /// <summary>
+        ///     Returns a string representation of the WatermarkOffsets object.
+        /// </summary>
+        /// <returns>
+        ///     A string representation of the WatermarkOffsets object.
+        /// </returns>
         public override string ToString()
             => $"{Low} .. {High}";
     }

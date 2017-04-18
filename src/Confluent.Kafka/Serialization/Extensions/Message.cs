@@ -21,6 +21,22 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public static class MessageExtensions
     {
+        /// <summary>
+        ///     Deserializes a Message instance's key and value and returns 
+        ///     the corresponding typed Message instance.
+        /// </summary>
+        /// <param name="message">
+        ///     The message instance for which to deserialize the key and value.
+        /// </param>
+        /// <param name="keyDeserializer">
+        ///     The deserializer to use to deserialize the key.
+        /// </param>
+        /// <param name="valueDeserializer">
+        ///     The deserializer to use to deserialize the value.
+        /// </param>
+        /// <returns>
+        ///     A typed message instance corresponding to <paramref name="message" />.
+        /// </returns>
         public static Message<TKey, TValue> Deserialize<TKey, TValue>(this Message message, IDeserializer<TKey> keyDeserializer, IDeserializer<TValue> valueDeserializer)
             => new Message<TKey, TValue> (
                 message.Topic,

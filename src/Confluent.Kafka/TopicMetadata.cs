@@ -28,6 +28,18 @@ namespace Confluent.Kafka
     /// </summary>
     public class TopicMetadata
     {
+        /// <summary>
+        ///     Initializes a new TopicMetadata class instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic name.
+        /// </param>
+        /// <param name="partitions">
+        ///     Metadata for each of the topic's partitions.
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> object associated with the request for this topic metadata.
+        /// </param>
         public TopicMetadata(string topic, List<PartitionMetadata> partitions, Error error)
         {
             Topic = topic;
@@ -35,10 +47,27 @@ namespace Confluent.Kafka
             Partitions = partitions;
         }
 
+        /// <summary>
+        ///     Gets the topic name.
+        /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     Gets metadata for each of the topics partitions.
+        /// </summary>
         public List<PartitionMetadata> Partitions { get; }
+
+        /// <summary>
+        ///     A rich <see cref="Error"/> object associated with the request for this topic metadata.
+        /// </summary>
         public Error Error { get; }
 
+        /// <summary>
+        ///     Returns a JSON representation of the TopicMetadata object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation the TopicMetadata object.
+        /// </returns>
         public override string ToString()
         {
             var result = new StringBuilder();

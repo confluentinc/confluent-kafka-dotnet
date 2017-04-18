@@ -19,8 +19,21 @@ using System;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Extension methods for the <see cref="TimeSpan"/> class.
+    /// </summary>
     public static class TimeSpanExtensions
     {
+        /// <summary>
+        ///     Converts the TimeSpan value <paramref name="timespan" /> to an integer number of milliseconds.
+        ///     An <see cref="OverflowException"/> is thrown if the number of milliseconds is greater than Int32.MaxValue.
+        /// </summary>
+        /// <param name="timespan">
+        ///     The TimeSpan value to convert to milliseconds.
+        /// </param>
+        /// <returns>
+        ///     The TimeSpan value <paramref name="timespan" /> in milliseconds.
+        /// </returns>
         internal static int TotalMillisecondsAsInt(this TimeSpan timespan)
         {
             int millisecondsTimespan;

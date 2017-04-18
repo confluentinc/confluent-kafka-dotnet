@@ -19,10 +19,34 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents a (deserialized) Kafka Message
+    ///     Represents a (deserialized) message stored in Kafka.
     /// </summary>
     public class Message<TKey, TValue>
     {
+        /// <summary>
+        ///     Instantiates a new Message class instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     The Kafka topic name associated with this message.
+        /// </param>
+        /// <param name="partition">
+        ///     The topic partition id associated with this message.
+        /// </param>
+        /// <param name="offset">
+        ///     The offset of this message in the Kafka topic partition.
+        /// </param>
+        /// <param name="key">
+        ///     The message key value.
+        /// </param>
+        /// <param name="val">
+        ///     The message value.
+        /// </param>
+        /// <param name="timestamp">
+        ///     The message timestamp.
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> associated with the message.
+        /// </param>
         public Message(string topic, int partition, long offset, TKey key, TValue val, Timestamp timestamp, Error error)
         {
             Topic = topic;
@@ -34,27 +58,84 @@ namespace Confluent.Kafka
             Error = error;
         }
 
+        /// <summary>
+        ///     Gets the topic name associated with this message.
+        /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     Gets the partition associated with this message.
+        /// </summary>
         public int Partition { get; }
+
+        /// <summary>
+        ///     Gets the offset of this message in the Kafka topic partition.
+        /// </summary>
         public Offset Offset { get; }
+
+        /// <summary>
+        ///     Gets the message key value.
+        /// </summary>
         public TKey Key { get; }
+
+        /// <summary>
+        ///     Gets the message value.
+        /// </summary>
         public TValue Value { get; }
+
+        /// <summary>
+        ///     Gets the message timestamp.
+        /// </summary>
         public Timestamp Timestamp { get; }
+
+        /// <summary>
+        ///     Gets a rich <see cref="Error"/> associated with the message.
+        /// </summary>
         public Error Error { get; }
 
+        /// <summary>
+        ///     Gets the topic/partition/offset associated with this message.
+        /// </summary>
         public TopicPartitionOffset TopicPartitionOffset
             => new TopicPartitionOffset(Topic, Partition, Offset);
 
+        /// <summary>
+        ///     Gets the topic/partition associated with this message.
+        /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
     }
 
 
     /// <summary>
-    ///     Represents a Kafka Message
+    ///     Represents a message stored in Kafka.
     /// </summary>
     public class Message
     {
+        /// <summary>
+        ///     Instantiates a new Message class instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     The Kafka topic name associated with this message.
+        /// </param>
+        /// <param name="partition">
+        ///     The topic partition id associated with this message.
+        /// </param>
+        /// <param name="offset">
+        ///     The offset of this message in the Kafka topic partition.
+        /// </param>
+        /// <param name="key">
+        ///     The message key value.
+        /// </param>
+        /// <param name="val">
+        ///     The message value.
+        /// </param>
+        /// <param name="timestamp">
+        ///     The message timestamp.
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> associated with the message.
+        /// </param>
         public Message(string topic, int partition, long offset, byte[] key, byte[] val, Timestamp timestamp, Error error)
         {
             Topic = topic;
@@ -66,17 +147,50 @@ namespace Confluent.Kafka
             Error = error;
         }
 
+        /// <summary>
+        ///     Gets the Kafka topic name associated with this message.
+        /// </summary>
         public string Topic { get; }
+
+        /// <summary>
+        ///     Gets the topic partition associated with this message.
+        /// </summary>
         public int Partition { get; }
+
+        /// <summary>
+        ///     Gets the offset of this message in the Kafka topic partition.
+        /// </summary>
         public Offset Offset { get; }
+
+        /// <summary>
+        ///     Gets the message value.
+        /// </summary>
         public byte[] Value { get; }
+
+        /// <summary>
+        ///     Gets the message key value.
+        /// </summary>
         public byte[] Key { get; }
+
+        /// <summary>
+        ///     Gets the message timestamp.
+        /// </summary>
         public Timestamp Timestamp { get; }
+
+        /// <summary>
+        ///     Gets a rich <see cref="Error"/> associated with the message.
+        /// </summary>
         public Error Error { get; }
 
+        /// <summary>
+        ///     Gets the topic/partition/offset associated with this message.
+        /// </summary>
         public TopicPartitionOffset TopicPartitionOffset
             => new TopicPartitionOffset(Topic, Partition, Offset);
 
+        /// <summary>
+        ///     Gets the topic/partition associated with this message.
+        /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
     }

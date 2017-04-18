@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 
@@ -43,14 +42,44 @@ namespace Confluent.Kafka
         /// </summary>
         ISerializer<TValue> ValueSerializer { get; }
 
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue)"/>.
+        /// </summary>
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);
+
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int, bool)"/>.
+        /// </summary>
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
+
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int)"/>.
+        /// </summary>
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
+
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, bool)"/>.
+        /// </summary>
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
 
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, IDeliveryHandler{TKey, TValue})"/>.
+        /// </summary>
         void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler);
+
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/>.
+        /// </summary>
         void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
+
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int, IDeliveryHandler{TKey, TValue})"/>.
+        /// </summary>
         void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler);
+
+        /// <summary>
+        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, bool, IDeliveryHandler{TKey, TValue})"/>.
+        /// </summary>
         void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
     }
 }

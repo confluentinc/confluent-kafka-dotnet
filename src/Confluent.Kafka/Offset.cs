@@ -88,6 +88,15 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Tests whether this Offset value is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if obj is an Offset and has the same value. false otherwise.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (!(obj is Offset))
@@ -98,33 +107,129 @@ namespace Confluent.Kafka
             return ((Offset)obj).Value == this.Value;
         }
 
+        /// <summary>
+        ///     Tests whether Offset value a is equal to Offset value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Offset value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Offset value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Offset value a and b are equal. false otherwise.
+        /// </returns>
         public static bool operator ==(Offset a, Offset b)
             => a.Equals(b);
 
+        /// <summary>
+        ///     Tests whether Offset value a is not equal to Offset value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Offset value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Offset value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Offset value a and b are not equal. false otherwise.
+        /// </returns>
         public static bool operator !=(Offset a, Offset b)
             => !(a == b);
 
+        /// <summary>
+        ///     Tests whether Offset value a is greater than Offset value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Offset value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Offset value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Offset value a is greater than Offset value b. false otherwise.
+        /// </returns>
         public static bool operator >(Offset a, Offset b)
             => a.Value > b.Value;
 
+        /// <summary>
+        ///     Tests whether Offset value a is less than Offset value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Offset value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Offset value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Offset value a is less than Offset value b. false otherwise.
+        /// </returns>
         public static bool operator <(Offset a, Offset b)
             => a.Value < b.Value;
 
+        /// <summary>
+        ///     Tests whether Offset value a is greater than or equal to Offset value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Offset value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Offset value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Offset value a is greater than or equal to Offset value b. false otherwise.
+        /// </returns>
         public static bool operator >=(Offset a, Offset b)
             => a.Value >= b.Value;
 
+        /// <summary>
+        ///     Tests whether Offset value a is less than or equal to Offset value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Offset value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Offset value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Offset value a is less than or equal to Offset value b. false otherwise.
+        /// </returns>
         public static bool operator <=(Offset a, Offset b)
             => a.Value <= b.Value;
 
+        /// <summary>
+        ///     Returns a hash code for this Offset.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this Offset.
+        /// </returns>
         public override int GetHashCode()
             => Value.GetHashCode();
 
+        /// <summary>
+        ///     Converts the specified long value to an Offset value.
+        /// </summary>
+        /// <param name="v">
+        ///     THe long value to convert.
+        /// </param>
         public static implicit operator Offset(long v)
             => new Offset(v);
 
+        /// <summary>
+        ///     Converts the specified Offset value to a long value.
+        /// </summary>
+        /// <param name="o">
+        ///     The Offset value to convert.
+        /// </param>
         public static implicit operator long(Offset o)
             => o.Value;
 
+        /// <summary>
+        ///     Returns a string representation of the Offset object.
+        /// </summary>
+        /// <returns>
+        ///     A string that represents the Offset object.
+        /// </returns>
         public override string ToString()
         {
             switch (Value)

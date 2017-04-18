@@ -23,6 +23,18 @@ namespace Confluent.Kafka
     /// </summary>
     public class BrokerMetadata
     {
+        /// <summary>
+        ///     Initializes a new BrokerMetadata class instance.
+        /// </summary>
+        /// <param name="brokerId">
+        ///     The Kafka broker id.
+        /// </param>
+        /// <param name="host">
+        ///     The Kafka broker hostname.
+        /// </param>
+        /// <param name="port">
+        ///     The Kafka broker port.
+        /// </param>
         public BrokerMetadata(int brokerId, string host, int port)
         {
             BrokerId = brokerId;
@@ -30,10 +42,27 @@ namespace Confluent.Kafka
             Port = port;
         }
 
+        /// <summary>
+        ///     Gets the Kafka broker id.
+        /// </summary>
         public int BrokerId { get; }
+
+        /// <summary>
+        ///     Gets the Kafka broker hostname.
+        /// </summary>
         public string Host { get; }
+
+        /// <summary>
+        ///     Gets the Kafka broker port.
+        /// </summary>
         public int Port { get; }
 
+        /// <summary>
+        ///     Returns a JSON representation of the BrokerMetadata object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of the BrokerMetadata object.
+        /// </returns>
         public override string ToString()
             => $"{{ \"BrokerId\": {BrokerId}, \"Host\": \"{Host}\", \"Port\": {Port} }}";
     }
