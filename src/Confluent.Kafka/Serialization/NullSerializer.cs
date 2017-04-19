@@ -17,7 +17,7 @@
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     A 'dummy' serializer for use with values that must be null.
+    ///     A dummy serializer for use with values that must be null (the <see cref="Null"/> class cannot be instantiated).
     /// </summary>
     public class NullSerializer : ISerializer<Null>
     {

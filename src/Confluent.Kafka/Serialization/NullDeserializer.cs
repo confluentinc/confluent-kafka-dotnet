@@ -17,21 +17,26 @@
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     A 'dummy' deserializer for use with values that must be null.
+    ///     A dummy deserializer for use with values that must be null.
     /// </summary>
     public class NullDeserializer : IDeserializer<Null>
     {
         /// <summary>
-        ///     'deserializes' any byte array to a null value.
+        ///     'Deserializes' a null value to a null value.
         /// </summary>
         /// <param name="data">
-        ///     The data to deserialize (should be null)
+        ///     The data to deserialize (must be null).
         /// </param>
         /// <returns>
         ///     null
         /// </returns>
         public Null Deserialize(byte[] data)
         {
+            if (data != null)
+            {
+                throw new System.ArgumentException("NullDeserializer may only be used to deserialize data that is null.");
+            }
+
             return null;
         }
     }

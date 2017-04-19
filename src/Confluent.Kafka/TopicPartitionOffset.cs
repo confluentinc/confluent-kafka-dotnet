@@ -106,7 +106,7 @@ namespace Confluent.Kafka
             => (Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode();
 
         /// <summary>
-        ///     Tests whether TopicPartitionOffset instance a is equal to Offset instance b.
+        ///     Tests whether TopicPartitionOffset instance a is equal to TopicPartitionOffset instance b.
         /// </summary>
         /// <param name="a">
         ///     The first TopicPartitionOffset instance to compare.
@@ -121,7 +121,7 @@ namespace Confluent.Kafka
             => a.Equals(b);
 
         /// <summary>
-        ///     Tests whether TopicPartitionOffset instance a is not equal to Offset instance b.
+        ///     Tests whether TopicPartitionOffset instance a is not equal to TopicPartitionOffset instance b.
         /// </summary>
         /// <param name="a">
         ///     The first TopicPartitionOffset instance to compare.

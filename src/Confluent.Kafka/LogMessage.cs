@@ -28,10 +28,10 @@ namespace Confluent.Kafka
         ///     Instantiates a new LogMessage class instance.
         /// </summary> 
         /// <param name="name">
-        ///     The librdkakfa client name.
+        ///     The librdkakfa client instance name.
         /// </param>
         /// <param name="level">
-        ///     The log level (levels correspond to syslog(3)).
+        ///     The log level (levels correspond to syslog(3)), lower is worse.
         /// </param>
         /// <param name="facility">
         ///     The facility (section of librdkafka code) that produced the message.
@@ -49,12 +49,12 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Gets the librdkafka client name.
+        ///     Gets the librdkafka client instance name.
         /// </summary>
         public string Name { get; }
 
         /// <summary>
-        ///     Gets the log level (levels correspond to syslog(3)).
+        ///     Gets the log level (levels correspond to syslog(3)), lower is worse.
         /// </summary>
         public int Level { get; }
         
