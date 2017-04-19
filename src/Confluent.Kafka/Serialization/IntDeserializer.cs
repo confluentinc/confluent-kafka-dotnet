@@ -16,8 +16,20 @@
 
 namespace Confluent.Kafka.Serialization
 {
+    /// <summary>
+    ///     A deserializer for big endian encoded (network byte ordered) <see cref="System.Int32"/> values.
+    /// </summary>
     public class IntDeserializer : IDeserializer<int>
     {
+        /// <summary>
+        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int32"/> value from a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     A byte array containing the serialized <see cref="System.Int32"/> value (big endian encoding).
+        /// </param>
+        /// <returns>
+        ///     The deserialized <see cref="System.Int32"/> value.
+        /// </returns>
         public int Deserialize(byte[] data)
         {
             // network byte order -> big endian -> most significant byte in the smallest address.

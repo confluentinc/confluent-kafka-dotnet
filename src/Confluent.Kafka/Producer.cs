@@ -124,10 +124,10 @@ namespace Confluent.Kafka
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
 
-        /// <param name="opaque">
+        /// <remarks>
         ///     note: this property is set to that defined in rd_kafka_conf
         ///     (which is never used by confluent-kafka-dotnet).
-        /// </param>
+        /// </remarks>
         private static void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
             var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(rkmessage);
@@ -392,7 +392,7 @@ namespace Confluent.Kafka
         ///     Raised when there is information that should be logged.
         /// </summary>
         /// <remarks>
-        ///     Note: By default not many log messages are generated.
+        ///     By default not many log messages are generated.
         /// 
         ///     You can specify one or more debug contexts using the 'debug'
         ///     configuration property and a log level using the 'log_level'

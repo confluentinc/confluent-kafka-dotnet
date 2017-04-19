@@ -16,8 +16,20 @@
 
 namespace Confluent.Kafka.Serialization
 {
+    /// <summary>
+    ///     A serializer for <see cref="System.Int32"/> values. The byte order of serialized data is big endian (network byte order).
+    /// </summary>
     public class IntSerializer : ISerializer<int>
     {
+        /// <summary>
+        ///     Serializes the specified <see cref="System.Int32"/> value to a byte array of length 4. Byte order is big endian (network byte order).
+        /// </summary>
+        /// <param name="val">
+        ///     The <see cref="System.Int32"/> value to serialize.
+        /// </param>
+        /// <returns>
+        ///     The <see cref="System.Int32"/> value <paramref name="val" /> encoded as a byte array of length 8 (network byte order).
+        /// </returns>
         public byte[] Serialize(int val)
         {
             var result = new byte[4]; // int is always 32 bits on .NET.

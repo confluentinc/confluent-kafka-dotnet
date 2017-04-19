@@ -16,8 +16,17 @@
 
 namespace Confluent.Kafka.Serialization
 {
+    /// <summary>
+    ///     A dummy serializer for use with values that must be null (the <see cref="Null"/> class cannot be instantiated).
+    /// </summary>
     public class NullSerializer : ISerializer<Null>
     {
+        /// <param name="val">
+        ///     Can only be null (the <see cref="Null"/> class cannot be instantiated).
+        /// </param>
+        /// <returns>
+        ///     null
+        /// </returns>
         public byte[] Serialize(Null val)
         {
             return null;

@@ -20,18 +20,18 @@ using System;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     A deserializer for big endian encoded (network byte ordered) System.Int64 values.
+    ///     A deserializer for big endian encoded (network byte ordered) <see cref="System.Int64"/> values.
     /// </summary>
     public class LongDeserializer : IDeserializer<long>
     {
         /// <summary>
-        ///     Deserializes a big endian encoded (network byte ordered) System.Int64 value from a byte array.
+        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int64"/> value from a byte array.
         /// </summary>
         /// <param name="data">
-        ///     A byte array containing the serialized System.Int64 value (big endian encoding)
+        ///     A byte array containing the serialized <see cref="System.Int64"/> value (big endian encoding)
         /// </param>
         /// <returns>
-        ///     The deserialized System.Int64 value.
+        ///     The deserialized <see cref="System.Int64"/> value.
         /// </returns>
         public long Deserialize(byte[] data)
         {

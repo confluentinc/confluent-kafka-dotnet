@@ -48,6 +48,15 @@ namespace Confluent.Kafka
         /// </summary>
         public int Partition { get; }
 
+        /// <summary>
+        ///     Tests whether this TopicPartition instance is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if obj is a TopicPartition and all properties are equal. false otherwise.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (!(obj is TopicPartition))
@@ -59,16 +68,52 @@ namespace Confluent.Kafka
             return tp.Partition == Partition && tp.Topic == Topic;
         }
 
-        // x by prime number is quick and gives decent distribution.
+        /// <summary>
+        ///     Returns a hash code for this TopicPartition.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this TopicPartition.
+        /// </returns>
         public override int GetHashCode()
+            // x by prime number is quick and gives decent distribution.
             => Partition.GetHashCode()*251 + Topic.GetHashCode();
 
+        /// <summary>
+        ///     Tests whether TopicPartition instance a is equal to TopicPartition instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first TopicPartition instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second TopicPartition instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if TopicPartition instances a and b are equal. false otherwise.
+        /// </returns>
         public static bool operator ==(TopicPartition a, TopicPartition b)
             => a.Equals(b);
 
+        /// <summary>
+        ///     Tests whether TopicPartition instance a is not equal to TopicPartition instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first TopicPartition instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second TopicPartition instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if TopicPartition instances a and b are not equal. false otherwise.
+        /// </returns>
         public static bool operator !=(TopicPartition a, TopicPartition b)
             => !(a == b);
 
+        /// <summary>
+        ///     Returns a string representation of the TopicPartition object.
+        /// </summary>
+        /// <returns>
+        ///     A string that represents the TopicPartition object.
+        /// </returns>
         public override string ToString()
             => $"{Topic} [{Partition}]";
     }

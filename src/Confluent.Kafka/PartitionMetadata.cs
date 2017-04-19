@@ -27,6 +27,25 @@ namespace Confluent.Kafka
     /// </summary>
     public class PartitionMetadata
     {
+        /// <summary>
+        ///     Initializes a new PartitionMetadata instance.
+        /// </summary>
+        /// <param name="partitionId">
+        ///     The id of the partition this metadata relates to.
+        /// </param>
+        /// <param name="leader">
+        ///     The id of the broker that is the leader for the partition.
+        /// </param>
+        /// <param name="replicas">
+        ///     The ids of all brokers that contain replicas of the partition.
+        /// </param>
+        /// <param name="inSyncReplicas">
+        ///     The ids of all brokers that contain in-sync replicas of the partition.
+        ///     Note: this value is cached by the broker and is consequently not guarenteed to be up-to-date.
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> object associated with the request for this partition metadata.
+        /// </param>
         public PartitionMetadata(int partitionId, int leader, int[] replicas, int[] inSyncReplicas, Error error)
         {
             PartitionId = partitionId;
@@ -36,12 +55,38 @@ namespace Confluent.Kafka
             Error = error;
         }
 
+        /// <summary>
+        ///     Gets ths id of the partition this metadata relates to.
+        /// </summary>
         public int PartitionId { get; }
+
+        /// <summary>
+        ///     Gets the id of the broker that is the leader for the partition.
+        /// </summary>
         public int Leader { get; }
+
+        /// <summary>
+        ///     Gets the ids of all brokers that contain replicas of the partition.
+        /// </summary>
         public int[] Replicas { get; }
+
+        /// <summary>
+        ///     Gets the ids of all brokers that contain in-sync replicas of the partition.
+        /// </summary>
         public int[] InSyncReplicas { get; }
+
+        /// <summary>
+        ///     Gets a rich <see cref="Error"/> object associated with the request for this partition metadata.
+        ///     Note: this value is cached by the broker and is consequently not guarenteed to be up-to-date.
+        /// </summary>
         public Error Error { get; }
 
+        /// <summary>
+        ///     Returns a JSON representation of the PartitionMetadata object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation the PartitionMetadata object.
+        /// </returns>
         public override string ToString()
         {
             var result = new StringBuilder();

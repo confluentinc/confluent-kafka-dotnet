@@ -18,15 +18,27 @@ using System.Text;
 
 namespace Confluent.Kafka.Serialization
 {
+    /// <summary>
+    ///     A serializer for string values.
+    /// </summary>
     public class StringSerializer : ISerializer<string>
     {
         private Encoding encoding;
 
+        /// <summary>
+        ///     Initializes a new StringSerializer class instance.
+        /// </summary>
+        /// <param name="encoding">
+        ///     The encoding to use when serializing.
+        /// </param>
         public StringSerializer(Encoding encoding)
         {
             this.encoding = encoding;
         }
 
+        /// <summary>
+        ///     Encodes a string value in a byte array.
+        /// </summary>
         /// <param name="val">
         ///     The string value to serialize.
         /// </param>

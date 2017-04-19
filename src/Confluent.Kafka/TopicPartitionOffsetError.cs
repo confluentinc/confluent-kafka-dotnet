@@ -105,6 +105,15 @@ namespace Confluent.Kafka
         public TopicPartitionOffset TopicPartitionOffset
             => new TopicPartitionOffset(Topic, Partition, Offset);
 
+        /// <summary>
+        ///     Tests whether this TopicPartitionOffsetError instance is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if obj is a TopicPartitionOffsetError and all properties are equal. false otherwise.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (!(obj is TopicPartitionOffsetError))
@@ -116,15 +125,52 @@ namespace Confluent.Kafka
             return tp.Partition == Partition && tp.Topic == Topic && tp.Offset == Offset && tp.Error == Error;
         }
 
+        /// <summary>
+        ///     Returns a hash code for this TopicPartitionOffsetError.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this TopicPartitionOffsetError.
+        /// </returns>
         public override int GetHashCode()
-            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode(); // x by prime number is quick and gives decent distribution.
+            // x by prime number is quick and gives decent distribution.
+            => ((Partition.GetHashCode()*251 + Topic.GetHashCode())*251 + Offset.GetHashCode())*251 + Error.GetHashCode();
 
+        /// <summary>
+        ///     Tests whether TopicPartitionOffsetError instance a is equal to TopicPartitionOffsetError instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first TopicPartitionOffsetError instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second TopicPartitionOffsetError instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if TopicPartitionOffsetError instances a and b are equal. false otherwise.
+        /// </returns>
         public static bool operator ==(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
             => a.Equals(b);
 
+        /// <summary>
+        ///     Tests whether TopicPartitionOffsetError instance a is not equal to TopicPartitionOffsetError instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first TopicPartitionOffsetError instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second TopicPartitionOffsetError instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if TopicPartitionOffsetError instances a and b are not equal. false otherwise.
+        /// </returns>
         public static bool operator !=(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
             => !(a == b);
 
+        /// <summary>
+        ///     Returns a JSON representation of the TopicPartitionOffsetError object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of the TopicPartitionOffsetError object.
+        /// </returns>
         public override string ToString()
             => $"{Topic} [{Partition}] @{Offset}: {Error}";
     }

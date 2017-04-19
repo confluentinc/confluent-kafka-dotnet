@@ -26,14 +26,14 @@ namespace Confluent.Kafka
     {
         /// <summary>
         ///     Initialize a new Error instance from a particular
-        ///     ErrorCode value.
+        ///     <see cref="ErrorCode"/> value.
         /// </summary>
         /// <param name="code">
-        ///     The ErrorCode value associated with this Error.
+        ///     The <see cref="ErrorCode"/> value associated with this Error.
         /// </param>
         /// <remarks>
         ///     The reason string associated with this Error will
-        ///     be a static value associated with the ErrorCode.
+        ///     be a static value associated with the <see cref="ErrorCode"/>.
         /// </remarks>
         public Error(ErrorCode code)
         {
@@ -43,11 +43,11 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Initialize a new Error instance from a particular
-        ///     ErrorCode value and custom <paramref name="reason"/>
+        ///     <see cref="ErrorCode"/> value and custom <paramref name="reason"/>
         ///     string.
         /// </summary>
         /// <param name="code">
-        ///     The ErrorCode value associated with this Error.
+        ///     The <see cref="ErrorCode"/> value associated with this Error.
         /// </param>
         /// <param name="reason">
         ///     A custom reason string associated with the error
@@ -61,7 +61,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Gets the ErrorCode associated with this Error.
+        ///     Gets the <see cref="ErrorCode"/> associated with this Error.
         /// </summary>
         public ErrorCode Code { get; }
 
@@ -93,15 +93,42 @@ namespace Confluent.Kafka
         public bool IsBrokerError
             => (int)Code > 0;
 
+        /// <summary>
+        ///     Converts the specified Error value to a boolean value (false if e.Code == ErrorCode.NoError, true otherwise).
+        /// </summary>
+        /// <param name="e">
+        ///     The Error value to convert.
+        /// </param>
         public static implicit operator bool(Error e)
             => e.HasError;
 
+        /// <summary>
+        ///     Converts the specified Error value to the value of it's Code property.
+        /// </summary>
+        /// <param name="e">
+        ///     The Error value to convert.
+        /// </param>
         public static implicit operator ErrorCode(Error e)
             => e.Code;
 
+        /// <summary>
+        ///     Converts the specified <see cref="ErrorCode"/> value to it's corresponding rich Error value.
+        /// </summary>
+        /// <param name="c">
+        ///     The <see cref="ErrorCode"/> value to convert.
+        /// </param>
         public static implicit operator Error(ErrorCode c)
             => new Error(c);
 
+        /// <summary>
+        ///     Tests whether this Error instance is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if obj is an Error and the Code property values are equal. false otherwise.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (!(obj is Error))
@@ -112,12 +139,42 @@ namespace Confluent.Kafka
             return ((Error)obj).Code == Code;
         }
 
+        /// <summary>
+        ///     Returns a hash code for this Error value.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this Error value.
+        /// </returns>
         public override int GetHashCode()
             => Code.GetHashCode();
 
+        /// <summary>
+        ///     Tests whether Error value a is equal to Error value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Error value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Error value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Error values a and b are equal. false otherwise.
+        /// </returns>
         public static bool operator ==(Error a, Error b)
             => a.Equals(b);
 
+        /// <summary>
+        ///     Tests whether Error value a is not equal to Error value b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first Error value to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second Error value to compare.
+        /// </param>
+        /// <returns>
+        ///     true if Error values a and b are not equal. false otherwise.
+        /// </returns>
         public static bool operator !=(Error a, Error b)
             => !(a == b);
 
@@ -127,6 +184,9 @@ namespace Confluent.Kafka
         ///     contextual error message, or a simple static
         ///     string representation of the error Code.
         /// </summary>
+        /// <returns>
+        ///     A string representation of the Error object.
+        /// </returns>
         public override string ToString()
         {
             // If a rich error string is available return that, otherwise fall

@@ -18,20 +18,32 @@ using System.Text;
 
 namespace Confluent.Kafka.Serialization
 {
+    /// <summary>
+    ///     A deserializer for string values.
+    /// </summary>
     public class StringDeserializer : IDeserializer<string>
     {
         Encoding encoding;
 
+        /// <summary>
+        ///     Initializes a new StringDeserializer class instance.
+        /// </summary>
+        /// <param name="encoding">
+        ///     The encoding to use when deserializing.
+        /// </param>
         public StringDeserializer(Encoding encoding)
         {
             this.encoding = encoding;
         }
 
+        /// <summary>
+        ///     Deserializes a string value from a byte array.
+        /// </summary>
         /// <param name="data">
-        ///     The data to deserialize
+        ///     The data to deserialize.
         /// </param>
         /// <returns>
-        ///     <paramref name="data" /> deserialized to a string (or null if data was null).
+        ///     <paramref name="data" /> deserialized to a string (or null if data is null).
         /// </returns>
         public string Deserialize(byte[] data)
         {
