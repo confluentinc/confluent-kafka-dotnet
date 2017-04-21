@@ -32,7 +32,7 @@ namespace Confluent.Kafka.Impl
     internal static class LibRdKafka
     {
         //min librdkafka version, to change when binding to new function are added
-        const long minVersion = 0x000904ff;
+        const long minVersion = 0x000903ff;
 
 #if NET45
         [Flags]
