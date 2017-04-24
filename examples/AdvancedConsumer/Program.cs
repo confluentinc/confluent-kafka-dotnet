@@ -66,6 +66,9 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
+                consumer.OnConsumeError += (_, msg)
+                    => Console.WriteLine($"Error consuming from topic/partition/offset {msg.Topic}/{msg.Partition}/{msg.Offset}: {msg.Error}");
+
                 consumer.OnOffsetsCommitted += (_, commit) =>
                 {
                     Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
