@@ -215,7 +215,7 @@ namespace Confluent.Kafka
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
         {
             add { consumer.OnPartitionsAssigned += value; }
-            remove { consumer.OnPartitionsRevoked -= value; }
+            remove { consumer.OnPartitionsAssigned -= value; }
         }
 
         /// <summary>
