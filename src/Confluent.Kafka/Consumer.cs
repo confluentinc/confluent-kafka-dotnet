@@ -1041,8 +1041,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit offsets for the current assignment.
         /// </summary>
-        public async Task<CommittedOffsets> CommitAsync()
-            => await kafkaHandle.CommitAsync();
+        public Task<CommittedOffsets> CommitAsync()
+            => kafkaHandle.CommitAsync();
 
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a message.
@@ -1055,20 +1055,20 @@ namespace Confluent.Kafka
         ///     A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
         ///     Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
         /// </remarks>
-        public async Task<CommittedOffsets> CommitAsync(Message message)
+        public Task<CommittedOffsets> CommitAsync(Message message)
         {
             if (message.Error.Code != ErrorCode.NoError)
             {
                 throw new InvalidOperationException("Must not commit offset for errored message");
             }
-            return await CommitAsync(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+            return CommitAsync(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 
         /// <summary>
         ///     Commit an explicit list of offsets.
         /// </summary>
-        public async Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
-            => await kafkaHandle.CommitAsync(offsets);
+        public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
+            => kafkaHandle.CommitAsync(offsets);
 
         /// <summary>
         ///     Retrieve current committed offsets for topics + partitions.

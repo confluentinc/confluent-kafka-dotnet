@@ -452,11 +452,11 @@ namespace Confluent.Kafka.Impl
             return committedOffsets;
         }
 
-        internal async Task<CommittedOffsets> CommitAsync()
-            => await Task.Run(() => commitSync(null));
+        internal Task<CommittedOffsets> CommitAsync()
+            => Task.Run(() => commitSync(null));
 
-        internal async Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
-            => await Task.Run(() => commitSync(offsets));
+        internal Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
+            => Task.Run(() => commitSync(offsets));
 
         /// <summary>
         ///     for each topic/partition returns the current committed offset
