@@ -59,5 +59,8 @@ namespace Confluent.Kafka.Serialization
         {
             return Serialize(data);
         }
+
+        void IDisposable.Dispose()
+        { }
     }
 }
