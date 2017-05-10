@@ -15,12 +15,14 @@ build_script:
   - dotnet build Confluent.Kafka.sln -c %CONFIGURATION%
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.StrongName/Confluent.Kafka.StrongName.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.StrongName/Confluent.Kafka.StrongName.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
 
 artifacts:
-  - path: ./src/Confluent.Kafka/bin/Release/*.nupkg
+  - path: ./src/**/bin/Release/*.nupkg
 
 #deploy:
 #  provider: NuGet
