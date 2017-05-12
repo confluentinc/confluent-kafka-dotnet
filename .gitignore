@@ -1,5 +1,6 @@
 project.lock.json
 bin/
+bin-sn/
 obj/
 *.so
 *.dylib
