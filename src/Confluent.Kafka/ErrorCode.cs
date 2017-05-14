@@ -29,6 +29,26 @@ namespace Confluent.Kafka
     public enum ErrorCode
     {
         /// <summary>
+        ///     Value serialization error
+        /// </summary>
+        Local_ValueSerialization = -1004,
+
+        /// <summary>
+        ///     Key serialization error
+        /// </summary>
+        Local_KeySerialization = -1003,
+
+        /// <summary>
+        ///     Value deserialization error
+        /// </summary>
+        Local_ValueDeserialization = -1002,
+
+        /// <summary>
+        ///     Key deserialization error
+        /// </summary>
+        Local_KeyDeserialization = -1001,
+
+        /// <summary>
         ///     Received message is incorrect
         /// </summary>
         Local_BadMsg = -199,

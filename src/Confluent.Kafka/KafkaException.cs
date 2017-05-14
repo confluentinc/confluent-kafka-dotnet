@@ -40,6 +40,22 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     Initialize a new instance of KafkaException based on
+        ///     an existing Error instance and inner exception.
+        /// </summary>
+        /// <param name="error">
+        ///     The Kafka Error.
+        /// </param>
+        /// <param name="innerException">
+        ///     The exception instance that caused this exception.
+        /// </param>
+        public KafkaException(Error error, Exception innerException)
+            : base(error.Reason, innerException)
+        {
+            Error = error;            
+        }
+
+        /// <summary>
         ///     Initialize a new instance of KafkaException based on 
         ///     an existing ErrorCode value.
         /// </summary>
