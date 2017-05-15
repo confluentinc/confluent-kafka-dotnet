@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Serialization
             }
             catch (Exception ex)
             {
-                throw new KafkaException(new Error(ErrorCode.Local_KeyDeserialization, ex.Message), ex);
+                throw new KafkaException(new Error(ErrorCode.Client_KeyDeserialization, ex.Message), ex);
             }
 
             try
@@ -59,7 +59,7 @@ namespace Confluent.Kafka.Serialization
             }
             catch (Exception ex)
             {
-                throw new KafkaException(new Error(ErrorCode.Local_KeyDeserialization, ex.Message), ex);
+                throw new KafkaException(new Error(ErrorCode.Client_ValueDeserialization, ex.Message), ex);
             }
 
             return new Message<TKey, TValue> (

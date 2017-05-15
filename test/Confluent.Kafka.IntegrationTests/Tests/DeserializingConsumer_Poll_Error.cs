@@ -70,7 +70,8 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnConsumeError += (_, msg) =>
                 {
                     errCnt += 1;
-                    Assert.Equal(ErrorCode.Local_KeyDeserialization, msg.Error.Code);
+                    Assert.Equal(ErrorCode.Client_KeyDeserialization, msg.Error.Code);
+                    Assert.Equal(firstProduced.Offset.Value, msg.Offset.Value);
                 };
 
                 consumer.OnPartitionEOF += (_, partition)
@@ -108,11 +109,12 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     msgCnt += 1;
                 };
-
+                
                 consumer.OnConsumeError += (_, msg) =>
                 {
                     errCnt += 1;
-                    Assert.Equal(ErrorCode.Local_ValueDeserialization, msg.Error.Code);
+                    Assert.Equal(ErrorCode.Client_ValueDeserialization, msg.Error.Code);
+                    Assert.Equal(firstProduced.Offset.Value + 1, msg.Offset.Value);
                 };
 
                 consumer.OnPartitionEOF += (_, partition)

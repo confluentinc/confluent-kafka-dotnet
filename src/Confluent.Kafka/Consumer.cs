@@ -144,7 +144,7 @@ namespace Confluent.Kafka
                     msg.Timestamp,
                     ex.Error
                 );
-                OnConsumeError(this, erroredMsg);
+                OnConsumeError?.Invoke(this, erroredMsg);
                 message = null;
                 return false;
             }
