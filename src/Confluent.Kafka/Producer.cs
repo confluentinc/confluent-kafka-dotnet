@@ -617,6 +617,24 @@ namespace Confluent.Kafka
             => kafkaHandle.Flush(millisecondsTimeout);
 
         /// <summary>
+        ///     Wait until all outstanding produce requests and delievery report
+        ///     callbacks are completed. Refer to <see cref="Flush(int)" /> for
+        ///     more information.
+        /// 
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
+        ///     for more information.
+        /// </returns>
+        public int Flush(TimeSpan timeout)
+            => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+
+        /// <summary>
         ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
         ///
         ///     [UNSTABLE-API] - the semantics and/or type of the return value is
@@ -1203,6 +1221,24 @@ namespace Confluent.Kafka
         /// </remarks>
         public int Flush(int millisecondsTimeout)
             => producer.Flush(millisecondsTimeout);
+
+        /// <summary>
+        ///     Wait until all outstanding produce requests and delievery report
+        ///     callbacks are completed. Refer to <see cref="Flush(int)" /> for
+        ///     more information.
+        /// 
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
+        ///     for more information.
+        /// </returns>
+        public int Flush(TimeSpan timeout)
+            => producer.Flush(timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>

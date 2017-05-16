@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.ProduceAsync(topic, null, new byte[0]).Wait();
                 producer.ProduceAsync(topic, new byte[0], null).Wait();
                 producer.ProduceAsync(topic, new byte[0], new byte[0]).Wait();
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             using (var consumer = new Consumer(consumerConfig))

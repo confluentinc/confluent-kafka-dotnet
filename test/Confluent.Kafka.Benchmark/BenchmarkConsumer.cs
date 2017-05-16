@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Benchmark
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
                     Message msg;
-                    consumer.Consume(out msg);
+                    consumer.Consume(out msg, TimeSpan.FromSeconds(10));
 
                     long startTime = DateTime.Now.Ticks;
 

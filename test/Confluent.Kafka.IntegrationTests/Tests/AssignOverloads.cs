@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.False(dr.Error.HasError);
                 var dr2 = producer.ProduceAsync(topic, null, testString2).Result;
                 Assert.False(dr2.Error.HasError);
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))

@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.NotEqual<long>(dr.Offset, Offset.Invalid);
                 }
 
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             return firstDeliveryReport.TopicPartitionOffset;

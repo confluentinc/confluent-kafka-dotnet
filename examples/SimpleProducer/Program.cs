@@ -49,7 +49,7 @@ namespace Confluent.Kafka.Examples.SimpleProducer
 
                 // Tasks are not waited on synchronously (ContinueWith is not synchronous),
                 // so it's possible they may still in progress here.
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
         }
     }

@@ -117,7 +117,7 @@ namespace Confluent.Kafka.IntegrationTests
                     dh
                 );
 
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             Assert.Equal(6, dh.Count);

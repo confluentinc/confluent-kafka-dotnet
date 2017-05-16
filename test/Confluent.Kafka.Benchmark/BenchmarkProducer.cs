@@ -101,7 +101,7 @@ namespace Confluent.Kafka.Benchmark
                     Console.WriteLine($"{nMessages / (duration/10000.0):F0} messages/ms");
                 }
 
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             return firstDeliveryReport.Offset;

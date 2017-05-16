@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
 
                 var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(topic, 0));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);

@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
                 drs.Add(producer.ProduceAsync(partitionedTopic, "test key 1", "test val 1", 1));
                 drs.Add(producer.ProduceAsync(partitionedTopic, "test key 2", "test val 2", true));
                 drs.Add(producer.ProduceAsync(partitionedTopic, "test key 3", "test val 3"));
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             for (int i=0; i<4; ++i)

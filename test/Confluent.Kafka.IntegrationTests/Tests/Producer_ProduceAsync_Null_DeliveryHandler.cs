@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, dh);
                 producer.ProduceAsync(topic, null, null, dh);
                 Assert.Throws<ArgumentException>(() => producer.ProduceAsync(topic, null, -123, int.MinValue, null, int.MaxValue, 44, dh));
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             Assert.Equal(5, dh.Count);
