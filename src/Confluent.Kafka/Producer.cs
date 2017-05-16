@@ -31,12 +31,6 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka producer (without serialization).
-    ///
-    ///     [UNSTABLE-API] We are considering making this class private in a future version 
-    ///     so as to limit API surface area. Prefer to use the serializing producer
-    ///     <see cref="Confluent.Kafka.Producer{TKey,TValue}" /> where possible. Please let us know
-    ///     if you find the <see cref="GetSerializingProducer{TKey,TValue}(ISerializer{TKey},ISerializer{TValue})" /> method
-    ///     useful.
     /// </summary>
     public class Producer : IDisposable
     {
