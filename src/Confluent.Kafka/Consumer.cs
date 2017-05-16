@@ -151,13 +151,6 @@ namespace Confluent.Kafka
         public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Refer to <see cref="Consume(out Message{TKey, TValue}, int)" />.
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
-        /// </summary>
-        public bool Consume(out Message<TKey, TValue> message)
-            => Consume(out message, -1);
 
         /// <summary>
         ///     Poll for new consumer events, including new messages
@@ -165,7 +158,7 @@ namespace Confluent.Kafka
         ///     event).
         /// </summary>
         /// <param name="millisecondsTimeout"> 
-        ///     The maximum time to block (in milliseconds).
+        ///     The maximum time to block (in milliseconds), or -1 to block indefinitely.
         /// </param>
         public void Poll(int millisecondsTimeout)
         {
@@ -195,12 +188,13 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Poll for new consumer events, including new messages
-        ///     ready to be consumed(which will trigger the OnMessage
+        ///     ready to be consumed (which will trigger the OnMessage
         ///     event).
         /// </summary> 
         /// <remarks>
         ///     Blocks indefinitely until a new event is ready.
         /// </remarks>
+        [Obsolete("Indefinite polling cannot be cancelled so it's usually not what you want. Removing this method to discourage.", false)]
         public void Poll()
             => Poll(-1);
 
@@ -500,13 +494,6 @@ namespace Confluent.Kafka
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
 
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => consumer.ListGroups();
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -984,13 +971,6 @@ namespace Confluent.Kafka
         public bool Consume(out Message message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Refer to <see cref="Consume(out Message, int)" />
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
-        /// </summary>
-        public bool Consume(out Message message)
-            => Consume(out message, -1);
 
         /// <summary>
         ///     Poll for new consumer events, including new messages
@@ -1015,7 +995,7 @@ namespace Confluent.Kafka
         ///     event).
         /// </summary>
         /// <param name="millisecondsTimeout"> 
-        ///     The maximum time to block (in milliseconds)
+        ///     The maximum time to block (in milliseconds), or -1 to block indefinitely.
         /// </param>
         public void Poll(int millisecondsTimeout)
         {
@@ -1034,6 +1014,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Blocks indefinitely until a new event is ready.
         /// </remarks>
+        [Obsolete("Indefinite polling cannot be cancelled so it's usually not what you want. Removing this method to discourage.", false)]
         public void Poll()
             => Poll(-1);
 
@@ -1142,15 +1123,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
-
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka
-        ///     cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => kafkaHandle.ListGroups(-1);
 
 
         /// <summary>

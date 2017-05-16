@@ -360,6 +360,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Returns the number of events served.
         /// </returns>
+        [Obsolete("Indefinite polling cannot be cancelled so it's usually not what you want. Removing this method to discourage.", false)]
         public int Poll()
             => Poll(-1);
 
@@ -624,6 +625,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Refer to <see cref="Flush(int)" />.
         /// </returns>
+        [Obsolete("This method cannot be cancelled so it's usually not what you want. Removing this method to discourage.", false)]
         public int Flush()
             => kafkaHandle.Flush(-1);
 
@@ -659,14 +661,6 @@ namespace Confluent.Kafka
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka
-        ///     cluster (blocks, potentially indefinitely)
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => kafkaHandle.ListGroups(-1);
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -1210,21 +1204,12 @@ namespace Confluent.Kafka
         public int Flush(int millisecondsTimeout)
             => producer.Flush(millisecondsTimeout);
 
-        /// <summary>
-        ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
-        ///
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
-        /// </summary>
-        public int Flush()
-            => producer.Flush();
-
 
         /// <summary>
         ///     Releases all resources used by this Producer.
         /// </summary>
         /// <remarks>
-        ///     You will often want to call <see cref="Flush()" />
+        ///     You will often want to call <see cref="Flush(int)" />
         ///     before disposing a Producer instance.
         /// </remarks>
         public void Dispose()
@@ -1241,15 +1226,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
-
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka
-        ///     cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => producer.ListGroups();
 
 
         /// <summary>
