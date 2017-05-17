@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Authors>Confluent Inc</Authors>
+    <Authors>Confluent Inc.</Authors>
+    <Description>Example demonstrating how to use different serializers with the one underlying producer.</Description>
+    <Copyright>Copyright 2016-2017 Confluent Inc.</Copyright>
+    <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>MultiProducer</AssemblyName>
     <OutputType>Exe</OutputType>

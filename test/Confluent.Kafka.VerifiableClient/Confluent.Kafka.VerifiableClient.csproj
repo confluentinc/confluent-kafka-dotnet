@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <Authors>Confluent Inc</Authors>
+    <Description>Application for use with Kafka's kafkatests client tests.</Description>
+    <Copyright>Copyright 2016-2017 Confluent Inc.</Copyright>
+    <PackageTags>Kafka;Confluent;librdkafka;tests</PackageTags>
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Confluent.Kafka.VerifiableClient</AssemblyName>
     <OutputType>Exe</OutputType>
