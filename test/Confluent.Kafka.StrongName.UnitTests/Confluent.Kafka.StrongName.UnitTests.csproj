@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Authors>Stephen Kazmierczak;Confluent Inc.</Authors>
+    <Description>Tests that the signed version of `Confluent.Kafka.StrongName `has been built and signed correctly.</Description>
+    <Copyright>Copyright 2016-2017 Confluent Inc.</Copyright>
+    <PackageTags>Kafka;Confluent;</PackageTags>
     <TargetFrameworks>netcoreapp1.1;net452</TargetFrameworks>
     <AssemblyName>Confluent.Kafka.StrongName.UnitTests</AssemblyName>
     <PackageId>Confluent.Kafka.StrongName.UnitTests</PackageId>
