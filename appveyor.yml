@@ -11,16 +11,20 @@ environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
 
 build_script:
+  - cmd: SET STRONG_NAME_OPTIONS=/p:SignAssembly=true;AssemblyOriginatorKeyFile=Confluent.Kafka.snk;PackageId=Confluent.Kafka.StrongName;AssemblyName=Confluent.Kafka.StrongName;BaseOutputPath=bin-sn\
   - appveyor-retry dotnet restore -v Minimal
+  - appveyor-retry dotnet restore -v Minimal test/Confluent.Kafka.StrongName.UnitTests/Confluent.Kafka.StrongName.UnitTests.csproj
   - dotnet build Confluent.Kafka.sln -c %CONFIGURATION%
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - dotnet build src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
+ - dotnet test -c %CONFIGURATION% test/Confluent.Kafka.StrongName.UnitTests/Confluent.Kafka.StrongName.UnitTests.csproj
 
 artifacts:
-  - path: ./src/Confluent.Kafka/bin/Release/*.nupkg
+  - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
 
 #deploy:
 #  provider: NuGet
