@@ -14,18 +14,23 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
     ///     Implement this interface to define a deserializer 
     ///     for a particular type T.
     /// </summary>
-    public interface IDeserializer<T>
+    public interface IDeserializer<T> : IDisposable
     {
         /// <summary>
         ///     Deserialize a byte array to an instance of
         ///     type T.
         /// </summary>
+        /// <param name="topic">
+        ///     The topic associated wih the data.
+        /// </param>
         /// <param name="data">
         ///     The serialized representation of an instance
         ///     of type T to deserialize.
@@ -33,6 +38,6 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The deserialized value.
         /// </returns>
-        T Deserialize(byte[] data);
+        T Deserialize(string topic, byte[] data);
     }
 }

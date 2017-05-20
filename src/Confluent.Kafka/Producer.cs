@@ -836,8 +836,8 @@ namespace Confluent.Kafka
         private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull)
         {
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
-            var keyBytes = KeySerializer?.Serialize(key);
-            var valBytes = ValueSerializer?.Serialize(val);
+            var keyBytes = KeySerializer?.Serialize(topic, key);
+            var valBytes = ValueSerializer?.Serialize(topic, val);
             producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
@@ -889,8 +889,8 @@ namespace Confluent.Kafka
         private void Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
         {
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
-            var keyBytes = KeySerializer?.Serialize(key);
-            var valBytes = ValueSerializer?.Serialize(val);
+            var keyBytes = KeySerializer?.Serialize(topic, key);
+            var valBytes = ValueSerializer?.Serialize(topic, val);
             producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
         }
 

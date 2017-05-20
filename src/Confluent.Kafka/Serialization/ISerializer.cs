@@ -14,23 +14,28 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
     ///     Implement this interface to define a serializer 
     ///     for a particular type T.
     /// </summary>
-    public interface ISerializer<T>
+    public interface ISerializer<T> : IDisposable
     {
         /// <summary>
         ///     Serialize an instance of type T to a byte array.
         /// </summary>
+        /// <param name="topic">
+        ///     The topic associated wih the data.
+        /// </param>
         /// <param name="data">
-        ///     The object to serialize
+        ///     The object to serialize.
         /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        byte[] Serialize(T data);
+        byte[] Serialize(string topic, T data);
     }
 }

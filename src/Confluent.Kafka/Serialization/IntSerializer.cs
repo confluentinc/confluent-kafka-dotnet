@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -43,5 +45,13 @@ namespace Confluent.Kafka.Serialization
             result[3] = (byte)val; // & 0xff;
             return result;
         }
+        
+        byte[] ISerializer<int>.Serialize(string topic, int data)
+        {
+            return Serialize(data);
+        }
+
+        void IDisposable.Dispose()
+        { }
     }
 }

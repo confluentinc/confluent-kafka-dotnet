@@ -95,8 +95,8 @@ namespace Confluent.Kafka
                     e.Topic,
                     e.Partition,
                     e.Offset,
-                    KeyDeserializer.Deserialize(e.Key),
-                    ValueDeserializer.Deserialize(e.Value),
+                    KeyDeserializer.Deserialize(e.Topic, e.Key),
+                    ValueDeserializer.Deserialize(e.Topic, e.Value),
                     e.Timestamp,
                     e.Error
                 )

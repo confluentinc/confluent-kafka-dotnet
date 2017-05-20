@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -39,5 +41,13 @@ namespace Confluent.Kafka.Serialization
                 (((int)data[2]) << 8) |
                 (int)data[3];
         }
+
+        int IDeserializer<int>.Deserialize(string topic, byte[] data)
+        {
+            return Deserialize(data);
+        }
+
+        void IDisposable.Dispose()
+        { }
     }
 }
