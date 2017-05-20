@@ -1,13 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Authors>Confluent Inc.</Authors>
-    <Description>Integration tests for Confluent.Kafka</Description>
-    <Copyright>Copyright 2016-2017 Confluent Inc.</Copyright>
-    <PackageTags>Kafka;Confluent;librdkafka;tests</PackageTags>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Confluent.Kafka.IntegrationTests</AssemblyName>
-    <PackageId>Confluent.Kafka.IntegrationTests</PackageId>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 

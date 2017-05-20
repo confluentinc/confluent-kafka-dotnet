@@ -1,14 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Authors>Andreas Heider;Confluent Inc.</Authors>
-    <Description>Example demonstrating how to consume messages.</Description>
-    <Copyright>Copyright 2016-2017 Confluent Inc., Andreas Heider</Copyright>
-    <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>AdvancedConsumer</AssemblyName>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>AdvancedConsumer</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

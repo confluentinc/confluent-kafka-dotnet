@@ -1,14 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Authors>Confluent Inc.</Authors>
-    <Description>Benchmark tests for Confluent.Kafka</Description>
-    <Copyright>Copyright 2016-2017 Confluent Inc.</Copyright>
-    <PackageTags>Kafka;Confluent;librdkafka;benchmark;tests</PackageTags>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Confluent.Kafka.Benchmark</AssemblyName>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>Confluent.Kafka.Benchmark</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
