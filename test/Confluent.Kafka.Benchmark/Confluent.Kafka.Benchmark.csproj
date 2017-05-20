@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Confluent.Kafka.Benchmark</AssemblyName>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>Confluent.Kafka.Benchmark</PackageId>
   </PropertyGroup>
 
   <ItemGroup>

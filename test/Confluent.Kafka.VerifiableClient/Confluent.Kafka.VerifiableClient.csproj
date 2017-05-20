@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Authors>Confluent Inc</Authors>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Confluent.Kafka.VerifiableClient</AssemblyName>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>Confluent.Kafka.VerifiableClient</PackageId>
     <RuntimeIdentifiers>win7-x64;debian-x64;ubuntu.16.04-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
 

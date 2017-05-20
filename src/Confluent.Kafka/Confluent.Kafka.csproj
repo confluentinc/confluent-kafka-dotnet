@@ -1,13 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Authors>Confluent Inc.;Andreas Heider</Authors>
+    <Description>Confluent's .NET Client for Apache Kafka</Description>
+    <Copyright>Copyright 2016-2017 Confluent Inc., Andreas Heider</Copyright>
+    <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/confluent_logo.png</PackageIconUrl>
+    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+    <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
+    <PackageId>Confluent.Kafka</PackageId>
+    <Title>Confluent.Kafka</Title>
+    <AssemblyName>Confluent.Kafka</AssemblyName>
     <VersionPrefix>0.9.5</VersionPrefix>
     <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Confluent.Kafka</AssemblyName>
-    <PackageId>Confluent.Kafka</PackageId>
-    <PackageTags>kafka;librdkafka;confluent</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

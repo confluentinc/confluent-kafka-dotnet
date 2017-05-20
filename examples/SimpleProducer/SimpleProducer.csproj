@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Authors>Andreas Heider;Confluent Inc</Authors>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>SimpleProducer</AssemblyName>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputType>Exe</OutputType>
-    <PackageId>SimpleProducer</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
