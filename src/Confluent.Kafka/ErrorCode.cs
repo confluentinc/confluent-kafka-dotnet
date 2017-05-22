@@ -29,16 +29,6 @@ namespace Confluent.Kafka
     public enum ErrorCode
     {
         /// <summary>
-        ///     Value deserialization error
-        /// </summary>
-        Client_ValueDeserialization = -1002,
-
-        /// <summary>
-        ///     Key deserialization error
-        /// </summary>
-        Client_KeyDeserialization = -1001,
-
-        /// <summary>
         ///     Received message is incorrect
         /// </summary>
         Local_BadMsg = -199,
@@ -207,6 +197,41 @@ namespace Confluent.Kafka
         ///     Timed out in queue
         /// </summary>
         Local_TimedOutQueue = -166,
+
+        /// <summary>
+        ///     Feature not supported by broker
+        /// </summary>
+        Local_UnsupportedFeature = -165,
+
+        /// <summary>
+        ///     Awaiting cache update
+        /// </summary>
+        Local_WaitCache = -164,
+
+        /// <summary>
+        ///     Operation interrupted
+        /// </summary>
+        Local_Intr = -163,
+
+        /// <summary>
+        ///     Key serialization error
+        /// </summary>
+        Local_KeySerialization = -162,
+
+        /// <summary>
+        ///     Value serialization error
+        /// </summary>
+        Local_ValueSerialization = -161,
+
+        /// <summary>
+        ///     Key deserialization error
+        /// </summary>
+        Local_KeyDeserialization = -160,
+
+        /// <summary>
+        ///     Value deserialization error
+        /// </summary>
+        Local_ValueDeserialization = -159,
 
 
         /// <summary>
