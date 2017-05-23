@@ -89,18 +89,8 @@ namespace Confluent.Kafka
 
             consumer = new Consumer(config);
 
-            // TODO: bypass this.consumer for this event to optimize perf.
-            consumer.OnMessage += (sender, e) => OnMessage?.Invoke(sender,
-                new Message<TKey, TValue> (
-                    e.Topic,
-                    e.Partition,
-                    e.Offset,
-                    KeyDeserializer.Deserialize(e.Key),
-                    ValueDeserializer.Deserialize(e.Value),
-                    e.Timestamp,
-                    e.Error
-                )
-            );
+            consumer.OnConsumeError += (sender, msg) 
+                => OnConsumeError?.Invoke(this, msg);
         }
 
         /// <summary>
@@ -139,7 +129,26 @@ namespace Confluent.Kafka
                 return false;
             }
 
-            message = msg.Deserialize(KeyDeserializer, ValueDeserializer);
+            try
+            {
+                message = msg.Deserialize(KeyDeserializer, ValueDeserializer);
+            }
+            catch (KafkaException ex)
+            {
+                var erroredMsg = new Message(
+                    msg.Topic,
+                    msg.Partition,
+                    msg.Offset,
+                    msg.Key,
+                    msg.Value,
+                    msg.Timestamp,
+                    ex.Error
+                );
+                OnConsumeError?.Invoke(this, erroredMsg);
+                message = null;
+                return false;
+            }
+
             return true;
         }
 
@@ -284,11 +293,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).
         /// </remarks>
-        public event EventHandler<Message> OnConsumeError
-        {
-            add { consumer.OnConsumeError += value; }
-            remove { consumer.OnConsumeError -= value; }
-        }
+        public event EventHandler<Message> OnConsumeError;
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all 

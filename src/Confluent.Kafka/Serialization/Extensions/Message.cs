@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -38,14 +40,37 @@ namespace Confluent.Kafka.Serialization
         ///     A typed message instance corresponding to <paramref name="message" />.
         /// </returns>
         public static Message<TKey, TValue> Deserialize<TKey, TValue>(this Message message, IDeserializer<TKey> keyDeserializer, IDeserializer<TValue> valueDeserializer)
-            => new Message<TKey, TValue> (
+        {
+            TKey key;
+            TValue val;
+
+            try
+            {
+                key = keyDeserializer.Deserialize(message.Key);
+            }
+            catch (Exception ex)
+            {
+                throw new KafkaException(new Error(ErrorCode.Local_KeyDeserialization, ex.Message), ex);
+            }
+
+            try
+            {
+                val = valueDeserializer.Deserialize(message.Value);
+            }
+            catch (Exception ex)
+            {
+                throw new KafkaException(new Error(ErrorCode.Local_ValueDeserialization, ex.Message), ex);
+            }
+
+            return new Message<TKey, TValue> (
                 message.Topic,
                 message.Partition,
                 message.Offset,
-                keyDeserializer.Deserialize(message.Key),
-                valueDeserializer.Deserialize(message.Value),
+                key,
+                val,
                 message.Timestamp,
                 message.Error
             );
+        }
     }
 }

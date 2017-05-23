@@ -198,6 +198,41 @@ namespace Confluent.Kafka
         /// </summary>
         Local_TimedOutQueue = -166,
 
+        /// <summary>
+        ///     Feature not supported by broker
+        /// </summary>
+        Local_UnsupportedFeature = -165,
+
+        /// <summary>
+        ///     Awaiting cache update
+        /// </summary>
+        Local_WaitCache = -164,
+
+        /// <summary>
+        ///     Operation interrupted
+        /// </summary>
+        Local_Intr = -163,
+
+        /// <summary>
+        ///     Key serialization error
+        /// </summary>
+        Local_KeySerialization = -162,
+
+        /// <summary>
+        ///     Value serialization error
+        /// </summary>
+        Local_ValueSerialization = -161,
+
+        /// <summary>
+        ///     Key deserialization error
+        /// </summary>
+        Local_KeyDeserialization = -160,
+
+        /// <summary>
+        ///     Value deserialization error
+        /// </summary>
+        Local_ValueDeserialization = -159,
+
 
         /// <summary>
         ///     Unknown broker error
