@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{8859B121-D3C0-421E-8A0E-1C6F3B395A1F}"
 EndProject
@@ -30,6 +30,16 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleConsumer", "examples\SimpleConsumer\SimpleConsumer.csproj", "{25002C63-82EE-43BF-A63F-A3D01AC5D0F1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProducer", "examples\SimpleProducer\SimpleProducer.csproj", "{835A806F-D265-44CA-BA30-F71ABD33A1FC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6AD243E9-3BA3-4F38-AAF1-B16550C0C607}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		appveyor.yml = appveyor.yml
+		LICENSE = LICENSE
+		Makefile = Makefile
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
