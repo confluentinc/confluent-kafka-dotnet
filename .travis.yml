@@ -28,4 +28,5 @@ install:
 script:
    - make build
    - make unit_test
+   - make install_kafka
    - make integration_test
