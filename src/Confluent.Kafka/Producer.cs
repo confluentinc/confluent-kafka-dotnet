@@ -322,7 +322,9 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="millisecondsTimeout">
         ///     The maximum period of time to block (in milliseconds) if no
-        ///     callback events are waiting.
+        ///     callback events are waiting or -1 to block indefinitely. 
+        ///     You should typically use a relatively short timout period 
+        ///     because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     Returns the number of events served.
@@ -343,7 +345,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="timeout">
         ///     The maximum period of time to block if no callback events
-        ///     are waiting.
+        ///     are waiting. You should typically use a relatively short 
+        ///     timout period because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     Returns the number of events served.
@@ -360,7 +363,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Returns the number of events served.
         /// </returns>
-        [Obsolete("Indefinite polling cannot be cancelled so it's usually not what you want. Removing this method to discourage.", false)]
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public int Poll()
             => Poll(-1);
 
@@ -590,7 +593,9 @@ namespace Confluent.Kafka
         ///     subject to change.
         /// </summary>
         /// <param name="millisecondsTimeout">
-        ///     The maximum time to block in milliseconds.
+        ///     The maximum time to block in milliseconds or -1 to block
+        ///     indefinitely. You should typically use a relatively short timout 
+        ///     period because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. This should be interpreted
@@ -625,7 +630,9 @@ namespace Confluent.Kafka
         ///     subject to change.
         /// </summary>
         /// <param name="timeout">
-        ///     The maximum length of time to block.
+        ///     The maximum length of time to block. You should typically use a
+        ///     relatively short timout period because this operation cannot be 
+        ///     cancelled.
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
@@ -643,7 +650,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Refer to <see cref="Flush(int)" />.
         /// </returns>
-        [Obsolete("This method cannot be cancelled so it's usually not what you want. Removing this method to discourage.", false)]
+        [Obsolete("Use an overload of Flush with a finite timeout.", false)]
         public int Flush()
             => kafkaHandle.Flush(-1);
 
@@ -1187,7 +1194,6 @@ namespace Confluent.Kafka
         }
 
 
-
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
         ///     callbacks are completed.
@@ -1196,7 +1202,9 @@ namespace Confluent.Kafka
         ///     subject to change.
         /// </summary>
         /// <param name="millisecondsTimeout">
-        ///     The maximum time to block in milliseconds.
+        ///     The maximum time to block in milliseconds, or -1 to block
+        ///     indefinitely. You should typically use a relatively short timout 
+        ///     period because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. This should be interpreted
@@ -1231,7 +1239,9 @@ namespace Confluent.Kafka
         ///     subject to change.
         /// </summary>
         /// <param name="timeout">
-        ///     The maximum length of time to block.
+        ///     The maximum length of time to block. You should typically use a
+        ///     relatively short timout period because this operation cannot be 
+        ///     cancelled.
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
