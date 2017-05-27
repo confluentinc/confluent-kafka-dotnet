@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
 using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
@@ -60,7 +61,7 @@ namespace Confluent.Kafka.Examples.MultiProducer
 
                 // ProducerAsync tasks are not waited on - there is a good chance they are still
                 // in flight.
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
         }
     }

@@ -94,22 +94,25 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Poll for new messages / consumer events.
+        ///     Poll for new messages / consumer events. Blocks until a new 
+        ///     message or event is ready to be handled or the timeout period
+        ///     <paramref name="millisecondsTimeout" /> has elapsed.
         ///     
         ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / 
         ///     <see cref="OnMessage"/> instead of Consume. We may remove
-        ///     this method in the future
-        ///     to limit API surface area. Please let us know if 
-        ///     you have a use case where Consume more convenient 
-        ///     than Poll.
+        ///     this method in the future to limit API surface area. 
+        ///     Please let us know if you have a use case where Consume 
+        ///     more convenient than Poll.
         /// </summary>
         /// <param name="message">
         ///     A consumed message, or null if no messages are 
         ///     available for consumption.
         /// </param>
         /// <param name="millisecondsTimeout">
-        ///     The maximum time to block for messages to become
-        ///     available for consumption.
+        ///     The maximum time to block (in milliseconds), or -1 to 
+        ///     block indefinitely. You should typically use a
+        ///     relatively short timout period because this operation
+        ///     cannot be cancelled.
         /// </param>
         /// <returns>
         ///     true: a message (with non-error state) was consumed.
@@ -160,21 +163,19 @@ namespace Confluent.Kafka
         public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Refer to <see cref="Consume(out Message{TKey, TValue}, int)" />.
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
-        /// </summary>
-        public bool Consume(out Message<TKey, TValue> message)
-            => Consume(out message, -1);
 
         /// <summary>
         ///     Poll for new consumer events, including new messages
         ///     ready to be consumed (which will trigger the OnMessage
-        ///     event).
+        ///     event). Blocks until a new event is available to be 
+        ///     handled or the timeout period <paramref name="millisecondsTimeout" /> 
+        ///     has elapsed.
         /// </summary>
         /// <param name="millisecondsTimeout"> 
-        ///     The maximum time to block (in milliseconds).
+        ///     The maximum time to block (in milliseconds), or -1 to 
+        ///     block indefinitely. You should typically use a
+        ///     relatively short timout period because this operation
+        ///     cannot be cancelled.
         /// </param>
         public void Poll(int millisecondsTimeout)
         {
@@ -188,10 +189,14 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Poll for new consumer events, including new messages
         ///     ready to be consumed (which will trigger the OnMessage
-        ///     event).
+        ///     event). Blocks until a new event is available to be
+        ///     handled or the timeout period <paramref name="timeout" /> 
+        ///     has elapsed.
         /// </summary>
         /// <param name="timeout"> 
-        ///     The maximum time to block.
+        ///     The maximum time to block. You should typically use a
+        ///     relatively short timout period because this operation
+        ///     cannot be cancelled.
         /// </param>
         public void Poll(TimeSpan timeout)
         {
@@ -204,12 +209,13 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Poll for new consumer events, including new messages
-        ///     ready to be consumed(which will trigger the OnMessage
+        ///     ready to be consumed (which will trigger the OnMessage
         ///     event).
         /// </summary> 
         /// <remarks>
         ///     Blocks indefinitely until a new event is ready.
         /// </remarks>
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public void Poll()
             => Poll(-1);
 
@@ -505,13 +511,6 @@ namespace Confluent.Kafka
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
 
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => consumer.ListGroups();
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -935,22 +934,25 @@ namespace Confluent.Kafka
             => kafkaHandle.Assign(null);
 
         /// <summary>
-        ///     Poll for new messages / consumer events.
+        ///     Poll for new messages / consumer events. Blocks until a new 
+        ///     message or event is ready to be handled or the timeout period
+        ///     <paramref name="millisecondsTimeout" /> has elapsed.
         ///     
-        ///     [UNSTABLE-API] -  prefer to use <see cref="Poll()"/> / 
-        ///     <see cref="OnMessage"/> instead of Consume. We may 
-        ///     remove this method in the future
-        ///     to limit API surface area. Please let us know if 
-        ///     you have a use case where Consume more convenient 
-        ///     than Poll.
+        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / 
+        ///     <see cref="OnMessage"/> instead of Consume. We may remove
+        ///     this method in the future to limit API surface area. 
+        ///     Please let us know if you have a use case where Consume 
+        ///     more convenient than Poll.
         /// </summary>
         /// <param name="message">
         ///     A consumed message, or null if no messages are 
         ///     available for consumption.
         /// </param>
         /// <param name="millisecondsTimeout">
-        ///     The maximum time to block for messages to become
-        ///     available for consumption.
+        ///     The maximum time to block (in milliseconds), or -1 to 
+        ///     block indefinitely. You should typically use a
+        ///     relatively short timout period because this operation
+        ///     cannot be cancelled.
         /// </param>
         /// <returns>
         ///     true: a message (with non-error state) was consumed.
@@ -989,13 +991,6 @@ namespace Confluent.Kafka
         public bool Consume(out Message message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Refer to <see cref="Consume(out Message, int)" />
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
-        /// </summary>
-        public bool Consume(out Message message)
-            => Consume(out message, -1);
 
         /// <summary>
         ///     Poll for new consumer events, including new messages
@@ -1003,7 +998,9 @@ namespace Confluent.Kafka
         ///     event).
         /// </summary>
         /// <param name="timeout"> 
-        ///     The maximum time to block.
+        ///     The maximum time to block. You should typically use a
+        ///     relatively short timout period because this operation
+        ///     cannot be cancelled.
         /// </param>
         public void Poll(TimeSpan timeout)
         {
@@ -1017,10 +1014,15 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Poll for new consumer events, including new messages
         ///     ready to be consumed (which will trigger the OnMessage
-        ///     event).
+        ///     event). Blocks until a new event is available to be 
+        ///     handled or the timeout period <paramref name="millisecondsTimeout" /> 
+        ///     has elapsed.
         /// </summary>
         /// <param name="millisecondsTimeout"> 
-        ///     The maximum time to block (in milliseconds)
+        ///     The maximum time to block (in milliseconds), or -1 to 
+        ///     block indefinitely. You should typically use a
+        ///     relatively short timout period because this operation
+        ///     cannot be cancelled.
         /// </param>
         public void Poll(int millisecondsTimeout)
         {
@@ -1039,6 +1041,7 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Blocks indefinitely until a new event is ready.
         /// </remarks>
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public void Poll()
             => Poll(-1);
 
@@ -1147,15 +1150,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
-
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka
-        ///     cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => kafkaHandle.ListGroups(-1);
 
 
         /// <summary>

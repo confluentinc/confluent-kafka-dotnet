@@ -322,7 +322,9 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="millisecondsTimeout">
         ///     The maximum period of time to block (in milliseconds) if no
-        ///     callback events are waiting.
+        ///     callback events are waiting or -1 to block indefinitely. 
+        ///     You should typically use a relatively short timout period 
+        ///     because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     Returns the number of events served.
@@ -343,7 +345,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="timeout">
         ///     The maximum period of time to block if no callback events
-        ///     are waiting.
+        ///     are waiting. You should typically use a relatively short 
+        ///     timout period because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     Returns the number of events served.
@@ -360,6 +363,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Returns the number of events served.
         /// </returns>
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public int Poll()
             => Poll(-1);
 
@@ -589,7 +593,9 @@ namespace Confluent.Kafka
         ///     subject to change.
         /// </summary>
         /// <param name="millisecondsTimeout">
-        ///     The maximum time to block in milliseconds.
+        ///     The maximum time to block in milliseconds or -1 to block
+        ///     indefinitely. You should typically use a relatively short timout 
+        ///     period because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. This should be interpreted
@@ -616,6 +622,26 @@ namespace Confluent.Kafka
             => kafkaHandle.Flush(millisecondsTimeout);
 
         /// <summary>
+        ///     Wait until all outstanding produce requests and delievery report
+        ///     callbacks are completed. Refer to <see cref="Flush(int)" /> for
+        ///     more information.
+        /// 
+        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
+        ///     subject to change.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block. You should typically use a
+        ///     relatively short timout period because this operation cannot be 
+        ///     cancelled.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
+        ///     for more information.
+        /// </returns>
+        public int Flush(TimeSpan timeout)
+            => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+
+        /// <summary>
         ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
         ///
         ///     [UNSTABLE-API] - the semantics and/or type of the return value is
@@ -624,6 +650,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Refer to <see cref="Flush(int)" />.
         /// </returns>
+        [Obsolete("Use an overload of Flush with a finite timeout.", false)]
         public int Flush()
             => kafkaHandle.Flush(-1);
 
@@ -659,14 +686,6 @@ namespace Confluent.Kafka
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka
-        ///     cluster (blocks, potentially indefinitely)
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => kafkaHandle.ListGroups(-1);
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -1175,7 +1194,6 @@ namespace Confluent.Kafka
         }
 
 
-
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
         ///     callbacks are completed.
@@ -1184,7 +1202,9 @@ namespace Confluent.Kafka
         ///     subject to change.
         /// </summary>
         /// <param name="millisecondsTimeout">
-        ///     The maximum time to block in milliseconds.
+        ///     The maximum time to block in milliseconds, or -1 to block
+        ///     indefinitely. You should typically use a relatively short timout 
+        ///     period because this operation cannot be cancelled.
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. This should be interpreted
@@ -1211,20 +1231,31 @@ namespace Confluent.Kafka
             => producer.Flush(millisecondsTimeout);
 
         /// <summary>
-        ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
-        ///
+        ///     Wait until all outstanding produce requests and delievery report
+        ///     callbacks are completed. Refer to <see cref="Flush(int)" /> for
+        ///     more information.
+        /// 
         ///     [UNSTABLE-API] - the semantics and/or type of the return value is
         ///     subject to change.
         /// </summary>
-        public int Flush()
-            => producer.Flush();
+        /// <param name="timeout">
+        ///     The maximum length of time to block. You should typically use a
+        ///     relatively short timout period because this operation cannot be 
+        ///     cancelled.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
+        ///     for more information.
+        /// </returns>
+        public int Flush(TimeSpan timeout)
+            => producer.Flush(timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
         ///     Releases all resources used by this Producer.
         /// </summary>
         /// <remarks>
-        ///     You will often want to call <see cref="Flush()" />
+        ///     You will often want to call <see cref="Flush(int)" />
         ///     before disposing a Producer instance.
         /// </remarks>
         public void Dispose()
@@ -1241,15 +1272,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
-
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka
-        ///     cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public List<GroupInfo> ListGroups()
-            => producer.ListGroups();
 
 
         /// <summary>

@@ -266,7 +266,7 @@ namespace Confluent.Kafka.VerifiableClient
             ProduceTimer.Dispose();
 
             Dbg("Flushing Producer");
-            var remain = Handle.Flush(10000);
+            var remain = Handle.Flush(TimeSpan.FromSeconds(10));
             Dbg($"{remain} messages remain in queue after flush");
 
             // Explicitly handle dispose to catch hang-on-dispose errors

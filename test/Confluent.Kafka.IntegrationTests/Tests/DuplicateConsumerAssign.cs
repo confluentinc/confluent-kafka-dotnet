@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
                 Assert.NotNull(dr);
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             using (var consumer1 = new Consumer(consumerConfig))

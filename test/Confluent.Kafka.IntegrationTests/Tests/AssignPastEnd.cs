@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 dr = producer.ProduceAsync(topic, null, testString).Result;
                 Assert.True(dr.Offset >= 0);
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "latest" } };

@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
                 Assert.Throws<ArgumentException>(() => { producer.ProduceAsync(partitionedTopic, null, 8, 100, null, -33, int.MaxValue); });
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             for (int i=0; i<5; ++i)

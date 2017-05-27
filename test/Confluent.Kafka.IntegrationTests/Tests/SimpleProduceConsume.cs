@@ -87,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.NotEqual<long>(result.Offset, Offset.Invalid);
             Assert.Equal(TimestampType.CreateTime, result.Timestamp.Type);
             Assert.True(Math.Abs((DateTime.UtcNow - result.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-            producer.Flush();
+            producer.Flush(TimeSpan.FromSeconds(10));
             return result;
         }
     }

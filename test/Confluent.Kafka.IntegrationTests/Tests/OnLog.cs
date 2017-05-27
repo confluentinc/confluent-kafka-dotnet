@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                   => logCount += 1;
 
                 producer.ProduceAsync(topic, null, (byte[])null).Wait();
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                   => logCount += 1;
 
                 dr = producer.ProduceAsync(topic, null, "test value").Result;
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
@@ -81,7 +81,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
                 
                 sProducer.ProduceAsync(topic, null, "test value").Wait();
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 

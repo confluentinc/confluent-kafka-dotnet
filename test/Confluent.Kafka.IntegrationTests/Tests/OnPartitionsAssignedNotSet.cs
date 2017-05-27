@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var dr = producer.ProduceAsync(topic, null, "test string").Result;
                 Assert.NotEqual((long)dr.Offset, (long)Offset.Invalid); // TODO: remove long cast. this is fixed in PR #29
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))

@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.ProduceAsync(topic, "test key 1", "test val 1", 0, dh);
                 producer.ProduceAsync(topic, "test key 2", "test val 2", true, dh);
                 producer.ProduceAsync(topic, "test key 3", "test val 3", dh);
-                producer.Flush();
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             Assert.Equal(4, dh.Count);
