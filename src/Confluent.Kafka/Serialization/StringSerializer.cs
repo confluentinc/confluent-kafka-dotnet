@@ -16,6 +16,8 @@
 
 using System;
 using System.Text;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -37,16 +39,7 @@ namespace Confluent.Kafka.Serialization
             this.encoding = encoding;
         }
 
-        /// <summary>
-        ///     Encodes a string value in a byte array.
-        /// </summary>
-        /// <param name="val">
-        ///     The string value to serialize.
-        /// </param>
-        /// <returns>
-        ///     <paramref name="val" /> encoded in a byte array (or null if <paramref name="val" /> is null).
-        /// </returns>
-        public byte[] Serialize(string val)
+        private byte[] Serialize(string val)
         {
             if (val == null)
             {
@@ -55,12 +48,31 @@ namespace Confluent.Kafka.Serialization
             return encoding.GetBytes(val);
         }
 
-        byte[] ISerializer<string>.Serialize(string topic, string data)
+        /// <summary>
+        ///     Encodes a string value in a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     The string value to serialize.
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     <paramref name="data" /> encoded in a byte array (or null if <paramref name="data" /> is null).
+        /// </returns>
+        public byte[] Serialize(string topic, string data, bool isKey)
         {
             return Serialize(data);
         }
 
-        void IDisposable.Dispose()
-        { }
+        /// <summary>
+        ///     Configuration properties used by the serializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }

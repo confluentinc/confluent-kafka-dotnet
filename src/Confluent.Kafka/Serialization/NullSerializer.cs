@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -23,23 +25,33 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class NullSerializer : ISerializer<Null>
     {
-        /// <param name="val">
+        private byte[] Serialize(Null val)
+        {
+            return null;
+        }
+
+        /// <param name="data">
         ///     Can only be null (the <see cref="Null"/> class cannot be instantiated).
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
         /// </param>
         /// <returns>
         ///     null
         /// </returns>
-        public byte[] Serialize(Null val)
+        public byte[] Serialize(string topic, Null data, bool isKey)
         {
             return null;
         }
 
-        byte[] ISerializer<Null>.Serialize(string topic, Null data)
-        {
-            return null;
-        }
-
-        void IDisposable.Dispose()
-        { }
+        /// <summary>
+        ///     Configuration properties used by the serializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }

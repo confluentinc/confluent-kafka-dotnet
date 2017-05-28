@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -22,7 +24,7 @@ namespace Confluent.Kafka.Serialization
     ///     Implement this interface to define a serializer 
     ///     for a particular type T.
     /// </summary>
-    public interface ISerializer<T> : IDisposable
+    public interface ISerializer<T>
     {
         /// <summary>
         ///     Serialize an instance of type T to a byte array.
@@ -33,9 +35,18 @@ namespace Confluent.Kafka.Serialization
         /// <param name="data">
         ///     The object to serialize.
         /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        byte[] Serialize(string topic, T data);
+        byte[] Serialize(string topic, T data, bool isKey);
+
+        /// <summary>
+        ///     Configuration properties used by the serializer.
+        /// </summary>
+        IEnumerable<KeyValuePair<string, object>> Configuration { get; }
     }
 }

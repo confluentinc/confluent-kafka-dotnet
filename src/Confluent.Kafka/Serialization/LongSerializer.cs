@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -23,16 +25,7 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class LongSerializer : ISerializer<long>
     {
-        /// <summary>
-        ///     Serializes the specified <see cref="System.Int64"/> value to a byte array of length 8. Byte order is big endian (network byte order).
-        /// </summary>
-        /// <param name="val">
-        ///     The <see cref="System.Int64"/> value to serialize.
-        /// </param>
-        /// <returns>
-        ///     The <see cref="System.Int64"/> value <paramref name="val" /> encoded as a byte array of length 8 (network byte order).
-        /// </returns>
-        public byte[] Serialize(long val)
+        private byte[] Serialize(long val)
         {
             var result = new byte[8];
             result[0] = (byte)(val >> 56);
@@ -46,12 +39,31 @@ namespace Confluent.Kafka.Serialization
             return result;
         }
         
-        byte[] ISerializer<long>.Serialize(string topic, long data)
+        /// <summary>
+        ///     Serializes the specified <see cref="System.Int64"/> value to a byte array of length 8. Byte order is big endian (network byte order).
+        /// </summary>
+        /// <param name="data">
+        ///     The <see cref="System.Int64"/> value to serialize.
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     The <see cref="System.Int64"/> value <paramref name="data" /> encoded as a byte array of length 8 (network byte order).
+        /// </returns>
+        public byte[] Serialize(string topic, long data, bool isKey)
         {
             return Serialize(data);
         }
 
-        void IDisposable.Dispose()
-        { }
+        /// <summary>
+        ///     Configuration properties used by the serializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }
