@@ -48,22 +48,15 @@ namespace Confluent.Kafka.Serialization
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this serializer).
         /// </param>
-        /// <param name="isKey">
-        ///     true: deserialization is for a key, 
-        ///     false: deserializing is for a value.
-        /// </param>
         /// <returns>
         ///     The <see cref="System.Int64"/> value <paramref name="data" /> encoded as a byte array of length 8 (network byte order).
         /// </returns>
-        public byte[] Serialize(string topic, long data, bool isKey)
+        public byte[] Serialize(string topic, long data)
         {
             return Serialize(data);
         }
 
-        /// <summary>
-        ///     Configuration properties used by the serializer.
-        /// </summary>
-        public IEnumerable<KeyValuePair<string, object>> Configuration 
-            => new List<KeyValuePair<string, object>>();
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+            => config;
     }
 }

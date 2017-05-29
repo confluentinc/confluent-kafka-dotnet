@@ -85,10 +85,13 @@ namespace Confluent.Kafka
                 ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
             }
 
+            var adjustedConfig1 = KeyDeserializer.Configure(config, true);
+            var adjustedConfig2 = ValueDeserializer.Configure(config, false);
+
             consumer = new Consumer(
                 config.Where(item => 
-                    !keyDeserializer.Configuration.Select(c => c.Key).Contains(item.Key) &&
-                    !valueDeserializer.Configuration.Select(c => c.Key).Contains(item.Key)
+                    adjustedConfig1.Count(ci => ci.Key == item.Key) > 0 &&
+                    adjustedConfig2.Count(ci => ci.Key == item.Key) > 0
                 )
             );
 

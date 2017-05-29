@@ -37,18 +37,24 @@ namespace Confluent.Kafka.Serialization
         ///     The serialized representation of an instance
         ///     of type T to deserialize.
         /// </param>
-        /// <param name="isKey">
-        ///     true: deserialization is for a key, 
-        ///     false: deserializing is for a value.
-        /// </param>
         /// <returns>
         ///     The deserialized value.
         /// </returns>
-        T Deserialize(string topic, byte[] data, bool isKey);
+        T Deserialize(string topic, byte[] data);
 
         /// <summary>
-        ///     Configuration properties used by the deserializer.
+        ///     Configure the deserializer using relevant configuration parameter(s) in <paramref name="config" /> (if present).
         /// </summary>
-        IEnumerable<KeyValuePair<string, object>> Configuration { get; }
+        /// <param name="config">
+        ///     A collection containing configuration parameter(s) relevant to this deserializer.
+        /// </param>
+        /// <param name="isKey">
+        ///     true: if this deserializer instance is used to serialize keys,
+        ///     false: if this deserializer instance is used to serialize values.
+        /// </param>
+        /// <returns>
+        ///     A configuration collection with configuration parameter(s) relevant to this deseriaizer removed.
+        /// </returns>
+        IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey);
     }
 }

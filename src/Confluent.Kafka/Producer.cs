@@ -853,8 +853,8 @@ namespace Confluent.Kafka
         private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull)
         {
             var handler = new TypedTaskDeliveryHandlerShim(key, val);
-            var keyBytes = KeySerializer?.Serialize(topic, key, true);
-            var valBytes = ValueSerializer?.Serialize(topic, val, false);
+            var keyBytes = KeySerializer?.Serialize(topic, key);
+            var valBytes = ValueSerializer?.Serialize(topic, val);
             producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
             return handler.Task;
         }
@@ -906,8 +906,8 @@ namespace Confluent.Kafka
         private void Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
         {
             var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
-            var keyBytes = KeySerializer?.Serialize(topic, key, true);
-            var valBytes = ValueSerializer?.Serialize(topic, val, false);
+            var keyBytes = KeySerializer?.Serialize(topic, key);
+            var valBytes = ValueSerializer?.Serialize(topic, val);
             producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
         }
 
@@ -965,10 +965,13 @@ namespace Confluent.Kafka
             ISerializer<TValue> valueSerializer,
             bool manualPoll, bool disableDeliveryReports)
         {
+            var adjustedConfig1 = keySerializer.Configure(config, true);
+            var adjustedConfig2 = valueSerializer.Configure(config, false);
+
             producer = new Producer(
                 config.Where(item => 
-                    !keySerializer.Configuration.Select(ci => ci.Key).Contains(item.Key) &&
-                    !valueSerializer.Configuration.Select(ci => ci.Key).Contains(item.Key)
+                    adjustedConfig1.Count(ci => ci.Key == item.Key) > 0 &&
+                    adjustedConfig2.Count(ci => ci.Key == item.Key) > 0
                 ), 
                 manualPoll, 
                 disableDeliveryReports

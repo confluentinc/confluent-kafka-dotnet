@@ -27,8 +27,10 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class StringSerializer : ISerializer<string>
     {
-        private Encoding keyEncoding;
-        private Encoding valueEncoding;
+        private Encoding encoding;
+
+        private const string KeyEncodingConfigParam = "dotnet.key.string.serializer.encoding";
+        private const string ValueEncodingConfigParam = "dotnet.value.string.serializer.encoding";
 
         /// <summary>
         ///     Initializes a new StringSerializer class instance.
@@ -38,13 +40,12 @@ namespace Confluent.Kafka.Serialization
         /// </param>
         public StringSerializer(Encoding encoding)
         {
-            this.keyEncoding = encoding;
-            this.valueEncoding = encoding;
+            this.encoding = encoding;
         }
 
-        private static Encoding StringToEncoding(string s) 
+        private static Encoding StringToEncoding(string encodingName) 
         {
-            switch (s)
+            switch (encodingName)
             {
                 case "UTF8":
                     return Encoding.UTF8;
@@ -59,31 +60,16 @@ namespace Confluent.Kafka.Serialization
                 case "BigEndignUnicode":
                     return Encoding.BigEndianUnicode;
                 default:
-                    throw new ArgumentException("unknown string encoding: " + s);
+                    throw new ArgumentException("unknown string encoding: " + encodingName);
             }
         }
 
         /// <summary>
         ///     Initializes a new StringSerializer class instance.
+        ///     The encoding encoding to use must be provided via <see cref="Producer" /> configuration properties.
         /// </summary>
-        /// <param name="config">
-        ///     Configuration properties.
-        /// </param>
-        public StringSerializer(IEnumerable<KeyValuePair<string, object>> config)
+        public StringSerializer()
         {
-            if (config.Count(ci => ci.Key == "string.serializer.encoding.key") > 0)
-            {
-                var configItem = config.Single(ci => ci.Key == "string.serializer.encoding.key");
-                keyEncoding = StringToEncoding(configItem.Value.ToString());
-                configuration.Add(configItem.Key, configItem.Value);
-            }
-
-            if (config.Count(ci => ci.Key == "string.serializer.encoding.value") > 0)
-            {
-                var configItem = config.Single(ci => ci.Key == "string.serializer.encoding.value");
-                valueEncoding = StringToEncoding(configItem.Value.ToString());
-                configuration.Add(configItem.Key, configItem.Value);
-            }
         }
 
         /// <summary>
@@ -95,31 +81,58 @@ namespace Confluent.Kafka.Serialization
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this serializer).
         /// </param>
-        /// <param name="isKey">
-        ///     true: deserialization is for a key, 
-        ///     false: deserializing is for a value.
-        /// </param>
         /// <returns>
         ///     <paramref name="data" /> encoded in a byte array (or null if <paramref name="data" /> is null).
         /// </returns>
-        public byte[] Serialize(string topic, string data, bool isKey)
+        public byte[] Serialize(string topic, string data)
         {
             if (data == null)
             {
                 return null;
             }
 
-            return isKey 
-                ? keyEncoding.GetBytes(data) 
-                : valueEncoding.GetBytes(data);
+            return encoding.GetBytes(data);
         }
 
-        private Dictionary<string, object> configuration = new Dictionary<string, object>();
 
-        /// <summary>
-        ///     Configuration properties handled by the serializer.
-        /// </summary>
-        public IEnumerable<KeyValuePair<string, object>> Configuration 
-            => configuration;
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+        {
+            if (isKey)
+            {
+                if (config.Count(ci => ci.Key == KeyEncodingConfigParam) > 0)
+                {
+                    var configItem = config.Single(ci => ci.Key == KeyEncodingConfigParam);
+                    encoding = StringToEncoding(configItem.Value.ToString());
+                    if (encoding != null)
+                    {
+                        throw new ArgumentException("Key StringSerializer encoding configured using both constructor and configuration parameter.");
+                    }
+                    return config.Where(ci => ci.Key != KeyEncodingConfigParam);
+                }
+                if (encoding == null)
+                {
+                    throw new ArgumentException("Key StringSerializer encoding was not configured");
+                }
+                return config;
+            }
+            else
+            {
+                if (config.Count(ci => ci.Key == ValueEncodingConfigParam) > 0)
+                {
+                    var configItem = config.Single(ci => ci.Key == ValueEncodingConfigParam);
+                    encoding = StringToEncoding(configItem.Value.ToString());
+                    if (encoding != null)
+                    {
+                        throw new ArgumentException("Value StringSerializer encoding configured using both constructor and configuration parameter.");
+                    }
+                    return config.Where(ci => ci.Key != ValueEncodingConfigParam);
+                }
+                if (encoding == null)
+                {
+                    throw new ArgumentException("Value StringSerializer encoding was not configured");
+                }
+                return config;
+            }
+        }
     }
 }
