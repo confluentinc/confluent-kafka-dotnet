@@ -3,7 +3,6 @@ language: csharp
 env:
   global:
     - CONFIGURATION=Release
-    - INSTALL_KAFKA=True
 
 matrix:
   include:
@@ -20,7 +19,7 @@ matrix:
     env: DOTNETCORE=1
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ulimit -n 1024 ; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ulimit -n 1024 ; fi
 
 install:
    - dotnet restore
