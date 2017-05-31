@@ -52,49 +52,54 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 },
                 { "api.version.request", true }
             };
-            
+
             using (var typedProducer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 TestMetadata(
                     () => typedProducer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
-                    () => typedProducer.AddBrokers(bootstrapServers));
+                    typedProducer.AddBrokers);
             }
 
             using (var producer = new Producer(producerConfig))
             {
                 TestMetadata(
                     () => producer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
-                    () => producer.AddBrokers(bootstrapServers));
+                    producer.AddBrokers);
             }
 
             using (var consumer = new Consumer(consumerConfig))
             {
                 TestMetadata(
                     () => consumer.GetMetadata(false, TimeSpan.FromSeconds(3)),
-                    () => consumer.AddBrokers(bootstrapServers));
+                    consumer.AddBrokers);
             }
 
             using (var typedConsumer = new Consumer<Null, Null>(consumerConfig, new NullDeserializer(), new NullDeserializer()))
             {
                 TestMetadata(
                     () => typedConsumer.GetMetadata(false, TimeSpan.FromSeconds(3)),
-                    () => typedConsumer.AddBrokers(bootstrapServers));
+                    typedConsumer.AddBrokers);
             }
 
-            void TestMetadata(Func<Metadata> getMetadata, Action addBrokers)
+            void TestMetadata(Func<Metadata> getMetadata, Func<string, int> addBrokers)
             {
                 try
                 {
                     var metadata = getMetadata();
-                    Assert.True(false, "Broker should not be reached here");
+                    Assert.True(metadata?.Brokers?.Count != 0, "Broker should not be reached here");
                 }
                 catch (KafkaException e)
                 {
                     Assert.Equal(ErrorCode.Local_Transport, e.Error.Code);
                 }
-                addBrokers();
+                int brokersAdded = addBrokers(bootstrapServers);
+                Assert.True(brokersAdded > 0, "Should have added one broker or more");
+
                 var newMetadata = getMetadata();
                 Assert.True(newMetadata.Brokers.Count > 0);
+
+                brokersAdded = addBrokers("");
+                Assert.True(brokersAdded == 0, "Should not have added brokers");
             }
         }
     }
