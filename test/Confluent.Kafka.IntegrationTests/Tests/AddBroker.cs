@@ -83,7 +83,6 @@ namespace Confluent.Kafka.IntegrationTests
 
             void TestMetadata(Func<Metadata> getMetadata, Action addBrokers)
             {
-
                 try
                 {
                     var metadata = getMetadata();
