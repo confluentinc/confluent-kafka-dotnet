@@ -794,6 +794,21 @@ namespace Confluent.Kafka
         /// </summary>
         public Metadata GetMetadata()
             => GetMetadata(true, null, -1);
+
+        /// <summary>
+        ///     Adds one or more brokers to the kafka bootstrap brokers.
+        ///     
+        ///     Use this when brokers IP address change at runtime.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Coma-separated list of brokers in the same format as bootstrap.server
+        /// </param>
+        /// <example>
+        ///     AddBrokers("broker1:9092,broker2")
+        ///     AddBrokers("SSL://broker3:9000,ssl://broker2")
+        /// </example>
+        public int AddBrokers(string brokers)
+            => kafkaHandle.AddBrokers(brokers);
     }
 
 
@@ -1374,5 +1389,20 @@ namespace Confluent.Kafka
         /// </summary>
         public Metadata GetMetadata(bool allTopics, string topic)
             => producer.GetMetadata(allTopics, topic);
+
+        /// <summary>
+        ///     Adds one or more brokers to the kafka bootstrap brokers.
+        ///     
+        ///     Use this when brokers IP address change at runtime.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Coma-separated list of brokers in the same format as bootstrap.server
+        /// </param>
+        /// <example>
+        ///     AddBrokers("broker1:9092,broker2")
+        ///     AddBrokers("SSL://broker3:9000,ssl://broker2")
+        /// </example>
+        public int AddBrokers(string brokers)
+            => producer.AddBrokers(brokers);
     }
 }
