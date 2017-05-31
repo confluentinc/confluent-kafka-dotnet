@@ -29,6 +29,18 @@ namespace Confluent.Kafka
     public enum ErrorCode
     {
         /// <summary>
+        ///     Passed a delivery report with deliveryReport disabled.
+        ///     Message is still produced (fire and forget)
+        /// </summary>
+        Client_DisabledDeliveryReport = -999,
+
+        /// <summary>
+        ///     Passed a delivery report with delivery.report.only.error at true.
+        ///     Message is still produced (fire and forget)
+        /// </summary>
+        Client_TaskProduceWithOnlyErrorCallback = -998,
+
+        /// <summary>
         ///     Received message is incorrect
         /// </summary>
         Local_BadMsg = -199,
@@ -431,7 +443,17 @@ namespace Confluent.Kafka
         /// </summary>
         public static string GetReason(this ErrorCode code)
         {
-            return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
+            switch(code)
+            {
+                case ErrorCode.Client_DisabledDeliveryReport:
+                    return "DeliveryReport are disable, no delivery report for success nor error";
+
+                case ErrorCode.Client_TaskProduceWithOnlyErrorCallback:
+                    return "Can't use 'Task ProduceAsync(...)' when delivery.report.only.error is true, use 'void ProduceAsync(..., IDeliveryHandler handler)' instead";
+
+                default:
+                    return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
+            }
         }
     }
 }

@@ -44,6 +44,7 @@ namespace Confluent.Kafka
         private bool disableDeliveryReports;
 
         internal const int RD_KAFKA_PARTITION_UA = -1;
+        internal bool deliveryReportOnlyError;
 
         private IEnumerable<KeyValuePair<string, object>> topicConfig;
 
@@ -186,7 +187,9 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(Message message)
             {
-                SetResult(message);
+                // SetException may have been called because of incorrect disabled delivery report usage
+                // (delivery.report.only.error true and Task ProduceAsync used)
+                TrySetResult(message);
             }
         }
 
@@ -200,39 +203,61 @@ namespace Confluent.Kafka
         {
             SafeTopicHandle topicHandle = getKafkaTopicHandle(topic);
 
+            var librdkafkaTimestamp = timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value);
+
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
-                var deliveryCompletionSource = deliveryHandler;
-                var gch = GCHandle.Alloc(deliveryCompletionSource);
+                var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
                 if (topicHandle.Produce(
-                    val, valOffset, valLength, 
-                    key, keyOffset, keyLength, 
-                    partition, 
-                    timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    librdkafkaTimestamp,
                     ptr, blockIfQueueFull) != 0)
                 {
                     var err = LibRdKafka.last_error();
+                    // we never throw
+                    // and are consistent with error propagated through callback
+                    deliveryHandler.HandleDeliveryReport(new Message(
+                        topic,
+                        partition,
+                        RD_KAFKA_PARTITION_UA,
+                        deliveryHandler.MarshalData ? key : null,
+                        deliveryHandler.MarshalData ? val : null,
+                        new Timestamp(0, TimestampType.NotAvailable),
+                        new Error(err)));
                     gch.Free();
-                    throw new KafkaException(err);
                 }
-
-                return;
             }
-
-            if (topicHandle.Produce(
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                partition, 
-                timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                IntPtr.Zero, blockIfQueueFull) != 0)
+            else
             {
-                throw new KafkaException(LibRdKafka.last_error());
-            }
+                //fire and forget
+                topicHandle.Produce(
+                val, valOffset, valLength,
+                key, keyOffset, keyLength,
+                partition,
+                librdkafkaTimestamp,
+                IntPtr.Zero, blockIfQueueFull);
 
-            return;
+                if (disableDeliveryReports && deliveryHandler != null)
+                {
+                    // to avoid memory leak (task never completed),
+                    // Handle delivery here with exception
+                    // disableDeliveryReports should be depreceted
+
+                    deliveryHandler.HandleDeliveryReport(new Message(
+                        topic,
+                        partition,
+                        Offset.Invalid,
+                        deliveryHandler.MarshalData ? key : null,
+                        deliveryHandler.MarshalData ? val : null,
+                        new Timestamp(Timestamp.DateTimeToUnixTimestampMs(DateTime.UtcNow), TimestampType.CreateTime),
+                        new Error(ErrorCode.Client_DisabledDeliveryReport)));
+                }
+            }
         }
 
         private Task<Message> Produce(
@@ -245,6 +270,18 @@ namespace Confluent.Kafka
         {
             var deliveryCompletionSource = new TaskDeliveryHandler();
             Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
+            if (deliveryReportOnlyError)
+            {
+                deliveryCompletionSource.HandleDeliveryReport(
+                    new Message(
+                        topic,
+                        partition.HasValue ? partition.Value : RD_KAFKA_PARTITION_UA,
+                        Offset.Invalid,
+                        key,
+                        val,
+                        new Timestamp(Timestamp.DateTimeToUnixTimestampMs(DateTime.UtcNow) , TimestampType.CreateTime),
+                        new Error(ErrorCode.Client_TaskProduceWithOnlyErrorCallback)));
+            }
             return deliveryCompletionSource.Task;
         }
 
@@ -269,6 +306,7 @@ namespace Confluent.Kafka
             this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
+            this.deliveryReportOnlyError = config.Any(x => x.Key == "delivery.report.only.error" && x.Value.ToString().ToLower() == "true");
 
             var configHandle = SafeConfigHandle.Create();
             config
@@ -848,7 +886,8 @@ namespace Confluent.Kafka
                     message.Error
                 );
 
-                SetResult(mi);
+                // This may be called twice if delivery.report.only.error is true
+                TrySetResult(mi);
             }
         }
 
@@ -858,6 +897,18 @@ namespace Confluent.Kafka
             var keyBytes = KeySerializer?.Serialize(key);
             var valBytes = ValueSerializer?.Serialize(val);
             producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
+            if (producer.deliveryReportOnlyError)
+            {
+                handler.HandleDeliveryReport(
+                    new Message(
+                        topic,
+                        partition,
+                        Offset.Invalid,
+                        null,
+                        null,
+                        new Timestamp(Timestamp.DateTimeToUnixTimestampMs(DateTime.UtcNow), TimestampType.NotAvailable),
+                        new Error(ErrorCode.Client_TaskProduceWithOnlyErrorCallback)));
+            }
             return handler.Task;
         }
 
