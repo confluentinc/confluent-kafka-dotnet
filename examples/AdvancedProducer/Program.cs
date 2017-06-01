@@ -79,11 +79,17 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
                     string text;
                     try
                     {
-                       text = Console.ReadLine();
+                        text = Console.ReadLine();
                     }
                     catch (IOException)
                     {
                         // IO exception is thrown when ConsoleCancelEventArgs.Cancel == true.
+                        break;
+                    }
+                    if (text == null)
+                    {
+                        // Console returned null before 
+                        // the CancelKeyPress was treated
                         break;
                     }
 
