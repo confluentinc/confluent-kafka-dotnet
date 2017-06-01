@@ -25,6 +25,7 @@ using System.Runtime.InteropServices;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
+using System.Collections.Concurrent;
 
 
 namespace Confluent.Kafka
@@ -54,7 +55,6 @@ namespace Confluent.Kafka
 
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
-
         private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
@@ -65,10 +65,42 @@ namespace Confluent.Kafka
                     }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
+        // volatile because OnLog and OnError may be called from different thread
+        // we don't care the order or race condition - just make sure the value is not cached
+        // we could also rely on a start DateTime, but it cost more
+        private volatile bool waitForEventToRegister;
+        private void StartDelayEventHandlerRegistrationTask(TimeSpan timespan)
+        {
+            Task.Factory.StartNew(async () =>
+            {
+                //let some time for the event handlers OnError and OnLog to register
+                await Task.Delay(timespan.TotalMillisecondsAsInt());
+                waitForEventToRegister = false;
+                while(!errorQueueDelay.IsEmpty)
+                {
+                    // clear the queue
+                    errorQueueDelay.TryDequeue(out Error dummy);
+                }
+                while (!logQueueDelay.IsEmpty)
+                {
+                    // clear the queue
+                    logQueueDelay.TryDequeue(out LogMessage dummy);
+                }
+            });
+        }
+
+        // error should typically be called from one thread, 
+        // but in case poll is called in multiple thread need a concurrentQueue
+        private ConcurrentQueue<Error> errorQueueDelay = new ConcurrentQueue<Error>();
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            OnError?.Invoke(this, new Error(err, reason));
+            var error = new Error(err, reason);
+            if (waitForEventToRegister)
+            {
+                errorQueueDelay.Enqueue(error);
+            }
+            onError?.Invoke(this, error);
         }
 
         private LibRdKafka.StatsDelegate statsDelegate;
@@ -78,19 +110,26 @@ namespace Confluent.Kafka
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
+        // log can be called from any thread, need a concurrentQueue
+        private ConcurrentQueue<LogMessage> logQueueDelay = new ConcurrentQueue<LogMessage>();
         private LibRdKafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
 
-            if (OnLog == null)
+            var logMessage = new LogMessage(name, level, fac, buf);
+            if (waitForEventToRegister)
+            {
+                logQueueDelay.Enqueue(logMessage);
+            }
+            if (onLog == null)
             {
                 // Log to stderr by default if no logger is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
+                Loggers.ConsoleLogger(this, logMessage);
                 return;
             }
 
-            OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
+            onLog?.Invoke(this, logMessage);
         }
 
         private SafeTopicHandle getKafkaTopicHandle(string topic)
@@ -264,8 +303,9 @@ namespace Confluent.Kafka
         ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
         ///     forget" semantics and a small boost in performance.
         /// </param>
-        public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
+        public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports, bool allowEventHandlersDelay)
         {
+            Console.WriteLine("START");
             this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
@@ -287,15 +327,22 @@ namespace Confluent.Kafka
             errorDelegate = ErrorCallback;
             logDelegate = LogCallback;
             statsDelegate = StatsCallback;
-
-            // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
-            //       such time as event handlers have had a chance to be registered.
+            
             LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
             LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
             LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
 
+            // Cache error and log callbacks for 10s
+            // so that event handlers have had a chance to be registered.
+            waitForEventToRegister = allowEventHandlersDelay;
+
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
+
+            if (allowEventHandlersDelay)
+            {
+                StartDelayEventHandlerRegistrationTask(TimeSpan.FromSeconds(2));
+            }
 
             if (!manualPoll)
             {
@@ -303,6 +350,9 @@ namespace Confluent.Kafka
                 callbackTask = StartPollTask(callbackCts.Token);
             }
         }
+
+        public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
+            : this(config, manualPoll, disableDeliveryReports, true) { }
 
         /// <summary>
         ///     Initializes a new Producer instance.
@@ -312,7 +362,7 @@ namespace Confluent.Kafka
         ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
-            : this(config, false, false) {}
+            : this(config, false, false) { }
 
 
         /// <summary>
@@ -368,6 +418,7 @@ namespace Confluent.Kafka
             => Poll(-1);
 
 
+        private EventHandler<Error> onError;
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all 
         ///     brokers down. Note that the client will try to automatically 
@@ -377,7 +428,23 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Called on the Producer poll thread.
         /// </remarks>
-        public event EventHandler<Error> OnError;
+        public event EventHandler<Error> OnError
+        {
+            add
+            {
+                if (waitForEventToRegister)
+                {
+                    // when we add a handler, if we are at the start of Producer
+                    // we process every logs processed before the registration
+                    foreach (var error in errorQueueDelay)
+                    {
+                        value(this, error);
+                    }
+                }
+                onError += value;
+            }
+            remove { onError -= value; }
+        }
 
         /// <summary>
         ///     Raised on librdkafka statistics events. JSON formatted
@@ -392,6 +459,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public event EventHandler<string> OnStatistics;
 
+        private EventHandler<LogMessage> onLog;
         /// <summary>
         ///     Raised when there is information that should be logged.
         /// </summary>
@@ -407,7 +475,23 @@ namespace Confluent.Kafka
         ///     threads and the application must not call any Confluent.Kafka APIs from 
         ///     within a log handler or perform any prolonged operations.
         /// </remarks>
-        public event EventHandler<LogMessage> OnLog;
+        public event EventHandler<LogMessage> OnLog
+        {
+            add
+            {
+                if(waitForEventToRegister)
+                {
+                    // when we add a handler, if we are at the start of Producer
+                    // we process every logs processed before the registration
+                    foreach (var logMessage in logQueueDelay)
+                    {
+                        value(this, logMessage);
+                    }
+                }
+                onLog += value;
+            }
+            remove { onLog -= value; }
+        }
 
         /// <summary>
         ///     Returns a serializing producer that uses this Producer to 
