@@ -21,7 +21,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-#if NET45
+#if NET45 || NET46
 using System.Reflection;
 using System.ComponentModel;
 #endif
@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Impl
         //min librdkafka version, to change when binding to new function are added
         const long minVersion = 0x000903ff;
 
-#if NET45
+#if NET45 || NET46
         [Flags]
         public enum LoadLibraryFlags : uint
         {
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.Impl
 
         static LibRdKafka()
         {
-#if NET45
+#if NET45 || NET46
             try
             {
                 // In net45, we don't put the native dlls in the assembly directory
