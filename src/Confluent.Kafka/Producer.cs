@@ -182,11 +182,19 @@ namespace Confluent.Kafka
 
         private sealed class TaskDeliveryHandler : TaskCompletionSource<Message>, IDeliveryHandler
         {
+#if !NET45
+            public TaskDeliveryHandler() : base(TaskContinuationOptions.RunContinuationsAsynchronously)
+            { }
+#endif
             public bool MarshalData { get { return true; } }
 
             public void HandleDeliveryReport(Message message)
             {
+#if NET45
+                System.Threading.Tasks.Task.Run(() => SetResult(message));
+#else
                 SetResult(message);
+#endif
             }
         }
 
@@ -825,6 +833,9 @@ namespace Confluent.Kafka
         private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<Message<TKey, TValue>>, IDeliveryHandler
         {
             public TypedTaskDeliveryHandlerShim(TKey key, TValue val)
+#if !NET45
+                : base(TaskContinuationOptions.RunContinuationsAsynchronously)
+#endif
             {
                 Key = key;
                 Value = val;
@@ -848,7 +859,11 @@ namespace Confluent.Kafka
                     message.Error
                 );
 
+#if NET45
+                System.Threading.Tasks.Task.Run(() => SetResult(mi));
+#else
                 SetResult(mi);
+#endif
             }
         }
 
