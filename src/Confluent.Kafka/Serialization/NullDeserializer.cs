@@ -14,6 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -21,16 +25,7 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class NullDeserializer : IDeserializer<Null>
     {
-        /// <summary>
-        ///     'Deserializes' a null value to a null value.
-        /// </summary>
-        /// <param name="data">
-        ///     The data to deserialize (must be null).
-        /// </param>
-        /// <returns>
-        ///     null
-        /// </returns>
-        public Null Deserialize(byte[] data)
+        private Null Deserialize(byte[] data)
         {
             if (data != null)
             {
@@ -39,5 +34,32 @@ namespace Confluent.Kafka.Serialization
 
             return null;
         }
+
+        /// <summary>
+        ///     'Deserializes' a null value to a null value.
+        /// </summary>
+        /// <param name="data">
+        ///     The data to deserialize (must be null).
+        /// </param>        
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     null
+        /// </returns>
+        public Null Deserialize(string topic, byte[] data, bool isKey)
+        {
+            return null;
+        }
+
+        /// <summary>
+        ///     Configuration properties used by the deserializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }

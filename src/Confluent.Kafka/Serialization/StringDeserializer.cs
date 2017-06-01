@@ -14,7 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -36,16 +39,7 @@ namespace Confluent.Kafka.Serialization
             this.encoding = encoding;
         }
 
-        /// <summary>
-        ///     Deserializes a string value from a byte array.
-        /// </summary>
-        /// <param name="data">
-        ///     The data to deserialize.
-        /// </param>
-        /// <returns>
-        ///     <paramref name="data" /> deserialized to a string (or null if data is null).
-        /// </returns>
-        public string Deserialize(byte[] data)
+        private string Deserialize(byte[] data)
         {
             if (data == null)
             {
@@ -53,5 +47,32 @@ namespace Confluent.Kafka.Serialization
             }
             return encoding.GetString(data);
         }
+
+        /// <summary>
+        ///     Deserializes a string value from a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     The data to deserialize.
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     <paramref name="data" /> deserialized to a string (or null if data is null).
+        /// </returns>
+        public string Deserialize(string topic, byte[] data, bool isKey)
+        {
+            return Deserialize(data);
+        }
+
+        /// <summary>
+        ///     Configuration properties used by the deserializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }

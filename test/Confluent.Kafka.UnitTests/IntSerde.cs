@@ -75,6 +75,32 @@ namespace Confluent.Kafka.Tests
                 Assert.Equal(theInt, reconstructed);
             }
         }
-    }
 
+        [Fact]
+        public void ExplicitSerializationWorks()
+        {
+            foreach(string topic in new[] {null, "", "topic"})
+            {
+                var serializer = new IntSerializer();
+                var bytesImplicit = serializer.Serialize(42);
+                var bytesExplicit = ((ISerializer<int>)serializer).Serialize(topic, 42);
+
+                Assert.Equal(bytesImplicit, bytesExplicit);
+            }
+        }
+
+        [Fact]
+        public void ExplicitDeserializationWorks()
+        {
+            var byte42 = new IntSerializer().Serialize(42);
+
+            foreach (string topic in new[] { null, "", "topic" })
+            {
+                var deserializer = new IntDeserializer();
+                var deconstructExplicit = ((IDeserializer<int>)deserializer).Deserialize(topic, byte42);
+
+                Assert.Equal(42, deconstructExplicit);
+            }
+        }
+    }
 }

@@ -31,9 +31,13 @@ namespace Confluent.Kafka.Examples.SimpleProducer
             string brokerList = args[0];
             string topicName = args[1];
 
-            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
+            var config = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", brokerList },
+                { "string.serializer.encoding.key", "UTF8" }
+            };
 
-            using (var producer = new Producer<Null, string>(config, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(config, null, new StringSerializer(config)))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
 

@@ -14,6 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -21,16 +25,7 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class IntSerializer : ISerializer<int>
     {
-        /// <summary>
-        ///     Serializes the specified <see cref="System.Int32"/> value to a byte array of length 4. Byte order is big endian (network byte order).
-        /// </summary>
-        /// <param name="val">
-        ///     The <see cref="System.Int32"/> value to serialize.
-        /// </param>
-        /// <returns>
-        ///     The <see cref="System.Int32"/> value <paramref name="val" /> encoded as a byte array of length 8 (network byte order).
-        /// </returns>
-        public byte[] Serialize(int val)
+        private byte[] Serialize(int val)
         {
             var result = new byte[4]; // int is always 32 bits on .NET.
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -43,5 +38,32 @@ namespace Confluent.Kafka.Serialization
             result[3] = (byte)val; // & 0xff;
             return result;
         }
+        
+        /// <summary>
+        ///     Serializes the specified <see cref="System.Int32"/> value to a byte array of length 4. Byte order is big endian (network byte order).
+        /// </summary>
+        /// <param name="data">
+        ///     The <see cref="System.Int32"/> value to serialize.
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     The <see cref="System.Int32"/> value <paramref name="data" /> encoded as a byte array of length 8 (network byte order).
+        /// </returns>
+        public byte[] Serialize(string topic, int data, bool isKey)
+        {
+            return Serialize(data);
+        }
+
+        /// <summary>
+        ///     Configuration properties used by the serializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }

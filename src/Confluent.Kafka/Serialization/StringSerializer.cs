@@ -14,7 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -23,7 +27,8 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class StringSerializer : ISerializer<string>
     {
-        private Encoding encoding;
+        private Encoding keyEncoding;
+        private Encoding valueEncoding;
 
         /// <summary>
         ///     Initializes a new StringSerializer class instance.
@@ -33,25 +38,88 @@ namespace Confluent.Kafka.Serialization
         /// </param>
         public StringSerializer(Encoding encoding)
         {
-            this.encoding = encoding;
+            this.keyEncoding = encoding;
+            this.valueEncoding = encoding;
+        }
+
+        private static Encoding StringToEncoding(string s) 
+        {
+            switch (s)
+            {
+                case "UTF8":
+                    return Encoding.UTF8;
+                case "UTF7":
+                    return Encoding.UTF7;
+                case "UTF32":
+                    return Encoding.UTF32;
+                case "ASCII":
+                    return Encoding.ASCII;
+                case "Unicode":
+                    return Encoding.Unicode;
+                case "BigEndignUnicode":
+                    return Encoding.BigEndianUnicode;
+                default:
+                    throw new ArgumentException("unknown string encoding: " + s);
+            }
+        }
+
+        /// <summary>
+        ///     Initializes a new StringSerializer class instance.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        public StringSerializer(IEnumerable<KeyValuePair<string, object>> config)
+        {
+            if (config.Count(ci => ci.Key == "string.serializer.encoding.key") > 0)
+            {
+                var configItem = config.Single(ci => ci.Key == "string.serializer.encoding.key");
+                keyEncoding = StringToEncoding(configItem.Value.ToString());
+                configuration.Add(configItem.Key, configItem.Value);
+            }
+
+            if (config.Count(ci => ci.Key == "string.serializer.encoding.value") > 0)
+            {
+                var configItem = config.Single(ci => ci.Key == "string.serializer.encoding.value");
+                valueEncoding = StringToEncoding(configItem.Value.ToString());
+                configuration.Add(configItem.Key, configItem.Value);
+            }
         }
 
         /// <summary>
         ///     Encodes a string value in a byte array.
         /// </summary>
-        /// <param name="val">
+        /// <param name="data">
         ///     The string value to serialize.
         /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
         /// <returns>
-        ///     <paramref name="val" /> encoded in a byte array (or null if <paramref name="val" /> is null).
+        ///     <paramref name="data" /> encoded in a byte array (or null if <paramref name="data" /> is null).
         /// </returns>
-        public byte[] Serialize(string val)
+        public byte[] Serialize(string topic, string data, bool isKey)
         {
-            if (val == null)
+            if (data == null)
             {
                 return null;
             }
-            return encoding.GetBytes(val);
+
+            return isKey 
+                ? keyEncoding.GetBytes(data) 
+                : valueEncoding.GetBytes(data);
         }
+
+        private Dictionary<string, object> configuration = new Dictionary<string, object>();
+
+        /// <summary>
+        ///     Configuration properties handled by the serializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => configuration;
     }
 }

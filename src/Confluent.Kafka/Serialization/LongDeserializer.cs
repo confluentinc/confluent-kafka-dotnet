@@ -14,8 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
-
 using System;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -24,16 +25,7 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class LongDeserializer : IDeserializer<long>
     {
-        /// <summary>
-        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int64"/> value from a byte array.
-        /// </summary>
-        /// <param name="data">
-        ///     A byte array containing the serialized <see cref="System.Int64"/> value (big endian encoding)
-        /// </param>
-        /// <returns>
-        ///     The deserialized <see cref="System.Int64"/> value.
-        /// </returns>
-        public long Deserialize(byte[] data)
+        private long Deserialize(byte[] data)
         {
             if (data == null)
             {
@@ -56,5 +48,32 @@ namespace Confluent.Kafka.Serialization
                 (data[7]);
             return result;
         }
+        
+        /// <summary>
+        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int64"/> value from a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     A byte array containing the serialized <see cref="System.Int64"/> value (big endian encoding)
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     The deserialized <see cref="System.Int64"/> value.
+        /// </returns>
+        public long Deserialize(string topic, byte[] data, bool isKey)
+        {
+            return Deserialize(data);
+        }
+
+        /// <summary>
+        ///     Configuration properties used by the deserializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
     }
 }

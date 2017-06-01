@@ -14,6 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -21,16 +25,7 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class IntDeserializer : IDeserializer<int>
     {
-        /// <summary>
-        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int32"/> value from a byte array.
-        /// </summary>
-        /// <param name="data">
-        ///     A byte array containing the serialized <see cref="System.Int32"/> value (big endian encoding).
-        /// </param>
-        /// <returns>
-        ///     The deserialized <see cref="System.Int32"/> value.
-        /// </returns>
-        public int Deserialize(byte[] data)
+        private int Deserialize(byte[] data)
         {
             // network byte order -> big endian -> most significant byte in the smallest address.
             return
@@ -39,5 +34,33 @@ namespace Confluent.Kafka.Serialization
                 (((int)data[2]) << 8) |
                 (int)data[3];
         }
+
+        /// <summary>
+        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int32"/> value from a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     A byte array containing the serialized <see cref="System.Int32"/> value (big endian encoding).
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
+        /// <param name="isKey">
+        ///     true: deserialization is for a key, 
+        ///     false: deserializing is for a value.
+        /// </param>
+        /// <returns>
+        ///     The deserialized <see cref="System.Int32"/> value.
+        /// </returns>
+        public int Deserialize(string topic, byte[] data, bool isKey)
+        {
+            return Deserialize(data);
+        }
+
+        /// <summary>
+        ///     Configuration properties used by the deserializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, object>> Configuration 
+            => new List<KeyValuePair<string, object>>();
+   
     }
 }
