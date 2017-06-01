@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 firstProduced = producer.ProduceAsync(topic, Encoding.UTF8.GetBytes("key"), null).Result.TopicPartitionOffset;
                 producer.ProduceAsync(topic, null, Encoding.UTF8.GetBytes("val"));
-                producer.Flush();
+                producer.Flush(30);
             }
 
             var consumerConfig = new Dictionary<string, object>
