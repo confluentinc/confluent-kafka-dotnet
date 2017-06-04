@@ -40,19 +40,7 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         byte[] Serialize(string topic, T data);
 
-        /// <summary>
-        ///     Configure the serializer using relevant configuration parameter(s) in <paramref name="config" /> (if present)
-        /// </summary>
-        /// <param name="config">
-        ///     A collection containing configuration parameter(s) relevant to this serializer.
-        /// </param>
-        /// <param name="isKey">
-        ///     true: if this serializer instance is used to serialize keys,
-        ///     false: if this serializer instance is used to serialize values.
-        /// </param>
-        /// <returns>
-        ///     A configuration collection with configuration parameter(s) relevant to this seriaizer removed.
-        /// </returns>
+        /// <include file='../include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
         IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey);
     }
 }

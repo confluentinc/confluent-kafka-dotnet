@@ -61,6 +61,7 @@ namespace Confluent.Kafka.Serialization
             return result;
         }
 
+        /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
             => config;
     }
