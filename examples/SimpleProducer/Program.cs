@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Examples.SimpleProducer
             var config = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", brokerList },
-                { "dotnet.key.string.serializer.encoding", "UTF8" }
+                { "dotnet.string.serializer.encoding.value", "UTF8" }
             };
 
             using (var producer = new Producer<Null, string>(config, null, new StringSerializer()))

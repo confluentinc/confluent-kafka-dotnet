@@ -25,16 +25,6 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class IntDeserializer : IDeserializer<int>
     {
-        private int Deserialize(byte[] data)
-        {
-            // network byte order -> big endian -> most significant byte in the smallest address.
-            return
-                (((int)data[0]) << 24) |
-                (((int)data[1]) << 16) |
-                (((int)data[2]) << 8) |
-                (int)data[3];
-        }
-
         /// <summary>
         ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int32"/> value from a byte array.
         /// </summary>
@@ -49,11 +39,15 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public int Deserialize(string topic, byte[] data)
         {
-            return Deserialize(data);
+            // network byte order -> big endian -> most significant byte in the smallest address.
+            return
+                (((int)data[0]) << 24) |
+                (((int)data[1]) << 16) |
+                (((int)data[2]) << 8) |
+                (int)data[3];
         }
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
             => config;
-   
     }
 }

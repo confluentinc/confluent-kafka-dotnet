@@ -27,13 +27,13 @@ namespace Confluent.Kafka.UnitTests
         [MemberData(nameof(TestData))]
         public void CanReconstruct(long value)
         {
-            Assert.Equal(value, new LongDeserializer().Deserialize(new LongSerializer().Serialize(value)));
+            Assert.Equal(value, new LongDeserializer().Deserialize("topic", new LongSerializer().Serialize("topic", value)));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = new LongSerializer().Serialize(23L);
+            var data = new LongSerializer().Serialize("topic", 23L);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
@@ -41,41 +41,14 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void DeserializeArgNull()
         {
-            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize(null));
+            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize("topic", null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize(new byte[7]));
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize(new byte[9]));
-        }
-
-        [Fact]
-        public void ExplicitSerializationWork()
-        {
-            foreach (string topic in new[] { null, "", "topic" })
-            {
-                var serializer = new LongSerializer();
-                var bytesImplicit = serializer.Serialize(42);
-                var bytesExplicit = ((ISerializer<long>)serializer).Serialize(topic, 42);
-
-                Assert.Equal(bytesImplicit, bytesExplicit);
-            }
-        }
-
-        [Fact]
-        public void ExplicitDeserializationWorks()
-        {
-            var byte42 = new LongSerializer().Serialize(42);
-
-            foreach (string topic in new[] { null, "", "topic" })
-            {
-                var deserializer = new LongDeserializer();
-                var deconstructExplicit = ((IDeserializer<long>)deserializer).Deserialize(topic, byte42);
-
-                Assert.Equal(42, deconstructExplicit);
-            }
+            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[7]));
+            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[9]));
         }
 
         public static IEnumerable<object[]> TestData()

@@ -25,7 +25,19 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class LongDeserializer : IDeserializer<long>
     {
-        private long Deserialize(byte[] data)
+        /// <summary>
+        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int64"/> value from a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     A byte array containing the serialized <see cref="System.Int64"/> value (big endian encoding)
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
+        /// <returns>
+        ///     The deserialized <see cref="System.Int64"/> value.
+        /// </returns>
+        public long Deserialize(string topic, byte[] data)
         {
             if (data == null)
             {
@@ -47,23 +59,6 @@ namespace Confluent.Kafka.Serialization
                 ((long)(data[6])) << 8 |
                 (data[7]);
             return result;
-        }
-        
-        /// <summary>
-        ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int64"/> value from a byte array.
-        /// </summary>
-        /// <param name="data">
-        ///     A byte array containing the serialized <see cref="System.Int64"/> value (big endian encoding)
-        /// </param>
-        /// <param name="topic">
-        ///     The topic associated with the data (ignored by this deserializer).
-        /// </param>
-        /// <returns>
-        ///     The deserialized <see cref="System.Int64"/> value.
-        /// </returns>
-        public long Deserialize(string topic, byte[] data)
-        {
-            return Deserialize(data);
         }
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)

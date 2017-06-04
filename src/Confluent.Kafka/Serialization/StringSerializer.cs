@@ -29,8 +29,8 @@ namespace Confluent.Kafka.Serialization
     {
         private Encoding encoding;
 
-        private const string KeyEncodingConfigParam = "dotnet.key.string.serializer.encoding";
-        private const string ValueEncodingConfigParam = "dotnet.value.string.serializer.encoding";
+        private const string KeyEncodingConfigParam = "dotnet.string.serializer.encoding.key";
+        private const string ValueEncodingConfigParam = "dotnet.string.serializer.encoding.value";
 
         /// <summary>
         ///     Initializes a new StringSerializer class instance.
@@ -41,27 +41,6 @@ namespace Confluent.Kafka.Serialization
         public StringSerializer(Encoding encoding)
         {
             this.encoding = encoding;
-        }
-
-        private static Encoding StringToEncoding(string encodingName) 
-        {
-            switch (encodingName)
-            {
-                case "UTF8":
-                    return Encoding.UTF8;
-                case "UTF7":
-                    return Encoding.UTF7;
-                case "UTF32":
-                    return Encoding.UTF32;
-                case "ASCII":
-                    return Encoding.ASCII;
-                case "Unicode":
-                    return Encoding.Unicode;
-                case "BigEndignUnicode":
-                    return Encoding.BigEndianUnicode;
-                default:
-                    throw new ArgumentException("unknown string encoding: " + encodingName);
-            }
         }
 
         /// <summary>
@@ -94,45 +73,27 @@ namespace Confluent.Kafka.Serialization
             return encoding.GetBytes(data);
         }
 
-
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
-            if (isKey)
+            var paramName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
+            var typeName = isKey ? "Key" : "Value";
+
+            if (config.Count(ci => ci.Key == paramName) > 0)
             {
-                if (config.Count(ci => ci.Key == KeyEncodingConfigParam) > 0)
+                var configItem = config.Single(ci => ci.Key == paramName);
+                encoding = configItem.Value.ToString().AsEncoding();
+                if (encoding != null)
                 {
-                    var configItem = config.Single(ci => ci.Key == KeyEncodingConfigParam);
-                    encoding = StringToEncoding(configItem.Value.ToString());
-                    if (encoding != null)
-                    {
-                        throw new ArgumentException("Key StringSerializer encoding configured using both constructor and configuration parameter.");
-                    }
-                    return config.Where(ci => ci.Key != KeyEncodingConfigParam);
+                    throw new ArgumentException($"{typeName} StringSerializer encoding was configured using both constructor and configuration parameter.");
                 }
-                if (encoding == null)
-                {
-                    throw new ArgumentException("Key StringSerializer encoding was not configured");
-                }
-                return config;
+                return config.Where(ci => ci.Key != KeyEncodingConfigParam);
             }
-            else
+            if (encoding == null)
             {
-                if (config.Count(ci => ci.Key == ValueEncodingConfigParam) > 0)
-                {
-                    var configItem = config.Single(ci => ci.Key == ValueEncodingConfigParam);
-                    encoding = StringToEncoding(configItem.Value.ToString());
-                    if (encoding != null)
-                    {
-                        throw new ArgumentException("Value StringSerializer encoding configured using both constructor and configuration parameter.");
-                    }
-                    return config.Where(ci => ci.Key != ValueEncodingConfigParam);
-                }
-                if (encoding == null)
-                {
-                    throw new ArgumentException("Value StringSerializer encoding was not configured");
-                }
-                return config;
+                throw new ArgumentException($"{typeName} StringSerializer encoding was not configured.");
             }
+            return config;
         }
+
     }
 }

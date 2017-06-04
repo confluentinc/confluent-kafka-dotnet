@@ -25,11 +25,6 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class NullSerializer : ISerializer<Null>
     {
-        private byte[] Serialize(Null val)
-        {
-            return null;
-        }
-
         /// <param name="data">
         ///     Can only be null (the <see cref="Null"/> class cannot be instantiated).
         /// </param>

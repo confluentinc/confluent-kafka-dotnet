@@ -16,6 +16,7 @@
 
 using System;
 using System.Text;
+using System.Linq;
 using System.Collections.Generic;
 
 
@@ -28,6 +29,10 @@ namespace Confluent.Kafka.Serialization
     {
         Encoding encoding;
 
+        private const string KeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
+        private const string ValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
+
+
         /// <summary>
         ///     Initializes a new StringDeserializer class instance.
         /// </summary>
@@ -37,6 +42,14 @@ namespace Confluent.Kafka.Serialization
         public StringDeserializer(Encoding encoding)
         {
             this.encoding = encoding;
+        }
+
+        /// <summary>
+        ///     Initializes a new StringDesrializer class instance.
+        ///     The encoding encoding to use must be provided via <see cref="Producer" /> configuration properties.
+        /// </summary>
+        public StringDeserializer()
+        {
         }
 
         private string Deserialize(byte[] data)
@@ -66,6 +79,25 @@ namespace Confluent.Kafka.Serialization
         }
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
-            => config;
+        {
+            var propertyName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
+            var keyOrValue = isKey ? "Key" : "Value";
+
+            if (config.Count(ci => ci.Key == propertyName) > 0)
+            {
+                var configItem = config.Single(ci => ci.Key == propertyName);
+                encoding = configItem.Value.ToString().AsEncoding();
+                if (encoding != null)
+                {
+                    throw new ArgumentException($"{keyOrValue} StringSerializer encoding was configured using both constructor and configuration parameter.");
+                }
+                return config.Where(ci => ci.Key != KeyEncodingConfigParam);
+            }
+            if (encoding == null)
+            {
+                throw new ArgumentException($"{keyOrValue} StringSerializer encoding was not configured.");
+            }
+            return config;
+        }
     }
 }

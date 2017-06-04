@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Tests
         public void IsBigEndian()
         {
             var serializer = new IntSerializer();
-            var bytes = serializer.Serialize(42);
+            var bytes = serializer.Serialize("topic", 42);
             Assert.Equal(bytes.Length, 4);
             // most significant byte in smallest address.
             Assert.Equal(bytes[0], 0);
@@ -52,7 +52,7 @@ namespace Confluent.Kafka.Tests
                 var bytes1 = BitConverter.GetBytes(networkOrder);
 
                 var serializer = new IntSerializer();
-                var bytes2 = serializer.Serialize(theInt);
+                var bytes2 = serializer.Serialize("topic", theInt);
 
                 Assert.Equal(bytes1.Length, bytes2.Length);
 
@@ -71,35 +71,8 @@ namespace Confluent.Kafka.Tests
 
             foreach (int theInt in toTest)
             {
-                var reconstructed = deserializer.Deserialize(serializer.Serialize(theInt));
+                var reconstructed = deserializer.Deserialize("topic", serializer.Serialize("topic", theInt));
                 Assert.Equal(theInt, reconstructed);
-            }
-        }
-
-        [Fact]
-        public void ExplicitSerializationWorks()
-        {
-            foreach(string topic in new[] {null, "", "topic"})
-            {
-                var serializer = new IntSerializer();
-                var bytesImplicit = serializer.Serialize(42);
-                var bytesExplicit = ((ISerializer<int>)serializer).Serialize(topic, 42);
-
-                Assert.Equal(bytesImplicit, bytesExplicit);
-            }
-        }
-
-        [Fact]
-        public void ExplicitDeserializationWorks()
-        {
-            var byte42 = new IntSerializer().Serialize(42);
-
-            foreach (string topic in new[] { null, "", "topic" })
-            {
-                var deserializer = new IntDeserializer();
-                var deconstructExplicit = ((IDeserializer<int>)deserializer).Deserialize(topic, byte42);
-
-                Assert.Equal(42, deconstructExplicit);
             }
         }
     }

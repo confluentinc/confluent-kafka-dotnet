@@ -25,20 +25,6 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class LongSerializer : ISerializer<long>
     {
-        private byte[] Serialize(long val)
-        {
-            var result = new byte[8];
-            result[0] = (byte)(val >> 56);
-            result[1] = (byte)(val >> 48);
-            result[2] = (byte)(val >> 40);
-            result[3] = (byte)(val >> 32);
-            result[4] = (byte)(val >> 24);
-            result[5] = (byte)(val >> 16);
-            result[6] = (byte)(val >> 8);
-            result[7] = (byte)val;
-            return result;
-        }
-        
         /// <summary>
         ///     Serializes the specified <see cref="System.Int64"/> value to a byte array of length 8. Byte order is big endian (network byte order).
         /// </summary>
@@ -53,7 +39,16 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public byte[] Serialize(string topic, long data)
         {
-            return Serialize(data);
+            var result = new byte[8];
+            result[0] = (byte)(data >> 56);
+            result[1] = (byte)(data >> 48);
+            result[2] = (byte)(data >> 40);
+            result[3] = (byte)(data >> 32);
+            result[4] = (byte)(data >> 24);
+            result[5] = (byte)(data >> 16);
+            result[6] = (byte)(data >> 8);
+            result[7] = (byte)data;
+            return result;
         }
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)

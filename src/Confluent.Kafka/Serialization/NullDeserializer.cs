@@ -25,16 +25,6 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class NullDeserializer : IDeserializer<Null>
     {
-        private Null Deserialize(byte[] data)
-        {
-            if (data != null)
-            {
-                throw new System.ArgumentException("NullDeserializer may only be used to deserialize data that is null.");
-            }
-
-            return null;
-        }
-
         /// <summary>
         ///     'Deserializes' a null value to a null value.
         /// </summary>
@@ -49,6 +39,11 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public Null Deserialize(string topic, byte[] data)
         {
+            if (data != null)
+            {
+                throw new System.ArgumentException("NullDeserializer may only be used to deserialize data that is null.");
+            }
+
             return null;
         }
 
