@@ -52,15 +52,6 @@ namespace Confluent.Kafka.Serialization
         {
         }
 
-        private string Deserialize(byte[] data)
-        {
-            if (data == null)
-            {
-                return null;
-            }
-            return encoding.GetString(data);
-        }
-
         /// <summary>
         ///     Deserializes a string value from a byte array.
         /// </summary>
@@ -75,7 +66,11 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public string Deserialize(string topic, byte[] data)
         {
-            return Deserialize(data);
+            if (data == null)
+            {
+                return null;
+            }
+            return encoding.GetString(data);
         }
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
@@ -85,18 +80,32 @@ namespace Confluent.Kafka.Serialization
 
             if (config.Count(ci => ci.Key == propertyName) > 0)
             {
-                var configItem = config.Single(ci => ci.Key == propertyName);
-                encoding = configItem.Value.ToString().AsEncoding();
+                try
+                {
+                    encoding = config
+                        .Single(ci => ci.Key == propertyName)
+                        .Value
+                        .ToString()
+                        .ToEncoding();
+                }
+                catch
+                {
+                    throw new ArgumentException($"{keyOrValue} StringDeserializer encoding configuration parameter was specified twice.");
+                }
+
                 if (encoding != null)
                 {
-                    throw new ArgumentException($"{keyOrValue} StringSerializer encoding was configured using both constructor and configuration parameter.");
+                    throw new ArgumentException($"{keyOrValue} StringDeserializer encoding was configured using both constructor and configuration parameter.");
                 }
+
                 return config.Where(ci => ci.Key != KeyEncodingConfigParam);
             }
+
             if (encoding == null)
             {
-                throw new ArgumentException($"{keyOrValue} StringSerializer encoding was not configured.");
+                throw new ArgumentException($"{keyOrValue} StringDeserializer encoding was not configured.");
             }
+
             return config;
         }
     }

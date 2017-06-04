@@ -23,9 +23,9 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Extension methods for the <see cref="String"/> class.
     /// </summary>
-    public static class StringExtensions
+    internal static class StringExtensions
     {
-        internal static Encoding AsEncoding(this string encodingName) 
+        internal static Encoding ToEncoding(this string encodingName) 
         {
             switch (encodingName)
             {
@@ -39,7 +39,7 @@ namespace Confluent.Kafka
                     return Encoding.ASCII;
                 case "Unicode":
                     return Encoding.Unicode;
-                case "BigEndignUnicode":
+                case "BigEndianUnicode":
                     return Encoding.BigEndianUnicode;
                 default:
                     throw new ArgumentException("unknown string encoding: " + encodingName);

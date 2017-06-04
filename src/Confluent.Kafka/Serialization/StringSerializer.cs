@@ -75,23 +75,37 @@ namespace Confluent.Kafka.Serialization
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
-            var paramName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
-            var typeName = isKey ? "Key" : "Value";
+            var propertyName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
+            var keyOrValue = isKey ? "Key" : "Value";
 
-            if (config.Count(ci => ci.Key == paramName) > 0)
+            if (config.Count(ci => ci.Key == propertyName) > 0)
             {
-                var configItem = config.Single(ci => ci.Key == paramName);
-                encoding = configItem.Value.ToString().AsEncoding();
+                try
+                {
+                    encoding = config
+                        .Single(ci => ci.Key == propertyName)
+                        .Value
+                        .ToString()
+                        .ToEncoding();
+                }
+                catch
+                {
+                    throw new ArgumentException($"{keyOrValue} StringSerializer encoding configuration parameter was specified twice.");
+                }
+
                 if (encoding != null)
                 {
-                    throw new ArgumentException($"{typeName} StringSerializer encoding was configured using both constructor and configuration parameter.");
+                    throw new ArgumentException($"{keyOrValue} StringSerializer encoding was configured using both constructor and configuration parameter.");
                 }
+
                 return config.Where(ci => ci.Key != KeyEncodingConfigParam);
             }
+
             if (encoding == null)
             {
-                throw new ArgumentException($"{typeName} StringSerializer encoding was not configured.");
+                throw new ArgumentException($"{keyOrValue} StringSerializer encoding was not configured.");
             }
+
             return config;
         }
 
