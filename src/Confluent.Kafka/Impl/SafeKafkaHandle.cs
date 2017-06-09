@@ -517,7 +517,7 @@ namespace Confluent.Kafka.Impl
             get
             {
                 IntPtr strPtr = LibRdKafka.memberid(handle);
-                if (strPtr == null)
+                if (strPtr == IntPtr.Zero)
                 {
                     return null;
                 }
