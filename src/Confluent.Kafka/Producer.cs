@@ -800,7 +800,7 @@ namespace Confluent.Kafka
         ///     bootstrap brokers. 
         ///
         ///     Note: Additional brokers are discovered automatically as 
-        ///     soon as the Producer connects to a broker by querying the 
+        ///     soon as the Producer connects to any broker by querying the 
         ///     broker metadata. Calling this method is only required in 
         ///     some scenarios where the address of all brokers in the 
         ///     cluster changes.
@@ -809,10 +809,14 @@ namespace Confluent.Kafka
         ///     Coma-separated list of brokers in the same format as 
         ///     the bootstrap.server configuration parameter.
         /// </param>
-        /// <example>
-        ///     AddBrokers("broker1:9092,broker2")
-        ///     AddBrokers("SSL://broker3:9000,ssl://broker2")
-        /// </example>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
     }
@@ -1401,7 +1405,7 @@ namespace Confluent.Kafka
         ///     bootstrap brokers. 
         ///
         ///     Note: Additional brokers are discovered automatically as 
-        ///     soon as the Producer connects to a broker by querying the 
+        ///     soon as the Producer connects to any broker by querying the 
         ///     broker metadata. Calling this method is only required in 
         ///     some scenarios where the address of all brokers in the 
         ///     cluster changes.
@@ -1410,10 +1414,14 @@ namespace Confluent.Kafka
         ///     Coma-separated list of brokers in the same format as 
         ///     the bootstrap.server configuration parameter.
         /// </param>
-        /// <example>
-        ///     AddBrokers("broker1:9092,broker2")
-        ///     AddBrokers("SSL://broker3:9000,ssl://broker2")
-        /// </example>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
         public int AddBrokers(string brokers)
             => producer.AddBrokers(brokers);
     }

@@ -97,6 +97,9 @@ namespace Confluent.Kafka.IntegrationTests
                 int brokersAdded = addBrokers(bootstrapServers);
                 Assert.True(brokersAdded > 0, "Should have added one broker or more");
 
+                brokersAdded = addBrokers(bootstrapServers);
+                Assert.True(brokersAdded > 0, "Should have added one broker or more (duplicates considered added)");
+
                 var newMetadata = getMetadata();
                 Assert.True(newMetadata.Brokers.Count > 0);
 
