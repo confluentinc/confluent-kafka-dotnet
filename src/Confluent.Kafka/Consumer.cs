@@ -622,12 +622,18 @@ namespace Confluent.Kafka
             => consumer.GetMetadata(allTopics);
 
         /// <summary>
-        ///     Adds one or more brokers to the kafka bootstrap brokers.
-        ///     
-        ///     Use this when brokers IP address change at runtime.
+        ///     Adds one or more brokers to the Consumer's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as 
+        ///     soon as the Consumer connects to a broker by querying the 
+        ///     broker metadata. Calling this method is only required in 
+        ///     some scenarios where the address of all brokers in the 
+        ///     cluster changes.
         /// </summary>
         /// <param name="brokers">
-        ///     Coma-separated list of brokers in the same format as bootstrap.server
+        ///     Coma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
         /// </param>
         /// <example>
         ///     AddBrokers("broker1:9092,broker2")
@@ -1275,12 +1281,18 @@ namespace Confluent.Kafka
             => kafkaHandle.GetMetadata(allTopics, null, -1);
 
         /// <summary>
-        ///     Adds one or more brokers to the kafka bootstrap brokers.
-        ///     
-        ///     Use this when brokers IP address change at runtime.
+        ///     Adds one or more brokers to the Consumer's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as 
+        ///     soon as the Consumer connects to a broker by querying the 
+        ///     broker metadata. Calling this method is only required in 
+        ///     some scenarios where the address of all brokers in the 
+        ///     cluster changes.
         /// </summary>
         /// <param name="brokers">
-        ///     Coma-separated list of brokers in the same format as bootstrap.server
+        ///     Coma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
         /// </param>
         /// <example>
         ///     AddBrokers("broker1:9092,broker2")
