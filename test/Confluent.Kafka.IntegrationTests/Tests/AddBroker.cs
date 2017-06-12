@@ -17,6 +17,7 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
@@ -29,15 +30,15 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that produces a message then consumes it.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-
         public static void AddBrokers(string bootstrapServers, string topic, string partitionedTopic)
         {
             // This test assumes broker v0.10.0 or higher:
             // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
 
-            // This test call metadata, as it's an easy way to see if we are connected to broker
-            // It's not really the best way to test it (ideally, we would get from a working list of brokers
-            // to all brokers have change IP) but this wil be good enough
+            // This test does a broker metadata request, as it's an easy way to see 
+            // if we are connected to broker. It's not really the best way to test this
+            // (ideally, we would get from a working list of brokers to all brokers 
+            // that have changed IP) but this will be good enough.
 
             var producerConfig = new Dictionary<string, object>
             {
@@ -86,12 +87,13 @@ namespace Confluent.Kafka.IntegrationTests
                 try
                 {
                     var metadata = getMetadata();
-                    Assert.True(metadata?.Brokers?.Count != 0, "Broker should not be reached here");
+                    Assert.True(false, "Broker should not be reached here");
                 }
                 catch (KafkaException e)
                 {
                     Assert.Equal(ErrorCode.Local_Transport, e.Error.Code);
                 }
+
                 int brokersAdded = addBrokers(bootstrapServers);
                 Assert.True(brokersAdded > 0, "Should have added one broker or more");
 
