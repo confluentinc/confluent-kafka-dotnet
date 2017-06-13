@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Serialization
 
         /// <summary>
         ///     Initializes a new StringDesrializer class instance.
-        ///     The encoding encoding to use must be provided via <see cref="Producer" /> configuration properties.
+        ///     The encoding encoding to use must be provided via <see cref="Consumer" /> configuration properties.
         /// </summary>
         public StringDeserializer()
         {
