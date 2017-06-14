@@ -970,8 +970,8 @@ namespace Confluent.Kafka
 
             producer = new Producer(
                 config.Where(item => 
-                    adjustedConfig1.Count(ci => ci.Key == item.Key) > 0 &&
-                    adjustedConfig2.Count(ci => ci.Key == item.Key) > 0
+                    adjustedConfig1.Any(ci => ci.Key == item.Key) &&
+                    adjustedConfig2.Any(ci => ci.Key == item.Key)
                 ), 
                 manualPoll, 
                 disableDeliveryReports

@@ -42,7 +42,7 @@ namespace Confluent.Kafka
                 case "BigEndianUnicode":
                     return Encoding.BigEndianUnicode;
                 default:
-                    throw new ArgumentException("unknown string encoding: " + encodingName);
+                    return Encoding.GetEncoding(encodingName);
             }
         }
     }

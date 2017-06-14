@@ -29,15 +29,23 @@ namespace Confluent.Kafka.Serialization
     {
         Encoding encoding;
 
-        private const string KeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
-        private const string ValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
+        /// <summary>
+        ///     Name of the encoding configuration parameter for the case of key deserialization.
+        /// </summary>
+        public const string KeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
+
+        /// <summary>
+        ///     Name of the encoding configuration parameter for the case of value deserialization.
+        /// </summary>
+        public const string ValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
 
 
         /// <summary>
         ///     Initializes a new StringDeserializer class instance.
         /// </summary>
         /// <param name="encoding">
-        ///     The encoding to use when deserializing.
+        ///     The encoding to use when deserializing. For available options, refer to:
+        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
         /// </param>
         public StringDeserializer(Encoding encoding)
         {
@@ -49,8 +57,7 @@ namespace Confluent.Kafka.Serialization
         ///     The encoding encoding to use must be provided via <see cref="Consumer" /> configuration properties.
         /// </summary>
         public StringDeserializer()
-        {
-        }
+        { }
 
         /// <summary>
         ///     Deserializes a string value from a byte array.
@@ -81,24 +88,26 @@ namespace Confluent.Kafka.Serialization
 
             if (config.Count(ci => ci.Key == propertyName) > 0)
             {
-                try
-                {
-                    encoding = config
-                        .Single(ci => ci.Key == propertyName)
-                        .Value
-                        .ToString()
-                        .ToEncoding();
-                }
-                catch
-                {
-                    throw new ArgumentException($"{keyOrValue} StringDeserializer encoding configuration parameter was specified twice.");
-                }
-
                 if (encoding != null)
                 {
                     throw new ArgumentException($"{keyOrValue} StringDeserializer encoding was configured using both constructor and configuration parameter.");
                 }
 
+                string encodingName;
+                try
+                {
+                    encodingName = config
+                        .Single(ci => ci.Key == propertyName)
+                        .Value
+                        .ToString();
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException($"{keyOrValue} StringDeserializer encoding configuration parameter was specified twice.", e);
+                }
+
+                encoding = encodingName.ToEncoding();
+                
                 return config.Where(ci => ci.Key != KeyEncodingConfigParam);
             }
 
