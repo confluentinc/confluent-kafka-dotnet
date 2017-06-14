@@ -86,7 +86,7 @@ namespace Confluent.Kafka.Serialization
             var propertyName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
             var keyOrValue = isKey ? "Key" : "Value";
 
-            if (config.Count(ci => ci.Key == propertyName) > 0)
+            if (config.Any(ci => ci.Key == propertyName))
             {
                 if (encoding != null)
                 {
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Serialization
 
                 encoding = encodingName.ToEncoding();
                 
-                return config.Where(ci => ci.Key != KeyEncodingConfigParam);
+                return config.Where(ci => ci.Key != propertyName);
             }
 
             if (encoding == null)
