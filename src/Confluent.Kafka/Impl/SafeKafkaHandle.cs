@@ -129,8 +129,8 @@ namespace Confluent.Kafka.Impl
             return OutQueueLength;
         }
 
-        internal long AddBrokers(string brokers)
-            => (long)LibRdKafka.brokers_add(handle, brokers);
+        internal int AddBrokers(string brokers)
+            => (int)LibRdKafka.brokers_add(handle, brokers);
 
         internal int Poll(IntPtr millisecondsTimeout)
             => (int)LibRdKafka.poll(handle, millisecondsTimeout);

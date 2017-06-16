@@ -794,6 +794,31 @@ namespace Confluent.Kafka
         /// </summary>
         public Metadata GetMetadata()
             => GetMetadata(true, null, -1);
+
+        /// <summary>
+        ///     Adds one or more brokers to the Producer's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as 
+        ///     soon as the Producer connects to any broker by querying the 
+        ///     broker metadata. Calling this method is only required in 
+        ///     some scenarios where the address of all brokers in the 
+        ///     cluster changes.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Coma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
+        /// </param>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
+        public int AddBrokers(string brokers)
+            => kafkaHandle.AddBrokers(brokers);
     }
 
 
@@ -1385,5 +1410,30 @@ namespace Confluent.Kafka
         /// </summary>
         public Metadata GetMetadata(bool allTopics, string topic)
             => producer.GetMetadata(allTopics, topic);
+
+        /// <summary>
+        ///     Adds one or more brokers to the Producer's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as 
+        ///     soon as the Producer connects to any broker by querying the 
+        ///     broker metadata. Calling this method is only required in 
+        ///     some scenarios where the address of all brokers in the 
+        ///     cluster changes.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Coma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
+        /// </param>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
+        public int AddBrokers(string brokers)
+            => producer.AddBrokers(brokers);
     }
 }
