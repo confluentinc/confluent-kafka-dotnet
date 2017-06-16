@@ -14,7 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -24,6 +28,17 @@ namespace Confluent.Kafka.Serialization
     public class StringDeserializer : IDeserializer<string>
     {
         Encoding encoding;
+
+        /// <summary>
+        ///     Name of the configuration parameter used to specify the encoding when deserializing keys.
+        /// </summary>
+        public const string KeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
+
+        /// <summary>
+        ///     Name of the configuration parameter used to specify the encoding when deserializing values.
+        /// </summary>
+        public const string ValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
+
 
         /// <summary>
         ///     Initializes a new StringDeserializer class instance.
@@ -37,21 +52,76 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
+        ///     Initializes a new StringDeserializer class instance.
+        ///     The encoding to use must be provided via a <see cref="Consumer" /> 
+        ///     configuration property. When used to deserialize keys, the 
+        ///     relevant property is 'dotnet.string.deserializer.encoding.key'.
+        ///     When used to deserialize values, the relevant property is
+        ///     'dotnet.string.deserializer.encoding.value'. For available encodings, 
+        ///     refer to:
+        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
+        /// </summary>
+        public StringDeserializer()
+        { }
+
+        /// <summary>
         ///     Deserializes a string value from a byte array.
         /// </summary>
         /// <param name="data">
         ///     The data to deserialize.
         /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> deserialized to a string (or null if data is null).
         /// </returns>
-        public string Deserialize(byte[] data)
+        public string Deserialize(string topic, byte[] data)
         {
             if (data == null)
             {
                 return null;
             }
             return encoding.GetString(data);
+        }
+
+        /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+        {
+            var propertyName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
+            var keyOrValue = isKey ? "Key" : "Value";
+
+            if (config.Any(ci => ci.Key == propertyName))
+            {
+                if (encoding != null)
+                {
+                    throw new ArgumentException($"{keyOrValue} StringDeserializer encoding was configured using both constructor and configuration parameter.");
+                }
+
+                string encodingName;
+                try
+                {
+                    encodingName = config
+                        .Single(ci => ci.Key == propertyName)
+                        .Value
+                        .ToString();
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException($"{keyOrValue} StringDeserializer encoding configuration parameter was specified twice.", e);
+                }
+
+                encoding = encodingName.ToEncoding();
+                
+                return config.Where(ci => ci.Key != propertyName);
+            }
+
+            if (encoding == null)
+            {
+                throw new ArgumentException($"{keyOrValue} StringDeserializer encoding was not configured.");
+            }
+
+            return config;
         }
     }
 }

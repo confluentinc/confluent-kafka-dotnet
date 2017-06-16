@@ -27,13 +27,13 @@ namespace Confluent.Kafka.UnitTests
         [MemberData(nameof(TestData))]
         public void CanReconstruct(long value)
         {
-            Assert.Equal(value, new LongDeserializer().Deserialize(new LongSerializer().Serialize(value)));
+            Assert.Equal(value, new LongDeserializer().Deserialize("topic", new LongSerializer().Serialize("topic", value)));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = new LongSerializer().Serialize(23L);
+            var data = new LongSerializer().Serialize("topic", 23L);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
@@ -41,14 +41,14 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void DeserializeArgNull()
         {
-            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize(null));
+            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize("topic", null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize(new byte[7]));
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize(new byte[9]));
+            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[7]));
+            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[9]));
         }
 
         public static IEnumerable<object[]> TestData()

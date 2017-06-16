@@ -14,6 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -27,10 +31,13 @@ namespace Confluent.Kafka.Serialization
         /// <param name="data">
         ///     A byte array containing the serialized <see cref="System.Int32"/> value (big endian encoding).
         /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
         /// <returns>
         ///     The deserialized <see cref="System.Int32"/> value.
         /// </returns>
-        public int Deserialize(byte[] data)
+        public int Deserialize(string topic, byte[] data)
         {
             // network byte order -> big endian -> most significant byte in the smallest address.
             return
@@ -39,5 +46,9 @@ namespace Confluent.Kafka.Serialization
                 (((int)data[2]) << 8) |
                 (int)data[3];
         }
+
+        /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+            => config;
     }
 }

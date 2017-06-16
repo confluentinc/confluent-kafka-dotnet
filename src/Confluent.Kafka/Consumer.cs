@@ -65,8 +65,6 @@ namespace Confluent.Kafka
             KeyDeserializer = keyDeserializer;
             ValueDeserializer = valueDeserializer;
 
-            // TODO: allow deserializers to be set in the producer config IEnumerable<KeyValuePair<string, object>>.
-
             if (KeyDeserializer == null)
             {
                 if (typeof(TKey) != typeof(Null))
@@ -87,7 +85,15 @@ namespace Confluent.Kafka
                 ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
             }
 
-            consumer = new Consumer(config);
+            var configWithoutKeyDeserializerProperties = KeyDeserializer.Configure(config, true);
+            var configWithoutValueDeserializerProperties = ValueDeserializer.Configure(config, false);
+
+            var configWithoutDeserializerProperties = config.Where(item => 
+                configWithoutKeyDeserializerProperties.Any(ci => ci.Key == item.Key) &&
+                configWithoutValueDeserializerProperties.Any(ci => ci.Key == item.Key)
+            );
+
+            consumer = new Consumer(configWithoutDeserializerProperties);
 
             consumer.OnConsumeError += (sender, msg) 
                 => OnConsumeError?.Invoke(this, msg);

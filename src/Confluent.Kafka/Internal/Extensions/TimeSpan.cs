@@ -22,7 +22,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Extension methods for the <see cref="TimeSpan"/> class.
     /// </summary>
-    public static class TimeSpanExtensions
+    internal static class TimeSpanExtensions
     {
         /// <summary>
         ///     Converts the TimeSpan value <paramref name="timespan" /> to an integer number of milliseconds.

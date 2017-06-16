@@ -14,6 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -24,24 +28,31 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Serializes the specified <see cref="System.Int32"/> value to a byte array of length 4. Byte order is big endian (network byte order).
         /// </summary>
-        /// <param name="val">
+        /// <param name="data">
         ///     The <see cref="System.Int32"/> value to serialize.
         /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
         /// <returns>
-        ///     The <see cref="System.Int32"/> value <paramref name="val" /> encoded as a byte array of length 8 (network byte order).
+        ///     The <see cref="System.Int32"/> value <paramref name="data" /> encoded as a byte array of length 8 (network byte order).
         /// </returns>
-        public byte[] Serialize(int val)
+        public byte[] Serialize(string topic, int data)
         {
             var result = new byte[4]; // int is always 32 bits on .NET.
             // network byte order -> big endian -> most significant byte in the smallest address.
             // Note: At the IL level, the conv.u1 operator is used to cast int to byte which truncates
             // the high order bits if overflow occurs.
             // https://msdn.microsoft.com/en-us/library/system.reflection.emit.opcodes.conv_u1.aspx
-            result[0] = (byte)(val >> 24);
-            result[1] = (byte)(val >> 16); // & 0xff;
-            result[2] = (byte)(val >> 8); // & 0xff;
-            result[3] = (byte)val; // & 0xff;
+            result[0] = (byte)(data >> 24);
+            result[1] = (byte)(data >> 16); // & 0xff;
+            result[2] = (byte)(data >> 8); // & 0xff;
+            result[3] = (byte)data; // & 0xff;
             return result;
         }
+
+        /// <include file='../include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+            => config;
     }
 }

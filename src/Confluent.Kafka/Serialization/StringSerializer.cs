@@ -14,7 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace Confluent.Kafka.Serialization
 {
@@ -26,10 +30,20 @@ namespace Confluent.Kafka.Serialization
         private Encoding encoding;
 
         /// <summary>
+        ///     Name of the configuration parameter used to specify the encoding when serializing keys.
+        /// </summary>
+        public const string KeyEncodingConfigParam = "dotnet.string.serializer.encoding.key";
+
+        /// <summary>
+        ///     Name of the configuration parameter used to specify the encoding when serializing values.
+        /// </summary>
+        public const string ValueEncodingConfigParam = "dotnet.string.serializer.encoding.value";
+
+        /// <summary>
         ///     Initializes a new StringSerializer class instance.
         /// </summary>
         /// <param name="encoding">
-        ///     The encoding to use when serializing.
+        ///     The encoding to use when serializing. 
         /// </param>
         public StringSerializer(Encoding encoding)
         {
@@ -37,21 +51,78 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
+        ///     Initializes a new StringSerializer class instance.
+        ///     The encoding to use must be provided via a <see cref="Producer" /> 
+        ///     configuration property. When used to serialize keys, the 
+        ///     relevant property is 'dotnet.string.serializer.encoding.key'.
+        ///     When used to serialize values, the relevant property is
+        ///     'dotnet.string.serializer.encoding.value'. For available encodings, 
+        ///     refer to:
+        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
+        /// </summary>
+        public StringSerializer()
+        { }
+
+        /// <summary>
         ///     Encodes a string value in a byte array.
         /// </summary>
-        /// <param name="val">
+        /// <param name="data">
         ///     The string value to serialize.
         /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this serializer).
+        /// </param>
         /// <returns>
-        ///     <paramref name="val" /> encoded in a byte array (or null if <paramref name="val" /> is null).
+        ///     <paramref name="data" /> encoded in a byte array (or null if <paramref name="data" /> is null).
         /// </returns>
-        public byte[] Serialize(string val)
+        public byte[] Serialize(string topic, string data)
         {
-            if (val == null)
+            if (data == null)
             {
                 return null;
             }
-            return encoding.GetBytes(val);
+
+            return encoding.GetBytes(data);
         }
+
+        /// <include file='../include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+        {
+            var propertyName = isKey ? KeyEncodingConfigParam : ValueEncodingConfigParam;
+            var keyOrValue = isKey ? "Key" : "Value";
+
+            if (config.Any(ci => ci.Key == propertyName))
+            {
+                if (encoding != null)
+                {
+                    throw new ArgumentException($"{keyOrValue} StringSerializer encoding was configured using both constructor and configuration parameter.");
+                }
+
+                string encodingName;
+                try
+                {
+                    encodingName = config
+                        .Single(ci => ci.Key == propertyName)
+                        .Value
+                        .ToString();
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException($"{keyOrValue} StringSerializer encoding configuration parameter was specified twice.", e);
+                }
+                
+                encoding = encodingName.ToEncoding();
+
+                return config.Where(ci => ci.Key != propertyName);
+            }
+
+            if (encoding == null)
+            {
+                throw new ArgumentException($"{keyOrValue} StringSerializer encoding was not configured.");
+            }
+
+            return config;
+        }
+
     }
 }

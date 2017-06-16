@@ -14,6 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
@@ -26,6 +30,9 @@ namespace Confluent.Kafka.Serialization
         ///     Deserialize a byte array to an instance of
         ///     type T.
         /// </summary>
+        /// <param name="topic">
+        ///     The topic associated wih the data.
+        /// </param>
         /// <param name="data">
         ///     The serialized representation of an instance
         ///     of type T to deserialize.
@@ -33,6 +40,9 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The deserialized value.
         /// </returns>
-        T Deserialize(byte[] data);
+        T Deserialize(string topic, byte[] data);
+
+        /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
+        IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey);
     }
 }
