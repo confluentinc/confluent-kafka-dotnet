@@ -30,12 +30,12 @@ namespace Confluent.Kafka.Serialization
         Encoding encoding;
 
         /// <summary>
-        ///     Name of the encoding configuration parameter for the case of key deserialization.
+        ///     Name of the configuration parameter used to specify the encoding when deserializing keys.
         /// </summary>
         public const string KeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
 
         /// <summary>
-        ///     Name of the encoding configuration parameter for the case of value deserialization.
+        ///     Name of the configuration parameter used to specify the encoding when deserializing values.
         /// </summary>
         public const string ValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
 
@@ -44,8 +44,7 @@ namespace Confluent.Kafka.Serialization
         ///     Initializes a new StringDeserializer class instance.
         /// </summary>
         /// <param name="encoding">
-        ///     The encoding to use when deserializing. For available options, refer to:
-        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
+        ///     The encoding to use when deserializing.
         /// </param>
         public StringDeserializer(Encoding encoding)
         {
@@ -53,8 +52,14 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Initializes a new StringDesrializer class instance.
-        ///     The encoding encoding to use must be provided via <see cref="Consumer" /> configuration properties.
+        ///     Initializes a new StringDeserializer class instance.
+        ///     The encoding to use must be provided via a <see cref="Consumer" /> 
+        ///     configuration property. When used to deserialize keys, the 
+        ///     relevant property is 'dotnet.string.deserializer.encoding.key'.
+        ///     When used to deserialize values, the relevant property is
+        ///     'dotnet.string.deserializer.encoding.value'. For available encodings, 
+        ///     refer to:
+        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
         /// </summary>
         public StringDeserializer()
         { }

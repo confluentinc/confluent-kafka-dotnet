@@ -125,5 +125,74 @@ namespace Confluent.Kafka.Serialization.Tests
 
             Assert.True(false, "Exception expected");
         }
+
+        [Fact]
+        public void DeserializeInvalidConfigValue()
+        {
+            var config = new Dictionary<string, object>();
+            config.Add("dotnet.string.deserializer.encoding.value", "invalid-encoding");
+            try
+            {
+                var deserializer = new StringDeserializer();
+                deserializer.Configure(config, false);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            Assert.True(false, "Exception expected");
+        }
+
+        [Fact]
+        public void SerializeInvalidConfigValue()
+        {
+            var config = new Dictionary<string, object>();
+            config.Add("dotnet.string.serializer.encoding.value", "invalid-encoding");
+            try
+            {
+                var serializer = new StringSerializer();
+                serializer.Configure(config, false);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            Assert.True(false, "Exception expected");
+        }
+
+        [Fact]
+        public void DeserializeNoConfigValue()
+        {
+            try
+            {
+                var deserializer = new StringDeserializer();
+                deserializer.Configure(new Dictionary<string, object>(), false);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            Assert.True(false, "Exception expected");
+        }
+
+        [Fact]
+        public void SerializeNoConfigValue()
+        {
+            try
+            {
+                var serializer = new StringSerializer();
+                serializer.Configure(new Dictionary<string, object>(), false);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            Assert.True(false, "Exception expected");
+        }
+
     }
 }

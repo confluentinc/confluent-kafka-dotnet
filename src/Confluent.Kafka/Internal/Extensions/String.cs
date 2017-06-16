@@ -27,20 +27,17 @@ namespace Confluent.Kafka
     {
         internal static Encoding ToEncoding(this string encodingName) 
         {
-            switch (encodingName)
+            switch (encodingName.ToLower())
             {
-                case "UTF8":
+                // these names match up with static properties of the Encoding class
+                case "utf8":
                     return Encoding.UTF8;
-                case "UTF7":
+                case "utf7":
                     return Encoding.UTF7;
-                case "UTF32":
+                case "utf32":
                     return Encoding.UTF32;
-                case "ASCII":
+                case "ascii":
                     return Encoding.ASCII;
-                case "Unicode":
-                    return Encoding.Unicode;
-                case "BigEndianUnicode":
-                    return Encoding.BigEndianUnicode;
                 default:
                     return Encoding.GetEncoding(encodingName);
             }

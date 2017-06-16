@@ -965,14 +965,16 @@ namespace Confluent.Kafka
             ISerializer<TValue> valueSerializer,
             bool manualPoll, bool disableDeliveryReports)
         {
-            var adjustedConfig1 = keySerializer.Configure(config, true);
-            var adjustedConfig2 = valueSerializer.Configure(config, false);
+            var configWithoutKeySerializerProperties = KeySerializer.Configure(config, true);
+            var configWithoutValueSerializerProperties = ValueSerializer.Configure(config, false);
+
+            var configWithoutSerializerProperties = config.Where(item => 
+                configWithoutKeySerializerProperties.Any(ci => ci.Key == item.Key) &&
+                configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
+            );
 
             producer = new Producer(
-                config.Where(item => 
-                    adjustedConfig1.Any(ci => ci.Key == item.Key) &&
-                    adjustedConfig2.Any(ci => ci.Key == item.Key)
-                ), 
+                configWithoutSerializerProperties, 
                 manualPoll, 
                 disableDeliveryReports
             );

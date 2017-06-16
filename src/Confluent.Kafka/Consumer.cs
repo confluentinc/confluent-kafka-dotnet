@@ -85,15 +85,15 @@ namespace Confluent.Kafka
                 ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
             }
 
-            var adjustedConfig1 = KeyDeserializer.Configure(config, true);
-            var adjustedConfig2 = ValueDeserializer.Configure(config, false);
+            var configWithoutKeyDeserializerProperties = KeyDeserializer.Configure(config, true);
+            var configWithoutValueDeserializerProperties = ValueDeserializer.Configure(config, false);
 
-            consumer = new Consumer(
-                config.Where(item => 
-                    adjustedConfig1.Any(ci => ci.Key == item.Key) &&
-                    adjustedConfig2.Any(ci => ci.Key == item.Key)
-                )
+            var configWithoutDeserializerProperties = config.Where(item => 
+                configWithoutKeyDeserializerProperties.Any(ci => ci.Key == item.Key) &&
+                configWithoutValueDeserializerProperties.Any(ci => ci.Key == item.Key)
             );
+
+            consumer = new Consumer(configWithoutDeserializerProperties);
 
             consumer.OnConsumeError += (sender, msg) 
                 => OnConsumeError?.Invoke(this, msg);

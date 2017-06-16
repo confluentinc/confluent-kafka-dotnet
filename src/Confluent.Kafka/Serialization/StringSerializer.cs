@@ -30,12 +30,12 @@ namespace Confluent.Kafka.Serialization
         private Encoding encoding;
 
         /// <summary>
-        ///     Name of the encoding configuration parameter for the case of key serialization.
+        ///     Name of the configuration parameter used to specify the encoding when serializing keys.
         /// </summary>
         public const string KeyEncodingConfigParam = "dotnet.string.serializer.encoding.key";
 
         /// <summary>
-        ///     Name of the encoding configuration parameter for the case of value serialization.
+        ///     Name of the configuration parameter used to specify the encoding when serializing values.
         /// </summary>
         public const string ValueEncodingConfigParam = "dotnet.string.serializer.encoding.value";
 
@@ -43,8 +43,7 @@ namespace Confluent.Kafka.Serialization
         ///     Initializes a new StringSerializer class instance.
         /// </summary>
         /// <param name="encoding">
-        ///     The encoding to use when serializing. For available options, refer to:
-        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
+        ///     The encoding to use when serializing. 
         /// </param>
         public StringSerializer(Encoding encoding)
         {
@@ -53,7 +52,13 @@ namespace Confluent.Kafka.Serialization
 
         /// <summary>
         ///     Initializes a new StringSerializer class instance.
-        ///     The encoding encoding to use must be provided via <see cref="Producer" /> configuration properties.
+        ///     The encoding to use must be provided via a <see cref="Producer" /> 
+        ///     configuration property. When used to serialize keys, the 
+        ///     relevant property is 'dotnet.string.serializer.encoding.key'.
+        ///     When used to serialize values, the relevant property is
+        ///     'dotnet.string.serializer.encoding.value'. For available encodings, 
+        ///     refer to:
+        ///     https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
         /// </summary>
         public StringSerializer()
         { }
