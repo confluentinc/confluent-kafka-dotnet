@@ -258,6 +258,20 @@ namespace Confluent.Kafka.Impl
             return new WatermarkOffsets(low, high);
         }
 
+        internal IEnumerable<KeyValuePair<TopicPartition, OffsetAndTimestamp>> OffsetsForTimes(
+            IEnumerable<KeyValuePair<TopicPartition, long>> timestampsToSearch,
+            IntPtr millisecondsTimeout)
+        {
+            IntPtr topics = IntPtr.Zero;
+            ErrorCode err = LibRdKafka.offsets_for_times(handle, topics, millisecondsTimeout);
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(err);
+            }
+
+            return null;
+        }
+
         internal void Subscribe(IEnumerable<string> topics)
         {
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) topics.Count());
