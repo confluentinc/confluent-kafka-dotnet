@@ -3,7 +3,7 @@
     // https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/clients/consumer/OffsetAndTimestamp.java
     public struct OffsetAndTimestamp
     {
-        public OffsetAndTimestamp(Offset offset, long timestamp)
+        public OffsetAndTimestamp(Offset offset, Timestamp timestamp)
         {
             Offset = offset;
             Timestamp = timestamp;
@@ -11,7 +11,7 @@
 
         public Offset Offset { get; }
 
-        public long Timestamp { get; }
+        public Timestamp Timestamp { get; }
 
         public override bool Equals(object obj)
         {

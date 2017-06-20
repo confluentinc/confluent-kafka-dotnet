@@ -611,6 +611,11 @@ namespace Confluent.Kafka
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => consumer.QueryWatermarkOffsets(topicPartition);
 
+        public IReadOnlyDictionary<TopicPartition, OffsetAndTimestamp> OffsetsForTimes(
+            IReadOnlyDictionary<TopicPartition, DateTime> timestampsToSearch,
+            int millisecondsTimeout)
+            => consumer.OffsetsForTimes(timestampsToSearch, (IntPtr)millisecondsTimeout);
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
         ///     
@@ -1239,6 +1244,11 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
+
+        public IReadOnlyDictionary<TopicPartition, OffsetAndTimestamp> OffsetsForTimes(
+            IReadOnlyDictionary<TopicPartition, DateTime> timestampsToSearch,
+            IntPtr millisecondsTimeout)
+            => kafkaHandle.OffsetsForTimes(timestampsToSearch, millisecondsTimeout);
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
