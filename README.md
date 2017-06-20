@@ -40,11 +40,11 @@ Install-Package Confluent.Kafka -Version 0.9.5
 To reference in a dotnet core project, explicitly add a package reference to your .csproj file:
 
 ```
-   <ItemGroup>
-     ...
-     <PackageReference Include="Confluent.Kafka" Version="0.9.5" />
-     ...
-   </ItemGroup>
+<ItemGroup>
+  ...
+  <PackageReference Include="Confluent.Kafka" Version="0.9.5" />
+  ...
+</ItemGroup>
 ```
 
 ## Examples
