@@ -31,13 +31,21 @@ client. Thanks Andreas!
 
 Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.9.5).
 
-To install confluent-kafka-dotnet from within Visual Studio, run the following command in the Package Manager Console:
+To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
 Install-Package Confluent.Kafka -Version 0.9.5
 ```
 
-To reference in a dotnet core project, add `"Confluent.Kafka": "0.9.5"` to the dependencies section of the project.json file.
+To reference in a dotnet core project, explicitly add a package reference to your .csproj file:
+
+```
+<ItemGroup>
+  ...
+  <PackageReference Include="Confluent.Kafka" Version="0.9.5" />
+  ...
+</ItemGroup>
+```
 
 ## Examples
 

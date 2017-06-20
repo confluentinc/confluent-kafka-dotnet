@@ -11,7 +11,7 @@ environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
 
 build_script:
-  - cmd: SET STRONG_NAME_OPTIONS=/p:SignAssembly=true;AssemblyOriginatorKeyFile=Confluent.Kafka.snk;PackageId=Confluent.Kafka.StrongName;AssemblyName=Confluent.Kafka.StrongName;BaseOutputPath=bin-sn\
+  - cmd: SET STRONG_NAME_OPTIONS=/p:SignAssembly=true;AssemblyOriginatorKeyFile=Confluent.Kafka.snk;PackageId=Confluent.Kafka.StrongName;Title=Confluent.Kafka.StrongName;AssemblyName=Confluent.Kafka.StrongName;BaseOutputPath=bin-sn\
   - appveyor-retry dotnet restore -v Minimal
   - appveyor-retry dotnet restore -v Minimal test/Confluent.Kafka.StrongName.UnitTests/Confluent.Kafka.StrongName.UnitTests.csproj
   - dotnet build Confluent.Kafka.sln -c %CONFIGURATION%
