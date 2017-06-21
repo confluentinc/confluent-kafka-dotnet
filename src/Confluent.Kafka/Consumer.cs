@@ -624,7 +624,8 @@ namespace Confluent.Kafka
         ///     Notice that this method may block indefinitely if the partition does not exist.
         /// </remarks>
         /// <param name="timestampsToSearch">
-        ///     The mapping from partition to the timestamp to look up</param>
+        ///     The mapping from partition to the timestamp to look up.
+        /// </param>
         /// <param name="timeout">
         ///     The maximum period of time the call may block.
         /// </param>
@@ -633,7 +634,7 @@ namespace Confluent.Kafka
         ///     than or equal to the target timestamp. null will be returned for the partition if there is no such message.
         /// </returns>
         public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
-            => consumer.OffsetsForTimes(timestampsToSearch, (IntPtr)timeout.Milliseconds);
+            => consumer.OffsetsForTimes(timestampsToSearch, timeout);
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
@@ -1277,16 +1278,17 @@ namespace Confluent.Kafka
         ///     Notice that this method may block indefinitely if the partition does not exist.
         /// </remarks>
         /// <param name="timestampsToSearch">
-        ///     The mapping from partition to the timestamp to look up</param>
-        /// <param name="millisecondsTimeout">
+        ///     The mapping from partition to the timestamp to look up.
+        /// </param>
+        /// <param name="timeout">
         ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
         ///     A mapping from partition to the timestamp and offset of the first message with timestamp greater
         ///     than or equal to the target timestamp. null will be returned for the partition if there is no such message.
         /// </returns>
-        public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, IntPtr millisecondsTimeout)
-            => kafkaHandle.OffsetsForTimes(timestampsToSearch, millisecondsTimeout);
+        public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+            => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)

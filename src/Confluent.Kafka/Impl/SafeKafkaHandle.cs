@@ -258,13 +258,13 @@ namespace Confluent.Kafka.Impl
             return new WatermarkOffsets(low, high);
         }
 
-        internal IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, IntPtr millisecondsTimeout)
+        internal IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, int millisecondsTimeout)
         {
             IEnumerable<TopicPartitionOffset> offsets = timestampsToSearch
                 .Select(t => new TopicPartitionOffset(t.TopicPartition, t.Timestamp.UnixTimestampMs))
                 .ToList();
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
-            ErrorCode err = LibRdKafka.offsets_for_times(handle, cOffsets, millisecondsTimeout);
+            ErrorCode err = LibRdKafka.offsets_for_times(handle, cOffsets, (IntPtr)millisecondsTimeout);
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
