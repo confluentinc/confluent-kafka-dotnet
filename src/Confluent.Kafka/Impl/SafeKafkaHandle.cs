@@ -258,12 +258,10 @@ namespace Confluent.Kafka.Impl
             return new WatermarkOffsets(low, high);
         }
 
-        internal IReadOnlyDictionary<TopicPartition, OffsetAndTimestamp> OffsetsForTimes(
-            IReadOnlyDictionary<TopicPartition, DateTime> timestampsToSearch,
-            IntPtr millisecondsTimeout)
+        internal IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, IntPtr millisecondsTimeout)
         {
             IEnumerable<TopicPartitionOffset> offsets = timestampsToSearch
-                .Select(t => new TopicPartitionOffset(t.Key, Timestamp.DateTimeToUnixTimestampMs(t.Value)))
+                .Select(t => new TopicPartitionOffset(t.TopicPartition, t.Timestamp.UnixTimestampMs))
                 .ToList();
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
             ErrorCode err = LibRdKafka.offsets_for_times(handle, cOffsets, millisecondsTimeout);
@@ -273,13 +271,7 @@ namespace Confluent.Kafka.Impl
             }
 
             var list = GetTopicPartitionOffsetErrorList(cOffsets);
-            return list.Zip(offsets,
-                    (offset, t) => new KeyValuePair<TopicPartition, OffsetAndTimestamp>(
-                        offset.TopicPartition,
-                        new OffsetAndTimestamp(
-                            offset.Offset,
-                            new Timestamp(t.Offset, TimestampType.NotAvailable))))
-                .ToDictionary(t => t.Key, t => t.Value);
+            return list.Select(t => t.TopicPartitionOffset).ToList();
         }
 
         internal void Subscribe(IEnumerable<string> topics)
