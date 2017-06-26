@@ -1005,8 +1005,12 @@ namespace Confluent.Kafka
             ISerializer<TValue> valueSerializer,
             bool manualPoll, bool disableDeliveryReports)
         {
-            var configWithoutKeySerializerProperties = KeySerializer.Configure(config, true);
-            var configWithoutValueSerializerProperties = ValueSerializer.Configure(config, false);
+            var configWithoutKeySerializerProperties = keySerializer != null
+                ? keySerializer.Configure(config, true)
+                : Enumerable.Empty<KeyValuePair<string, object>>();
+            var configWithoutValueSerializerProperties = valueSerializer != null
+                ? valueSerializer.Configure(config, false)
+                : Enumerable.Empty<KeyValuePair<string, object>>();
 
             var configWithoutSerializerProperties = config.Where(item => 
                 configWithoutKeySerializerProperties.Any(ci => ci.Key == item.Key) &&
