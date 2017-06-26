@@ -1,0 +1,23 @@
+Description
+===========
+
+
+
+
+How to reproduce
+================
+
+
+
+
+Checklist
+=========
+Please provide the following information:
+
+ - [ ] Confluent.Kafka nuget version:
+ - [ ] Apache Kafka version: 
+ - [ ] Client configuration:
+ - [ ] Operating system:
+ - [ ] Provide logs (with "debug" : "..." as necessary in configuration)
+ - [ ] Provide broker log excerpts
+ - [ ] Critical issue
