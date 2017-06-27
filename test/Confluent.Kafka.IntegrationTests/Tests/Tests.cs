@@ -17,8 +17,8 @@
 
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -30,13 +30,19 @@ namespace Confluent.Kafka.IntegrationTests
         {
             if (kafkaParameters == null)
             {
-                var codeBase = typeof(Tests).GetTypeInfo().Assembly.CodeBase;
-                // TODO: Better way to turn Uri into path?
-                var assemblyPath = codeBase.Substring("file://".Length);
+                var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
                 var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
                 var jsonPath = Path.Combine(assemblyDirectory, "kafka.parameters.json");
-                dynamic json = JsonConvert.DeserializeObject(File.ReadAllText(jsonPath));
-                kafkaParameters = new List<object[]>() { new object[] { json.bootstrapServers.ToString(), json.topic.ToString(), json.partitionedTopic.ToString() } };
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                kafkaParameters = new List<object[]>
+                {
+                    new object[]
+                    {
+                        json["bootstrapServers"].ToString(),
+                        json["topic"].ToString(),
+                        json["partitionedTopic"].ToString()
+                    }
+                };
             }
             return kafkaParameters;
         }

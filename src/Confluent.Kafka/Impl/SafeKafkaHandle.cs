@@ -271,6 +271,7 @@ namespace Confluent.Kafka.Impl
             }
 
             var list = GetTopicPartitionOffsetErrorList(cOffsets);
+            LibRdKafka.topic_partition_list_destroy(cOffsets);
             return list.Select(t => t.TopicPartitionOffset).ToList();
         }
 
