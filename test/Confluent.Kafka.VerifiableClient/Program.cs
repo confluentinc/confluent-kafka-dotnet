@@ -498,7 +498,7 @@ namespace Confluent.Kafka.VerifiableClient
 
             Commit(false);
 
-            if (Config.MaxMsgs > 0 && consumedMsgs > Config.MaxMsgs)
+            if (Config.MaxMsgs > 0 && consumedMsgs >= Config.MaxMsgs)
                 Stop($"Consumed all {consumedMsgs}/{Config.MaxMsgs} messages");
         }
 
