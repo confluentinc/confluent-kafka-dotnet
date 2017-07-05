@@ -642,7 +642,7 @@ Producer options:
    --producer.config <file>     Ignored (compatibility)
 
 Consumer options:
-   --group <group>              Consumer group (required)
+   --group-id <group>              Consumer group (required)
    --session-timeout <ms>       Group session timeout
    --enable-autocommit          Enable auto commit (false)
    --assignment-strategy <jcls> Java assignment strategy class name
