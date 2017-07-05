@@ -118,7 +118,14 @@ namespace Confluent.Kafka
         ///     true if TopicPartitionOffset instances a and b are equal. false otherwise.
         /// </returns>
         public static bool operator ==(TopicPartitionOffset a, TopicPartitionOffset b)
-            => a.Equals(b);
+        {
+            if (object.ReferenceEquals(a, null))
+            {
+                return object.ReferenceEquals(b, null);
+            }
+
+            return a.Equals(b);
+        }
 
         /// <summary>
         ///     Tests whether TopicPartitionOffset instance a is not equal to TopicPartitionOffset instance b.
