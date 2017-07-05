@@ -97,7 +97,7 @@ namespace Confluent.Kafka.VerifiableClient
             throw new NotImplementedException();
         }
 
-        public virtual void WaitTerm ()
+        public virtual void WaitTerm()
         {
             do
             {
@@ -126,7 +126,7 @@ namespace Confluent.Kafka.VerifiableClient
         public double MsgRate = 100.0;  // Messages/second
         public string ValuePrefix;
 
-        public VerifiableProducerConfig ()
+        public VerifiableProducerConfig()
         {
             // Default Producer configs
             ((Dictionary<string, object>)Conf["default.topic.config"])["acks"] = "all";
@@ -155,7 +155,7 @@ namespace Confluent.Kafka.VerifiableClient
             Dbg("Created producer " + Handle.Name);
         }
 
-        ~VerifiableProducer ()
+        ~VerifiableProducer()
         {
             Dbg("Destruction of producer");
         }
@@ -203,7 +203,7 @@ namespace Confluent.Kafka.VerifiableClient
         private class DeliveryHandler : IDeliveryHandler<Null, string>
         {
             private VerifiableProducer vp;
-            public DeliveryHandler (VerifiableProducer producer)
+            public DeliveryHandler(VerifiableProducer producer)
             {
                 vp = producer;
             }
@@ -217,12 +217,13 @@ namespace Confluent.Kafka.VerifiableClient
         }
 
 
-        private void Produce (string topic, string value)
+        private void Produce(string topic, string value)
         {
             try
             {
                 Handle.ProduceAsync(topic, null, value, deliveryHandler);
-            } catch (KafkaException e)
+            }
+            catch (KafkaException e)
             {
                 Fatal($"Produce({topic}, {value}) failed: {e}");
             }
@@ -232,7 +233,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             lock (ProduceLock)
             {
-                double elapsed = (DateTime.Now - LastProduce).TotalMilliseconds/1000.0;
+                double elapsed = (DateTime.Now - LastProduce).TotalMilliseconds / 1000.0;
                 double msgsToSend = Config.MsgRate * elapsed;
                 if (msgsToSend < 1)
                     return;
@@ -248,7 +249,7 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public override void Run ()
+        public override void Run()
         {
             Send("startup_complete", new Dictionary<string, object>());
 
@@ -296,7 +297,7 @@ namespace Confluent.Kafka.VerifiableClient
         Consumer<Null, string> Handle; // Client Handle
         VerifiableConsumerConfig Config;
 
-        private Dictionary<TopicPartition,AssignedPartition> currentAssignment;
+        private Dictionary<TopicPartition, AssignedPartition> currentAssignment;
         private int consumedMsgs;
         private int consumedMsgsLastReported;
         private int consumedMsgsAtLastCommit;
@@ -330,7 +331,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// <summary>
         ///   Override WaitTerm to periodically send records_consumed stats to driver
         /// </summary>
-        public override void WaitTerm ()
+        public override void WaitTerm()
         {
             do
             {
@@ -352,7 +353,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// Send "records_consumed" to test driver
         /// </summary>
         /// <param name="immediate">Force send regardless of interval</param>
-        private void SendRecordsConsumed (bool immediate)
+        private void SendRecordsConsumed(bool immediate)
         {
             // Report every 1000 messages, or immediately if forced
             if (currentAssignment == null ||
@@ -396,7 +397,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// Send result of offset commit to test-driver
         /// </summary>
         /// <param name="offsets">Committed offsets</param>
-        private void SendOffsetsCommitted (CommittedOffsets offsets)
+        private void SendOffsetsCommitted(CommittedOffsets offsets)
         {
             Dbg($"OffsetCommit {offsets.Error}: {string.Join(", ", offsets.Offsets)}");
             if (offsets.Error.Code == ErrorCode.Local_NoOffset ||
@@ -433,7 +434,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// Commit offsets every commitEvery messages or when immediate is true.
         /// </summary>
         /// <param name="immediate"></param>
-        private void Commit (bool immediate)
+        private void Commit(bool immediate)
         {
             if (!immediate &&
                 (Config.AutoCommit ||
@@ -462,12 +463,13 @@ namespace Confluent.Kafka.VerifiableClient
         /// Handle consumed message (or consumer error)
         /// </summary>
         /// <param name="m"></param>
-        private void HandleMessage (Message<Null,string> m)
+        private void HandleMessage(Message<Null, string> m)
         {
             AssignedPartition ap;
 
             if (currentAssignment == null ||
-                !currentAssignment.TryGetValue(m.TopicPartition, out ap)) {
+                !currentAssignment.TryGetValue(m.TopicPartition, out ap))
+            {
                 Dbg($"Received Message on unassigned partition {m.TopicPartition}");
                 return;
             }
@@ -480,7 +482,7 @@ namespace Confluent.Kafka.VerifiableClient
 
             if (ap.LastOffset != -1 &&
                 ap.LastOffset + 1 != m.Offset)
-                Dbg($"Message at {m.TopicPartitionOffset}, expected offset {ap.LastOffset+1}");
+                Dbg($"Message at {m.TopicPartitionOffset}, expected offset {ap.LastOffset + 1}");
 
 
             ap.LastOffset = m.Offset;
@@ -498,7 +500,7 @@ namespace Confluent.Kafka.VerifiableClient
 
             Commit(false);
 
-            if (Config.MaxMsgs > 0 && consumedMsgs > Config.MaxMsgs)
+            if (Config.MaxMsgs > 0 && consumedMsgs >= Config.MaxMsgs)
                 Stop($"Consumed all {consumedMsgs}/{Config.MaxMsgs} messages");
         }
 
@@ -508,7 +510,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// </summary>
         /// <param name="name"></param>
         /// <param name="partitions"></param>
-        private void SendPartitions (string name, IEnumerable<TopicPartition> partitions)
+        private void SendPartitions(string name, IEnumerable<TopicPartition> partitions)
         {
             var list = new List<Dictionary<string, object>>();
 
@@ -529,7 +531,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// Handle new partition assignment
         /// </summary>
         /// <param name="partitions"></param>
-        private void HandleAssign (IEnumerable<TopicPartition> partitions)
+        private void HandleAssign(IEnumerable<TopicPartition> partitions)
         {
             Dbg($"New assignment: {string.Join(", ", partitions)}");
             if (currentAssignment != null)
@@ -548,7 +550,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// <summary>
         /// Handle partition revocal
         /// </summary>
-        private void HandleRevoke (IEnumerable<TopicPartition> partitions)
+        private void HandleRevoke(IEnumerable<TopicPartition> partitions)
         {
             Dbg($"Revoked assignment: {string.Join(", ", partitions)}");
             if (currentAssignment == null)
@@ -616,7 +618,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class Program
     {
-        static private void Usage (int exitCode, string reason)
+        static private void Usage(int exitCode, string reason)
         {
             if (reason.Length > 0)
                 Console.Error.WriteLine($"Error: {reason}");
@@ -642,7 +644,7 @@ Producer options:
    --producer.config <file>     Ignored (compatibility)
 
 Consumer options:
-   --group <group>              Consumer group (required)
+   --group-id <group>              Consumer group (required)
    --session-timeout <ms>       Group session timeout
    --enable-autocommit          Enable auto commit (false)
    --assignment-strategy <jcls> Java assignment strategy class name
@@ -656,13 +658,13 @@ Consumer options:
          *  @brief Translates a CSV-list of Java assignment strategy class names
          *         to their librdkafka counterparts (lower-case without fluff).
          */
-        static private string JavaAssignmentStrategyParse (string javas)
+        static private string JavaAssignmentStrategyParse(string javas)
         {
             var re = new Regex(@"org.apache.kafka.clients.consumer.(\w+)Assignor");
             return re.Replace(javas, "$1").ToLower();
         }
 
-        static private void AssertProducer (string mode, string key)
+        static private void AssertProducer(string mode, string key)
         {
             if (!mode.Equals("--producer"))
                 Usage(1, $"{key} is a producer property");
@@ -676,10 +678,10 @@ Consumer options:
 
         static private void AssertValue(string mode, string key, string val)
         {
-                if (val == null)
-                {
-                        Usage(1, $"{key} requires a value");
-                 }
+            if (val == null)
+            {
+                Usage(1, $"{key} requires a value");
+            }
         }
 
         static private VerifiableClient NewClientFromArgs(string[] args)
@@ -703,7 +705,7 @@ Consumer options:
                 string val = null;
                 if (i + 1 < args.Length)
                 {
-                        val = args[i + 1];
+                    val = args[i + 1];
                 }
 
                 // It is helpful to see the passed arguments from system test logs
@@ -753,7 +755,7 @@ Consumer options:
                     case "--acks":
                         AssertValue(mode, key, val);
                         AssertProducer(mode, key);
-                        ((Dictionary<string,object>)conf.Conf["default.topic.config"])["acks"] = val;
+                        ((Dictionary<string, object>)conf.Conf["default.topic.config"])["acks"] = val;
                         break;
                     case "--producer.config":
                         /* Ignored */
