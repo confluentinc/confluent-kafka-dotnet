@@ -19,12 +19,22 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using System.Reflection;
+using System;
 
 namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
     {
         private static List<object[]> kafkaParameters;
+
+        static Tests()
+        {
+            // Quick fix for https://github.com/Microsoft/vstest/issues/918
+            // Some tests will log using ConsoleLogger which print to standard Err by default, bugged on vstest
+            // If we have error in test, they may hang
+            // Write to standard output solve the issue
+            Console.SetError(Console.Out);
+        }
 
         public static IEnumerable<object[]> KafkaParameters()
         {
