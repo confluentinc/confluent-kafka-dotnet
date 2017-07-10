@@ -44,16 +44,10 @@ namespace Confluent.Kafka.Impl
         Ok = 0
     }
 
-    class SafeConfigHandle : SafeHandle
+    class SafeConfigHandle : SafeHandleZeroIsInvalid
     {
         public SafeConfigHandle()
-            : base(IntPtr.Zero, false) { }
-
-        public override bool IsInvalid
-            => handle == IntPtr.Zero;
-
-        protected override bool ReleaseHandle()
-            => true;
+            : base("config handle", false) { }
 
         internal static SafeConfigHandle Create()
         {
@@ -67,19 +61,13 @@ namespace Confluent.Kafka.Impl
 
         internal IntPtr Dup()
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             return LibRdKafka.conf_dup(handle);
         }
 
         internal Dictionary<string, string> Dump()
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             UIntPtr cntp = (UIntPtr) 0;
             IntPtr data = LibRdKafka.conf_dump(handle, out cntp);
 
@@ -113,10 +101,7 @@ namespace Confluent.Kafka.Impl
 
         internal void Set(string name, string value)
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             // TODO: Constant instead of 512?
             var errorStringBuilder = new StringBuilder(512);
             ConfRes res = LibRdKafka.conf_set(handle, name, value,
@@ -141,10 +126,7 @@ namespace Confluent.Kafka.Impl
 
         internal string Get(string name)
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             UIntPtr destSize = (UIntPtr) 0;
             StringBuilder sb = null;
 

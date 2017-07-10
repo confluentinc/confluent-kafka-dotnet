@@ -26,16 +26,9 @@ using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka.Impl
 {
-    internal sealed class SafeTopicConfigHandle : SafeHandle
+    internal sealed class SafeTopicConfigHandle : SafeHandleZeroIsInvalid
     {
-        public SafeTopicConfigHandle()
-            : base(IntPtr.Zero, false) { }
-
-        public override bool IsInvalid
-            => handle == IntPtr.Zero;
-
-        protected override bool ReleaseHandle()
-            => true;
+        public SafeTopicConfigHandle() : base("kafka topic config", false) { }
 
         internal static SafeTopicConfigHandle Create()
         {
@@ -49,20 +42,14 @@ namespace Confluent.Kafka.Impl
 
         internal IntPtr Dup()
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka topic config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             return LibRdKafka.topic_conf_dup(handle);
         }
 
         // TODO: deduplicate, merge with other one
         internal Dictionary<string, string> Dump()
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka topic config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             UIntPtr cntp = (UIntPtr) 0;
             IntPtr data = LibRdKafka.topic_conf_dump(handle, out cntp);
 
@@ -96,10 +83,7 @@ namespace Confluent.Kafka.Impl
 
         internal void Set(string name, string value)
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka topic config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             // TODO: Constant instead of 512?
             var errorStringBuilder = new StringBuilder(512);
             ConfRes res = LibRdKafka.topic_conf_set(handle, name, value,
@@ -124,10 +108,7 @@ namespace Confluent.Kafka.Impl
 
         internal string Get(string name)
         {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException("kafka topic config handle is closed", innerException: null);
-            }
+            CheckClosedHandle();
             UIntPtr destSize = (UIntPtr) 0;
             StringBuilder sb = null;
 
