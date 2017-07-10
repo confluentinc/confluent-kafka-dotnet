@@ -40,7 +40,6 @@ namespace Confluent.Kafka.Impl
 
         protected override bool ReleaseHandle()
         {
-            CheckClosedHandle();
             LibRdKafka.topic_destroy(handle);
             // See SafeKafkaHandle.Topic
             kafkaHandle.DangerousRelease();
