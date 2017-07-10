@@ -103,6 +103,7 @@ namespace Confluent.Kafka.Impl
 
         protected override bool ReleaseHandle()
         {
+            CheckClosedHandle();
             LibRdKafka.destroy(handle);
             return true;
         }

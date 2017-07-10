@@ -41,9 +41,8 @@ namespace Confluent.Kafka.Impl
         protected override bool ReleaseHandle() => true;
 
         /// <summary>
-        /// Prevent AccessViolation
-        /// Should be called at start of function, every time handle is used in a function,
-        /// except when creating.releasing the handle
+        /// Prevent AccessViolationException when handle has already been closed
+        /// Should be called at start of every function using handle
         /// </summary>
         protected void CheckClosedHandle()
         {
