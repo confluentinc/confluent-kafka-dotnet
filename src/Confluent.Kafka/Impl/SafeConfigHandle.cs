@@ -146,5 +146,9 @@ namespace Confluent.Kafka.Impl
             }
             return sb?.ToString();
         }
+
+        protected override bool ReleaseHandle()
+            //Should never be called (ownsHandle false)
+            => false;
     }
 }
