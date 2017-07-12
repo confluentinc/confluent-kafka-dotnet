@@ -59,6 +59,27 @@ namespace Confluent.Kafka.Tests
         }
 
         [Fact]
+        public void NullEquality()
+        {
+            var e1 = new Error(ErrorCode.Local_AllBrokersDown);
+            Error e2 = null;
+            Error e3 = null;
+
+            Assert.NotEqual(e1, e2);
+            Assert.False(e1.Equals(e2));
+            Assert.False(e1 == e2);
+            Assert.True(e1 != e2);
+
+            Assert.NotEqual(e2, e1);
+            Assert.False(e2 == e1);
+            Assert.True(e2 != e1);
+
+            Assert.Equal(e2, e3);
+            Assert.True(e2 == e3);
+            Assert.False(e2 != e3);
+        }
+
+        [Fact]
         public void HasError()
         {
             var e1 = new Error(ErrorCode.NoError);
