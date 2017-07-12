@@ -95,7 +95,6 @@ namespace Confluent.Kafka.Impl
                     (UIntPtr) errorStringBuilder.Capacity);
             if (skh.IsInvalid)
             {
-                LibRdKafka.conf_destroy(skh.DangerousGetHandle());
                 throw new InvalidOperationException(errorStringBuilder.ToString());
             }
             return skh;
