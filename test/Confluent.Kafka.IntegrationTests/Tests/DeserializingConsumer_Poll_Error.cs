@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 firstProduced = producer.ProduceAsync(topic, Encoding.UTF8.GetBytes("key"), null).Result.TopicPartitionOffset;
-                var secondProduced = producer.ProduceAsync(topic, null, Encoding.UTF8.GetBytes("val"));
+                producer.ProduceAsync(topic, null, Encoding.UTF8.GetBytes("val"));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
