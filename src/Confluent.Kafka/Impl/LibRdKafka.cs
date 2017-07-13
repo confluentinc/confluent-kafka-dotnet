@@ -392,10 +392,10 @@ namespace Confluent.Kafka.Impl
                 out long low, out long high)
             => _get_watermark_offsets(rk, topic, partition, out low, out high);
 
-        private delegate ErrorCode OffsetsForTimes(IntPtr rk, IntPtr topics, IntPtr timeout_ms);
+        private delegate ErrorCode OffsetsForTimes(IntPtr rk, IntPtr offsets, IntPtr timeout_ms);
         private static OffsetsForTimes _offsets_for_times;
-        internal static ErrorCode offsets_for_times(IntPtr rk, IntPtr topics, IntPtr timeout_ms)
-            => _offsets_for_times(rk, topics, timeout_ms);
+        internal static ErrorCode offsets_for_times(IntPtr rk, IntPtr offsets, IntPtr timeout_ms)
+            => _offsets_for_times(rk, offsets, timeout_ms);
 
         private static Action<IntPtr, IntPtr> _mem_free;
         internal static void mem_free(IntPtr rk, IntPtr ptr)

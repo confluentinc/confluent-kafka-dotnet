@@ -611,28 +611,7 @@ namespace Confluent.Kafka
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => consumer.QueryWatermarkOffsets(topicPartition);
 
-        /// <summary>
-        ///     Look up the offsets for the given partitions by timestamp. The returned offset for each partition is the
-        ///     earliest offset whose timestamp is greater than or equal to the given timestamp in the corresponding partition.
-        ///
-        /// </summary>
-        /// <remarks>
-        ///     This is a blocking call.The consumer does not have to be assigned the partitions.
-        ///     If the message format version in a partition is before 0.10.0, i.e.the messages do not have timestamps, null
-        ///     will be returned for that partition.
-        ///
-        ///     Notice that this method may block indefinitely if the partition does not exist.
-        /// </remarks>
-        /// <param name="timestampsToSearch">
-        ///     The mapping from partition to the timestamp to look up.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     A mapping from partition to the timestamp and offset of the first message with timestamp greater
-        ///     than or equal to the target timestamp. null will be returned for the partition if there is no such message.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="Consumer_OffsetsForTimes"]/*' />
         public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             => consumer.OffsetsForTimes(timestampsToSearch, timeout);
 
@@ -1265,28 +1244,7 @@ namespace Confluent.Kafka
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-        /// <summary>
-        ///     Look up the offsets for the given partitions by timestamp. The returned offset for each partition is the
-        ///     earliest offset whose timestamp is greater than or equal to the given timestamp in the corresponding partition.
-        ///
-        /// </summary>
-        /// <remarks>
-        ///     This is a blocking call.The consumer does not have to be assigned the partitions.
-        ///     If the message format version in a partition is before 0.10.0, i.e.the messages do not have timestamps, null
-        ///     will be returned for that partition.
-        ///
-        ///     Notice that this method may block indefinitely if the partition does not exist.
-        /// </remarks>
-        /// <param name="timestampsToSearch">
-        ///     The mapping from partition to the timestamp to look up.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     A mapping from partition to the timestamp and offset of the first message with timestamp greater
-        ///     than or equal to the target timestamp. null will be returned for the partition if there is no such message.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="Consumer_OffsetsForTimes"]/*' />
         public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 

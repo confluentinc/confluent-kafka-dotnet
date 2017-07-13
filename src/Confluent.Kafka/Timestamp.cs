@@ -156,5 +156,22 @@ namespace Confluent.Kafka
         /// </returns>
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
             => UnixTimeEpoch + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+
+        /// <summary>
+        ///     Factory method to create Timestamp instance having DateTime value.
+        ///     Note: <paramref name="dateTime"/> is first converted to UTC 
+        ///     if it is not already.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The DateTime value to create Timestamp from.
+        /// </param>
+        /// <param name="type">
+        ///     The type of the timestamp.
+        /// </param>
+        /// <returns>
+        ///     The Timestamp value associated with <paramref name="dateTime"/>.
+        /// </returns>
+        public static Timestamp FromDateTime(DateTime dateTime, TimestampType type)
+            => new Timestamp(DateTimeToUnixTimestampMs(dateTime), type);
     }
 }

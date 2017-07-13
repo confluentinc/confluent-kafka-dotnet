@@ -260,19 +260,31 @@ namespace Confluent.Kafka.Impl
 
         internal IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, int millisecondsTimeout)
         {
-            IEnumerable<TopicPartitionOffset> offsets = timestampsToSearch
-                .Select(t => new TopicPartitionOffset(t.TopicPartition, t.Timestamp.UnixTimestampMs))
-                .ToList();
+            var offsets = timestampsToSearch.Select(t => new TopicPartitionOffset(t.TopicPartition, t.Timestamp.UnixTimestampMs)).ToList();
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
-            ErrorCode err = LibRdKafka.offsets_for_times(handle, cOffsets, (IntPtr)millisecondsTimeout);
-            if (err != ErrorCode.NoError)
+            try
             {
-                throw new KafkaException(err);
-            }
+                // The timestamps to query are represented as Offset property in offsets param on input, 
+                // and Offset property will contain the offset on output
+                var errorCode = LibRdKafka.offsets_for_times(handle, cOffsets, (IntPtr) millisecondsTimeout);
+                if (errorCode != ErrorCode.NoError)
+                {
+                    throw new KafkaException(errorCode);
+                }
 
-            var list = GetTopicPartitionOffsetErrorList(cOffsets);
-            LibRdKafka.topic_partition_list_destroy(cOffsets);
-            return list.Select(t => t.TopicPartitionOffset).ToList();
+                var list = GetTopicPartitionOffsetErrorList(cOffsets);
+                var error = list.Where(x => x.Error.Code != ErrorCode.NoError).Select(x => x.Error).FirstOrDefault();
+                if (error != null)
+                {
+                    throw new KafkaException(error.Code);
+                }
+                
+                return list.Select(t => t.TopicPartitionOffset).ToList();
+            }
+            finally
+            {
+                LibRdKafka.topic_partition_list_destroy(cOffsets);
+            }
         }
 
         internal void Subscribe(IEnumerable<string> topics)

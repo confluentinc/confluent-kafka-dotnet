@@ -161,7 +161,19 @@ namespace Confluent.Kafka
         ///     true if Error values a and b are equal. false otherwise.
         /// </returns>
         public static bool operator ==(Error a, Error b)
-            => a.Equals(b);
+        {
+            if (ReferenceEquals(a, b))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
+            {
+                return false;
+            }
+
+            return a.Equals(b);
+        }
 
         /// <summary>
         ///     Tests whether Error value a is not equal to Error value b.
