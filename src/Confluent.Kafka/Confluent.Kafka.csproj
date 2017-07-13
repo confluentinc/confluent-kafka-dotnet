@@ -6,7 +6,7 @@
     <Copyright>Copyright 2016-2017 Confluent Inc., Andreas Heider</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/confluent_logo.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent_logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
     <PackageId>Confluent.Kafka</PackageId>
