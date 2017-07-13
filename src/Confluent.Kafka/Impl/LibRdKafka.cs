@@ -720,7 +720,7 @@ namespace Confluent.Kafka.Impl
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_offsets_for_times(IntPtr rk,
-                /* rd_kafka_topic_partition_list_t * */ IntPtr topics,
+                /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
                 IntPtr timeout_ms);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
