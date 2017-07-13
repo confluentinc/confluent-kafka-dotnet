@@ -42,14 +42,14 @@ namespace Confluent.Kafka.Impl
 
         internal IntPtr Dup()
         {
-            CheckClosedHandle();
+            ThrowIfHandleClosed();
             return LibRdKafka.topic_conf_dup(handle);
         }
 
         // TODO: deduplicate, merge with other one
         internal Dictionary<string, string> Dump()
         {
-            CheckClosedHandle();
+            ThrowIfHandleClosed();
             UIntPtr cntp = (UIntPtr) 0;
             IntPtr data = LibRdKafka.topic_conf_dump(handle, out cntp);
 
@@ -83,9 +83,8 @@ namespace Confluent.Kafka.Impl
 
         internal void Set(string name, string value)
         {
-            CheckClosedHandle();
-            // TODO: Constant instead of 512?
-            var errorStringBuilder = new StringBuilder(512);
+            ThrowIfHandleClosed();
+            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
             ConfRes res = LibRdKafka.topic_conf_set(handle, name, value,
                     errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
             if (res == ConfRes.Ok)
@@ -108,8 +107,8 @@ namespace Confluent.Kafka.Impl
 
         internal string Get(string name)
         {
-            CheckClosedHandle();
-            UIntPtr destSize = (UIntPtr) 0;
+            ThrowIfHandleClosed();
+            UIntPtr destSize = UIntPtr.Zero;
             StringBuilder sb = null;
 
             ConfRes res = LibRdKafka.topic_conf_get(handle, name, null, ref destSize);
@@ -130,7 +129,7 @@ namespace Confluent.Kafka.Impl
         }
 
         protected override bool ReleaseHandle()
-            //Should never be called (ownsHandle false)
+            // Should never be called (ownsHandle false)
             => false;
     }
 }

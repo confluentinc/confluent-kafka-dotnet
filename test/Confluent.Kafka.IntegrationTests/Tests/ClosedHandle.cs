@@ -29,7 +29,6 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
-            // Fix https://github.com/confluentinc/confluent-kafka-dotnet/issues/258
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
@@ -37,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producer = new Producer(producerConfig, true, false);
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
-            Assert.Throws<ObjectDisposedException>(()=>producer.Poll(TimeSpan.FromMilliseconds(10)));
+            Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
         }
 
         /// <summary>
@@ -47,7 +46,6 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
-            // Fix https://github.com/confluentinc/confluent-kafka-dotnet/issues/258
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -66,7 +64,6 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void TypedProducer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
-            // Fix https://github.com/confluentinc/confluent-kafka-dotnet/issues/258
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
@@ -84,7 +81,6 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void TypedConsumer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
-            // Fix https://github.com/confluentinc/confluent-kafka-dotnet/issues/258
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },

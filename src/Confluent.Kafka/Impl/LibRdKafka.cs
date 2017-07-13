@@ -31,8 +31,11 @@ namespace Confluent.Kafka.Impl
 {
     internal static class LibRdKafka
     {
-        //min librdkafka version, to change when binding to new function are added
+        // min librdkafka version, to change when binding to new function are added
         const long minVersion = 0x000903ff;
+
+        // max length for error strings built by librdkafka
+        internal const int MaxErrorStringLength = 512;
 
 #if NET45 || NET46
         [Flags]
