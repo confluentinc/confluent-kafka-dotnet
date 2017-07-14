@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,30 +21,34 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     System.Single serializer. Byte order of serialized data is big endian (network byte order).
+    ///     System.Double serializer. Byte order of serialized data is big endian (network byte order).
     /// </summary>
-    public class FloatSerializer : ISerializer<float>
+    public class DoubleSerializer : ISerializer<double>
     {
         /// <summary>
-        ///     Serializes the specified System.Single value to a byte array of length 4. Byte order is big endian (network byte order).
+        ///     Serializes the specified System.Double value to a byte array of length 8. Byte order is big endian (network byte order).
         /// </summary>
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this serializer).
         /// </param>
         /// <param name="data">
-        ///     The System.Single value to serialize.
+        ///     The System.Double value to serialize.
         /// </param>
         /// <returns>
-        ///     The System.Single value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
+        ///     The System.Double value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
         /// </returns>
-        public byte[] Serialize(string topic, float data)
+        public byte[] Serialize(string topic, double data)
         {
             if (BitConverter.IsLittleEndian)
             {
                 unsafe
                 {
-                    byte[] result = new byte[4];
+                    byte[] result = new byte[8];
                     byte* p = (byte*)(&data);
+                    result[7] = *p++;
+                    result[6] = *p++;
+                    result[5] = *p++;
+                    result[4] = *p++;
                     result[3] = *p++;
                     result[2] = *p++;
                     result[1] = *p++;

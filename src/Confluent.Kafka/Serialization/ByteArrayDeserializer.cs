@@ -14,25 +14,35 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+
+
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     A deserializer for System.Byte[] values. 
+    ///     A deserializer for System.Byte[] values. This deserializer simply passes through the provided System.Byte[] value.
     /// </summary>
     public class ByteArrayDeserializer : IDeserializer<byte[]>
     {
         /// <summary>
-        ///     Deserializes a System.Byte[] value from a byte array.
+        ///     Deserializes a System.Byte[] value (or null) from a byte array.
         /// </summary>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
         /// <param name="data">
-        ///     A byte array containing the serialized System.Byte[] value
+        ///     A byte array containing the serialized System.Byte[] value (or null).
         /// </param>
         /// <returns>
         ///     The deserialized System.Byte[] value.
         /// </returns>
-        public byte[] Deserialize(byte[] data)
+        public byte[] Deserialize(string topic, byte[] data)
         {
             return data;
         }
+
+        /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
+        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+            => config;
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,32 +21,32 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     A deserializer for big endian encoded (network byte ordered) System.Single values.
+    ///     A deserializer for big endian encoded (network byte ordered) System.Double values.
     /// </summary>
-    public class FloatDeserializer : IDeserializer<float>
+    public class DoubleDeserializer : IDeserializer<double>
     {
         /// <summary>
-        ///     Deserializes a big endian encoded (network byte ordered) System.Single value from a byte array.
+        ///     Deserializes a big endian encoded (network byte ordered) System.Double value from a byte array.
         /// </summary>
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this deserializer).
         /// </param>
         /// <param name="data">
-        ///     A byte array containing the serialized System.Single value (big endian encoding).
+        ///     A byte array containing the serialized System.Double value (big endian encoding).
         /// </param>
         /// <returns>
-        ///     The deserialized System.Single value.
+        ///     The deserialized System.Double value.
         /// </returns>
-        public float Deserialize(string topic, byte[] data)
+        public double Deserialize(string topic, byte[] data)
         {
             if (data == null)
             {
                 throw new ArgumentNullException($"Arg {nameof(data)} is null");
             }
 
-            if (data.Length != 4)
+            if (data.Length != 8)
             {
-                throw new ArgumentException($"Size of {nameof(data)} received by {nameof(FloatDeserializer)} is not 4");
+                throw new ArgumentException($"Size of {nameof(data)} received by {nameof(DoubleDeserializer)} is not 8");
             }
 
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -54,8 +54,12 @@ namespace Confluent.Kafka.Serialization
             {
                 unsafe
                 {
-                    float result = default(float);
+                    double result = default(double);
                     byte* p = (byte*)(&result);
+                    *p++ = data[7];
+                    *p++ = data[6];
+                    *p++ = data[5];
+                    *p++ = data[4];
                     *p++ = data[3];
                     *p++ = data[2];
                     *p++ = data[1];
@@ -65,7 +69,7 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                return BitConverter.ToSingle(data, 0);
+                return BitConverter.ToDouble(data, 0);
             }
         }
 
