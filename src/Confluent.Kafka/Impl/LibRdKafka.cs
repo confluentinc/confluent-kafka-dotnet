@@ -442,18 +442,20 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
 
-        //Var-arg tag types, used in producev
+        /// <summary>
+        ///     Var-arg tag types, used in producev
+        /// </summary>
         private enum ProduceVarTag
         {
-            End,       //va-arg sentinel
-            Topic,     //(const char *) Topic name
-            Rkt,       //(rd_kafka_topic_t *) Topic handle
-            Partition, //(int32_t) Partition
-            Value,     //(void *, size_t) Message value (payload)
-            Key,       //(void *, size_t) Message key
-            Opaque,    //(void *) Application opaque
-            MsgFlags,  //(int) RD_KAFKA_MSG_F_.. flags
-            Timestamp, //(int64_t) Milliseconds since epoch UTC
+            End,       // va-arg sentinel
+            Topic,     // (const char *) Topic name
+            Rkt,       // (rd_kafka_topic_t *) Topic handle
+            Partition, // (int32_t) Partition
+            Value,     // (void *, size_t) Message value (payload)
+            Key,       // (void *, size_t) Message key
+            Opaque,    // (void *) Application opaque
+            MsgFlags,  // (int) RD_KAFKA_MSG_F_.. flags
+            Timestamp, // (int64_t) Milliseconds since epoch UTC
         }
 
         private delegate ErrorCode Producev(IntPtr rk,
@@ -789,10 +791,9 @@ namespace Confluent.Kafka.Impl
                     IntPtr rk, IntPtr partitions);
 
             // note: producev signature is rd_kafka_producev(rk, ...)
-            // __arglist is an undocumented keyword which deal with it
-            // but doesn't work on standardlib (and undocumented so don't use)
-            // stay simple with one binding for now, but it will be worth benchmarking
-            // the overload with no timestamp, opaque, partition, etc
+            // we are keeping things simple with one binding for now, but it 
+            // will be worth benchmarking the overload with no timestamp, opaque,
+            // partition, etc
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_producev(
                 IntPtr rk,
