@@ -29,12 +29,12 @@ client. Thanks Andreas!
 
 ## Usage
 
-Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.11.0).
+Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.11.0-RC3).
 
 To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 0.11.0
+Install-Package Confluent.Kafka -Version 0.11.0-RC3
 ```
 
 To reference in a dotnet core project, explicitly add a package reference to your .csproj file:
@@ -42,7 +42,7 @@ To reference in a dotnet core project, explicitly add a package reference to you
 ```
 <ItemGroup>
   ...
-  <PackageReference Include="Confluent.Kafka" Version="0.11.0" />
+  <PackageReference Include="Confluent.Kafka" Version="0.11.0-RC3" />
   ...
 </ItemGroup>
 ```
