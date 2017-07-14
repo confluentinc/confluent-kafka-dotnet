@@ -55,6 +55,27 @@ namespace Confluent.Kafka.Tests
         }
 
         [Fact]
+        public void NullEquality()
+        {
+            var tp1 = new TopicPartition("a", 31);
+            TopicPartition tp2 = null;
+            TopicPartition tp3 = null;
+
+            Assert.NotEqual(tp1, tp2);
+            Assert.False(tp1.Equals(tp2));
+            Assert.False(tp1 == tp2);
+            Assert.True(tp1 != tp2);
+
+            Assert.NotEqual(tp2, tp1);
+            Assert.False(tp2 == tp1);
+            Assert.True(tp2 != tp1);
+
+            Assert.Equal(tp2, tp3);
+            Assert.True(tp2 == tp3);
+            Assert.False(tp2 != tp3);
+        }
+
+        [Fact]
         public void ToStringTest()
         {
             var tp = new TopicPartition("mytopic", 42);
