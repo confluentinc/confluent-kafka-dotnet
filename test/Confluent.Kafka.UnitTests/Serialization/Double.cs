@@ -27,31 +27,31 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [MemberData(nameof(TestData))]
         public void CanReconstruct(double value)
         {
-            Assert.Equal(value, new DoubleDeserializer().Deserialize(new DoubleSerializer().Serialize(value)));
+            Assert.Equal(value, new DoubleDeserializer().Deserialize(null, new DoubleSerializer().Serialize(null, value)));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var buffer = new byte[] { 23, 0, 0, 0 };
+            var buffer = new byte[] { 23, 0, 0, 0, 0, 0, 0, 0 };
             var value = BitConverter.ToDouble(buffer, 0);
-            var data = new DoubleSerializer().Serialize(value);
-            Assert.Equal(23, data[3]);
+            var data = new DoubleSerializer().Serialize(null, value);
+            Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
 
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentNullException>(() => new DoubleDeserializer().Deserialize(null));
+            Assert.ThrowsAny<ArgumentNullException>(() => new DoubleDeserializer().Deserialize(null, null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual4Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(new byte[0]));
-            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(new byte[3]));
-            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(new byte[5]));
+            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[0]));
+            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[7]));
+            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[9]));
         }
 
         public static IEnumerable<object[]> TestData()

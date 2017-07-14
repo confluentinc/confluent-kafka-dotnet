@@ -27,7 +27,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [MemberData(nameof(TestData))]
         public void CanReconstruct(float value)
         {
-            Assert.Equal(value, new FloatDeserializer().Deserialize(new FloatSerializer().Serialize(value)));
+            Assert.Equal(value, new FloatDeserializer().Deserialize(null, new FloatSerializer().Serialize(null, value)));
         }
 
         [Fact]
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             var buffer = new byte[] { 23, 0, 0, 0 };
             var value = BitConverter.ToSingle(buffer, 0);
-            var data = new FloatSerializer().Serialize(value);
+            var data = new FloatSerializer().Serialize(null, value);
             Assert.Equal(23, data[3]);
             Assert.Equal(0, data[0]);
         }
@@ -43,15 +43,15 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentNullException>(() => new FloatDeserializer().Deserialize(null));
+            Assert.ThrowsAny<ArgumentNullException>(() => new FloatDeserializer().Deserialize(null, null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual4Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(new byte[0]));
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(new byte[3]));
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(new byte[5]));
+            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[0]));
+            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[3]));
+            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[5]));
         }
 
         public static IEnumerable<object[]> TestData()
