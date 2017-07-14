@@ -484,7 +484,7 @@ namespace Confluent.Kafka.Impl
         ///     for each topic/partition returns the current committed offset
         ///     or a partition specific error. if no stored offset, Offset.Invalid.
         ///
-        ///     throws KafakException if the above information cannot be retrieved.
+        ///     throws KafkaException if the above information cannot be retrieved.
         /// </summary>
         internal List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, IntPtr timeout_ms)
         {

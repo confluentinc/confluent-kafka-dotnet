@@ -47,7 +47,7 @@ namespace Confluent.Kafka.Impl
     class SafeConfigHandle : SafeHandleZeroIsInvalid
     {
         public SafeConfigHandle()
-            : base("kafak config", false) { }
+            : base("kafka config", false) { }
 
         internal static SafeConfigHandle Create()
         {
