@@ -86,11 +86,11 @@ namespace Confluent.Kafka.Impl
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
 
-        public SafeKafkaHandle() {}
+        public SafeKafkaHandle() : base("kafka") { }
 
         public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config)
         {
-            var errorStringBuilder = new StringBuilder(512);
+            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
             var skh = LibRdKafka.kafka_new(type, config, errorStringBuilder,
                     (UIntPtr) errorStringBuilder.Capacity);
             if (skh.IsInvalid)
@@ -114,6 +114,7 @@ namespace Confluent.Kafka.Impl
             {
                 if (name == null)
                 {
+                    ThrowIfHandleClosed();
                     name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(handle));
                 }
                 return name;
@@ -121,22 +122,36 @@ namespace Confluent.Kafka.Impl
         }
 
         private int OutQueueLength
-            => LibRdKafka.outq_len(handle);
+        {
+            get
+            {
+                ThrowIfHandleClosed();
+                return LibRdKafka.outq_len(handle);
+            }
+        }
 
         internal int Flush(int millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             LibRdKafka.flush(handle, new IntPtr(millisecondsTimeout));
             return OutQueueLength;
         }
 
         internal int AddBrokers(string brokers)
-            => (int)LibRdKafka.brokers_add(handle, brokers);
+        {
+            ThrowIfHandleClosed();
+            return (int)LibRdKafka.brokers_add(handle, brokers);
+        }
 
         internal int Poll(IntPtr millisecondsTimeout)
-            => (int)LibRdKafka.poll(handle, millisecondsTimeout);
+        {
+            ThrowIfHandleClosed();
+            return (int)LibRdKafka.poll(handle, millisecondsTimeout);
+        }
 
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
+            ThrowIfHandleClosed();
             // Increase the refcount to this handle to keep it alive for
             // at least as long as the topic handle.
             // Will be decremented by the topic handle ReleaseHandle.
@@ -171,6 +186,7 @@ namespace Confluent.Kafka.Impl
         /// </summary>
         internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             IntPtr metaPtr;
             ErrorCode err = LibRdKafka.metadata(
                 handle, allTopics,
@@ -228,14 +244,15 @@ namespace Confluent.Kafka.Impl
         }
 
         internal ErrorCode PollSetConsumer()
-            => LibRdKafka.poll_set_consumer(handle);
+        {
+            ThrowIfHandleClosed();
+            return LibRdKafka.poll_set_consumer(handle);
+        }
 
         internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)
         {
-            long low;
-            long high;
-
-            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr) millisecondsTimeout);
+            ThrowIfHandleClosed();
+            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out long low, out long high, (IntPtr)millisecondsTimeout);
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
@@ -246,10 +263,8 @@ namespace Confluent.Kafka.Impl
 
         internal WatermarkOffsets GetWatermarkOffsets(string topic, int partition)
         {
-            long low;
-            long high;
-
-            ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out low, out high);
+            ThrowIfHandleClosed();
+            ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out long low, out long high);
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
@@ -260,6 +275,7 @@ namespace Confluent.Kafka.Impl
 
         internal void Subscribe(IEnumerable<string> topics)
         {
+            ThrowIfHandleClosed();
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) topics.Count());
             if (list == IntPtr.Zero)
             {
@@ -280,6 +296,7 @@ namespace Confluent.Kafka.Impl
 
         internal void Unsubscribe()
         {
+            ThrowIfHandleClosed();
             ErrorCode err = LibRdKafka.unsubscribe(handle);
             if (err != ErrorCode.NoError)
             {
@@ -289,6 +306,7 @@ namespace Confluent.Kafka.Impl
 
         internal bool ConsumerPoll(out Message message, IntPtr millisecondsTimeout)
         {
+            ThrowIfHandleClosed();
             // TODO: There is a newer librdkafka interface for this now. Use that.
             IntPtr msgPtr = LibRdKafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -318,8 +336,7 @@ namespace Confluent.Kafka.Impl
                 topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt));
             }
 
-            IntPtr timestampType;
-            long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType);
+            long timestamp = LibRdKafka.message_timestamp(msgPtr, out IntPtr timestampType);
 
             LibRdKafka.message_destroy(msgPtr);
 
@@ -338,6 +355,7 @@ namespace Confluent.Kafka.Impl
 
         internal void ConsumerClose()
         {
+            ThrowIfHandleClosed();
             ErrorCode err = LibRdKafka.consumer_close(handle);
             if (err != ErrorCode.NoError)
             {
@@ -347,6 +365,7 @@ namespace Confluent.Kafka.Impl
 
         internal List<TopicPartition> GetAssignment()
         {
+            ThrowIfHandleClosed();
             IntPtr listPtr = IntPtr.Zero;
             ErrorCode err = LibRdKafka.assignment(handle, out listPtr);
             if (err != ErrorCode.NoError)
@@ -361,6 +380,7 @@ namespace Confluent.Kafka.Impl
 
         internal List<string> GetSubscription()
         {
+            ThrowIfHandleClosed();
             IntPtr listPtr = IntPtr.Zero;
             ErrorCode err = LibRdKafka.subscription(handle, out listPtr);
             if (err != ErrorCode.NoError)
@@ -374,6 +394,7 @@ namespace Confluent.Kafka.Impl
 
         internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
+            ThrowIfHandleClosed();
             IntPtr list = IntPtr.Zero;
             if (partitions != null)
             {
@@ -420,6 +441,7 @@ namespace Confluent.Kafka.Impl
         /// <returns>CommittedOffsets with global or per-partition errors.</returns>
         private CommittedOffsets commitSync (IEnumerable<TopicPartitionOffset> offsets)
         {
+            ThrowIfHandleClosed();
             // Create temporary queue so we can get the offset commit results
             // as an event instead of a callback.
             // We still need to specify a dummy callback (that does nothing)
@@ -462,10 +484,11 @@ namespace Confluent.Kafka.Impl
         ///     for each topic/partition returns the current committed offset
         ///     or a partition specific error. if no stored offset, Offset.Invalid.
         ///
-        ///     throws KafakException if the above information cannot be retrieved.
+        ///     throws KafkaException if the above information cannot be retrieved.
         /// </summary>
         internal List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, IntPtr timeout_ms)
         {
+            ThrowIfHandleClosed();
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
@@ -493,6 +516,7 @@ namespace Confluent.Kafka.Impl
         /// </summary>
         internal List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
         {
+            ThrowIfHandleClosed();
             IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
@@ -516,6 +540,7 @@ namespace Confluent.Kafka.Impl
         {
             get
             {
+                ThrowIfHandleClosed();
                 IntPtr strPtr = LibRdKafka.memberid(handle);
                 if (strPtr == IntPtr.Zero)
                 {
@@ -592,8 +617,8 @@ namespace Confluent.Kafka.Impl
 
         private List<GroupInfo> ListGroupsImpl(string group, int millisecondsTimeout)
         {
-            IntPtr grplistPtr;
-            ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)millisecondsTimeout);
+            ThrowIfHandleClosed();
+            ErrorCode err = LibRdKafka.list_groups(handle, group, out IntPtr grplistPtr, (IntPtr)millisecondsTimeout);
             if (err == ErrorCode.NoError)
             {
                 var list = Util.Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
