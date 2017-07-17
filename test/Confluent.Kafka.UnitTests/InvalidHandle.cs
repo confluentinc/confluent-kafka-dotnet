@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using Xunit;
 
 
-namespace Confluent.Kafka.Tests
+namespace Confluent.Kafka.UnitTests
 {
     public class InvalidHandleTest
     {

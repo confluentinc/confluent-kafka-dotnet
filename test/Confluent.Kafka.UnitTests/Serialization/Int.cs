@@ -19,9 +19,9 @@ using Xunit;
 using Confluent.Kafka.Serialization;
 
 
-namespace Confluent.Kafka.Tests
+namespace Confluent.Kafka.UnitTests.Serialization
 {
-    public class IntSerdeTests
+    public class IntTests
     {
         private static readonly int[] toTest = new int[]
         {
