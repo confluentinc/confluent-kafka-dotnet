@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace Confluent.Kafka.UnitTests
+namespace Confluent.Kafka.UnitTests.Serialization
 {
     public class LongTests
     {

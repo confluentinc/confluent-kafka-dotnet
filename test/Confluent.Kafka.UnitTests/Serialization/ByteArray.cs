@@ -1,6 +1,7 @@
 ﻿using Confluent.Kafka.Serialization;
 using Xunit;
 
+
 namespace Confluent.Kafka.UnitTests.Serialization
 {
     public class ByteArrayTests
@@ -13,12 +14,6 @@ namespace Confluent.Kafka.UnitTests.Serialization
         public void CanReconstruct(byte[] values)
         {
             Assert.Equal(values, new ByteArrayDeserializer().Deserialize(null, new ByteArraySerializer().Serialize(null, values)));
-        }
-
-        [Fact]
-        public void DeserizerNull()
-        {
-            Assert.Null(new ByteArrayDeserializer().Deserialize(null, null));
         }
     }
 }

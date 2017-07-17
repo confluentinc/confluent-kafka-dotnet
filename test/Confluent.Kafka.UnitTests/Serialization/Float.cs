@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
+
 namespace Confluent.Kafka.UnitTests.Serialization
 {
     public class FloatTests
@@ -64,7 +65,8 @@ namespace Confluent.Kafka.UnitTests.Serialization
                 short.MaxValue-1, short.MaxValue,short.MaxValue+1,
                 int.MaxValue-1, int.MaxValue, int.MinValue, int.MinValue + 1,
                 float.MaxValue-1,float.MaxValue,float.MinValue,float.MinValue+1,
-                float.NaN,float.PositiveInfinity,float.NegativeInfinity,float.Epsilon,-float.Epsilon
+                float.NaN,float.PositiveInfinity,float.NegativeInfinity,float.Epsilon,-float.Epsilon,
+                0.1f, -0.1f
             };
 
             foreach (var v in testData)

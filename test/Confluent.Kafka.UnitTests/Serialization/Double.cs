@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
+
 namespace Confluent.Kafka.UnitTests.Serialization
 {
     public class DoubleTests
@@ -47,7 +48,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         }
 
         [Fact]
-        public void DeserializeArgLengthNotEqual4Throw()
+        public void DeserializeArgLengthNotEqual8Throw()
         {
             Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[0]));
             Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[7]));
