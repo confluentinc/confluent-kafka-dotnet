@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{8859B121-D3C0-421E-8A0E-1C6F3B395A1F}"
 EndProject
@@ -30,6 +30,16 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleConsumer", "examples\SimpleConsumer\SimpleConsumer.csproj", "{25002C63-82EE-43BF-A63F-A3D01AC5D0F1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProducer", "examples\SimpleProducer\SimpleProducer.csproj", "{835A806F-D265-44CA-BA30-F71ABD33A1FC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro", "src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj", "{FAF96869-D279-4ECA-9C7F-6AEFFF688031}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.SchemaRegistry", "src\Confluent.Kafka.SchemaRegistry\Confluent.Kafka.SchemaRegistry.csproj", "{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.UnitTests", "test\Confluent.Kafka.Avro.UnitTests\Confluent.Kafka.Avro.UnitTests.csproj", "{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.IntegrationTests", "test\Confluent.Kafka.Avro.IntegrationTests\Confluent.Kafka.Avro.IntegrationTests.csproj", "{7067703F-78EA-40CE-B2F7-32CA90FF50C3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroGeneric", "examples\AvroGeneric\AvroGeneric.csproj", "{45B586D3-7CCA-46B0-A118-A070D84E8364}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +91,26 @@ Global
 		{835A806F-D265-44CA-BA30-F71ABD33A1FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{835A806F-D265-44CA-BA30-F71ABD33A1FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{835A806F-D265-44CA-BA30-F71ABD33A1FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAF96869-D279-4ECA-9C7F-6AEFFF688031}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAF96869-D279-4ECA-9C7F-6AEFFF688031}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAF96869-D279-4ECA-9C7F-6AEFFF688031}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAF96869-D279-4ECA-9C7F-6AEFFF688031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7067703F-78EA-40CE-B2F7-32CA90FF50C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7067703F-78EA-40CE-B2F7-32CA90FF50C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7067703F-78EA-40CE-B2F7-32CA90FF50C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7067703F-78EA-40CE-B2F7-32CA90FF50C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45B586D3-7CCA-46B0-A118-A070D84E8364}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45B586D3-7CCA-46B0-A118-A070D84E8364}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45B586D3-7CCA-46B0-A118-A070D84E8364}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45B586D3-7CCA-46B0-A118-A070D84E8364}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +127,10 @@ Global
 		{877AE1AA-3DA6-4933-BE85-214AA623E222} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
 		{25002C63-82EE-43BF-A63F-A3D01AC5D0F1} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
 		{835A806F-D265-44CA-BA30-F71ABD33A1FC} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
+		{FAF96869-D279-4ECA-9C7F-6AEFFF688031} = {59EE4CB4-41F6-4CE5-96ED-F5EAE0164417}
+		{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA} = {59EE4CB4-41F6-4CE5-96ED-F5EAE0164417}
+		{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9} = {399116BF-334E-4F4F-BB63-F128707EBA85}
+		{7067703F-78EA-40CE-B2F7-32CA90FF50C3} = {399116BF-334E-4F4F-BB63-F128707EBA85}
+		{45B586D3-7CCA-46B0-A118-A070D84E8364} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
 	EndGlobalSection
 EndGlobal
