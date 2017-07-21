@@ -162,16 +162,11 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(Error a, Error b)
         {
-            if (ReferenceEquals(a, b))
+            if (object.ReferenceEquals(a, null))
             {
-                return true;
+                return object.ReferenceEquals(b, null);
             }
-
-            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
-            {
-                return false;
-            }
-
+ 
             return a.Equals(b);
         }
 
