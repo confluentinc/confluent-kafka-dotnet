@@ -166,7 +166,7 @@ namespace Confluent.Kafka
             {
                 return object.ReferenceEquals(b, null);
             }
- 
+
             return a.Equals(b);
         }
 
