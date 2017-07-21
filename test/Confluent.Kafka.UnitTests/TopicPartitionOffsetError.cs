@@ -18,7 +18,7 @@ using Xunit;
 using System.Collections.Generic;
 
 
-namespace Confluent.Kafka.Tests
+namespace Confluent.Kafka.UnitTests
 {
     public class TopicPartitionOffsetErrorTests
     {
@@ -57,6 +57,27 @@ namespace Confluent.Kafka.Tests
                 Assert.False(a == ne);
                 Assert.True(a != ne);
             }
+        }
+
+        [Fact]
+        public void NullEquality()
+        {
+            var tpoe1 = new TopicPartitionOffsetError("a", 31, 55, ErrorCode.NoError);
+            TopicPartitionOffsetError tpoe2 = null;
+            TopicPartitionOffsetError tpoe3 = null;
+
+            Assert.NotEqual(tpoe1, tpoe2);
+            Assert.False(tpoe1.Equals(tpoe2));
+            Assert.False(tpoe1 == tpoe2);
+            Assert.True(tpoe1 != tpoe2);
+
+            Assert.NotEqual(tpoe2, tpoe1);
+            Assert.False(tpoe2 == tpoe1);
+            Assert.True(tpoe2 != tpoe1);
+
+            Assert.Equal(tpoe2, tpoe3);
+            Assert.True(tpoe2 == tpoe3);
+            Assert.False(tpoe2 != tpoe3);
         }
 
         [Fact]

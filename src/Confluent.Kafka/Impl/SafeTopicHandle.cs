@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Impl
 
         internal SafeKafkaHandle kafkaHandle;
 
-        private SafeTopicHandle() {}
+        private SafeTopicHandle() : base("kafka topic") { }
 
         protected override bool ReleaseHandle()
         {
@@ -51,6 +51,7 @@ namespace Confluent.Kafka.Impl
 
         internal long Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long? timestamp, IntPtr opaque, bool blockIfQueueFull)
         {
+            ThrowIfHandleClosed();
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
 
@@ -125,6 +126,9 @@ namespace Confluent.Kafka.Impl
         }
 
         internal bool PartitionAvailable(int partition)
-            => LibRdKafka.topic_partition_available(handle, partition);
+        {
+            ThrowIfHandleClosed();
+            return LibRdKafka.topic_partition_available(handle, partition);
+        }
     }
 }

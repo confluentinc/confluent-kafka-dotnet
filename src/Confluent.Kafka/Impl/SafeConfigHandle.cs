@@ -44,16 +44,10 @@ namespace Confluent.Kafka.Impl
         Ok = 0
     }
 
-    class SafeConfigHandle : SafeHandle
+    class SafeConfigHandle : SafeHandleZeroIsInvalid
     {
         public SafeConfigHandle()
-            : base(IntPtr.Zero, false) { }
-
-        public override bool IsInvalid
-            => handle == IntPtr.Zero;
-
-        protected override bool ReleaseHandle()
-            => true;
+            : base("kafka config", false) { }
 
         internal static SafeConfigHandle Create()
         {
@@ -66,10 +60,14 @@ namespace Confluent.Kafka.Impl
         }
 
         internal IntPtr Dup()
-            => LibRdKafka.conf_dup(handle);
+        {
+            ThrowIfHandleClosed();
+            return LibRdKafka.conf_dup(handle);
+        }
 
         internal Dictionary<string, string> Dump()
         {
+            ThrowIfHandleClosed();
             UIntPtr cntp = (UIntPtr) 0;
             IntPtr data = LibRdKafka.conf_dump(handle, out cntp);
 
@@ -103,8 +101,8 @@ namespace Confluent.Kafka.Impl
 
         internal void Set(string name, string value)
         {
-            // TODO: Constant instead of 512?
-            var errorStringBuilder = new StringBuilder(512);
+            ThrowIfHandleClosed();
+            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
             ConfRes res = LibRdKafka.conf_set(handle, name, value,
                     errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
             if (res == ConfRes.Ok)
@@ -127,6 +125,7 @@ namespace Confluent.Kafka.Impl
 
         internal string Get(string name)
         {
+            ThrowIfHandleClosed();
             UIntPtr destSize = (UIntPtr) 0;
             StringBuilder sb = null;
 
@@ -146,5 +145,9 @@ namespace Confluent.Kafka.Impl
             }
             return sb?.ToString();
         }
+
+        protected override bool ReleaseHandle()
+            // Should never be called (ownsHandle false)
+            => false;
     }
 }

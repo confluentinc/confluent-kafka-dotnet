@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(topic);
                 Assert.Equal(consumer.Assignment.Count, 0);
-                consumer.Poll(TimeSpan.FromSeconds(1));
+                consumer.Poll(TimeSpan.FromSeconds(10));
                 Assert.Equal(consumer.Assignment.Count, 1);
                 Assert.Equal(consumer.Assignment[0].Topic, topic);
             }

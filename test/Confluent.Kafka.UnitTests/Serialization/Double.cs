@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,48 +19,53 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
+
 namespace Confluent.Kafka.UnitTests.Serialization
 {
-    public class LongTests
+    public class DoubleTests
     {
         [Theory]
         [MemberData(nameof(TestData))]
-        public void CanReconstruct(long value)
+        public void CanReconstruct(double value)
         {
-            Assert.Equal(value, new LongDeserializer().Deserialize("topic", new LongSerializer().Serialize("topic", value)));
+            Assert.Equal(value, new DoubleDeserializer().Deserialize(null, new DoubleSerializer().Serialize(null, value)));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = new LongSerializer().Serialize("topic", 23L);
+            var buffer = new byte[] { 23, 0, 0, 0, 0, 0, 0, 0 };
+            var value = BitConverter.ToDouble(buffer, 0);
+            var data = new DoubleSerializer().Serialize(null, value);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
 
         [Fact]
-        public void DeserializeArgNull()
+        public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize("topic", null));
+            Assert.ThrowsAny<ArgumentNullException>(() => new DoubleDeserializer().Deserialize(null, null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[7]));
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[9]));
+            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[0]));
+            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[7]));
+            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[9]));
         }
 
         public static IEnumerable<object[]> TestData()
         {
-            long[] testData = new long[]
+            double[] testData = new double[]
             {
                 0, 1, -1, 42, -42, 127, 128, 129, -127, -128,
                 -129,254, 255, 256, 257, -254, -255, -256, -257,
-                (int)short.MinValue-1, (int)short.MinValue, (int)short.MinValue+1,
-                (int)short.MaxValue-1, (int)short.MaxValue, (int)short.MaxValue+1,
+                short.MinValue-1, short.MinValue, short.MinValue+1,
+                short.MaxValue-1, short.MaxValue,short.MaxValue+1,
                 int.MaxValue-1, int.MaxValue, int.MinValue, int.MinValue + 1,
-                long.MaxValue-1,long.MaxValue,long.MinValue,long.MinValue+1
+                double.MaxValue-1,double.MaxValue,double.MinValue,double.MinValue+1,
+                double.NaN,double.PositiveInfinity,double.NegativeInfinity,double.Epsilon,-double.Epsilon
             };
 
             foreach (var v in testData)

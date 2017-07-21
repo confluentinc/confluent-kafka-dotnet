@@ -19,48 +19,54 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
+
 namespace Confluent.Kafka.UnitTests.Serialization
 {
-    public class LongTests
+    public class FloatTests
     {
         [Theory]
         [MemberData(nameof(TestData))]
-        public void CanReconstruct(long value)
+        public void CanReconstruct(float value)
         {
-            Assert.Equal(value, new LongDeserializer().Deserialize("topic", new LongSerializer().Serialize("topic", value)));
+            Assert.Equal(value, new FloatDeserializer().Deserialize(null, new FloatSerializer().Serialize(null, value)));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = new LongSerializer().Serialize("topic", 23L);
-            Assert.Equal(23, data[7]);
+            var buffer = new byte[] { 23, 0, 0, 0 };
+            var value = BitConverter.ToSingle(buffer, 0);
+            var data = new FloatSerializer().Serialize(null, value);
+            Assert.Equal(23, data[3]);
             Assert.Equal(0, data[0]);
         }
 
         [Fact]
-        public void DeserializeArgNull()
+        public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize("topic", null));
+            Assert.ThrowsAny<ArgumentNullException>(() => new FloatDeserializer().Deserialize(null, null));
         }
 
         [Fact]
-        public void DeserializeArgLengthNotEqual8Throw()
+        public void DeserializeArgLengthNotEqual4Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[7]));
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[9]));
+            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[0]));
+            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[3]));
+            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[5]));
         }
 
         public static IEnumerable<object[]> TestData()
         {
-            long[] testData = new long[]
+            float[] testData = new float[]
             {
                 0, 1, -1, 42, -42, 127, 128, 129, -127, -128,
                 -129,254, 255, 256, 257, -254, -255, -256, -257,
-                (int)short.MinValue-1, (int)short.MinValue, (int)short.MinValue+1,
-                (int)short.MaxValue-1, (int)short.MaxValue, (int)short.MaxValue+1,
+                short.MinValue-1, short.MinValue, short.MinValue+1,
+                short.MaxValue-1, short.MaxValue,short.MaxValue+1,
                 int.MaxValue-1, int.MaxValue, int.MinValue, int.MinValue + 1,
-                long.MaxValue-1,long.MaxValue,long.MinValue,long.MinValue+1
+                float.MaxValue-1,float.MaxValue,float.MinValue,float.MinValue+1,
+                float.NaN,float.PositiveInfinity,float.NegativeInfinity,float.Epsilon,-float.Epsilon,
+                0.1f, -0.1f
             };
 
             foreach (var v in testData)
