@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
 
 
@@ -28,7 +30,9 @@ namespace Confluent.Kafka.Impl
         MSG_F_BLOCK = 4
     }
 
-    // TODO: remove when get_metadata works with string for only_topic
+    /// <remarks>
+    ///     TODO: remove when get_metadata works with string for only_topic
+    /// </remarks>
     internal sealed class SafeTopicHandle : SafeHandleZeroIsInvalid
     {
         const int RD_KAFKA_PARTITION_UA = -1;

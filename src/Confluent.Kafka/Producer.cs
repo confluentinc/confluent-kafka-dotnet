@@ -88,10 +88,14 @@ namespace Confluent.Kafka
             OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
+        /// <remarks>
+        ///     getKafkaTopicHandle() is now only required by GetMetadata() which still requires that 
+        ///     topic is specified via a handle rather than a string name (note that getKafkaTopicHandle() 
+        ///     was also formerly required by the ProduceAsync methods). Eventually we would like to 
+        ///     depreciate this method as well as the SafeTopicHandle class.
+        /// </remarks>
         private SafeTopicHandle getKafkaTopicHandle(string topic)
         {
-            // TODO: We should consider getting rid of these and add proper support in librdkafka itself
-            //       (producev() with RD_KAFKA_V_TOPIC() is one step closer)
             if (topicHandles.ContainsKey(topic))
             {
                 return topicHandles[topic];
