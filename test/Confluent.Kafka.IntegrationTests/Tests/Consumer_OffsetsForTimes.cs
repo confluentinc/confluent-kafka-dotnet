@@ -59,8 +59,6 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                var a = (TopicPartitionOffset)result[0];
-
                 Assert.Equal(result.Count, 1);
                 Assert.Equal(result[0].Offset, firstMessage.Offset);
                 Assert.False(result[0].Error.HasError);
