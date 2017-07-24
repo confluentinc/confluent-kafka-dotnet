@@ -612,7 +612,7 @@ namespace Confluent.Kafka
             => consumer.QueryWatermarkOffsets(topicPartition);
 
         /// <include file='include_docs.xml' path='API/Member[@name="Consumer_OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             => consumer.OffsetsForTimes(timestampsToSearch, timeout);
 
         /// <summary>
@@ -1245,7 +1245,7 @@ namespace Confluent.Kafka
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
         /// <include file='include_docs.xml' path='API/Member[@name="Consumer_OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 
         /// <summary>

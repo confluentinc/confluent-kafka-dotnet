@@ -59,8 +59,11 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
+                var a = (TopicPartitionOffset)result[0];
+
                 Assert.Equal(result.Count, 1);
                 Assert.Equal(result[0].Offset, firstMessage.Offset);
+                Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the last produced message timestamp
                 result = consumer.OffsetsForTimes(
@@ -70,16 +73,18 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Assert.Equal(result.Count, 1);
                 Assert.Equal(result[0].Offset, lastMessage.Offset);
+                Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the timestamp that very far in the past
                 var unixTimeEpoch = Timestamp.UnixTimeEpoch;
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(topic, Partition), Timestamp.FromDateTime(unixTimeEpoch, TimestampType.CreateTime)) },
+                        new[] { new TopicPartitionTimestamp(new TopicPartition(topic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },
                         timeout)
                     .ToList();
 
                 Assert.Equal(result.Count, 1);
                 Assert.Equal(result[0].Offset, 0);
+                Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the timestamp that very far in the future
                 result = consumer.OffsetsForTimes(
@@ -89,6 +94,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Assert.Equal(result.Count, 1);
                 Assert.Equal(result[0].Offset, 0);
+                Assert.False(result[0].Error.HasError);
             }
         }
 
