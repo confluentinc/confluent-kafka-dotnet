@@ -30,6 +30,9 @@ namespace Confluent.Kafka.Impl
         MSG_F_BLOCK = 4
     }
 
+    /// <remarks>
+    ///     TODO: remove when get_metadata works with string for only_topic
+    /// </remarks>
     internal sealed class SafeTopicHandle : SafeHandleZeroIsInvalid
     {
         const int RD_KAFKA_PARTITION_UA = -1;
@@ -48,82 +51,6 @@ namespace Confluent.Kafka.Impl
 
         internal string GetName()
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
-
-        internal long Produce(byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long? timestamp, IntPtr opaque, bool blockIfQueueFull)
-        {
-            ThrowIfHandleClosed();
-            var pValue = IntPtr.Zero;
-            var pKey = IntPtr.Zero;
-
-            var gchValue = default(GCHandle);
-            var gchKey = default(GCHandle);
-
-            if (val == null)
-            {
-                if (valOffset != 0 || valLength != 0)
-                {
-                    throw new ArgumentException("valOffset and valLength parameters must be 0 when producing null values.");
-                }
-            }
-            else
-            {
-                gchValue = GCHandle.Alloc(val, GCHandleType.Pinned);
-                pValue = Marshal.UnsafeAddrOfPinnedArrayElement(val, valOffset);
-            }
-
-            if (key == null)
-            {
-                if (keyOffset != 0 || keyLength != 0)
-                {
-                    throw new ArgumentException("keyOffset and keyLength parameters must be 0 when producing null key values.");
-                }
-            }
-            else
-            {
-                gchKey = GCHandle.Alloc(key, GCHandleType.Pinned);
-                pKey = Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset);
-            }
-
-            try
-            {
-                // TODO: when refactor complete, reassess the below note.
-                // Note: since the message queue threshold limit also includes delivery reports, it is important that another
-                // thread of the application calls poll() for a blocking produce() to ever unblock.
-                if (timestamp == null)
-                {
-                    return (long) LibRdKafka.produce(
-                        handle,
-                        partition,
-                        (IntPtr) (MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
-                        pValue, (UIntPtr) valLength,
-                        pKey, (UIntPtr) keyLength,
-                        opaque);
-                }
-                else
-                {
-                    return (long) LibRdKafka.producev(
-                        handle,
-                        partition,
-                        (IntPtr) (MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
-                        pValue, (UIntPtr) valLength,
-                        pKey, (UIntPtr) keyLength,
-                        timestamp.Value,
-                        opaque);
-                }
-            }
-            finally
-            {
-                if (val != null)
-                {
-                    gchValue.Free();
-                }
-
-                if (key != null)
-                {
-                    gchKey.Free();
-                }
-            }
-        }
 
         internal bool PartitionAvailable(int partition)
         {

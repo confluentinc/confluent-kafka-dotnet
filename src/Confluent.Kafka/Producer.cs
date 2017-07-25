@@ -38,6 +38,7 @@ namespace Confluent.Kafka
         private bool disableDeliveryReports;
 
         internal const int RD_KAFKA_PARTITION_UA = -1;
+        internal const long RD_KAFKA_NO_TIMESTAMP = 0;
 
         private IEnumerable<KeyValuePair<string, object>> topicConfig;
 
@@ -87,10 +88,14 @@ namespace Confluent.Kafka
             OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
+        /// <remarks>
+        ///     getKafkaTopicHandle() is now only required by GetMetadata() which still requires that 
+        ///     topic is specified via a handle rather than a string name (note that getKafkaTopicHandle() 
+        ///     was also formerly required by the ProduceAsync methods). Eventually we would like to 
+        ///     depreciate this method as well as the SafeTopicHandle class.
+        /// </remarks>
         private SafeTopicHandle getKafkaTopicHandle(string topic)
         {
-            // TODO: We should consider getting rid of these and add proper support in librdkafka itself
-            //       (producev() with RD_KAFKA_V_TOPIC() is one step closer)
             if (topicHandles.ContainsKey(topic))
             {
                 return topicHandles[topic];
@@ -200,8 +205,6 @@ namespace Confluent.Kafka
             Int32 partition, bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
-            SafeTopicHandle topicHandle = getKafkaTopicHandle(topic);
-
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
@@ -209,32 +212,33 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                if (topicHandle.Produce(
-                    val, valOffset, valLength, 
-                    key, keyOffset, keyLength, 
-                    partition, 
-                    timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                    ptr, blockIfQueueFull) != 0)
+                var err = kafkaHandle.Produce(
+                    topic,
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    timestamp == null ? RD_KAFKA_NO_TIMESTAMP : Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
+                    ptr, blockIfQueueFull);
+                if (err != ErrorCode.NoError)
                 {
-                    var err = LibRdKafka.last_error();
                     gch.Free();
                     throw new KafkaException(err);
                 }
-
-                return;
             }
-
-            if (topicHandle.Produce(
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                partition, 
-                timestamp == null ? null : (long?)Timestamp.DateTimeToUnixTimestampMs(timestamp.Value), 
-                IntPtr.Zero, blockIfQueueFull) != 0)
+            else
             {
-                throw new KafkaException(LibRdKafka.last_error());
+                var err = kafkaHandle.Produce(
+                    topic,
+                    val, valOffset, valLength,
+                    key, keyOffset, keyLength,
+                    partition,
+                    timestamp == null ? RD_KAFKA_NO_TIMESTAMP : Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
+                    IntPtr.Zero, blockIfQueueFull);
+                if (err != ErrorCode.NoError)
+                {
+                    throw new KafkaException(err);
+                }
             }
-
-            return;
         }
 
         private Task<Message> Produce(
