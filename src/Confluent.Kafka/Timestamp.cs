@@ -53,6 +53,23 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        ///     Note: <paramref name="dateTime"/> is first converted to UTC 
+        ///     if it is not already.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The DateTime value to create Timestamp from.
+        /// </param>
+        /// <param name="type">
+        ///     The type of the timestamp.
+        /// </param>
+        public Timestamp(DateTime dateTime, TimestampType type)
+        {
+            Type = type;
+            UnixTimestampMs = DateTimeToUnixTimestampMs(dateTime);
+        }
+
+        /// <summary>
         ///     Gets the timestamp type.
         /// </summary>
         public TimestampType Type { get; }

@@ -173,6 +173,26 @@ namespace Confluent.Kafka
             => !(a == b);
 
         /// <summary>
+        ///     Converts TopicPartitionOffsetError instance to TopicPartitionOffset instance.
+        ///     NOTE: Throws KafkaException if Error.Code != ErrorCode.NoError 
+        /// </summary>
+        /// <param name="tpoe">
+        ///     The TopicPartitionOffsetError instance to convert.
+        /// </param>
+        /// <returns>
+        ///     TopicPartitionOffset instance converted from TopicPartitionOffsetError instance
+        /// </returns>
+        public static explicit operator TopicPartitionOffset(TopicPartitionOffsetError tpoe)
+        {
+            if (tpoe.Error.HasError)
+            {
+                throw new KafkaException(tpoe.Error);
+            }
+            
+            return tpoe.TopicPartitionOffset;
+        }
+
+        /// <summary>
         ///     Returns a JSON representation of the TopicPartitionOffsetError object.
         /// </summary>
         /// <returns>

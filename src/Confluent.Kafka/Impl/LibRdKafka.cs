@@ -151,6 +151,7 @@ namespace Confluent.Kafka.Impl
             _poll_set_consumer = NativeMethods.rd_kafka_poll_set_consumer;
             _query_watermark_offsets = NativeMethods.rd_kafka_query_watermark_offsets;
             _get_watermark_offsets = NativeMethods.rd_kafka_get_watermark_offsets;
+            _offsets_for_times = NativeMethods.rd_kafka_offsets_for_times;
             _mem_free = NativeMethods.rd_kafka_mem_free;
             _subscribe = NativeMethods.rd_kafka_subscribe;
             _unsubscribe = NativeMethods.rd_kafka_unsubscribe;
@@ -393,6 +394,11 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode get_watermark_offsets(IntPtr rk, string topic, int partition,
                 out long low, out long high)
             => _get_watermark_offsets(rk, topic, partition, out low, out high);
+
+        private delegate ErrorCode OffsetsForTimes(IntPtr rk, IntPtr offsets, IntPtr timeout_ms);
+        private static OffsetsForTimes _offsets_for_times;
+        internal static ErrorCode offsets_for_times(IntPtr rk, IntPtr offsets, IntPtr timeout_ms)
+            => _offsets_for_times(rk, offsets, timeout_ms);
 
         private static Action<IntPtr, IntPtr> _mem_free;
         internal static void mem_free(IntPtr rk, IntPtr ptr)
@@ -714,6 +720,11 @@ namespace Confluent.Kafka.Impl
             internal static extern ErrorCode rd_kafka_get_watermark_offsets(IntPtr rk,
                     [MarshalAs(UnmanagedType.LPStr)] string topic,
                     int partition, out long low, out long high);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_offsets_for_times(IntPtr rk,
+                /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
+                IntPtr timeout_ms);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void rd_kafka_mem_free(IntPtr rk, IntPtr ptr);
