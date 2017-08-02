@@ -6,7 +6,9 @@ Confluent's .NET Client for Apache Kafka<sup>TM</sup>
 [![Chat on Slack](https://img.shields.io/badge/chat-on%20slack-7A5979.svg)](https://confluentcommunity.slack.com/messages/clients)
 
 **confluent-kafka-dotnet** is Confluent's .NET client for [Apache Kafka](http://kafka.apache.org/) and the
-[Confluent Platform](https://www.confluent.io/product/).
+[Confluent Platform](https://www.confluent.io/product/), which is a more complete distribution of
+Apache Kafka available in two editions - [Open Source](https://www.confluent.io/product/confluent-open-source/) and
+[Enterprise](https://www.confluent.io/product/confluent-enterprise/).
 
 Features:
 
