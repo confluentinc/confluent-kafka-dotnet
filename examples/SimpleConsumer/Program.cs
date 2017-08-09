@@ -29,18 +29,45 @@ namespace Confluent.Kafka.Examples.SimpleConsumer
     {
         public static void Main(string[] args)
         {
-            string brokerList = args[0];
-            var topics = args.Skip(1).ToList();
+            string brokerList = "localhost:9092";
+            var topic = "test";
 
             var config = new Dictionary<string, object>
             {
                 { "group.id", "simple-csharp-consumer" },
-                { "bootstrap.servers", brokerList }
+                { "bootstrap.servers", brokerList },
+                { "enable.auto.commit", false },
+                //{"debug", "cgrp,topic" }
             };
 
             using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topics.First(), 0, 0) });
+                consumer.OnOffsetsCommitted += (_, commit) =>
+                {
+                    Console.WriteLine($"[{string.Join(", ", commit.Offsets)}]");
+
+                    if (commit.Error)
+                    {
+                        Console.WriteLine($"Failed to commit offsets: {commit.Error}");
+                    }
+                    Console.WriteLine($"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]");
+                };
+
+                consumer.OnPartitionsAssigned += (_, partitions) =>
+                {
+                    Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
+                    consumer.Assign(partitions);
+                };
+
+                consumer.OnPartitionsRevoked += (_, partitions) =>
+                {
+                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
+                    consumer.CommitAsync(consumer.Position(consumer.Assignment).Select(x=>x.TopicPartitionOffset));
+                    consumer.Unassign();
+                };
+
+                consumer.Subscribe(topic);
+                //consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, Offset.Invalid) });
 
                 while (true)
                 {
