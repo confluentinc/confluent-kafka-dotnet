@@ -1,12 +1,29 @@
-﻿using Avro;
+﻿// Copyright 2016-2017 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+using Avro;
 using Avro.Generic;
 using Confluent.Kafka.SchemaRegistry;
 using Confluent.Kafka.Serialization;
-using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Confluent.Kafka.Examples.AvroGeneric
 {
@@ -14,50 +31,67 @@ namespace Confluent.Kafka.Examples.AvroGeneric
     {
         static void Main(string[] args)
         {
-            string brokerList = "localhost:9092";
-            string topicName = "testAvro";
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Usage:  AvroGeneric brokerList schemaregistryurl topicName");
+                return;
+            }
+            string brokerList = args[0];
+            string schemaRegistryUrl = args[1];
+            string topicName = args[2];
 
             string userSchema = File.ReadAllText("User.asvc");
-
-            var schemaRegistry = new Mock<ISchemaRegistryClient>();
-            schemaRegistry.Setup(x => x.GetRegistrySubject(It.IsAny<string>(), It.IsAny<bool>())).Returns((string topic, bool isKey) => topic + (isKey ? "-key" : "-value"));
-
-            schemaRegistry.Setup(x => x.RegisterAsync(topicName + "-key", It.IsAny<string>())).ReturnsAsync(1);
-            schemaRegistry.Setup(x => x.RegisterAsync(topicName + "-value", It.IsAny<string>())).ReturnsAsync(2);
-
-            schemaRegistry.Setup(x => x.GetSchemaAsync(1)).ReturnsAsync("string");
-            schemaRegistry.Setup(x => x.GetSchemaAsync(2)).ReturnsAsync(User._SCHEMA.ToString());
+            
+            var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryUrl);
 
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
             var consumerConfig = new Dictionary<string, object> { { "bootstrap.servers", brokerList }, { "group.id", Guid.NewGuid() } };
             var consumerDynamicConfig = new Dictionary<string, object> { { "bootstrap.servers", brokerList }, { "group.id", Guid.NewGuid() } };
 
-            var deserializer = new AvroDeserializer(schemaRegistry.Object);
+            var deserializer = new AvroDeserializer(schemaRegistry);
 
             using (var consumer = new Consumer<object, object>(consumerConfig, deserializer, deserializer))
-            using (var consumerDynamic = new Consumer<dynamic, dynamic>(consumerDynamicConfig, deserializer, deserializer))
-            using (var producer = new Producer<object, object>(producerConfig, new AvroSerializer(schemaRegistry.Object, true), new AvroSerializer(schemaRegistry.Object, false)))
+            using (var consumerAvroRecord = new Consumer<string, User>(consumerDynamicConfig, new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
+            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(schemaRegistry, true), new AvroSerializer<User>(schemaRegistry, false)))
             {
                 consumer.OnMessage += (o, e) =>
                 {
-                    var record = (Avro.Generic.GenericRecord)e.Value;
+                    // To use when you know the type of data you get (primitive, GenericRecord, Union...)
+                    // By using AvroRecord or DataWithId rather than object, you will get schema or schemaId alongside with data
+                    var record = (GenericRecord)e.Value;
                     Console.WriteLine($"object {e.Key}: read user {record["name"]} with favorite number {record["favorite_number"]}");
                 };
-
-                consumerDynamic.OnMessage += (o, e) =>
+                
+                consumerAvroRecord.OnMessage += (o, e) =>
                 {
-                    Console.WriteLine($"dynamic {e.Key}: read user {e.Value["name"]} with favorite number {e.Value["favorite_number"]}");
+                    //// To use when the type of data read is unknown
+                    //// or for custom treatement on given schema
+                    //var sb = new StringBuilder();
+                    //switch(e.Key.Schema.Tag)
+                    //{
+                    //    case Avro.Schema.Type.Int:
+                    //        sb.Append("Key""Name:" + e.Key.Schema.Name);
+                    //        sb.Append(" - ");
+                    //        var recordSchema = e.Key.Schema as RecordSchema;
+                    //        foreach(var field in recordSchema.Fields)
+                    //        {
+                    //            sb.Append(field.Name)
+                    //            Console.WriteLine()
+                    //        }
+                    //        break;
+                    //}
+                    //Console.WriteLine($"dynamic {e.Key}: read user {e.Value["name"]} with favorite number {e.Value["favorite_number"]}");
                 };
 
                 consumer.Subscribe(topicName);
-                consumerDynamic.Subscribe(topicName);
+                consumerAvroRecord.Subscribe(topicName);
                 bool done = false;
                 var consumeTask = Task.Factory.StartNew(() =>
                 {
                     while (!done)
                     {
                         consumer.Poll(100);
-                        consumerDynamic.Poll(100);
+                        consumerAvroRecord.Poll(100);
                     }
                 });
 
@@ -83,7 +117,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                         record.Add("favorite_number", i++);
                         user = record;
                     }
-                    var deliveryReport = producer.ProduceAsync(topicName, text, user);
+                    var deliveryReport = producer.ProduceAsync(topicName, text, (User)user);
                     deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");

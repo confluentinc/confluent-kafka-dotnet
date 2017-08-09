@@ -26,7 +26,7 @@ using Confluent.Kafka.SchemaRegistry;
 
 namespace Confluent.Kafka.Serialization
 {
-    public class AvroSerializer : ISerializer<object>
+    public class AvroSerializerOld<T> : ISerializer<T>
     {
         // format: 
         // [0] : Magic byte (0 as of today, used for future version with breaking change)
@@ -53,10 +53,12 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         /// <param name="schemaRegistryClient"></param>
         /// <param name="isKey"></param>
-        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, bool isKey)
+        public AvroSerializerOld(ISchemaRegistryClient schemaRegistryClient, bool isKey)
         {
             SchemaRegistryClient = schemaRegistryClient;
             IsKey = isKey;
+
+            // Given 
         }
 
         private Avro.Schema FromType(Avro.Schema.Type type)
@@ -82,12 +84,14 @@ namespace Confluent.Kafka.Serialization
                 return FromType(Avro.Schema.Type.Bytes);
             if (data is ISpecificRecord specificRecord)
                 return specificRecord.Schema;
+            if (data is SpecificFixed specificFixed)
+                return specificFixed.Schema;
             if (data is GenericRecord genericRecord)
                 return genericRecord.Schema;
             
             throw new ArgumentException(
                     "Unsupported Avro type. Supported types are null, Boolean, Integer, Long, "
-                    + "Float, Double, String, byte[], SpecificRecord and GenericRecord");
+                    + "Float, Double, String, byte[], ISpecificRecord, SpecificFixed and GenericRecord");
         }
 
     
@@ -100,7 +104,7 @@ namespace Confluent.Kafka.Serialization
         /// <param name="length">Length of the result to take into account </param>
         /// <param name="isKey"></param>
         /// <returns></returns>
-        public byte[] Serialize(string topic, object data)
+        public byte[] Serialize(string topic, T data)
         {
             string subject = SchemaRegistryClient.GetRegistrySubject(topic, IsKey);
             // TODO check to use something else than 30 which is not optimal.
@@ -118,12 +122,8 @@ namespace Confluent.Kafka.Serialization
                 // use network order to b compatible with other implementation
                 byte[] idBytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(schemaId));
                 stream.Write(idBytes, 0, 4);
-
-                if (data is byte[] bytes)
-                {
-                    stream.Write(bytes, 0, bytes.Length);
-                }
-                else if (data is ISpecificRecord)
+                
+                if (data is ISpecificRecord)
                 {
                     var writer = new SpecificDefaultWriter(schema);
                     writer.Write(schema, data, new BinaryEncoder(stream));

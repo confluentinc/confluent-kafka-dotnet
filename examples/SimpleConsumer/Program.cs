@@ -29,8 +29,8 @@ namespace Confluent.Kafka.Examples.SimpleConsumer
     {
         public static void Main(string[] args)
         {
-            string brokerList = args[0];
-            var topics = args.Skip(1).ToList();
+            string brokerList = "localhost:9092";
+            var topic = "test";
 
             var config = new Dictionary<string, object>
             {
