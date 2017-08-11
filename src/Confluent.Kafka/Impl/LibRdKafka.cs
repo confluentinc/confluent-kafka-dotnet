@@ -163,6 +163,8 @@ namespace Confluent.Kafka.Impl
             _commit = NativeMethods.rd_kafka_commit;
             _commit_queue = NativeMethods.rd_kafka_commit_queue;
             _committed = NativeMethods.rd_kafka_committed;
+            _pause_partitions = NativeMethods.rd_kafka_pause_partitions;
+            _resume_partitions = NativeMethods.rd_kafka_resume_partitions;
             _position = NativeMethods.rd_kafka_position;
             _producev = NativeMethods.rd_kafka_producev;
             _flush = NativeMethods.rd_kafka_flush;
@@ -439,6 +441,14 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode commit_queue(IntPtr rk, IntPtr offsets, IntPtr rkqu,
             CommitDelegate cb, IntPtr opaque)
             => _commit_queue(rk, offsets, rkqu, cb, opaque);
+
+        private static Func<IntPtr, IntPtr, ErrorCode> _pause_partitions;
+        internal static ErrorCode pause_partitions(IntPtr rk, IntPtr partitions)
+            => _pause_partitions(rk, partitions);
+
+        private static Func<IntPtr, IntPtr, ErrorCode> _resume_partitions;
+        internal static ErrorCode resume_partitions(IntPtr rk, IntPtr partitions)
+            => _resume_partitions(rk, partitions);
 
         private static Func<IntPtr, IntPtr, IntPtr, ErrorCode> _committed;
         internal static ErrorCode committed(IntPtr rk, IntPtr partitions, IntPtr timeout_ms)
@@ -792,6 +802,14 @@ namespace Confluent.Kafka.Impl
                     /* rd_kafka_queue_t * */ IntPtr rkqu,
                     /* offset_commit_cb * */ CommitDelegate cb,
                     /* void * */ IntPtr opaque);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_pause_partitions(
+                    IntPtr rk, IntPtr partitions);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_resume_partitions(
+                    IntPtr rk, IntPtr partitions);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_committed(

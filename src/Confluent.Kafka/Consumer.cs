@@ -460,6 +460,14 @@ namespace Confluent.Kafka
         public void Dispose()
             => consumer.Dispose();
 
+        /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Pause"]/*' />
+        public List<TopicPartitionError> Pause(IEnumerable<TopicPartition> partitions)
+            => consumer.Pause(partitions);
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Resume"]/*' />
+        public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
+            => consumer.Resume(partitions);
+
         /// <summary>
         ///     Retrieve current committed offsets for topics + partitions.
         ///
@@ -1112,6 +1120,14 @@ namespace Confluent.Kafka
         /// </summary>
         public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.CommitAsync(offsets);
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Pause"]/*' />
+        public List<TopicPartitionError> Pause(IEnumerable<TopicPartition> partitions)
+            => kafkaHandle.Pause(partitions);
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Resume"]/*' />
+        public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
+            => kafkaHandle.Resume(partitions);
 
         /// <summary>
         ///     Retrieve current committed offsets for topics + partitions.

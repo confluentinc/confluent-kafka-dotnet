@@ -55,4 +55,28 @@
     </returns>
 </Member>
 
+<Member name="Consumer_Pause">
+    <summary>
+        Pause consumption for the provided list of partitions.
+    </summary>
+    <param name="partitions">
+        The partitions to pause consumption of.
+    </param>
+    <returns>
+        Per partition success or error.
+    </returns>
+</Member>
+
+<Member name="Consumer_Resume">
+    <summary>
+        Resume consumption for the provided list of partitions.
+    </summary>
+    <param name="partitions">
+        The partitions to resume consumption of.
+    </param>
+    <returns>
+        Per partition success or error.
+    </returns>
+</Member>
+
 </API>  
