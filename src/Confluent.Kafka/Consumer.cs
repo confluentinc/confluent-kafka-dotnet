@@ -103,12 +103,6 @@ namespace Confluent.Kafka
         ///     Poll for new messages / consumer events. Blocks until a new 
         ///     message or event is ready to be handled or the timeout period
         ///     <paramref name="millisecondsTimeout" /> has elapsed.
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / 
-        ///     <see cref="OnMessage"/> instead of Consume. We may remove
-        ///     this method in the future to limit API surface area. 
-        ///     Please let us know if you have a use case where Consume 
-        ///     more convenient than Poll.
         /// </summary>
         /// <param name="message">
         ///     A consumed message, or null if no messages are 
@@ -163,8 +157,6 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Refer to <see cref="Consume(out Message{TKey, TValue}, int)" />.
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
@@ -980,12 +972,6 @@ namespace Confluent.Kafka
         ///     Poll for new messages / consumer events. Blocks until a new 
         ///     message or event is ready to be handled or the timeout period
         ///     <paramref name="millisecondsTimeout" /> has elapsed.
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / 
-        ///     <see cref="OnMessage"/> instead of Consume. We may remove
-        ///     this method in the future to limit API surface area. 
-        ///     Please let us know if you have a use case where Consume 
-        ///     more convenient than Poll.
         /// </summary>
         /// <param name="message">
         ///     A consumed message, or null if no messages are 
@@ -1028,8 +1014,6 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Refer to <see cref="Consume(out Message, int)" />
-        ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
