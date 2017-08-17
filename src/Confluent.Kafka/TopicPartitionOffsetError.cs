@@ -193,10 +193,10 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Returns a JSON representation of the TopicPartitionOffsetError object.
+        ///     Returns a string representation of the TopicPartitionOffsetError object.
         /// </summary>
         /// <returns>
-        ///     A JSON representation of the TopicPartitionOffsetError object.
+        ///     A string representation of the TopicPartitionOffsetError object.
         /// </returns>
         public override string ToString()
             => $"{Topic} [{Partition}] @{Offset}: {Error}";

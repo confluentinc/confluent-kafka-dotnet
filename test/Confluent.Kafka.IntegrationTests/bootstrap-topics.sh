@@ -7,5 +7,5 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-$1/bin/kafka-topics --zookeeper $2 --create --topic test-topic-1 --partitions 1 --replication 1
-$1/bin/kafka-topics --zookeeper $2 --create --topic test-topic-2 --partitions 2 --replication 1
+$1/bin/kafka-topics --zookeeper $2 --create --topic test-topic-1 --partitions 1 --replication-factor 1
+$1/bin/kafka-topics --zookeeper $2 --create --topic test-topic-2 --partitions 2 --replication-factor 1

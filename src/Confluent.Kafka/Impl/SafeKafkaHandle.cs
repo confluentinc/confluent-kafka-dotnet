@@ -565,6 +565,50 @@ namespace Confluent.Kafka.Impl
         internal Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => Task.Run(() => commitSync(offsets));
 
+        internal List<TopicPartitionError> Pause(IEnumerable<TopicPartition> partitions)
+        {
+            ThrowIfHandleClosed();
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
+            if (list == IntPtr.Zero)
+            {
+                throw new Exception("Failed to create pause partition list");
+            }
+            foreach (var partition in partitions)
+            {
+                LibRdKafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
+            }
+            ErrorCode err = LibRdKafka.pause_partitions(handle, list);
+            var result = GetTopicPartitionErrorList(list);
+            LibRdKafka.topic_partition_list_destroy(list);
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(err);
+            }
+            return result;
+        }
+
+        internal List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
+        {
+            ThrowIfHandleClosed();
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr) partitions.Count());
+            if (list == IntPtr.Zero)
+            {
+                throw new Exception("Failed to create resume partition list");
+            }
+            foreach (var partition in partitions)
+            {
+                LibRdKafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
+            }
+            ErrorCode err = LibRdKafka.resume_partitions(handle, list);
+            var result = GetTopicPartitionErrorList(list);
+            LibRdKafka.topic_partition_list_destroy(list);
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(err);
+            }
+            return result;
+        }
+
         /// <summary>
         ///     for each topic/partition returns the current committed offset
         ///     or a partition specific error. if no stored offset, Offset.Invalid.
@@ -636,6 +680,21 @@ namespace Confluent.Kafka.Impl
                 LibRdKafka.mem_free(handle, strPtr);
                 return memberId;
             }
+        }
+
+        internal static List<TopicPartitionError> GetTopicPartitionErrorList(IntPtr listPtr)
+        {
+            if (listPtr == IntPtr.Zero)
+            {
+                return new List<TopicPartitionError>();
+            }
+
+            var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
+            return Enumerable.Range(0, list.cnt)
+                .Select(i => Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(
+                    list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>()))
+                .Select(ktp => new TopicPartitionError(ktp.topic, ktp.partition, ktp.err))
+                .ToList();
         }
 
         internal static List<TopicPartitionOffsetError> GetTopicPartitionOffsetErrorList(IntPtr listPtr)
