@@ -1,11 +1,8 @@
 os: Visual Studio 2015
 
 configuration:
+- Debug
 - Release
-
-install:
-- ps: Start-FileDownload 'https://download.microsoft.com/download/8/F/9/8F9659B9-E628-4D1A-B6BF-C3004C8C954B/dotnet-1.1.1-sdk-win-x64.exe'
-- cmd: dotnet-1.1.1-sdk-win-x64.exe /quiet
 
 environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
