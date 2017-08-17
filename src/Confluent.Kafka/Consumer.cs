@@ -31,7 +31,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer (with 
     ///     key and value deserialization).
     /// </summary>
-    public class Consumer<TKey, TValue> : IDisposable
+    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
         private readonly Consumer consumer;
 
@@ -104,8 +104,8 @@ namespace Confluent.Kafka
         ///     message or event is ready to be handled or the timeout period
         ///     <paramref name="millisecondsTimeout" /> has elapsed.
         ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / 
-        ///     <see cref="OnMessage"/> instead of Consume. We may remove
+        ///     [UNSTABLE-API] - prefer to use <see cref="Consumer{TKey,TValue}.Poll()"/> / 
+        ///     <see cref="Consumer{TKey,TValue}.OnMessage"/> instead of Consume. We may remove
         ///     this method in the future to limit API surface area. 
         ///     Please let us know if you have a use case where Consume 
         ///     more convenient than Poll.
@@ -162,9 +162,9 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Consume(out Message{TKey, TValue}, int)" />.
+        ///     Refer to <see cref="Consumer{TKey,TValue}.Consume(out Confluent.Kafka.Message{TKey,TValue},int)" />.
         ///     
-        ///     [UNSTABLE-API] - prefer to use <see cref="Poll()"/> / <see cref="OnMessage"/> instead of this method.
+        ///     [UNSTABLE-API] - prefer to use <see cref="Consumer{TKey,TValue}.Poll()"/> / <see cref="Consumer{TKey,TValue}.OnMessage"/> instead of this method.
         /// </summary>
         public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
@@ -513,7 +513,6 @@ namespace Confluent.Kafka
         public string MemberId
             => consumer.MemberId;
 
-
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster (blocking).
         ///
@@ -524,7 +523,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
-
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -561,7 +559,6 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => consumer.ListGroup(group);
 
-
         /// <summary>
         ///     Get last known low (oldest/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
@@ -584,7 +581,6 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => consumer.GetWatermarkOffsets(topicPartition);
-
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
