@@ -6,6 +6,7 @@ configuration:
 install:
 - ps: Start-FileDownload 'https://download.microsoft.com/download/8/F/9/8F9659B9-E628-4D1A-B6BF-C3004C8C954B/dotnet-1.1.1-sdk-win-x64.exe'
 - cmd: dotnet-1.1.1-sdk-win-x64.exe /quiet
+- cinst docfx -y
 
 environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
@@ -18,6 +19,11 @@ build_script:
   - dotnet build src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - docfx doc/docfx.json
+
+after_build:
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs.zip doc/_site/*)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
@@ -25,6 +31,7 @@ test_script:
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
+  - path: ./docs*.zip
 
 #deploy:
 #  provider: NuGet
