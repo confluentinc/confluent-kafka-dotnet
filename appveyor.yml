@@ -22,8 +22,8 @@ build_script:
   - docfx doc/docfx.json
 
 after_build:
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs.zip doc/_site/*)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-0.11.0.zip doc/_site/*)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-0.11.0-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
@@ -32,6 +32,17 @@ test_script:
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
   - path: ./docs*.zip
+
+deploy:
+  provider: s3
+  access_key_id:
+    secure: 4jcvdYbfQmj/okVl0sd3IEhdC9zk8093XaXMOIUENUQ=
+  secret_access_key:
+    secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
+  bucket:
+    secure: jMbmAFVC13iqz8PDSV4O2hPNF2Od9PAQMbol8+RDZOk=
+  region: us-west-1
+  artifact: docs-0.11.0-ci-%APPVEYOR_BUILD_NUMBER%.zip
 
 #deploy:
 #  provider: NuGet
