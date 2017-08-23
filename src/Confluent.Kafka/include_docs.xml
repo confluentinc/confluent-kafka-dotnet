@@ -79,4 +79,19 @@
     </returns>
 </Member>
 
+<Member name="Consumer_Seek">
+    <summary>
+        Seek consumer for topic+partition to <parmref name="offset"/> which is either an
+        absolute or logical offset.
+    </summary>
+    <param name="tpo">
+        The partitions to resume consumption of.
+    </param>
+    <param name="timeout">
+    </param>
+    <returns>
+        Per partition success or error.
+    </returns>
+</Member>
+
 </API>  

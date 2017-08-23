@@ -149,6 +149,11 @@ namespace Confluent.Kafka.Impl
             return (int)LibRdKafka.poll(handle, millisecondsTimeout);
         }
 
+        /// <param name="config">
+        ///     Setting config to IntPtr.Zero returns the handle of an existing topic,
+        ///     or an invalid handle if a topic with name <paramref name="topic" /> does
+        ///     not exist.
+        /// </param>
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
             ThrowIfHandleClosed();
@@ -564,6 +569,17 @@ namespace Confluent.Kafka.Impl
 
         internal Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => Task.Run(() => commitSync(offsets));
+
+        internal void Seek(string topic, int partition, long offset, int millisecondsTimeout)
+        {
+            ThrowIfHandleClosed();
+            SafeTopicHandle rtk = Topic(topic, IntPtr.Zero);
+            var result = LibRdKafka.seek(rtk.DangerousGetHandle(), partition, offset, (IntPtr)millisecondsTimeout);
+            if (result != ErrorCode.NoError)
+            {
+                throw new KafkaException(result);
+            }
+        }
 
         internal List<TopicPartitionError> Pause(IEnumerable<TopicPartition> partitions)
         {
