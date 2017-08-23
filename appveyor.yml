@@ -42,7 +42,7 @@ deploy:
   bucket:
     secure: jMbmAFVC13iqz8PDSV4O2hPNF2Od9PAQMbol8+RDZOk=
   region: us-west-1
-  artifact: docs-0.11.0-ci-%APPVEYOR_BUILD_NUMBER%.zip
+  artifact: './docs-0.11.0-ci-%APPVEYOR_BUILD_NUMBER%.zip'
 
 #deploy:
 #  provider: NuGet
