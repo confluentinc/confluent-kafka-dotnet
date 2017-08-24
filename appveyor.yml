@@ -30,19 +30,24 @@ test_script:
  - dotnet test -c %CONFIGURATION% test/Confluent.Kafka.StrongName.UnitTests/Confluent.Kafka.StrongName.UnitTests.csproj
 
 artifacts:
-  - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
+  - path: ./src/Confluent.Kafka/bin/*/Release/*.nupkg
+    name: nuget-package
+  - path: ./src/Confluent.Kafka/bin-sn/*/Release/*.nupkg
+    name: sn-nuget-package
   - path: ./docs*.zip
+    name: docs
 
 deploy:
-  provider: s3
-  access_key_id:
-    secure: 4jcvdYbfQmj/okVl0sd3IEhdC9zk8093XaXMOIUENUQ=
-  secret_access_key:
-    secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
-  bucket:
-    secure: jMbmAFVC13iqz8PDSV4O2hPNF2Od9PAQMbol8+RDZOk=
-  region: us-west-1
-  artifact: './docs-0.11.0-ci-%APPVEYOR_BUILD_NUMBER%.zip'
+  - provider: S3
+    access_key_id:
+      secure: 4jcvdYbfQmj/okVl0sd3IEhdC9zk8093XaXMOIUENUQ=
+    secret_access_key:
+      secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
+    bucket: librdkafka-ci-packages
+    folder: dotnet
+    artifact: docs
+    set_public: false
+
 
 #deploy:
 #  provider: NuGet
