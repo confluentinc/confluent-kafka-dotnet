@@ -40,7 +40,7 @@ deploy:
     secret_access_key:
       secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
     bucket: librdkafka-ci-packages
-    folder:
+    folder: dotnet
     artifact:
     set_public: false
 
