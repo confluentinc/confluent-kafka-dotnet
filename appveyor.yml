@@ -10,7 +10,6 @@ install:
 
 environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
-  VERSION: 0.11.0
 
 build_script:
   - cmd: SET STRONG_NAME_OPTIONS=/p:SignAssembly=true;AssemblyOriginatorKeyFile=Confluent.Kafka.snk;PackageId=Confluent.Kafka.StrongName;Title=Confluent.Kafka.StrongName;AssemblyName=Confluent.Kafka.StrongName;BaseOutputPath=bin-sn\
@@ -23,8 +22,7 @@ build_script:
   - docfx doc/docfx.json
 
 after_build:
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-%VERSION%.zip doc/_site/*)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-%VERSION%-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
+  - 7z a docs-%APPVEYOR_REPO_COMMIT%-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
@@ -45,5 +43,4 @@ deploy:
     bucket: librdkafka-ci-packages
     folder: dotnet
     artifact: docs
-    set_public: false
-
+    set_public: true
