@@ -38,9 +38,9 @@ artifacts:
 deploy:
   - provider: S3
     access_key_id:
-      secure: 4qy8gz7ILrNdYmzrSbARJQ19W59+SMOoB1uHwQ8w5iE=
+      secure: lc37DobYoIbFLb++PpZvnk2xzhoww/uoqFxnE/iWgG8=
     secret_access_key:
-      secure: gQ/p0SpUGaz5ZRxO9Ti3b6wrfV2DlIJZtvdy1jK6fSKqGDPeJgQtpLqCaNfa/X1q
+      secure: +z4JP6m9kjGfyqaBvnzp5+NaHi7bZsvl/fB9CV5rnzDqcjxnxoMFGK5qsHGSsTjH
     region: us-west-1
     bucket: librdkafka-ci-packages
     folder: dotnet
