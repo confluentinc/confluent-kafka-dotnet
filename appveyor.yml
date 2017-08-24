@@ -10,6 +10,7 @@ install:
 
 environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
+  VERSION: 0.11.0
 
 build_script:
   - cmd: SET STRONG_NAME_OPTIONS=/p:SignAssembly=true;AssemblyOriginatorKeyFile=Confluent.Kafka.snk;PackageId=Confluent.Kafka.StrongName;Title=Confluent.Kafka.StrongName;AssemblyName=Confluent.Kafka.StrongName;BaseOutputPath=bin-sn\
@@ -22,20 +23,16 @@ build_script:
   - docfx doc/docfx.json
 
 after_build:
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-0.11.0.zip doc/_site/*)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-0.11.0-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-%VERSION%.zip doc/_site/*)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-%VERSION%-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
  - dotnet test -c %CONFIGURATION% test/Confluent.Kafka.StrongName.UnitTests/Confluent.Kafka.StrongName.UnitTests.csproj
 
 artifacts:
-  - path: ./src/Confluent.Kafka/bin/*/Release/*.nupkg
-    name: nuget-package
-  - path: ./src/Confluent.Kafka/bin-sn/*/Release/*.nupkg
-    name: sn-nuget-package
+  - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
   - path: ./docs*.zip
-    name: docs
 
 deploy:
   - provider: S3
@@ -44,9 +41,8 @@ deploy:
       secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
     bucket: librdkafka-ci-packages
     folder: dotnet
-    artifact: docs
+    artifact: ./docs-%VERSION%-ci-%APPVEYOR_BUILD_NUMBER%.zip,./docs-%VERSION%.zip 
     set_public: false
-
 
 #deploy:
 #  provider: NuGet
