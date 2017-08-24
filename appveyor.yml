@@ -33,6 +33,7 @@ test_script:
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
   - path: ./docs*.zip
+    name: docs
 
 deploy:
   - provider: S3
@@ -41,7 +42,7 @@ deploy:
       secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
     bucket: librdkafka-ci-packages
     folder: dotnet
-    artifact: ./docs-%VERSION%-ci-%APPVEYOR_BUILD_NUMBER%.zip,./docs-%VERSION%.zip 
+    artifact: docs
     set_public: false
 
 #deploy:
