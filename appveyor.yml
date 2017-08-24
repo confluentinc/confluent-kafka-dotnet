@@ -6,9 +6,11 @@ configuration:
 install:
 - ps: Start-FileDownload 'https://download.microsoft.com/download/8/F/9/8F9659B9-E628-4D1A-B6BF-C3004C8C954B/dotnet-1.1.1-sdk-win-x64.exe'
 - cmd: dotnet-1.1.1-sdk-win-x64.exe /quiet
+- cinst docfx -y
 
 environment:
   PATH: $(PATH);$(PROGRAMFILES)\dotnet\
+  VERSION: 0.11.0
 
 build_script:
   - cmd: SET STRONG_NAME_OPTIONS=/p:SignAssembly=true;AssemblyOriginatorKeyFile=Confluent.Kafka.snk;PackageId=Confluent.Kafka.StrongName;Title=Confluent.Kafka.StrongName;AssemblyName=Confluent.Kafka.StrongName;BaseOutputPath=bin-sn\
@@ -18,6 +20,11 @@ build_script:
   - dotnet build src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - docfx doc/docfx.json
+
+after_build:
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-%VERSION%.zip doc/_site/*)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (7z a docs-%VERSION%-ci-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*)
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
@@ -25,6 +32,17 @@ test_script:
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
+  - path: ./docs*.zip
+
+deploy:
+  - provider: S3
+    access_key_id: AKIAI6DI3ICJPXUPPPKA
+    secret_access_key:
+      secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
+    bucket: librdkafka-ci-packages
+    folder: dotnet
+    artifact: ./docs-%VERSION%-ci-%APPVEYOR_BUILD_NUMBER%.zip,./docs-%VERSION%.zip 
+    set_public: false
 
 #deploy:
 #  provider: NuGet
