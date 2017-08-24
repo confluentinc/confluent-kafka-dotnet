@@ -39,8 +39,7 @@ artifacts:
 
 deploy:
   - provider: S3
-    access_key_id:
-      secure: 4jcvdYbfQmj/okVl0sd3IEhdC9zk8093XaXMOIUENUQ=
+    access_key_id: AKIAI6DI3ICJPXUPPPKA
     secret_access_key:
       secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
     bucket: librdkafka-ci-packages
