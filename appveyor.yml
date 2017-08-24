@@ -45,7 +45,7 @@ deploy:
     bucket: librdkafka-ci-packages
     folder: dotnet
     artifact: docs
-    set_public: true
+    set_public: false
 
 #deploy:
 #  provider: NuGet
