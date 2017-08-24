@@ -37,14 +37,15 @@ artifacts:
 
 deploy:
   - provider: S3
-    access_key_id: AKIAI6DI3ICJPXUPPPKA
+    access_key_id:
+      secure: 4qy8gz7ILrNdYmzrSbARJQ19W59+SMOoB1uHwQ8w5iE=
     secret_access_key:
-      secure: k2WP0jliIT22GXpqHbGlxuB2sJcqLW4xPwKwkETt6zheIO4ad9rXiDF2QW5QbYwZ
+      secure: gQ/p0SpUGaz5ZRxO9Ti3b6wrfV2DlIJZtvdy1jK6fSKqGDPeJgQtpLqCaNfa/X1q
     region: us-west-1
     bucket: librdkafka-ci-packages
     folder: dotnet
     artifact: docs
-    set_public: false
+    set_public: true
 
 #deploy:
 #  provider: NuGet
