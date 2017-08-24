@@ -22,7 +22,7 @@ build_script:
   - docfx doc/docfx.json
 
 after_build:
-  - 7z a docs-%APPVEYOR_REPO_COMMIT%-%APPVEYOR_BUILD_NUMBER%.zip doc/_site/*
+  - 7z a docs-%APPVEYOR_REPO_COMMIT%.zip doc/_site/*
 
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
@@ -36,11 +36,10 @@ artifacts:
 deploy:
   - provider: S3
     access_key_id:
-      secure: lc37DobYoIbFLb++PpZvnk2xzhoww/uoqFxnE/iWgG8=
+      secure: 1CwAH4xAr+14pkeEBRd3CNdaWrustJaN83PEZVq407I=
     secret_access_key:
-      secure: +z4JP6m9kjGfyqaBvnzp5+NaHi7bZsvl/fB9CV5rnzDqcjxnxoMFGK5qsHGSsTjH
+      secure: vXjAddNBH6D5FqC+Y3DqYykQaASQ+HQUEiFeYy59Vk71DmS5QgTIeZIRp18D0qZa
     region: us-west-1
     bucket: librdkafka-ci-packages
-    folder: dotnet
     artifact: docs
     set_public: true
