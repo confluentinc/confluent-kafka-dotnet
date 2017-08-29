@@ -31,6 +31,12 @@ namespace Confluent.Kafka.Internal
             public static string PtrToStringUTF8(IntPtr strPtr)
             {
                 // TODO: Is there a built in / vectorized / better way to implement this?
+                // There isn't yet, but there is planned to be in the future (some time after .NET Core 2.0):
+                // https://github.com/dotnet/corefx/issues/7804
+                // Will likely need an #if NET45 block as older frameworks won't necessarily have this new method
+                // The current Marshal.PtrToStringUni method expects to work with UTF-16 strings
+                // The current Marshal.PtrToStringAnsi method has different behavior depending on platform :(
+                // The above issue is to explicitly add a PtrToStringUTF8 method
                 var length = 0;
                 unsafe
                 {
