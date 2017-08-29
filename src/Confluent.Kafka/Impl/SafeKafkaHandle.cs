@@ -510,6 +510,37 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
+        /// Store offsets to be comitted.
+        /// </summary>
+        /// <param name="offsets">List of offsets to be commited</param>
+        /// <returns>Offset results with global or per-partition errors.</returns>
+        internal OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr cOffsets = GetCTopicPartitionList(offsets);
+
+            ErrorCode err = LibRdKafka.offsets_store(handle, cOffsets);
+
+            var result = GetTopicPartitionOffsetErrorList(cOffsets);
+
+            LibRdKafka.topic_partition_list_destroy(cOffsets);
+
+            if (err != ErrorCode.NoError)
+            {
+                return new OffsetResults(new Error(err));
+
+                //TODO: 08/25/2017 @vinodres - Is Exception more appropriate in this situation?
+                //throw new KafkaException(err);
+            }
+
+            var offsetResults = new OffsetResults(result);
+
+            return offsetResults;
+        }
+
+
+        /// <summary>
         ///  Dummy commit callback that does nothing but prohibits
         ///  triggering the global offset_commit_cb.
         ///  Used by manual commits.

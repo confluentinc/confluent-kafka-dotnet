@@ -414,6 +414,28 @@ namespace Confluent.Kafka
             => consumer.Unassign();
 
         /// <summary>
+        ///     Offset is stored for commit based on the topic/partition/offset of a message.
+        ///     The next message to be read will be that following <paramref name="message" />.
+        /// </summary>
+        /// <param name="message">
+        ///     The message used to determine the stored offset.
+        /// </param>
+        /// <remarks>
+        ///     confluent-kafka-dotnet Github issue #31 
+        ///     https://github.com/confluentinc/confluent-kafka-dotnet/issues/31
+        ///     
+        ///     A consumer which has position N has consumed records with offsets 0 
+        ///     through N-1 and will next receive the record with offset N. 
+        ///     Hence, this method stores an offset of <paramref name="message" />.Offset + 1.
+        /// </remarks>
+        public OffsetResults StoreOffset(Message<TKey, TValue> message)
+            => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
+        public OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+            => consumer.StoreOffsets(offsets);
+
+        /// <summary>
         ///     Commit offsets for the current assignment.
         /// </summary>
         public Task<CommittedOffsets> CommitAsync()
@@ -1071,6 +1093,11 @@ namespace Confluent.Kafka
         [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public void Poll()
             => Poll(-1);
+
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
+        public OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+            => kafkaHandle.StoreOffsets(offsets);
 
 
         /// <summary>

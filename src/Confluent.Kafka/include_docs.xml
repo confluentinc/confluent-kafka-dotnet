@@ -78,5 +78,17 @@
         Per partition success or error.
     </returns>
 </Member>
+  
+<Member name="Store_Offsets">
+    <summary>
+        Store offsets to be commited for the provided list of topic partition offsets.
+    </summary>
+    <param name="offsets">
+        The topic partition offsets to be stored for commit.
+    </param>
+    <returns>
+        Per topic partition offset success or error.
+    </returns>
+</Member>
 
 </API>  

@@ -160,6 +160,7 @@ namespace Confluent.Kafka.Impl
             _consumer_close = NativeMethods.rd_kafka_consumer_close;
             _assign = NativeMethods.rd_kafka_assign;
             _assignment = NativeMethods.rd_kafka_assignment;
+            _offsets_store = NativeMethods.rd_kafka_offsets_store;
             _commit = NativeMethods.rd_kafka_commit;
             _commit_queue = NativeMethods.rd_kafka_commit_queue;
             _committed = NativeMethods.rd_kafka_committed;
@@ -432,6 +433,10 @@ namespace Confluent.Kafka.Impl
         private static Assignment _assignment;
         internal static ErrorCode assignment(IntPtr rk, out IntPtr topics)
             => _assignment(rk, out topics);
+
+        private static Func<IntPtr, IntPtr, ErrorCode> _offsets_store;
+        internal static ErrorCode offsets_store(IntPtr rk, IntPtr offsets)
+            => _offsets_store(rk, offsets);
 
         private static Func<IntPtr, IntPtr, bool, ErrorCode> _commit;
         internal static ErrorCode commit(IntPtr rk, IntPtr offsets, bool async)
@@ -788,6 +793,11 @@ namespace Confluent.Kafka.Impl
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_assignment(IntPtr rk,
                     /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_offsets_store(
+                    IntPtr rk,
+                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_commit(
