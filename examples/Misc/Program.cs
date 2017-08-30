@@ -74,21 +74,78 @@ namespace Confluent.Kafka.Examples.Misc
             }
         }
 
+        static void DeleteTopicsProducer(string brokerList, IEnumerable<string> topics)
+        {
+            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
+            using (var producer = new Producer(config))
+            {
+                IAdmin admin = producer;
+                try
+                {
+                    var result = admin.DeleteTopics(topics, TimeSpan.FromSeconds(10), true);
+                    foreach(var topicError in result)
+                    {
+                        var message = topicError.Error.HasError
+                            ? " deleted"
+                            : topicError.Error.Code == ErrorCode.RequestTimedOut ? 
+                              "marked for deletion" : $"deletion encoutered error {topicError.Error}";
+                        Console.WriteLine($"  Topic: {topicError.Topic} {message}");
+                    }
+                }
+                catch(KafkaException e)
+                {
+                    Console.WriteLine($"Error while deleting : {e}");
+                }
+            }
+        }
+
+        static void DeleteTopicsAdmin(string brokerList, IEnumerable<string> topics)
+        {
+            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
+            using (var admin = new AdminClient(config))
+            {
+                try
+                {
+                    var result = admin.DeleteTopics(topics, TimeSpan.FromSeconds(10), true);
+                    foreach (var topicError in result)
+                    {
+                        var message = topicError.Error.HasError
+                            ? " deleted"
+                            : topicError.Error.Code == ErrorCode.RequestTimedOut ?
+                              "marked for deletion" : $"deletion encoutered error {topicError.Error}";
+                        Console.WriteLine($"  Topic: {topicError.Topic} {message}");
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"Error while deleting : {e}");
+                }
+            }
+        }
+
         public static void Main(string[] args)
         {
+            args = new string[] { "172.22.12.3:49092", "--delete-topics", "tazezae", "poirksd", "topicToDelete" };
             Console.WriteLine($"Hello RdKafka!");
             Console.WriteLine($"{Library.Version:X}");
             Console.WriteLine($"{Library.VersionString}");
             Console.WriteLine($"{string.Join(", ", Library.DebugContexts)}");
 
-            if (args.Contains("--list-groups"))
+            switch (args[1])
             {
-                ListGroups(args[0]);
-            }
+                case "--list-groups":
+                    ListGroups(args[0]);
+                    break;
+                case "--metadata":
+                    PrintMetadata(args[0]);
+                    break;
+                case "--delete-topics":
+                    DeleteTopicsProducer(args[0], args.Skip(2));
+                    break;
+                case "--delete-topics-admin":
+                    DeleteTopicsAdmin(args[0], args.Skip(2));
+                    break;
 
-            if (args.Contains("--metadata"))
-            {
-                PrintMetadata(args[0]);
             }
         }
     }
