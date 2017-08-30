@@ -529,9 +529,6 @@ namespace Confluent.Kafka.Impl
             if (err != ErrorCode.NoError)
             {
                 return new OffsetResults(new Error(err));
-
-                //TODO: 08/25/2017 @vinodres - Is Exception more appropriate in this situation?
-                //throw new KafkaException(err);
             }
 
             var offsetResults = new OffsetResults(result);
