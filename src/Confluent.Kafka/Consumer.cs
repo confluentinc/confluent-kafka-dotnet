@@ -421,9 +421,6 @@ namespace Confluent.Kafka
         ///     The message used to determine the stored offset.
         /// </param>
         /// <remarks>
-        ///     confluent-kafka-dotnet Github issue #31 
-        ///     https://github.com/confluentinc/confluent-kafka-dotnet/issues/31
-        ///     
         ///     A consumer which has position N has consumed records with offsets 0 
         ///     through N-1 and will next receive the record with offset N. 
         ///     Hence, this method stores an offset of <paramref name="message" />.Offset + 1.

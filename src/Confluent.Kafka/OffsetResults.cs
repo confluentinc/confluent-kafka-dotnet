@@ -26,17 +26,8 @@ namespace Confluent.Kafka
     ///     - per-partition offsets and success/error together with overall 
     ///     success/error of the operation.
     /// </summary> 
-    /// <remarks>
-    ///     Possible error conditions:
-    ///     //TODO: 08/09/2017 @vinodres: What are possible error conditions?
-    /// </remarks>
     public class OffsetResults
     {
-        //TODO: 08/29/2017 @vinodres: This class is similar to CommitedOffsets, 
-        //     but using CommittedOffsets in StoreOffsets feature sounds misleading
-        //     So created OffsetResults. CommittedOffsets should be depricated and 
-        //     its usage should be replaced with OffsetResults.
-
         /// <summary>
         ///     Initializes a new instance of OffsetResults.
         /// </summary>
