@@ -182,6 +182,7 @@ namespace Confluent.Kafka.Impl
             _event_topic_partition_list = NativeMethods.rd_kafka_event_topic_partition_list;
             _event_destroy = NativeMethods.rd_kafka_event_destroy;
             _queue_poll = NativeMethods.rd_kafka_queue_poll;
+            _admin_delete_topics = NativeMethods.rd_kafka_admin_delete_topics;
 
             if ((long)version() < minVersion)
             {
@@ -574,6 +575,10 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _event_topic_partition_list;
         internal static IntPtr event_topic_partition_list(IntPtr rkev)
             => _event_topic_partition_list(rkev);
+        
+        private static Func<IntPtr, IntPtr, IntPtr, ErrorCode> _admin_delete_topics;
+        internal static ErrorCode admin_delete_topics(IntPtr rk, IntPtr topics, IntPtr timeout_ms)
+            => _admin_delete_topics(rk, topics, timeout_ms);
 
 
 
@@ -896,6 +901,9 @@ namespace Confluent.Kafka.Impl
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr rd_kafka_event_topic_partition_list(IntPtr rkev);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_admin_delete_topics(IntPtr rk, IntPtr topics, IntPtr timeout_ms);
         }
 
     }
