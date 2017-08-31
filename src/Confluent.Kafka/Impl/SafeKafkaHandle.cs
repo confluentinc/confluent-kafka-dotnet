@@ -517,13 +517,9 @@ namespace Confluent.Kafka.Impl
         internal OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();
-
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
-
             ErrorCode err = LibRdKafka.offsets_store(handle, cOffsets);
-
             var result = GetTopicPartitionOffsetErrorList(cOffsets);
-
             LibRdKafka.topic_partition_list_destroy(cOffsets);
 
             if (err != ErrorCode.NoError)
@@ -531,8 +527,7 @@ namespace Confluent.Kafka.Impl
                 return new OffsetResults(new Error(err));
             }
 
-            var offsetResults = new OffsetResults(result);
-
+            OffsetResults offsetResults = new OffsetResults(result);
             return offsetResults;
         }
 
