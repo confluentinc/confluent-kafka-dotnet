@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+
 namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
 {
     public class AvroSerializerTests
