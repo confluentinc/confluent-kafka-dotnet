@@ -26,9 +26,12 @@ using Confluent.Kafka.SchemaRegistry;
 
 namespace Confluent.Kafka.Serialization
 {
-    public class AvroSerializerOld<T> : ISerializer<T>
+    /// <summary>
+    ///     Serializer to serialize all kind of object using confluent Schema Registry
+    ///     For performances, use the generic serializer if you always use a specific type
+    /// </summary>
+    internal abstract class ConfluentAvroSerializerBase<T> : ISerializer<T>
     {
-        // format: 
         // [0] : Magic byte (0 as of today, used for future version with breaking change)
         // [1-4] : unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
         // following: data serialized with corresponding schema
@@ -53,51 +56,17 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         /// <param name="schemaRegistryClient"></param>
         /// <param name="isKey"></param>
-        public AvroSerializerOld(ISchemaRegistryClient schemaRegistryClient, bool isKey)
+        public ConfluentAvroSerializerBase(ISchemaRegistryClient schemaRegistryClient, bool isKey)
         {
             SchemaRegistryClient = schemaRegistryClient;
             IsKey = isKey;
-
-            // Given 
         }
 
-        private Avro.Schema FromType(Avro.Schema.Type type)
-            => Avro.Schema.Parse(Avro.Schema.GetTypeString(type));
 
-        private Avro.Schema GetSchema(object data)
-        {
-            if (data == null )
-                return FromType(Avro.Schema.Type.Null);
-            if (data is bool)
-                return FromType(Avro.Schema.Type.Boolean);
-            if (data is int)
-                return FromType(Avro.Schema.Type.Int);
-            if (data is long)
-                return FromType(Avro.Schema.Type.Long);
-            if (data is float)
-                return FromType(Avro.Schema.Type.Float);
-            if (data is double)
-                return FromType(Avro.Schema.Type.Double);
-            if (data is string)
-                return FromType(Avro.Schema.Type.String);
-            if (data is byte[])
-                return FromType(Avro.Schema.Type.Bytes);
-            if (data is ISpecificRecord specificRecord)
-                return specificRecord.Schema;
-            if (data is SpecificFixed specificFixed)
-                return specificFixed.Schema;
-            if (data is GenericRecord genericRecord)
-                return genericRecord.Schema;
-            
-            throw new ArgumentException(
-                    "Unsupported Avro type. Supported types are null, Boolean, Integer, Long, "
-                    + "Float, Double, String, byte[], ISpecificRecord, SpecificFixed and GenericRecord");
-        }
+        protected abstract Avro.Schema GetSchema(T data);
+        protected abstract DefaultWriter GetWriter(T data);
 
-    
         /// <summary>
-        /// Serialize data
-        /// If SchemaId is not initialized, may throw SchemaRegistry related exception
         /// </summary>
         /// <param name="data"></param>
         /// <param name="topic"></param>
@@ -107,14 +76,15 @@ namespace Confluent.Kafka.Serialization
         public byte[] Serialize(string topic, T data)
         {
             string subject = SchemaRegistryClient.GetRegistrySubject(topic, IsKey);
+
+            int schemaId;
+            Avro.Schema schema = GetSchema(data);
+            schemaId = SchemaRegistryClient.RegisterAsync(subject, schema.ToString()).Result;
+
             // TODO check to use something else than 30 which is not optimal.
             // For primitive type, we can "easily" generate an exact value
             using (var stream = new MemoryStream(30))
             {
-                int schemaId;
-                Avro.Schema schema = GetSchema(data);
-                schemaId = SchemaRegistryClient.RegisterAsync(subject, schema.ToString()).Result;
-
                 // 1 byte: magic byte
                 stream.WriteByte(MAGIC_BYTE);
 
@@ -122,18 +92,10 @@ namespace Confluent.Kafka.Serialization
                 // use network order to b compatible with other implementation
                 byte[] idBytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(schemaId));
                 stream.Write(idBytes, 0, 4);
-                
-                if (data is ISpecificRecord)
-                {
-                    var writer = new SpecificDefaultWriter(schema);
-                    writer.Write(schema, data, new BinaryEncoder(stream));
-                }
-                else
-                {
-                    var writer = new GenericWriter<object>(schema);
-                    writer.Write(data, new BinaryEncoder(stream));
-                }
 
+                DefaultWriter writer = GetWriter(data);
+                writer.Write(data, new BinaryEncoder(stream));
+                
                 // TODO
                 // stream.ToArray copy the memory stream to a new Array
                 // we may rather want to use GetBuffer (or arraySegment in netstandard)

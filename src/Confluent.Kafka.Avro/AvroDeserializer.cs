@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Serialization
     ///     Avro specific deserializer
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class AvroDeserializer<T> : AvroDeserializer, IDeserializer<T>
+    public class AvroDeserializer<T> : IDeserializer<T>
     {
         Avro.Schema readerSchema;
 
@@ -241,8 +241,6 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class AvroDeserializer1<T> : IDeserializer<T>
     {
-        //We use the same format as confluentinc java implementation for compatibility :
-
         // [0] : Magic byte (0 as of today, used for future version with breaking change)
         // [1-4] : unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
         // following: data serialized with corresponding schema
