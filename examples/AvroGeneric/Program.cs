@@ -52,7 +52,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
 
             using (var consumer = new Consumer<object, object>(consumerConfig, deserializer, deserializer))
             using (var consumerAvroRecord = new Consumer<string, User>(consumerDynamicConfig, new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
-            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(schemaRegistry, true), new AvroSerializer<User>(schemaRegistry, false)))
+            using (var producer = new Producer<string, User>(producerConfig, new ConfluentAvroSerializer<string>(schemaRegistry, true), new ConfluentAvroSerializer<User>(schemaRegistry, false)))
             {
                 consumer.OnMessage += (o, e) =>
                 {

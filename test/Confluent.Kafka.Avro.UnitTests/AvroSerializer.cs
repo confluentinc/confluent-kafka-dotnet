@@ -56,7 +56,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         [Fact]
         public void GenericSerDe()
         {
-            var avroSerializer = new AvroSerializer<object>(schemaRegistry, false);
+            var avroSerializer = new ConfluentAvroSerializer<object>(schemaRegistry, false);
             IDeserializer<object> avroDeserializer = new AvroDeserializer(schemaRegistry);
             byte[] bytes;
             GenericRecord avroRecord = CreateAvroRecord();
@@ -91,7 +91,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         [Fact]
         public void IntSerDe()
         {
-            var avroSerializer = new AvroSerializer<int>(schemaRegistry, false);
+            var avroSerializer = new ConfluentAvroSerializer<int>(schemaRegistry, false);
             IDeserializer<int> avroDeserializer = new AvroDeserializer1<int>(schemaRegistry);
             byte[] bytes;
             bytes = avroSerializer.Serialize(topic, 123);
@@ -101,7 +101,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         [Fact]
         public void BoolSerDe()
         {
-            ISerializer<bool> avroSerializer = new AvroSerializer<bool>(schemaRegistry, false);
+            ISerializer<bool> avroSerializer = new ConfluentAvroSerializer<bool>(schemaRegistry, false);
             IDeserializer<bool> avroDeserializer = new AvroDeserializer1<bool>(schemaRegistry);
             byte[] bytes;
             bytes = avroSerializer.Serialize(topic, true);
@@ -111,7 +111,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         [Fact]
         public void StringSerDe()
         {
-            var avroSerializer = new AvroSerializer<string>(schemaRegistry, false);
+            var avroSerializer = new ConfluentAvroSerializer<string>(schemaRegistry, false);
             IDeserializer<string> avroDeserializer = new AvroDeserializer1<string>(schemaRegistry);
             byte[] bytes;
             bytes = avroSerializer.Serialize(topic, "abc");
@@ -121,7 +121,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         [Fact]
         public void DoubleSerDe()
         {
-            var avroSerializer = new AvroSerializer<double>(schemaRegistry, false);
+            var avroSerializer = new ConfluentAvroSerializer<double>(schemaRegistry, false);
             IDeserializer<double> avroDeserializer = new AvroDeserializer<double>(schemaRegistry);
             byte[] bytes;
             bytes = avroSerializer.Serialize(topic, 123d);
@@ -145,31 +145,31 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
             }
 
             {
-                var avroSerializer = new AvroSerializer<User>(schemaRegistry, false);
+                var avroSerializer = new ConfluentAvroSerializer<User>(schemaRegistry, false);
                 avroSerializer.Serialize(topic, @"{name=""confluent"", ""age""=10}");
                 // serialize using an ISpecificRecord (and it's embedded schema)
             }
 
             {
-                var avroSerializer = new AvroSerializer<MD5>(schemaRegistry, false);
+                var avroSerializer = new ConfluentAvroSerializer<MD5>(schemaRegistry, false);
                 avroSerializer.Serialize(topic, @"{name=""confluent"", ""age""=10}");
                 // serialize using an ISpecificRecord (and it's embedded schema)
             }
 
             {
-                var avroSerializer = new AvroSerializer<string>(schemaRegistry, false);
+                var avroSerializer = new ConfluentAvroSerializer<string>(schemaRegistry, false);
                 avroSerializer.Serialize(topic, "confluent");
                 // serialize using the given schema for topic (as a string, so no avro necessary in code). throw if schema is not valid
             }
 
             {
-                var avroSerializer = new AvroSerializer<string>(schemaRegistry, false);
+                var avroSerializer = new ConfluentAvroSerializer<string>(schemaRegistry, false);
                 avroSerializer.Serialize(topic, "confluent");
                 // serialize data using a string schema
             }
 
             {
-                var avroSerializer = new AvroSerializer<GenericRecord>(schemaRegistry, false);
+                var avroSerializer = new ConfluentAvroSerializer<GenericRecord>(schemaRegistry, false);
                 GenericRecord r = new GenericRecord(schema);
                 avroSerializer.Serialize(topic, "confluent");
                 // serialize data using a string schema
