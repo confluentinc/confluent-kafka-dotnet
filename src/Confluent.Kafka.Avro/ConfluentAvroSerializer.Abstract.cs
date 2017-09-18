@@ -61,8 +61,7 @@ namespace Confluent.Kafka.Serialization
             SchemaRegistryClient = schemaRegistryClient;
             IsKey = isKey;
         }
-
-
+        
         protected abstract Avro.Schema GetSchema(T data);
         protected abstract DefaultWriter GetWriter(T data);
 

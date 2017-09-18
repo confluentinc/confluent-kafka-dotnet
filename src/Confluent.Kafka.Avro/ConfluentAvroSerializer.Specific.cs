@@ -31,8 +31,6 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class ConfluentAvroSerializer<T> : ISerializer<T>
     {
-        // We use the same format as confluentinc java implementation for compatibility :
-
         // [0] : magic byte (use to identify protocol format)
         // [1-4] : unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
         // following: data serialized with corresponding schema
@@ -40,12 +38,21 @@ namespace Confluent.Kafka.Serialization
         // topic refer to kafka topic
         // subject refers to schema registry subject. Usually topic postfixed by -key or -data
 
-        private const byte MAGIC_BYTE = 0;
-        private const int UNINITIALIZED_ID = -1;
-        private const int INIT_STREAM_CAPACITY = 30;
-
+        /// <summary>
+        ///     Magic byte identifying avro confluent protocol format.
+        /// </summary>
+        public const byte MAGIC_BYTE = 0;
+        
         private SpecificDatumWriter<T> avroWriter;
-        private int schemaId = UNINITIALIZED_ID;
+
+        /// <summary>
+        ///     SchemaId corresponding to type <see cref="T"/>
+        ///     Available only after Produce has been called once
+        /// </summary>
+        public int SchemaId { get; private set; }
+        private int schemaIdBigEndian; // schema id in big endian (bytes reversed)
+
+        // topics alread
         private HashSet<string> topicsRegistred = new HashSet<string>();
 
 		/// <summary>
@@ -58,7 +65,22 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         public bool IsKey { get; }
 
+        /// <summary>
+        ///     The avro schema corresponding to type <see cref="T"/>
+        /// </summary>
         public Avro.Schema WriterSchema { get; }
+
+        /// <summary>
+        ///     Initial capcity used for memory stream.
+        /// </summary>
+        /// <remarks>
+        ///     Use a value high enough to avoid resizing of memorystream
+        ///     and small enough to avoid too big allocation.
+        ///     You will have to monitor the size of <see cref="Serialize(string, T)"/>
+        ///     to take correct value.
+        /// </remarks>
+        public int MemoryStreamInitialCapavity { get; set; } = 30;
+
 
         /// <summary>
         ///     Initiliaze an avro serializer.
@@ -70,7 +92,7 @@ namespace Confluent.Kafka.Serialization
         ///		Indicates if this serializer is used for kafka keys or values.
         ///	</param>
         /// <exception cref="InvalidOperationException">
-        ///		The <see cref="T"/> generic type is not supported.
+        ///		The generic type <see cref="T"/> is not supported.
         ///	</exception>
         public ConfluentAvroSerializer(ISchemaRegistryClient schemaRegisterClient, bool isKey)
         {
@@ -78,7 +100,7 @@ namespace Confluent.Kafka.Serialization
             IsKey = isKey;
 
             Type writerType = typeof(T);
-            if (writerType.IsSubclassOf(typeof(ISpecificRecord)) || writerType.IsSubclassOf(typeof(SpecificFixed)))
+            if (typeof(ISpecificRecord).IsAssignableFrom(writerType) || writerType.IsSubclassOf(typeof(SpecificFixed)))
             {
                 WriterSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
             }
@@ -112,45 +134,61 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException($"{nameof(ConfluentAvroSerializer)} " +
-                    $"only accepts int, bool, double, string, float, long, byte[], " +
-                    "ISpecificRecord subclass and SpecificRecord");
+                throw new InvalidOperationException($"{nameof(ConfluentAvroSerializer<T>)} " +
+                    "only accepts int, bool, double, string, float, long, byte[], " +
+                    "ISpecificRecord subclass and SpecificFixed");
             }
             avroWriter = new SpecificDatumWriter<T>(WriterSchema);
         }
 
-
+        /// <summary>
+        ///     Serialize an instance of type T to a byte array
+        ///     corresponding to confluent avro format with schema registry.
+        ///     May block or throw at first call when registring schema at schema registry.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic associated wih the data.
+        /// </param>
+        /// <param name="data">
+        ///     The object to serialize.
+        /// </param>
+        /// <returns>
+        ///     <paramref name="data" /> serialized as a byte array.
+        /// </returns>
         public byte[] Serialize(string topic, T data)
         {
-            if (topicsRegistred.Contains(topic))
+            if (!topicsRegistred.Contains(topic))
             {
                 // first usage: register schema, to check compatibility and version
-                var subject = SchemaRegisterClient.GetRegistrySubject(topic, IsKey);
-				// TODO SerializeAsync would be fine here. Serialize could block, which is bad.
-                schemaId = SchemaRegisterClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
+                string subject = SchemaRegisterClient.GetRegistrySubject(topic, IsKey);
+                // schemaId could already be intialized through an other topic
+                // this has no impact, as schemaId will be the same
+                SchemaId = SchemaRegisterClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
                 // use big endian
-                schemaId = IPAddress.NetworkToHostOrder(schemaId);
+                schemaIdBigEndian = IPAddress.NetworkToHostOrder(SchemaId);
                 topicsRegistred.Add(topic);
             }
 			
-            using (var stream = new MemoryStream(INIT_STREAM_CAPACITY))
+            using (var stream = new MemoryStream(MemoryStreamInitialCapavity))
             using (var writer = new BinaryWriter(stream))
             {
                 stream.WriteByte(MAGIC_BYTE);
 
-                writer.Write(schemaId);
+                writer.Write(schemaIdBigEndian);
                 avroWriter.Write(data, new BinaryEncoder(stream));
 
-				// TODO
-				// stream.ToArray create a copy of the array
-				// we could return GetBuffer (or GetArraySegment in netstandard) with proper length
-				// to avoid this copy, which would need to change ISerializer interface
+                // TODO
+                // stream.ToArray create a copy of the array
+                // we could return GetBuffer (or GetArraySegment in netstandard) 
+                // with proper length / offset to avoid this copy
+                // which would require to change ISerializer interface
                 return stream.ToArray();
             }
         }
 
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
+            // TODO not necessary for first iteration
             return config;
         }
     }
