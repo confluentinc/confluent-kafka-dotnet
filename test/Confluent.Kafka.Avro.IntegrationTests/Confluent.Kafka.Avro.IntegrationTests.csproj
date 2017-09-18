@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj" />
-    <ProjectReference Include="..\..\src\Confluent.Kafka\Confluent.Kafka.csproj" />
   </ItemGroup>
 
   <ItemGroup>

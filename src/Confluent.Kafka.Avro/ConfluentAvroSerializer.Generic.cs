@@ -106,17 +106,14 @@ namespace Confluent.Kafka.Serialization
         public byte[] Serialize(string topic, object data)
         {
             string subject = SchemaRegistryClient.GetRegistrySubject(topic, IsKey);
-            // TODO SerializeAsync would be fine here. Serialize could block, which is bad.
-            int schemaId = SchemaRegistryClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
             // use big endian
-            schemaId = IPAddress.NetworkToHostOrder(schemaId);
             // TODO check to use something else than 30 which is not optimal.
             // For primitive type, we can "easily" generate an exact value
             using (var stream = new MemoryStream(30))
             {
-                int schemaId;
+                // TODO schema.ToString may be costly, there may be lighter way
                 Avro.Schema schema = GetSchema(data);
-                schemaId = SchemaRegistryClient.RegisterAsync(subject, schema.ToString()).Result;
+                int schemaId = SchemaRegistryClient.RegisterAsync(subject, schema.ToString()).Result;
 
                 // 1 byte: magic byte
                 stream.WriteByte(MAGIC_BYTE);
@@ -126,7 +123,6 @@ namespace Confluent.Kafka.Serialization
                 byte[] idBytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(schemaId));
                 stream.Write(idBytes, 0, 4);
                 
-
                 if (data is ISpecificRecord || data is SpecificFixed)
                 {
                     var writer = new SpecificDefaultWriter(schema);
