@@ -28,6 +28,12 @@ namespace Confluent.Kafka.Examples.SimpleProducer
     {
         public static void Main(string[] args)
         {
+            if (args.Length != 2)
+            {
+                Console.WriteLine("Usage:  SimpleProducer brokerList topicName");
+                return;
+            }
+
             string brokerList = args[0];
             string topicName = args[1];
 
