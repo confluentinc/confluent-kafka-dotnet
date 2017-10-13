@@ -90,8 +90,8 @@ namespace Confluent.Kafka.Impl
 
         public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config)
         {
-            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
-            var skh = LibRdKafka.kafka_new(type, config, errorStringBuilder,
+            var errorStringBuilder = new StringBuilder(512);
+            var skh = LibRdKafka.rd_new(type, config, errorStringBuilder,
                     (UIntPtr) errorStringBuilder.Capacity);
             if (skh.IsInvalid)
             {
@@ -543,7 +543,7 @@ namespace Confluent.Kafka.Impl
             }
 
             // Wait for commit to finish
-            IntPtr rkev = LibRdKafka.queue_poll(cQueue, -1/*infinite*/);
+            IntPtr rkev = LibRdKafka.queue_poll(cQueue, (System.IntPtr)(-1) /*infinite*/);
             LibRdKafka.queue_destroy(cQueue);
             if (rkev == IntPtr.Zero)
             {
@@ -553,7 +553,7 @@ namespace Confluent.Kafka.Impl
 
             CommittedOffsets committedOffsets =
                 new CommittedOffsets(GetTopicPartitionOffsetErrorList(LibRdKafka.event_topic_partition_list(rkev)),
-                new Error(LibRdKafka.event_error(rkev), LibRdKafka.event_error_string(rkev)));
+                new Error(LibRdKafka.event_error(rkev), LibRdKafka.event_error_string_utf8(rkev)));
 
             LibRdKafka.event_destroy(rkev);
             return committedOffsets;
