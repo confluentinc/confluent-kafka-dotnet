@@ -81,13 +81,19 @@
   
 <Member name="Store_Offsets">
     <summary>
-        Store offsets to be commited for the provided list of topic partition offsets.
+        Store offsets for one or more partitions. 
+        
+        The offset will be committed (written) to the offset store according
+        to `auto.commit.interval.ms` or manual offset-less commit().
     </summary>
+    <remarks>
+        `enable.auto.offset.store` must be set to "false" when using this API.
+    </remarks>
     <param name="offsets">
-        The topic partition offsets to be stored for commit.
+        List of offsets to be commited.
     </param>
     <returns>
-        Per topic partition offset success or error.
+        Offset results with global or per-partition errors.
     </returns>
 </Member>
 

@@ -510,10 +510,20 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
-        /// Store offsets to be comitted.
+        ///     Store offsets for one or more partitions.
+        ///   
+        ///     The offset will be committed (written) to the offset store according
+        ///     to `auto.commit.interval.ms` or manual offset-less commit().
         /// </summary>
-        /// <param name="offsets">List of offsets to be commited</param>
-        /// <returns>Offset results with global or per-partition errors.</returns>
+        /// <remarks>
+        ///     `enable.auto.offset.store` must be set to "false" when using this API.
+        /// </remarks>
+        /// <param name="offsets">
+        ///     List of offsets to be commited.
+        /// </param>
+        /// <returns>
+        ///     Offset results with global or per-partition errors.
+        /// </returns>
         internal OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();

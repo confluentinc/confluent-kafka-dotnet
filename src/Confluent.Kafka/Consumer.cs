@@ -414,17 +414,20 @@ namespace Confluent.Kafka
             => consumer.Unassign();
 
         /// <summary>
-        ///     Offset is stored for commit based on the topic/partition/offset of a message.
-        ///     The next message to be read will be that following <paramref name="message" />.
+        ///     Store offsets for one or more partitions.
+        ///     
+        ///     The offset will be committed (written) to the offset store according
+        ///     to `auto.commit.interval.ms` or manual offset-less commit().
         /// </summary>
-        /// <param name="message">
-        ///     The message used to determine the stored offset.
-        /// </param>
         /// <remarks>
-        ///     A consumer which has position N has consumed records with offsets 0 
-        ///     through N-1 and will next receive the record with offset N. 
-        ///     Hence, this method stores an offset of <paramref name="message" />.Offset + 1.
+        ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
+        /// <param name="message">
+        ///     The message used to determine partition of the offset.
+        /// </param>
+        /// <returns>
+        ///     Offset results with global or per-partition errors.
+        /// </returns>
         public OffsetResults StoreOffset(Message<TKey, TValue> message)
             => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
