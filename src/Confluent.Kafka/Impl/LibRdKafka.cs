@@ -22,10 +22,6 @@ using System.Text;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-#if NET45 || NET46
-using System.Reflection;
-using System.ComponentModel;
-#endif
 
 
 namespace Confluent.Kafka.Impl
@@ -35,36 +31,35 @@ namespace Confluent.Kafka.Impl
         // min librdkafka version, to change when binding to new function are added
         const long minVersion = 0x000903ff;
 
-<<<<<<< HEAD
         // max length for error strings built by librdkafka
         internal const int MaxErrorStringLength = 512;
 
-#if NET45 || NET46
-=======
->>>>>>> load libraries dynamically
-        [Flags]
-        public enum LoadLibraryFlags : uint
-        {
-            DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
-            LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
-            LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
-            LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
-            LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
-            LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
-            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
-            LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
-            LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
-            LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
-            LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
-        }
-
         private static class WindowsNative
         {
+            [Flags]
+            public enum LoadLibraryFlags : uint
+            {
+                DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
+                LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
+                LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
+                LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
+                LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
+                LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
+                LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
+                LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
+                LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
+                LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
+                LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
+            }
+
             [DllImport("kernel32", SetLastError = true)]
             public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
 
             [DllImport("kernel32", SetLastError = true)]
             public static extern IntPtr GetModuleHandle(string lpFileName);
+
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr GetProcAddress(IntPtr hModule, String procname);
         }
 
         private static class LinuxNative
@@ -79,7 +74,7 @@ namespace Confluent.Kafka.Impl
             public static extern IntPtr dlsym(IntPtr handle, String symbol);
         }
 
-        private static class MacNative
+        private static class OsxNative
         {
             [DllImport("libdl.dylib")]
             public static extern IntPtr dlopen(String fileName, int flags);
@@ -96,114 +91,91 @@ namespace Confluent.Kafka.Impl
 
         public delegate IntPtr SymbolLookupDelegate(IntPtr addr, string name);
 
-#if NET45 || NET46
-        static void LoadNet45Librdkafka()
-        {
-            // in net45, librdkafka.dll is not in the process directory, we have to load it manually
-            // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
-            var is64 = IntPtr.Size == 8;
-            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
-            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-            var dllDirectory = Path.Combine(baseDirectory, is64 ? "x64" : "x86");
-
-            if (LoadLibraryEx(Path.Combine(dllDirectory, "librdkafka.dll"),
-                IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
-            {
-                //catch the last win32 error by default and keep the associated default message
-                var win32Exception = new Win32Exception();
-                var additionalMessage =
-                    $"Error while loading librdkafka.dll or its dependencies from {dllDirectory}. " +
-                    $"Check the directory exists, if not check your deployment process. " +
-                    $"You can also load the library and its dependencies by yourself " +
-                    $"before any call to Confluent.Kafka";
-
-                throw new InvalidOperationException(additionalMessage, win32Exception);
-            }
-        }
-#else
-
-        static IntPtr TryLoadLibrdkafka(string librdkafkaName, string librarySuffix, LibraryOpenDelegate openLib)
-        {
-            string confluentKafkaAssemblyLocation = typeof(Error).GetTypeInfo().Assembly.Location;
-            if (!confluentKafkaAssemblyLocation.EndsWith("Confluent.Kafka.dll"))
-            {
-                throw new Exception("unexpected Assembly name");
-            }
-
-            // In general, the librdkafka shared library we want will not be in the library load path, so we need to 
-            // specify an absolute path. Unfortunately, it's relative position to Confluent.Kafka.dll (which is easy 
-            // to know), is not fixed. In dotnet core this is different depending on whether the project is published 
-            // or not. Here we do some magic to guess where librdkafka is is and fall back to assuming it's in the 
-            // library load path if we detect an unusual situation.
-
-            string librdkafkaLocation = null;
-            if (confluentKafkaAssemblyLocation.Contains("/netcoreapp"))
-            {
-                librdkafkaLocation = 
-                    confluentKafkaAssemblyLocation.Substring(0, confluentKafkaAssemblyLocation.Length - "/Confluent.Kafka.dll".Length) +
-                    librdkafkaName + librarySuffix;
-            }
-            else if (confluentKafkaAssemblyLocation.Contains("/packages/librdkafka.redist"))
-            {
-                // TODO: maybe we should make the layout in the nuget package flat for debian, redhat etc.
-                // Else, todo: work out how to know that. 
-                librdkafkaLocation = "TODO - how do you reliably get distro?";
-            }
-            
-            if (librdkafkaLocation == null || !File.Exists(librdkafkaLocation))
-            {
-                // don't specify absolute path - assume library is in the library load path.
-                librdkafkaLocation = librdkafkaName + librarySuffix;
-            }
-
-            return openLib(librdkafkaLocation);
-        }
-
-        static void LoadLibrdkafka()
+        static void LoadLibrdkafka(string userSpecifiedLibrdkafkaPath)
         {
             const int RTLD_NOW = 2;
 
             LibraryOpenDelegate openLib = null;
             SymbolLookupDelegate lookupSymbol = null;
-            string librarySufix = null;
+            Tuple<string, string>[] nugetLibrdkafkaNames = new Tuple<string, string>[0];
 
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                openLib = (string name) => MacNative.dlopen(name, RTLD_NOW);
-                lookupSymbol = MacNative.dlsym;
-                librarySufix = ".dylib";
+                openLib = (string name) => OsxNative.dlopen(name, RTLD_NOW);
+                lookupSymbol = OsxNative.dlsym;
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
+                {
+                    nugetLibrdkafkaNames = new Tuple<string, string>[]
+                        { Tuple.Create("osx-x64", "librdkafka.dylib") };
+                }
             } 
-            else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 openLib = (string name) => LinuxNative.dlopen(name, RTLD_NOW);
                 lookupSymbol = LinuxNative.dlsym;
-                librarySufix = ".so";
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
+                {
+                    // TODO: more sophisticated discovery / ordering.
+                    nugetLibrdkafkaNames = new Tuple<string, string>[]
+                    {
+                        Tuple.Create("debian-x64", "librdkafka.so"),
+                        Tuple.Create("rhel-x64", "librdkafka.so"),
+                        // Tuple.Create("linux-x64", "librdkafka-ssl-1.0.2.so"),
+                        // Tuple.Create("linux-x64", "librdkafka-ssl-1.0.0.so"),
+                    };
+                }
             }
-            else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                librarySufix = ".dll";
+                openLib = (string name)
+                     => WindowsNative.LoadLibraryEx(
+                            name, 
+                            IntPtr.Zero, 
+                            WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH);
+                lookupSymbol = WindowsNative.GetProcAddress;
+                
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
+                {
+                    nugetLibrdkafkaNames = new Tuple<string, string>[]
+                    {
+                        Tuple.Create("win-x64", "librdkafka.dll"),
+                    };
+                }
+                else if (RuntimeInformation.OSArchitecture == Architecture.X86)
+                {
+                    nugetLibrdkafkaNames = new Tuple<string, string>[]
+                    {
+                        Tuple.Create("win-x86", "librdkafka.dll")
+                    };
+                }
             }
             else
             {
-                throw new Exception("Unsupported platform");
+                throw new Exception($"Unsupported platform: {RuntimeInformation.OSDescription}");
             }
 
-            // TODO: allow this to be overriden with a prop specified in consumer or producer constructor.
-            string[] librdkafkaNames = new string[] { "librdkafka-dep-libssl1.0.0-libsasl", "librdkafka-dep-libssl", "librdkafka-bare", "librdkafka" };
-
-            IntPtr addr = IntPtr.Zero;
-            foreach (var librdkafkaName in librdkafkaNames)
+            IntPtr librdkafkaAddr = IntPtr.Zero;
+            if (userSpecifiedLibrdkafkaPath != null)
             {
-                addr = TryLoadLibrdkafka(librdkafkaName, librarySufix, openLib);
-                if (addr != IntPtr.Zero) 
+                librdkafkaAddr = openLib(userSpecifiedLibrdkafkaPath);
+                return;
+            }
+            else
+            {
+                foreach (var librdkafkaName in nugetLibrdkafkaNames)
                 {
-                    break;
+                    var bd = AppContext.BaseDirectory;
+                    var path = Path.Combine(bd, "librdkafka", librdkafkaName.Item1, librdkafkaName.Item2);
+                    librdkafkaAddr = openLib(path);
+                    if (librdkafkaAddr != IntPtr.Zero)
+                    {
+                        break;
+                    }
                 }
             }
 
-            InitializeDelegates(addr, lookupSymbol);
+            InitializeDelegates(librdkafkaAddr, lookupSymbol);
         }
-#endif
 
         static void InitializeDelegates(IntPtr librdkafkaAddr, SymbolLookupDelegate lookup)
         {
@@ -295,34 +267,11 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        public static void Initialize()
+        public static void Initialize(string userSpecifiedLibrdkafkaPath)
         {
             lock (lockObj)
             {
-                
-#if NET45 || NET46
-                try
-                {
-                    // In net45, we don't put the native dlls in the assembly directory
-                    // but in subfolders x64 and x86
-                    // we have to force the load as it won't be found by the system by itself
-                    if (GetModuleHandle(NativeMethods.DllName) == IntPtr.Zero)
-                    {
-                        // In some cases, the user might want to load the library by himself
-                        // (if he could not have the folders in the bin directory, or to change the version of the dll)
-                        // If he did it before first call to Confluent.Kafka, GetModuleHandle will be nonZero
-                        // and we don't have to force the load (which would fail and throw otherwise)
-                        LoadNet45Librdkafka();
-                    }
-                }
-                catch
-                {
-                    // There may be some platforms where GetModuleHandle/LoadLibraryEx do not work
-                    // Fail silently so the user can still have the opportunity to load the dll by himself
-                }
-#else
-                LoadLibrdkafka();
-#endif
+                LoadLibrdkafka(userSpecifiedLibrdkafkaPath);
 
                 if ((long) version() < minVersion) {
                     throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");

@@ -751,9 +751,12 @@ namespace Confluent.Kafka
         /// </remarks>
         public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
+            var librdkafkaPath = config.FirstOrDefault(prop => prop.Key == "librdkafka.path").Value;
+            config = config.Where(prop => prop.Key != "librdkafka.path");
+
             if (!LibRdKafka.IsInitialized)
             {
-                LibRdKafka.Initialize();
+                LibRdKafka.Initialize((string)librdkafkaPath);
             }
 
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
