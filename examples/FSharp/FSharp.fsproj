@@ -13,8 +13,9 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
-
+  
   <ItemGroup>
+    <PackageReference Include="librdkafka.redist" Version="0.11.1" />
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
     <PackageReference Include="FSharp.NET.Sdk" Version="1.0.*" PrivateAssets="All" />
   </ItemGroup>

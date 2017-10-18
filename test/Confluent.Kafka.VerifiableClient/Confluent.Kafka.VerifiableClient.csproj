@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="librdkafka.redist" Version="0.11.1" />
   </ItemGroup>
 
 </Project>
