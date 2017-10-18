@@ -32,7 +32,7 @@ client. Thanks Andreas!
 Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) and 
 [librdkafka.redist](https://www.nuget.org/packages/librdkafka.redist/) NuGet packages (version 0.11.1).
 
-**Important Note:** The librdkafka.redist package dependency is no longer transitive. You must now reference the 
+**Important Note:** The librdkafka.redist package dependency is no longer implicit. You must now reference the 
 librdkafka.redist package explicitly in addition to the Confluent.Kafka package. In the future we plan to provide
 a variety of different librdkafka nuget packages suitable for use on specific platforms. We will also continue to 
 distribute the general purpose librdkafka.redist package and this will continue to work seamlessly on the most 
