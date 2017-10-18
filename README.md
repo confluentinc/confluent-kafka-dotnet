@@ -29,11 +29,20 @@ client. Thanks Andreas!
 
 ## Usage
 
-Reference the [Confluent.Kafka NuGet package](https://www.nuget.org/packages/Confluent.Kafka/) (version 0.11.1).
+Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) and 
+[librdkafka.redist](https://www.nuget.org/packages/librdkafka.redist/) NuGet packages (version 0.11.1).
 
-To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
+**Important Note:** The librdkafka.redist package dependency is no longer implicit. You must now reference the 
+librdkafka.redist package explicitly in addition to the Confluent.Kafka package. In the future we plan to provide
+a variety of different librdkafka nuget packages suitable for use on specific platforms. We will also continue to 
+distribute the general purpose librdkafka.redist package and this will continue to work seamlessly on the most 
+common platforms.
+
+To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka and librdkafka.redist in the 
+NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
+Install-Package librdkafka.redist -Version 0.11.1
 Install-Package Confluent.Kafka -Version 0.11.1
 ```
 
@@ -42,6 +51,7 @@ To reference in a dotnet core project, explicitly add a package reference to you
 ```
 <ItemGroup>
   ...
+  <PackageReference Include="librdkafka.redist" Version="0.11.1" />
   <PackageReference Include="Confluent.Kafka" Version="0.11.1" />
   ...
 </ItemGroup>

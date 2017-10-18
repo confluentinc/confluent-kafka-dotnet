@@ -10,4 +10,8 @@
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="librdkafka.redist" Version="0.11.1" />
+  </ItemGroup>
+  
 </Project>
