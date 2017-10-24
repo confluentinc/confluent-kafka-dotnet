@@ -12,11 +12,15 @@
     <PackageId>Confluent.Kafka</PackageId>
     <Title>Confluent.Kafka</Title>
     <AssemblyName>Confluent.Kafka</AssemblyName>
-    <VersionPrefix>0.11.1</VersionPrefix>
+    <VersionPrefix>0.11.2</VersionPrefix>
     <TargetFrameworks>net45;net46;netstandard1.3</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>		
+    <PackageReference Include="librdkafka.redist" Version="0.11.1" />		
+  </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
     <PackageReference Include="System.Console" Version="4.3.0" />
