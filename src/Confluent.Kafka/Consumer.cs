@@ -426,7 +426,7 @@ namespace Confluent.Kafka
         ///     The message used to determine partition of the offset.
         /// </param>
         /// <returns>
-        ///     Offset results with global or per-partition errors.
+        ///     Offset results with per-partition errors.
         /// </returns>
         public OffsetResults StoreOffset(Message<TKey, TValue> message)
             => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });

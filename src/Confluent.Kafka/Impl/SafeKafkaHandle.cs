@@ -522,7 +522,7 @@ namespace Confluent.Kafka.Impl
         ///     List of offsets to be commited.
         /// </param>
         /// <returns>
-        ///     Offset results with global or per-partition errors.
+        ///     Offset results with per-partition errors.
         /// </returns>
         internal OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {
@@ -534,7 +534,7 @@ namespace Confluent.Kafka.Impl
 
             if (err != ErrorCode.NoError)
             {
-                return new OffsetResults(new Error(err));
+                throw new KafkaException(err);
             }
 
             OffsetResults offsetResults = new OffsetResults(result);

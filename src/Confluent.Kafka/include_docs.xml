@@ -93,7 +93,7 @@
         List of offsets to be commited.
     </param>
     <returns>
-        Offset results with global or per-partition errors.
+        Offset results with per-partition errors.
     </returns>
 </Member>
 
