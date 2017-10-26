@@ -57,5 +57,14 @@ namespace Confluent.Kafka
         public static string[] DebugContexts
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
 
+        public static void Load()
+            => Load(null);
+
+        /// <summary>
+        ///     Loads the native librdkafka library at the specified path.
+        ///     May only be called once.
+        /// </summary>
+        public static void Load(string path)
+            => LibRdKafka.Initialize(path);
     }
 }

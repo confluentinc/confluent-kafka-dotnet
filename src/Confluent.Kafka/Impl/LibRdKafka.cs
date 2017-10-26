@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Reflection;
@@ -178,6 +179,8 @@ namespace Confluent.Kafka.Impl
             }
 #endif
 
+            var pathsTried = new List<string>();
+
             IntPtr librdkafkaAddr = IntPtr.Zero;
             if (userSpecifiedLibrdkafkaPath != null)
             {
@@ -188,20 +191,28 @@ namespace Confluent.Kafka.Impl
             {
                 foreach (var librdkafkaName in nugetLibrdkafkaNames)
                 {
-
+           
 #if NET45 || NET46
                     var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
-                    var bd = Path.GetDirectoryName(baseUri.LocalPath);
+                    var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+
 #else
-                    var bd = AppContext.BaseDirectory;
+                    var baseDirectory = Path.GetDirectoryName(typeof(Error).GetTypeInfo().Assembly.Location);
 #endif
-                    var path = Path.Combine(bd, "librdkafka", librdkafkaName.Item1, librdkafkaName.Item2);
+                    pathsTried.Add(baseDirectory);
+
+                    var path = Path.Combine(baseDirectory, "librdkafka", librdkafkaName.Item1, librdkafkaName.Item2);
                     librdkafkaAddr = openLib(path);
                     if (librdkafkaAddr != IntPtr.Zero)
                     {
                         break;
                     }
                 }
+            }
+
+            if (librdkafkaAddr == IntPtr.Zero)
+            {
+                throw new DllNotFoundException("Failed to load librdkafka native library: " + string.Join("\n", pathsTried.ToArray()));
             }
 
             InitializeDelegates(librdkafkaAddr, lookupSymbol);
@@ -376,13 +387,17 @@ namespace Confluent.Kafka.Impl
         {
             lock (lockObj)
             {
-                LoadLibrdkafka(userSpecifiedLibrdkafkaPath);
+                if (!isInitialized)
+                {
+                    LoadLibrdkafka(userSpecifiedLibrdkafkaPath);
 
-                if ((long) version() < minVersion) {
-                    throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
+                    if ((long)version() < minVersion)
+                    {
+                        throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
+                    }
+
+                    isInitialized = true;
                 }
-
-                isInitialized = true;
             }
         }
 
