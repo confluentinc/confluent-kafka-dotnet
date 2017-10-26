@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{8859B121-D3C0-421E-8A0E-1C6F3B395A1F}"
 EndProject
@@ -39,7 +39,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.UnitTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.IntegrationTests", "test\Confluent.Kafka.Avro.IntegrationTests\Confluent.Kafka.Avro.IntegrationTests.csproj", "{7067703F-78EA-40CE-B2F7-32CA90FF50C3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroGeneric", "examples\AvroGeneric\AvroGeneric.csproj", "{45B586D3-7CCA-46B0-A118-A070D84E8364}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSpecific", "examples\AvroGeneric\AvroSpecific.csproj", "{45B586D3-7CCA-46B0-A118-A070D84E8364}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -132,5 +132,8 @@ Global
 		{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9} = {399116BF-334E-4F4F-BB63-F128707EBA85}
 		{7067703F-78EA-40CE-B2F7-32CA90FF50C3} = {399116BF-334E-4F4F-BB63-F128707EBA85}
 		{45B586D3-7CCA-46B0-A118-A070D84E8364} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CC489066-2768-4B90-9C6D-5F360D877242}
 	EndGlobalSection
 EndGlobal

@@ -43,7 +43,7 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         public const byte MAGIC_BYTE = 0;
         
-        private SpecificDatumWriter<T> avroWriter;
+        private SpecificWriter<T> avroWriter;
 
         /// <summary>
         ///     SchemaId corresponding to type <see cref="T"/>
@@ -118,7 +118,7 @@ namespace Confluent.Kafka.Serialization
             }
             else if (writerType.Equals(typeof(string)))
             {
-                WriterSchema = Avro.Schema.Parse("string");
+                WriterSchema = Avro.Schema.Parse("[\"null\", \"string\"]");
             }
             else if (writerType.Equals(typeof(float)))
             {
@@ -138,7 +138,7 @@ namespace Confluent.Kafka.Serialization
                     "only accepts int, bool, double, string, float, long, byte[], " +
                     "ISpecificRecord subclass and SpecificFixed");
             }
-            avroWriter = new SpecificDatumWriter<T>(WriterSchema);
+            avroWriter = new SpecificWriter<T>(WriterSchema);
         }
 
         /// <summary>

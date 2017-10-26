@@ -1,97 +1,140 @@
-﻿//using Confluent.Kafka.SchemaRegistry.Serializer;
-//using Moq;
+﻿//using Moq;
 //using Xunit;
+//using Confluent.Kafka.Serialization;
+//using com.example.tests;
+//using Avro.Specific;
 
 //namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
 //{
-//    public class KafkaGenericAvroSerializerTest
+
+//    public class KafkaAvroSerializerGenericUnitTest
 //    {
-//        [Fact]
-//        public void GenericWithRecordType()
+//        private Mock<ISchemaRegistryClient> schemaRegistryMock;
+//        private ISchemaRegistryClient schemaRegistry;
+
+//        private void InitSchemaRegistry(string schema, bool isKey = false, int schemaId = 1, string topic = "topic")
 //        {
-//            string topic = "test";
-//            int topicId = 3;
-//            string avroSchema = @"{
-//	""type"": ""record"",
+//            string subject = $"{topic}-{(isKey ? "key" : "value")}";
+//            if (schemaRegistryMock == null)
+//            {
+//                schemaRegistryMock = new Mock<ISchemaRegistryClient>();
+//                schemaRegistry = schemaRegistryMock.Object;
+//                schemaRegistryMock.Setup(x => x.GetRegistrySubject(topic, isKey)).Returns(subject);
+//            }
+//            schemaRegistryMock.Setup(x => x.RegisterAsync(subject, schema)).ReturnsAsync(schemaId);
+//            schemaRegistryMock.Setup(x => x.GetSchemaAsync(schemaId)).ReturnsAsync(schema);
+//        }
 
-//    ""name"": ""sale"",
-//	""namespace"": ""back"",
-//	""fields"": [{
-//		""name"": ""id"",
-//		""type"": ""string"",
-//		""doc"": ""id of the sale. Currently operaiontId or some identifier for special sales (mini site...)""
-//    },
-//	{
-//		""name"": ""name"",
-//		""type"": ""string"",
-//		""doc"": ""name of the sale for display""
-//	},
-//	{
-//		""name"": ""mediaValues"",
-//		""type"": {
-//			""type"": ""map"",
-//			""values"": ""string""
-//		},
-//		""doc"": ""collection of media (external link, images, video) for dispay""
-//	},
-//	{
-//		""name"": ""linkedCategories"",
-//		""type"": {
-//			""type"": ""map"",
-//			""values"": ""long""
-//		},
-//		""doc"": ""map this sale with different category (sector, subsector, type...)""
-//	}]
-//}";
+//        public void SpecificSerializerAndDeserialize_User()
+//        {
+//            InitSchemaRegistry(User._SCHEMA.ToString());
+//            var user = new User
+//            {
+//                favorite_color = "blue",
+//                favorite_number = 100,
+//                name = "awesome"
+//            };
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
 
-//            var schemaRegistry = new Mock<ISchemaRegistryClient>();
-//            schemaRegistry.Setup(x => x.RegisterAsync(topic + "-value", It.IsAny<string>())).ReturnsAsync(topicId);
-//            schemaRegistry.Setup(x => x.GetRegistrySubject(topic, false)).Returns(topic + "-value");
-//            schemaRegistry.Setup(x => x.GetSchemaAsync(topicId)).ReturnsAsync(avroSchema);
-//            int length;
+//            var bytes = serializer.Serialize("topic", user);
+//            dynamic deserUser = deserializer.Deserialize("topic", bytes);
 
-//            KafkaGenericAvroSerializer serializer = new KafkaGenericAvroSerializer(schemaRegistry.Object, false);
-
-//            var record = serializer.GenerateRecordAsync(topic, avroSchema).Result;
-//            record["id"] = "test";
-//            record["name"] = "currentName";
-
-//            var mediaValues = new System.Collections.Generic.Dictionary<string, object>();
-//            record["mediaValues"] = mediaValues;
-//            mediaValues["test"] = "mapTest";
-
-//            record["linkedCategories"] = new System.Collections.Generic.Dictionary<string, object>();
+//            Assert.Equal(user.name, deserUser.name);
+//            Assert.Equal(user.favorite_color, deserUser.favorite_color);
+//            Assert.Equal(user.favorite_number, deserUser.favorite_number);
+//        }
 
 
-//            var array = serializer.Serialize(record, out length);
+//        [Fact]
+//        public void SpecificSerializerAndDeserialize_Union(string text)
+//        {
+//            InitSchemaRegistry(Avro.Schema.Parse("[\"null\", \"string\"]").ToString(), false);
 
-//            dynamic deser = serializer.Deserialize(topic, array);
-//            Assert.Equal("test", deser["id"]);
-//            Assert.Equal("currentName", deser["name"]);
-//            Assert.Equal("mapTest", deser["mediaValues"]["test"]);
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
+
+//            var bytes = serializer.Serialize("topic", text);
+//            var deserUser = deserializer.Deserialize("topic", bytes);
+
+//            Assert.Equal(text, deserUser);
 //        }
 
 //        [Fact]
-//        public void GenericWithPrimitiveType()
+//        public void SpecificSerializerAndDeserialize_Int()
 //        {
-//            string topic = "test";
-//            int topicId = 4;
-//            string avroSchema = @"{""type"": ""int""}";
-//            int length;
+//            InitSchemaRegistry(Avro.Schema.Parse("int").ToString());
 
-//            var schemaRegistry = new Mock<ISchemaRegistryClient>();
-//            schemaRegistry.Setup(x => x.RegisterAsync(topic + "-value", It.IsAny<string>())).ReturnsAsync(topicId);
-//            schemaRegistry.Setup(x => x.GetRegistrySubject(topic, false)).Returns(topic + "-value");
-//            schemaRegistry.Setup(x => x.GetSchemaAsync(topicId)).ReturnsAsync(avroSchema);
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
 
-//            KafkaGenericAvroSerializer serializer = new KafkaGenericAvroSerializer(schemaRegistry.Object, false);
-//            var record = serializer.GenerateRecordAsync(topic, avroSchema).Result;
+//            var bytes = serializer.Serialize("topic", 10);
+//            var deserUser = deserializer.Deserialize("topic", bytes);
 
-//            record.Value = 10;
-//            var array = serializer.Serialize(record, out length);
-            
-//            object deser = serializer.Deserialize(topic, array);
-//            Assert.Equal(10, deser);
+//            Assert.Equal(10, deserUser);
+//        }
+
+//        [Fact]
+//        public void SpecificSerializerAndDeserialize_Bool()
+//        {
+//            InitSchemaRegistry(Avro.Schema.Parse("boolean").ToString());
+
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
+
+//            var bytes = serializer.Serialize("topic", true);
+//            var deserUser = deserializer.Deserialize("topic", bytes);
+
+//            Assert.Equal(true, deserUser);
+//        }
+
+//        [Fact]
+//        public void SpecificSerializerAndDeserialize_Double()
+//        {
+//            InitSchemaRegistry(Avro.Schema.Parse("double").ToString(), false);
+
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
+
+//            var bytes = serializer.Serialize("topic", 10.5d);
+//            var deserUser = deserializer.Deserialize("topic", bytes);
+
+//            Assert.Equal(10.5d, deserUser);
+//        }
+
+//        [Theory]
+//        [InlineData("")]
+//        [InlineData(null)]
+//        [InlineData("test")]
+//        public void SpecificSerializerAndDeserialize_String(string text)
+//        {
+//            InitSchemaRegistry(Avro.Schema.Parse("string").ToString(), false);
+
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
+
+//            var bytes = serializer.Serialize("topic", text);
+//            var deserUser = deserializer.Deserialize("topic", bytes);
+
+//            Assert.Equal(text, deserUser);
+//        }
+
+//        //float
+//        //long
+
+//        [Fact]
+//        public void SpecificSerializerAndDeserialize_ByteArray()
+//        {
+//            InitSchemaRegistry(Avro.Schema.Parse("bytes").ToString(), false);
+
+//            var serializer = new ConfluentAvroSerializer(schemaRegistry, false);
+//            var deserializer = new ConfluentAvroDeserializer(schemaRegistry);
+
+//            var obj = new byte[] { 1, 2, 3 };
+//            var bytes = serializer.Serialize("topic", obj);
+//            var deserUser = deserializer.Deserialize("topic", bytes);
+
+//            Assert.Equal(obj, deserUser);
 //        }
 //    }
 //}
