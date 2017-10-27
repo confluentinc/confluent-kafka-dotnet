@@ -19,4 +19,10 @@
     <PackageReference Include="FSharp.NET.Sdk" Version="1.0.*" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="librdkafka.redist.osx-x64" Version="0.11.1-TEST4" />
+    <PackageReference Include="librdkafka.redist.debian-x64" Version="0.11.1-TEST4" />
+    <PackageReference Include="librdkafka.redist.rhel-x64" Version="0.11.1-TEST4" />
+  </ItemGroup>
+
 </Project>

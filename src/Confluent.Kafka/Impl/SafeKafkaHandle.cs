@@ -213,13 +213,14 @@ namespace Confluent.Kafka.Impl
                 // thread of the application calls poll() for a blocking produce() to ever unblock.
                 return LibRdKafka.producev(
                     handle,
-                    topic,
-                    partition,
-                    (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
-                    pValue, (UIntPtr)valLength,
-                    pKey, (UIntPtr)keyLength,
-                    timestamp,
-                    opaque);
+                    LibRdKafka.ProduceVarTag.Topic, topic,
+                    LibRdKafka.ProduceVarTag.Partition, partition,
+                    LibRdKafka.ProduceVarTag.Value, pValue, (UIntPtr)valLength,
+                    LibRdKafka.ProduceVarTag.Key, pKey, (UIntPtr)keyLength,
+                    LibRdKafka.ProduceVarTag.MsgFlags, (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
+                    LibRdKafka.ProduceVarTag.Opaque, opaque,
+                    LibRdKafka.ProduceVarTag.Timestamp, timestamp,
+                    LibRdKafka.ProduceVarTag.End);
             }
             finally
             {

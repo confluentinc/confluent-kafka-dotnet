@@ -187,7 +187,7 @@ namespace Confluent.Kafka.Impl
 
             if (librdkafkaAddr == IntPtr.Zero)
             {
-                throw new DllNotFoundException("Failed to load librdkafka native library. Load paths attempted: " + string.Join("; ", loadPathsAttempted.ToArray()));
+                throw new DllNotFoundException("Failed to load the librdkafka native library. Load paths attempted: " + string.Join("; ", loadPathsAttempted.ToArray()));
             }
 
             LibraryPath = loadPathsAttempted[loadPathsAttempted.Count-1];
@@ -315,6 +315,7 @@ namespace Confluent.Kafka.Impl
             poll_set_consumer = Marshal.GetDelegateForFunctionPointer<poll_set_consumer_delegate>(lookup(librdkafkaAddr, "rd_kafka_poll_set_consumer"));
             query_watermark_offsets = Marshal.GetDelegateForFunctionPointer<QueryOffsets>(lookup(librdkafkaAddr, "rd_kafka_query_watermark_offsets"));
             get_watermark_offsets = Marshal.GetDelegateForFunctionPointer<GetOffsets>(lookup(librdkafkaAddr, "rd_kafka_get_watermark_offsets"));
+            offsets_for_times = Marshal.GetDelegateForFunctionPointer<offsets_for_times_delegate>(lookup(librdkafkaAddr, "rd_kafka_offsets_for_times"));
             mem_free = Marshal.GetDelegateForFunctionPointer<mem_free_delegate>(lookup(librdkafkaAddr, "rd_kafka_mem_free"));
             subscribe = Marshal.GetDelegateForFunctionPointer<subscribe_delegate>(lookup(librdkafkaAddr, "rd_kafka_subscribe"));
             unsubscribe = Marshal.GetDelegateForFunctionPointer<unsubscribe_delegate>(lookup(librdkafkaAddr, "rd_kafka_unsubscribe"));
@@ -325,6 +326,8 @@ namespace Confluent.Kafka.Impl
             assignment = Marshal.GetDelegateForFunctionPointer<Assignment>(lookup(librdkafkaAddr, "rd_kafka_assignment"));
             commit = Marshal.GetDelegateForFunctionPointer<commit_delegate>(lookup(librdkafkaAddr, "rd_kafka_commit"));
             commit_queue = Marshal.GetDelegateForFunctionPointer<commit_queue_delegate>(lookup(librdkafkaAddr, "rd_kafka_commit_queue"));
+            pause_partitions = Marshal.GetDelegateForFunctionPointer<pause_partitions_delegate>(lookup(librdkafkaAddr, "rd_kafka_pause_partitions"));
+            resume_partitions = Marshal.GetDelegateForFunctionPointer<resume_partitions_delegate>(lookup(librdkafkaAddr, "rd_kafka_resume_partitions"));
             committed = Marshal.GetDelegateForFunctionPointer<committed_delegate>(lookup(librdkafkaAddr, "rd_kafka_committed"));
             position = Marshal.GetDelegateForFunctionPointer<position_delegate>(lookup(librdkafkaAddr, "rd_kafka_position"));
             produce = Marshal.GetDelegateForFunctionPointer<produce_delegate>(lookup(librdkafkaAddr, "rd_kafka_produce"));
@@ -547,6 +550,9 @@ namespace Confluent.Kafka.Impl
 
         internal static GetOffsets get_watermark_offsets;
 
+        internal delegate ErrorCode offsets_for_times_delegate(IntPtr rk, IntPtr offsets, IntPtr timeout_ms);
+        internal static offsets_for_times_delegate offsets_for_times;
+
         internal delegate IntPtr mem_free_delegate(IntPtr p, IntPtr p2);
         internal static mem_free_delegate mem_free;
 
@@ -578,6 +584,12 @@ namespace Confluent.Kafka.Impl
         internal delegate ErrorCode commit_queue_delegate(IntPtr p, IntPtr p2, IntPtr p3, CommitDelegate d, IntPtr p4);
         internal static commit_queue_delegate commit_queue;
 
+        internal delegate ErrorCode pause_partitions_delegate(IntPtr p, IntPtr p2);
+        internal static pause_partitions_delegate pause_partitions;
+
+        internal delegate ErrorCode resume_partitions_delegate(IntPtr p, IntPtr p2);
+        internal static resume_partitions_delegate resume_partitions;
+
         internal delegate ErrorCode committed_delegate(IntPtr p, IntPtr p1, IntPtr p2);
         internal static committed_delegate committed;
 
@@ -587,9 +599,34 @@ namespace Confluent.Kafka.Impl
         internal delegate IntPtr produce_delegate(IntPtr p, int i, IntPtr p2, IntPtr p3, UIntPtr p4, IntPtr p5, UIntPtr p6, IntPtr p7);
         internal static produce_delegate produce;
 
-        internal delegate IntPtr producev_delegate(IntPtr p, int i, IntPtr p2, IntPtr p3, UIntPtr p4, IntPtr p5, UIntPtr p6, long l, IntPtr p7);
-        internal static producev_delegate producev;
 
+        /// <summary>
+        ///     Var-arg tag types, used in producev
+        /// </summary>
+        internal enum ProduceVarTag
+        {
+            End,       // va-arg sentinel
+            Topic,     // (const char *) Topic name
+            Rkt,       // (rd_kafka_topic_t *) Topic handle
+            Partition, // (int32_t) Partition
+            Value,     // (void *, size_t) Message value (payload)
+            Key,       // (void *, size_t) Message key
+            Opaque,    // (void *) Application opaque
+            MsgFlags,  // (int) RD_KAFKA_MSG_F_.. flags
+            Timestamp, // (int64_t) Milliseconds since epoch UTC
+        }
+
+        internal delegate ErrorCode producev_delegate(
+            IntPtr rk,
+            ProduceVarTag topicTag, string topic,
+            ProduceVarTag partitionTag, int partition,
+            ProduceVarTag vaTag, IntPtr val, UIntPtr len,
+            ProduceVarTag keyTag, IntPtr key, UIntPtr keylen,
+            ProduceVarTag msgflagsTag, IntPtr msgflags,
+            ProduceVarTag msg_opaqueTag, IntPtr msg_opaque,
+            ProduceVarTag timestampTag, long timestamp,
+            ProduceVarTag endTag);
+        internal static producev_delegate producev;
 
         internal delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
         internal static Flush flush;
