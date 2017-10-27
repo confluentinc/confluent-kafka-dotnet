@@ -275,6 +275,11 @@ namespace Confluent.Kafka
             var librdkafkaPath = config.FirstOrDefault(prop => prop.Key == "librdkafka.path").Value;
             config = config.Where(prop => prop.Key != "librdkafka.path");
 
+            if (librdkafkaPath != null && !librdkafkaPath.Equals(Library.LibrdkafkaPath))
+            {
+                throw new ArgumentException("The librdkafka.path configuration property is different from the currently loaded librdkafka path.");
+            }
+
             if (!LibRdKafka.IsInitialized)
             {
                 LibRdKafka.Initialize((string)librdkafkaPath);

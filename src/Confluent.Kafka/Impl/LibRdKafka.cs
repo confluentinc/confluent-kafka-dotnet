@@ -92,6 +92,8 @@ namespace Confluent.Kafka.Impl
 
         public delegate IntPtr SymbolLookupDelegate(IntPtr addr, string name);
 
+        public static string LibraryPath { get; private set; }
+
         static void LoadLibrdkafka(string userSpecifiedLibrdkafkaPath)
         {
             LibraryOpenDelegate openLib = null;
@@ -139,7 +141,7 @@ namespace Confluent.Kafka.Impl
                 lookupSymbol = LinuxNative.dlsym;
                 if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
-                    // TODO: more sophisticated discovery / ordering.
+                    // TODO: more sophisticated discovery / ordering of this list.
                     nugetLibrdkafkaNames = new Tuple<string, string>[]
                     {
                         Tuple.Create("debian-x64", "librdkafka.so"),
@@ -185,17 +187,15 @@ namespace Confluent.Kafka.Impl
             if (userSpecifiedLibrdkafkaPath != null)
             {
                 librdkafkaAddr = openLib(userSpecifiedLibrdkafkaPath);
-                return;
+                pathsTried.Add(userSpecifiedLibrdkafkaPath);
             }
             else
             {
                 foreach (var librdkafkaName in nugetLibrdkafkaNames)
                 {
-           
 #if NET45 || NET46
                     var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
                     var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-
 #else
                     var baseDirectory = Path.GetDirectoryName(typeof(Error).GetTypeInfo().Assembly.Location);
 #endif
@@ -213,6 +213,8 @@ namespace Confluent.Kafka.Impl
             {
                 throw new DllNotFoundException("Failed to load librdkafka native library: " + string.Join("\n", pathsTried.ToArray()));
             }
+
+            LibraryPath = pathsTried[pathsTried.Count-1];
 
             InitializeDelegates(librdkafkaAddr, lookupSymbol);
         }

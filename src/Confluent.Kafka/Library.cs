@@ -57,14 +57,37 @@ namespace Confluent.Kafka
         public static string[] DebugContexts
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
 
+        /// <summary>
+        ///     Whether or not librdkafka has been loaded yet.
+        /// </summary>
+        public static bool LibrdkafkaLoaded
+            => LibrdkafkaPath != null;
+
+        /// <summary>
+        ///     If librdkafka has been successfully loaded, the path it was loaded from.
+        ///     null if librdkafka has not yet been successfully loaded.
+        /// </summary>
+        public static string LibrdkafkaPath
+            => LibRdKafka.LibraryPath;
+
+        /// <summary>
+        ///     Loads the native librdkafka library. An exception is thrown if librdkafka
+        ///     has already been loaded.
+        /// </summary>
         public static void Load()
             => Load(null);
 
         /// <summary>
-        ///     Loads the native librdkafka library at the specified path.
-        ///     May only be called once.
+        ///     Loads the native librdkafka library from the specified path. An exception
+        ///     is thrown if librdkafka has already been loaded.
         /// </summary>
         public static void Load(string path)
-            => LibRdKafka.Initialize(path);
+        {
+            if (LibrdkafkaLoaded)
+            {
+                throw new Exception("librdkafka can only be loaded once.");
+            }
+            LibRdKafka.Initialize(path);
+        }
     }
 }
