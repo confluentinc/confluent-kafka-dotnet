@@ -58,7 +58,7 @@ namespace Confluent.Kafka
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
 
         /// <summary>
-        ///     Whether or not librdkafka has been loaded yet.
+        ///     True if librdkafka has been successfully loaded, false if not.
         /// </summary>
         public static bool LibrdkafkaLoaded
             => LibrdkafkaPath != null;
