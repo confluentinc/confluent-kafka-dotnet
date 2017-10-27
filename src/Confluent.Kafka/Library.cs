@@ -85,7 +85,7 @@ namespace Confluent.Kafka
         {
             if (LibrdkafkaLoaded)
             {
-                throw new Exception("librdkafka can only be loaded once.");
+                throw new Exception("librdkafka is already loaded.");
             }
             LibRdKafka.Initialize(path);
         }
