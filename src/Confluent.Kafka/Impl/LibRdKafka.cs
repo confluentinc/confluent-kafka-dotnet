@@ -252,7 +252,7 @@ namespace Confluent.Kafka.Impl
             topic_conf_set = (topic_conf_set_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set"), typeof(topic_conf_set_delegate));
             topic_conf_set_partitioner_cb = (topic_conf_set_partitioner_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set_partitioner_cb"), typeof(topic_conf_set_partitioner_cb_delegate));
             topic_partition_available = (topic_partition_available_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_partition_available"), typeof(topic_partition_available_delegate));
-            rd_new = (rd_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_new"), typeof(rd_new_delegate));
+            kafka_new = (kafka_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_new"), typeof(kafka_new_delegate));
             destroy = (destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_destroy"), typeof(destroy_delegate));
             name = (name_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_name"), typeof(name_delegate));
             memberid = (memberid_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_memberid"), typeof(memberid_delegate));
@@ -325,7 +325,7 @@ namespace Confluent.Kafka.Impl
             topic_conf_set = Marshal.GetDelegateForFunctionPointer<topic_conf_set_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set"));
             topic_conf_set_partitioner_cb = Marshal.GetDelegateForFunctionPointer<topic_conf_set_partitioner_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set_partitioner_cb"));
             topic_partition_available = Marshal.GetDelegateForFunctionPointer<topic_partition_available_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_partition_available"));
-            rd_new = Marshal.GetDelegateForFunctionPointer<rd_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_new"));
+            kafka_new = Marshal.GetDelegateForFunctionPointer<kafka_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_new"));
             destroy = Marshal.GetDelegateForFunctionPointer<destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_destroy"));
             name = Marshal.GetDelegateForFunctionPointer<name_delegate>(lookup(librdkafkaAddr, "rd_kafka_name"));
             memberid = Marshal.GetDelegateForFunctionPointer<memberid_delegate>(lookup(librdkafkaAddr, "rd_kafka_memberid"));
@@ -532,8 +532,8 @@ namespace Confluent.Kafka.Impl
         internal delegate bool topic_partition_available_delegate(IntPtr p, int i);
         internal static topic_partition_available_delegate topic_partition_available;
 
-        internal delegate SafeKafkaHandle rd_new_delegate(RdKafkaType t, IntPtr p, StringBuilder s, UIntPtr p2);
-        internal static rd_new_delegate rd_new;
+        internal delegate SafeKafkaHandle kafka_new_delegate(RdKafkaType t, IntPtr p, StringBuilder s, UIntPtr p2);
+        internal static kafka_new_delegate kafka_new;
 
         internal delegate void destroy_delegate(IntPtr p);
         internal static destroy_delegate destroy;

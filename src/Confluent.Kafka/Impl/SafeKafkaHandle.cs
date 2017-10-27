@@ -91,7 +91,7 @@ namespace Confluent.Kafka.Impl
         public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config)
         {
             var errorStringBuilder = new StringBuilder(512);
-            var skh = LibRdKafka.rd_new(type, config, errorStringBuilder,
+            var skh = LibRdKafka.kafka_new(type, config, errorStringBuilder,
                     (UIntPtr) errorStringBuilder.Capacity);
             if (skh.IsInvalid)
             {
