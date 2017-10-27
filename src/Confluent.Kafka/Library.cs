@@ -74,6 +74,10 @@ namespace Confluent.Kafka
         ///     Loads the native librdkafka library. An exception is thrown if librdkafka
         ///     has already been loaded.
         /// </summary>
+        /// <remarks>
+        ///     You will not typically need to call this method - librdkafka is loaded
+        ///     automatically on first use of a Producer or Consumer instance.
+        /// </remarks>
         public static void Load()
             => Load(null);
 
@@ -81,6 +85,10 @@ namespace Confluent.Kafka
         ///     Loads the native librdkafka library from the specified path. An exception
         ///     is thrown if librdkafka has already been loaded.
         /// </summary>
+        /// <remarks>
+        ///     You will not typically need to call this method - librdkafka is loaded
+        ///     automatically on first use of a Producer or Consumer instance.
+        /// </remarks>
         public static void Load(string path)
         {
             if (LibrdkafkaLoaded)
