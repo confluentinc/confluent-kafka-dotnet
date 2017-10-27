@@ -199,9 +199,8 @@ namespace Confluent.Kafka.Impl
 #else
                     var baseDirectory = Path.GetDirectoryName(typeof(Error).GetTypeInfo().Assembly.Location);
 #endif
-                    pathsTried.Add(baseDirectory);
-
                     var path = Path.Combine(baseDirectory, "librdkafka", librdkafkaName.Item1, librdkafkaName.Item2);
+                    pathsTried.Add(path);
                     librdkafkaAddr = openLib(path);
                     if (librdkafkaAddr != IntPtr.Zero)
                     {
