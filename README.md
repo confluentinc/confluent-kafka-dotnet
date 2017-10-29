@@ -36,7 +36,7 @@ client. Thanks Andreas!
 Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.2).
 
 To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager
-UI, or run the following command in the Package Manager Console:
+UI, or run the following command in the Package Manager Console: 
 
 ```
 Install-Package Confluent.Kafka -Version 0.11.2
@@ -58,7 +58,7 @@ Pre-release nuget packages are available from the following nuget package source
 The version suffix of these nuget packages matches the appveyor build number. You can see which commit a 
 particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
-
+ 
 
 ## Examples
 
