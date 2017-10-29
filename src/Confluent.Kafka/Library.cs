@@ -71,8 +71,8 @@ namespace Confluent.Kafka
             => LibRdKafka.LibraryPath;
 
         /// <summary>
-        ///     Loads the native librdkafka library. An exception is thrown if librdkafka
-        ///     has already been loaded.
+        ///     Loads the native librdkafka library. Does nothing if the library is
+        ///     already loaded.
         /// </summary>
         /// <remarks>
         ///     You will not typically need to call this method - librdkafka is loaded
@@ -82,8 +82,7 @@ namespace Confluent.Kafka
             => Load(null);
 
         /// <summary>
-        ///     Loads the native librdkafka library from the specified path. An exception
-        ///     is thrown if librdkafka has already been loaded.
+        ///     Loads the native librdkafka library from the specified path. 
         /// </summary>
         /// <remarks>
         ///     You will not typically need to call this method - librdkafka is loaded
@@ -91,10 +90,16 @@ namespace Confluent.Kafka
         /// </remarks>
         public static void Load(string path)
         {
+            if (LibrdkafkaLoaded && path != null && LibrdkafkaPath != path)
+            {
+                throw new Exception("librdkafka is already loaded with a different path.");
+            }
+            
             if (LibrdkafkaLoaded)
             {
-                throw new Exception("librdkafka is already loaded.");
+                return;
             }
+            
             LibRdKafka.Initialize(path);
         }
     }

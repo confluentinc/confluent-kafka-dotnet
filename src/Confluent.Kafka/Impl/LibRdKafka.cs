@@ -173,7 +173,8 @@ namespace Confluent.Kafka.Impl
                     var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
                     var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
 #else
-                    var baseDirectory = Path.GetDirectoryName(typeof(Error).GetTypeInfo().Assembly.Location);
+                    var baseDirectory = AppContext.BaseDirectory;
+                    // var baseDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 #endif
                     var path = Path.Combine(baseDirectory, "librdkafka", librdkafkaName[0], librdkafkaName[1]);
                     loadPathsAttempted.Add(path);
@@ -242,6 +243,7 @@ namespace Confluent.Kafka.Impl
             poll_set_consumer = (poll_set_consumer_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_poll_set_consumer"), typeof(poll_set_consumer_delegate));
             query_watermark_offsets = (QueryOffsets)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_query_watermark_offsets"), typeof(QueryOffsets));
             get_watermark_offsets = (GetOffsets)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_get_watermark_offsets"), typeof(GetOffsets));
+            offsets_for_times = (offsets_for_times_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_offsets_for_times"), typeof(offsets_for_times_delegate));
             mem_free = (mem_free_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_mem_free"), typeof(mem_free_delegate));
             subscribe = (subscribe_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_subscribe"), typeof(subscribe_delegate));
             unsubscribe = (unsubscribe_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_unsubscribe"), typeof(unsubscribe_delegate));
@@ -252,6 +254,8 @@ namespace Confluent.Kafka.Impl
             assignment = (Assignment)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_assignment"), typeof(Assignment));
             commit = (commit_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_commit"), typeof(commit_delegate));
             commit_queue = (commit_queue_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_commit_queue"), typeof(commit_queue_delegate));
+            pause_partitions = (pause_partitions_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_pause_partitions"), typeof(pause_partitions_delegate));
+            resume_partitions = (resume_partitions_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_resume_partitions"), typeof(resume_partitions_delegate));
             committed = (committed_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_committed"), typeof(committed_delegate));
             position = (position_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_position"), typeof(position_delegate));
             produce = (produce_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_produce"), typeof(produce_delegate));

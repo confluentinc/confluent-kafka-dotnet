@@ -34,8 +34,6 @@ client. Thanks Andreas!
 ## Usage
 
 Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.2).
-If you are deploying to non-windows platforms, you will additionally need to reference one or more platform specific
-packages (see below).
 
 To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager
 UI, or run the following command in the Package Manager Console:
@@ -53,25 +51,6 @@ To reference in a dotnet core project, explicitly add a package reference to you
   ...
 </ItemGroup>
 ```
-
-The `Confluent.Kafka` nuget package references two additional packages that provide librdkafka builds 
-suitable for use on Windows (x86 and x64). If you are deploying to a Windows environment, all you need
-to do is simply reference the `Confluent.Kafka` nuget package - nothing else is required. 
-
-If you wish to deploy to other platforms, you'll need to additionally reference a nuget packages suitable
-for each platform you wish to deploy to, or specify the path to a suitable build of librdkafka via the
-`librdkafka.path` configuration property passed to your `Producer` or `Consumer` instance.
-
-We currently provide nuget packages that can be used on debian, rhel and OSX platforms. 
-
-nuget package name             | platform
--------------------------------|----------
-librdkafka.redist.win-64       | windows
-librdkafka.redist.debian-x64   | debian + microsoft/dotnet:1.1-sdk docker image
-librdkafka.redist.rhel-x64     | rhel
-
-
-### Pre Releases
 
 Pre-release nuget packages are available from the following nuget package source:
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). 
