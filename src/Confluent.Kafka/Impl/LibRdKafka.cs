@@ -21,7 +21,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-#if NET45 || NET46
+#if NET45 || NET46 || NET47
 using System.Reflection;
 using System.ComponentModel;
 #endif
@@ -37,7 +37,9 @@ namespace Confluent.Kafka.Impl
         // max length for error strings built by librdkafka
         internal const int MaxErrorStringLength = 512;
 
-#if NET45 || NET46
+        const string librdkafkadll = "librdkafka.dll";
+
+#if NET45 || NET46 || NET47
         [Flags]
         public enum LoadLibraryFlags : uint
         {
@@ -69,7 +71,10 @@ namespace Confluent.Kafka.Impl
             var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
             var dllDirectory = Path.Combine(baseDirectory, is64 ? "x64" : "x86");
 
-            if (LoadLibraryEx(Path.Combine(dllDirectory, "librdkafka.dll"),
+            if (!File.Exists(Path.Combine(dllDirectory, librdkafkadll)))
+                dllDirectory = Path.Combine(baseDirectory, is64 ? @"runtimes\win7-x64\native" : @"runtimes\win7-x86\native");
+
+            if (LoadLibraryEx(Path.Combine(dllDirectory, librdkafkadll),
                 IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
             {
                 //catch the last win32 error by default and keep the associated default message
@@ -87,11 +92,11 @@ namespace Confluent.Kafka.Impl
 
         static LibRdKafka()
         {
-#if NET45 || NET46
+#if NET45 || NET46 || NET47
             try
             {
-                // In net45, we don't put the native dlls in the assembly directory
-                // but in subfolders x64 and x86
+                // In net45 and above we don't put the native dlls in the
+                // assembly directory but in subfolders
                 // we have to force the load as it won't be found by the system by itself
                 if (GetModuleHandle(NativeMethods.DllName) == IntPtr.Zero)
                 {
