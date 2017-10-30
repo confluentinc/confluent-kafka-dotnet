@@ -795,6 +795,16 @@ namespace Confluent.Kafka
         /// </remarks>
         public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
+            var librdkafkaPath = config.FirstOrDefault(prop => prop.Key == "librdkafka.path").Value;
+            config = config.Where(prop => prop.Key != "librdkafka.path");
+
+            if (LibRdKafka.IsInitialized && librdkafkaPath != null)
+            {
+                throw new Exception("The librdkafka.path configuration property was specified, but librdkafka is already loaded.");
+            }
+
+            LibRdKafka.Initialize((string)librdkafkaPath);
+
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");

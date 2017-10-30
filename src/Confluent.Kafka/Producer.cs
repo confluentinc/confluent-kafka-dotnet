@@ -272,6 +272,16 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
         {
+            var librdkafkaPath = config.FirstOrDefault(prop => prop.Key == "librdkafka.path").Value;
+            config = config.Where(prop => prop.Key != "librdkafka.path");
+
+            if (LibRdKafka.IsInitialized && librdkafkaPath != null)
+            {
+                throw new Exception("The librdkafka.path configuration property was specified, but librdkafka is already loaded.");
+            }
+
+            LibRdKafka.Initialize((string)librdkafkaPath);
+
             this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
