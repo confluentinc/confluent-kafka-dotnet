@@ -14,7 +14,7 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
     <Reference Include="Confluent.Kafka.StrongName">
-      <HintPath>../../src/Confluent.Kafka/bin-sn/$(Configuration)/netstandard1.3/Confluent.Kafka.StrongName.dll</HintPath>
+      <HintPath>../../src/Confluent.Kafka/bin-sn/$(Configuration)/netstandard1.5/Confluent.Kafka.StrongName.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="librdkafka.redist" Version="0.11.1" />
+    <PackageReference Include="librdkafka.redist" Version="0.11.1-TEST6" />
   </ItemGroup>
 
   <ItemGroup>

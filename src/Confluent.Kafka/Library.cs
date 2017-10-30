@@ -57,5 +57,50 @@ namespace Confluent.Kafka
         public static string[] DebugContexts
             => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
 
+        /// <summary>
+        ///     True if librdkafka has been successfully loaded, false if not.
+        /// </summary>
+        public static bool LibrdkafkaLoaded
+            => LibrdkafkaPath != null;
+
+        /// <summary>
+        ///     If librdkafka has been successfully loaded, the path it was loaded from.
+        ///     null if librdkafka has not yet been successfully loaded.
+        /// </summary>
+        public static string LibrdkafkaPath
+            => LibRdKafka.LibraryPath;
+
+        /// <summary>
+        ///     Loads the native librdkafka library. Does nothing if the library is
+        ///     already loaded.
+        /// </summary>
+        /// <remarks>
+        ///     You will not typically need to call this method - librdkafka is loaded
+        ///     automatically on first use of a Producer or Consumer instance.
+        /// </remarks>
+        public static void Load()
+            => Load(null);
+
+        /// <summary>
+        ///     Loads the native librdkafka library from the specified path. 
+        /// </summary>
+        /// <remarks>
+        ///     You will not typically need to call this method - librdkafka is loaded
+        ///     automatically on first use of a Producer or Consumer instance.
+        /// </remarks>
+        public static void Load(string path)
+        {
+            if (LibrdkafkaLoaded && path != null && LibrdkafkaPath != path)
+            {
+                throw new Exception("librdkafka is already loaded with a different path.");
+            }
+            
+            if (LibrdkafkaLoaded)
+            {
+                return;
+            }
+            
+            LibRdKafka.Initialize(path);
+        }
     }
 }

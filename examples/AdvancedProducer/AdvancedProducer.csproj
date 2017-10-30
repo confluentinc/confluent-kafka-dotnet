@@ -9,5 +9,5 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
-  
+
 </Project>

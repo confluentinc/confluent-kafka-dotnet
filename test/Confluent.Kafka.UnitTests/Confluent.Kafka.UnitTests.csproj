@@ -13,6 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="librdkafka.redist.osx-x64" Version="0.11.1-TEST4" />
+    <PackageReference Include="librdkafka.redist.debian-x64" Version="0.11.1-TEST4" />
+    <PackageReference Include="librdkafka.redist.rhel-x64" Version="0.11.1-TEST4" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />

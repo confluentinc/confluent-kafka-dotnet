@@ -24,6 +24,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Constuctor()
         {
+            Library.Load();
+
             var e = new Error(ErrorCode.Local_BadCompression);
             Assert.Equal(e.Code, ErrorCode.Local_BadCompression);
             Assert.NotNull(e.Reason);
@@ -37,6 +39,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Equality()
         {
+            Library.Load();
+
             var e1 = new Error(ErrorCode.Local_AllBrokersDown);
             var e2 = new Error(ErrorCode.Local_AllBrokersDown);
             var e3 = new Error(ErrorCode.Local_InProgress);
@@ -61,6 +65,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void NullEquality()
         {
+            Library.Load();
+
             var e1 = new Error(ErrorCode.Local_AllBrokersDown);
             Error e2 = null;
             Error e3 = null;
@@ -82,6 +88,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void HasError()
         {
+            Library.Load();
+
             var e1 = new Error(ErrorCode.NoError);
             var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
@@ -94,6 +102,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void BoolCast()
         {
+            Library.Load();
+
             var e1 = new Error(ErrorCode.NoError);
             var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
@@ -104,6 +114,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void ErrorCodeCast()
         {
+            Library.Load();
+
             var e1 = new Error(ErrorCode.NotCoordinatorForGroup);
             var ec1 = ErrorCode.NotCoordinatorForGroup;
 

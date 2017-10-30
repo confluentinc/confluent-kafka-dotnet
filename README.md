@@ -35,8 +35,8 @@ client. Thanks Andreas!
 
 Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.2).
 
-To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka and librdkafka.redist in the 
-NuGet Package Manager UI, or run the following command in the Package Manager Console:
+To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager
+UI, or run the following command in the Package Manager Console: 
 
 ```
 Install-Package Confluent.Kafka -Version 0.11.2

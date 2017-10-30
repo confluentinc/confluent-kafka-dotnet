@@ -213,13 +213,14 @@ namespace Confluent.Kafka.Impl
                 // thread of the application calls poll() for a blocking produce() to ever unblock.
                 return LibRdKafka.producev(
                     handle,
-                    topic,
-                    partition,
-                    (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
-                    pValue, (UIntPtr)valLength,
-                    pKey, (UIntPtr)keyLength,
-                    timestamp,
-                    opaque);
+                    LibRdKafka.ProduceVarTag.Topic, topic,
+                    LibRdKafka.ProduceVarTag.Partition, partition,
+                    LibRdKafka.ProduceVarTag.Value, pValue, (UIntPtr)valLength,
+                    LibRdKafka.ProduceVarTag.Key, pKey, (UIntPtr)keyLength,
+                    LibRdKafka.ProduceVarTag.MsgFlags, (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
+                    LibRdKafka.ProduceVarTag.Opaque, opaque,
+                    LibRdKafka.ProduceVarTag.Timestamp, timestamp,
+                    LibRdKafka.ProduceVarTag.End);
             }
             finally
             {
@@ -543,7 +544,7 @@ namespace Confluent.Kafka.Impl
             }
 
             // Wait for commit to finish
-            IntPtr rkev = LibRdKafka.queue_poll(cQueue, -1/*infinite*/);
+            IntPtr rkev = LibRdKafka.queue_poll(cQueue, (System.IntPtr)(-1) /*infinite*/);
             LibRdKafka.queue_destroy(cQueue);
             if (rkev == IntPtr.Zero)
             {
@@ -553,7 +554,7 @@ namespace Confluent.Kafka.Impl
 
             CommittedOffsets committedOffsets =
                 new CommittedOffsets(GetTopicPartitionOffsetErrorList(LibRdKafka.event_topic_partition_list(rkev)),
-                new Error(LibRdKafka.event_error(rkev), LibRdKafka.event_error_string(rkev)));
+                new Error(LibRdKafka.event_error(rkev), LibRdKafka.event_error_string_utf8(rkev)));
 
             LibRdKafka.event_destroy(rkev);
             return committedOffsets;

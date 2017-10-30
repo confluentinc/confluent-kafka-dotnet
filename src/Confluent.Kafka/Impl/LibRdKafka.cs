@@ -17,15 +17,15 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
 #if NET45 || NET46
-using System.Reflection;
 using System.ComponentModel;
 #endif
-
 
 namespace Confluent.Kafka.Impl
 {
@@ -37,42 +37,92 @@ namespace Confluent.Kafka.Impl
         // max length for error strings built by librdkafka
         internal const int MaxErrorStringLength = 512;
 
-#if NET45 || NET46
-        [Flags]
-        public enum LoadLibraryFlags : uint
+        private static class WindowsNative
         {
-            DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
-            LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
-            LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
-            LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
-            LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
-            LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
-            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
-            LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
-            LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
-            LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
-            LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
+            [Flags]
+            public enum LoadLibraryFlags : uint
+            {
+                DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
+                LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
+                LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
+                LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
+                LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
+                LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
+                LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
+                LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
+                LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
+                LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
+                LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
+            }
+
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
+
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr GetModuleHandle(string lpFileName);
+
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr GetProcAddress(IntPtr hModule, String procname);
         }
 
-        [DllImport("kernel32", SetLastError = true)]
-        private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
-
-        [DllImport("kernel32", SetLastError = true)]
-        private static extern IntPtr GetModuleHandle(string lpFileName);
-
-        static void LoadNet45Librdkafka()
+        private static class LinuxNative
         {
-            // in net45, librdkafka.dll is not in the process directory, we have to load it manually
-            // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
+            [DllImport("libdl.so")]
+            public static extern IntPtr dlopen(String fileName, int flags);
+
+            [DllImport("libdl.so")]
+            public static extern IntPtr dlerror();
+
+            [DllImport("libdl.so")]
+            public static extern IntPtr dlsym(IntPtr handle, String symbol);
+        }
+
+        private static class OsxNative
+        {
+            [DllImport("libdl.dylib")]
+            public static extern IntPtr dlopen(String fileName, int flags);
+
+            [DllImport("libdl.dylib")]
+            public static extern IntPtr dlerror();
+
+            [DllImport("libdl.dylib")]
+            public static extern IntPtr dlsym(IntPtr handle, String symbol);
+        }
+
+
+        public delegate IntPtr LibraryOpenDelegate(String fileName);
+
+        public delegate IntPtr SymbolLookupDelegate(IntPtr addr, string name);
+
+        public static string LibraryPath { get; private set; }
+
+        static void LoadLibrdkafka(string userSpecifiedLibrdkafkaPath)
+        {
+            LibraryOpenDelegate openLib = null;
+            SymbolLookupDelegate lookupSymbol = null;
+            string[] librdkafkaTryNames = new string[0];
+            IntPtr librdkafkaAddr = IntPtr.Zero;
+
+#if NET45 || NET46
+            openLib = (string name)
+                     => WindowsNative.LoadLibraryEx(
+                            name,
+                            IntPtr.Zero,
+                            WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH);
+            lookupSymbol = WindowsNative.GetProcAddress;
+
             var is64 = IntPtr.Size == 8;
             var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
             var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-            var dllDirectory = Path.Combine(baseDirectory, is64 ? "x64" : "x86");
+            var dllDirectory = Path.Combine(baseDirectory, 
+                is64 
+                    ? Path.Combine("librdkafka", "x64") 
+                    : Path.Combine("librdkafka", "x86"));
+            librdkafkaAddr = openLib(dllDirectory);
 
-            if (LoadLibraryEx(Path.Combine(dllDirectory, "librdkafka.dll"),
-                IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            if (librdkafkaAddr == IntPtr.Zero)
             {
-                //catch the last win32 error by default and keep the associated default message
+                // catch the last win32 error by default and keep the associated default message
                 var win32Exception = new Win32Exception();
                 var additionalMessage =
                     $"Error while loading librdkafka.dll or its dependencies from {dllDirectory}. " +
@@ -82,110 +132,257 @@ namespace Confluent.Kafka.Impl
 
                 throw new InvalidOperationException(additionalMessage, win32Exception);
             }
-        }
-#endif
+#else
+            const int RTLD_NOW = 2;
 
-        static LibRdKafka()
-        {
-#if NET45 || NET46
-            try
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                // In net45, we don't put the native dlls in the assembly directory
-                // but in subfolders x64 and x86
-                // we have to force the load as it won't be found by the system by itself
-                if (GetModuleHandle(NativeMethods.DllName) == IntPtr.Zero)
+                openLib = (string name) => OsxNative.dlopen(name, RTLD_NOW);
+                lookupSymbol = OsxNative.dlsym;
+                librdkafkaTryNames = new string[] { "librdkafka.dylib" };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                openLib = (string name) => LinuxNative.dlopen(name, RTLD_NOW);
+                lookupSymbol = LinuxNative.dlsym;
+                if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
-                    // In some cases, the user might want to load the library by himself
-                    // (if he could not have the folders in the bin directory, or to change the version of the dll)
-                    // If he did it before first call to Confluent.Kafka, GetModuleHandle will be nonZero
-                    // and we don't have to force the load (which would fail and throw otherwise)
-                    LoadNet45Librdkafka();
+                    librdkafkaTryNames = new string[] { "librdkafka.so-libssl1.0.0.so" };
                 }
             }
-            catch
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                // There may be some platforms where GetModuleHandle/LoadLibraryEx do not work
-                // Fail silently so the user can still have the opportunity to load the dll by himself
+                openLib = (string name)
+                     => WindowsNative.LoadLibraryEx(
+                            name, 
+                            IntPtr.Zero, 
+                            WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH);
+                lookupSymbol = WindowsNative.GetProcAddress;
+                librdkafkaTryNames = new string[] { "librdkafka.dll" };
             }
-#endif
-            _version = NativeMethods.rd_kafka_version;
-            _version_str = NativeMethods.rd_kafka_version_str;
-            _get_debug_contexts = NativeMethods.rd_kafka_get_debug_contexts;
-            _err2str = NativeMethods.rd_kafka_err2str;
-            _last_error = NativeMethods.rd_kafka_last_error;
-            _topic_partition_list_new = NativeMethods.rd_kafka_topic_partition_list_new;
-            _topic_partition_list_destroy = NativeMethods.rd_kafka_topic_partition_list_destroy;
-            _topic_partition_list_add = NativeMethods.rd_kafka_topic_partition_list_add;
-            _message_timestamp = NativeMethods.rd_kafka_message_timestamp;
-            _message_destroy = NativeMethods.rd_kafka_message_destroy;
-            _conf_new = NativeMethods.rd_kafka_conf_new;
-            _conf_destroy = NativeMethods.rd_kafka_conf_destroy;
-            _conf_dup = NativeMethods.rd_kafka_conf_dup;
-            _conf_set = NativeMethods.rd_kafka_conf_set;
-            _conf_set_dr_msg_cb = NativeMethods.rd_kafka_conf_set_dr_msg_cb;
-            _conf_set_rebalance_cb = NativeMethods.rd_kafka_conf_set_rebalance_cb;
-            _conf_set_error_cb = NativeMethods.rd_kafka_conf_set_error_cb;
-            _conf_set_offset_commit_cb = NativeMethods.rd_kafka_conf_set_offset_commit_cb;
-            _conf_set_log_cb = NativeMethods.rd_kafka_conf_set_log_cb;
-            _conf_set_stats_cb = NativeMethods.rd_kafka_conf_set_stats_cb;
-            _conf_set_default_topic_conf = NativeMethods.rd_kafka_conf_set_default_topic_conf;
-            _conf_get = NativeMethods.rd_kafka_conf_get;
-            _topic_conf_get = NativeMethods.rd_kafka_topic_conf_get;
-            _conf_dump = NativeMethods.rd_kafka_conf_dump;
-            _topic_conf_dump = NativeMethods.rd_kafka_topic_conf_dump;
-            _conf_dump_free = NativeMethods.rd_kafka_conf_dump_free;
-            _topic_conf_new = NativeMethods.rd_kafka_topic_conf_new;
-            _topic_conf_dup = NativeMethods.rd_kafka_topic_conf_dup;
-            _topic_conf_destroy = NativeMethods.rd_kafka_topic_conf_destroy;
-            _topic_conf_set = NativeMethods.rd_kafka_topic_conf_set;
-            _topic_conf_set_partitioner_cb = NativeMethods.rd_kafka_topic_conf_set_partitioner_cb;
-            _topic_partition_available = NativeMethods.rd_kafka_topic_partition_available;
-            _new = NativeMethods.rd_kafka_new;
-            _destroy = NativeMethods.rd_kafka_destroy;
-            _name = NativeMethods.rd_kafka_name;
-            _memberid = NativeMethods.rd_kafka_memberid;
-            _topic_new = NativeMethods.rd_kafka_topic_new;
-            _topic_destroy = NativeMethods.rd_kafka_topic_destroy;
-            _topic_name = NativeMethods.rd_kafka_topic_name;
-            _poll = NativeMethods.rd_kafka_poll;
-            _poll_set_consumer = NativeMethods.rd_kafka_poll_set_consumer;
-            _query_watermark_offsets = NativeMethods.rd_kafka_query_watermark_offsets;
-            _get_watermark_offsets = NativeMethods.rd_kafka_get_watermark_offsets;
-            _offsets_for_times = NativeMethods.rd_kafka_offsets_for_times;
-            _mem_free = NativeMethods.rd_kafka_mem_free;
-            _subscribe = NativeMethods.rd_kafka_subscribe;
-            _unsubscribe = NativeMethods.rd_kafka_unsubscribe;
-            _subscription = NativeMethods.rd_kafka_subscription;
-            _consumer_poll = NativeMethods.rd_kafka_consumer_poll;
-            _consumer_close = NativeMethods.rd_kafka_consumer_close;
-            _assign = NativeMethods.rd_kafka_assign;
-            _assignment = NativeMethods.rd_kafka_assignment;
-            _commit = NativeMethods.rd_kafka_commit;
-            _commit_queue = NativeMethods.rd_kafka_commit_queue;
-            _committed = NativeMethods.rd_kafka_committed;
-            _pause_partitions = NativeMethods.rd_kafka_pause_partitions;
-            _resume_partitions = NativeMethods.rd_kafka_resume_partitions;
-            _position = NativeMethods.rd_kafka_position;
-            _producev = NativeMethods.rd_kafka_producev;
-            _flush = NativeMethods.rd_kafka_flush;
-            _metadata = NativeMethods.rd_kafka_metadata;
-            _metadata_destroy = NativeMethods.rd_kafka_metadata_destroy;
-            _list_groups = NativeMethods.rd_kafka_list_groups;
-            _group_list_destroy = NativeMethods.rd_kafka_group_list_destroy;
-            _brokers_add = NativeMethods.rd_kafka_brokers_add;
-            _outq_len = NativeMethods.rd_kafka_outq_len;
-            _queue_new = NativeMethods.rd_kafka_queue_new;
-            _queue_destroy = NativeMethods.rd_kafka_queue_destroy;
-            _event_type = NativeMethods.rd_kafka_event_type;
-            _event_error = NativeMethods.rd_kafka_event_error;
-            _event_error_string = NativeMethods.rd_kafka_event_error_string;
-            _event_topic_partition_list = NativeMethods.rd_kafka_event_topic_partition_list;
-            _event_destroy = NativeMethods.rd_kafka_event_destroy;
-            _queue_poll = NativeMethods.rd_kafka_queue_poll;
-
-            if ((long)version() < minVersion)
+            else
             {
-                throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
+                throw new Exception($"Unsupported platform: {RuntimeInformation.OSDescription}");
+            }
+
+            var loadPathsAttempted = new List<string>();
+
+            if (userSpecifiedLibrdkafkaPath != null)
+            {
+                librdkafkaAddr = openLib(userSpecifiedLibrdkafkaPath);
+                loadPathsAttempted.Add(userSpecifiedLibrdkafkaPath);
+            }
+            else
+            {
+                foreach (var librdkafkaName in librdkafkaTryNames)
+                {
+                    loadPathsAttempted.Add(librdkafkaName);
+                    librdkafkaAddr = openLib(librdkafkaName);
+                    if (librdkafkaAddr != IntPtr.Zero)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (librdkafkaAddr == IntPtr.Zero)
+            {
+                throw new DllNotFoundException("Failed to load the librdkafka native library. Attempted to load: " + string.Join("; ", loadPathsAttempted.ToArray()));
+            }
+
+            LibraryPath = loadPathsAttempted[loadPathsAttempted.Count-1];
+
+#endif
+            InitializeDelegates(librdkafkaAddr, lookupSymbol);
+        }
+
+        static void InitializeDelegates(IntPtr librdkafkaAddr, SymbolLookupDelegate lookup)
+        {
+#if NET45 || NET46
+            // this GetDelegateForFunctionPointer variant is depreciated, but the generic version is not available on NET45/46.
+            version = (version_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_version"), typeof(version_delegate));
+            version_str = (version_str_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_version_str"), typeof(version_str_delegate));
+            get_debug_contexts = (get_debug_contexts_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_get_debug_contexts"), typeof(get_debug_contexts_delegate));
+            err2str = (err2str_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_err2str"), typeof(err2str_delegate));
+            topic_partition_list_new = (topic_partition_list_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_partition_list_new"),typeof(topic_partition_list_new_delegate));
+            topic_partition_list_destroy = (topic_partition_list_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_partition_list_destroy"), typeof(topic_partition_list_destroy_delegate));
+            topic_partition_list_add = (topic_partition_list_add_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_partition_list_add"), typeof(topic_partition_list_add_delegate));
+            last_error = (last_error_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_last_error"), typeof(last_error_delegate));
+            message_timestamp = (messageTimestampDelegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_message_timestamp"), typeof(messageTimestampDelegate));
+            message_destroy = (message_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_message_destroy"), typeof(message_destroy_delegate));
+            conf_new = (conf_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_new"), typeof(conf_new_delegate));
+            conf_destroy = (conf_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_destroy"), typeof(conf_destroy_delegate));
+            conf_dup = (conf_dup_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_dup"), typeof(conf_dup_delegate));
+            conf_set = (conf_set_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set"), typeof(conf_set_delegate));
+            conf_set_dr_msg_cb = (conf_set_dr_msg_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_dr_msg_cb"), typeof(conf_set_dr_msg_cb_delegate));
+            conf_set_rebalance_cb = (conf_set_rebalance_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_rebalance_cb"), typeof(conf_set_rebalance_cb_delegate));
+            conf_set_offset_commit_cb = (conf_set_offset_commit_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_offset_commit_cb"), typeof(conf_set_offset_commit_cb_delegate));
+            conf_set_error_cb = (conf_set_error_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_error_cb"), typeof(conf_set_error_cb_delegate));
+            conf_set_log_cb = (conf_set_log_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_log_cb"), typeof(conf_set_log_cb_delegate));
+            conf_set_stats_cb = (conf_set_stats_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_stats_cb"), typeof(conf_set_stats_cb_delegate));
+            conf_set_default_topic_conf = (conf_set_default_topic_conf_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_set_default_topic_conf"), typeof(conf_set_default_topic_conf_delegate));
+            conf_get = (ConfGet)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_get"), typeof(ConfGet));
+            topic_conf_get = (ConfGet)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_get"), typeof(ConfGet));
+            conf_dump = (ConfDump)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_dump"), typeof(ConfDump));
+            topic_conf_dump = (ConfDump)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_dump"), typeof(ConfDump));
+            conf_dump_free = (conf_dump_free_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_conf_dump_free"), typeof(conf_dump_free_delegate));
+            topic_conf_new = (topic_conf_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_new"), typeof(topic_conf_new_delegate));
+            topic_conf_dup = (topic_conf_dup_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_dup"), typeof(topic_conf_dup_delegate));
+            topic_conf_destroy = (topic_conf_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_destroy"), typeof(topic_conf_destroy_delegate));
+            topic_conf_set = (topic_conf_set_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set"), typeof(topic_conf_set_delegate));
+            topic_conf_set_partitioner_cb = (topic_conf_set_partitioner_cb_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set_partitioner_cb"), typeof(topic_conf_set_partitioner_cb_delegate));
+            topic_partition_available = (topic_partition_available_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_partition_available"), typeof(topic_partition_available_delegate));
+            kafka_new = (kafka_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_new"), typeof(kafka_new_delegate));
+            destroy = (destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_destroy"), typeof(destroy_delegate));
+            name = (name_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_name"), typeof(name_delegate));
+            memberid = (memberid_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_memberid"), typeof(memberid_delegate));
+            topic_new = (topic_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_new"), typeof(topic_new_delegate));
+            topic_destroy = (topic_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_destroy"), typeof(topic_destroy_delegate));
+            topic_name = (topic_name_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_topic_name"), typeof(topic_name_delegate));
+            poll = (poll_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_poll"), typeof(poll_delegate));
+            poll_set_consumer = (poll_set_consumer_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_poll_set_consumer"), typeof(poll_set_consumer_delegate));
+            query_watermark_offsets = (QueryOffsets)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_query_watermark_offsets"), typeof(QueryOffsets));
+            get_watermark_offsets = (GetOffsets)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_get_watermark_offsets"), typeof(GetOffsets));
+            offsets_for_times = (offsets_for_times_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_offsets_for_times"), typeof(offsets_for_times_delegate));
+            mem_free = (mem_free_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_mem_free"), typeof(mem_free_delegate));
+            subscribe = (subscribe_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_subscribe"), typeof(subscribe_delegate));
+            unsubscribe = (unsubscribe_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_unsubscribe"), typeof(unsubscribe_delegate));
+            subscription = (Subscription)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_subscription"), typeof(Subscription));
+            consumer_poll = (consumer_poll_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_consumer_poll"), typeof(consumer_poll_delegate));
+            consumer_close = (consumer_close_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_consumer_close"), typeof(consumer_close_delegate));
+            assign = (assign_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_assign"), typeof(assign_delegate));
+            assignment = (Assignment)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_assignment"), typeof(Assignment));
+            commit = (commit_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_commit"), typeof(commit_delegate));
+            commit_queue = (commit_queue_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_commit_queue"), typeof(commit_queue_delegate));
+            pause_partitions = (pause_partitions_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_pause_partitions"), typeof(pause_partitions_delegate));
+            resume_partitions = (resume_partitions_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_resume_partitions"), typeof(resume_partitions_delegate));
+            committed = (committed_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_committed"), typeof(committed_delegate));
+            position = (position_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_position"), typeof(position_delegate));
+            produce = (produce_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_produce"), typeof(produce_delegate));
+            producev = (producev_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_producev"), typeof(producev_delegate));
+            flush = (Flush)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_flush"), typeof(Flush));
+            metadata = (Metadata)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_metadata"), typeof(Metadata));
+            metadata_destroy = (metadata_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_metadata_destroy"), typeof(metadata_destroy_delegate));
+            list_groups = (ListGroups)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_list_groups"), typeof(ListGroups));
+            group_list_destroy = (group_list_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_group_list_destroy"), typeof(group_list_destroy_delegate));
+            brokers_add = (brokers_add_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_brokers_add"), typeof(brokers_add_delegate));
+            outq_len = (outq_len_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_outq_len"), typeof(outq_len_delegate));
+            queue_new = (queue_new_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_queue_new"), typeof(queue_new_delegate));
+            queue_destroy = (queue_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_queue_destroy"), typeof(queue_destroy_delegate));
+            event_type = (event_type_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_event_type"), typeof(event_type_delegate));
+            event_error = (event_error_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_event_error"), typeof(event_error_delegate));
+            event_error_string = (event_error_string_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_event_error_string"), typeof(event_error_string_delegate));
+            event_topic_partition_list = (event_topic_partition_list_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_event_topic_partition_list"), typeof(event_topic_partition_list_delegate));
+            event_destroy = (event_destroy_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_event_destroy"), typeof(event_destroy_delegate));
+            queue_poll = (queue_poll_delegate)Marshal.GetDelegateForFunctionPointer(lookup(librdkafkaAddr, "rd_kafka_queue_poll"), typeof(queue_poll_delegate));
+#else
+            version = Marshal.GetDelegateForFunctionPointer<version_delegate>(lookup(librdkafkaAddr, "rd_kafka_version"));
+            version_str = Marshal.GetDelegateForFunctionPointer<version_str_delegate>(lookup(librdkafkaAddr, "rd_kafka_version_str"));
+            get_debug_contexts = Marshal.GetDelegateForFunctionPointer<get_debug_contexts_delegate>(lookup(librdkafkaAddr, "rd_kafka_get_debug_contexts"));
+            err2str = Marshal.GetDelegateForFunctionPointer<err2str_delegate>(lookup(librdkafkaAddr, "rd_kafka_err2str"));
+            topic_partition_list_new = Marshal.GetDelegateForFunctionPointer<topic_partition_list_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_partition_list_new"));
+            topic_partition_list_destroy = Marshal.GetDelegateForFunctionPointer<topic_partition_list_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_partition_list_destroy"));
+            topic_partition_list_add = Marshal.GetDelegateForFunctionPointer<topic_partition_list_add_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_partition_list_add"));
+            last_error = Marshal.GetDelegateForFunctionPointer<last_error_delegate>(lookup(librdkafkaAddr, "rd_kafka_last_error"));
+            message_timestamp = Marshal.GetDelegateForFunctionPointer<messageTimestampDelegate>(lookup(librdkafkaAddr, "rd_kafka_message_timestamp"));
+            message_destroy = Marshal.GetDelegateForFunctionPointer<message_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_message_destroy"));
+            conf_new = Marshal.GetDelegateForFunctionPointer<conf_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_new"));
+            conf_destroy = Marshal.GetDelegateForFunctionPointer<conf_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_destroy"));
+            conf_dup = Marshal.GetDelegateForFunctionPointer<conf_dup_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_dup"));
+            conf_set = Marshal.GetDelegateForFunctionPointer<conf_set_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set"));
+            conf_set_dr_msg_cb = Marshal.GetDelegateForFunctionPointer<conf_set_dr_msg_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_dr_msg_cb"));
+            conf_set_rebalance_cb = Marshal.GetDelegateForFunctionPointer<conf_set_rebalance_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_rebalance_cb"));
+            conf_set_offset_commit_cb = Marshal.GetDelegateForFunctionPointer<conf_set_offset_commit_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_offset_commit_cb"));
+            conf_set_error_cb = Marshal.GetDelegateForFunctionPointer<conf_set_error_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_error_cb"));
+            conf_set_log_cb = Marshal.GetDelegateForFunctionPointer<conf_set_log_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_log_cb"));
+            conf_set_stats_cb = Marshal.GetDelegateForFunctionPointer<conf_set_stats_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_stats_cb"));
+            conf_set_default_topic_conf = Marshal.GetDelegateForFunctionPointer<conf_set_default_topic_conf_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_set_default_topic_conf"));
+            conf_get = Marshal.GetDelegateForFunctionPointer<ConfGet>(lookup(librdkafkaAddr, "rd_kafka_conf_get"));
+            topic_conf_get = Marshal.GetDelegateForFunctionPointer<ConfGet>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_get"));
+            conf_dump = Marshal.GetDelegateForFunctionPointer<ConfDump>(lookup(librdkafkaAddr, "rd_kafka_conf_dump"));
+            topic_conf_dump = Marshal.GetDelegateForFunctionPointer<ConfDump>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_dump"));
+            conf_dump_free = Marshal.GetDelegateForFunctionPointer<conf_dump_free_delegate>(lookup(librdkafkaAddr, "rd_kafka_conf_dump_free"));
+            topic_conf_new = Marshal.GetDelegateForFunctionPointer<topic_conf_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_new"));
+            topic_conf_dup = Marshal.GetDelegateForFunctionPointer<topic_conf_dup_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_dup"));
+            topic_conf_destroy = Marshal.GetDelegateForFunctionPointer<topic_conf_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_destroy"));
+            topic_conf_set = Marshal.GetDelegateForFunctionPointer<topic_conf_set_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set"));
+            topic_conf_set_partitioner_cb = Marshal.GetDelegateForFunctionPointer<topic_conf_set_partitioner_cb_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_conf_set_partitioner_cb"));
+            topic_partition_available = Marshal.GetDelegateForFunctionPointer<topic_partition_available_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_partition_available"));
+            kafka_new = Marshal.GetDelegateForFunctionPointer<kafka_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_new"));
+            destroy = Marshal.GetDelegateForFunctionPointer<destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_destroy"));
+            name = Marshal.GetDelegateForFunctionPointer<name_delegate>(lookup(librdkafkaAddr, "rd_kafka_name"));
+            memberid = Marshal.GetDelegateForFunctionPointer<memberid_delegate>(lookup(librdkafkaAddr, "rd_kafka_memberid"));
+            topic_new = Marshal.GetDelegateForFunctionPointer<topic_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_new"));
+            topic_destroy = Marshal.GetDelegateForFunctionPointer<topic_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_destroy"));
+            topic_name = Marshal.GetDelegateForFunctionPointer<topic_name_delegate>(lookup(librdkafkaAddr, "rd_kafka_topic_name"));
+            poll = Marshal.GetDelegateForFunctionPointer<poll_delegate>(lookup(librdkafkaAddr, "rd_kafka_poll"));
+            poll_set_consumer = Marshal.GetDelegateForFunctionPointer<poll_set_consumer_delegate>(lookup(librdkafkaAddr, "rd_kafka_poll_set_consumer"));
+            query_watermark_offsets = Marshal.GetDelegateForFunctionPointer<QueryOffsets>(lookup(librdkafkaAddr, "rd_kafka_query_watermark_offsets"));
+            get_watermark_offsets = Marshal.GetDelegateForFunctionPointer<GetOffsets>(lookup(librdkafkaAddr, "rd_kafka_get_watermark_offsets"));
+            offsets_for_times = Marshal.GetDelegateForFunctionPointer<offsets_for_times_delegate>(lookup(librdkafkaAddr, "rd_kafka_offsets_for_times"));
+            mem_free = Marshal.GetDelegateForFunctionPointer<mem_free_delegate>(lookup(librdkafkaAddr, "rd_kafka_mem_free"));
+            subscribe = Marshal.GetDelegateForFunctionPointer<subscribe_delegate>(lookup(librdkafkaAddr, "rd_kafka_subscribe"));
+            unsubscribe = Marshal.GetDelegateForFunctionPointer<unsubscribe_delegate>(lookup(librdkafkaAddr, "rd_kafka_unsubscribe"));
+            subscription = Marshal.GetDelegateForFunctionPointer<Subscription>(lookup(librdkafkaAddr, "rd_kafka_subscription"));
+            consumer_poll = Marshal.GetDelegateForFunctionPointer<consumer_poll_delegate>(lookup(librdkafkaAddr, "rd_kafka_consumer_poll"));
+            consumer_close = Marshal.GetDelegateForFunctionPointer<consumer_close_delegate>(lookup(librdkafkaAddr, "rd_kafka_consumer_close"));
+            assign = Marshal.GetDelegateForFunctionPointer<assign_delegate>(lookup(librdkafkaAddr, "rd_kafka_assign"));
+            assignment = Marshal.GetDelegateForFunctionPointer<Assignment>(lookup(librdkafkaAddr, "rd_kafka_assignment"));
+            commit = Marshal.GetDelegateForFunctionPointer<commit_delegate>(lookup(librdkafkaAddr, "rd_kafka_commit"));
+            commit_queue = Marshal.GetDelegateForFunctionPointer<commit_queue_delegate>(lookup(librdkafkaAddr, "rd_kafka_commit_queue"));
+            pause_partitions = Marshal.GetDelegateForFunctionPointer<pause_partitions_delegate>(lookup(librdkafkaAddr, "rd_kafka_pause_partitions"));
+            resume_partitions = Marshal.GetDelegateForFunctionPointer<resume_partitions_delegate>(lookup(librdkafkaAddr, "rd_kafka_resume_partitions"));
+            committed = Marshal.GetDelegateForFunctionPointer<committed_delegate>(lookup(librdkafkaAddr, "rd_kafka_committed"));
+            position = Marshal.GetDelegateForFunctionPointer<position_delegate>(lookup(librdkafkaAddr, "rd_kafka_position"));
+            produce = Marshal.GetDelegateForFunctionPointer<produce_delegate>(lookup(librdkafkaAddr, "rd_kafka_produce"));
+            producev = Marshal.GetDelegateForFunctionPointer<producev_delegate>(lookup(librdkafkaAddr, "rd_kafka_producev"));
+            flush = Marshal.GetDelegateForFunctionPointer<Flush>(lookup(librdkafkaAddr, "rd_kafka_flush"));
+            metadata = Marshal.GetDelegateForFunctionPointer<Metadata>(lookup(librdkafkaAddr, "rd_kafka_metadata"));
+            metadata_destroy = Marshal.GetDelegateForFunctionPointer<metadata_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_metadata_destroy"));
+            list_groups = Marshal.GetDelegateForFunctionPointer<ListGroups>(lookup(librdkafkaAddr, "rd_kafka_list_groups"));
+            group_list_destroy = Marshal.GetDelegateForFunctionPointer<group_list_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_group_list_destroy"));
+            brokers_add = Marshal.GetDelegateForFunctionPointer<brokers_add_delegate>(lookup(librdkafkaAddr, "rd_kafka_brokers_add"));
+            outq_len = Marshal.GetDelegateForFunctionPointer<outq_len_delegate>(lookup(librdkafkaAddr, "rd_kafka_outq_len"));
+            queue_new = Marshal.GetDelegateForFunctionPointer<queue_new_delegate>(lookup(librdkafkaAddr, "rd_kafka_queue_new"));
+            queue_destroy = Marshal.GetDelegateForFunctionPointer<queue_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_queue_destroy"));
+            event_type = Marshal.GetDelegateForFunctionPointer<event_type_delegate>(lookup(librdkafkaAddr, "rd_kafka_event_type"));
+            event_error = Marshal.GetDelegateForFunctionPointer<event_error_delegate>(lookup(librdkafkaAddr, "rd_kafka_event_error"));
+            event_error_string = Marshal.GetDelegateForFunctionPointer<event_error_string_delegate>(lookup(librdkafkaAddr, "rd_kafka_event_error_string"));
+            event_topic_partition_list = Marshal.GetDelegateForFunctionPointer<event_topic_partition_list_delegate>(lookup(librdkafkaAddr, "rd_kafka_event_topic_partition_list"));
+            event_destroy = Marshal.GetDelegateForFunctionPointer<event_destroy_delegate>(lookup(librdkafkaAddr, "rd_kafka_event_destroy"));
+            queue_poll = Marshal.GetDelegateForFunctionPointer<queue_poll_delegate>(lookup(librdkafkaAddr, "rd_kafka_queue_poll"));
+#endif
+        }
+
+        static object loadLockObj = new object();
+        static bool isInitialized = false;
+
+        public static bool IsInitialized
+        {
+            get
+            {
+                lock (loadLockObj)
+                {
+                    return isInitialized;
+                }
+            }
+        }
+
+        public static void Initialize(string userSpecifiedLibrdkafkaPath)
+        {
+            lock (loadLockObj)
+            {
+                if (!isInitialized)
+                {
+                    LoadLibrdkafka(userSpecifiedLibrdkafkaPath);
+
+                    if ((long)version() < minVersion)
+                    {
+                        throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
+                    }
+
+                    isInitialized = true;
+                }
             }
         }
 
@@ -228,240 +425,189 @@ namespace Confluent.Kafka.Impl
             IntPtr msg_opaque);
 
 
-        private static Func<IntPtr> _version;
-        internal static IntPtr version() => _version();
+        internal delegate IntPtr version_delegate();
+        internal static version_delegate version;
 
-        private static Func<IntPtr> _version_str;
-        internal static IntPtr version_str() => _version_str();
+        internal delegate IntPtr version_str_delegate();
+        internal static version_str_delegate version_str;
 
-        private static Func<IntPtr> _get_debug_contexts;
-        internal static IntPtr get_debug_contexts() => _get_debug_contexts();
+        internal delegate IntPtr get_debug_contexts_delegate();
+        internal static get_debug_contexts_delegate get_debug_contexts;
 
-        private static Func<ErrorCode, IntPtr> _err2str;
-        internal static IntPtr err2str(ErrorCode err) => _err2str(err);
+        internal delegate IntPtr err2str_delegate(ErrorCode e);
+        internal static err2str_delegate err2str;
 
-        private static Func<IntPtr, IntPtr> _topic_partition_list_new;
-        internal static IntPtr topic_partition_list_new(IntPtr size)
-            => _topic_partition_list_new(size);
+        internal delegate IntPtr topic_partition_list_new_delegate(IntPtr p);
+        internal static topic_partition_list_new_delegate topic_partition_list_new;
 
-        private static Action<IntPtr> _topic_partition_list_destroy;
-        internal static void topic_partition_list_destroy(IntPtr rkparlist)
-            => _topic_partition_list_destroy(rkparlist);
+        internal delegate void topic_partition_list_destroy_delegate(IntPtr p);
+        internal static topic_partition_list_destroy_delegate topic_partition_list_destroy;
 
-        private static Func<IntPtr, string, int, IntPtr> _topic_partition_list_add;
-        internal static IntPtr topic_partition_list_add(IntPtr rktparlist,
-                string topic, int partition)
-            => _topic_partition_list_add(rktparlist, topic, partition);
-
-        private static Func<ErrorCode> _last_error;
-        internal static ErrorCode last_error() => _last_error();
+        internal delegate IntPtr topic_partition_list_add_delegate(IntPtr p, string s, int i);
+        internal static topic_partition_list_add_delegate topic_partition_list_add;
+        
+        internal delegate ErrorCode last_error_delegate();
+        internal static last_error_delegate last_error;
 
         internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
-        private static messageTimestampDelegate _message_timestamp;
-        internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
+        internal static messageTimestampDelegate message_timestamp;
 
-        private static Action<IntPtr> _message_destroy;
-        internal static void message_destroy(IntPtr rkmessage) => _message_destroy(rkmessage);
+        internal delegate void message_destroy_delegate(IntPtr p);
+        internal static message_destroy_delegate message_destroy;
 
-        private static Func<SafeConfigHandle> _conf_new;
-        internal static SafeConfigHandle conf_new() => _conf_new();
+        internal delegate SafeConfigHandle conf_new_delegate();
+        internal static conf_new_delegate conf_new;
 
-        private static Action<IntPtr> _conf_destroy;
-        internal static void conf_destroy(IntPtr conf) => _conf_destroy(conf);
+        internal delegate void conf_destroy_delegate(IntPtr p);
+        internal static conf_destroy_delegate conf_destroy;
 
-        private static Func<IntPtr, IntPtr> _conf_dup;
-        internal static IntPtr conf_dup(IntPtr conf) => _conf_dup(conf);
+        internal delegate IntPtr conf_dup_delegate(IntPtr p);
+        internal static conf_dup_delegate conf_dup;
 
-        private static Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes> _conf_set;
-        internal static ConfRes conf_set(IntPtr conf, string name,
-                string value, StringBuilder errstr, UIntPtr errstr_size)
-            => _conf_set(conf, name, value, errstr, errstr_size);
+        internal delegate ConfRes conf_set_delegate(IntPtr p, string s, string s2, StringBuilder s3, UIntPtr p2);
+        internal static conf_set_delegate conf_set;
+        
+        internal delegate void conf_set_dr_msg_cb_delegate(IntPtr p, DeliveryReportDelegate d);
+        internal static conf_set_dr_msg_cb_delegate conf_set_dr_msg_cb;
 
-        private static Action<IntPtr, DeliveryReportDelegate> _conf_set_dr_msg_cb;
-        internal static void conf_set_dr_msg_cb(IntPtr conf, DeliveryReportDelegate dr_msg_cb)
-            => _conf_set_dr_msg_cb(conf, dr_msg_cb);
+        internal delegate void conf_set_rebalance_cb_delegate(IntPtr p, RebalanceDelegate d);
+        internal static conf_set_rebalance_cb_delegate conf_set_rebalance_cb;
 
-        private static Action<IntPtr, RebalanceDelegate> _conf_set_rebalance_cb;
-        internal static void conf_set_rebalance_cb(IntPtr conf, RebalanceDelegate rebalance_cb)
-            => _conf_set_rebalance_cb(conf, rebalance_cb);
+        internal delegate void conf_set_offset_commit_cb_delegate(IntPtr p, CommitDelegate d);
+        internal static conf_set_offset_commit_cb_delegate conf_set_offset_commit_cb;
 
-        private static Action<IntPtr, CommitDelegate> _conf_set_offset_commit_cb;
-        internal static void conf_set_offset_commit_cb(IntPtr conf, CommitDelegate commit_cb)
-            => _conf_set_offset_commit_cb(conf, commit_cb);
+        internal delegate void conf_set_error_cb_delegate(IntPtr p, ErrorDelegate d);
+        internal static conf_set_error_cb_delegate conf_set_error_cb;
 
-        private static Action<IntPtr, ErrorDelegate> _conf_set_error_cb;
-        internal static void conf_set_error_cb(IntPtr conf, ErrorDelegate error_cb)
-            => _conf_set_error_cb(conf, error_cb);
+        internal delegate void conf_set_log_cb_delegate(IntPtr p, LogDelegate d);
+        internal static conf_set_log_cb_delegate conf_set_log_cb;
 
-        private static Action<IntPtr, LogDelegate> _conf_set_log_cb;
-        internal static void conf_set_log_cb(IntPtr conf, LogDelegate log_cb)
-            => _conf_set_log_cb(conf, log_cb);
+        internal delegate void conf_set_stats_cb_delegate(IntPtr p, StatsDelegate d);
+        internal static conf_set_stats_cb_delegate conf_set_stats_cb;
 
-        private static Action<IntPtr, StatsDelegate> _conf_set_stats_cb;
-        internal static void conf_set_stats_cb(IntPtr conf, StatsDelegate stats_cb)
-            => _conf_set_stats_cb(conf, stats_cb);
+        internal delegate void conf_set_default_topic_conf_delegate(IntPtr p, IntPtr p2);
+        internal static conf_set_default_topic_conf_delegate conf_set_default_topic_conf;
 
-        private static Action<IntPtr, IntPtr> _conf_set_default_topic_conf;
-        internal static void conf_set_default_topic_conf(IntPtr conf, IntPtr tconf)
-            => _conf_set_default_topic_conf(conf, tconf);
 
-        private delegate ConfRes ConfGet(IntPtr conf, string name, StringBuilder dest,
-                ref UIntPtr dest_size);
-        private static ConfGet _conf_get;
-        internal static ConfRes conf_get(IntPtr conf, string name,
-                StringBuilder dest, ref UIntPtr dest_size)
-            => _conf_get(conf, name, dest, ref dest_size);
+        internal delegate ConfRes ConfGet(IntPtr conf, string name, StringBuilder dest, ref UIntPtr dest_size);
+        internal static ConfGet conf_get;
+        internal static ConfGet topic_conf_get;
 
-        private static ConfGet _topic_conf_get;
-        internal static ConfRes topic_conf_get(IntPtr conf, string name,
-                StringBuilder dest, ref UIntPtr dest_size)
-            => _topic_conf_get(conf, name, dest, ref dest_size);
+        internal delegate IntPtr ConfDump(IntPtr conf, out UIntPtr cntp);
+        internal static ConfDump conf_dump;
+        internal static ConfDump topic_conf_dump;
 
-        private delegate IntPtr ConfDump(IntPtr conf, out UIntPtr cntp);
-        private static ConfDump _conf_dump;
-        internal static IntPtr conf_dump(IntPtr conf, out UIntPtr cntp)
-            => _conf_dump(conf, out cntp);
+        internal delegate void conf_dump_free_delegate(IntPtr p, UIntPtr p2);
+        internal static conf_dump_free_delegate conf_dump_free;
 
-        private static ConfDump _topic_conf_dump;
-        internal static IntPtr topic_conf_dump(IntPtr conf, out UIntPtr cntp)
-            => _topic_conf_dump(conf, out cntp);
+        internal delegate SafeTopicConfigHandle topic_conf_new_delegate();
+        internal static topic_conf_new_delegate topic_conf_new;
 
-        private static Action<IntPtr, UIntPtr> _conf_dump_free;
-        internal static void conf_dump_free(IntPtr arr, UIntPtr cnt)
-            => _conf_dump_free(arr, cnt);
+        internal delegate IntPtr topic_conf_dup_delegate(IntPtr p);
+        internal static topic_conf_dup_delegate topic_conf_dup;
 
-        private static Func<SafeTopicConfigHandle> _topic_conf_new;
-        internal static SafeTopicConfigHandle topic_conf_new() => _topic_conf_new();
+        internal delegate void topic_conf_destroy_delegate(IntPtr p);
+        internal static topic_conf_destroy_delegate topic_conf_destroy;
 
-        private static Func<IntPtr, IntPtr> _topic_conf_dup;
-        internal static IntPtr topic_conf_dup(IntPtr conf) => _topic_conf_dup(conf);
+        internal delegate ConfRes topic_conf_set_delegate(IntPtr p, string s, string s1, StringBuilder s2, UIntPtr p1);
+        internal static topic_conf_set_delegate topic_conf_set;
 
-        private static Action<IntPtr> _topic_conf_destroy;
-        internal static void topic_conf_destroy(IntPtr conf) => _topic_conf_destroy(conf);
+        internal delegate void topic_conf_set_partitioner_cb_delegate(IntPtr p, PartitionerDelegate d);
+        internal static topic_conf_set_partitioner_cb_delegate topic_conf_set_partitioner_cb;
 
-        private static Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes> _topic_conf_set;
-        internal static ConfRes topic_conf_set(IntPtr conf, string name,
-                string value, StringBuilder errstr, UIntPtr errstr_size)
-            => _topic_conf_set(conf, name, value, errstr, errstr_size);
+        internal delegate bool topic_partition_available_delegate(IntPtr p, int i);
+        internal static topic_partition_available_delegate topic_partition_available;
 
-        private static Action<IntPtr, PartitionerDelegate> _topic_conf_set_partitioner_cb;
-        internal static void topic_conf_set_partitioner_cb(
-                IntPtr topic_conf, PartitionerDelegate partitioner_cb)
-            => _topic_conf_set_partitioner_cb(topic_conf, partitioner_cb);
+        internal delegate SafeKafkaHandle kafka_new_delegate(RdKafkaType t, IntPtr p, StringBuilder s, UIntPtr p2);
+        internal static kafka_new_delegate kafka_new;
 
-        private static Func<IntPtr, int, bool> _topic_partition_available;
-        internal static bool topic_partition_available(IntPtr rkt, int partition)
-            => _topic_partition_available(rkt, partition);
+        internal delegate void destroy_delegate(IntPtr p);
+        internal static destroy_delegate destroy;
 
-        private static Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle> _new;
-        internal static SafeKafkaHandle kafka_new(RdKafkaType type, IntPtr conf,
-                StringBuilder errstr, UIntPtr errstr_size)
-            => _new(type, conf, errstr, errstr_size);
+        internal delegate IntPtr name_delegate(IntPtr p);
+        internal static name_delegate name;
 
-        private static Action<IntPtr> _destroy;
-        internal static void destroy(IntPtr rk) => _destroy(rk);
+        internal delegate IntPtr memberid_delegate(IntPtr p);
+        internal static memberid_delegate memberid;
 
-        private static Func<IntPtr, IntPtr> _name;
-        internal static IntPtr name(IntPtr rk) => _name(rk);
+        internal delegate SafeTopicHandle topic_new_delegate(IntPtr p, string s, IntPtr p2);
+        internal static topic_new_delegate topic_new;
 
-        private static Func<IntPtr, IntPtr> _memberid;
-        internal static IntPtr memberid(IntPtr rk) => _memberid(rk);
+        internal delegate void topic_destroy_delegate(IntPtr p);
+        internal static topic_destroy_delegate topic_destroy;
 
-        private static Func<IntPtr, string, IntPtr, SafeTopicHandle> _topic_new;
-        internal static SafeTopicHandle topic_new(IntPtr rk, string topic, IntPtr conf)
-            => _topic_new(rk, topic, conf);
+        internal delegate IntPtr topic_name_delegate(IntPtr p);
+        internal static topic_name_delegate topic_name;
 
-        private static Action<IntPtr> _topic_destroy;
-        internal static void topic_destroy(IntPtr rk) => _topic_destroy(rk);
+        internal delegate ErrorCode poll_set_consumer_delegate(IntPtr p);
+        internal static poll_set_consumer_delegate poll_set_consumer;
 
-        private static Func<IntPtr, IntPtr> _topic_name;
-        internal static IntPtr topic_name(IntPtr rkt) => _topic_name(rkt);
+        internal delegate IntPtr poll_delegate(IntPtr p, IntPtr p1);
+        internal static poll_delegate poll;
 
-        private static Func<IntPtr, ErrorCode> _poll_set_consumer;
-        internal static ErrorCode poll_set_consumer(IntPtr rk) => _poll_set_consumer(rk);
-
-        private static Func<IntPtr, IntPtr, IntPtr> _poll;
-        internal static IntPtr poll(IntPtr rk, IntPtr timeout_ms) => _poll(rk, timeout_ms);
-
-        private delegate ErrorCode QueryOffsets(IntPtr rk, string topic, int partition,
+        internal delegate ErrorCode QueryOffsets(IntPtr rk, string topic, int partition,
                 out long low, out long high, IntPtr timeout_ms);
-        private static QueryOffsets _query_watermark_offsets;
-        internal static ErrorCode query_watermark_offsets(IntPtr rk, string topic, int partition,
-                out long low, out long high, IntPtr timeout_ms)
-            => _query_watermark_offsets(rk, topic, partition, out low, out high, timeout_ms);
+        internal static QueryOffsets query_watermark_offsets;
 
-        private delegate ErrorCode GetOffsets(IntPtr rk, string topic, int partition,
+        internal delegate ErrorCode GetOffsets(IntPtr rk, string topic, int partition,
                 out long low, out long high);
-        private static GetOffsets _get_watermark_offsets;
-        internal static ErrorCode get_watermark_offsets(IntPtr rk, string topic, int partition,
-                out long low, out long high)
-            => _get_watermark_offsets(rk, topic, partition, out low, out high);
 
-        private delegate ErrorCode OffsetsForTimes(IntPtr rk, IntPtr offsets, IntPtr timeout_ms);
-        private static OffsetsForTimes _offsets_for_times;
-        internal static ErrorCode offsets_for_times(IntPtr rk, IntPtr offsets, IntPtr timeout_ms)
-            => _offsets_for_times(rk, offsets, timeout_ms);
+        internal static GetOffsets get_watermark_offsets;
 
-        private static Action<IntPtr, IntPtr> _mem_free;
-        internal static void mem_free(IntPtr rk, IntPtr ptr)
-            => _mem_free(rk, ptr);
+        internal delegate ErrorCode offsets_for_times_delegate(IntPtr rk, IntPtr offsets, IntPtr timeout_ms);
+        internal static offsets_for_times_delegate offsets_for_times;
 
-        private static Func<IntPtr, IntPtr, ErrorCode> _subscribe;
-        internal static ErrorCode subscribe(IntPtr rk, IntPtr topics) => _subscribe(rk, topics);
+        internal delegate IntPtr mem_free_delegate(IntPtr p, IntPtr p2);
+        internal static mem_free_delegate mem_free;
 
-        private static Func<IntPtr, ErrorCode> _unsubscribe;
-        internal static ErrorCode unsubscribe(IntPtr rk) => _unsubscribe(rk);
+        internal delegate ErrorCode subscribe_delegate(IntPtr p, IntPtr p1);
+        internal static subscribe_delegate subscribe;
 
-        private delegate ErrorCode Subscription(IntPtr rk, out IntPtr topics);
-        private static Subscription _subscription;
-        internal static ErrorCode subscription(IntPtr rk, out IntPtr topics)
-            => _subscription(rk, out topics);
+        internal delegate ErrorCode unsubscribe_delegate(IntPtr p);
+        internal static unsubscribe_delegate unsubscribe;
+        
+        internal delegate ErrorCode Subscription(IntPtr rk, out IntPtr topics);
+        internal static Subscription subscription;
 
-        private static Func<IntPtr, IntPtr, IntPtr> _consumer_poll;
-        internal static IntPtr consumer_poll(IntPtr rk, IntPtr timeout_ms)
-            => _consumer_poll(rk, timeout_ms);
+        internal delegate IntPtr consumer_poll_delegate(IntPtr p, IntPtr p2);
+        internal static consumer_poll_delegate consumer_poll;
 
-        private static Func<IntPtr, ErrorCode> _consumer_close;
-        internal static ErrorCode consumer_close(IntPtr rk) => _consumer_close(rk);
+        internal delegate ErrorCode consumer_close_delegate(IntPtr p);
+        internal static consumer_close_delegate consumer_close;
 
-        private static Func<IntPtr, IntPtr, ErrorCode> _assign;
-        internal static ErrorCode assign(IntPtr rk, IntPtr partitions)
-            => _assign(rk, partitions);
+        internal delegate ErrorCode assign_delegate(IntPtr p, IntPtr p2);
+        internal static assign_delegate assign;
 
-        private delegate ErrorCode Assignment(IntPtr rk, out IntPtr topics);
-        private static Assignment _assignment;
-        internal static ErrorCode assignment(IntPtr rk, out IntPtr topics)
-            => _assignment(rk, out topics);
 
-        private static Func<IntPtr, IntPtr, bool, ErrorCode> _commit;
-        internal static ErrorCode commit(IntPtr rk, IntPtr offsets, bool async)
-            => _commit(rk, offsets, async);
+        internal delegate ErrorCode Assignment(IntPtr rk, out IntPtr topics);
+        internal static Assignment assignment;
 
-        private static Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode> _commit_queue;
-        internal static ErrorCode commit_queue(IntPtr rk, IntPtr offsets, IntPtr rkqu,
-            CommitDelegate cb, IntPtr opaque)
-            => _commit_queue(rk, offsets, rkqu, cb, opaque);
+        internal delegate ErrorCode commit_delegate(IntPtr p, IntPtr p2, bool b);
+        internal static commit_delegate commit;
 
-        private static Func<IntPtr, IntPtr, ErrorCode> _pause_partitions;
-        internal static ErrorCode pause_partitions(IntPtr rk, IntPtr partitions)
-            => _pause_partitions(rk, partitions);
+        internal delegate ErrorCode commit_queue_delegate(IntPtr p, IntPtr p2, IntPtr p3, CommitDelegate d, IntPtr p4);
+        internal static commit_queue_delegate commit_queue;
 
-        private static Func<IntPtr, IntPtr, ErrorCode> _resume_partitions;
-        internal static ErrorCode resume_partitions(IntPtr rk, IntPtr partitions)
-            => _resume_partitions(rk, partitions);
+        internal delegate ErrorCode pause_partitions_delegate(IntPtr p, IntPtr p2);
+        internal static pause_partitions_delegate pause_partitions;
 
-        private static Func<IntPtr, IntPtr, IntPtr, ErrorCode> _committed;
-        internal static ErrorCode committed(IntPtr rk, IntPtr partitions, IntPtr timeout_ms)
-            => _committed(rk, partitions, timeout_ms);
+        internal delegate ErrorCode resume_partitions_delegate(IntPtr p, IntPtr p2);
+        internal static resume_partitions_delegate resume_partitions;
 
-        private static Func<IntPtr, IntPtr, ErrorCode> _position;
-        internal static ErrorCode position(IntPtr rk, IntPtr partitions)
-            => _position(rk, partitions);
+        internal delegate ErrorCode committed_delegate(IntPtr p, IntPtr p1, IntPtr p2);
+        internal static committed_delegate committed;
+
+        internal delegate ErrorCode position_delegate(IntPtr p1, IntPtr p2);
+        internal static position_delegate position;
+
+        internal delegate IntPtr produce_delegate(IntPtr p, int i, IntPtr p2, IntPtr p3, UIntPtr p4, IntPtr p5, UIntPtr p6, IntPtr p7);
+        internal static produce_delegate produce;
+
 
         /// <summary>
         ///     Var-arg tag types, used in producev
         /// </summary>
-        private enum ProduceVarTag
+        internal enum ProduceVarTag
         {
             End,       // va-arg sentinel
             Topic,     // (const char *) Topic name
@@ -474,429 +620,73 @@ namespace Confluent.Kafka.Impl
             Timestamp, // (int64_t) Milliseconds since epoch UTC
         }
 
-        private delegate ErrorCode Producev(IntPtr rk,
-                ProduceVarTag topicTag, string topic,
-                ProduceVarTag partitionTag, int partition,
-                ProduceVarTag vaTag, IntPtr val, UIntPtr len,
-                ProduceVarTag keyTag, IntPtr key, UIntPtr keylen,
-                ProduceVarTag msgflagsTag, IntPtr msgflags,
-                ProduceVarTag msg_opaqueTag, IntPtr msg_opaque,
-                ProduceVarTag timestampTag, long timestamp,
-                ProduceVarTag endTag);
-        private static Producev _producev;
-        internal static ErrorCode producev(
-                IntPtr rk,
-                string topic,
-                int partition,
-                IntPtr msgflags,
-                IntPtr val, UIntPtr len,
-                IntPtr key, UIntPtr keylen,
-                long timestamp,
-                IntPtr msg_opaque)
-            => _producev(rk,
-                    ProduceVarTag.Topic, topic,
-                    ProduceVarTag.Partition, partition,
-                    ProduceVarTag.Value, val, len,
-                    ProduceVarTag.Key, key, keylen,
-                    ProduceVarTag.Opaque, msg_opaque,
-                    ProduceVarTag.MsgFlags, msgflags,
-                    ProduceVarTag.Timestamp, timestamp,
-                    ProduceVarTag.End);
+        internal delegate ErrorCode producev_delegate(
+            IntPtr rk,
+            ProduceVarTag topicTag, string topic,
+            ProduceVarTag partitionTag, int partition,
+            ProduceVarTag vaTag, IntPtr val, UIntPtr len,
+            ProduceVarTag keyTag, IntPtr key, UIntPtr keylen,
+            ProduceVarTag msgflagsTag, IntPtr msgflags,
+            ProduceVarTag msg_opaqueTag, IntPtr msg_opaque,
+            ProduceVarTag timestampTag, long timestamp,
+            ProduceVarTag endTag);
+        internal static producev_delegate producev;
 
-        private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
-        private static Flush _flush;
-        internal static ErrorCode flush(IntPtr rk, IntPtr timeout_ms)
-            => _flush(rk, timeout_ms);
+        internal delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
+        internal static Flush flush;
 
-        private delegate ErrorCode Metadata(IntPtr rk, bool all_topics,
+        internal delegate ErrorCode Metadata(IntPtr rk, bool all_topics,
                 IntPtr only_rkt, out IntPtr metadatap, IntPtr timeout_ms);
-        private static Metadata _metadata;
-        internal static ErrorCode metadata(IntPtr rk, bool all_topics,
-                IntPtr only_rkt, out IntPtr metadatap, IntPtr timeout_ms)
-            => _metadata(rk, all_topics, only_rkt, out metadatap, timeout_ms);
+        internal static Metadata metadata;
 
-        private static Action<IntPtr> _metadata_destroy;
-        internal static void metadata_destroy(IntPtr metadata)
-            => _metadata_destroy(metadata);
+        internal delegate void metadata_destroy_delegate(IntPtr p);
+        internal static metadata_destroy_delegate metadata_destroy;
 
-        private delegate ErrorCode ListGroups(IntPtr rk, string group,
+        internal delegate ErrorCode ListGroups(IntPtr rk, string group,
                 out IntPtr grplistp, IntPtr timeout_ms);
-        private static ListGroups _list_groups;
-        internal static ErrorCode list_groups(IntPtr rk, string group,
-                out IntPtr grplistp, IntPtr timeout_ms)
-            => _list_groups(rk, group, out grplistp, timeout_ms);
+        internal static ListGroups list_groups;
 
-        private static Action<IntPtr> _group_list_destroy;
-        internal static void group_list_destroy(IntPtr grplist)
-            => _group_list_destroy(grplist);
+        internal delegate void group_list_destroy_delegate(IntPtr p);
+        internal static group_list_destroy_delegate group_list_destroy;
 
-        private static Func<IntPtr, string, IntPtr> _brokers_add;
-        internal static IntPtr brokers_add(IntPtr rk, string brokerlist)
-            => _brokers_add(rk, brokerlist);
+        internal delegate IntPtr brokers_add_delegate(IntPtr p, string s);
+        internal static brokers_add_delegate brokers_add;
 
-        private static Func<IntPtr, int> _outq_len;
-        internal static int outq_len(IntPtr rk) => _outq_len(rk);
+        internal delegate int outq_len_delegate(IntPtr p);
+        internal static outq_len_delegate outq_len;
 
         //
         // Queues
         //
-        private static Func<IntPtr, IntPtr> _queue_new;
-        internal static IntPtr queue_new(IntPtr rk)
-            => _queue_new(rk);
+        internal delegate IntPtr queue_new_delegate(IntPtr p);
+        internal static queue_new_delegate queue_new;
 
-        private static Action<IntPtr> _queue_destroy;
-        internal static void queue_destroy(IntPtr rkqu)
-            => _queue_destroy(rkqu);
+        internal delegate void queue_destroy_delegate(IntPtr p);
+        internal static queue_destroy_delegate queue_destroy;
 
-        private static Func<IntPtr, IntPtr, IntPtr> _queue_poll;
-        internal static IntPtr queue_poll(IntPtr rkqu, int timeout_ms)
-            => _queue_poll(rkqu, (IntPtr)timeout_ms);
+        internal delegate IntPtr queue_poll_delegate(IntPtr p, IntPtr p2);
+        internal static queue_poll_delegate queue_poll;
 
         //
         // Events
         //
-        private static Action<IntPtr> _event_destroy;
-        internal static void event_destroy(IntPtr rkev)
-            => _event_destroy(rkev);
 
-        private static Func<IntPtr, int> _event_type;
-        internal static int event_type(IntPtr rkev)
-            => _event_type(rkev);
+        internal delegate void event_destroy_delegate(IntPtr p);
+        internal static event_destroy_delegate event_destroy;
 
-        private static Func<IntPtr, ErrorCode> _event_error;
-        internal static ErrorCode event_error(IntPtr rkev)
-            => _event_error(rkev);
+        internal delegate int event_type_delegate(IntPtr p);
+        internal static event_type_delegate event_type;
 
-        private static Func<IntPtr, IntPtr> _event_error_string;
-        internal static string event_error_string(IntPtr rkev)
-            => Util.Marshal.PtrToStringUTF8(_event_error_string(rkev));
+        internal delegate ErrorCode event_error_delegate(IntPtr p);
+        internal static event_error_delegate event_error;
 
-        private static Func<IntPtr, IntPtr> _event_topic_partition_list;
-        internal static IntPtr event_topic_partition_list(IntPtr rkev)
-            => _event_topic_partition_list(rkev);
+        internal delegate IntPtr event_error_string_delegate(IntPtr p);
+        internal static event_error_string_delegate event_error_string;
+        internal static string event_error_string_utf8(IntPtr rkev)
+            => Util.Marshal.PtrToStringUTF8(event_error_string(rkev));
 
-
-
-        private class NativeMethods
-        {
-            public const string DllName = "librdkafka";
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_version();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_version_str();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_get_debug_contexts();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_err2str(ErrorCode err);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_last_error();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_topic_partition_list_t * */ IntPtr
-            rd_kafka_topic_partition_list_new(IntPtr size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_partition_list_destroy(
-                    /* rd_kafka_topic_partition_list_t * */ IntPtr rkparlist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_topic_partition_t * */ IntPtr
-            rd_kafka_topic_partition_list_add(
-                    /* rd_kafka_topic_partition_list_t * */ IntPtr rktparlist,
-                    string topic, int partition);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* int64_t */ long rd_kafka_message_timestamp(
-                    /* rd_kafka_message_t * */ IntPtr rkmessage,
-                    /* r_kafka_timestamp_type_t * */ out IntPtr tstype);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_message_destroy(
-                    /* rd_kafka_message_t * */ IntPtr rkmessage);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeConfigHandle rd_kafka_conf_new();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_destroy(IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_conf_dup(IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_conf_set(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    [MarshalAs(UnmanagedType.LPStr)] string value,
-                    StringBuilder errstr,
-                    UIntPtr errstr_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_dr_msg_cb(
-                    IntPtr conf,
-                    DeliveryReportDelegate dr_msg_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_rebalance_cb(
-                    IntPtr conf, RebalanceDelegate rebalance_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_offset_commit_cb(
-                    IntPtr conf, CommitDelegate commit_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_error_cb(
-                    IntPtr conf, ErrorDelegate error_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, LogDelegate log_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_stats_cb(IntPtr conf, StatsDelegate stats_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_default_topic_conf(
-                    IntPtr conf, IntPtr tconf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_conf_get(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    StringBuilder dest, ref UIntPtr dest_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_topic_conf_get(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    StringBuilder dest, ref UIntPtr dest_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char ** */ IntPtr rd_kafka_conf_dump(
-                    IntPtr conf, /* size_t * */ out UIntPtr cntp);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char ** */ IntPtr rd_kafka_topic_conf_dump(
-                    IntPtr conf, out UIntPtr cntp);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_dump_free(/* const char ** */ IntPtr arr, UIntPtr cnt);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeTopicConfigHandle rd_kafka_topic_conf_new();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_topic_conf_t * */ IntPtr rd_kafka_topic_conf_dup(
-                    /* const rd_kafka_topic_conf_t * */ IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_conf_destroy(IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_topic_conf_set(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    [MarshalAs(UnmanagedType.LPStr)] string value,
-                    StringBuilder errstr,
-                    UIntPtr errstr_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_conf_set_partitioner_cb(
-                    IntPtr topic_conf, PartitionerDelegate partitioner_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern bool rd_kafka_topic_partition_available(
-                    IntPtr rkt, int partition);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeKafkaHandle rd_kafka_new(
-                    RdKafkaType type, IntPtr conf,
-                    StringBuilder errstr,
-                    UIntPtr errstr_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_destroy(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char * */ IntPtr rd_kafka_name(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* char * */ IntPtr rd_kafka_memberid(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeTopicHandle rd_kafka_topic_new(
-                    IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string topic,
-                    /* rd_kafka_topic_conf_t * */ IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_destroy(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char * */ IntPtr rd_kafka_topic_name(IntPtr rkt);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_poll_set_consumer(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_poll(IntPtr rk, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_query_watermark_offsets(IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string topic,
-                    int partition, out long low, out long high, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_get_watermark_offsets(IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string topic,
-                    int partition, out long low, out long high);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_offsets_for_times(IntPtr rk,
-                /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
-                IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_mem_free(IntPtr rk, IntPtr ptr);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_subscribe(IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr topics);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_unsubscribe(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_subscription(IntPtr rk,
-                    /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_message_t * */ IntPtr rd_kafka_consumer_poll(
-                    IntPtr rk, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_consumer_close(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_assign(IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr partitions);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_assignment(IntPtr rk,
-                    /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_commit(
-                    IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
-                    bool async);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_commit_queue(
-                    IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
-                    /* rd_kafka_queue_t * */ IntPtr rkqu,
-                    /* offset_commit_cb * */ CommitDelegate cb,
-                    /* void * */ IntPtr opaque);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_pause_partitions(
-                    IntPtr rk, IntPtr partitions);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_resume_partitions(
-                    IntPtr rk, IntPtr partitions);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_committed(
-                    IntPtr rk, IntPtr partitions, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_position(
-                    IntPtr rk, IntPtr partitions);
-
-            // note: producev signature is rd_kafka_producev(rk, ...)
-            // we are keeping things simple with one binding for now, but it 
-            // will be worth benchmarking the overload with no timestamp, opaque,
-            // partition, etc
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_producev(
-                IntPtr rk,
-                ProduceVarTag topicType, [MarshalAs(UnmanagedType.LPStr)] string topic,
-                ProduceVarTag partitionType, int partition,
-                ProduceVarTag vaType, IntPtr val, UIntPtr len,
-                ProduceVarTag keyType, IntPtr key, UIntPtr keylen,
-                ProduceVarTag msgflagsType, IntPtr msgflags,
-                ProduceVarTag msg_opaqueType, IntPtr msg_opaque,
-                ProduceVarTag timestampType, long timestamp,
-                ProduceVarTag endType);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_flush(
-                IntPtr rk,
-                IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_metadata(
-                IntPtr rk, bool all_topics,
-                /* rd_kafka_topic_t * */ IntPtr only_rkt,
-                /* const struct rd_kafka_metadata ** */ out IntPtr metadatap,
-                IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_metadata_destroy(
-                    /* const struct rd_kafka_metadata * */ IntPtr metadata);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_list_groups(
-                    IntPtr rk, string group, out IntPtr grplistp,
-                    IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_group_list_destroy(
-                    IntPtr grplist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_brokers_add(IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string brokerlist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern int rd_kafka_outq_len(IntPtr rk);
-
-            //
-            // Queues
-            //
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_queue_new(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_queue_destroy(IntPtr rkqu);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, IntPtr timeout_ms);
-
-            //
-            // Events
-            //
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_event_destroy(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern int rd_kafka_event_type(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_event_error(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_event_error_string(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_event_topic_partition_list(IntPtr rkev);
-        }
+        internal delegate IntPtr event_topic_partition_list_delegate(IntPtr p);
+        internal static event_topic_partition_list_delegate event_topic_partition_list;
 
     }
 }
