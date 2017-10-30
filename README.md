@@ -58,7 +58,7 @@ Pre-release nuget packages are available from the following nuget package source
 The version suffix of these nuget packages matches the appveyor build number. You can see which commit a 
 particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
- 
+
 
 ## Examples
 

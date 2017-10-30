@@ -23,7 +23,9 @@ using System.Text;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-
+#if NET45 || NET46
+using System.ComponentModel;
+#endif
 
 namespace Confluent.Kafka.Impl
 {
@@ -98,7 +100,8 @@ namespace Confluent.Kafka.Impl
         {
             LibraryOpenDelegate openLib = null;
             SymbolLookupDelegate lookupSymbol = null;
-            string[][] librdkafkaTryPaths = new string[0][];
+            string[] librdkafkaTryNames = new string[0];
+            IntPtr librdkafkaAddr = IntPtr.Zero;
 
 #if NET45 || NET46
             openLib = (string name)
@@ -108,9 +111,27 @@ namespace Confluent.Kafka.Impl
                             WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH);
             lookupSymbol = WindowsNative.GetProcAddress;
 
-            librdkafkaTryPaths = IntPtr.Size == 8
-                ? new [] { new string[] { "win-x64", "librdkafka.dll" } }
-                : new [] { new string[] { "win-x86", "librdkafka.dll" } };
+            var is64 = IntPtr.Size == 8;
+            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
+            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+            var dllDirectory = Path.Combine(baseDirectory, 
+                is64 
+                    ? Path.Combine("librdkafka", "x64") 
+                    : Path.Combine("librdkafka", "x86"));
+            librdkafkaAddr = openLib(dllDirectory);
+
+            if (librdkafkaAddr == IntPtr.Zero)
+            {
+                // catch the last win32 error by default and keep the associated default message
+                var win32Exception = new Win32Exception();
+                var additionalMessage =
+                    $"Error while loading librdkafka.dll or its dependencies from {dllDirectory}. " +
+                    $"Check the directory exists, if not check your deployment process. " +
+                    $"You can also load the library and its dependencies by yourself " +
+                    $"before any call to Confluent.Kafka";
+
+                throw new InvalidOperationException(additionalMessage, win32Exception);
+            }
 #else
             const int RTLD_NOW = 2;
 
@@ -118,24 +139,15 @@ namespace Confluent.Kafka.Impl
             {
                 openLib = (string name) => OsxNative.dlopen(name, RTLD_NOW);
                 lookupSymbol = OsxNative.dlsym;
-                if (RuntimeInformation.OSArchitecture == Architecture.X64)
-                {
-                    librdkafkaTryPaths = new [] { new string[] { "osx-x64", "librdkafka.dylib" } };
-                }
-            } 
+                librdkafkaTryNames = new string[] { "librdkafka.dylib" };
+            }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 openLib = (string name) => LinuxNative.dlopen(name, RTLD_NOW);
                 lookupSymbol = LinuxNative.dlsym;
                 if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
-                    // TODO: more sophisticated discovery / ordering of this list (check
-                    // what specific platform we're on) + more library options (libssl 
-                    // 1.0.2).
-                    librdkafkaTryPaths = new [] { 
-                        new string[] { "debian-x64", "librdkafka.so" },
-                        new string[] { "rhel-x64", "librdkafka.so" }
-                    };
+                    librdkafkaTryNames = new string[] { "librdkafka.so-libssl1.0.0.so" };
                 }
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -146,20 +158,15 @@ namespace Confluent.Kafka.Impl
                             IntPtr.Zero, 
                             WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH);
                 lookupSymbol = WindowsNative.GetProcAddress;
-                
-                librdkafkaTryPaths = RuntimeInformation.OSArchitecture == Architecture.X64
-                    ? new [] { new string[] { "win-x64", "librdkafka.dll" } }
-                    : new [] { new string[] { "win-x86", "librdkafka.dll" } };
+                librdkafkaTryNames = new string[] { "librdkafka.dll" };
             }
             else
             {
                 throw new Exception($"Unsupported platform: {RuntimeInformation.OSDescription}");
             }
-#endif
 
             var loadPathsAttempted = new List<string>();
 
-            IntPtr librdkafkaAddr = IntPtr.Zero;
             if (userSpecifiedLibrdkafkaPath != null)
             {
                 librdkafkaAddr = openLib(userSpecifiedLibrdkafkaPath);
@@ -167,18 +174,10 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                foreach (var librdkafkaName in librdkafkaTryPaths)
+                foreach (var librdkafkaName in librdkafkaTryNames)
                 {
-#if NET45 || NET46
-                    var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
-                    var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-#else
-                    var baseDirectory = AppContext.BaseDirectory;
-                    // var baseDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-#endif
-                    var path = Path.Combine(baseDirectory, "librdkafka", librdkafkaName[0], librdkafkaName[1]);
-                    loadPathsAttempted.Add(path);
-                    librdkafkaAddr = openLib(path);
+                    loadPathsAttempted.Add(librdkafkaName);
+                    librdkafkaAddr = openLib(librdkafkaName);
                     if (librdkafkaAddr != IntPtr.Zero)
                     {
                         break;
@@ -188,11 +187,12 @@ namespace Confluent.Kafka.Impl
 
             if (librdkafkaAddr == IntPtr.Zero)
             {
-                throw new DllNotFoundException("Failed to load the librdkafka native library. Load paths attempted: " + string.Join("; ", loadPathsAttempted.ToArray()));
+                throw new DllNotFoundException("Failed to load the librdkafka native library. Attempted to load: " + string.Join("; ", loadPathsAttempted.ToArray()));
             }
 
             LibraryPath = loadPathsAttempted[loadPathsAttempted.Count-1];
 
+#endif
             InitializeDelegates(librdkafkaAddr, lookupSymbol);
         }
 

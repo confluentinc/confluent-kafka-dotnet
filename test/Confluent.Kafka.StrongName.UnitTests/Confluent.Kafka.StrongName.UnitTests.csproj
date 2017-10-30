@@ -24,11 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="librdkafka.redist.win-x64" Version="0.11.1-TEST4" />
-    <PackageReference Include="librdkafka.redist.win-x86" Version="0.11.1-TEST4" />
-    <PackageReference Include="librdkafka.redist.osx-x64" Version="0.11.1-TEST4" />
-    <PackageReference Include="librdkafka.redist.debian-x64" Version="0.11.1-TEST4" />
-    <PackageReference Include="librdkafka.redist.rhel-x64" Version="0.11.1-TEST4" />
+    <PackageReference Include="librdkafka.redist" Version="0.11.1-TEST6" />
   </ItemGroup>
 
   <ItemGroup>

@@ -19,16 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>		
-    <PackageReference Include="librdkafka.redist.win-x64" Version="0.11.1-TEST4">
-      <IncludeAssets>all</IncludeAssets>
-      <ExcludeAssets>none</ExcludeAssets>
-      <PrivateAssets>none</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="librdkafka.redist.win-x86" Version="0.11.1-TEST4">
-      <IncludeAssets>all</IncludeAssets>
-      <ExcludeAssets>none</ExcludeAssets>
-      <PrivateAssets>none</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="librdkafka.redist" Version="0.11.1-TEST6" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
