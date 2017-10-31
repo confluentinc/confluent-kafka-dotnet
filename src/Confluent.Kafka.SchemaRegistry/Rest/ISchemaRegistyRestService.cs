@@ -20,7 +20,7 @@ using Confluent.Kafka.SchemaRegistry.Rest.Entities;
 using Confluent.Kafka.SchemaRegistry.Rest.Entities.Requests;
 
 
-namespace  Confluent.Kafka.SchemaRegistry.Rest
+namespace Confluent.Kafka.SchemaRegistry.Rest
 {
     public interface ISchemaRegistyRestService
     {

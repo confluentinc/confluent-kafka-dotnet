@@ -23,69 +23,97 @@ namespace Confluent.Kafka.SchemaRegistry
     public interface ISchemaRegistryClient
     {
         /// <summary>
-        ///     Register schema in registry
+        ///     Register a schema.
         /// </summary>
         /// <param name="subject">
+        ///     The subject to register the schema against.
         /// </param>
         /// <param name="schema">
+        ///     The schema to register.
         /// </param>
         /// <returns>
-        ///     schema id (not version)
+        ///     A unique id identifying the schema.
         /// </returns>
         Task<int> RegisterAsync(string subject, string schema);
 
         /// <summary>
-        ///     Get schema by unique id
+        ///     Gets the schema uniquely identified by <paramref name="id" />.
         /// </summary>
         /// <param name="id">
-        ///     Unique id of s
+        ///     The unique id of schema to get.
         /// </param>
         /// <returns>
+        ///     The schema identified by <paramref name="id" />.
         /// </returns>
         Task<string> GetSchemaAsync(int id);
 
         /// <summary>
-        ///     Get schema by subject and version
+        ///     Gets a schema given a <paramref name="subject" /> and <paramref name="version" /> number.
         /// </summary>
         /// <param name="subject">
+        ///     The subject to get the schema for.
         /// </param>
         /// <param name="version">
-        ///     version Id under this subject (positive)
+        ///     The version number of schema to get.
         /// </param>
         /// <returns>
+        ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
         /// </returns>
         Task<string> GetSchemaAsync(string subject, int version);
 
         /// <summary>
-        ///     Get latest known schema for the subject
+        ///     Get the latest schema registered against the specified <paramref name="subject" />.
         /// </summary>
         /// <param name="subject">
+        ///     The subject to get the latest associated schema for.
         /// </param>
         /// <returns>
+        ///     The latest schema registred against <paramref name="subject" />.
         /// </returns>
         Task<Schema> GetLatestSchemaAsync(string subject);
 
         /// <summary>
-        ///     Get all subjects in registry
+        ///     Gets a list of all subjects with registered schemas.
         /// </summary>
         /// <returns>
+        ///     A list of all subjects with registered schemas.
         /// </returns>
         Task<List<string>> GetAllSubjectsAsync();
         
         /// <summary>
-        ///     Check a schema is compatible with latest version in registry
+        ///     Check if a schema is compatible with latest version registered against a 
+        ///     specified subject.
         /// </summary>
         /// <param name="subject">
+        ///     The subject to check.
         /// </param>
         /// <param name="avroSchema">
+        ///     The schema to check.
         /// </param>
         /// <returns>
+        ///     true if <paramref name="avroSchema" /> is compatible with the latest version 
+        ///     registered against a specified subject, false otherwise.
         /// </returns>
         Task<bool> IsCompatibleAsync(string subject, string avroSchema);
 
-        string GetRegistrySubject(string topic, bool isKey);
+        /// <summary>
+        ///     Returns the schema registry subject name given a topic name and a subject 
+        ///     type (key or value).
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic name.
+        /// </param>
+        /// <param name="keyOrValue">
+        ///     The subject type (key or value).
+        /// </param>
+        /// <returns>
+        ///     The subject name given a topic name and a subject 
+        ///     type (key or value).
+        /// </returns>
+        string GetRegistrySubject(string topic, SubjectType keyOrValue);
 
-        // TODO: see if we need to add interfaces
+
+        // TODO: the following interfaces may be required.
         
         // Task<bool> CheckSchemaAsync(string subject, string schema);
         // Task<Config.Compatbility> GetGlobalCompatibility();

@@ -241,17 +241,25 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         }
 
         /// <summary>
-        /// Get a specific version of the schema registered under this subject.
+        ///     Get a specific version of the schema registered under this subject.
         /// </summary>
-        /// <param name="subject">Name of the subject</param>
-        /// <param name="version">Version of the schema to be returned. Valid values for version are between [1,2^31-1]</param>
-        /// <returns>Corresponding Schema</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="subject">
+        ///     Name of the subject
+        /// </param>
+        /// <param name="version">
+        ///     Version of the schema to be returned. Valid values for version are between [1,2^31-1]
+        /// </param>
+        /// <returns>
+        ///     Corresponding Schema
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 40401 – Subject not found
-        /// Error code 40402 – Version not found
-        /// Error code 42202 – Invalid version
-        /// Error code 50001 – Error in the backend data store
+        ///     Error code 40401 – Subject not found
+        ///     Error code 40402 – Version not found
+        ///     Error code 42202 – Invalid version
+        ///     Error code 50001 – Error in the backend data store
         /// </exception>
         public Task<Schema> GetSchemaAsync(string subject, int version)
         {
@@ -259,15 +267,21 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         }
 
         /// <summary>
-        /// Get the last registered schema under the specified subject
-        /// Note that there may be a new latest schema that gets registered right after this request
+        ///     Get the last registered schema under the specified subject
+        ///     Note that there may be a new latest schema that gets registered right after this request
         /// </summary>
-        /// <param name="subject">Name of the subject</param>
-        /// <returns>Corresponding Schema</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="subject">
+        ///     Name of the subject
+        /// </param>
+        /// <returns>
+        ///     Corresponding Schema
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 40401 – Subject not found
-        /// Error code 50001 – Error in the backend data store
+        ///     Error code 40401 – Subject not found
+        ///     Error code 50001 – Error in the backend data store
         /// </exception>
         public Task<Schema> GetLatestSchemaAsync(string subject)
         {
@@ -275,32 +289,40 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         }
 
         /// <summary>
-        /// Register a new schema under the specified subject.
-        /// If successfully registered, this returns the unique identifier of this schema in the registry.
-        /// The returned identifier should be used to retrieve this schema from the schemas resource
-        /// and is different from the schema’s version which is associated with the subject.
-        /// If the same schema is registered under a different subject, the same identifier will be returned.
-        /// However, the version of the schema may be different under different subjects.
+        ///     Register a new schema under the specified subject.
+        ///     If successfully registered, this returns the unique identifier of this schema in the registry.
+        ///     The returned identifier should be used to retrieve this schema from the schemas resource
+        ///     and is different from the schema’s version which is associated with the subject.
+        ///     If the same schema is registered under a different subject, the same identifier will be returned.
+        ///     However, the version of the schema may be different under different subjects.
         ///
-        /// A schema should be compatible with the previously registered schemas(if there are any)
-        /// as per the configured compatibility level.
-        /// The configured compatibility level can be obtained by issuing by <see cref="GetCompatibilityAsync(string)"/>.
-        /// If that returns null, then <see cref="GetGlobalCompatibilityAsync()"/>
+        ///     A schema should be compatible with the previously registered schemas(if there are any)
+        ///     as per the configured compatibility level.
+        ///     The configured compatibility level can be obtained by issuing by <see cref="GetCompatibilityAsync(string)"/>.
+        ///     If that returns null, then <see cref="GetGlobalCompatibilityAsync()"/>
         ///
-        /// When there are multiple instances of schema registry running in the same cluster,
-        /// the schema registration request will be forwarded to one of the instances designated as the master.
-        /// If the master is not available, the client will get an error code indicating that the forwarding has failed.
+        ///     When there are multiple instances of schema registry running in the same cluster,
+        ///     the schema registration request will be forwarded to one of the instances designated as the master.
+        ///     If the master is not available, the client will get an error code indicating that the forwarding has failed.
         /// </summary>
-        /// <param name="subject">Subject under which the schema will be registered</param>
-        /// <param name="schema">The Avro schema string</param>
-        /// <returns>Globally unique identifier of the schema</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="subject">
+        ///     Subject under which the schema will be registered
+        /// </param>
+        /// <param name="schema">
+        ///     The Avro schema string
+        /// </param>
+        /// <returns>
+        ///     Globally unique identifier of the schema
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// 409 Conflict – Incompatible Avro schema
-        /// Error code 42201 – Invalid Avro schema
-        /// Error code 50001 – Error in the backend data store
-        /// Error code 50002 – Operation timed out
-        /// Error code 50003 – Error while forwarding the request to the master
+        ///     409 Conflict – Incompatible Avro schema
+        ///     Error code 42201 – Invalid Avro schema
+        ///     Error code 50001 – Error in the backend data store
+        ///     Error code 50002 – Operation timed out
+        ///     Error code 50003 – Error while forwarding the request to the master
         /// </exception>
         public Task<SchemaId> PostSchemaAsync(string subject, string schema)
         {
@@ -308,13 +330,18 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         }
 
         /// <summary>
-        /// Check if a schema has already been registered under the specified subject.
-        /// If so, this returns the schema string along with its globally unique identifier,
-        /// its version under this subject and the subject name.
+        ///     Check if a schema has already been registered under the specified subject.
+        ///     If so, this returns the schema string along with its globally unique identifier,
+        ///     its version under this subject and the subject name.
         /// </summary>
-        /// <param name="subject">Subject under which the schema will be registered</param>
-        /// <param name="schema">The Avro schema string</param>
-        /// <returns></returns>
+        /// <param name="subject">
+        ///     Subject under which the schema will be registered
+        /// </param>
+        /// <param name="schema">
+        ///     The Avro schema string
+        /// </param>
+        /// <returns>
+        /// </returns>
         public Task<Schema> CheckSchemaAsync(string subject, string schema)
         {
             return RequestToAsync<Schema>($"/subjects/{subject}", HttpMethod.Post, new SchemaString(schema));
@@ -327,21 +354,33 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         // for compatibility against specific versions of a subject’s schema.
 
         /// <summary>
-        /// Test input schema against a particular version of a subject’s schema for compatibility.
-        /// Note that the compatibility level applied for the check is the configured compatibility level for the subject (<see cref="GetCompatibilityAsync(string)"/>).
-        /// If this subject’s compatibility level was never changed, then the global compatibility level applies (<see cref="GetCompatibilityAsync"/>) .
+        ///     Test input schema against a particular version of a subject’s schema for 
+        ///     compatibility. Note that the compatibility level applied for the check is 
+        ///     the configured compatibility level for the subject 
+        ///     (<see cref="GetCompatibilityAsync(string)"/>). If this subject’s compatibility
+        ///     level was never changed, then the global compatibility level applies 
+        ///     (<see cref="GetCompatibilityAsync"/>) .
         /// </summary>
-        /// <param name="subject">Subject of the schema version against which compatibility is to be tested</param>
-        /// <param name="versionId">Version of the subject’s schema against which compatibility is to be tested</param>
-        /// <param name="avroSchema">Le schema qu'on souhaite comparer</param>
-        /// <returns></returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="subject">
+        ///     Subject of the schema version against which compatibility is to be tested
+        /// </param>
+        /// <param name="versionId">
+        ///     Version of the subject’s schema against which compatibility is to be tested
+        /// </param>
+        /// <param name="avroSchema">
+        ///     Le schema qu'on souhaite comparer
+        /// </param>
+        /// <returns>
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 40401 – Subject not found
-        /// Error code 40402 – Version not found
-        /// Error code 42201 – Invalid Avro schema
-        /// Error code 42202 – Invalid version
-        /// Error code 50001 – Error in the backend data store
+        ///     Error code 40401 – Subject not found
+        ///     Error code 40402 – Version not found
+        ///     Error code 42201 – Invalid Avro schema
+        ///     Error code 42202 – Invalid version
+        ///     Error code 50001 – Error in the backend data store
         /// </exception>
         public Task<CompatibilityCheckResponse> TestCompatibilityAsync(string subject, int versionId, string avroSchema)
         {
@@ -353,20 +392,27 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 
 
         /// <summary>
-        /// Test input schema against latest version of a subject’s schema for compatibility.
-        /// Note that the compatibility level applied for the check is the configured compatibility level for the subject (<see cref="GetCompatibilityAsync(string)"/>).
-        /// If this subject’s compatibility level was never changed, then the global compatibility level applies (<see cref="GetCompatibilityAsync"/>) .
+        ///     Test input schema against latest version of a subject’s schema for compatibility.
+        ///     Note that the compatibility level applied for the check is the configured compatibility level for the subject (<see cref="GetCompatibilityAsync(string)"/>).
+        ///     If this subject’s compatibility level was never changed, then the global compatibility level applies (<see cref="GetCompatibilityAsync"/>) .
         /// </summary>
-        /// <param name="subject">Subject of the schema version against which compatibility is to be tested</param>
-        /// <param name="avroSchema">Le schema qu'on souhaite comparer</param>
-        /// <returns></returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="subject">
+        ///     Subject of the schema version against which compatibility is to be tested
+        /// </param>
+        /// <param name="avroSchema">
+        ///     Le schema qu'on souhaite comparer
+        /// </param>
+        /// <returns>
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 40401 – Subject not found
-        /// Error code 40402 – Version not found
-        /// Error code 42201 – Invalid Avro schema
-        /// Error code 42202 – Invalid version
-        /// Error code 50001 – Error in the backend data store
+        ///     Error code 40401 – Subject not found
+        ///     Error code 40402 – Version not found
+        ///     Error code 42201 – Invalid Avro schema
+        ///     Error code 42202 – Invalid version
+        ///     Error code 50001 – Error in the backend data store
         /// </exception>
         public Task<CompatibilityCheckResponse> TestLatestCompatibilityAsync(string subject, string avroSchema)
         {
@@ -382,38 +428,67 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 
         //The config resource allows you to inspect the cluster-level configuration values as well as subject overrides.
 
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <summary>
+        /// </summary>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 50001 – Error in the backend data store
+        ///     Error code 50001 – Error in the backend data store
         /// </exception>
         public Task<Config> GetGlobalCompatibilityAsync()
             => RequestToAsync<Config>("/config", HttpMethod.Get);
 
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <summary>
+        /// </summary>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 50001 – Error in the backend data store
-        /// Error code 40401 – Subject not found
+        ///     Error code 50001 – Error in the backend data store
+        ///     Error code 40401 – Subject not found
         /// </exception>
         public Task<Config> GetCompatibilityAsync(string subject)
             => RequestToAsync<Config>($"/config/{subject}", HttpMethod.Get);
 
-        /// <param name="compatibility">FULL, BACKWARD or FORWARD</param>
-        /// <returns>New global compatibility level</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
-        /// <exception cref="SchemaRegistryInternalException">L'instance de schema Registry a renvoyée une erreur interne</exception>
+        /// <summary>
+        /// </summary>
+        /// <param name="compatibility">
+        ///     FULL, BACKWARD or FORWARD
+        /// </param>
+        /// <returns>
+        ///     New global compatibility level
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
+        /// <exception cref="SchemaRegistryInternalException">
+        ///     L'instance de schema Registry a renvoyée une erreur interne
+        /// </exception>
         public Task<Config> PutGlobalCompatibilityAsync(Config.Compatbility compatibility)
             => RequestToAsync<Config>("/config", HttpMethod.Put, new Config(compatibility));
 
         /// <summary>
-        /// Update compatibility level for the specified subject.
+        ///     Update compatibility level for the specified subject.
         /// </summary>
-        /// <param name="subject">Name of the subject</param>
-        /// <param name="compatibility">New global compatibility level. Must be one of NONE, FULL, FORWARD, BACKWARD</param>
-        /// <returns>New compatibility level of the subject</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
-        /// <exception cref="SchemaRegistryInternalException">L'instance de schema Registry a renvoyée une erreur interne</exception>
+        /// <param name="subject">
+        ///     Name of the subject
+        /// </param>
+        /// <param name="compatibility">
+        ///     New global compatibility level. Must be one of NONE, FULL, FORWARD, BACKWARD
+        /// </param>
+        /// <returns>
+        ///     New compatibility level of the subject
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
+        /// <exception cref="SchemaRegistryInternalException">
+        ///     L'instance de schema Registry a renvoyée une erreur interne
+        /// </exception>
         public Task<Config> PutCompatibilityAsync(string subject, Config.Compatbility compatibility)
             => RequestToAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility));
+            
         #endregion Config
     }
 }

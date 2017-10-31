@@ -27,7 +27,7 @@ namespace  Confluent.Kafka.SchemaRegistry.Rest.Entities
         public int Id { get; set; }
 
         /// <summary>
-        /// Empty constructor for serialization
+        ///     Empty constructor for serialization
         /// </summary>
         private SchemaId() { }
 

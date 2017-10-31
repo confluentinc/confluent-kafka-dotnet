@@ -18,44 +18,53 @@ using System;
 using System.Runtime.Serialization;
 
 
-namespace  Confluent.Kafka.SchemaRegistry
+namespace Confluent.Kafka.SchemaRegistry
 {
+    /// <summary>
+    ///     Represents a Schema stored in Schema Registry.
+    /// </summary>
     [DataContract]
     public class Schema : IComparable<Schema>, IEquatable<Schema>
     {
         /// <summary>
-        /// Subject where the schema is registred
+        ///     The subject the schema is registered against.
         /// </summary>
         [DataMember(Name = "subject")]
         public string Subject { get; set; }
 
         /// <summary>
-        /// Verion of the schema in the subject
+        ///     The schema version.
         /// </summary>
         [DataMember(Name = "version")]
         public int Version { get; set; }
 
         /// <summary>
-        /// Globally unique identifier of the schema
+        ///     Globally unique identifier of the schema.
         /// </summary>
         [DataMember(Name = "id")]
         public int Id { get; set; }
 
         /// <summary>
-        /// Schema in unindented string
+        ///     A string representation of the schema.
         /// </summary>
         [DataMember(Name = "schema")]
         public string SchemaString { get; set; }
 
         /// <summary>
-        /// 
+        ///     Initializes a new instance of the Schema class.
         /// </summary>
-        /// <param name="subject"></param>
-        /// <param name="version">version du schema (liée à l'id), >= 0</param>
-        /// <param name="id">id du schema (global), >= 0</param>
-        /// <param name="schema"></param>
-        /// <exception cref="ArgumentException">id ou version inférieur à 0</exception>
-        /// <exception cref="ArgumentNullException">subject ou schema null ou vide</exception>
+        /// <param name="subject">
+        ///     The subject the schema is registered against.
+        /// </param>
+        /// <param name="version">
+        ///     The schema version, >= 0
+        /// </param>
+        /// <param name="id">
+        ///     The globally unique identifier of the schema, >= 0
+        /// </param>
+        /// <param name="schema">
+        ///     String representation of the schema.
+        /// </param>
         public Schema(string subject, int version, int id, string schema)
         {
             if (string.IsNullOrEmpty(subject))
@@ -81,22 +90,23 @@ namespace  Confluent.Kafka.SchemaRegistry
             SchemaString = schema;
         }
 
+        /// <summary>
+        ///     Returns a string representation of the Schema object.
+        /// </summary>
+        /// <returns>
+        ///     A string that represents the schema object.
+        /// </returns>
         public override string ToString()
         {
-            return $"{{subject={Subject},version={Version},id={Id},schema={SchemaString}}}";
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null || GetType() != obj.GetType())
-            {
-                return false;
-            }
-
-            Schema that = (Schema)obj;
-            return Equals(that);
+            return $"{{subject={Subject}, version={Version}, id={Id}, schema={SchemaString}}}";
         }
         
+        /// <summary>
+        ///     Returns a hash code for this Schema.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this Schema.
+        /// </returns>
         public override int GetHashCode()
         {
             int result = Subject.GetHashCode();
@@ -106,6 +116,21 @@ namespace  Confluent.Kafka.SchemaRegistry
             return result;
         }
         
+        /// <summary>
+        ///     Compares this instance with a specified Schema object and indicates whether this 
+        ///     instance precedes, follows, or appears in the same position in the sort order as
+        ///     the specified schema.
+        /// </summary>
+        /// <param name="other">
+        ///     The schema to compare with this instance.
+        /// </param>
+        /// <returns>
+        ///     A 32-bit signed integer that indicates whether this instance precedes, follows, or
+        ///     appears in the same position in the sort order as the other parameter. Less than 
+        ///     zero: this instance precedes other. Zero: this instance has the same position in
+        ///     the sort order as other. Greater than zero: This instance follows other OR other 
+        ///     is null.
+        /// </returns>
         public int CompareTo(Schema other)
         {
             int result = string.Compare(Subject, other.Subject, StringComparison.Ordinal);
@@ -116,6 +141,38 @@ namespace  Confluent.Kafka.SchemaRegistry
             return result;
         }
 
+        /// <summary>
+        ///     Determines whether this instance and a specified object, which must also be a Schema 
+        ///     object, have the same value (Overrides Object.Equals(Object))
+        /// </summary>
+        /// <param name="obj">
+        ///     The Schema to compare to this instance.
+        /// </param>
+        /// <returns>
+        ///     true if obj is a Schema and its value is the same as this instance; otherwise, false. 
+        ///     If obj is null, the method returns false.
+        /// </returns>
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            Schema that = (Schema)obj;
+            return Equals(that);
+        }
+
+        /// <summary>
+        ///     Determines whether this instance and another specified Schema object have the same value.
+        /// </summary>
+        /// <param name="other">
+        ///     The schema to compare to this instance.
+        /// </param>
+        /// <returns>
+        ///     true if the value of the other parameter is the same as the value of this instance; 
+        ///     otherwise, false. If other is null, the method returns false.
+        /// </returns>
         public bool Equals(Schema other)
         {
             return Version == other.Version &&
