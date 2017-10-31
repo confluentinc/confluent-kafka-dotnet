@@ -11,7 +11,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
     /// </summary>
     /// <remarks>
     ///     This copy/pasting is required because DllName must be const. 
-    ///     TODO: generate the NativeMethod classes at runtime (compile C# code) rather
+    ///     TODO: generate the NativeMethods classes at runtime (compile C# code) rather
     ///     than copy/paste.
     /// 
     ///     Alternatively, we could have used dlopen to load the native library, but to 

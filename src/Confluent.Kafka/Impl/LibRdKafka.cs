@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl.NativeMethods;
 using System.Reflection;
-#if NET45 || NET46
+#if NET45 || NET46 || NET47
 using System.ComponentModel;
 #endif
 
@@ -40,7 +40,7 @@ namespace Confluent.Kafka.Impl
         // max length for error strings built by librdkafka
         internal const int MaxErrorStringLength = 512;
 
-#if NET45 || NET46
+#if NET45 || NET46 || NET47
 
         private static class WindowsNative
         {
@@ -213,7 +213,7 @@ namespace Confluent.Kafka.Impl
 
                 isInitialized = false;
 
-#if NET45 || NET46
+#if NET45 || NET46 || NET47
 
                 string path = userSpecifiedPath;
                 if (path == null)
@@ -229,6 +229,16 @@ namespace Confluent.Kafka.Impl
                             ? Path.Combine("librdkafka", "x64")
                             : Path.Combine("librdkafka", "x86"));
                     path = Path.Combine(dllDirectory, "librdkafka.dll");
+
+                    if (!File.Exists(path))
+                    {
+                        dllDirectory = Path.Combine(
+                            baseDirectory, 
+                            is64 
+                                ? @"runtimes\win7-x64\native"
+                                : @"runtimes\win7-x86\native");
+                        path = Path.Combine(dllDirectory, "librdkafka.dll");
+                    }
                 }
 
                 if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
