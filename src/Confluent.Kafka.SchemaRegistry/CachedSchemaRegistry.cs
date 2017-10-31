@@ -23,7 +23,7 @@ using System.Linq;
 namespace Confluent.Kafka.SchemaRegistry
 {
     /// <summary>
-    /// SchemaRegistry client with cached result
+    ///     SchemaRegistry client with cached result
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient
     {
@@ -36,19 +36,25 @@ namespace Confluent.Kafka.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> _schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         
         /// <summary>
-        /// Create a cached schema registry
+        ///     Create a cached schema registry
         /// </summary>
-        /// <param name="schemaRegistryConfig"></param>
-        /// <param name="identityMapCapacity">maximum stored schemas by in the cache, cache is whiped when this limit is hit</param>
+        /// <param name="schemaRegistryConfig">
+        /// </param>
+        /// <param name="identityMapCapacity">
+        ///     maximum stored schemas by in the cache, cache is wiped when this limit is hit
+        /// </param>
         public CachedSchemaRegistryClient(string schemaRegistryUris, int timeoutMs = SchemaRegistryRestService.DefaultTimetout, int identityMapCapacity = 1024)
             : this(new SchemaRegistryRestService(schemaRegistryUris), identityMapCapacity)
         { }
 
         /// <summary>
-        /// Create a cached schema registry
+        ///     Create a cached schema registry
         /// </summary>
-        /// <param name="restService"></param>
-        /// <param name="identityMapCapacity">maximum stored schemas by in the cache, cache is whiped when this limit is hit</param>
+        /// <param name="restService">
+        /// </param>
+        /// <param name="identityMapCapacity">
+        ///     maximum stored schemas by in the cache, cache is whiped when this limit is hit
+        /// </param>
         public CachedSchemaRegistryClient(ISchemaRegistyRestService restService, int identityMapCapacity = 1024)
         {
             _identityMapCapacity = identityMapCapacity;
@@ -136,11 +142,13 @@ namespace Confluent.Kafka.SchemaRegistry
         }
 
         /// <summary>
-        /// Get latest known subject
-        /// Always call web api
+        ///     Get latest known subject
+        ///     Always call web api
         /// </summary>
-        /// <param name="subject"></param>
-        /// <returns></returns>
+        /// <param name="subject">
+        /// </param>
+        /// <returns>
+        /// </returns>
         public async Task<Schema> GetLatestSchemaAsync(string subject)
         {
             var getLatestSchema = await _restService.GetLatestSchemaAsync(subject).ConfigureAwait(false);
@@ -148,10 +156,11 @@ namespace Confluent.Kafka.SchemaRegistry
         }
 
         /// <summary>
-        /// Get all subjects
-        /// Always call web api
+        ///     Get all subjects
+        ///     Always call web api
         /// </summary>
-        /// <returns></returns>
+        /// <returns>
+        /// </returns>
         public Task<List<string>> GetAllSubjectsAsync()
         {
             return _restService.GetSubjectsAsync();

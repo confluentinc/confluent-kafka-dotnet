@@ -31,7 +31,7 @@ using Newtonsoft.Json;
 namespace Confluent.Kafka.SchemaRegistry.Rest
 {
     /// <summary>
-    /// Communique avec l'api REST de schema registry pour enregistrer/récupérer les schema AVRO
+    ///     Communique avec l'api REST de schema registry pour enregistrer/récupérer les schema AVRO
     /// </summary>
     public class SchemaRegistryRestService : ISchemaRegistyRestService
     {
@@ -50,9 +50,14 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         
         /// <summary>
         /// </summary>
-        /// <param name="schemaRegistryUris">Adresses vers les instances, séparées par une virgule. si vide, aucune requete ne sera executée et tous les appels lanceront des exceptions</param>
-        /// <param name="timeoutMs"></param>
-        /// <exception cref="UriFormatException">une des uri n'est pas valable</exception>
+        /// <param name="schemaRegistryUris">
+        ///     Adresses vers les instances, séparées par une virgule. si vide, aucune requete ne sera executée et tous les appels lanceront des exceptions
+        /// </param>
+        /// <param name="timeoutMs">
+        /// </param>
+        /// <exception cref="UriFormatException">
+        ///     une des uri n'est pas valable
+        /// </exception>
         public SchemaRegistryRestService(string schemaRegistryUris, int timeoutMs = DefaultTimetout)
             : this(ExtractRestClientList(schemaRegistryUris, timeoutMs))
         { }
@@ -74,10 +79,16 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         /// <summary>
         ///
         /// </summary>
-        /// <param name="request"></param>
-        /// <exception cref="IOException">All instances returned HttpRequestException</exception>
-        /// <exception cref="SchemaRegistryInternalException">Schema registry server returned exception</exception>
-        /// <returns></returns>
+        /// <param name="request">
+        /// </param>
+        /// <exception cref="IOException">
+        ///     All instances returned HttpRequestException
+        /// </exception>
+        /// <exception cref="SchemaRegistryInternalException">
+        ///     Schema registry server returned exception
+        /// </exception>
+        /// <returns>
+        /// </returns>
         private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(HttpRequestMessage request)
         {
             //TODO not thread safe with _lastClientUsed?
@@ -119,7 +130,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 
 
         /// <summary>
-        /// Used when endPoint return a json object { ... }
+        ///     Used when endPoint return a json object { ... }
         /// </summary>
         private async Task<T> RequestToAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
@@ -131,13 +142,18 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         }
 
         /// <summary>
-        /// Used when endPoint return a json array [ ... ]
+        ///     Used when endPoint return a json array [ ... ]
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="endPoint"></param>
-        /// <param name="method"></param>
-        /// <param name="jsonBody"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">
+        /// </typeparam>
+        /// <param name="endPoint">
+        /// </param>
+        /// <param name="method">
+        /// </param>
+        /// <param name="jsonBody">
+        /// </param>
+        /// <returns>
+        /// </returns>
         private async Task<List<T>> RequestToListOfAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             var request = CreateRequest(endPoint, method, jsonBody);
@@ -168,14 +184,20 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         // depending on whether you are registering the key schema for that topic or the value schema.
 
         /// <summary>
-        /// Get the schema string identified by the input id.
+        ///     Get the schema string identified by the input id.
         /// </summary>
-        /// <param name="id">the globally unique identifier of the schema</param>
-        /// <returns>Schema string identified by the id</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="id">
+        ///     the globally unique identifier of the schema
+        /// </param>
+        /// <returns>
+        ///     Schema string identified by the id
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 40403 – Schema not found
-        /// Error code 50001 – Error in the backend datastore
+        ///     Error code 40403 – Schema not found
+        ///     Error code 50001 – Error in the backend datastore
         /// </exception>
         public Task<SchemaString> GetSchemaAsync(int id)
             => RequestToAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get);
@@ -183,25 +205,35 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 
         #region Subjects
         /// <summary>
-        /// Get a list of registered subjects.
+        ///     Get a list of registered subjects.
         /// </summary>
-        /// <returns>List of subjects</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <returns>
+        ///     List of subjects
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 50001 – Error in the backend datastore
+        ///     Error code 50001 – Error in the backend datastore
         /// </exception>
         public Task<List<string>> GetSubjectsAsync()
             => RequestToListOfAsync<string>("/subjects", HttpMethod.Get);
 
         /// <summary>
-        /// Get a list of versions registered under the specified subject.
+        ///     Get a list of versions registered under the specified subject.
         /// </summary>
-        /// <param name="subject">the name of the subject</param>
-        /// <returns>List of versions of the schema registered under this subject</returns>
-        /// <exception cref="IOException">Aucune instance n'a pu exécuter la requête</exception>
+        /// <param name="subject">
+        ///     the name of the subject
+        /// </param>
+        /// <returns>
+        ///     List of versions of the schema registered under this subject
+        /// </returns>
+        /// <exception cref="IOException">
+        ///     Aucune instance n'a pu exécuter la requête
+        /// </exception>
         /// <exception cref="SchemaRegistryInternalException">
-        /// Error code 40401 – Subject not found
-        /// Error code 50001 – Error in the backend datastore
+        ///     Error code 40401 – Subject not found
+        ///     Error code 50001 – Error in the backend datastore
         /// </exception>
         public Task<List<string>> GetSubjectVersions(string subject)
         {
