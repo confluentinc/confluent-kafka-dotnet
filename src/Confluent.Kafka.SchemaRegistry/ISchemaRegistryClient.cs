@@ -22,95 +22,26 @@ namespace Confluent.Kafka.SchemaRegistry
 {
     public interface ISchemaRegistryClient
     {
-        /// <summary>
-        ///     Register a schema.
-        /// </summary>
-        /// <param name="subject">
-        ///     The subject to register the schema against.
-        /// </param>
-        /// <param name="schema">
-        ///     The schema to register.
-        /// </param>
-        /// <returns>
-        ///     A unique id identifying the schema.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         Task<int> RegisterAsync(string subject, string schema);
 
-        /// <summary>
-        ///     Gets the schema uniquely identified by <paramref name="id" />.
-        /// </summary>
-        /// <param name="id">
-        ///     The unique id of schema to get.
-        /// </param>
-        /// <returns>
-        ///     The schema identified by <paramref name="id" />.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         Task<string> GetSchemaAsync(int id);
 
-        /// <summary>
-        ///     Gets a schema given a <paramref name="subject" /> and <paramref name="version" /> number.
-        /// </summary>
-        /// <param name="subject">
-        ///     The subject to get the schema for.
-        /// </param>
-        /// <param name="version">
-        ///     The version number of schema to get.
-        /// </param>
-        /// <returns>
-        ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync_II"]/*' />
         Task<string> GetSchemaAsync(string subject, int version);
 
-        /// <summary>
-        ///     Get the latest schema registered against the specified <paramref name="subject" />.
-        /// </summary>
-        /// <param name="subject">
-        ///     The subject to get the latest associated schema for.
-        /// </param>
-        /// <returns>
-        ///     The latest schema registred against <paramref name="subject" />.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
         Task<Schema> GetLatestSchemaAsync(string subject);
 
-        /// <summary>
-        ///     Gets a list of all subjects with registered schemas.
-        /// </summary>
-        /// <returns>
-        ///     A list of all subjects with registered schemas.
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetAllSubjectsAsync"]/*' />
         Task<List<string>> GetAllSubjectsAsync();
-        
-        /// <summary>
-        ///     Check if a schema is compatible with latest version registered against a 
-        ///     specified subject.
-        /// </summary>
-        /// <param name="subject">
-        ///     The subject to check.
-        /// </param>
-        /// <param name="avroSchema">
-        ///     The schema to check.
-        /// </param>
-        /// <returns>
-        ///     true if <paramref name="avroSchema" /> is compatible with the latest version 
-        ///     registered against a specified subject, false otherwise.
-        /// </returns>
+
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
         Task<bool> IsCompatibleAsync(string subject, string avroSchema);
 
-        /// <summary>
-        ///     Returns the schema registry subject name given a topic name and a subject 
-        ///     type (key or value).
-        /// </summary>
-        /// <param name="topic">
-        ///     The topic name.
-        /// </param>
-        /// <param name="keyOrValue">
-        ///     The subject type (key or value).
-        /// </param>
-        /// <returns>
-        ///     The subject name given a topic name and a subject 
-        ///     type (key or value).
-        /// </returns>
-        string GetRegistrySubject(string topic, SubjectType keyOrValue);
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
+        string ConstructRegistrySubject(string topic, SubjectType keyOrValue);
 
 
         // TODO: the following interfaces may be required.

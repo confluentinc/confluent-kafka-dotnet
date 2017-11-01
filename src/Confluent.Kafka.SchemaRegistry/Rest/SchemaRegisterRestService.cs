@@ -30,108 +30,85 @@ using Newtonsoft.Json;
 
 namespace Confluent.Kafka.SchemaRegistry.Rest
 {
-    /// <summary>
-    ///     Communique avec l'api REST de schema registry pour enregistrer/récupérer les schema AVRO
-    /// </summary>
-    public class SchemaRegistryRestService : ISchemaRegistyRestService
+    /// <remarks>
+    ///     It may be useful to expose this publically, but this is not
+    ///     required by the Avro serializers, so keeping internal 
+    ///     for now to minimize documentation / risk of API change etc.
+    /// </remarks>
+    internal class SchemaRegistryRestService : ISchemaRegistyRestService
     {
-        public const int DefaultTimetout = 2000;
+        public const int DefaultTimeout = 2000;
 
-        private static readonly string _acceptHeader = string.Join(", ", Versions.PREFERRED_RESPONSE_TYPES);
+        private static readonly string acceptHeader = string.Join(", ", Versions.PREFERRED_RESPONSE_TYPES);
 
-        private int _lastClientUsed; //Last client successfully used (or random if none worked)
-        private readonly List<HttpClient> _clients;
+        /// <summary>
+        ///     Last client successfully used (or random if none worked)
+        /// </summary>
+        private int lastClientUsed;
+        private readonly List<HttpClient> clients;
 
-
-        public SchemaRegistryRestService(List<HttpClient> clients)
-        {
-            _clients = clients;
-        }
         
         /// <summary>
+        ///     Initializes a new instance of the SchemaRegistryRestService class.
         /// </summary>
-        /// <param name="schemaRegistryUris">
-        ///     Adresses vers les instances, séparées par une virgule. si vide, aucune requete ne sera executée et tous les appels lanceront des exceptions
-        /// </param>
-        /// <param name="timeoutMs">
-        /// </param>
-        /// <exception cref="UriFormatException">
-        ///     une des uri n'est pas valable
-        /// </exception>
-        public SchemaRegistryRestService(string schemaRegistryUris, int timeoutMs = DefaultTimetout)
-            : this(ExtractRestClientList(schemaRegistryUris, timeoutMs))
-        { }
-
-        static List<HttpClient> ExtractRestClientList(string schemaRegistryUris, int timeoutMs)
-        {
-            return ExtractRestClientList(schemaRegistryUris?.Split(','), timeoutMs);
-        }
-
-        static List<HttpClient> ExtractRestClientList(IEnumerable<string> schemaRegistryUris, int timeoutMs)
-        {
-            return schemaRegistryUris
-                .Select(uri => uri.StartsWith("http", StringComparison.Ordinal) ? uri : "http://" + uri) //need http or https - http if not present
+        public SchemaRegistryRestService(string schemaRegistryUris, int timeoutMs = DefaultTimeout)
+        { 
+            this.clients = schemaRegistryUris
+                .Split(',')
+                .Select(uri => uri.StartsWith("http", StringComparison.Ordinal) ? uri : "http://" + uri) // need http or https - http if not present
                 .Select(uri => new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) })
                 .ToList();
         }
 
         #region Base Requests
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="request">
-        /// </param>
-        /// <exception cref="IOException">
-        ///     All instances returned HttpRequestException
-        /// </exception>
-        /// <exception cref="SchemaRegistryInternalException">
-        ///     Schema registry server returned exception
-        /// </exception>
-        /// <returns>
-        /// </returns>
+
         private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(HttpRequestMessage request)
         {
-            //TODO not thread safe with _lastClientUsed?
+            // TODO not thread safe with _lastClientUsed?
 
             string aggregatedErrorMessage = null;
             HttpResponseMessage response = null;
             bool gotOkAnswer = false;
-            for (int i = 0; i < _clients.Count && !gotOkAnswer; i++)
+            for (int i = 0; i < clients.Count && !gotOkAnswer; i++)
             {
                 gotOkAnswer = true;
-                //We have many base urls, we roll until we find a correct one
+
+                // We have many base urls, we roll until we find a correct one
                 try
                 {
-                    response = await _clients[_lastClientUsed].SendAsync(request).ConfigureAwait(false);
+                    response = await clients[lastClientUsed].SendAsync(request).ConfigureAwait(false);
                 }
                 catch (HttpRequestException e)
                 {
-                    aggregatedErrorMessage += $"{_clients[i].BaseAddress} : {e.Message}";
+                    aggregatedErrorMessage += $"{clients[i].BaseAddress} : {e.Message}";
                     //use next url
-                    _lastClientUsed = (_lastClientUsed + 1) % _clients.Count;
+                    lastClientUsed = (lastClientUsed + 1) % clients.Count;
                     gotOkAnswer = false;
                 }
             }
+
             if (!gotOkAnswer)
             {
-                //All schemas failed, return exception for each one
+                // All schemas failed, return an exception containing information about each failure.
                 throw new IOException(aggregatedErrorMessage);
             }
-            if (response.StatusCode != HttpStatusCode.OK)
+
+            if (response.StatusCode != HttpStatusCode.OK)            
             {
-                //We may have contacted a schema registry whith a default (disconnected from the cluster...),
-                //by precaution we roll for a next one
-                _lastClientUsed = (_lastClientUsed + 1) % _clients.Count;
+                // We may have contacted a schema registry whith a default (disconnected from the cluster...),
+                // by precaution we roll for a next one
+                lastClientUsed = (lastClientUsed + 1) % clients.Count;
                 var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
                 throw new SchemaRegistryInternalException(errorObject.Value<string>("message"), response.StatusCode, errorObject.Value<int>("error_code"));
             }
+
             return response;
         }
 
 
-        /// <summary>
+        /// <remarks>
         ///     Used when endPoint return a json object { ... }
-        /// </summary>
+        /// </remarks>
         private async Task<T> RequestToAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             var request = CreateRequest(endPoint, method, jsonBody);
@@ -141,19 +118,9 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
             return t;
         }
 
-        /// <summary>
+        /// <remarks>
         ///     Used when endPoint return a json array [ ... ]
-        /// </summary>
-        /// <typeparam name="T">
-        /// </typeparam>
-        /// <param name="endPoint">
-        /// </param>
-        /// <param name="method">
-        /// </param>
-        /// <param name="jsonBody">
-        /// </param>
-        /// <returns>
-        /// </returns>
+        /// </remarks>
         private async Task<List<T>> RequestToListOfAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             var request = CreateRequest(endPoint, method, jsonBody);
@@ -165,7 +132,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         private HttpRequestMessage CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
-            request.Headers.Add("Accept", _acceptHeader);
+            request.Headers.Add("Accept", acceptHeader);
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));
@@ -174,9 +141,11 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 
             return request;
         }
+
         #endregion Base Requests
 
         #region Schemas
+
         // The subjects resource provides a list of all registered subjects in your schema registry.
         // A subject refers to the name under which the schema is registered.
         // If you are using the schema registry for Kafka,
@@ -201,9 +170,11 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         /// </exception>
         public Task<SchemaString> GetSchemaAsync(int id)
             => RequestToAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get);
+
         #endregion Schemas
 
         #region Subjects
+
         /// <summary>
         ///     Get a list of registered subjects.
         /// </summary>
@@ -346,6 +317,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         {
             return RequestToAsync<Schema>($"/subjects/{subject}", HttpMethod.Post, new SchemaString(schema));
         }
+
         #endregion Subjects
 
         #region Compatibility

@@ -34,9 +34,13 @@ namespace Confluent.Kafka.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         
         /// <summary>
-        ///     Create a cached schema registry
+        ///     Initialize a new instance of the CachedSchemaRegistryClient
         /// </summary>
         /// <param name="schemaRegistryConfig">
+        ///     
+        /// </param>
+        /// <param name="timeoutMs">
+        ///     
         /// </param>
         /// <param name="identityMapCapacity">
         ///     maximum stored schemas by in the cache, cache is wiped when this limit is hit
@@ -45,30 +49,11 @@ namespace Confluent.Kafka.SchemaRegistry
             string schemaRegistryUris, 
             int timeoutMs = SchemaRegistryRestService.DefaultTimeout,
             int identityMapCapacity = 1024)
-                : this(new SchemaRegistryRestService(schemaRegistryUris), timeoutMs, identityMapCapacity)
-        { }
-
-        /// <summary>
-        ///     Create a cached schema registry
-        /// </summary>
-        /// <param name="restService">
-        /// </param>
-        /// <param name="timeoutMs">
-        /// </param>
-        /// <param name="identityMapCapacity">
-        ///     maximum stored schemas by in the cache, cache is whiped when this limit is hit
-        /// </param>
-        public CachedSchemaRegistryClient(ISchemaRegistyRestService restService, int timeoutMs, int identityMapCapacity=1024)
         {
-            // TODO: do something with timeoutMs.
             this.identityMapCapacity = identityMapCapacity;
-            this.restService = restService;
+            this.restService = new SchemaRegistryRestService(schemaRegistryUris, timeoutMs);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         private bool CleanCacheIfNeeded()
         {
             // call before inserting a new element
@@ -77,7 +62,7 @@ namespace Confluent.Kafka.SchemaRegistry
             // don't check _idBySchemaBySubject, it's directly related with both others
             if(schemaById.Count + schemaByVersionBySubject.Sum(x=>x.Value.Count) >= identityMapCapacity)
             {
-                //TODO log
+                // TODO log
                 schemaById.Clear();
                 idBySchemaBySubject.Clear();
                 schemaByVersionBySubject.Clear();
@@ -86,15 +71,10 @@ namespace Confluent.Kafka.SchemaRegistry
             return false;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="subject"></param>
-        /// <param name="schema"></param>
-        /// <returns></returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         public async Task<int> RegisterAsync(string subject, string schema)
         {
-            //Can't check schemaById, we need to register under a specific subject
+            // Can't check schemaById, we need to register under a specific subject
             Dictionary<string, int> idBySchema;
             if (!idBySchemaBySubject.TryGetValue(subject, out idBySchema))
             {
@@ -118,11 +98,7 @@ namespace Confluent.Kafka.SchemaRegistry
             return schemaId;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         public async Task<string> GetSchemaAsync(int id)
         {
             string schema;
@@ -136,12 +112,7 @@ namespace Confluent.Kafka.SchemaRegistry
             return schema;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="subject"></param>
-        /// <param name="version"></param>
-        /// <returns></returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync_II"]/*' />
         public async Task<string> GetSchemaAsync(string subject, int version)
         {
             if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
@@ -155,7 +126,7 @@ namespace Confluent.Kafka.SchemaRegistry
                 var getSchema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(false);
                 if (CleanCacheIfNeeded())
                 {
-                    //repopulate this one
+                    // repopulate this one
                     schemaByVersionBySubject[subject] = schemaByVersion;
                 }
                 schema = getSchema.SchemaString;
@@ -166,64 +137,28 @@ namespace Confluent.Kafka.SchemaRegistry
             return schema;
         }
 
-        /// <summary>
-        ///     Get latest known subject
-        ///     Always call web api
-        /// </summary>
-        /// <param name="subject">
-        /// </param>
-        /// <returns>
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
         public async Task<Schema> GetLatestSchemaAsync(string subject)
         {
             var getLatestSchema = await restService.GetLatestSchemaAsync(subject).ConfigureAwait(false);
             return getLatestSchema;
         }
 
-        /// <summary>
-        ///     Get all subjects
-        ///     Always call web api
-        /// </summary>
-        /// <returns>
-        ///     
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetAllSubjectsAsync"]/*' />
         public Task<List<string>> GetAllSubjectsAsync()
         {
             return restService.GetSubjectsAsync();
         }
 
-        /// <summary>
-        ///     
-        /// </summary>
-        /// <param name="subject">
-        ///     
-        /// </param>
-        /// <param name="avroSchema">
-        ///     
-        /// </param>
-        /// <returns>
-        ///     
-        /// </returns>
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
         {
             var getLatestCompatibility = await restService.TestLatestCompatibilityAsync(subject, avroSchema).ConfigureAwait(false);
             return getLatestCompatibility.IsCompatible;
         }
 
-        /// <summary>
-        ///     Gets the schema registry subject name given the topic name, and whether or 
-        ///     not the schema is associated with the message key or value.
-        /// </summary>
-        /// <param name="topic">
-        ///     The topic name.
-        /// </param>
-        /// <param name="isKey">
-        ///     true if the schema is associated with the message key, false if it is associated
-        ///     with a message value.
-        /// </param>
-        /// <returns></returns>
-        public string GetRegistrySubject(string topic, bool isKey)
-            => $"{topic}-{(isKey ? "key" : "value")}";
-
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
+        public string ConstructRegistrySubject(string topic, SubjectType keyOrValue)
+            => $"{topic}-{(keyOrValue == SubjectType.Key ? "key" : "value")}";
     }
 }

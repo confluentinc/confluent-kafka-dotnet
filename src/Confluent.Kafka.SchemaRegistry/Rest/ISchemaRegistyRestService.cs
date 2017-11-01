@@ -22,7 +22,12 @@ using Confluent.Kafka.SchemaRegistry.Rest.Entities.Requests;
 
 namespace Confluent.Kafka.SchemaRegistry.Rest
 {
-    public interface ISchemaRegistyRestService
+    /// <remarks>
+    ///     It may be useful to expose this publically, but this is not
+    ///     required by the Avro serializers, so keeping internal 
+    ///     for now to minimize documentation / risk of API change etc.
+    /// </remarks>
+    internal interface ISchemaRegistyRestService
     {
         Task<Schema> CheckSchemaAsync(string subject, string schema);
         Task<Config> GetCompatibilityAsync(string subject);
