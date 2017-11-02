@@ -19,7 +19,7 @@ using System.Collections.Generic;
 
 namespace  Confluent.Kafka.SchemaRegistry.Rest
 {
-    public static class Versions
+    internal static class Versions
     {
         public const string SCHEMA_REGISTRY_V1_JSON = "application/vnd.schemaregistry.v1+json";
         // Default weight = 1

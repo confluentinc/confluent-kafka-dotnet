@@ -39,7 +39,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.UnitTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.IntegrationTests", "test\Confluent.Kafka.Avro.IntegrationTests\Confluent.Kafka.Avro.IntegrationTests.csproj", "{7067703F-78EA-40CE-B2F7-32CA90FF50C3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSpecific", "examples\AvroGeneric\AvroSpecific.csproj", "{45B586D3-7CCA-46B0-A118-A070D84E8364}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSpecific", "examples\AvroSpecific\AvroSpecific.csproj", "{45B586D3-7CCA-46B0-A118-A070D84E8364}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.SchemaRegistry.UnitTests", "test\Confluent.Kafka.SchemaRegistry.UnitTests\Confluent.Kafka.SchemaRegistry.UnitTests.csproj", "{29DA188E-CB20-4A9C-AC4E-50B442B9AC7D}"
 EndProject

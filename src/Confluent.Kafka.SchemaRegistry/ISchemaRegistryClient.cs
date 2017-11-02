@@ -41,7 +41,7 @@ namespace Confluent.Kafka.SchemaRegistry
         Task<bool> IsCompatibleAsync(string subject, string avroSchema);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
-        string ConstructRegistrySubject(string topic, SubjectType keyOrValue);
+        string ConstructSubjectName(string topic, bool isKey);
 
 
         // TODO: the following interfaces may be required.

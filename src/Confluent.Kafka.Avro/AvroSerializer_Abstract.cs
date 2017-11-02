@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Serialization
     ///     Serializer to serialize all kind of object using confluent Schema Registry
     ///     For performances, use the generic serializer if you always use a specific type
     /// </summary>
-    internal abstract class ConfluentAvroSerializerBase<T> : ISerializer<T>
+    internal abstract class AvroSerializerBase<T> : ISerializer<T>
     {
         // [0] : Magic byte (0 as of today, used for future version with breaking change)
         // [1-4] : unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
@@ -56,7 +56,7 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         /// <param name="schemaRegistryClient"></param>
         /// <param name="isKey"></param>
-        public ConfluentAvroSerializerBase(ISchemaRegistryClient schemaRegistryClient, bool isKey)
+        public AvroSerializerBase(ISchemaRegistryClient schemaRegistryClient, bool isKey)
         {
             SchemaRegistryClient = schemaRegistryClient;
             IsKey = isKey;
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns></returns>
         public byte[] Serialize(string topic, T data)
         {
-            string subject = SchemaRegistryClient.GetRegistrySubject(topic, IsKey);
+            string subject = SchemaRegistryClient.ConstructSubjectName(topic, IsKey);
 
             int schemaId;
             Avro.Schema schema = GetSchema(data);

@@ -29,7 +29,7 @@ namespace Confluent.Kafka.Serialization
     ///     Avro specific serializer. Used to serialize primitive types
     ///     or types generated with avrogen tool.
     /// </summary>
-    public class ConfluentAvroSerializer<T> : ISerializer<T>
+    public class AvroSerializer<T> : ISerializer<T>
     {
         // [0] : magic byte (use to identify protocol format)
         // [1-4] : unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
@@ -63,7 +63,7 @@ namespace Confluent.Kafka.Serialization
 		/// <summary>
         ///		Indicates if this serializer is used for kafka keys or values.
         /// </summary>
-        public bool IsKey { get; }
+        public bool IsKey { get; private set; }
 
         /// <summary>
         ///     The avro schema corresponding to type <see cref="T"/>
@@ -79,25 +79,40 @@ namespace Confluent.Kafka.Serialization
         ///     You will have to monitor the size of <see cref="Serialize(string, T)"/>
         ///     to take correct value.
         /// </remarks>
-        public int MemoryStreamInitialCapavity { get; set; } = 30;
+        public int InitialBufferCapacity { get; private set; }
 
 
         /// <summary>
         ///     Initiliaze an avro serializer.
         /// </summary>
-        /// <param name="schemaRegisterClient">
+        /// <param name="schemaRegistry">
         ///		Client used to communicate with confluent schema registry.
-        ///	</param>
-        /// <param name="isKey">
-        ///		Indicates if this serializer is used for kafka keys or values.
         ///	</param>
         /// <exception cref="InvalidOperationException">
         ///		The generic type <see cref="T"/> is not supported.
         ///	</exception>
-        public ConfluentAvroSerializer(ISchemaRegistryClient schemaRegisterClient, bool isKey)
+        public AvroSerializer(ISchemaRegistryClient schemaRegistry)
+            : this(schemaRegistry, 128)
+        {}
+
+        /// <summary>
+        ///     Initialize a new instance of AvroSerializer.
+        /// </summary>
+        /// <param name="schemaRegistry">
+        ///		Client used for communication with Confluent's Schema Registry.
+        ///	</param>
+        /// <param name="initialBufferCapacity">
+        ///     The initial size of the buffer used for serializing messages (note: each call 
+        ///     to serialize creates a new buffer). You should specify a value high enough to
+        ///     avoid re-allocation, but not so high as to cause excessive memory use.
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        ///		The generic type <see cref="T"/> is not supported.
+        ///	</exception>
+        public AvroSerializer(ISchemaRegistryClient schemaRegistry, int initialBufferCapacity)
         {
-            SchemaRegisterClient = schemaRegisterClient;
-            IsKey = isKey;
+            SchemaRegisterClient = schemaRegistry;
+            InitialBufferCapacity = initialBufferCapacity;
 
             Type writerType = typeof(T);
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType) || writerType.IsSubclassOf(typeof(SpecificFixed)))
@@ -134,10 +149,11 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException($"{nameof(ConfluentAvroSerializer<T>)} " +
+                throw new InvalidOperationException($"{nameof(AvroSerializer<T>)} " +
                     "only accepts int, bool, double, string, float, long, byte[], " +
                     "ISpecificRecord subclass and SpecificFixed");
             }
+
             avroWriter = new SpecificWriter<T>(WriterSchema);
         }
 
@@ -160,7 +176,7 @@ namespace Confluent.Kafka.Serialization
             if (!topicsRegistred.Contains(topic))
             {
                 // first usage: register schema, to check compatibility and version
-                string subject = SchemaRegisterClient.GetRegistrySubject(topic, IsKey);
+                string subject = SchemaRegisterClient.ConstructSubjectName(topic, IsKey);
                 // schemaId could already be intialized through an other topic
                 // this has no impact, as schemaId will be the same
                 SchemaId = SchemaRegisterClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
@@ -169,7 +185,7 @@ namespace Confluent.Kafka.Serialization
                 topicsRegistred.Add(topic);
             }
 			
-            using (var stream = new MemoryStream(MemoryStreamInitialCapavity))
+            using (var stream = new MemoryStream(InitialBufferCapacity))
             using (var writer = new BinaryWriter(stream))
             {
                 stream.WriteByte(MAGIC_BYTE);
@@ -177,18 +193,15 @@ namespace Confluent.Kafka.Serialization
                 writer.Write(schemaIdBigEndian);
                 avroWriter.Write(data, new BinaryEncoder(stream));
 
-                // TODO
-                // stream.ToArray create a copy of the array
-                // we could return GetBuffer (or GetArraySegment in netstandard) 
-                // with proper length / offset to avoid this copy
-                // which would require to change ISerializer interface
+                // TODO: change the ISerializer interface so that this copy isn't necessary.
                 return stream.ToArray();
             }
         }
 
+        /// <include file='../../Confluent.Kafka/include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
-            // TODO not necessary for first iteration
+            this.IsKey = isKey;
             return config;
         }
     }

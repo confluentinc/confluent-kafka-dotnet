@@ -5,17 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="ConfluentAvroSerializer.Specific.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Apache.Avro" Version="1.7.7.2" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 
+
   <ItemGroup>
-    <ProjectReference Include="..\Confluent.Kafka.SchemaRegistry\Confluent.Kafka.SchemaRegistry.csproj" />
     <ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
+    <ProjectReference Include="..\Confluent.Kafka.SchemaRegistry\Confluent.Kafka.SchemaRegistry.csproj" />
   </ItemGroup>
 
 </Project>

@@ -19,7 +19,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
             {
                 schemaRegistryMock = new Mock<ISchemaRegistryClient>();
                 schemaRegistry = schemaRegistryMock.Object;
-                schemaRegistryMock.Setup(x => x.GetRegistrySubject(topic, isKey)).Returns(subject);
+                schemaRegistryMock.Setup(x => x.ConstructSubjectName(topic, isKey)).Returns(subject);
             }
             schemaRegistryMock.Setup(x => x.RegisterAsync(subject, schema)).ReturnsAsync(schemaId);
             schemaRegistryMock.Setup(x => x.GetSchemaAsync(schemaId)).ReturnsAsync(schema);
@@ -34,8 +34,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
                 favorite_number = 100,
                 name = "awesome"
             };
-            var serializer = new ConfluentAvroSerializer<User>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<User>(schemaRegistry);
+            var serializer = new AvroSerializer<User>(schemaRegistry);
+            var deserializer = new AvroDeserializer<User>(schemaRegistry);
 
             var bytes = serializer.Serialize("topic", user);
             var deserUser = deserializer.Deserialize("topic", bytes);
@@ -53,8 +53,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         {
             InitSchemaRegistry(Avro.Schema.Parse("[\"null\", \"string\"]").ToString(), false);
 
-            var serializer = new ConfluentAvroSerializer<string>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<string>(schemaRegistry);
+            var serializer = new AvroSerializer<string>(schemaRegistry);
+            var deserializer = new AvroDeserializer<string>(schemaRegistry);
 
             var bytes = serializer.Serialize("topic", text);
             var deserUser = deserializer.Deserialize("topic", bytes);
@@ -67,8 +67,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         {
             InitSchemaRegistry(Avro.Schema.Parse("int").ToString());
 
-            var serializer = new ConfluentAvroSerializer<int>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<int>(schemaRegistry);
+            var serializer = new AvroSerializer<int>(schemaRegistry);
+            var deserializer = new AvroDeserializer<int>(schemaRegistry);
 
             var bytes = serializer.Serialize("topic", 10);
             var deserUser = deserializer.Deserialize("topic", bytes);
@@ -81,8 +81,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         {
             InitSchemaRegistry(Avro.Schema.Parse("boolean").ToString());
 
-            var serializer = new ConfluentAvroSerializer<bool>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<bool>(schemaRegistry);
+            var serializer = new AvroSerializer<bool>(schemaRegistry);
+            var deserializer = new AvroDeserializer<bool>(schemaRegistry);
 
             var bytes = serializer.Serialize("topic", true);
             var deserUser = deserializer.Deserialize("topic", bytes);
@@ -95,8 +95,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         {
             InitSchemaRegistry(Avro.Schema.Parse("double").ToString(), false);
 
-            var serializer = new ConfluentAvroSerializer<double>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<double>(schemaRegistry);
+            var serializer = new AvroSerializer<double>(schemaRegistry);
+            var deserializer = new AvroDeserializer<double>(schemaRegistry);
 
             var bytes = serializer.Serialize("topic", 10.5d);
             var deserUser = deserializer.Deserialize("topic", bytes);
@@ -111,8 +111,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         {
             InitSchemaRegistry(Avro.Schema.Parse("string").ToString(), false);
 
-            var serializer = new ConfluentAvroSerializer<string>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<string>(schemaRegistry);
+            var serializer = new AvroSerializer<string>(schemaRegistry);
+            var deserializer = new AvroDeserializer<string>(schemaRegistry);
 
             var bytes = serializer.Serialize("topic", text);
             var deserUser = deserializer.Deserialize("topic", bytes);
@@ -125,8 +125,8 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
         {
             InitSchemaRegistry(Avro.Schema.Parse("bytes").ToString(), false);
 
-            var serializer = new ConfluentAvroSerializer<byte[]>(schemaRegistry, false);
-            var deserializer = new ConfluentAvroDeserializer<byte[]>(schemaRegistry);
+            var serializer = new AvroSerializer<byte[]>(schemaRegistry);
+            var deserializer = new AvroDeserializer<byte[]>(schemaRegistry);
 
             var obj = new byte[] { 1, 2, 3 };
             var bytes = serializer.Serialize("topic", obj);

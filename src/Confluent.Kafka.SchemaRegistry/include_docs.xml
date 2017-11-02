@@ -80,7 +80,7 @@
     </returns>
 </Member>
 
-<Member name="ISchemaRegistryClient_ConstructRegistrySubject">
+<Member name="ISchemaRegistryClient_ConstructSubjectName">
     <summary>
         Returns the schema registry subject name given a topic name and a subject 
         type (key or value).
@@ -88,8 +88,9 @@
     <param name="topic">
         The topic name.
     </param>
-    <param name="keyOrValue">
-        The subject type (key or value).
+    <param name="isKey">
+        true if the schema is associated with a key, false if it is associated with
+        a value.
     </param>
     <returns>
         The subject name given a topic name and a subject 

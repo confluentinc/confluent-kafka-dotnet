@@ -18,6 +18,7 @@ using Confluent.Kafka.SchemaRegistry.Rest;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using System;
 
 
 namespace Confluent.Kafka.SchemaRegistry
@@ -25,7 +26,7 @@ namespace Confluent.Kafka.SchemaRegistry
     /// <summary>
     ///     A Schema Registry client that caches request responses.
     /// </summary>
-    public class CachedSchemaRegistryClient : ISchemaRegistryClient
+    public class SchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
         private ISchemaRegistyRestService restService;
         private readonly int identityMapCapacity;
@@ -34,35 +35,38 @@ namespace Confluent.Kafka.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         
         /// <summary>
-        ///     Initialize a new instance of the CachedSchemaRegistryClient
+        ///     Initialize a new instance of the SchemaRegistryClient class.
         /// </summary>
-        /// <param name="schemaRegistryConfig">
-        ///     
+        /// <param name="config">
+        ///     Configuration properties.
         /// </param>
-        /// <param name="timeoutMs">
-        ///     
-        /// </param>
-        /// <param name="identityMapCapacity">
-        ///     maximum stored schemas by in the cache, cache is wiped when this limit is hit
-        /// </param>
-        public CachedSchemaRegistryClient(
-            string schemaRegistryUris, 
-            int timeoutMs = SchemaRegistryRestService.DefaultTimeout,
-            int identityMapCapacity = 1024)
+        public SchemaRegistryClient(IEnumerable<KeyValuePair<string, object>> config)
         {
-            this.identityMapCapacity = identityMapCapacity;
+            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.urls").FirstOrDefault();
+            if (schemaRegistryUrisMaybe.Value == null)
+            {
+                throw new ArgumentException("schema.registry.urls configuration property must be specified.");
+            }
+            var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
+
+            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.timeout.ms").FirstOrDefault();
+            var timeoutMs = timeoutMsMaybe.Value == null ? SchemaRegistryRestService.DefaultTimeout : (int)timeoutMsMaybe.Value;
+
+            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.max.capacity").FirstOrDefault();
+            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? 1024 : (int)identityMapCapacityMaybe.Value;
+
             this.restService = new SchemaRegistryRestService(schemaRegistryUris, timeoutMs);
         }
 
+        /// <remarks>
+        ///     This is to make sure memory doesn't explode in the case of incorrect usage.
+        /// </remarks>
         private bool CleanCacheIfNeeded()
         {
-            // call before inserting a new element
-
-            // just to make sure we don't explose memory due to wrong usage
-            // don't check _idBySchemaBySubject, it's directly related with both others
+            // don't check _idBySchemaBySubject - it's directly related with both the others.
             if(schemaById.Count + schemaByVersionBySubject.Sum(x=>x.Value.Count) >= identityMapCapacity)
             {
-                // TODO log
+                // TODO: log when this happens.
                 schemaById.Clear();
                 idBySchemaBySubject.Clear();
                 schemaByVersionBySubject.Clear();
@@ -158,7 +162,11 @@ namespace Confluent.Kafka.SchemaRegistry
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
-        public string ConstructRegistrySubject(string topic, SubjectType keyOrValue)
-            => $"{topic}-{(keyOrValue == SubjectType.Key ? "key" : "value")}";
+        public string ConstructSubjectName(string topic, bool isKey)
+            => $"{topic}-{(isKey ? "key" : "value")}";
+
+        public void Dispose()
+            => restService.Dispose();
+
     }
 }

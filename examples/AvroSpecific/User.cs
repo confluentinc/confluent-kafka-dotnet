@@ -5,7 +5,7 @@
 //    is regenerated
 // </auto-generated>
 // ------------------------------------------------------------------------------
-namespace Confluent.Kafka.Examples.AvroGeneric
+namespace Confluent.Kafka.Examples.AvroSpecific
 {
     using System;
     using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
 
     public partial class User : ISpecificRecord
     {
-        public static Schema _SCHEMA = Avro.Schema.Parse("{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroGeneric" +
+        public static Schema _SCHEMA = Avro.Schema.Parse("{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}");
         private string _name;

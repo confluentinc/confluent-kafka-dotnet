@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka.SchemaRegistry.Rest.Entities;
@@ -27,7 +28,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
     ///     required by the Avro serializers, so keeping internal 
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
-    internal interface ISchemaRegistyRestService
+    internal interface ISchemaRegistyRestService : IDisposable
     {
         Task<Schema> CheckSchemaAsync(string subject, string schema);
         Task<Config> GetCompatibilityAsync(string subject);

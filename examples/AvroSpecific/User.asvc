@@ -1,4 +1,4 @@
-﻿{"namespace": "Confluent.Kafka.Examples.AvroGeneric",
+﻿{"namespace": "Confluent.Kafka.Examples.AvroSpecific",
  "type": "record",
  "name": "User",
  "fields": [

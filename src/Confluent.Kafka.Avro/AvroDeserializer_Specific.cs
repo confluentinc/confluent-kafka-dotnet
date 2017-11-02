@@ -30,14 +30,14 @@ namespace Confluent.Kafka.Serialization
     /// <summary>
     ///     Avro generic deserializer
     /// </summary>
-    public class ConfluentAvroDeserializer<T> : IDeserializer<T>
+    public class AvroDeserializer<T> : IDeserializer<T>
     {
         // [0] : magic byte (use to identify protocol format)
         // [1-4] : unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
         // following: data serialized with corresponding schema
 
         // topic refer to kafka topic
-        // subject refers to schema registry subject. Usually topic postfixed by -key or -data
+        // subject refers to schema registry subject. Usually topic postfixed by -key or -value
 
         /// <summary>
         ///     Magic byte identifying avro confluent protocol format.
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.Serialization
         /// <exception cref="InvalidOperationException">
         ///		The generic type <see cref="T"/> is not supported.
         ///	</exception>
-        public ConfluentAvroDeserializer(ISchemaRegistryClient schemaRegisterClient)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegisterClient)
         {
             SchemaRegisterClient = schemaRegisterClient;
 
@@ -105,7 +105,7 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException($"{nameof(ConfluentAvroDeserializer<T>)} " +
+                throw new InvalidOperationException($"{nameof(AvroDeserializer<T>)} " +
                     "only accepts int, bool, double, string, float, long, byte[], " +
                     "ISpecificRecord subclass and SpecificFixed");
             }

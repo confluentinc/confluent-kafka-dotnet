@@ -462,5 +462,10 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
             => RequestToAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility));
             
         #endregion Config
+
+        public void Dispose()
+        {
+            // TODO.
+        }
     }
 }
