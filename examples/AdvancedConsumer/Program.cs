@@ -122,7 +122,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
         /// </summary>
         public static void Run_Consume(string brokerList, List<string> topics)
         {
-            using (var consumer = new Consumer<Null, string>(constructConfig(brokerList, false), null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(constructConfig(brokerList, false), null, new StringDeserializer(Encoding.UTF8)))
             {
                 // Note: All event handlers are called on the main thread.
 
@@ -131,6 +131,9 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
 
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
+
+                consumer.OnConsumeError += (_, error)
+                    => Console.WriteLine($"Consume error: {error}");
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -159,7 +162,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
 
                 while (!cancelled)
                 {
-                    Message<Null, string> msg;
+                    Message<Ignore, string> msg;
                     if (!consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
                         continue;

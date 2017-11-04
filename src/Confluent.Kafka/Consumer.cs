@@ -67,22 +67,34 @@ namespace Confluent.Kafka
 
             if (KeyDeserializer == null)
             {
-                if (typeof(TKey) != typeof(Null))
+                if (typeof(TKey) == typeof(Null))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
+                }
+                else if (typeof(TKey) == typeof(Ignore))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new IgnoreDeserializer();
+                }
+                else
                 {
                     throw new ArgumentNullException("Key deserializer must be specified.");
                 }
-                // TKey == Null -> cast is always valid.
-                KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
             }
 
             if (ValueDeserializer == null)
             {
-                if (typeof(TValue) != typeof(Null))
+                if (typeof(TValue) == typeof(Null))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
+                }
+                else if (typeof(TValue) == typeof(Ignore))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new IgnoreDeserializer();
+                }
+                else
                 {
                     throw new ArgumentNullException("Value deserializer must be specified.");
                 }
-                // TValue == Null -> cast is always valid.
-                ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
             }
 
             var configWithoutKeyDeserializerProperties = KeyDeserializer.Configure(config, true);
