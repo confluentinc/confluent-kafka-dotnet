@@ -834,6 +834,11 @@ namespace Confluent.Kafka
             KeySerializer = keySerializer;
             ValueSerializer = valueSerializer;
 
+            if (keySerializer != null && keySerializer == valueSerializer)
+            {
+                throw new ArgumentException("Key and value serializers must not be the same object.");
+            }
+
             if (KeySerializer == null)
             {
                 if (typeof(TKey) != typeof(Null))

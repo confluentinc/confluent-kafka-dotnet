@@ -65,6 +65,11 @@ namespace Confluent.Kafka
             KeyDeserializer = keyDeserializer;
             ValueDeserializer = valueDeserializer;
 
+            if (keyDeserializer != null && keyDeserializer == valueDeserializer)
+            {
+                throw new ArgumentException("Key and value deserializers must not be the same object.");
+            }
+
             if (KeyDeserializer == null)
             {
                 if (typeof(TKey) == typeof(Null))
