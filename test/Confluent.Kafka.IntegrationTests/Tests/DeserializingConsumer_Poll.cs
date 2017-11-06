@@ -30,10 +30,10 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic DeserializingConsumer test (poll mode).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DeserializingConsumer_Poll(string bootstrapServers, string topic, string partitionedTopic)
+        public static void DeserializingConsumer_Poll(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             int N = 2;
-            var firstProduced = Util.ProduceMessages(bootstrapServers, topic, 100, N);
+            var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
 
             var consumerConfig = new Dictionary<string, object>
             {
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionsRevoked += (_, partitions)
                     => consumer.Unassign();
 
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (!done)
                 {

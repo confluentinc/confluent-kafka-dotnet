@@ -68,7 +68,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_DeliveryHandler(string bootstrapServers, string topic, string partitionedTopic)
+        public static void Producer_ProduceAsync_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
@@ -76,42 +76,42 @@ namespace Confluent.Kafka.IntegrationTests
                 { "api.version.request", true }
             };
 
-            var dh = new DeliveryHandler_P(topic);
+            var dh = new DeliveryHandler_P(singlePartitionTopic);
 
             using (var producer = new Producer(producerConfig))
             {
                 producer.ProduceAsync(
-                    topic,
+                    singlePartitionTopic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
                     0, true, dh
                 );
 
                 producer.ProduceAsync(
-                    topic,
+                    singlePartitionTopic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
                     0, dh
                 );
 
                 producer.ProduceAsync(
-                    topic,
+                    singlePartitionTopic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
                     true, dh
                 );
 
                 producer.ProduceAsync(
-                    topic,
+                    singlePartitionTopic,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
                     dh
                 );
 
-                producer.ProduceAsync(topic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue, dh);
+                producer.ProduceAsync(singlePartitionTopic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue, dh);
 
                 producer.ProduceAsync(
-                    topic,
+                    singlePartitionTopic,
                     DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length-2,
                     DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length-3,
                     dh

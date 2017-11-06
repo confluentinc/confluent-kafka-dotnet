@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     You should never do this, but the brokers don't actually prevent it.
         /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DuplicateConsumerAssign(string bootstrapServers, string topic, string partitionedTopic)
+        public static void DuplicateConsumerAssign(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
             Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(topic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
                 Assert.NotNull(dr);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
@@ -56,8 +56,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer1 = new Consumer(consumerConfig))
             using (var consumer2 = new Consumer(consumerConfig))
             {
-                consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
-                consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, dr.Partition, 0) });
+                consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
+                consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 Message msg;
                 var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
                 Assert.NotNull(msg);

@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Await(string bootstrapServers, string topic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "api.version.request", true }
             };
 
-            var task = Producer_ProduceAsync_Await_Task(producerConfig, topic);
+            var task = Producer_ProduceAsync_Await_Task(producerConfig, singlePartitionTopic);
             task.Wait();
         }
     }

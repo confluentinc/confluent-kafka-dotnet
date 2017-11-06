@@ -32,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Segfault?
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void GarbageCollect(string bootstrapServers, string topic, string partitionedTopic)
+        public static void GarbageCollect(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object>
             {
@@ -47,12 +47,12 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                producer.ProduceAsync(topic, null, "test string").Wait();
+                producer.ProduceAsync(singlePartitionTopic, null, "test string").Wait();
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
                 consumer.Poll(1000);
             }
 

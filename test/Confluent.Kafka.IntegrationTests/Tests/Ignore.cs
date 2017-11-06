@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -24,11 +25,10 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that null and byte[0] keys and values are produced / consumed
-        ///     as expected.
+        ///     Test that the ignore deserialier behaves as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void NullVsEmpty(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void IgnoreTest(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -45,18 +45,18 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(singlePartitionTopic, (byte[])null, null).Result;
-                producer.ProduceAsync(singlePartitionTopic, null, new byte[0]).Wait();
-                producer.ProduceAsync(singlePartitionTopic, new byte[0], null).Wait();
-                producer.ProduceAsync(singlePartitionTopic, new byte[0], new byte[0]).Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, null, null).Result;
+                producer.ProduceAsync(singlePartitionTopic, null, new byte[] { 1 }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new byte[] { 0 }, null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new byte[] { 42 }, new byte[] { 42, 240 }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Ignore, Ignore>(consumerConfig, null, null))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                Message msg;
+                Message<Ignore, Ignore> msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(msg);
                 Assert.Null(msg.Key);
@@ -65,15 +65,25 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(msg);
                 Assert.Null(msg.Key);
-                Assert.Equal(msg.Value, new byte[0]);
-
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.Equal(msg.Key, new byte[0]);
                 Assert.Null(msg.Value);
 
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.Equal(msg.Key, new byte[0]);
-                Assert.Equal(msg.Value, new byte[0]);
+                Assert.NotNull(msg);
+                Assert.Null(msg.Key);
+                Assert.Null(msg.Value);
+            }
+
+            using (var consumer = new Consumer<Ignore, byte[]>(consumerConfig, null, new ByteArrayDeserializer()))
+            {
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
+
+                Message<Ignore, byte[]> msg;
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(msg);
+                Assert.Null(msg.Key);
+                Assert.NotNull(msg.Value);
+                Assert.Equal(msg.Value[0], 42);
+                Assert.Equal(msg.Value[1], 240);
             }
         }
 

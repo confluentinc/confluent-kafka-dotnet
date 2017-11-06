@@ -31,10 +31,10 @@ namespace Confluent.Kafka.IntegrationTests
         ///     group using the ListGroup method (on a Consumer).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void ListGroup(string bootstrapServers, string topic, string partitionedTopic)
+        public static void ListGroup(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             int N = 2;
-            var firstProduced = Util.ProduceMessages(bootstrapServers, topic, 100, N);
+            var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
 
             var groupId = Guid.NewGuid().ToString();
             var consumerConfig = new Dictionary<string, object>
@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
 
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (!done)
                 {

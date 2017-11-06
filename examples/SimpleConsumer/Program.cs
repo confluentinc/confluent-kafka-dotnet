@@ -38,13 +38,21 @@ namespace Confluent.Kafka.Examples.SimpleConsumer
                 { "bootstrap.servers", brokerList }
             };
 
-            using (var consumer = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topics.First(), 0, 0) });
+                
+                // Raised on critical errors, e.g. connection failures or all brokers down.
+                consumer.OnError += (_, error)
+                    => Console.WriteLine($"Error: {error}");
 
+                // Raised on deserialization errors or when a consumed message has an error != NoError.
+                consumer.OnConsumeError += (_, error)
+                    => Console.WriteLine($"Consume error: {error}");
+                
                 while (true)
                 {
-                    Message<Null, string> msg;
+                    Message<Ignore, string> msg;
                     if (consumer.Consume(out msg, TimeSpan.FromSeconds(1)))
                     {
                         Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");

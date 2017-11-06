@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that produces a message then consumes it.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AddBrokers(string bootstrapServers, string topic, string partitionedTopic)
+        public static void AddBrokers(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             // This test assumes broker v0.10.0 or higher:
             // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility

@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple Consumer Pause / Resume test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_Pause_Resume(string bootstrapServers, string topic, string partitionedTopic)
+        public static async Task Consumer_Pause_Resume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                     assignedPartitions = partitions;
                 };
 
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (assignedPartitions == null) 
                 {
@@ -61,10 +61,10 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 Assert.False(consumer.Consume(out message, TimeSpan.FromSeconds(1)));
 
-                Assert.False(producer.ProduceAsync(topic, null, "test value").Result.Error);
+                Assert.False(producer.ProduceAsync(singlePartitionTopic, null, "test value").Result.Error);
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 consumer.Pause(assignedPartitions);
-                producer.ProduceAsync(topic, null, "test value 2").Wait();
+                producer.ProduceAsync(singlePartitionTopic, null, "test value 2").Wait();
                 Assert.False(consumer.Consume(out message, TimeSpan.FromSeconds(2)));
                 consumer.Resume(assignedPartitions);
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(10)));

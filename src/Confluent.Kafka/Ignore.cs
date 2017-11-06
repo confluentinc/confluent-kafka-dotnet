@@ -20,12 +20,12 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A type for use in conjunction with <see cref="NullSerializer" />
-    ///     and <see cref="NullDeserializer" /> that enables null key or 
-    ///     values to be enforced when producing or consuming messages.
+    ///     A type for use in conjunction with <see cref="IgnoreDeserializer" />
+    ///     that enables message keys or values to be read as null, regardless
+    ///     of their value.
     /// </summary>
-    public sealed class Null
+    public sealed class Ignore
     {
-        private Null() {}
+        private Ignore() {}
     }
 }

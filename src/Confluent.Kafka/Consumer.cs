@@ -65,24 +65,41 @@ namespace Confluent.Kafka
             KeyDeserializer = keyDeserializer;
             ValueDeserializer = valueDeserializer;
 
+            if (keyDeserializer != null && keyDeserializer == valueDeserializer)
+            {
+                throw new ArgumentException("Key and value deserializers must not be the same object.");
+            }
+
             if (KeyDeserializer == null)
             {
-                if (typeof(TKey) != typeof(Null))
+                if (typeof(TKey) == typeof(Null))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
+                }
+                else if (typeof(TKey) == typeof(Ignore))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new IgnoreDeserializer();
+                }
+                else
                 {
                     throw new ArgumentNullException("Key deserializer must be specified.");
                 }
-                // TKey == Null -> cast is always valid.
-                KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
             }
 
             if (ValueDeserializer == null)
             {
-                if (typeof(TValue) != typeof(Null))
+                if (typeof(TValue) == typeof(Null))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
+                }
+                else if (typeof(TValue) == typeof(Ignore))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new IgnoreDeserializer();
+                }
+                else
                 {
                     throw new ArgumentNullException("Value deserializer must be specified.");
                 }
-                // TValue == Null -> cast is always valid.
-                ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
             }
 
             var configWithoutKeyDeserializerProperties = KeyDeserializer.Configure(config, true);
@@ -293,6 +310,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Raised when a consumed message has an error != NoError (both when Consume or Poll is used for polling).
+        ///     Also raised on deserialization errors.
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).

@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new object[]
                     {
                         json["bootstrapServers"].ToString(),
-                        json["topic"].ToString(),
+                        json["singlePartitionTopic"].ToString(),
                         json["partitionedTopic"].ToString()
                     }
                 };

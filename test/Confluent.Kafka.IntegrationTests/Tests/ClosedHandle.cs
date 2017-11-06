@@ -27,7 +27,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     when Dispose has been called
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
+        public static void Producer_ClosedHandle(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object>
             {

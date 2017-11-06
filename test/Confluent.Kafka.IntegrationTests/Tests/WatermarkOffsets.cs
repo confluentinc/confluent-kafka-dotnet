@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests for GetWatermarkOffsets and QueryWatermarkOffsets on producer and consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void WatermarkOffsets(string bootstrapServers, string topic, string partitionedTopic)
+        public static void WatermarkOffsets(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object>
             {
@@ -42,10 +42,10 @@ namespace Confluent.Kafka.IntegrationTests
             Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(topic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
 
-                var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(topic, 0));
+                var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.NotEqual(queryOffsets.High, Offset.Invalid);
 

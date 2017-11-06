@@ -63,9 +63,11 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionEOF += (_, end)
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
+                // Raised on critical errors, e.g. connection failures or all brokers down.
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
+                // Raised on deserialization errors or when a consumed message has an error != NoError.
                 consumer.OnConsumeError += (_, msg)
                     => Console.WriteLine($"Error consuming from topic/partition/offset {msg.Topic}/{msg.Partition}/{msg.Offset}: {msg.Error}");
 
@@ -122,7 +124,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
         /// </summary>
         public static void Run_Consume(string brokerList, List<string> topics)
         {
-            using (var consumer = new Consumer<Null, string>(constructConfig(brokerList, false), null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(constructConfig(brokerList, false), null, new StringDeserializer(Encoding.UTF8)))
             {
                 // Note: All event handlers are called on the main thread.
 
@@ -131,6 +133,9 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
 
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
+
+                consumer.OnConsumeError += (_, error)
+                    => Console.WriteLine($"Consume error: {error}");
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -159,7 +164,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
 
                 while (!cancelled)
                 {
-                    Message<Null, string> msg;
+                    Message<Ignore, string> msg;
                     if (!consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
                     {
                         continue;
