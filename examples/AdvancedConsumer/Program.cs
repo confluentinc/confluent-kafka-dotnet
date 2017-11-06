@@ -63,9 +63,11 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                 consumer.OnPartitionEOF += (_, end)
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
+                // Raised on critical errors, e.g. connection failures or all brokers down.
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
+                // Raised on deserialization errors or when a consumed message has an error != NoError.
                 consumer.OnConsumeError += (_, msg)
                     => Console.WriteLine($"Error consuming from topic/partition/offset {msg.Topic}/{msg.Partition}/{msg.Offset}: {msg.Error}");
 

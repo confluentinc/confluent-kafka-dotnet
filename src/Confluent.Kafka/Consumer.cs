@@ -310,6 +310,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Raised when a consumed message has an error != NoError (both when Consume or Poll is used for polling).
+        ///     Also raised on deserialization errors.
         /// </summary>
         /// <remarks>
         ///     Executes on the same thread as every other Consumer event handler (except OnLog which may be called from an arbitrary thread).

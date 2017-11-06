@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void NullVsEmpty(string bootstrapServers, string topic, string partitionedTopic)
+        public static void NullVsEmpty(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -45,10 +45,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(topic, (byte[])null, null).Result;
-                producer.ProduceAsync(topic, null, new byte[0]).Wait();
-                producer.ProduceAsync(topic, new byte[0], null).Wait();
-                producer.ProduceAsync(topic, new byte[0], new byte[0]).Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, (byte[])null, null).Result;
+                producer.ProduceAsync(singlePartitionTopic, null, new byte[0]).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new byte[0], null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new byte[0], new byte[0]).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string topic, string partitionedTopic)
+        public static void SerializingProducer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
@@ -64,14 +64,14 @@ namespace Confluent.Kafka.IntegrationTests
                 { "api.version.request", true }
             };
 
-            var dh = new DeliveryHandler_SPN(topic);
+            var dh = new DeliveryHandler_SPN(singlePartitionTopic);
 
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.ProduceAsync(topic, null, null, 0, true, dh);
-                producer.ProduceAsync(topic, null, null, 0, dh);
-                producer.ProduceAsync(topic, null, null, true, dh);
-                producer.ProduceAsync(topic, null, null, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, null, 0, true, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, null, 0, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, null, true, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, null, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -27,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that the ignore deserialier behaves as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void IgnoreTest(string bootstrapServers, string topic, string partitionedTopic)
+        public static void IgnoreTest(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -44,10 +45,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(topic, null, null).Result;
-                producer.ProduceAsync(topic, null, new byte[] { 1 }).Wait();
-                producer.ProduceAsync(topic, new byte[] { 0 }, null).Wait();
-                producer.ProduceAsync(topic, new byte[] { 42 }, new byte[] { 42, 240 }).Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, null, null).Result;
+                producer.ProduceAsync(singlePartitionTopic, null, new byte[] { 1 }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new byte[] { 0 }, null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new byte[] { 42 }, new byte[] { 42, 240 }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -70,11 +71,19 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(msg);
                 Assert.Null(msg.Key);
                 Assert.Null(msg.Value);
+            }
 
+            using (var consumer = new Consumer<Ignore, byte[]>(consumerConfig, null, new ByteArrayDeserializer()))
+            {
+                consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
+
+                Message<Ignore, byte[]> msg;
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(msg);
                 Assert.Null(msg.Key);
-                Assert.Null(msg.Value);
+                Assert.NotNull(msg.Value);
+                Assert.Equal(msg.Value[0], 42);
+                Assert.Equal(msg.Value[1], 240);
             }
         }
 

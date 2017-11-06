@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     higher than the offset of the last message on a partition.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AssignPastEnd(string bootstrapServers, string topic, string partitionedTopic)
+        public static void AssignPastEnd(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
             Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(topic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
                 Assert.True(dr.Offset >= 0);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

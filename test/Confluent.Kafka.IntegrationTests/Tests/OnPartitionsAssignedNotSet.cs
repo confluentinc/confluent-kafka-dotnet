@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void OnPartitionsAssignedNotSet(string bootstrapServers, string topic, string partitionedTopic)
+        public static void OnPartitionsAssignedNotSet(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -45,18 +45,18 @@ namespace Confluent.Kafka.IntegrationTests
             // Producing onto the topic to make sure it exists.
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                var dr = producer.ProduceAsync(topic, null, "test string").Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, null, "test string").Result;
                 Assert.NotEqual((long)dr.Offset, (long)Offset.Invalid); // TODO: remove long cast. this is fixed in PR #29
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
                 Assert.Equal(consumer.Assignment.Count, 0);
                 consumer.Poll(TimeSpan.FromSeconds(10));
                 Assert.Equal(consumer.Assignment.Count, 1);
-                Assert.Equal(consumer.Assignment[0].Topic, topic);
+                Assert.Equal(consumer.Assignment[0].Topic, singlePartitionTopic);
             }
         }
     }

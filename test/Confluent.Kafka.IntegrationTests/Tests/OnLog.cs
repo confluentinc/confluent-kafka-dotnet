@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests that log messages are received by OnLog on all Producer and Consumer variants.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void OnLog(string bootstrapServers, string topic, string partitionedTopic)
+        public static void OnLog(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
-                producer.ProduceAsync(topic, null, (byte[])null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, null, (byte[])null).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
-                dr = producer.ProduceAsync(topic, null, "test value").Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, null, "test value").Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
                 
-                sProducer.ProduceAsync(topic, null, "test value").Wait();
+                sProducer.ProduceAsync(singlePartitionTopic, null, "test value").Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);

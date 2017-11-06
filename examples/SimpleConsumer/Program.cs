@@ -42,9 +42,11 @@ namespace Confluent.Kafka.Examples.SimpleConsumer
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topics.First(), 0, 0) });
                 
+                // Raised on critical errors, e.g. connection failures or all brokers down.
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
+                // Raised on deserialization errors or when a consumed message has an error != NoError.
                 consumer.OnConsumeError += (_, error)
                     => Console.WriteLine($"Consume error: {error}");
                 

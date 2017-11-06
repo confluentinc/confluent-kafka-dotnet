@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple test of both Consumer.Assign overloads.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AssignOverloads(string bootstrapServers, string topic, string partitionedTopic)
+        public static void AssignOverloads(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -45,9 +45,9 @@ namespace Confluent.Kafka.IntegrationTests
             Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(topic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
                 Assert.False(dr.Error.HasError);
-                var dr2 = producer.ProduceAsync(topic, null, testString2).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, null, testString2).Result;
                 Assert.False(dr2.Error.HasError);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

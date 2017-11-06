@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
 
-        public static void SimpleProduceConsume(string bootstrapServers, string topic, string partitionedTopic)
+        public static void SimpleProduceConsume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             // This test assumes broker v0.10.0 or higher:
             // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
@@ -56,8 +56,8 @@ namespace Confluent.Kafka.IntegrationTests
             Message<Null, string> produceResult2;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                produceResult1 = ProduceMessage(topic, producer, testString1);
-                produceResult2 = ProduceMessage(topic, producer, testString2);
+                produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
+                produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
             using (var consumer = new Consumer(consumerConfig))

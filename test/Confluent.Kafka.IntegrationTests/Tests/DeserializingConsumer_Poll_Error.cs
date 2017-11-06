@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     and values are surfaced via the OnConsumeError event.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DeserializingConsumer_Poll_Error(string bootstrapServers, string topic, string partitionedTopic)
+        public static void DeserializingConsumer_Poll_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
@@ -42,8 +42,8 @@ namespace Confluent.Kafka.IntegrationTests
             TopicPartitionOffset firstProduced = null;
             using (var producer = new Producer(producerConfig))
             {
-                firstProduced = producer.ProduceAsync(topic, Encoding.UTF8.GetBytes("key"), null).Result.TopicPartitionOffset;
-                producer.ProduceAsync(topic, null, Encoding.UTF8.GetBytes("val"));
+                firstProduced = producer.ProduceAsync(singlePartitionTopic, Encoding.UTF8.GetBytes("key"), null).Result.TopicPartitionOffset;
+                producer.ProduceAsync(singlePartitionTopic, null, Encoding.UTF8.GetBytes("val"));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionsRevoked += (_, partitions)
                     => consumer.Unassign();
 
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (!done)
                 {
@@ -130,7 +130,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionsRevoked += (_, partitions)
                     => consumer.Unassign();
 
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (!done)
                 {

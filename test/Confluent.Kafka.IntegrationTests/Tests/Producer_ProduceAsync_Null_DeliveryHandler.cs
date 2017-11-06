@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string topic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
@@ -64,16 +64,16 @@ namespace Confluent.Kafka.IntegrationTests
                 { "api.version.request", true }
             };
 
-            var dh = new DeliveryHandler_PN(topic);
+            var dh = new DeliveryHandler_PN(singlePartitionTopic);
 
             using (var producer = new Producer(producerConfig))
             {
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, 0, true, dh);
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, 0, dh);
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, true, dh);
-                producer.ProduceAsync(topic, null, 0, 0, null, 0, 0, dh);
-                producer.ProduceAsync(topic, null, null, dh);
-                Assert.Throws<ArgumentException>(() => producer.ProduceAsync(topic, null, -123, int.MinValue, null, int.MaxValue, 44, dh));
+                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, 0, true, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, 0, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, true, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, dh);
+                producer.ProduceAsync(singlePartitionTopic, null, null, dh);
+                Assert.Throws<ArgumentException>(() => producer.ProduceAsync(singlePartitionTopic, null, -123, int.MinValue, null, int.MaxValue, 44, dh));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

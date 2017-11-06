@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Null_Task(string bootstrapServers, string topic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Null_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 

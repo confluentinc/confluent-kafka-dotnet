@@ -30,12 +30,12 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic OffsetsForTimes test on Consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_OffsetsForTimes(string bootstrapServers, string topic, string partitionedTopic)
+        public static async Task Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             const int N = 10;
             const int Partition = 0;
 
-            var messages = await ProduceMessages(bootstrapServers, topic, Partition, N);
+            var messages = await ProduceMessages(bootstrapServers, singlePartitionTopic, Partition, N);
 
             var consumerConfig = new Dictionary<string, object>
             {
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // Getting the offset for the timestamp that very far in the past
                 var unixTimeEpoch = Timestamp.UnixTimeEpoch;
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(topic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },
+                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },
                         timeout)
                     .ToList();
 
@@ -86,7 +86,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Getting the offset for the timestamp that very far in the future
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(topic, Partition), new Timestamp(int.MaxValue, TimestampType.CreateTime)) },
+                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(int.MaxValue, TimestampType.CreateTime)) },
                         timeout)
                     .ToList();
 
