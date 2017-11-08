@@ -85,13 +85,11 @@
         absolute or logical offset.
     </summary>
     <param name="tpo">
-        The partitions to resume consumption of.
+        The topic/partition to seek on and the offset to seek to.
     </param>
     <param name="timeout">
+        The maximum period of time the call may block.
     </param>
-    <returns>
-        Per partition success or error.
-    </returns>
 </Member>
 
 </API>  

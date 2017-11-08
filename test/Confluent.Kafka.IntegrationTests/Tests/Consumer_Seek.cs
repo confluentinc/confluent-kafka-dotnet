@@ -22,19 +22,21 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
+
 namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
     {
         /// <summary>
-        ///     A simple Consumer.Seek test.
+        ///     Basic test of Consumer.Seek.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_Seek(string bootstrapServers, string topic, string partitionedTopic)
+        public static async Task Consumer_Seek(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
+                { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers }
             };
 
@@ -43,32 +45,27 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                IEnumerable<TopicPartition> assignedPartitions = null;
+                consumer.OnError += (_, e) =>
+                    Assert.False(true);
+
+                consumer.OnConsumeError += (_, e) =>
+                    Assert.False(true);
+
+                const string checkValue = "check value";
+                var dr = producer.ProduceAsync(singlePartitionTopic, null, checkValue).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, null, "second value").Result;
+                var dr3 = producer.ProduceAsync(singlePartitionTopic, null, "third value").Result;
+
+                consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
+
                 Message<Null, string> message;
-
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    consumer.Assign(partitions);
-                    assignedPartitions = partitions;
-                };
-
-                consumer.Subscribe(topic);
-
-                while (assignedPartitions == null) 
-                {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
-                }
-                Assert.False(consumer.Consume(out message, TimeSpan.FromSeconds(1)));
-
-                var dr = producer.ProduceAsync(topic, null, "check value").Result;
-                producer.ProduceAsync(topic, null, "second value").Wait();
-
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 consumer.Seek(dr.TopicPartitionOffset, TimeSpan.FromSeconds(30));
 
-                var m = consumer.Consume(out message, TimeSpan.FromSeconds(30));
+                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
+                Assert.Equal(checkValue, message.Value);
             }
         }
 

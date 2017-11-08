@@ -369,8 +369,8 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr memberid(IntPtr rk) => _memberid(rk);
 
         private static Func<IntPtr, string, IntPtr, SafeTopicHandle> _topic_new;
-        internal static SafeTopicHandle topic_new(IntPtr rkt, string topic, IntPtr conf)
-            => _topic_new(rkt, topic, conf);
+        internal static SafeTopicHandle topic_new(IntPtr rk, string topic, IntPtr conf)
+            => _topic_new(rk, topic, conf);
 
         private static Action<IntPtr> _topic_destroy;
         internal static void topic_destroy(IntPtr rk) => _topic_destroy(rk);
@@ -734,7 +734,7 @@ namespace Confluent.Kafka.Impl
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern SafeTopicHandle rd_kafka_topic_new(
-                    IntPtr rkt,
+                    IntPtr rk,
                     [MarshalAs(UnmanagedType.LPStr)] string topic,
                     /* rd_kafka_topic_conf_t * */ IntPtr conf);
 

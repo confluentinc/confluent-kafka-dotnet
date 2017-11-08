@@ -149,11 +149,11 @@ namespace Confluent.Kafka.Impl
             return (int)LibRdKafka.poll(handle, millisecondsTimeout);
         }
 
-        /// <param name="config">
-        ///     Setting config to IntPtr.Zero returns the handle of an existing topic,
-        ///     or an invalid handle if a topic with name <paramref name="topic" /> does
-        ///     not exist.
-        /// </param>
+        /// <summary>
+        ///     Setting the config parameter to IntPtr.Zero returns the handle of an 
+        ///     existing topic, or an invalid handle if a topic with name <paramref name="topic" /> 
+        ///     does not exist.
+        /// </summary>
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
             ThrowIfHandleClosed();
