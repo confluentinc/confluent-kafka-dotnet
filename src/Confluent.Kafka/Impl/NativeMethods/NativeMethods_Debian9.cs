@@ -20,9 +20,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
     ///     these are relatively complex, so we prefer to go with the copy/paste solution
     ///     which is relatively simple.
     /// </remarks>
-    internal class NativeMethods_Ssl102
+    internal class NativeMethods_Debian9
     {
-        public const string DllName = "librdkafka++";
+        public const string DllName = "debian9-librdkafka";
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_version();

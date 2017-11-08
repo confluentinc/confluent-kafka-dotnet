@@ -273,7 +273,7 @@ namespace Confluent.Kafka.Impl
                         }
                     }
 
-                    nativeMethodTypes.Add(typeof(NativeMethods));
+                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                 }
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
@@ -284,12 +284,12 @@ namespace Confluent.Kafka.Impl
                             throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
                         }
                     
-                        nativeMethodTypes.Add(typeof(NativeMethods));
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                     }
                     else 
                     {
-                        nativeMethodTypes.Add(typeof(NativeMethods));
-                        nativeMethodTypes.Add(typeof(NativeMethods_Ssl102));
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
                     }
                 }
 
