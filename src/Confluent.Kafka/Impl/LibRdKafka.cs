@@ -254,7 +254,7 @@ namespace Confluent.Kafka.Impl
                     throw new InvalidOperationException(additionalMessage, win32Exception);
                 }
 
-                isInitialized = SetDelegates(typeof(NativeMethods));
+                isInitialized = SetDelegates(typeof(NativeMethods.NativeMethods));
 
 #else
 

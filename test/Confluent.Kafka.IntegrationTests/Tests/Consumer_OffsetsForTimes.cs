@@ -96,7 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
         }
 
-        private static  Message<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static Message<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
             var producerConfig = new Dictionary<string, object>
             {

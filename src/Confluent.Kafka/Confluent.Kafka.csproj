@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>		
-    <PackageReference Include="librdkafka.redist" Version="0.11.1-TEST88" />		
+    <PackageReference Include="librdkafka.redist" Version="0.11.1-TEST101" />		
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">

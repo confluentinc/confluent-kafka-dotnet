@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
+
 namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests

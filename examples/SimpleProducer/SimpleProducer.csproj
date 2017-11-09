@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>SimpleProducer</AssemblyName>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
