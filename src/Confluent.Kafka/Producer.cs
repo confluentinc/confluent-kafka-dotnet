@@ -40,8 +40,6 @@ namespace Confluent.Kafka
         internal const int RD_KAFKA_PARTITION_UA = -1;
         internal const long RD_KAFKA_NO_TIMESTAMP = 0;
 
-        private IEnumerable<KeyValuePair<string, object>> topicConfig;
-
         private SafeDictionary<string, SafeTopicHandle> topicHandles
             = new SafeDictionary<string, SafeTopicHandle>();
 
@@ -101,21 +99,11 @@ namespace Confluent.Kafka
                 return topicHandles[topic];
             }
 
-            var topicConfigHandle = SafeTopicConfigHandle.Create();
-            if (topicConfig != null)
-            {
-                topicConfig
-                    .ToList()
-                    .ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
-            }
-            topicConfigHandle.Set("produce.offset.report", "true");
-            IntPtr configPtr = topicConfigHandle.DangerousGetHandle();
-
             // note: there is a possible (benign) race condition here - topicHandle could have already
             // been created for the topic (and possibly added to topicHandles). If the topicHandle has
             // already been created, rdkafka will return it and not create another. the call to rdkafka
             // is threadsafe.
-            var topicHandle = kafkaHandle.Topic(topic, configPtr);
+            var topicHandle = kafkaHandle.Topic(topic, IntPtr.Zero);
             topicHandles.Add(topic, topicHandle);
 
             return topicHandle;
@@ -259,7 +247,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="manualPoll">
         ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
@@ -272,7 +259,6 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
         {
-            this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
 
@@ -281,6 +267,20 @@ namespace Confluent.Kafka
                 .Where(prop => prop.Key != "default.topic.config")
                 .ToList()
                 .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+
+            // Formerly default topic level configuration values were specified in a nested dictionary "default.topic.config"
+            // This is no longer required by librdkafka, but we still support this for backwards compatibility as follows:
+            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            if (defaultTopicConfig != null)
+            {
+                defaultTopicConfig
+                    .ToList()
+                    .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+            }
+            if (!disableDeliveryReports) 
+            {
+                configHandle.Set("produce.offset.report", "true");
+            }
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
@@ -315,7 +315,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
             : this(config, false, false) {}
@@ -980,7 +979,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -1025,7 +1023,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
