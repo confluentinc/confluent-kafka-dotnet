@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple Consumer StoreOffsets test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_StoreOffsets(string bootstrapServers, string topic, string partitionedTopic)
+        public static void Consumer_StoreOffsets(string bootstrapServers, string topic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -65,9 +65,12 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.False(producer.ProduceAsync(topic, null, "test store offset value").Result.Error);
 
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
-                var offsetResults = consumer.StoreOffset(message);
+                var results = consumer.StoreOffset(message);
 
-                Assert.Equal(ErrorCode.NoError, offsetResults.Error.Code);
+                foreach (var result in results)
+                {
+                    Assert.Equal(ErrorCode.NoError, result.Error.Code);
+                }
             }
         }
 

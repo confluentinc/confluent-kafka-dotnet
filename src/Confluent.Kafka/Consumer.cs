@@ -420,19 +420,20 @@ namespace Confluent.Kafka
         ///     to `auto.commit.interval.ms` or manual offset-less commit().
         /// </summary>
         /// <remarks>
+        ///     `enable.auto.commit` must be set to true and 
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
         /// <param name="message">
-        ///     The message used to determine partition of the offset.
+        ///     A message used to determine the offset to store and topic/partition.
         /// </param>
         /// <returns>
-        ///     Offset results with per-partition errors.
+        ///     Current stored offset or a partition specific error.
         /// </returns>
-        public OffsetResults StoreOffset(Message<TKey, TValue> message)
+        public List<TopicPartitionOffsetError> StoreOffset(Message<TKey, TValue> message)
             => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
-        public OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => consumer.StoreOffsets(offsets);
 
         /// <summary>
@@ -1096,7 +1097,7 @@ namespace Confluent.Kafka
 
 
         /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
-        public OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.StoreOffsets(offsets);
 
 

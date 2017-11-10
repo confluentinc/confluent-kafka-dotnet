@@ -516,20 +516,22 @@ namespace Confluent.Kafka.Impl
         ///     to `auto.commit.interval.ms` or manual offset-less commit().
         /// </summary>
         /// <remarks>
+        ///     `enable.auto.commit` must be set to true and 
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
         /// <param name="offsets">
         ///     List of offsets to be commited.
         /// </param>
         /// <returns>
-        ///     Offset results with per-partition errors.
+        ///     For each topic/partition returns current stored offset
+        ///     or a partition specific error.
         /// </returns>
-        internal OffsetResults StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        internal List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
             ErrorCode err = LibRdKafka.offsets_store(handle, cOffsets);
-            var result = GetTopicPartitionOffsetErrorList(cOffsets);
+            var results = GetTopicPartitionOffsetErrorList(cOffsets);
             LibRdKafka.topic_partition_list_destroy(cOffsets);
 
             if (err != ErrorCode.NoError)
@@ -537,8 +539,7 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(err);
             }
 
-            OffsetResults offsetResults = new OffsetResults(result);
-            return offsetResults;
+            return results;
         }
 
 
