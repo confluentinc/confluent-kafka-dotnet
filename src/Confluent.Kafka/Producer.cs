@@ -32,7 +32,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements a high-level Apache Kafka producer (without serialization).
     /// </summary>
-    public class Producer : IDisposable
+    public class Producer : IDisposable, IAdmin
     {
         private bool manualPoll;
         private bool disableDeliveryReports;
@@ -817,12 +817,16 @@ namespace Confluent.Kafka
         /// </returns>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
+
+        List<TopicError> IAdmin.DeleteTopics(IEnumerable<string> topics, TimeSpan timeout, bool waitForDeletion)
+            => kafkaHandle.AdminDeleteTopics(topics, timeout.TotalMillisecondsAsInt(), waitForDeletion);
     }
 
 
-    internal class SerializingProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>
+    internal class SerializingProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IAdmin
     {
         protected readonly Producer producer;
+        private IAdmin AdminProducer => producer;
 
         public ISerializer<TKey> KeySerializer { get; }
 
@@ -960,9 +964,12 @@ namespace Confluent.Kafka
 
         public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-
+        
         public string Name
             => producer.Name;
+
+        List<TopicError> IAdmin.DeleteTopics(IEnumerable<string> topics, TimeSpan timeout, bool waitForDeletion)
+            => AdminProducer.DeleteTopics(topics, timeout, waitForDeletion);
     }
 
 
@@ -970,11 +977,12 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka producer with key
     ///     and value serialization.
     /// </summary>
-    public class Producer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable
+    public class Producer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable, IAdmin
     {
         private readonly Producer producer;
         private readonly ISerializingProducer<TKey, TValue> serializingProducer;
 
+        private IAdmin AdminProducer => producer;
         /// <summary>
         ///     Creates a new Producer instance.
         /// </summary>
@@ -1433,5 +1441,9 @@ namespace Confluent.Kafka
         /// </returns>
         public int AddBrokers(string brokers)
             => producer.AddBrokers(brokers);
+
+
+        List<TopicError> IAdmin.DeleteTopics(IEnumerable<string> topics, TimeSpan timeout, bool waitForDeletion)
+            => AdminProducer.DeleteTopics(topics, timeout, waitForDeletion);
     }
 }

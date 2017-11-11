@@ -682,6 +682,21 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal static List<TopicError> GetTopicErrorList(IntPtr listPtr)
+        {
+            if (listPtr == IntPtr.Zero)
+            {
+                return new List<TopicError>();
+            }
+
+            var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
+            return Enumerable.Range(0, list.cnt)
+                .Select(i => Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(
+                    list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>()))
+                .Select(ktp => new TopicError(ktp.topic, ktp.err))
+                .ToList();
+        }
+
         internal static List<TopicPartitionError> GetTopicPartitionErrorList(IntPtr listPtr)
         {
             if (listPtr == IntPtr.Zero)
@@ -804,6 +819,55 @@ namespace Confluent.Kafka.Impl
             {
                 throw new KafkaException(err);
             }
+        }
+
+        internal List<TopicError> AdminDeleteTopics(IEnumerable<string> topics, int millisecondsTimeout, bool waitForDeletion)
+        {
+            if(topics == null)
+            {
+                throw new ArgumentNullException(nameof(topics));
+            }
+            if(millisecondsTimeout < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(millisecondsTimeout), "Timeout must be positive");
+            }
+
+            ThrowIfHandleClosed();
+            IntPtr list = LibRdKafka.topic_partition_list_new((IntPtr)topics.Count());
+            if (list == IntPtr.Zero)
+            {
+                throw new Exception("Failed to create topic list");
+            }
+            foreach (string topic in topics)
+            {
+                LibRdKafka.topic_partition_list_add(list, topic, 0); // no partition used
+            }
+            if (!waitForDeletion)
+            {
+                // use negative timeout to use timeout only for controller lookup
+                millisecondsTimeout = -millisecondsTimeout;
+            }
+            ErrorCode err = LibRdKafka.admin_delete_topics(handle, list, (IntPtr)millisecondsTimeout);
+            var result = GetTopicErrorList(list);
+            LibRdKafka.topic_partition_list_destroy(list);
+            if (err != ErrorCode.NoError && !(err == ErrorCode.RequestTimedOut && waitForDeletion))
+            {
+                // see below for RequestTimedOut explanation
+                throw new KafkaException(err);
+            }
+            if (waitForDeletion)
+            {
+                // in this scenario, it is excepted to receive a timeout in case of success
+                // transform it in NoError in this case
+                for (int i = 0; i < result.Count; i++)
+                {
+                    if (result[i].Error.Code == ErrorCode.RequestTimedOut)
+                    {
+                        result[i] = new TopicError(result[i].Topic, new Error(ErrorCode.NoError));
+                    }
+                }
+            }
+            return result;
         }
     }
 }
