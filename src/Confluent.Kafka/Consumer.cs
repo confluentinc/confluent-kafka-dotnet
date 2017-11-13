@@ -420,7 +420,6 @@ namespace Confluent.Kafka
         ///     to `auto.commit.interval.ms` or manual offset-less commit().
         /// </summary>
         /// <remarks>
-        ///     `enable.auto.commit` must be set to true and 
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
         /// <param name="message">
