@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
@@ -31,6 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_StoreOffsets(string bootstrapServers, string topic, string partitionedTopic)
         {
+            
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -62,14 +62,19 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 Assert.False(consumer.Consume(out message, TimeSpan.FromSeconds(1)));
-                Assert.False(producer.ProduceAsync(topic, null, "test store offset value").Result.Error);
 
+                int numerOfMessagesConsumed = 1;
+                Assert.False(producer.ProduceAsync(topic, null, "test store offset value").Result.Error);
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 var results = consumer.StoreOffset(message);
 
+                Assert.Equal(numerOfMessagesConsumed, results.Count);
                 foreach (var result in results)
                 {
                     Assert.Equal(ErrorCode.NoError, result.Error.Code);
+                    Assert.Equal(message.Topic, result.Topic);
+                    Assert.Equal(message.Partition, result.Partition);
+                    Assert.Equal(message.Offset.Value, result.Offset.Value);
                 }
             }
         }
