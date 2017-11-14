@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic test of Consumer.Seek.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_Seek(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_Seek(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
-                consumer.Seek(dr.TopicPartitionOffset, TimeSpan.FromSeconds(30));
+                consumer.Seek(dr.TopicPartitionOffset);
 
                 Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
                 Assert.Equal(checkValue, message.Value);

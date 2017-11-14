@@ -87,9 +87,6 @@
     <param name="tpo">
         The topic/partition to seek on and the offset to seek to.
     </param>
-    <param name="timeout">
-        The maximum period of time the call may block.
-    </param>
 </Member>
 
 </API>  
