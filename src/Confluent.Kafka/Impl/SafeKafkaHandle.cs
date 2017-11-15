@@ -510,6 +510,39 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
+        ///     Store offsets for one or more partitions.
+        ///   
+        ///     The offset will be committed (written) to the offset store according
+        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        /// </summary>
+        /// <remarks>
+        ///     `enable.auto.offset.store` must be set to "false" when using this API.
+        /// </remarks>
+        /// <param name="offsets">
+        ///     List of offsets to be commited.
+        /// </param>
+        /// <returns>
+        ///     For each topic/partition returns current stored offset
+        ///     or a partition specific error.
+        /// </returns>
+        internal List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        {
+            ThrowIfHandleClosed();
+            IntPtr cOffsets = GetCTopicPartitionList(offsets);
+            ErrorCode err = LibRdKafka.offsets_store(handle, cOffsets);
+            var results = GetTopicPartitionOffsetErrorList(cOffsets);
+            LibRdKafka.topic_partition_list_destroy(cOffsets);
+
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(err);
+            }
+
+            return results;
+        }
+
+
+        /// <summary>
         ///  Dummy commit callback that does nothing but prohibits
         ///  triggering the global offset_commit_cb.
         ///  Used by manual commits.

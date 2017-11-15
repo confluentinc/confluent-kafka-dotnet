@@ -432,6 +432,28 @@ namespace Confluent.Kafka
             => consumer.Unassign();
 
         /// <summary>
+        ///     Store offsets for one or more partitions.
+        ///     
+        ///     The offset will be committed (written) to the offset store according
+        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        /// </summary>
+        /// <remarks>
+        ///     `enable.auto.offset.store` must be set to "false" when using this API.
+        /// </remarks>
+        /// <param name="message">
+        ///     A message used to determine the offset to store and topic/partition.
+        /// </param>
+        /// <returns>
+        ///     Current stored offset or a partition specific error.
+        /// </returns>
+        public List<TopicPartitionOffsetError> StoreOffset(Message<TKey, TValue> message)
+            => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
+        public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+            => consumer.StoreOffsets(offsets);
+
+        /// <summary>
         ///     Commit offsets for the current assignment.
         /// </summary>
         public Task<CommittedOffsets> CommitAsync()
@@ -1089,6 +1111,11 @@ namespace Confluent.Kafka
         [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public void Poll()
             => Poll(-1);
+
+
+        /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
+        public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+            => kafkaHandle.StoreOffsets(offsets);
 
 
         /// <summary>
