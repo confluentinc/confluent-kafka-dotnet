@@ -152,7 +152,8 @@ namespace Confluent.Kafka.Impl
         /// <summary>
         ///     Setting the config parameter to IntPtr.Zero returns the handle of an 
         ///     existing topic, or an invalid handle if a topic with name <paramref name="topic" /> 
-        ///     does not exist.
+        ///     does not exist. Note: Only the first applied configuration for a specific
+        ///     topic will be used.
         /// </summary>
         internal SafeTopicHandle Topic(string topic, IntPtr config)
         {

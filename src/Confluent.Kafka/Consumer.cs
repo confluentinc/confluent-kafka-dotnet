@@ -1129,7 +1129,7 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Seek"]/*' />
         public void Seek(TopicPartitionOffset tpo)
-            => kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, 1000);
+            => kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, -1);
 
         /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Pause"]/*' />
         public List<TopicPartitionError> Pause(IEnumerable<TopicPartition> partitions)
