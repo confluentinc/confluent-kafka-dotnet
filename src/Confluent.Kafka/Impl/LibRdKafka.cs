@@ -166,6 +166,7 @@ namespace Confluent.Kafka.Impl
             _committed = NativeMethods.rd_kafka_committed;
             _pause_partitions = NativeMethods.rd_kafka_pause_partitions;
             _resume_partitions = NativeMethods.rd_kafka_resume_partitions;
+            _seek = NativeMethods.rd_kafka_seek;
             _position = NativeMethods.rd_kafka_position;
             _producev = NativeMethods.rd_kafka_producev;
             _flush = NativeMethods.rd_kafka_flush;
@@ -454,6 +455,10 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, ErrorCode> _resume_partitions;
         internal static ErrorCode resume_partitions(IntPtr rk, IntPtr partitions)
             => _resume_partitions(rk, partitions);
+
+        private static Func<IntPtr, int, long, IntPtr, ErrorCode> _seek;
+        internal static ErrorCode seek(IntPtr rkt, int partition, long offset, IntPtr timeout_ms)
+            => _seek(rkt, partition, offset, timeout_ms);
 
         private static Func<IntPtr, IntPtr, IntPtr, ErrorCode> _committed;
         internal static ErrorCode committed(IntPtr rk, IntPtr partitions, IntPtr timeout_ms)
@@ -820,6 +825,10 @@ namespace Confluent.Kafka.Impl
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_resume_partitions(
                     IntPtr rk, IntPtr partitions);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern ErrorCode rd_kafka_seek(
+                    IntPtr rkt, int partition, long offset, IntPtr timeout_ms);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             internal static extern ErrorCode rd_kafka_committed(
