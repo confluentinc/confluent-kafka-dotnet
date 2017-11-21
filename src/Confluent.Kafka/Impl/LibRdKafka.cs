@@ -40,8 +40,6 @@ namespace Confluent.Kafka.Impl
         // max length for error strings built by librdkafka
         internal const int MaxErrorStringLength = 512;
 
-#if NET45 || NET46 || NET47
-
         private static class WindowsNative
         {
             [Flags]
@@ -70,31 +68,17 @@ namespace Confluent.Kafka.Impl
             public static extern IntPtr GetProcAddress(IntPtr hModule, String procname);
         }
 
-#else
-        private static class LinuxNative
+        private static class PosixNative
         {
-            [DllImport("libdl.so")]
+            [DllImport("libdl")]
             public static extern IntPtr dlopen(String fileName, int flags);
 
-            [DllImport("libdl.so")]
+            [DllImport("libdl")]
             public static extern IntPtr dlerror();
 
-            [DllImport("libdl.so")]
+            [DllImport("libdl")]
             public static extern IntPtr dlsym(IntPtr handle, String symbol);
         }
-
-        private static class OsxNative
-        {
-            [DllImport("libdl.dylib")]
-            public static extern IntPtr dlopen(String fileName, int flags);
-
-            [DllImport("libdl.dylib")]
-            public static extern IntPtr dlerror();
-
-            [DllImport("libdl.dylib")]
-            public static extern IntPtr dlsym(IntPtr handle, String symbol);
-        }
-#endif
 
         static bool SetDelegates(Type nativeMethodsClass)
         {
@@ -262,12 +246,11 @@ namespace Confluent.Kafka.Impl
 
                 var nativeMethodTypes = new List<Type>();
 
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
-                    RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     if (userSpecifiedPath != null)
                     {
-                        if (OsxNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                        if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
                         {
                             throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
                         }
@@ -275,11 +258,23 @@ namespace Confluent.Kafka.Impl
 
                     nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                 }
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     if (userSpecifiedPath != null)
                     {
-                        if (LinuxNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                        {
+                            throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
+                        }
+                    }
+
+                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    if (userSpecifiedPath != null)
+                    {
+                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
                             throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
                         }

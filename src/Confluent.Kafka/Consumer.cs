@@ -795,10 +795,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
-            if (!LibRdKafka.IsInitialized)
-            {
-                LibRdKafka.Initialize(null);
-            }
+            LibRdKafka.Initialize(null);
 
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
