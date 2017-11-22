@@ -20,7 +20,7 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A type for use in conjunction with <see cref="IgnoreDeserializer" />
+    ///     A type for use in conjunction with <see cref="Confluent.Kafka.Serialization.IgnoreDeserializer" />
     ///     that enables message keys or values to be read as null, regardless
     ///     of their value.
     /// </summary>
