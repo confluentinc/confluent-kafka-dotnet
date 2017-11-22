@@ -250,6 +250,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_offsets_store(
+                IntPtr rk,
+                /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_commit(
                 IntPtr rk,
                 /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
@@ -270,6 +275,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_resume_partitions(
                 IntPtr rk, IntPtr partitions);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_seek(
+                IntPtr rkt, int partition, long offset, IntPtr timeout_ms);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_committed(

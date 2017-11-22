@@ -136,11 +136,13 @@ namespace Confluent.Kafka.Impl
             _consumer_close = (Func<IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_consumer_close").Single().CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _assign = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_assign").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _assignment = (Assignment)methods.Where(m => m.Name == "rd_kafka_assignment").Single().CreateDelegate(typeof(Assignment));
+            _offsets_store = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_offsets_store").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _commit = (Func<IntPtr, IntPtr, bool, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_commit").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, bool, ErrorCode>));
             _commit_queue = (Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_commit_queue").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode>));
             _committed = (Func<IntPtr, IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_committed").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, ErrorCode>));
             _pause_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_pause_partitions").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _resume_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_resume_partitions").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _seek = (Func<IntPtr, int, long, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_seek").Single().CreateDelegate(typeof(Func<IntPtr, int, long, IntPtr, ErrorCode>));
             _position = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_position").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _producev = (Producev)methods.Where(m => m.Name == "rd_kafka_producev").Single().CreateDelegate(typeof(Producev));
             _flush = (Flush)methods.Where(m => m.Name == "rd_kafka_flush").Single().CreateDelegate(typeof(Flush));
