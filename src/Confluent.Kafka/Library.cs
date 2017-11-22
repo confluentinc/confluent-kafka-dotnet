@@ -68,7 +68,8 @@ namespace Confluent.Kafka
         ///     already loaded.
         /// </summary>
         /// <returns>
-        ///     true if librdkafka was loaded as a result of this call, false otherwise.
+        ///     true if librdkafka was loaded as a result of this call, false if the
+        ///     library has already been loaded.
         /// </returns>
         /// <remarks>
         ///     You will not typically need to call this method - librdkafka is loaded
@@ -82,7 +83,8 @@ namespace Confluent.Kafka
         ///     nothing if the library is already loaded.
         /// </summary>
         /// <returns>
-        ///     true if librdkafka was loaded as a result of this call, false otherwise.
+        ///     true if librdkafka was loaded as a result of this call, false if the
+        ///     library has already been loaded.
         /// </returns>
         /// <remarks>
         ///     You will not typically need to call this method - librdkafka is loaded

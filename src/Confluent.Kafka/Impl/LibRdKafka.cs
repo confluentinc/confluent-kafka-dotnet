@@ -161,7 +161,7 @@ namespace Confluent.Kafka.Impl
 
             try
             {
-                // throws if the native library failed to load. 
+                // throws if the native library failed to load.
                 _err2str(ErrorCode.NoError);
             }
             catch (Exception)
@@ -252,7 +252,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
                         {
-                            throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Error code: {Marshal.GetLastWin32Error()}");
                         }
                     }
 
@@ -264,7 +264,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
-                            throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}': {Marshal.PtrToStringAnsi(PosixNative.dlerror())}");
                         }
                     }
 
@@ -276,7 +276,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
-                            throw new DllNotFoundException($"Failed to load librdkafka: '{userSpecifiedPath}'");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}': {Marshal.PtrToStringAnsi(PosixNative.dlerror())}");
                         }
                     
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
@@ -286,6 +286,10 @@ namespace Confluent.Kafka.Impl
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
                     }
+                }
+                else 
+                {
+                    throw new InvalidOperationException($"Unsupported platform: {RuntimeInformation.OSDescription}");
                 }
 
                 foreach (var t in nativeMethodTypes)

@@ -272,10 +272,7 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
         {
-            if (!LibRdKafka.IsInitialized)
-            {
-                LibRdKafka.Initialize(null);
-            }
+            LibRdKafka.Initialize(null);
 
             this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
