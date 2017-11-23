@@ -78,6 +78,20 @@ namespace Confluent.Kafka.Impl
 
             [DllImport("libdl")]
             public static extern IntPtr dlsym(IntPtr handle, String symbol);
+
+            public static string LastError
+            {
+                get
+                {
+                    // TODO: In practice, the following is always returning IntPtr.Zero. Why?
+                    IntPtr error = dlerror();
+                    if (error == IntPtr.Zero) 
+                    {
+                        return "";
+                    }
+                    return Marshal.PtrToStringAnsi(error);
+                }
+            }
         }
 
         static bool SetDelegates(Type nativeMethodsClass)
@@ -254,7 +268,9 @@ namespace Confluent.Kafka.Impl
                     {
                         if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
                         {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Error code: {Marshal.GetLastWin32Error()}");
+                            // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
+                            // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
                         }
                     }
 
@@ -266,7 +282,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: {PosixNative.dlerror()}");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
                         }
                     }
 
@@ -278,7 +294,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: {PosixNative.dlerror()}");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
                         }
                     
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
@@ -289,7 +305,7 @@ namespace Confluent.Kafka.Impl
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
                     }
                 }
-                else 
+                else
                 {
                     throw new InvalidOperationException($"Unsupported platform: {RuntimeInformation.OSDescription}");
                 }
