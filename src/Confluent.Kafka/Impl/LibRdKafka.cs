@@ -266,7 +266,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}': {Marshal.PtrToStringAnsi(PosixNative.dlerror())}");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: {PosixNative.dlerror()}");
                         }
                     }
 
@@ -278,7 +278,7 @@ namespace Confluent.Kafka.Impl
                     {
                         if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
                         {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}': {Marshal.PtrToStringAnsi(PosixNative.dlerror())}");
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: {PosixNative.dlerror()}");
                         }
                     
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
