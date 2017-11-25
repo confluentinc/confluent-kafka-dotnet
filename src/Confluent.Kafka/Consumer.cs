@@ -432,7 +432,8 @@ namespace Confluent.Kafka
             => consumer.Unassign();
 
         /// <summary>
-        ///     Store offsets for one or more partitions.
+        ///     Store offsets for a single partition based on the topic/partition/offset
+        ///     of a message.
         ///     
         ///     The offset will be committed (written) to the offset store according
         ///     to `auto.commit.interval.ms` or manual offset-less commit().
@@ -446,8 +447,8 @@ namespace Confluent.Kafka
         /// <returns>
         ///     Current stored offset or a partition specific error.
         /// </returns>
-        public List<TopicPartitionOffsetError> StoreOffset(Message<TKey, TValue> message)
-            => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+        public TopicPartitionOffsetError StoreOffset(Message<TKey, TValue> message)
+            => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) })[0];
 
         /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
         public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
