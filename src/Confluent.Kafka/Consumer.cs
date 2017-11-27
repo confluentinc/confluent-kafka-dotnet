@@ -796,6 +796,8 @@ namespace Confluent.Kafka
         /// </remarks>
         public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
+            LibRdKafka.Initialize(null);
+
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");

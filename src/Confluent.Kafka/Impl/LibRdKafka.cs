@@ -17,12 +17,15 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
-#if NET45 || NET46
+using Confluent.Kafka.Impl.NativeMethods;
 using System.Reflection;
+#if NET45 || NET46 || NET47
 using System.ComponentModel;
 #endif
 
@@ -37,157 +40,300 @@ namespace Confluent.Kafka.Impl
         // max length for error strings built by librdkafka
         internal const int MaxErrorStringLength = 512;
 
-#if NET45 || NET46
-        [Flags]
-        public enum LoadLibraryFlags : uint
+        private static class WindowsNative
         {
-            DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
-            LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
-            LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
-            LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
-            LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
-            LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
-            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
-            LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
-            LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
-            LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
-            LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
-        }
-
-        [DllImport("kernel32", SetLastError = true)]
-        private static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
-
-        [DllImport("kernel32", SetLastError = true)]
-        private static extern IntPtr GetModuleHandle(string lpFileName);
-
-        static void LoadNet45Librdkafka()
-        {
-            // in net45, librdkafka.dll is not in the process directory, we have to load it manually
-            // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
-            var is64 = IntPtr.Size == 8;
-            var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
-            var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-            var dllDirectory = Path.Combine(baseDirectory, is64 ? "x64" : "x86");
-
-            if (LoadLibraryEx(Path.Combine(dllDirectory, "librdkafka.dll"),
-                IntPtr.Zero, LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            [Flags]
+            public enum LoadLibraryFlags : uint
             {
-                //catch the last win32 error by default and keep the associated default message
-                var win32Exception = new Win32Exception();
-                var additionalMessage =
-                    $"Error while loading librdkafka.dll or its dependencies from {dllDirectory}. " +
-                    $"Check the directory exists, if not check your deployment process. " +
-                    $"You can also load the library and its dependencies by yourself " +
-                    $"before any call to Confluent.Kafka";
-
-                throw new InvalidOperationException(additionalMessage, win32Exception);
+                DONT_RESOLVE_DLL_REFERENCES = 0x00000001,
+                LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x00000010,
+                LOAD_LIBRARY_AS_DATAFILE = 0x00000002,
+                LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x00000040,
+                LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020,
+                LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200,
+                LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000,
+                LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100,
+                LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x00000800,
+                LOAD_LIBRARY_SEARCH_USER_DIRS = 0x00000400,
+                LOAD_WITH_ALTERED_SEARCH_PATH = 0x00000008
             }
-        }
-#endif
 
-        static LibRdKafka()
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, LoadLibraryFlags dwFlags);
+
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr GetModuleHandle(string lpFileName);
+
+            [DllImport("kernel32", SetLastError = true)]
+            public static extern IntPtr GetProcAddress(IntPtr hModule, String procname);
+        }
+
+        private static class PosixNative
         {
-#if NET45 || NET46
-            try
+            [DllImport("libdl")]
+            public static extern IntPtr dlopen(String fileName, int flags);
+
+            [DllImport("libdl")]
+            public static extern IntPtr dlerror();
+
+            [DllImport("libdl")]
+            public static extern IntPtr dlsym(IntPtr handle, String symbol);
+
+            public static string LastError
             {
-                // In net45, we don't put the native dlls in the assembly directory
-                // but in subfolders x64 and x86
-                // we have to force the load as it won't be found by the system by itself
-                if (GetModuleHandle(NativeMethods.DllName) == IntPtr.Zero)
+                get
                 {
-                    // In some cases, the user might want to load the library by himself
-                    // (if he could not have the folders in the bin directory, or to change the version of the dll)
-                    // If he did it before first call to Confluent.Kafka, GetModuleHandle will be nonZero
-                    // and we don't have to force the load (which would fail and throw otherwise)
-                    LoadNet45Librdkafka();
+                    // TODO: In practice, the following is always returning IntPtr.Zero. Why?
+                    IntPtr error = dlerror();
+                    if (error == IntPtr.Zero) 
+                    {
+                        return "";
+                    }
+                    return Marshal.PtrToStringAnsi(error);
                 }
             }
-            catch
-            {
-                // There may be some platforms where GetModuleHandle/LoadLibraryEx do not work
-                // Fail silently so the user can still have the opportunity to load the dll by himself
-            }
-#endif
-            _version = NativeMethods.rd_kafka_version;
-            _version_str = NativeMethods.rd_kafka_version_str;
-            _get_debug_contexts = NativeMethods.rd_kafka_get_debug_contexts;
-            _err2str = NativeMethods.rd_kafka_err2str;
-            _last_error = NativeMethods.rd_kafka_last_error;
-            _topic_partition_list_new = NativeMethods.rd_kafka_topic_partition_list_new;
-            _topic_partition_list_destroy = NativeMethods.rd_kafka_topic_partition_list_destroy;
-            _topic_partition_list_add = NativeMethods.rd_kafka_topic_partition_list_add;
-            _message_timestamp = NativeMethods.rd_kafka_message_timestamp;
-            _message_destroy = NativeMethods.rd_kafka_message_destroy;
-            _conf_new = NativeMethods.rd_kafka_conf_new;
-            _conf_destroy = NativeMethods.rd_kafka_conf_destroy;
-            _conf_dup = NativeMethods.rd_kafka_conf_dup;
-            _conf_set = NativeMethods.rd_kafka_conf_set;
-            _conf_set_dr_msg_cb = NativeMethods.rd_kafka_conf_set_dr_msg_cb;
-            _conf_set_rebalance_cb = NativeMethods.rd_kafka_conf_set_rebalance_cb;
-            _conf_set_error_cb = NativeMethods.rd_kafka_conf_set_error_cb;
-            _conf_set_offset_commit_cb = NativeMethods.rd_kafka_conf_set_offset_commit_cb;
-            _conf_set_log_cb = NativeMethods.rd_kafka_conf_set_log_cb;
-            _conf_set_stats_cb = NativeMethods.rd_kafka_conf_set_stats_cb;
-            _conf_set_default_topic_conf = NativeMethods.rd_kafka_conf_set_default_topic_conf;
-            _conf_get = NativeMethods.rd_kafka_conf_get;
-            _topic_conf_get = NativeMethods.rd_kafka_topic_conf_get;
-            _conf_dump = NativeMethods.rd_kafka_conf_dump;
-            _topic_conf_dump = NativeMethods.rd_kafka_topic_conf_dump;
-            _conf_dump_free = NativeMethods.rd_kafka_conf_dump_free;
-            _topic_conf_new = NativeMethods.rd_kafka_topic_conf_new;
-            _topic_conf_dup = NativeMethods.rd_kafka_topic_conf_dup;
-            _topic_conf_destroy = NativeMethods.rd_kafka_topic_conf_destroy;
-            _topic_conf_set = NativeMethods.rd_kafka_topic_conf_set;
-            _topic_conf_set_partitioner_cb = NativeMethods.rd_kafka_topic_conf_set_partitioner_cb;
-            _topic_partition_available = NativeMethods.rd_kafka_topic_partition_available;
-            _new = NativeMethods.rd_kafka_new;
-            _destroy = NativeMethods.rd_kafka_destroy;
-            _name = NativeMethods.rd_kafka_name;
-            _memberid = NativeMethods.rd_kafka_memberid;
-            _topic_new = NativeMethods.rd_kafka_topic_new;
-            _topic_destroy = NativeMethods.rd_kafka_topic_destroy;
-            _topic_name = NativeMethods.rd_kafka_topic_name;
-            _poll = NativeMethods.rd_kafka_poll;
-            _poll_set_consumer = NativeMethods.rd_kafka_poll_set_consumer;
-            _query_watermark_offsets = NativeMethods.rd_kafka_query_watermark_offsets;
-            _get_watermark_offsets = NativeMethods.rd_kafka_get_watermark_offsets;
-            _offsets_for_times = NativeMethods.rd_kafka_offsets_for_times;
-            _mem_free = NativeMethods.rd_kafka_mem_free;
-            _subscribe = NativeMethods.rd_kafka_subscribe;
-            _unsubscribe = NativeMethods.rd_kafka_unsubscribe;
-            _subscription = NativeMethods.rd_kafka_subscription;
-            _consumer_poll = NativeMethods.rd_kafka_consumer_poll;
-            _consumer_close = NativeMethods.rd_kafka_consumer_close;
-            _assign = NativeMethods.rd_kafka_assign;
-            _assignment = NativeMethods.rd_kafka_assignment;
-            _offsets_store = NativeMethods.rd_kafka_offsets_store;
-            _commit = NativeMethods.rd_kafka_commit;
-            _commit_queue = NativeMethods.rd_kafka_commit_queue;
-            _committed = NativeMethods.rd_kafka_committed;
-            _pause_partitions = NativeMethods.rd_kafka_pause_partitions;
-            _resume_partitions = NativeMethods.rd_kafka_resume_partitions;
-            _seek = NativeMethods.rd_kafka_seek;
-            _position = NativeMethods.rd_kafka_position;
-            _producev = NativeMethods.rd_kafka_producev;
-            _flush = NativeMethods.rd_kafka_flush;
-            _metadata = NativeMethods.rd_kafka_metadata;
-            _metadata_destroy = NativeMethods.rd_kafka_metadata_destroy;
-            _list_groups = NativeMethods.rd_kafka_list_groups;
-            _group_list_destroy = NativeMethods.rd_kafka_group_list_destroy;
-            _brokers_add = NativeMethods.rd_kafka_brokers_add;
-            _outq_len = NativeMethods.rd_kafka_outq_len;
-            _queue_new = NativeMethods.rd_kafka_queue_new;
-            _queue_destroy = NativeMethods.rd_kafka_queue_destroy;
-            _event_type = NativeMethods.rd_kafka_event_type;
-            _event_error = NativeMethods.rd_kafka_event_error;
-            _event_error_string = NativeMethods.rd_kafka_event_error_string;
-            _event_topic_partition_list = NativeMethods.rd_kafka_event_topic_partition_list;
-            _event_destroy = NativeMethods.rd_kafka_event_destroy;
-            _queue_poll = NativeMethods.rd_kafka_queue_poll;
+        }
 
-            if ((long)version() < minVersion)
+        static bool SetDelegates(Type nativeMethodsClass)
+        {
+            var methods = nativeMethodsClass.GetRuntimeMethods().ToArray();
+
+            _version = (Func<IntPtr>)methods.Where(m => m.Name == "rd_kafka_version").Single().CreateDelegate(typeof(Func<IntPtr>));
+            _version_str = (Func<IntPtr>)methods.Where(m => m.Name == "rd_kafka_version_str").Single().CreateDelegate(typeof(Func<IntPtr>));
+            _get_debug_contexts = (Func<IntPtr>)methods.Where(m => m.Name == "rd_kafka_get_debug_contexts").Single().CreateDelegate(typeof(Func<IntPtr>));
+            _err2str = (Func<ErrorCode, IntPtr>)methods.Where(m => m.Name == "rd_kafka_err2str").Single().CreateDelegate(typeof(Func<ErrorCode, IntPtr>));
+            _last_error = (Func<ErrorCode>)methods.Where(m => m.Name == "rd_kafka_last_error").Single().CreateDelegate(typeof(Func<ErrorCode>));
+            _topic_partition_list_new = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_new").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _topic_partition_list_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _topic_partition_list_add = (Func<IntPtr, string, int, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_add").Single().CreateDelegate(typeof(Func<IntPtr, string, int, IntPtr>));
+            _message_timestamp = (messageTimestampDelegate)methods.Where(m => m.Name == "rd_kafka_message_timestamp").Single().CreateDelegate(typeof(messageTimestampDelegate));
+            _message_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_message_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _conf_new = (Func<SafeConfigHandle>)methods.Where(m => m.Name == "rd_kafka_conf_new").Single().CreateDelegate(typeof(Func<SafeConfigHandle>));
+            _conf_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_conf_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _conf_dup = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_conf_dup").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Where(m => m.Name == "rd_kafka_conf_set").Single().CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
+            _conf_set_dr_msg_cb = (Action<IntPtr, DeliveryReportDelegate>)methods.Where(m => m.Name == "rd_kafka_conf_set_dr_msg_cb").Single().CreateDelegate(typeof(Action<IntPtr, DeliveryReportDelegate>));
+            _conf_set_rebalance_cb = (Action<IntPtr, RebalanceDelegate>)methods.Where(m => m.Name == "rd_kafka_conf_set_rebalance_cb").Single().CreateDelegate(typeof(Action<IntPtr, RebalanceDelegate>));
+            _conf_set_error_cb = (Action<IntPtr, ErrorDelegate>)methods.Where(m => m.Name == "rd_kafka_conf_set_error_cb").Single().CreateDelegate(typeof(Action<IntPtr, ErrorDelegate>));
+            _conf_set_offset_commit_cb = (Action<IntPtr, CommitDelegate>)methods.Where(m => m.Name == "rd_kafka_conf_set_offset_commit_cb").Single().CreateDelegate(typeof(Action<IntPtr, CommitDelegate>));
+            _conf_set_log_cb = (Action<IntPtr, LogDelegate>)methods.Where(m => m.Name == "rd_kafka_conf_set_log_cb").Single().CreateDelegate(typeof(Action<IntPtr, LogDelegate>));
+            _conf_set_stats_cb = (Action<IntPtr, StatsDelegate>)methods.Where(m => m.Name == "rd_kafka_conf_set_stats_cb").Single().CreateDelegate(typeof(Action<IntPtr, StatsDelegate>));
+            _conf_set_default_topic_conf = (Action<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_conf_set_default_topic_conf").Single().CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+            _conf_get = (ConfGet)methods.Where(m => m.Name == "rd_kafka_conf_get").Single().CreateDelegate(typeof(ConfGet));
+            _topic_conf_get = (ConfGet)methods.Where(m => m.Name == "rd_kafka_topic_conf_get").Single().CreateDelegate(typeof(ConfGet));
+            _conf_dump = (ConfDump)methods.Where(m => m.Name == "rd_kafka_conf_dump").Single().CreateDelegate(typeof(ConfDump));
+            _topic_conf_dump = (ConfDump)methods.Where(m => m.Name == "rd_kafka_topic_conf_dump").Single().CreateDelegate(typeof(ConfDump));
+            _conf_dump_free = (Action<IntPtr, UIntPtr>)methods.Where(m => m.Name == "rd_kafka_conf_dump_free").Single().CreateDelegate(typeof(Action<IntPtr, UIntPtr>));
+            _topic_conf_new = (Func<SafeTopicConfigHandle>)methods.Where(m => m.Name == "rd_kafka_topic_conf_new").Single().CreateDelegate(typeof(Func<SafeTopicConfigHandle>));
+            _topic_conf_dup = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_conf_dup").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _topic_conf_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_conf_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _topic_conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Where(m => m.Name == "rd_kafka_topic_conf_set").Single().CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
+            _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Where(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").Single().CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
+            _topic_partition_available = (Func<IntPtr, int, bool>)methods.Where(m => m.Name == "rd_kafka_topic_partition_available").Single().CreateDelegate(typeof(Func<IntPtr, int, bool>));
+            _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Where(m => m.Name == "rd_kafka_new").Single().CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
+            _destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _name = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_name").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _memberid = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_memberid").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _topic_new = (Func<IntPtr, string, IntPtr, SafeTopicHandle>)methods.Where(m => m.Name == "rd_kafka_topic_new").Single().CreateDelegate(typeof(Func<IntPtr, string, IntPtr, SafeTopicHandle>));
+            _topic_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _topic_name = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_name").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_poll").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _poll_set_consumer = (Func<IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_poll_set_consumer").Single().CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
+            _query_watermark_offsets = (QueryOffsets)methods.Where(m => m.Name == "rd_kafka_query_watermark_offsets").Single().CreateDelegate(typeof(QueryOffsets));
+            _get_watermark_offsets = (GetOffsets)methods.Where(m => m.Name == "rd_kafka_get_watermark_offsets").Single().CreateDelegate(typeof(GetOffsets));
+            _offsets_for_times = (OffsetsForTimes)methods.Where(m => m.Name == "rd_kafka_offsets_for_times").Single().CreateDelegate(typeof(OffsetsForTimes));
+            _mem_free = (Action<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_mem_free").Single().CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+            _subscribe = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_subscribe").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _unsubscribe = (Func<IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_unsubscribe").Single().CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
+            _subscription = (Subscription)methods.Where(m => m.Name == "rd_kafka_subscription").Single().CreateDelegate(typeof(Subscription));
+            _consumer_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_consumer_poll").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _consumer_close = (Func<IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_consumer_close").Single().CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
+            _assign = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_assign").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _assignment = (Assignment)methods.Where(m => m.Name == "rd_kafka_assignment").Single().CreateDelegate(typeof(Assignment));
+            _offsets_store = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_offsets_store").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _commit = (Func<IntPtr, IntPtr, bool, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_commit").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, bool, ErrorCode>));
+            _commit_queue = (Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_commit_queue").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode>));
+            _committed = (Func<IntPtr, IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_committed").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, ErrorCode>));
+            _pause_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_pause_partitions").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _resume_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_resume_partitions").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _seek = (Func<IntPtr, int, long, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_seek").Single().CreateDelegate(typeof(Func<IntPtr, int, long, IntPtr, ErrorCode>));
+            _position = (Func<IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_position").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _producev = (Producev)methods.Where(m => m.Name == "rd_kafka_producev").Single().CreateDelegate(typeof(Producev));
+            _flush = (Flush)methods.Where(m => m.Name == "rd_kafka_flush").Single().CreateDelegate(typeof(Flush));
+            _metadata = (Metadata)methods.Where(m => m.Name == "rd_kafka_metadata").Single().CreateDelegate(typeof(Metadata));
+            _metadata_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_metadata_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _list_groups = (ListGroups)methods.Where(m => m.Name == "rd_kafka_list_groups").Single().CreateDelegate(typeof(ListGroups));
+            _group_list_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_group_list_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _brokers_add = (Func<IntPtr, string, IntPtr>)methods.Where(m => m.Name == "rd_kafka_brokers_add").Single().CreateDelegate(typeof(Func<IntPtr, string, IntPtr>));
+            _outq_len = (Func<IntPtr, int>)methods.Where(m => m.Name == "rd_kafka_outq_len").Single().CreateDelegate(typeof(Func<IntPtr, int>));
+            _queue_new = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_queue_new").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _queue_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_queue_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _event_type = (Func<IntPtr, int>)methods.Where(m => m.Name == "rd_kafka_event_type").Single().CreateDelegate(typeof(Func<IntPtr, int>));
+            _event_error = (Func<IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_event_error").Single().CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
+            _event_error_string = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_event_error_string").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _event_topic_partition_list = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_event_topic_partition_list").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _event_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_event_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _queue_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_queue_poll").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+
+            try
             {
-                throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
+                // throws if the native library failed to load.
+                _err2str(ErrorCode.NoError);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        static object loadLockObj = new object();
+        static bool isInitialized = false;
+
+        public static bool IsInitialized
+        {
+            get
+            {
+                lock (loadLockObj)
+                {
+                    return isInitialized;
+                }
+            }
+        }
+
+        public static bool Initialize(string userSpecifiedPath)
+        {
+            lock (loadLockObj)
+            {
+                if (isInitialized)
+                {
+                    return false;
+                }
+
+                isInitialized = false;
+
+#if NET45 || NET46 || NET47
+
+                string path = userSpecifiedPath;
+                if (path == null)
+                {
+                    // in net45, librdkafka.dll is not in the process directory, we have to load it manually
+                    // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
+                    var is64 = IntPtr.Size == 8;
+                    var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
+                    var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+                    var dllDirectory = Path.Combine(
+                        baseDirectory, 
+                        is64 
+                            ? Path.Combine("librdkafka", "x64")
+                            : Path.Combine("librdkafka", "x86"));
+                    path = Path.Combine(dllDirectory, "librdkafka.dll");
+
+                    if (!File.Exists(path))
+                    {
+                        dllDirectory = Path.Combine(
+                            baseDirectory, 
+                            is64 
+                                ? @"runtimes\win7-x64\native"
+                                : @"runtimes\win7-x86\native");
+                        path = Path.Combine(dllDirectory, "librdkafka.dll");
+                    }
+                }
+
+                if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                {
+                    // catch the last win32 error by default and keep the associated default message
+                    var win32Exception = new Win32Exception();
+                    var additionalMessage =
+                        $"Error while loading librdkafka.dll or its dependencies from {path}. " +
+                        $"Check the directory exists, if not check your deployment process. " +
+                        $"You can also load the library and its dependencies by yourself " +
+                        $"before any call to Confluent.Kafka";
+
+                    throw new InvalidOperationException(additionalMessage, win32Exception);
+                }
+
+                isInitialized = SetDelegates(typeof(NativeMethods.NativeMethods));
+
+#else
+
+                const int RTLD_NOW = 2;
+
+                var nativeMethodTypes = new List<Type>();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (userSpecifiedPath != null)
+                    {
+                        if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                        {
+                            // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
+                            // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
+                        }
+                    }
+
+                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    if (userSpecifiedPath != null)
+                    {
+                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                        {
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                        }
+                    }
+
+                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    if (userSpecifiedPath != null)
+                    {
+                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                        {
+                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                        }
+                    
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                    }
+                    else 
+                    {
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported platform: {RuntimeInformation.OSDescription}");
+                }
+
+                foreach (var t in nativeMethodTypes)
+                {
+                    isInitialized = SetDelegates(t);
+                    if (isInitialized)
+                    {
+                        break;
+                    }
+                }
+
+#endif
+
+                if (!isInitialized)
+                {
+                    throw new DllNotFoundException("Failed to load the librdkafka native library.");
+                }
+
+                if ((long)version() < minVersion)
+                {
+                    throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
+                }
+
+                isInitialized = true;
+
+                return isInitialized;
             }
         }
 
@@ -471,7 +617,7 @@ namespace Confluent.Kafka.Impl
         /// <summary>
         ///     Var-arg tag types, used in producev
         /// </summary>
-        private enum ProduceVarTag
+        internal enum ProduceVarTag
         {
             End,       // va-arg sentinel
             Topic,     // (const char *) Topic name
@@ -584,338 +730,5 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _event_topic_partition_list;
         internal static IntPtr event_topic_partition_list(IntPtr rkev)
             => _event_topic_partition_list(rkev);
-
-
-
-        private class NativeMethods
-        {
-            public const string DllName = "librdkafka";
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_version();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_version_str();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_get_debug_contexts();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_err2str(ErrorCode err);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_last_error();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_topic_partition_list_t * */ IntPtr
-            rd_kafka_topic_partition_list_new(IntPtr size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_partition_list_destroy(
-                    /* rd_kafka_topic_partition_list_t * */ IntPtr rkparlist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_topic_partition_t * */ IntPtr
-            rd_kafka_topic_partition_list_add(
-                    /* rd_kafka_topic_partition_list_t * */ IntPtr rktparlist,
-                    string topic, int partition);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* int64_t */ long rd_kafka_message_timestamp(
-                    /* rd_kafka_message_t * */ IntPtr rkmessage,
-                    /* r_kafka_timestamp_type_t * */ out IntPtr tstype);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_message_destroy(
-                    /* rd_kafka_message_t * */ IntPtr rkmessage);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeConfigHandle rd_kafka_conf_new();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_destroy(IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_conf_dup(IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_conf_set(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    [MarshalAs(UnmanagedType.LPStr)] string value,
-                    StringBuilder errstr,
-                    UIntPtr errstr_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_dr_msg_cb(
-                    IntPtr conf,
-                    DeliveryReportDelegate dr_msg_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_rebalance_cb(
-                    IntPtr conf, RebalanceDelegate rebalance_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_offset_commit_cb(
-                    IntPtr conf, CommitDelegate commit_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_error_cb(
-                    IntPtr conf, ErrorDelegate error_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, LogDelegate log_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_stats_cb(IntPtr conf, StatsDelegate stats_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_set_default_topic_conf(
-                    IntPtr conf, IntPtr tconf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_conf_get(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    StringBuilder dest, ref UIntPtr dest_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_topic_conf_get(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    StringBuilder dest, ref UIntPtr dest_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char ** */ IntPtr rd_kafka_conf_dump(
-                    IntPtr conf, /* size_t * */ out UIntPtr cntp);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char ** */ IntPtr rd_kafka_topic_conf_dump(
-                    IntPtr conf, out UIntPtr cntp);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_conf_dump_free(/* const char ** */ IntPtr arr, UIntPtr cnt);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeTopicConfigHandle rd_kafka_topic_conf_new();
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_topic_conf_t * */ IntPtr rd_kafka_topic_conf_dup(
-                    /* const rd_kafka_topic_conf_t * */ IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_conf_destroy(IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ConfRes rd_kafka_topic_conf_set(
-                    IntPtr conf,
-                    [MarshalAs(UnmanagedType.LPStr)] string name,
-                    [MarshalAs(UnmanagedType.LPStr)] string value,
-                    StringBuilder errstr,
-                    UIntPtr errstr_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_conf_set_partitioner_cb(
-                    IntPtr topic_conf, PartitionerDelegate partitioner_cb);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern bool rd_kafka_topic_partition_available(
-                    IntPtr rkt, int partition);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeKafkaHandle rd_kafka_new(
-                    RdKafkaType type, IntPtr conf,
-                    StringBuilder errstr,
-                    UIntPtr errstr_size);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_destroy(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char * */ IntPtr rd_kafka_name(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* char * */ IntPtr rd_kafka_memberid(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern SafeTopicHandle rd_kafka_topic_new(
-                    IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string topic,
-                    /* rd_kafka_topic_conf_t * */ IntPtr conf);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_topic_destroy(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* const char * */ IntPtr rd_kafka_topic_name(IntPtr rkt);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_poll_set_consumer(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_poll(IntPtr rk, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_query_watermark_offsets(IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string topic,
-                    int partition, out long low, out long high, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_get_watermark_offsets(IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string topic,
-                    int partition, out long low, out long high);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_offsets_for_times(IntPtr rk,
-                /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
-                IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_mem_free(IntPtr rk, IntPtr ptr);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_subscribe(IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr topics);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_unsubscribe(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_subscription(IntPtr rk,
-                    /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern /* rd_kafka_message_t * */ IntPtr rd_kafka_consumer_poll(
-                    IntPtr rk, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_consumer_close(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_assign(IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr partitions);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_assignment(IntPtr rk,
-                    /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_offsets_store(
-                    IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_commit(
-                    IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
-                    bool async);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_commit_queue(
-                    IntPtr rk,
-                    /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
-                    /* rd_kafka_queue_t * */ IntPtr rkqu,
-                    /* offset_commit_cb * */ CommitDelegate cb,
-                    /* void * */ IntPtr opaque);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_pause_partitions(
-                    IntPtr rk, IntPtr partitions);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_resume_partitions(
-                    IntPtr rk, IntPtr partitions);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_seek(
-                    IntPtr rkt, int partition, long offset, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_committed(
-                    IntPtr rk, IntPtr partitions, IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_position(
-                    IntPtr rk, IntPtr partitions);
-
-            // note: producev signature is rd_kafka_producev(rk, ...)
-            // we are keeping things simple with one binding for now, but it 
-            // will be worth benchmarking the overload with no timestamp, opaque,
-            // partition, etc
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_producev(
-                IntPtr rk,
-                ProduceVarTag topicType, [MarshalAs(UnmanagedType.LPStr)] string topic,
-                ProduceVarTag partitionType, int partition,
-                ProduceVarTag vaType, IntPtr val, UIntPtr len,
-                ProduceVarTag keyType, IntPtr key, UIntPtr keylen,
-                ProduceVarTag msgflagsType, IntPtr msgflags,
-                ProduceVarTag msg_opaqueType, IntPtr msg_opaque,
-                ProduceVarTag timestampType, long timestamp,
-                ProduceVarTag endType);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_flush(
-                IntPtr rk,
-                IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_metadata(
-                IntPtr rk, bool all_topics,
-                /* rd_kafka_topic_t * */ IntPtr only_rkt,
-                /* const struct rd_kafka_metadata ** */ out IntPtr metadatap,
-                IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_metadata_destroy(
-                    /* const struct rd_kafka_metadata * */ IntPtr metadata);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_list_groups(
-                    IntPtr rk, string group, out IntPtr grplistp,
-                    IntPtr timeout_ms);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_group_list_destroy(
-                    IntPtr grplist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_brokers_add(IntPtr rk,
-                    [MarshalAs(UnmanagedType.LPStr)] string brokerlist);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern int rd_kafka_outq_len(IntPtr rk);
-
-            //
-            // Queues
-            //
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_queue_new(IntPtr rk);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_queue_destroy(IntPtr rkqu);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, IntPtr timeout_ms);
-
-            //
-            // Events
-            //
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern void rd_kafka_event_destroy(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern int rd_kafka_event_type(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern ErrorCode rd_kafka_event_error(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_event_error_string(IntPtr rkev);
-
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            internal static extern IntPtr rd_kafka_event_topic_partition_list(IntPtr rkev);
-        }
-
     }
 }

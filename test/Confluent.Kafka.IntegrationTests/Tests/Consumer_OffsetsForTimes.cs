@@ -30,12 +30,12 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic OffsetsForTimes test on Consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             const int N = 10;
             const int Partition = 0;
 
-            var messages = await ProduceMessages(bootstrapServers, singlePartitionTopic, Partition, N);
+            var messages = ProduceMessages(bootstrapServers, singlePartitionTopic, Partition, N);
 
             var consumerConfig = new Dictionary<string, object>
             {
@@ -96,7 +96,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
         }
 
-        private static async Task<Message<string, string>[]> ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static Message<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
             var producerConfig = new Dictionary<string, object>
             {
@@ -109,8 +109,9 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (var index = 0; index < count; index++)
                 {
-                    var message = await producer.ProduceAsync(topic, $"test key {index}", $"test val {index}", partition);
+                    var message = producer.ProduceAsync(topic, $"test key {index}", $"test val {index}", partition).Result;
                     messages[index] = message;
+                    Task.Delay(200).Wait();
                 }
             }
 

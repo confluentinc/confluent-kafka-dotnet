@@ -104,7 +104,7 @@
         absolute or logical offset. This must only be done for partitions that are 
         currently being consumed (i.e., have been Assign()ed). To set the start offset for 
         not-yet-consumed partitions you should use the 
-        <see cref="Confluent.Kafka.Consumer.Assign(IEnumerable<TopicPartitionOffset> partitions)" /> 
+        <see cref="Confluent.Kafka.Consumer.Assign(IEnumerable{TopicPartitionOffset})" /> 
         method instead.
     </summary>
     <param name="tpo">

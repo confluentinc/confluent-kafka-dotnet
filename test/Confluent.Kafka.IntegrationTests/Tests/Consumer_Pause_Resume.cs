@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple Consumer Pause / Resume test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Consumer_Pause_Resume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_Pause_Resume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
