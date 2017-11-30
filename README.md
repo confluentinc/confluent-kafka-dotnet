@@ -33,6 +33,8 @@ client. Thanks Andreas!
 
 ## Usage
 
+Refer to the [API docs](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html).
+
 Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.2).
 
 To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka and librdkafka.redist in the 
