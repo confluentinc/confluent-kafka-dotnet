@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="librdkafka.redist" Version="0.11.1-TEST101" />
+    <PackageReference Include="librdkafka.redist" Version="0.11.3-RC1" />
   </ItemGroup>
 
   <ItemGroup>
