@@ -35,13 +35,13 @@ client. Thanks Andreas!
 
 Refer to the [API docs](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html).
 
-Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.2).
+Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.3-RC1).
 
 To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka and librdkafka.redist in the 
 NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 0.11.2
+Install-Package Confluent.Kafka -Version 0.11.3-RC1
 ```
 
 To reference in a dotnet core project, explicitly add a package reference to your .csproj file:
@@ -49,7 +49,7 @@ To reference in a dotnet core project, explicitly add a package reference to you
 ```
 <ItemGroup>
   ...
-  <PackageReference Include="Confluent.Kafka" Version="0.11.2" />
+  <PackageReference Include="Confluent.Kafka" Version="0.11.3-RC1" />
   ...
 </ItemGroup>
 ```
