@@ -33,15 +33,13 @@ client. Thanks Andreas!
 
 ## Usage
 
-Refer to the [API docs](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html).
+Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.3).
 
-Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.3-RC1).
-
-To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka and librdkafka.redist in the 
-NuGet Package Manager UI, or run the following command in the Package Manager Console:
+To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package 
+Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 0.11.3-RC1
+Install-Package Confluent.Kafka -Version 0.11.3
 ```
 
 To reference in a dotnet core project, explicitly add a package reference to your .csproj file:
@@ -49,7 +47,7 @@ To reference in a dotnet core project, explicitly add a package reference to you
 ```
 <ItemGroup>
   ...
-  <PackageReference Include="Confluent.Kafka" Version="0.11.3-RC1" />
+  <PackageReference Include="Confluent.Kafka" Version="0.11.3" />
   ...
 </ItemGroup>
 ```
@@ -61,6 +59,7 @@ The version suffix of these nuget packages matches the appveyor build number. Yo
 particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
 
+See the [API documentation](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html) for more information. 
 
 ## Examples
 
