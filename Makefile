@@ -9,7 +9,7 @@ OS=$(shell uname -s)
 EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
 TEST_DIRS==$(shell find ./test -name '*.csproj' -exec dirname {} \;)
 
-LINUX_FRAMEWORK=netcoreapp1.1
+LINUX_FRAMEWORK=netcoreapp2.0
 DEFAULT_FRAMEWORK?=$(LINUX_FRAMEWORK)
 
 all:
