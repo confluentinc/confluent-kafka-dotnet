@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>Confluent.Kafka.StrongName.UnitTests</AssemblyName>
-    <TargetFrameworks>netcoreapp1.1;net452;</TargetFrameworks>
+    <TargetFrameworks>netcoreapp1.1;netcoreapp2.0;net452;</TargetFrameworks>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.Kafka.StrongName.UnitTests.snk</AssemblyOriginatorKeyFile>
@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
+    <Reference Include="Confluent.Kafka.StrongName">
+      <HintPath>../../src/Confluent.Kafka/bin-sn/$(Configuration)/netstandard1.3/Confluent.Kafka.StrongName.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
     <Reference Include="Confluent.Kafka.StrongName">
       <HintPath>../../src/Confluent.Kafka/bin-sn/$(Configuration)/netstandard1.3/Confluent.Kafka.StrongName.dll</HintPath>
     </Reference>

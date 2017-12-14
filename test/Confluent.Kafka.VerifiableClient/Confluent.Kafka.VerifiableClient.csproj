@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>Confluent.Kafka.VerifiableClient</AssemblyName>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RuntimeIdentifiers>win7-x64;debian-x64;ubuntu.16.04-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
 
 </Project>
