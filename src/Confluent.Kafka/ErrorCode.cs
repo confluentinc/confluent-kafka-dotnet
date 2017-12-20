@@ -431,6 +431,7 @@ namespace Confluent.Kafka
         /// </summary>
         public static string GetReason(this ErrorCode code)
         {
+            Impl.LibRdKafka.Initialize(null);
             return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
         }
     }

@@ -81,8 +81,6 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void ToStringTest()
         {
-            Library.Load();
-
             var tpe = new TopicPartitionError("mytopic", 42, ErrorCode.Local_BadMsg);
 
             Assert.True(tpe.ToString().Contains(tpe.Topic));

@@ -31,8 +31,6 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void KafkaHandleCreation()
         {
-            Library.Load();
-
             var config = new Dictionary<string, object>
             {
                 ["group.id"] = "test",
