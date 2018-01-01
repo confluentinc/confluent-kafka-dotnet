@@ -27,7 +27,7 @@
     </returns>
 </Member>
 
-<Member name="ISchemaRegistryClient_GetSchemaAsync_II">
+<Member name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion">
     <summary>
         Gets a schema given a <paramref name="subject" /> and <paramref name="version" /> number.
     </summary>

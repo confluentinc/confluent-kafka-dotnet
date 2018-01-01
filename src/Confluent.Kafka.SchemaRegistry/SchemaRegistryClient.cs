@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+﻿// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace Confluent.Kafka.SchemaRegistry
     /// </summary>
     public class SchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
-        private ISchemaRegistyRestService restService;
+        private IRestService restService;
         private readonly int identityMapCapacity;
         private readonly Dictionary<int, string> schemaById = new Dictionary<int, string>();
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
@@ -50,12 +50,12 @@ namespace Confluent.Kafka.SchemaRegistry
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
             var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.timeout.ms").FirstOrDefault();
-            var timeoutMs = timeoutMsMaybe.Value == null ? SchemaRegistryRestService.DefaultTimeout : (int)timeoutMsMaybe.Value;
+            var timeoutMs = timeoutMsMaybe.Value == null ? RestService.DefaultTimeout : (int)timeoutMsMaybe.Value;
 
             var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.max.capacity").FirstOrDefault();
             this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? 1024 : (int)identityMapCapacityMaybe.Value;
 
-            this.restService = new SchemaRegistryRestService(schemaRegistryUris, timeoutMs);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs);
         }
 
         /// <remarks>
@@ -64,7 +64,7 @@ namespace Confluent.Kafka.SchemaRegistry
         private bool CleanCacheIfNeeded()
         {
             // don't check _idBySchemaBySubject - it's directly related with both the others.
-            if(schemaById.Count + schemaByVersionBySubject.Sum(x=>x.Value.Count) >= identityMapCapacity)
+            if (schemaById.Count + schemaByVersionBySubject.Sum(x=>x.Value.Count) >= identityMapCapacity)
             {
                 // TODO: log when this happens.
                 schemaById.Clear();
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.SchemaRegistry
                 var register = await restService.PostSchemaAsync(subject, schema).ConfigureAwait(false);
                 if (CleanCacheIfNeeded())
                 {
-                    //must register again
+                    // must register again
                     idBySchemaBySubject[subject] = idBySchema;
                 }
                 schemaId = register.Id;
@@ -116,7 +116,7 @@ namespace Confluent.Kafka.SchemaRegistry
             return schema;
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync_II"]/*' />
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
         public async Task<string> GetSchemaAsync(string subject, int version)
         {
             if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
@@ -143,16 +143,11 @@ namespace Confluent.Kafka.SchemaRegistry
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
         public async Task<Schema> GetLatestSchemaAsync(string subject)
-        {
-            var getLatestSchema = await restService.GetLatestSchemaAsync(subject).ConfigureAwait(false);
-            return getLatestSchema;
-        }
+            => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(false);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetAllSubjectsAsync"]/*' />
         public Task<List<string>> GetAllSubjectsAsync()
-        {
-            return restService.GetSubjectsAsync();
-        }
+            => restService.GetSubjectsAsync();
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
@@ -167,6 +162,5 @@ namespace Confluent.Kafka.SchemaRegistry
 
         public void Dispose()
             => restService.Dispose();
-
     }
 }

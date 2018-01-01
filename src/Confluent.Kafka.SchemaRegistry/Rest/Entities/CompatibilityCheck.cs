@@ -20,12 +20,12 @@ using System.Runtime.Serialization;
 namespace Confluent.Kafka.SchemaRegistry.Rest.Entities.Requests
 {
     [DataContract]
-    public class CompatibilityCheckResponse
+    internal class CompatibilityCheck
     {
         [DataMember(Name ="is_compatible")]
         public bool IsCompatible { get; set; }
 
-        public CompatibilityCheckResponse(bool isCompatible)
+        public CompatibilityCheck(bool isCompatible)
         {
             IsCompatible = isCompatible;
         }

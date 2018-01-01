@@ -22,20 +22,20 @@ using System.Runtime.Serialization;
 namespace Confluent.Kafka.SchemaRegistry.Rest.Entities
 {
     [DataContract]
-    public class Config
+    internal class Config
     {
         [DataContract(Name = "compatibility")]
         [JsonConverter(typeof(StringEnumConverter))]
         public enum Compatbility
         {
             [EnumMember(Value = "NONE")]
-            NONE,
+            None,
             [EnumMember(Value = "FORWARD")]
-            FORWARD,
+            Forward,
             [EnumMember(Value = "BACKWARD")]
-            BACKWARD,
+            Backward,
             [EnumMember(Value = "FULL")]
-            FULL
+            Fulll
         }
 
         [DataMember(Name = "compatibility")]
@@ -46,7 +46,8 @@ namespace Confluent.Kafka.SchemaRegistry.Rest.Entities
             CompatibilityLevel = compatibilityLevel;
         }
 
-        public override string ToString() => $"{{compatibility={CompatibilityLevel}}}";
+        public override string ToString() 
+            => $"{{compatibility={CompatibilityLevel}}}";
         
         public override bool Equals(object obj)
         {
@@ -59,8 +60,6 @@ namespace Confluent.Kafka.SchemaRegistry.Rest.Entities
         }
         
         public override int GetHashCode()
-        {
-            return 31 * CompatibilityLevel.GetHashCode();
-        }
+            => 31 * CompatibilityLevel.GetHashCode();
     }
 }

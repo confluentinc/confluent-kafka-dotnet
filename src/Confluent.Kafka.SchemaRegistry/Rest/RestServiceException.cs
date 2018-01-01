@@ -25,7 +25,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest.Exceptions
     ///     an HTTP status indicating an error (any 400 or 500 statuses). For example, a request
     ///     entity that omits a required field may generate the following response:
     /// </summary>
-    public class SchemaRegistryInternalException : Exception
+    public class RestServiceException : Exception
     {
         /// <summary>
         ///     ErrorCode specfic to schemaSerializer, of form XXX or XXXYY 
@@ -39,7 +39,20 @@ namespace Confluent.Kafka.SchemaRegistry.Rest.Exceptions
         /// </summary>
         public HttpStatusCode Status { get; }
 
-        public SchemaRegistryInternalException(string message, HttpStatusCode status, int errorCode) : base(message + "; error code: " + errorCode)
+        /// <summary>
+        ///     Initialize a new instance of SchemaRegistryInternalException.
+        /// </summary>
+        /// <param name="message">
+        ///     
+        /// </param>
+        /// <param name="status">
+        ///     The HTTP Status Code
+        /// </param>
+        /// <param name="errorCode">
+        ///     The schema registry error code
+        /// </param>
+        public RestServiceException(string message, HttpStatusCode status, int errorCode) 
+            : base(message + "; error code: " + errorCode)
         {
             ErrorCode = errorCode;
             Status = status;

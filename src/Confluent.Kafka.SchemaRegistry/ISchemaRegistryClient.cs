@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+﻿// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace Confluent.Kafka.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         Task<string> GetSchemaAsync(int id);
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync_II"]/*' />
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
         Task<string> GetSchemaAsync(string subject, int version);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
@@ -42,14 +42,5 @@ namespace Confluent.Kafka.SchemaRegistry
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
         string ConstructSubjectName(string topic, bool isKey);
-
-
-        // TODO: the following interfaces may be required.
-        
-        // Task<bool> CheckSchemaAsync(string subject, string schema);
-        // Task<Config.Compatbility> GetGlobalCompatibility();
-        // Task<Config.Compatbility> GetCompatibilityAsync(string subject);
-        // Task<Config.Compatbility> PutGlobalCompatibilityAsync(Config.Compatbility compatibility);
-        // Task<Config.Compatbility> UpdateCompatibilityAsync(string subject, Config.Compatbility compatibility);
     }
 }

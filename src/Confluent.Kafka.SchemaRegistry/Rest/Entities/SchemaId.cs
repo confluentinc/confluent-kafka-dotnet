@@ -21,7 +21,7 @@ using System.Runtime.Serialization;
 namespace  Confluent.Kafka.SchemaRegistry.Rest.Entities
 {
     [DataContract]
-    public class SchemaId
+    internal class SchemaId
     {
         [DataMember(Name = "id")]
         public int Id { get; set; }

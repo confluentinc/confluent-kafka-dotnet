@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+﻿// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 {
     /// <remarks>
     ///     It may be useful to expose this publically, but this is not
-    ///     required by the Avro serializers, so keeping internal 
+    ///     required by the Avro serializers, so we will keep this internal 
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
-    internal interface ISchemaRegistyRestService : IDisposable
+    internal interface IRestService : IDisposable
     {
         Task<Schema> CheckSchemaAsync(string subject, string schema);
         Task<Config> GetCompatibilityAsync(string subject);
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         Task<SchemaId> PostSchemaAsync(string subject, string schema);
         Task<Config> PutCompatibilityAsync(string subject, Config.Compatbility compatibility);
         Task<Config> PutGlobalCompatibilityAsync(Config.Compatbility compatibility);
-        Task<CompatibilityCheckResponse> TestCompatibilityAsync(string subject, int versionId, string avroSchema);
-        Task<CompatibilityCheckResponse> TestLatestCompatibilityAsync(string subject, string avroSchema);
+        Task<CompatibilityCheck> TestCompatibilityAsync(string subject, int versionId, string avroSchema);
+        Task<CompatibilityCheck> TestLatestCompatibilityAsync(string subject, string avroSchema);
     }
 }

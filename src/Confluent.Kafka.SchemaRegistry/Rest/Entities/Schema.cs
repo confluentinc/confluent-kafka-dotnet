@@ -97,9 +97,7 @@ namespace Confluent.Kafka.SchemaRegistry
         ///     A string that represents the schema object.
         /// </returns>
         public override string ToString()
-        {
-            return $"{{subject={Subject}, version={Version}, id={Id}, schema={SchemaString}}}";
-        }
+            => $"{{subject={Subject}, version={Version}, id={Id}, schema={SchemaString}}}";
         
         /// <summary>
         ///     Returns a hash code for this Schema.
@@ -174,11 +172,9 @@ namespace Confluent.Kafka.SchemaRegistry
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
         public bool Equals(Schema other)
-        {
-            return Version == other.Version &&
-                   Id == other.Id &&
-                   Subject == other.Subject &&
-                   SchemaString == other.SchemaString;
-        }
+            => Version == other.Version &&
+               Id == other.Id &&
+               Subject == other.Subject &&
+               SchemaString == other.SchemaString;
     }
 }
