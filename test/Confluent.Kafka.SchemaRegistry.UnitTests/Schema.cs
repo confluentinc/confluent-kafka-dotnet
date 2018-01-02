@@ -20,10 +20,10 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests
         public void ToStringTest()
         {
             var schema = new Schema("test-key", 1, 42, "test-schema-string");    
-            Assert.True(schema.ToString().Contains("test-key"));
-            Assert.True(schema.ToString().Contains("1"));
-            Assert.True(schema.ToString().Contains("42"));
-            Assert.True(schema.ToString().Contains("test-schema-string"));
+            Assert.Contains("test-key", schema.ToString());
+            Assert.Contains("1", schema.ToString());
+            Assert.Contains("42", schema.ToString());
+            Assert.Contains("test-schema-string", schema.ToString());
         }
 
         [Fact]

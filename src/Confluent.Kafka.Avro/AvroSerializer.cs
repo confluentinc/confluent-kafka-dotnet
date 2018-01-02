@@ -109,6 +109,8 @@ namespace Confluent.Kafka.Serialization
             }
             else if (writerType.Equals(typeof(string)))
             {
+                // TODO: I don't think this is what the Java Serializer does.
+                // Match whatever it does.
                 WriterSchema = Avro.Schema.Parse("[\"null\", \"string\"]");
             }
             else if (writerType.Equals(typeof(float)))
@@ -242,6 +244,7 @@ namespace Confluent.Kafka.Serialization
 
                 // schemaId could already be intialized through an other topic
                 // this has no impact, as schemaId will be the same
+                var w = WriterSchema.ToString();
                 SchemaId = SchemaRegistryClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
                 // use big endian
                 schemaIdBigEndian = IPAddress.NetworkToHostOrder(SchemaId.Value);
