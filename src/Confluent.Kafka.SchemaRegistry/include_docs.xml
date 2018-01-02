@@ -80,21 +80,27 @@
     </returns>
 </Member>
 
-<Member name="ISchemaRegistryClient_ConstructSubjectName">
+<Member name="ISchemaRegistryClient_ConstructKeySubjectName">
     <summary>
-        Returns the schema registry subject name given a topic name and a subject 
-        type (key or value).
+        Returns the schema registry key subject name given a topic name.
     </summary>
     <param name="topic">
         The topic name.
     </param>
-    <param name="isKey">
-        true if the schema is associated with a key, false if it is associated with
-        a value.
+    <returns>
+        The key subject name given a topic name.
+    </returns>
+</Member>
+
+<Member name="ISchemaRegistryClient_ConstructValueSubjectName">
+    <summary>
+        Returns the schema registry value subject name given a topic name.
+    </summary>
+    <param name="topic">
+        The topic name.
     </param>
     <returns>
-        The subject name given a topic name and a subject 
-        type (key or value).
+        The value subject name given a topic name.
     </returns>
 </Member>
 

@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
         {
             if (args.Length != 2)
             {
-                Console.WriteLine("Usage:  AdvancedProducer brokerList topicName");
+                Console.WriteLine("Usage: .. brokerList topicName");
                 return;
             }
 

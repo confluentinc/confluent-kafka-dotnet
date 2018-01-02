@@ -23,7 +23,6 @@ using System;
 using System.Threading.Tasks;
 using Confluent.Kafka.SchemaRegistry.Rest.Entities.Requests;
 using Confluent.Kafka.SchemaRegistry.Rest.Entities;
-using Confluent.Kafka.SchemaRegistry.Rest.Exceptions;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
@@ -37,8 +36,6 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
     /// </remarks>
     internal class RestService : IRestService
     {
-        public const int DefaultTimeout = 10000;
-
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
         /// <summary>
@@ -56,7 +53,7 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUris, int timeoutMs = DefaultTimeout)
+        public RestService(string schemaRegistryUris, int timeoutMs)
         { 
             this.clients = schemaRegistryUris
                 .Split(',')
@@ -69,48 +66,101 @@ namespace Confluent.Kafka.SchemaRegistry.Rest
 
         private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(HttpRequestMessage request)
         {
+            // There may be many base urls - roll until one is found that works.
+            //
+            // Start with the last client that was used by this method, which only gets set on 
+            // success, so it's probably going to work.
+            //
+            // Otherwise, try every client until a successful call is made (true even under 
+            // concurrent access).
+
             string aggregatedErrorMessage = null;
             HttpResponseMessage response = null;
             bool gotOkAnswer = false;
-            for (int i = 0; i < clients.Count && !gotOkAnswer; i++)
+            bool firstError = true;
+            
+            int startClientIndex;
+            lock (lastClientUsedLock)
             {
-                gotOkAnswer = true;
+                startClientIndex = this.lastClientUsed;
+            }
 
-                // We have many base urls, we roll until we find a correct one
+            for (int i = startClientIndex; i < clients.Count + startClientIndex && !gotOkAnswer; ++i)
+            {
                 try
                 {
-                    response = await 
-                        clients[((Func<int>)(() => { lock (lastClientUsedLock) { return lastClientUsed; }}))()]
+                    response = await clients[startClientIndex % clients.Count]
                             .SendAsync(request).ConfigureAwait(false);
+
+                    // In the case of an internal server error, try another server 
+                    //   (reason could be e.g. "error while forwarding the request to the master")
+                    // 4xx errors should not be retried (these are conclusive)
+                    if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        if (!firstError)
+                        {
+                            aggregatedErrorMessage += "; ";
+                        }
+                        else 
+                        {
+                            firstError = false;
+                        }
+
+                        string message = "";
+                        int errorCode = -1;
+                        try
+                        {
+                            var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                            message = errorObject.Value<string>("message");
+                            errorCode = errorObject.Value<int>("error_code");
+                        }
+                        catch
+                        {
+                            aggregatedErrorMessage += $"[{clients[i].BaseAddress}] {response.StatusCode}";
+                        }
+
+                        aggregatedErrorMessage += $"[{clients[i].BaseAddress}] {response.StatusCode} {errorCode} {message}";
+                    }
+                    else 
+                    {
+                        gotOkAnswer = true;
+                    }
                 }
                 catch (HttpRequestException e)
                 {
-                    aggregatedErrorMessage += $"{clients[i].BaseAddress} : {e.Message}; ";
-                    lock (lastClientUsedLock)
+                    if (!firstError)
                     {
-                        this.lastClientUsed = (this.lastClientUsed + 1) % clients.Count;
+                        aggregatedErrorMessage += "; ";
                     }
+                    else 
+                    {
+                        firstError = false;
+                    }
+
+                    aggregatedErrorMessage += $"[{clients[i].BaseAddress}] HttpRequestException: {e.Message}";
                 }
             }
 
             if (!gotOkAnswer)
             {
-                // All schemas failed, return an exception containing information about each failure.
-                throw new IOException(aggregatedErrorMessage);
+                // All SR calls failed, return an exception containing information about each failure.
+                // TODO: Allow non-empty aggregatedErrorMessage to be logged even when gotOkAnswer == true.
+                throw new HttpRequestException(aggregatedErrorMessage);
             }
 
-            // TODO: It may make more sense to include this in the above loop.
-
-            if (response.StatusCode != HttpStatusCode.OK)            
+            if (!response.IsSuccessStatusCode)
             {
-                // We may have contacted a schema registry whith a default (disconnected from the cluster...),
-                // by precaution we roll for a next one
-                lock (lastClientUsedLock)
-                {
-                    this.lastClientUsed = (this.lastClientUsed + 1) % clients.Count;
-                }
+                // 4xx errors
                 var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                throw new RestServiceException(errorObject.Value<string>("message"), response.StatusCode, errorObject.Value<int>("error_code"));
+                var message = errorObject.Value<string>("message");
+                var errorCode = errorObject.Value<int>("error_code");
+                throw new SchemaRegistryException(message, response.StatusCode, errorCode);
+            }
+
+            // if we had success, set last client used so we start with this next time.
+            lock (lastClientUsedLock)
+            {
+                this.lastClientUsed = (this.lastClientUsed + 1) % clients.Count;
             }
 
             return response;

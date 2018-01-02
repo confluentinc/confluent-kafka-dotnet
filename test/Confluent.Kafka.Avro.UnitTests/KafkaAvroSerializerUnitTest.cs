@@ -19,7 +19,11 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests.Serializer
             {
                 schemaRegistryMock = new Mock<ISchemaRegistryClient>();
                 schemaRegistry = schemaRegistryMock.Object;
-                schemaRegistryMock.Setup(x => x.ConstructSubjectName(topic, isKey)).Returns(subject);
+                schemaRegistryMock.Setup(
+                    x => isKey
+                        ? x.ConstructKeySubjectName(topic)
+                        : x.ConstructValueSubjectName(topic)
+                ).Returns(subject);
             }
             schemaRegistryMock.Setup(x => x.RegisterAsync(subject, schema)).ReturnsAsync(schemaId);
             schemaRegistryMock.Setup(x => x.GetSchemaAsync(schemaId)).ReturnsAsync(schema);

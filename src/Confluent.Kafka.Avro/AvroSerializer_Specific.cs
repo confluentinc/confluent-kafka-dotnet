@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Serialization
 		/// <summary>
         ///		Client used to communicate with confluent schema registry.
         /// </summary>
-        public ISchemaRegistryClient SchemaRegisterClient { get; }
+        public ISchemaRegistryClient SchemaRegistryClient { get; }
 
 		/// <summary>
         ///		Indicates if this serializer is used for kafka keys or values.
@@ -111,7 +111,7 @@ namespace Confluent.Kafka.Serialization
         ///	</exception>
         public AvroSerializer(ISchemaRegistryClient schemaRegistry, int initialBufferCapacity)
         {
-            SchemaRegisterClient = schemaRegistry;
+            SchemaRegistryClient = schemaRegistry;
             InitialBufferCapacity = initialBufferCapacity;
 
             Type writerType = typeof(T);
@@ -176,10 +176,13 @@ namespace Confluent.Kafka.Serialization
             if (!topicsRegistred.Contains(topic))
             {
                 // first usage: register schema, to check compatibility and version
-                string subject = SchemaRegisterClient.ConstructSubjectName(topic, IsKey);
+                string subject = IsKey
+                    ? SchemaRegistryClient.ConstructKeySubjectName(topic)
+                    : SchemaRegistryClient.ConstructValueSubjectName(topic);
+
                 // schemaId could already be intialized through an other topic
                 // this has no impact, as schemaId will be the same
-                SchemaId = SchemaRegisterClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
+                SchemaId = SchemaRegistryClient.RegisterAsync(subject, WriterSchema.ToString()).Result;
                 // use big endian
                 schemaIdBigEndian = IPAddress.NetworkToHostOrder(SchemaId);
                 topicsRegistred.Add(topic);

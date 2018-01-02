@@ -67,14 +67,16 @@ namespace Confluent.Kafka.Serialization
 
         /// <summary>
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="topic"></param>
-        /// <param name="length">Length of the result to take into account </param>
-        /// <param name="isKey"></param>
+        /// <param name="data">
+        /// </param>
+        /// <param name="topic">
+        /// </param>
         /// <returns></returns>
         public byte[] Serialize(string topic, T data)
         {
-            string subject = SchemaRegistryClient.ConstructSubjectName(topic, IsKey);
+            string subject = IsKey 
+                ? SchemaRegistryClient.ConstructKeySubjectName(topic)
+                : SchemaRegistryClient.ConstructValueSubjectName(topic);
 
             int schemaId;
             Avro.Schema schema = GetSchema(data);

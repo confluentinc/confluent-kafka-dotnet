@@ -40,7 +40,10 @@ namespace Confluent.Kafka.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
         Task<bool> IsCompatibleAsync(string subject, string avroSchema);
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
-        string ConstructSubjectName(string topic, bool isKey);
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
+        string ConstructKeySubjectName(string topic);
+        
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructValueSubjectName"]/*' />
+        string ConstructValueSubjectName(string topic);
     }
 }

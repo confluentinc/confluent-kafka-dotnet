@@ -50,6 +50,10 @@ namespace Confluent.Kafka.SchemaRegistry
         [DataMember(Name = "schema")]
         public string SchemaString { get; set; }
 
+        private Schema()
+        {
+        }
+
         /// <summary>
         ///     Initializes a new instance of the Schema class.
         /// </summary>
@@ -62,18 +66,18 @@ namespace Confluent.Kafka.SchemaRegistry
         /// <param name="id">
         ///     The globally unique identifier of the schema, >= 0
         /// </param>
-        /// <param name="schema">
+        /// <param name="schemaString">
         ///     String representation of the schema.
         /// </param>
-        public Schema(string subject, int version, int id, string schema)
+        public Schema(string subject, int version, int id, string schemaString)
         {
             if (string.IsNullOrEmpty(subject))
             {
                 throw new ArgumentNullException(nameof(subject));
             }
-            if (string.IsNullOrEmpty(schema))
+            if (string.IsNullOrEmpty(schemaString))
             {
-                throw new ArgumentNullException(nameof(schema));
+                throw new ArgumentNullException(nameof(schemaString));
             }
             if (version < 0)
             {
@@ -87,7 +91,7 @@ namespace Confluent.Kafka.SchemaRegistry
             Subject = subject;
             Version = version;
             Id = id;
-            SchemaString = schema;
+            SchemaString = schemaString;
         }
 
         /// <summary>
@@ -134,8 +138,10 @@ namespace Confluent.Kafka.SchemaRegistry
             int result = string.Compare(Subject, other.Subject, StringComparison.Ordinal);
             if (result == 0)
             {
-                result = Version - other.Version;
+                return Version.CompareTo(other.Version);
+                // TODO: potentially check for id and schemaString equality here and fail fast if !=
             }
+
             return result;
         }
 

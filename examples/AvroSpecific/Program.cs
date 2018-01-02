@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
         {
             if (args.Length != 3)
             {
-                Console.WriteLine("Usage:   AvroSpecific  bootstrapServers schemaregistryurl topicName");
+                Console.WriteLine("Usage: .. bootstrapServers schemaregistryurl topicName");
                 return;
             }
 
@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
             var consumerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers }, { "group.id", Guid.NewGuid() } };
 
-            using (var schemaRegistry = new SchemaRegistryClient(schemaRegistryConfig))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {

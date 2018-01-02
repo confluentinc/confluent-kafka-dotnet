@@ -26,7 +26,7 @@ namespace Confluent.Kafka.SchemaRegistry
     /// <summary>
     ///     A Schema Registry client that caches request responses.
     /// </summary>
-    public class SchemaRegistryClient : ISchemaRegistryClient, IDisposable
+    public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
         private IRestService restService;
         private readonly int identityMapCapacity;
@@ -35,13 +35,28 @@ namespace Confluent.Kafka.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         
         /// <summary>
+        ///     The default timeout value for Schema Registry REST API calls.
+        /// </summary>
+        public const int DefaultTimeout = 10000;
+
+        /// <summary>
+        ///     The default maximum capacity of the local schema cache.
+        /// </summary>
+        public const int DefaultMaxCapacity = 1024;
+
+        /// <summary>
         ///     Initialize a new instance of the SchemaRegistryClient class.
         /// </summary>
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public SchemaRegistryClient(IEnumerable<KeyValuePair<string, object>> config)
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, object>> config)
         {
+            if (config == null)
+            {
+                throw new ArgumentNullException("config properties must be specified.");
+            }
+
             var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.urls").FirstOrDefault();
             if (schemaRegistryUrisMaybe.Value == null)
             {
@@ -50,95 +65,96 @@ namespace Confluent.Kafka.SchemaRegistry
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
             var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.timeout.ms").FirstOrDefault();
-            var timeoutMs = timeoutMsMaybe.Value == null ? RestService.DefaultTimeout : (int)timeoutMsMaybe.Value;
+            var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
 
             var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.max.capacity").FirstOrDefault();
-            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? 1024 : (int)identityMapCapacityMaybe.Value;
+            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCapacity : (int)identityMapCapacityMaybe.Value;
 
             this.restService = new RestService(schemaRegistryUris, timeoutMs);
         }
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
+        /// 
+        ///     It's behavior is pretty extreme - remove everything and start again if the 
+        ///     cache gets full. However, in practical situations this is not expected.
+        /// 
+        ///     TODO: Implement an LRU Cache here or something instead (not high priority).
         /// </remarks>
-        private bool CleanCacheIfNeeded()
+        private bool CleanCacheIfFull()
         {
-            // don't check _idBySchemaBySubject - it's directly related with both the others.
-            if (schemaById.Count + schemaByVersionBySubject.Sum(x=>x.Value.Count) >= identityMapCapacity)
+            if (
+                this.schemaById.Count + 
+                this.schemaByVersionBySubject.Sum(x => x.Value.Count) +
+                this.idBySchemaBySubject.Sum(x => x.Value.Count)
+                    >= identityMapCapacity)
             {
-                // TODO: log when this happens.
-                schemaById.Clear();
-                idBySchemaBySubject.Clear();
-                schemaByVersionBySubject.Clear();
+                // TODO: log if this happens.
+                this.schemaById.Clear();
+                this.idBySchemaBySubject.Clear();
+                this.schemaByVersionBySubject.Clear();
                 return true;
             }
+
             return false;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         public async Task<int> RegisterAsync(string subject, string schema)
         {
-            // Can't check schemaById, we need to register under a specific subject
-            Dictionary<string, int> idBySchema;
-            if (!idBySchemaBySubject.TryGetValue(subject, out idBySchema))
+            CleanCacheIfFull();
+            
+            if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
             {
                 idBySchema = new Dictionary<string, int>();
-                idBySchemaBySubject[subject] = idBySchema;
+                this.idBySchemaBySubject[subject] = idBySchema;
             }
 
-            int schemaId;
-            if (!idBySchema.TryGetValue(schema, out schemaId))
+            if (!idBySchema.TryGetValue(schema, out int schemaId))
             {
-                var register = await restService.PostSchemaAsync(subject, schema).ConfigureAwait(false);
-                if (CleanCacheIfNeeded())
-                {
-                    // must register again
-                    idBySchemaBySubject[subject] = idBySchema;
-                }
-                schemaId = register.Id;
+                var registered = await restService.PostSchemaAsync(subject, schema).ConfigureAwait(false);
+                schemaId = registered.Id;
                 idBySchema[schema] = schemaId;
                 schemaById[schemaId] = schema;
             }
+
             return schemaId;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         public async Task<string> GetSchemaAsync(int id)
         {
-            string schema;
-            if (!schemaById.TryGetValue(id, out schema))
+            CleanCacheIfFull();
+
+            if (!this.schemaById.TryGetValue(id, out string schema))
             {
-                var getSchema = await restService.GetSchemaAsync(id).ConfigureAwait(false);
-                CleanCacheIfNeeded();
-                schema = getSchema.Schema;
+                schema = (await restService.GetSchemaAsync(id).ConfigureAwait(false)).Schema;
                 schemaById[id] = schema;
             }
+
             return schema;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
         public async Task<string> GetSchemaAsync(string subject, int version)
         {
+            CleanCacheIfFull();
+
             if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
             {
                 schemaByVersion = new Dictionary<int, string>();
                 schemaByVersionBySubject[subject] = schemaByVersion;
             }
 
-            if (!schemaByVersion.TryGetValue(version, out string schema))
+            if (!schemaByVersion.TryGetValue(version, out string schemaString))
             {
-                var getSchema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(false);
-                if (CleanCacheIfNeeded())
-                {
-                    // repopulate this one
-                    schemaByVersionBySubject[subject] = schemaByVersion;
-                }
-                schema = getSchema.SchemaString;
-                schemaByVersion[version] = schema;
-                schemaById[getSchema.Id] = schema;
+                var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(false);
+                schemaString = schema.SchemaString;
+                schemaByVersion[version] = schemaString;
+                schemaById[schema.Id] = schemaString;
             }
 
-            return schema;
+            return schemaString;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
@@ -150,15 +166,16 @@ namespace Confluent.Kafka.SchemaRegistry
             => restService.GetSubjectsAsync();
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
-        public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
-        {
-            var getLatestCompatibility = await restService.TestLatestCompatibilityAsync(subject, avroSchema).ConfigureAwait(false);
-            return getLatestCompatibility.IsCompatible;
-        }
+        public async Task<bool> IsCompatibleAsync(string subject, string schemaString)
+            => (await restService.TestLatestCompatibilityAsync(subject, schemaString).ConfigureAwait(false)).IsCompatible;
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructRegistrySubject"]/*' />
-        public string ConstructSubjectName(string topic, bool isKey)
-            => $"{topic}-{(isKey ? "key" : "value")}";
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
+        public string ConstructKeySubjectName(string topic)
+            => $"{topic}-key";
+
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructValueSubjectName"]/*' />
+        public string ConstructValueSubjectName(string topic)
+            => $"{topic}-value";
 
         public void Dispose()
             => restService.Dispose();
