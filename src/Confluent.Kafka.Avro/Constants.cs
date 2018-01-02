@@ -15,12 +15,12 @@
 // Refer to LICENSE for more information.
 
 
-namespace Confluent.Kafka.Avro
+namespace Confluent.Kafka.Serialization
 {
     internal static class Constants
     {
         /// <summary>
-        ///     Magic byte identifying avro confluent protocol format.
+        ///     Magic byte that identifies an avro serialized message.
         /// </summary>
         public const byte MagicByte = 0;
     }

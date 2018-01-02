@@ -21,7 +21,6 @@ using System.Net;
 using Avro.Generic;
 using Avro.IO;
 using Avro.Specific;
-using Confluent.Kafka.Avro;
 using Confluent.Kafka.SchemaRegistry;
 using System.Reflection;
 using System;
@@ -30,8 +29,8 @@ using System;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     Avro specific deserializer. Used to deserialize to types 
-    ///     generated with the avrogen tool.
+    ///     Avro specific deserializer for deserializing to types 
+    ///     generated with the avrogen.exe tool.
     /// </summary>
     public class AvroDeserializer<T> : IDeserializer<T>
     {
@@ -41,24 +40,26 @@ namespace Confluent.Kafka.Serialization
         //   following: data serialized with corresponding schema
 
         /// <summary>
-        ///		Client used to communicate with confluent schema registry.
+        ///		The client used to communicate with Confluent Schema Registry.
         /// </summary>
-        private ISchemaRegistryClient SchemaRegistryClient { get; }
+        public ISchemaRegistryClient SchemaRegistryClient { get; private set;  }
 
         private bool disposeClientOnDispose;
 
-        // maintain a cache of deserializer, so that we only have to construct it once
-        // schemaId is big endian
+        /// <remarks>
+        ///     A deserializer cache is maintained, so that they only need to be constructed once.
+        /// </remarks>
         private readonly Dictionary<int, DatumReader<T>> readerBySchemaIdBigEndian = new Dictionary<int, DatumReader<T>>();
+        private object readerLock = new object();
 
         /// <summary>
         ///     The avro schema corresponding to type <see cref="T"/>
         /// </summary>
-        public Avro.Schema ReaderSchema { get; }
+        public Avro.Schema ReaderSchema { get; private set; }
 
         private void Initialize(ISchemaRegistryClient schemaRegistryClient)
         {
-            SchemaRegisterClient = schemaRegisterClient;
+            SchemaRegistryClient = schemaRegistryClient;
 
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)) || typeof(T).IsSubclassOf(typeof(SpecificFixed)))
             {
@@ -103,19 +104,22 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Initialize a new instance of AvroDeserializer from a 
         /// </summary>
-        /// <param name="config"></param>
+        /// <param name="config">
+        ///     A collection containing CachedSchemaRegistryClient configuration properties.
+        ///     A new CachedSchemaRegistryClient instance will be created and managed by this
+        ///     serializer for communication with the Confluent Schema Registry.
+        /// </param>
         public AvroDeserializer(IEnumerable<KeyValuePair<string, object>> config)
         {
             disposeClientOnDispose = true;
-            var schemaRegistryClient = new CachedSchemaRegistryClient(config);
-            Initialize(schemaRegistryClient);
+            Initialize(new CachedSchemaRegistryClient(config));
         }
 
         /// <summary>
-        ///     Initiliaze an avro serializer.
+        ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegisterClient">
-        ///		Client used to communicate with confluent schema registry.
+        ///		Client used for communication with Confluent's Schema Registry.
         ///	</param>
         /// <exception cref="InvalidOperationException">
         ///		The generic type <see cref="T"/> is not supported.
@@ -126,10 +130,23 @@ namespace Confluent.Kafka.Serialization
             Initialize(schemaRegisterClient);
         }
 
+        /// <summary>
+        ///     Deserialize an object of type <see cref="T"/> from a byte array.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic associated with the data (ignored by this deserializer).
+        /// </param>
+        /// <param name="array">
+        ///     A byte array containing the object serialized in the format produced
+        ///     by <see cref="AvroSerializer" />.
+        /// </param>
+        /// <returns>
+        ///     The deserialized <see cref="T"/> value.
+        /// </returns>
         public T Deserialize(string topic, byte[] array)
         {
             // topic is not necessary for deserialization (or knowing if it's key or not)
-            // we only care about the schema id
+            // we only care about the schema id.
             using (var stream = new MemoryStream(array))
             using (var reader = new BinaryReader(stream))
             {
@@ -140,7 +157,14 @@ namespace Confluent.Kafka.Serialization
                     throw new InvalidDataException("magic byte should be 0");
                 }
                 int writerIdBigEndian = reader.ReadInt32();
-                if (!readerBySchemaIdBigEndian.TryGetValue(writerIdBigEndian, out DatumReader<T> datumReader))
+
+                DatumReader<T> datumReader = null;
+                // TODO: A r/w lock would be better, but the improvement would be negligible here.
+                lock (readerLock)
+                {
+                    readerBySchemaIdBigEndian.TryGetValue(writerIdBigEndian, out datumReader);
+                }
+                if (datumReader == null)
                 {
                     int witerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
                     string writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(witerId).Result;
@@ -149,13 +173,17 @@ namespace Confluent.Kafka.Serialization
                     // can be of multiple type: Record, Primitive...
                     // we don't read against a given schema, so writer and reader schema are same
                     datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                    readerBySchemaIdBigEndian[writerIdBigEndian] = datumReader;
+                    lock (readerLock)
+                    {
+                        readerBySchemaIdBigEndian[writerIdBigEndian] = datumReader;
+                    }
                 }
 
                 return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }
-        
+
+        /// <include file='../../Confluent.Kafka/include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
             => config.Where(item => !item.Key.StartsWith("schema.registry."));
 
