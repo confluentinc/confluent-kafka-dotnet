@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Serialization
     ///     Implement this interface to define a deserializer 
     ///     for a particular type T.
     /// </summary>
-    public interface IDeserializer<T>
+    public interface IDeserializer<T> : IDisposable
     {
         /// <summary>
         ///     Deserialize a byte array to an instance of

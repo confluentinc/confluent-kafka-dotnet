@@ -14,13 +14,14 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka.SchemaRegistry
 {
-    public interface ISchemaRegistryClient
+    public interface ISchemaRegistryClient : IDisposable
     {
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         Task<int> RegisterAsync(string subject, string schema);

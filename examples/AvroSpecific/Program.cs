@@ -50,11 +50,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {
-                consumer.OnMessage += (o, e) =>
-                {
-                    var record = e.Value;
-                    Console.WriteLine($"user key name: {e.Key.name}, user value favorite color: {e.Value.favorite_color}");
-                };
+                consumer.OnMessage += (o, e) 
+                    => Console.WriteLine($"user key name: {e.Key.name}, user value favorite color: {e.Value.favorite_color}");
                 
                 consumer.OnError += (_, e)
                     => Console.WriteLine(e.Reason);
