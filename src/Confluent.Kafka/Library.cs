@@ -43,19 +43,37 @@ namespace Confluent.Kafka
         ///     E.g.: 0x000901ff = 0.9.1
         /// </summary>
         public static int Version
-            => (int) LibRdKafka.version();
+        {
+            get
+            {
+                LibRdKafka.Initialize(null);
+                return (int) LibRdKafka.version();
+            }
+        }
 
         /// <summary>
         ///     Gets the librdkafka version as string.
         /// </summary>
         public static string VersionString
-            => Util.Marshal.PtrToStringUTF8(LibRdKafka.version_str());
+        {
+            get
+            {
+                LibRdKafka.Initialize(null);
+                return Util.Marshal.PtrToStringUTF8(LibRdKafka.version_str());
+            }
+        }
 
         /// <summary>
         ///     Gets a list of the supported debug contexts.
         /// </summary>
         public static string[] DebugContexts
-            => Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
+        {
+            get
+            {
+                LibRdKafka.Initialize(null);
+                return Util.Marshal.PtrToStringUTF8(LibRdKafka.get_debug_contexts()).Split(',');
+            }
+        }
 
         /// <summary>
         ///     true if librdkafka has been successfully loaded, false if not.
@@ -79,8 +97,9 @@ namespace Confluent.Kafka
             => Load(null);
 
         /// <summary>
-        ///     Loads the native librdkafka library from the specified path. Does 
-        ///     nothing if the library is already loaded.
+        ///     Loads the native librdkafka library from the specified path (note: the 
+        ///     specified path needs to include the filename). Does nothing if the 
+        ///     library is already loaded.
         /// </summary>
         /// <returns>
         ///     true if librdkafka was loaded as a result of this call, false if the

@@ -83,8 +83,6 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void ToStringTest()
         {
-            Library.Load();
-
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.Local_BadMsg);
 
             Assert.True(tpoe.ToString().Contains(tpoe.Topic));
@@ -106,8 +104,6 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void ExplicitCast()
         {
-            Library.Load();
-
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.NoError);
             var tpo = (TopicPartitionOffset) tpoe;
             Assert.Equal(tpoe.TopicPartitionOffset, tpo);
