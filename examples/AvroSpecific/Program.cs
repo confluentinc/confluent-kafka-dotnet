@@ -14,16 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
-using Avro;
-using Avro.Generic;
-using Confluent.Kafka.SchemaRegistry;
-using Confluent.Kafka.Serialization;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Examples.AvroSpecific
@@ -42,13 +37,20 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
 
-            var schemaRegistryConfig = new Dictionary<string, object>{ { "schema.registry.urls", schemaRegistryUrl } };
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
-            var consumerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers }, { "group.id", Guid.NewGuid() } };
+            var producerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers },
+                { "schema.registry.urls", schemaRegistryUrl }
+            };
+            var consumerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers },
+                { "group.id", Guid.NewGuid() },
+                { "schema.registry.urls", schemaRegistryUrl }
+            };
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
-            using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
+            using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(), new AvroDeserializer<User>()))
+            using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(), new AvroSerializer<User>()))
             {
                 consumer.OnMessage += (o, e) 
                     => Console.WriteLine($"user key name: {e.Key.name}, user value favorite color: {e.Value.favorite_color}");
@@ -83,6 +85,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 cts.Cancel();
                 consumeTask.Wait();
             }
+
         }
     }
 }

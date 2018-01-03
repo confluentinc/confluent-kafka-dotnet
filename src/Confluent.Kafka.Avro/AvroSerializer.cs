@@ -66,7 +66,9 @@ namespace Confluent.Kafka.Serialization
 
         private bool disposeClientOnDispose;
 
-		/// <summary>
+        private const string InitialBufferSizePropertyName = "schema.registry.avro.buffer.size";
+
+        /// <summary>
         ///		True if this serializer is used for serializing Kafka message keys,
         ///		false if it is used for serializing Kafka message values.
         /// </summary>
@@ -134,48 +136,10 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Initialize a new AvroSerializer instance using the provided configuration.
+        ///     Initialize a new AvroSerializer instance. Relevant configuration properties
+        ///     will be extracted from the collection passed into the producer constructor.
         /// </summary>
-        /// <param name="config">
-        ///     A collection containing CachedSchemaRegistryClient configuration properties.
-        ///     A new CachedSchemaRegistryClient instance will be created and managed by this
-        ///     serializer for communication with the Confluent Schema Registry.
-        /// </param>
-        /// <exception cref="InvalidOperationException">
-        ///		The generic type <see cref="T"/> is not supported.
-        ///	</exception>
-        public AvroSerializer(IEnumerable<KeyValuePair<string, object>> config)
-        {
-            disposeClientOnDispose = true;
-            SchemaRegistryClient = new CachedSchemaRegistryClient(config);
-            InitialBufferSize = DefaultInitialBufferSize;
-            Initialize();
-        }
-
-
-        /// <summary>
-        ///     Initialize a new AvroSerializer instance using the supplied configuration.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection containing CachedSchemaRegistryClient configuration properties.
-        ///     A new CachedSchemaRegistryClient instance will be created and managed by this
-        ///     serializer for communication with the Confluent Schema Registry.
-        /// </param>
-        /// <param name="initialBufferSize">
-        ///     The initial size (in bytes) of the buffer used for serializing messages (note: 
-        ///     each call to serialize creates a new buffer). You should specify a value high 
-        ///     enough to avoid re-allocation, but not so high as to cause excessive memory use.
-        /// </param>
-        /// <exception cref="InvalidOperationException">
-        ///		The generic type <see cref="T"/> is not supported.
-        ///	</exception>
-        public AvroSerializer(IEnumerable<KeyValuePair<string, object>> config, int initialBufferSize)
-        {
-            disposeClientOnDispose = true;
-            SchemaRegistryClient = new CachedSchemaRegistryClient(config);
-            InitialBufferSize = initialBufferSize;
-            Initialize();
-        }
+        public AvroSerializer() { }
 
         /// <summary>
         ///     Initiliaze an AvroSerializer instance.
@@ -265,8 +229,52 @@ namespace Confluent.Kafka.Serialization
         /// <include file='../../Confluent.Kafka/include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
+            var keyOrValue = isKey ? "Key" : "Value";
+            var srConfig = config.Where(item => item.Key.StartsWith("schema.registry."));
             this.IsKey = isKey;
-            return config.Where(item => !item.Key.StartsWith("schema.registry."));
+
+            if (srConfig.Count() != 0)
+            {
+                if (SchemaRegistryClient != null)
+                {
+                    throw new ArgumentException($"{keyOrValue} AvroSerializer was configured using both constructor arguments and configuration parameters.");
+                }
+
+                int bufferSize = DefaultInitialBufferSize;
+
+                var bufferSizeProperties = config.Where(ci => ci.Key == InitialBufferSizePropertyName);
+                if (bufferSizeProperties.Count() > 1)
+                {
+                    throw new ArgumentException($"{keyOrValue} AvroSerializer {InitialBufferSizePropertyName} configuration parameter was specified more than once.");
+                }
+                
+                bufferSize = DefaultInitialBufferSize;
+                if (bufferSizeProperties.Count() == 0)
+                {
+                    try
+                    {
+                        bufferSize = int.Parse(bufferSizeProperties.First().Value.ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ArgumentException($"{keyOrValue} AvroSerializer {InitialBufferSizePropertyName} configuration parameter was incorrectly specified.", e);
+                    }
+                }
+                
+                disposeClientOnDispose = true;
+                SchemaRegistryClient = new CachedSchemaRegistryClient(config);
+                InitialBufferSize = bufferSize;
+                Initialize();
+
+                return config.Where(item => !item.Key.StartsWith("schema.registry."));
+            }
+
+            if (SchemaRegistryClient == null)
+            {
+                throw new ArgumentException($"{keyOrValue} AvroSerializer was not configured.");
+            }
+
+            return config;
         }
 
         /// <summary>

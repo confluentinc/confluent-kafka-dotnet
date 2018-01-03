@@ -102,18 +102,10 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Initialize a new instance of AvroDeserializer from a 
+        ///     Initialize a new instance of AvroDeserializer. Relevant configuration properties
+        ///     will be extracted from the collection passed into the consumer constructor.
         /// </summary>
-        /// <param name="config">
-        ///     A collection containing CachedSchemaRegistryClient configuration properties.
-        ///     A new CachedSchemaRegistryClient instance will be created and managed by this
-        ///     serializer for communication with the Confluent Schema Registry.
-        /// </param>
-        public AvroDeserializer(IEnumerable<KeyValuePair<string, object>> config)
-        {
-            disposeClientOnDispose = true;
-            Initialize(new CachedSchemaRegistryClient(config));
-        }
+        public AvroDeserializer() { }
 
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
@@ -185,7 +177,30 @@ namespace Confluent.Kafka.Serialization
 
         /// <include file='../../Confluent.Kafka/include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
-            => config.Where(item => !item.Key.StartsWith("schema.registry."));
+        {
+            var keyOrValue = isKey ? "Key" : "Value";
+            var srConfig = config.Where(item => item.Key.StartsWith("schema.registry."));
+
+            if (srConfig.Count() != 0)
+            {
+                if (SchemaRegistryClient != null)
+                {
+                    throw new ArgumentException($"{keyOrValue} AvroDeserializer was configured using both constructor arguments and configuration parameters.");
+                }
+
+                disposeClientOnDispose = true;
+                Initialize(new CachedSchemaRegistryClient(config));
+
+                return config.Where(item => !item.Key.StartsWith("schema.registry."));
+            }
+
+            if (SchemaRegistryClient == null)
+            {
+                throw new ArgumentException($"{keyOrValue} AvroDeserializer was not configured.");
+            }
+
+            return config;
+        }
 
         /// <summary>
         ///     Releases any unmanaged resources owned by the deserializer.

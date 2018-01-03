@@ -38,10 +38,7 @@ namespace Confluent.Kafka.AvroIntegrationTests
                 }
             };
 
-            using (var producer = new Producer<string, User>(
-                producerConfig, 
-                new AvroSerializer<string>(producerConfig), 
-                new AvroSerializer<User>(producerConfig)))
+            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -56,10 +53,7 @@ namespace Confluent.Kafka.AvroIntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var consumer = new Consumer<string, User>(
-                consumerConfig, 
-                new AvroDeserializer<string>(consumerConfig), 
-                new AvroDeserializer<User>(consumerConfig)))
+            using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
             {
                 bool done = false;
                 int i = 0;
