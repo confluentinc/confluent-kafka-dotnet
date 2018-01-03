@@ -21,7 +21,7 @@ using System.Linq;
 using Confluent.Kafka.SchemaRegistry;
 
 
-namespace Confluent.Kafka.Serialization.UnitTests
+namespace Confluent.Kafka.Serialization.UnitTestsZs
 {
     public class AvroSerializerTests
     {
@@ -140,7 +140,6 @@ namespace Confluent.Kafka.Serialization.UnitTests
             bytes = avroSerializer.Serialize(testTopic, "Hello world");
             Assert.Throws<Avro.AvroException>(() => avroDeserializer.Deserialize(testTopic, bytes));
         }
-
     }
 }
   

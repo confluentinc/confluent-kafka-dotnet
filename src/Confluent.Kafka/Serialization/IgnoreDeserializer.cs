@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Serialization
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
             => config;
 
-        // <summary>
+        /// <summary>
         ///     Releases any unmanaged resources owned by the deserializer (noop for this type).
         /// </summary>
         public void Dispose() {}

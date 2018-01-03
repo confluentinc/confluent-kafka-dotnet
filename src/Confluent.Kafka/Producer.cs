@@ -1333,7 +1333,11 @@ namespace Confluent.Kafka
         ///     before disposing a Producer instance.
         /// </remarks>
         public void Dispose()
-            => producer.Dispose();
+        {
+            KeySerializer.Dispose();
+            ValueSerializer.Dispose();
+            producer.Dispose();
+        }
 
 
         /// <summary>

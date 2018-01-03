@@ -109,9 +109,7 @@ namespace Confluent.Kafka.Serialization
             }
             else if (writerType.Equals(typeof(string)))
             {
-                // TODO: I don't think this is what the Java Serializer does.
-                // Match whatever it does.
-                WriterSchema = Avro.Schema.Parse("[\"null\", \"string\"]");
+                WriterSchema = Avro.Schema.Parse("string");
             }
             else if (writerType.Equals(typeof(float)))
             {

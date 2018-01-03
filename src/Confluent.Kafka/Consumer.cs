@@ -491,7 +491,11 @@ namespace Confluent.Kafka
         ///     separate out consumer close functionality from this method.
         /// </summary>
         public void Dispose()
-            => consumer.Dispose();
+        {
+            KeyDeserializer.Dispose();
+            ValueDeserializer.Dispose();
+            consumer.Dispose();
+        }
 
         /// <include file='include_docs.xml' path='API/Member[@name="Consumer_Seek"]/*' />
         public void Seek(TopicPartitionOffset tpo)

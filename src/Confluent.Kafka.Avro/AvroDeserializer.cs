@@ -79,7 +79,7 @@ namespace Confluent.Kafka.Serialization
             }
             else if (typeof(T).Equals(typeof(string)))
             {
-                ReaderSchema = Avro.Schema.Parse("[\"null\", \"string\"]");
+                ReaderSchema = Avro.Schema.Parse("string");
             }
             else if (typeof(T).Equals(typeof(float)))
             {
