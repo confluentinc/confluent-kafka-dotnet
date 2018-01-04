@@ -50,9 +50,7 @@ namespace Confluent.Kafka.SchemaRegistry
         [DataMember(Name = "schema")]
         public string SchemaString { get; set; }
 
-        private Schema()
-        {
-        }
+        private Schema() {}
 
         /// <summary>
         ///     Initializes a new instance of the Schema class.

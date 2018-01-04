@@ -142,4 +142,3 @@ namespace Confluent.Kafka.Serialization.UnitTestsZs
         }
     }
 }
-  

@@ -40,7 +40,7 @@ namespace Confluent.Kafka.Serialization
         //   following: data serialized with corresponding schema
 
         /// <summary>
-        ///		The client used to communicate with Confluent Schema Registry.
+        ///	    The client used to communicate with Confluent Schema Registry.
         /// </summary>
         public ISchemaRegistryClient SchemaRegistryClient { get; private set;  }
 
@@ -111,10 +111,10 @@ namespace Confluent.Kafka.Serialization
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegisterClient">
-        ///		Client used for communication with Confluent's Schema Registry.
+        ///	    Client used for communication with Confluent's Schema Registry.
         ///	</param>
         /// <exception cref="InvalidOperationException">
-        ///		The generic type <see cref="T"/> is not supported.
+        ///	    The generic type <see cref="T"/> is not supported.
         ///	</exception>
         public AvroDeserializer(ISchemaRegistryClient schemaRegisterClient)
         {

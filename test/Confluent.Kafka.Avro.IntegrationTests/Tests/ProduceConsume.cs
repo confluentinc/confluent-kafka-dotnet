@@ -21,7 +21,7 @@ namespace Confluent.Kafka.AvroIntegrationTests
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "api.version.request", true },
-                { "schema.registry.url", schemaRegistryServers }
+                { "schema.registry.urls", schemaRegistryServers }
             };
 
             var consumerConfig = new Dictionary<string, object>
@@ -30,7 +30,7 @@ namespace Confluent.Kafka.AvroIntegrationTests
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
                 { "api.version.request", true },
-                { "schema.registry.url", schemaRegistryServers },
+                { "schema.registry.urls", schemaRegistryServers },
                 { "default.topic.config", new Dictionary<string, object>()
                     {
                         { "auto.offset.reset", "smallest" }
@@ -93,4 +93,3 @@ namespace Confluent.Kafka.AvroIntegrationTests
 
     }
 }
-  

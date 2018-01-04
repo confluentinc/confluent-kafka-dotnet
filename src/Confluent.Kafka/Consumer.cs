@@ -810,7 +810,6 @@ namespace Confluent.Kafka
             var configHandle = SafeConfigHandle.Create();
             config
                 .Where(prop => prop.Key != "default.topic.config")
-                .Where(prop => !prop.Key.ToLower().StartsWith("schema.registry"))
                 .ToList()
                 .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
 

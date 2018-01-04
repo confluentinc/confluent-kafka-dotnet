@@ -53,8 +53,8 @@ namespace Confluent.Kafka.Serialization
 
         private HashSet<string> topicsRegistred = new HashSet<string>();
 
-		/// <summary>
-        ///		The client used to communicate with Confluent Schema Registry.
+        /// <summary>
+        ///	    The client used to communicate with Confluent Schema Registry.
         /// </summary>
         public ISchemaRegistryClient SchemaRegistryClient { get; private set; }
 
@@ -69,8 +69,8 @@ namespace Confluent.Kafka.Serialization
         private const string InitialBufferSizePropertyName = "avro.buffer.bytes";
 
         /// <summary>
-        ///		True if this serializer is used for serializing Kafka message keys,
-        ///		false if it is used for serializing Kafka message values.
+        ///	    True if this serializer is used for serializing Kafka message keys,
+        ///	    false if it is used for serializing Kafka message values.
         /// </summary>
         public bool IsKey { get; private set; }
 
@@ -145,11 +145,11 @@ namespace Confluent.Kafka.Serialization
         ///     Initiliaze an AvroSerializer instance.
         /// </summary>
         /// <param name="schemaRegistryClient">
-        ///		A client used to communicate with Confluent schema registry.
-        ///	</param>
+        ///     A client instance used to communicate with Confluent's Schema Registry.
+        /// </param>
         /// <exception cref="InvalidOperationException">
-        ///		The generic type <see cref="T"/> is not supported.
-        ///	</exception>
+        ///	    The generic type <see cref="T"/> is not supported.
+        /// </exception>
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient)
         {
             disposeClientOnDispose = false;
@@ -162,7 +162,7 @@ namespace Confluent.Kafka.Serialization
         ///     Initialize a new instance of AvroSerializer.
         /// </summary>
         /// <param name="schemaRegistryClient">
-        ///		Client used for communication with Confluent's Schema Registry.
+        ///		 A client instance used to communicate with Confluent's Schema Registry.
         ///	</param>
         /// <param name="initialBufferSize">
         ///     The initial size (in bytes) of the buffer used for serializing messages (note: 
@@ -171,7 +171,7 @@ namespace Confluent.Kafka.Serialization
         /// </param>
         /// <exception cref="InvalidOperationException">
         ///		The generic type <see cref="T"/> is not supported.
-        ///	</exception>
+        /// </exception>
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, int initialBufferSize)
         {
             disposeClientOnDispose = false;
@@ -183,7 +183,7 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Serialize an instance of type <see cref="T"/> to a byte array in avro format. The serialized
         ///     data is preceeded by a "magic byte" (1 byte) and the id of the schema as registered
-        ///     in the Confluent Schema Registry (4 bytes, network byte order). This call may block
+        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block
         ///     or throw on first use during schema registration.
         /// </summary>
         /// <param name="topic">

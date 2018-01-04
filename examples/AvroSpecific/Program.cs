@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 { "bootstrap.servers", bootstrapServers },
                 // note: you can specify more than one schema registry url using the
                 // schema.registry.url property for redundancy (comma separated list). 
-                // The property name is not plural, following the convention set by
+                // The property name is not plural to follow the convention set by
                 // the Java implementation.
                 { "schema.registry.url", schemaRegistryUrl },
                 // optional avro / schema registry client properties:
