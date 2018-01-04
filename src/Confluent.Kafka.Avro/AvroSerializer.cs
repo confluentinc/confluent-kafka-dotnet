@@ -66,7 +66,7 @@ namespace Confluent.Kafka.Serialization
 
         private bool disposeClientOnDispose;
 
-        private const string InitialBufferSizePropertyName = "schema.registry.avro.buffer.size";
+        private const string InitialBufferSizePropertyName = "avro.buffer.bytes";
 
         /// <summary>
         ///		True if this serializer is used for serializing Kafka message keys,
@@ -230,7 +230,7 @@ namespace Confluent.Kafka.Serialization
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
             var keyOrValue = isKey ? "Key" : "Value";
-            var srConfig = config.Where(item => item.Key.StartsWith("schema.registry."));
+            var srConfig = config.Where(item => item.Key.StartsWith("schema.registry.") || item.Key.StartsWith("avro."));
             this.IsKey = isKey;
 
             if (srConfig.Count() != 0)
@@ -249,7 +249,7 @@ namespace Confluent.Kafka.Serialization
                 }
                 
                 bufferSize = DefaultInitialBufferSize;
-                if (bufferSizeProperties.Count() == 0)
+                if (bufferSizeProperties.Count() == 1)
                 {
                     try
                     {
@@ -266,7 +266,7 @@ namespace Confluent.Kafka.Serialization
                 InitialBufferSize = bufferSize;
                 Initialize();
 
-                return config.Where(item => !item.Key.StartsWith("schema.registry."));
+                return config.Where(item => !item.Key.StartsWith("schema.registry.") && !item.Key.StartsWith("avro."));
             }
 
             if (SchemaRegistryClient == null)

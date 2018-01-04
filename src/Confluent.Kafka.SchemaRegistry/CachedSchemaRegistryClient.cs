@@ -57,17 +57,17 @@ namespace Confluent.Kafka.SchemaRegistry
                 throw new ArgumentNullException("config properties must be specified.");
             }
 
-            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.urls").FirstOrDefault();
+            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.url").FirstOrDefault();
             if (schemaRegistryUrisMaybe.Value == null)
             {
-                throw new ArgumentException("schema.registry.urls configuration property must be specified.");
+                throw new ArgumentException("schema.registry.url configuration property must be specified.");
             }
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
             var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.timeout.ms").FirstOrDefault();
             var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
 
-            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.max.capacity").FirstOrDefault();
+            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.cache.capacity").FirstOrDefault();
             this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCapacity : (int)identityMapCapacityMaybe.Value;
 
             this.restService = new RestService(schemaRegistryUris, timeoutMs);

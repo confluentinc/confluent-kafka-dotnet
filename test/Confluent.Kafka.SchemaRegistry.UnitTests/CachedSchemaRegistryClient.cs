@@ -26,7 +26,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests
         {
             var config = new Dictionary<string, object>
             {
-                { "schema.registry.urls", "irrelevanthost:8081" }
+                { "schema.registry.url", "irrelevanthost:8081" }
             };
 
             CachedSchemaRegistryClient src = new CachedSchemaRegistryClient(config);
@@ -38,7 +38,7 @@ namespace Confluent.Kafka.SchemaRegistry.UnitTests
         {
             var config = new Dictionary<string, object>
             {
-                { "schema.registry.urls", "irrelevanthost:8081" }
+                { "schema.registry.url", "irrelevanthost:8081" }
             };
 
             CachedSchemaRegistryClient src = new CachedSchemaRegistryClient(config);

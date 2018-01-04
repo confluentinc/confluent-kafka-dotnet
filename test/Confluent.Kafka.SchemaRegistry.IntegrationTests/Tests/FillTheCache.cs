@@ -19,9 +19,9 @@ namespace Confluent.Kafka.SchemaRegistry.IntegrationTests
 
             var config = new Dictionary<string, object>
             {
-                { "schema.registry.urls", server },
+                { "schema.registry.url", server },
                 { "schema.registry.timeout.ms", 3000 },
-                { "schema.registry.max.capacity", capacity }
+                { "schema.registry.cache.capacity", capacity }
             };
 
             var sr = new CachedSchemaRegistryClient(config);

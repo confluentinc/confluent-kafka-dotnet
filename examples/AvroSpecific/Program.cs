@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+﻿// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,13 +40,21 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.urls", schemaRegistryUrl }
+                // note: you can specify more than one schema registry url using the
+                // schema.registry.url property for redundancy (comma separated list). 
+                // The property name is not plural, following the convention set by
+                // the Java implementation.
+                { "schema.registry.url", schemaRegistryUrl },
+                // optional avro / schema registry client properties:
+                { "avro.buffer.bytes", 50 },
+                { "schema.registry.timeout.ms", 5000 },
+                { "schema.registry.cache.capacity", 10 }
             };
             var consumerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "group.id", Guid.NewGuid() },
-                { "schema.registry.urls", schemaRegistryUrl }
+                { "schema.registry.url", schemaRegistryUrl }
             };
 
             using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(), new AvroDeserializer<User>()))
@@ -85,7 +93,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 cts.Cancel();
                 consumeTask.Wait();
             }
-
         }
     }
 }
