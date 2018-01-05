@@ -17,6 +17,7 @@
 using System;
 using System.Text;
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
+using Unsafe = System.Runtime.CompilerServices.Unsafe;
 
 
 namespace Confluent.Kafka.Internal
@@ -43,22 +44,14 @@ namespace Confluent.Kafka.Internal
                 return Encoding.UTF8.GetString(strBuffer);
             }
 
-            public static T PtrToStructure<T>(IntPtr ptr)
+            public static unsafe T PtrToStructure<T>(IntPtr ptr)
             {
-#if NET45
-                return (T)SystemMarshal.PtrToStructure(ptr, typeof(T));
-#else
-                return SystemMarshal.PtrToStructure<T>(ptr);
-#endif
+                return Unsafe.Read<T>(ptr.ToPointer());
             }
 
             public static int SizeOf<T>()
             {
-#if NET45
-                return SystemMarshal.SizeOf(typeof(T));
-#else
-                return SystemMarshal.SizeOf<T>();
-#endif
+                return Unsafe.SizeOf<T>();
             }
 
             public static IntPtr OffsetOf<T>(string fieldName)
