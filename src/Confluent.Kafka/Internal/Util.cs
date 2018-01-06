@@ -47,14 +47,33 @@ namespace Confluent.Kafka.Internal
 #endif
             }
 
-            public static unsafe T PtrToStructure<T>(IntPtr ptr)
+            /// <summary>
+            /// reinterpret_cast without strings marshaling
+            /// </summary>
+            /// <typeparam name="T">Type of struct to cast</typeparam>
+            /// <param name="ptr">Raw pointer to use</param>
+            /// <returns></returns>
+            public static unsafe T PtrToStructureUnsafe<T>(IntPtr ptr)
             {
                 return Unsafe.Read<T>(ptr.ToPointer());
             }
 
+            public static T PtrToStructure<T>(IntPtr ptr)
+            {
+#if NET45
+                return (T)SystemMarshal.PtrToStructure(ptr, typeof(T));
+#else
+                return SystemMarshal.PtrToStructure<T>(ptr);
+#endif
+            }
+
             public static int SizeOf<T>()
             {
-                return Unsafe.SizeOf<T>();
+#if NET45
+                return SystemMarshal.SizeOf(typeof(T));
+#else
+                return SystemMarshal.SizeOf<T>();
+#endif
             }
 
             public static IntPtr OffsetOf<T>(string fieldName)
