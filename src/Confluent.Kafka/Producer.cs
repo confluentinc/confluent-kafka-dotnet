@@ -96,24 +96,6 @@ namespace Confluent.Kafka
         ///     depreciate this method as well as the SafeTopicHandle class.
         /// </remarks>
 
-/*
-        private SafeTopicHandle getKafkaTopicHandle(string topic)
-        {
-            if (topicHandles.ContainsKey(topic))
-            {
-                return topicHandles[topic];
-            }
-
-            // Note: there is a possible (benign) race condition here - topicHandle could have already
-            // been created for the topic (and possibly added to topicHandles). If the topicHandle has
-            // already been created, rdkafka will return it and not create another. the call to rdkafka
-            // is threadsafe.
-            var topicHandle = kafkaHandle.Topic(topic, IntPtr.Zero);
-            topicHandles.Add(topic, topicHandle);
-
-            return topicHandle;
-        }
-*/
         private SafeTopicHandle getKafkaTopicHandle(string topic) 
             => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
@@ -335,8 +317,7 @@ namespace Confluent.Kafka
                 // been created for the topic (and possibly added to topicHandles). If the topicHandle has
                 // already been created, rdkafka will return it and not create another. the call to rdkafka
                 // is threadsafe.
-                var topicHandle = kafkaHandle.Topic(topicName, IntPtr.Zero);
-                return topicHandle;
+                return kafkaHandle.Topic(topicName, IntPtr.Zero);
             };
         }
 
