@@ -19,7 +19,7 @@ using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 
-namespace Confluent.Kafka.SchemaRegistry.Rest.Entities
+namespace Confluent.SchemaRegistry.Rest.Entities
 {
     [DataContract]
     internal class Config

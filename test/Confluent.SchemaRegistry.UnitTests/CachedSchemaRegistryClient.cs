@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka.SchemaRegistry;
+using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.SchemaRegistry.UnitTests
+namespace Confluent.SchemaRegistry.UnitTests
 {
     public class CachedSchemaRegistryClientTests
     {

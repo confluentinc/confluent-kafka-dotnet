@@ -18,7 +18,7 @@ using System;
 using System.Net;
 
 
-namespace Confluent.Kafka.SchemaRegistry.Rest
+namespace Confluent.SchemaRegistry.Rest
 {
     /// <summary>
     ///     All API endpoints use a standard error message format for any requests that return

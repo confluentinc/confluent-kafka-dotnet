@@ -14,26 +14,20 @@
 //
 // Refer to LICENSE for more information.
 
-using Newtonsoft.Json;
 using System.Runtime.Serialization;
 
 
-namespace  Confluent.Kafka.SchemaRegistry.Rest.Entities
+namespace Confluent.SchemaRegistry.Rest.Entities.Requests
 {
     [DataContract]
-    internal class SchemaString
+    internal class CompatibilityCheck
     {
-        [DataMember(Name = "schema")]
-        public string Schema { get; set; }
+        [DataMember(Name ="is_compatible")]
+        public bool IsCompatible { get; set; }
 
-        /// <summary>
-        ///     Empty constructor for serialization
-        /// </summary>
-        private SchemaString() { }
-
-        public SchemaString(string schemaString)
+        public CompatibilityCheck(bool isCompatible)
         {
-            Schema = schemaString;
+            IsCompatible = isCompatible;
         }
     }
 }

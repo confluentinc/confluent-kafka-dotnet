@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj" />
-    <ProjectReference Include="..\..\src\Confluent.Kafka.SchemaRegistry\Confluent.Kafka.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
   </ItemGroup>
 
 </Project>

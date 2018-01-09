@@ -32,7 +32,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleProducer", "examples\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro", "src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj", "{FAF96869-D279-4ECA-9C7F-6AEFFF688031}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.SchemaRegistry", "src\Confluent.Kafka.SchemaRegistry\Confluent.Kafka.SchemaRegistry.csproj", "{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry", "src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj", "{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.UnitTests", "test\Confluent.Kafka.Avro.UnitTests\Confluent.Kafka.Avro.UnitTests.csproj", "{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}"
 EndProject
@@ -40,9 +40,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.Integr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSpecific", "examples\AvroSpecific\AvroSpecific.csproj", "{45B586D3-7CCA-46B0-A118-A070D84E8364}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.SchemaRegistry.UnitTests", "test\Confluent.Kafka.SchemaRegistry.UnitTests\Confluent.Kafka.SchemaRegistry.UnitTests.csproj", "{29DA188E-CB20-4A9C-AC4E-50B442B9AC7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.UnitTests", "test\Confluent.SchemaRegistry.UnitTests\Confluent.SchemaRegistry.UnitTests.csproj", "{29DA188E-CB20-4A9C-AC4E-50B442B9AC7D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.SchemaRegistry.IntegrationTests", "test\Confluent.Kafka.SchemaRegistry.IntegrationTests\Confluent.Kafka.SchemaRegistry.IntegrationTests.csproj", "{2F5F0775-3708-40B7-A71F-442E83F6BB3D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.IntegrationTests", "test\Confluent.SchemaRegistry.IntegrationTests\Confluent.SchemaRegistry.IntegrationTests.csproj", "{2F5F0775-3708-40B7-A71F-442E83F6BB3D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

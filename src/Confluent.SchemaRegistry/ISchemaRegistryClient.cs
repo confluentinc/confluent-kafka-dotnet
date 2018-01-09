@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
-namespace Confluent.Kafka.SchemaRegistry
+namespace Confluent.SchemaRegistry
 {
     public interface ISchemaRegistryClient : IDisposable
     {

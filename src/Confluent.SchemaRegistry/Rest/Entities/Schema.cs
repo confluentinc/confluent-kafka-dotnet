@@ -18,7 +18,7 @@ using System;
 using System.Runtime.Serialization;
 
 
-namespace Confluent.Kafka.SchemaRegistry
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
     ///     Represents a Schema stored in Schema Registry.

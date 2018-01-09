@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka.SchemaRegistry;
+using Confluent.SchemaRegistry;
 
-namespace Confluent.Kafka.SchemaRegistry.IntegrationTests
+namespace Confluent.SchemaRegistry.IntegrationTests
 {
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void GetAllSubjects(string server)
+        public static void IsCompatible(string server)
         {
             var topicName = Guid.NewGuid().ToString();
 
@@ -19,22 +19,18 @@ namespace Confluent.Kafka.SchemaRegistry.IntegrationTests
 
             var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>{ { "schema.registry.url", server } });
 
-            var subjectsBefore = sr.GetAllSubjectsAsync().Result;
-
             var subject = sr.ConstructKeySubjectName(topicName);
             var id = sr.RegisterAsync(subject, testSchema1).Result;
 
-            var subjectsAfter = sr.GetAllSubjectsAsync().Result;
+            var testSchema2 = // incompatible with testSchema1
+                "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
+                "nt\",\"null\"]},{\"name\":\"favorite_shape\",\"type\":[\"string\",\"null\"]}]}";
 
-            Assert.Equal(1, subjectsAfter.Count - subjectsBefore.Count);
+            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
+            Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
 
-            sr.RegisterAsync(subject, testSchema1).Wait();
-
-            var subjectsAfter2 = sr.GetAllSubjectsAsync().Result;
-
-            Assert.Equal(subjectsAfter.Count, subjectsAfter2.Count);
-
-            Assert.True(subjectsAfter2.Contains(subject));
+            // Note: backwards / forwards compatibility scenarios are not tested here. This is really just testing the API call.
         }
     }
 }

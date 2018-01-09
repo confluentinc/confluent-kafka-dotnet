@@ -21,7 +21,7 @@ using System.Reflection;
 using Newtonsoft.Json.Linq;
 
 
-namespace Confluent.Kafka.SchemaRegistry.IntegrationTests
+namespace Confluent.SchemaRegistry.IntegrationTests
 {
     public static partial class Tests
     {

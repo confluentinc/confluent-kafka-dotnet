@@ -21,7 +21,7 @@ using System.Net;
 using Avro.Generic;
 using Avro.IO;
 using Avro.Specific;
-using Confluent.Kafka.SchemaRegistry;
+using Confluent.SchemaRegistry;
 using System.Reflection;
 using System;
 

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka.SchemaRegistry;
+using Confluent.SchemaRegistry;
 
-namespace Confluent.Kafka.SchemaRegistry.IntegrationTests
+namespace Confluent.SchemaRegistry.IntegrationTests
 {
     public static partial class Tests
     {

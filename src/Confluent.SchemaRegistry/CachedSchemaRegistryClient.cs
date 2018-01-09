@@ -14,14 +14,14 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.SchemaRegistry.Rest;
+using Confluent.SchemaRegistry.Rest;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
 
 
-namespace Confluent.Kafka.SchemaRegistry
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
     ///     A Schema Registry client that caches request responses.

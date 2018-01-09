@@ -1,8 +1,8 @@
 ﻿using System;
 using Xunit;
-using Confluent.Kafka.SchemaRegistry;
+using Confluent.SchemaRegistry;
 
-namespace Confluent.Kafka.SchemaRegistry.UnitTests
+namespace Confluent.SchemaRegistry.UnitTests
 {
     public class SchemaTests
     {

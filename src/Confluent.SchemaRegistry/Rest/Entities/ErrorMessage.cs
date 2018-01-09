@@ -14,26 +14,30 @@
 //
 // Refer to LICENSE for more information.
 
-using Newtonsoft.Json;
 using System.Runtime.Serialization;
 
 
-namespace  Confluent.Kafka.SchemaRegistry.Rest.Entities
+namespace Confluent.SchemaRegistry.Rest.Entities
 {
+    /// <summary>
+    ///     Generic JSON error message.
+    /// </summary>
     [DataContract]
-    internal class SchemaId
+    internal class ErrorMessage
     {
-        [DataMember(Name = "id")]
-        public int Id { get; set; }
+        [DataMember(Name = "error_code")]
+        public int ErrorCode { get; set; }
 
-        /// <summary>
-        ///     Empty constructor for serialization
-        /// </summary>
-        private SchemaId() { }
+        [DataMember(Name = "message")]
+        public string Message { get; set; }
 
-        public SchemaId(int schemaId)
+        public ErrorMessage(int errorCode, string message)
         {
-            Id = schemaId;
+            ErrorCode = errorCode;
+            Message = message;
         }
+        
+        public override string ToString()
+            => $"{{error_code={ErrorCode},message={Message}}}";
     }
 }

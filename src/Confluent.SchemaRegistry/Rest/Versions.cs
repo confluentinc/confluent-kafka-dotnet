@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 
 
-namespace  Confluent.Kafka.SchemaRegistry.Rest
+namespace  Confluent.SchemaRegistry.Rest
 {
     internal static class Versions
     {

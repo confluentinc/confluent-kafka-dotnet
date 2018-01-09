@@ -18,7 +18,7 @@ using Moq;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.Kafka.SchemaRegistry;
+using Confluent.SchemaRegistry;
 
 
 namespace Confluent.Kafka.Serialization.UnitTestsZs

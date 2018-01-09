@@ -17,11 +17,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.Kafka.SchemaRegistry.Rest.Entities;
-using Confluent.Kafka.SchemaRegistry.Rest.Entities.Requests;
+using Confluent.SchemaRegistry.Rest.Entities;
+using Confluent.SchemaRegistry.Rest.Entities.Requests;
 
 
-namespace Confluent.Kafka.SchemaRegistry.Rest
+namespace Confluent.SchemaRegistry.Rest
 {
     /// <remarks>
     ///     It may be useful to expose this publically, but this is not
