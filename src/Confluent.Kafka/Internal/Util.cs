@@ -40,17 +40,23 @@ namespace Confluent.Kafka.Internal
                 System.Runtime.InteropServices.Marshal.Copy(strPtr, strBuffer, 0, length);
                 return Encoding.UTF8.GetString(strBuffer);
 #else
-                // avoid unnecessary data copying on NET45+
+                // Avoid unnecessary data copying on NET45+
                 return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
 #endif
             }
 
             /// <summary>
-            /// reinterpret_cast without strings marshaling
+            ///     Reinterpret_cast without strings marshaling
             /// </summary>
-            /// <typeparam name="T">Type of struct to cast</typeparam>
-            /// <param name="ptr">Raw pointer to use</param>
-            /// <returns></returns>
+            /// <typeparam name="T">
+            ///     Type of struct to cast
+            /// </typeparam>
+            /// <param name="ptr">
+            ///     Raw pointer to use
+            /// </param>
+            /// <returns>
+            ///     A value of type <typeparamref name="T"/>
+            /// </returns>
             public static unsafe T PtrToStructureUnsafe<T>(IntPtr ptr)
             {
                 return Unsafe.Read<T>(ptr.ToPointer());
