@@ -31,15 +31,13 @@ namespace Confluent.Kafka.Internal
             /// </summary>
             public unsafe static string PtrToStringUTF8(IntPtr strPtr)
             {
-                // TODO: Is there a built in / vectorized / better way to implement this?
-                var length = 0;
-                
+                // TODO: Is there a built in / vectorized / better way to implement this?              
                 byte* pTraverse = (byte*)strPtr;
                 while (*pTraverse != 0) { pTraverse += 1; }
-                length = (int)(pTraverse - (byte*)strPtr);
+                var length = (int)(pTraverse - (byte*)strPtr);
 #if NET45
                 var strBuffer = new byte[length];
-                System.Runtime.InteropServices.Marshal.Copy(strPtr, strBuffer, 0, strBuffer.Length);
+                System.Runtime.InteropServices.Marshal.Copy(strPtr, strBuffer, 0, length);
                 return Encoding.UTF8.GetString(strBuffer);
 #else
                 // avoid unnecessary data copying on NET45+
