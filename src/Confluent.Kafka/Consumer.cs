@@ -824,12 +824,11 @@ namespace Confluent.Kafka
             if (defaultTopicConfig != null)
             {
                 var topicConfigHandle = SafeTopicConfigHandle.Create();
-                if (config != null)
-                {
-                    defaultTopicConfig.ToList().ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
-                }
+                defaultTopicConfig.ToList().ForEach(
+                    (kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); }
+                );
                 LibRdKafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
-                topicConfigHandle.SetHandleAsInvalid(); // topic config object is no longer useable.
+                topicConfigHandle.SetHandleAsInvalid();
             }
 
             LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
