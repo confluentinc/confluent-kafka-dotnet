@@ -54,8 +54,8 @@ namespace Confluent.Kafka
                 {
                     while (true)
                     {
-                        this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
                         ct.ThrowIfCancellationRequested();
+                        this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
                     }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
