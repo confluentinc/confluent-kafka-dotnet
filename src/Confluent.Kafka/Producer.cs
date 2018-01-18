@@ -266,30 +266,27 @@ namespace Confluent.Kafka
             this.disableDeliveryReports = disableDeliveryReports;
 
             var configHandle = SafeConfigHandle.Create();
-            config
-                .Where(prop => prop.Key != "default.topic.config")
-                .ToList()
-                .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
 
-            // Note: setting default topic configuration properties via default.topic.config is depreciated 
+            var modifiedConfig = config
+                .Where(prop => prop.Key != "default.topic.config");
+
+            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
             // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            var defaultTopicConfig = config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             if (defaultTopicConfig != null)
             {
-                defaultTopicConfig.ToList().ForEach(
-                    (kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); }
-                );
+                modifiedConfig = modifiedConfig.Concat((IEnumerable<KeyValuePair<string, object>>)defaultTopicConfig);
             }
 
             // Note: changing the default value of produce.offset.report at the binding level is less than
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
             // .NET client. The default should probably be changed in librdkafka as well.
-            if (config.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null &&
-                (defaultTopicConfig == null ||
-                 defaultTopicConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null))
+            if (modifiedConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null)
             {
-                configHandle.Set("produce.offset.report", "true");
+                modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, object>[] { new KeyValuePair<string, object>("produce.offset.report", "true") });
             }
+
+            modifiedConfig.ToList().ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
