@@ -40,8 +40,6 @@ namespace Confluent.Kafka
         internal const int RD_KAFKA_PARTITION_UA = -1;
         internal const long RD_KAFKA_NO_TIMESTAMP = 0;
 
-        private IEnumerable<KeyValuePair<string, object>> defaultTopicConfig;
-
         private SafeDictionary<string, SafeTopicHandle> topicHandles
             = new SafeDictionary<string, SafeTopicHandle>();
 
@@ -275,10 +273,10 @@ namespace Confluent.Kafka
 
             // Note: setting default topic configuration properties via default.topic.config is depreciated 
             // and this functionality will be removed in a future version of the library.
-            this.defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (this.defaultTopicConfig != null)
+            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            if (defaultTopicConfig != null)
             {
-                this.defaultTopicConfig.ToList().ForEach(
+                defaultTopicConfig.ToList().ForEach(
                     (kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); }
                 );
             }
@@ -287,8 +285,8 @@ namespace Confluent.Kafka
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
             // .NET client. The default should probably be changed in librdkafka as well.
             if (config.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null &&
-                (this.defaultTopicConfig == null ||
-                 this.defaultTopicConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null))
+                (defaultTopicConfig == null ||
+                 defaultTopicConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null))
             {
                 configHandle.Set("produce.offset.report", "true");
             }
