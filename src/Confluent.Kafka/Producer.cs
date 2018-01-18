@@ -274,7 +274,6 @@ namespace Confluent.Kafka
         {
             LibRdKafka.Initialize(null);
 
-            this.defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
 
@@ -283,6 +282,26 @@ namespace Confluent.Kafka
                 .Where(prop => prop.Key != "default.topic.config")
                 .ToList()
                 .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+
+            // Note: setting default topic configuration properties via default.topic.config is depreciated 
+            // and this functionality will be removed in a future version of the library.
+            this.defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            if (this.defaultTopicConfig != null)
+            {
+                this.defaultTopicConfig.ToList().ForEach(
+                    (kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); }
+                );
+            }
+
+            // Note: changing the default value of produce.offset.report at the binding level is less than
+            // ideal since it means the librdkafka configuration docs will no longer completely match the 
+            // .NET client. The default should probably be changed in librdkafka as well.
+            if (config.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null &&
+                (this.defaultTopicConfig == null ||
+                 this.defaultTopicConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null))
+            {
+                configHandle.Set("produce.offset.report", "true");
+            }
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
@@ -301,31 +320,6 @@ namespace Confluent.Kafka
             LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
             LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
             LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
-
-            // Note: changing the default value of produce.offset.report at the binding level is less than
-            // ideal since it means the librdkafka configuration docs will no longer completely match the 
-            // .NET client. The default should probably be changed in librdkafka as well.
-            
-            if (this.defaultTopicConfig != null)
-            {
-                var topicConfigHandle = SafeTopicConfigHandle.Create();
-                this.defaultTopicConfig.ToList().ForEach(
-                    (kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); }
-                );
-                if (this.defaultTopicConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null)
-                {
-                    topicConfigHandle.Set("produce.offset.report", "true");
-                }
-                LibRdKafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
-                topicConfigHandle.SetHandleAsInvalid();
-            }
-            else
-            {
-                if (config.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null)
-                {
-                    configHandle.Set("produce.offset.report", "true");
-                }
-            }
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
