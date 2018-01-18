@@ -52,8 +52,9 @@ namespace Confluent.Kafka
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
-                    while (!ct.IsCancellationRequested)
+                    while (true)
                     {
+                        ct.ThrowIfCancellationRequested();
                         this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
                     }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -675,14 +676,29 @@ namespace Confluent.Kafka
         /// </remarks>
         public void Dispose()
         {
+            // TODO: If this method is called in a finalizer, can callbackTask potentially be null?
             topicHandles.Dispose();
 
             if (!this.manualPoll)
             {
-                // Note: It's necessary to wait on callbackTask before disposing kafkaHandle.
-                // TODO: If called in a finalizer, can callbackTask be potentially null?
                 callbackCts.Cancel();
-                callbackTask.Wait();
+                try
+                {
+                    // Note: It's necessary to wait on callbackTask before disposing kafkaHandle
+                    // since the poll loop makes use of this.
+                    callbackTask.Wait();
+                }
+                catch (AggregateException e)
+                {
+                    if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                    {
+                        throw e.InnerException;
+                    }
+                }
+                finally
+                {
+                    callbackCts.Dispose();
+                }
             }
             kafkaHandle.Dispose();
         }
