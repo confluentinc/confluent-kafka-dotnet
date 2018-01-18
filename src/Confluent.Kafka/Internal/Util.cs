@@ -17,6 +17,7 @@
 using System;
 using System.Text;
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
+using Unsafe = System.Runtime.CompilerServices.Unsafe;
 
 
 namespace Confluent.Kafka.Internal
@@ -28,19 +29,37 @@ namespace Confluent.Kafka.Internal
             /// <summary>
             ///     Interpret a zero terminated c string as UTF-8.
             /// </summary>
-            public static string PtrToStringUTF8(IntPtr strPtr)
+            public unsafe static string PtrToStringUTF8(IntPtr strPtr)
             {
-                // TODO: Is there a built in / vectorized / better way to implement this?
-                var length = 0;
-                unsafe
-                {
-                    byte* pTraverse = (byte*)strPtr;
-                    while (*pTraverse != 0) { pTraverse += 1; }
-                    length = (int)(pTraverse - (byte*)strPtr);
-                }
+                // TODO: Is there a built in / vectorized / better way to implement this?              
+                byte* pTraverse = (byte*)strPtr;
+                while (*pTraverse != 0) { pTraverse += 1; }
+                var length = (int)(pTraverse - (byte*)strPtr);
+#if NET45
                 var strBuffer = new byte[length];
                 System.Runtime.InteropServices.Marshal.Copy(strPtr, strBuffer, 0, length);
                 return Encoding.UTF8.GetString(strBuffer);
+#else
+                // Avoid unnecessary data copying on NET45+
+                return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
+#endif
+            }
+
+            /// <summary>
+            ///     Reinterpret_cast without strings marshaling
+            /// </summary>
+            /// <typeparam name="T">
+            ///     Type of struct to cast
+            /// </typeparam>
+            /// <param name="ptr">
+            ///     Raw pointer to use
+            /// </param>
+            /// <returns>
+            ///     A value of type <typeparamref name="T"/>
+            /// </returns>
+            public static unsafe T PtrToStructureUnsafe<T>(IntPtr ptr)
+            {
+                return Unsafe.Read<T>(ptr.ToPointer());
             }
 
             public static T PtrToStructure<T>(IntPtr ptr)
