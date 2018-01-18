@@ -40,8 +40,6 @@ namespace Confluent.Kafka
         internal const int RD_KAFKA_PARTITION_UA = -1;
         internal const long RD_KAFKA_NO_TIMESTAMP = 0;
 
-        private IEnumerable<KeyValuePair<string, object>> topicConfig;
-
         private SafeDictionary<string, SafeTopicHandle> topicHandles
             = new SafeDictionary<string, SafeTopicHandle>();
 
@@ -101,21 +99,11 @@ namespace Confluent.Kafka
                 return topicHandles[topic];
             }
 
-            var topicConfigHandle = SafeTopicConfigHandle.Create();
-            if (topicConfig != null)
-            {
-                topicConfig
-                    .ToList()
-                    .ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
-            }
-            topicConfigHandle.Set("produce.offset.report", "true");
-            IntPtr configPtr = topicConfigHandle.DangerousGetHandle();
-
-            // note: there is a possible (benign) race condition here - topicHandle could have already
+            // Note: there is a possible (benign) race condition here - topicHandle could have already
             // been created for the topic (and possibly added to topicHandles). If the topicHandle has
             // already been created, rdkafka will return it and not create another. the call to rdkafka
             // is threadsafe.
-            var topicHandle = kafkaHandle.Topic(topic, configPtr);
+            var topicHandle = kafkaHandle.Topic(topic, IntPtr.Zero);
             topicHandles.Add(topic, topicHandle);
 
             return topicHandle;
@@ -274,15 +262,31 @@ namespace Confluent.Kafka
         {
             LibRdKafka.Initialize(null);
 
-            this.topicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
 
             var configHandle = SafeConfigHandle.Create();
-            config
-                .Where(prop => prop.Key != "default.topic.config")
-                .ToList()
-                .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+
+            var modifiedConfig = config
+                .Where(prop => prop.Key != "default.topic.config");
+
+            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
+            // and this functionality will be removed in a future version of the library.
+            var defaultTopicConfig = config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            if (defaultTopicConfig != null)
+            {
+                modifiedConfig = modifiedConfig.Concat((IEnumerable<KeyValuePair<string, object>>)defaultTopicConfig);
+            }
+
+            // Note: changing the default value of produce.offset.report at the binding level is less than
+            // ideal since it means the librdkafka configuration docs will no longer completely match the 
+            // .NET client. The default should probably be changed in librdkafka as well.
+            if (modifiedConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null)
+            {
+                modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, object>[] { new KeyValuePair<string, object>("produce.offset.report", "true") });
+            }
+
+            modifiedConfig.ToList().ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 

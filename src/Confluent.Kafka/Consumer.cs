@@ -803,12 +803,21 @@ namespace Confluent.Kafka
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
             }
 
-            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
             var configHandle = SafeConfigHandle.Create();
             config
                 .Where(prop => prop.Key != "default.topic.config")
                 .ToList()
                 .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+
+            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
+            // and this functionality will be removed in a future version of the library.
+            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
+            if (defaultTopicConfig != null)
+            {
+                defaultTopicConfig.ToList().ForEach(
+                    (kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); }
+                );
+            }
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             rebalanceDelegate = RebalanceCallback;
@@ -821,16 +830,6 @@ namespace Confluent.Kafka
 
             LibRdKafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
             LibRdKafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
-            if (defaultTopicConfig != null)
-            {
-                var topicConfigHandle = SafeTopicConfigHandle.Create();
-                if (config != null)
-                {
-                    defaultTopicConfig.ToList().ForEach((kvp) => { topicConfigHandle.Set(kvp.Key, kvp.Value.ToString()); });
-                }
-                LibRdKafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
-                topicConfigHandle.SetHandleAsInvalid(); // topic config object is no longer useable.
-            }
 
             LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
             LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
