@@ -19,9 +19,10 @@ using Xunit;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.SchemaRegistry;
+using Confluent.Kafka.Serialization;
 
 
-namespace Confluent.Kafka.Serialization.UnitTestsZs
+namespace Confluent.Kafka.Avro.UnitTests
 {
     public class AvroSerializerTests
     {
@@ -138,7 +139,7 @@ namespace Confluent.Kafka.Serialization.UnitTestsZs
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(testTopic, "Hello world");
-            Assert.Throws<Avro.AvroException>(() => avroDeserializer.Deserialize(testTopic, bytes));
+            Assert.Throws<global::Avro.AvroException>(() => avroDeserializer.Deserialize(testTopic, bytes));
         }
     }
 }

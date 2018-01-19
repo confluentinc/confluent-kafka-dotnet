@@ -29,16 +29,17 @@ using System;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     Avro specific deserializer for deserializing to types 
+    ///     Avro specific deserializer. Use this deserializer with types 
     ///     generated with the avrogen.exe tool.
     /// </summary>
+    /// <remarks>
+    ///     Serialization format:
+    ///       byte 0:           Magic byte use to identify the protocol format.
+    ///       bytes 1-4:        Unique global id of the avro schema used for encoding (as registered in Confluent Schema Registry), big endian.
+    ///       following bytes:  The serialized data.
+    /// </remarks>
     public class AvroDeserializer<T> : IDeserializer<T>
     {
-        // Serialization format:
-        //   [0]:       magic byte (use to identify protocol format)
-        //   [1-4]:     unique global id of avro schema used for write (as registered in schema registry), BIG ENDIAN
-        //   following: data serialized with corresponding schema
-
         /// <summary>
         ///	    The client used to communicate with Confluent Schema Registry.
         /// </summary>
