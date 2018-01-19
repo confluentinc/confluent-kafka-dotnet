@@ -308,11 +308,6 @@ namespace Confluent.Kafka
             // note: ConcurrentDictionary.GetorAdd() method is not atomic
             this.topicHandlerFactory = (string topicName) =>
             {
-                if (topicHandles.ContainsKey(topicName))
-                {
-                    return topicHandles[topicName];
-                }
-
                 // Note: there is a possible (benign) race condition here - topicHandle could have already
                 // been created for the topic (and possibly added to topicHandles). If the topicHandle has
                 // already been created, rdkafka will return it and not create another. the call to rdkafka
