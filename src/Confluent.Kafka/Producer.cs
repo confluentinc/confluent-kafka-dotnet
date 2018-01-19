@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-
+using System.Collections.Concurrent;
 
 namespace Confluent.Kafka
 {
@@ -40,8 +40,8 @@ namespace Confluent.Kafka
         internal const int RD_KAFKA_PARTITION_UA = -1;
         internal const long RD_KAFKA_NO_TIMESTAMP = 0;
 
-        private SafeDictionary<string, SafeTopicHandle> topicHandles
-            = new SafeDictionary<string, SafeTopicHandle>();
+        private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
+            = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
         private SafeKafkaHandle kafkaHandle;
 
@@ -87,28 +87,17 @@ namespace Confluent.Kafka
             OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
+        private readonly Func<string, SafeTopicHandle> topicHandlerFactory;
+
         /// <remarks>
         ///     getKafkaTopicHandle() is now only required by GetMetadata() which still requires that 
         ///     topic is specified via a handle rather than a string name (note that getKafkaTopicHandle() 
         ///     was also formerly required by the ProduceAsync methods). Eventually we would like to 
         ///     depreciate this method as well as the SafeTopicHandle class.
         /// </remarks>
-        private SafeTopicHandle getKafkaTopicHandle(string topic)
-        {
-            if (topicHandles.ContainsKey(topic))
-            {
-                return topicHandles[topic];
-            }
 
-            // Note: there is a possible (benign) race condition here - topicHandle could have already
-            // been created for the topic (and possibly added to topicHandles). If the topicHandle has
-            // already been created, rdkafka will return it and not create another. the call to rdkafka
-            // is threadsafe.
-            var topicHandle = kafkaHandle.Topic(topic, IntPtr.Zero);
-            topicHandles.Add(topic, topicHandle);
-
-            return topicHandle;
-        }
+        private SafeTopicHandle getKafkaTopicHandle(string topic) 
+            => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
 
@@ -315,6 +304,16 @@ namespace Confluent.Kafka
                 callbackCts = new CancellationTokenSource();
                 callbackTask = StartPollTask(callbackCts.Token);
             }
+
+            // note: ConcurrentDictionary.GetorAdd() method is not atomic
+            this.topicHandlerFactory = (string topicName) =>
+            {
+                // Note: there is a possible (benign) race condition here - topicHandle could have already
+                // been created for the topic (and possibly added to topicHandles). If the topicHandle has
+                // already been created, rdkafka will return it and not create another. the call to rdkafka
+                // is threadsafe.
+                return kafkaHandle.Topic(topicName, IntPtr.Zero);
+            };
         }
 
         /// <summary>
@@ -676,9 +675,12 @@ namespace Confluent.Kafka
         /// </remarks>
         public void Dispose()
         {
-            // TODO: If this method is called in a finalizer, can callbackTask potentially be null?
-            topicHandles.Dispose();
+            foreach (var kv in topicHandles)
+            {
+                kv.Value.Dispose();
+            }
 
+            // TODO: If this method is called in a finalizer, can callbackTask potentially be null?
             if (!this.manualPoll)
             {
                 callbackCts.Cancel();
