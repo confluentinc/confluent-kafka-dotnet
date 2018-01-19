@@ -237,7 +237,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="manualPoll">
         ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
@@ -321,7 +320,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
             : this(config, false, false) {}
@@ -625,10 +623,10 @@ namespace Confluent.Kafka
         ///     completed before terminating. The wait time is bounded by the
         ///     millisecondsTimeout parameter.
         ///
-        ///     A related default.topic.config configuration parameter is message.timeout.ms
-        ///     which determines the maximum length of time librdkafka attempts to deliver
-        ///     the message before giving up and so also affects the maximum time a call
-        ///     to Flush may block.
+        ///     A related configuration parameter is message.timeout.ms which determines
+        ///     the maximum length of time librdkafka attempts to deliver a message 
+        ///     before giving up and so also affects the maximum time a call to Flush 
+        ///     may block.
         /// </remarks>
         public int Flush(int millisecondsTimeout)
             => kafkaHandle.Flush(millisecondsTimeout);
@@ -1009,7 +1007,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -1054,7 +1051,6 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -1300,9 +1296,9 @@ namespace Confluent.Kafka
         ///     completed before terminating. The wait time is bounded by the
         ///     millisecondsTimeout parameter.
         ///
-        ///     A related default.topic.config configuration parameter is message.timeout.ms
-        ///     which determines the maximum length of time librdkafka attempts to deliver
-        ///     the message before giving up and so also affects the maximum time a call
+        ///     A related topic configuration parameter is message.timeout.ms which 
+        ///     determines the maximum length of time librdkafka attempts to deliver
+        ///     a message before giving up and so also affects the maximum time a call
         ///     to Flush may block.
         /// </remarks>
         public int Flush(int millisecondsTimeout)
