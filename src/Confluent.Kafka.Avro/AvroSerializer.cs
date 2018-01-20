@@ -112,6 +112,9 @@ namespace Confluent.Kafka.Serialization
             }
             else if (writerType.Equals(typeof(string)))
             {
+                // Note: It would arguably be better to make this a union with null, to
+                // exactly match the .NET string type, however we don't for consistency
+                // with the Java avro serializer.
                 WriterSchema = Avro.Schema.Parse("string");
             }
             else if (writerType.Equals(typeof(float)))
@@ -124,6 +127,9 @@ namespace Confluent.Kafka.Serialization
             }
             else if (writerType.Equals(typeof(byte[])))
             {
+                // Note: It would arguably be better to make this a union with null, to
+                // exactly match the .NET byte[] type, however we don't for consistency
+                // with the Java avro serializer.
                 WriterSchema = Avro.Schema.Parse("bytes");
             }
             else

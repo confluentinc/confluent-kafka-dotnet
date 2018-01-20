@@ -27,12 +27,76 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that messages produced with the avro serializer can be consumed with the
-        ///     avro deserializer.
+        ///     Test that consuming a key/value with schema incompatible with
+        ///     the strongly typed consumer instance results in an appropriate
+        ///     consume error event.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void ConsumeIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
+            string topic = Guid.NewGuid().ToString();
+
+            var producerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers },
+                { "schema.registry.url", schemaRegistryServers }
+            };
+
+            var consumerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers },
+                { "group.id", Guid.NewGuid().ToString() },
+                { "session.timeout.ms", 6000 },
+                { "auto.offset.reset", "smallest" },
+                { "schema.registry.url", schemaRegistryServers }
+            };
+
+            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
+            {
+                var user = new User
+                {
+                    name = "username",
+                    favorite_number = 107,
+                    favorite_color = "orange"
+                };
+                producer.ProduceAsync(topic, user.name, user);
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(), new AvroDeserializer<User>()))
+            {
+                bool hadError = false;
+                consumer.OnConsumeError += (_, m) =>
+                {
+                    if (m.Error.Code == ErrorCode.Local_KeyDeserialization)
+                    {
+                        hadError = true;
+                    }
+                };
+
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
+                consumer.Consume(out Message<User, User> message, TimeSpan.FromSeconds(10));
+
+                Assert.True(hadError);
+            }
+
+            using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
+            {
+                bool hadError = false;
+                consumer.OnConsumeError += (_, m) =>
+                {
+                    if (m.Error.Code == ErrorCode.Local_ValueDeserialization)
+                    {
+                        hadError = true;
+                    }
+                };
+
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
+                consumer.Consume(out Message<string, string> message, TimeSpan.FromSeconds(10));
+
+                Assert.True(hadError);
+            }
+
         }
     }
 }

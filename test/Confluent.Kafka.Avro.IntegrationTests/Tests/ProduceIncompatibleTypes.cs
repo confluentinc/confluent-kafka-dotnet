@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.Kafka.Serialization;
 using Confluent.SchemaRegistry;
 using Xunit;
@@ -27,12 +26,67 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that messages produced with the avro serializer can be consumed with the
-        ///     avro deserializer.
+        ///     Test that producing messages with a key or value with incompatible schema
+        ///     throws a SchemaRegistryException.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
+            var producerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers },
+                { "schema.registry.url", schemaRegistryServers }
+            };
+
+            var consumerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers },
+                { "group.id", Guid.NewGuid().ToString() },
+                { "session.timeout.ms", 6000 },
+                { "auto.offset.reset", "smallest" },
+                { "schema.registry.url", schemaRegistryServers }
+            };
+
+            var topic = Guid.NewGuid().ToString();
+            using (var producer = new Producer<string, string>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<string>()))
+            {
+                producer.ProduceAsync(topic, "hello", "world");
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            using (var producer = new Producer<int, string>(producerConfig, new AvroSerializer<int>(), new AvroSerializer<string>()))
+            {
+                Assert.Throws<SchemaRegistryException>(
+                    () =>
+                    {
+                        try
+                        {
+                            producer.ProduceAsync(topic, 42, "world").Wait();
+                        }
+                        catch (AggregateException e)
+                        {
+                            throw e.InnerException;
+                        }
+                    }
+                );
+            }
+
+            using (var producer = new Producer<string, int>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<int>()))
+            {
+                Assert.Throws<SchemaRegistryException>(
+                    () =>
+                    {
+                        try
+                        {
+                            producer.ProduceAsync(topic, "world", 42).Wait();
+                        }
+                        catch (AggregateException e)
+                        {
+                            throw e.InnerException;
+                        }
+                    }
+                );
+            }
         }
     }
 }

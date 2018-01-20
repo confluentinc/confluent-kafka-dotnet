@@ -26,8 +26,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that messages produced with the avro serializer can be consumed with the
-        ///     avro deserializer.
+        ///     Test the variants of AvroSerializer and AvroDeserializer that accept 
+        ///     a pre-constructed ISchemaRegistry instance work.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void SharedSchemaRegistryClient(string bootstrapServers, string schemaRegistryServers)

@@ -16,9 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.Kafka.Serialization;
-using Confluent.SchemaRegistry;
 using Xunit;
 
 namespace Confluent.Kafka.Avro.IntegrationTests
@@ -26,8 +24,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that messages produced with the avro serializer can be consumed with the
-        ///     avro deserializer.
+        ///     Test AvroSerializer and AvroDeserializer work with all supported
+        ///     primitive types.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void PrimitiveTypes(string bootstrapServers, string schemaRegistryServers)
@@ -50,7 +48,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var stringTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<string, string>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<string>()))
             {
-                // TODO: make sure behavior when null matches java
                 producer.ProduceAsync(stringTopic, "hello", "world");
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
@@ -58,7 +55,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var bytesTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new AvroSerializer<byte[]>(), new AvroSerializer<byte[]>()))
             {
-                // TODO: make sure behavior when null matches java
                 producer.ProduceAsync(bytesTopic, new byte[] { 1, 4, 11 }, new byte[] { });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
