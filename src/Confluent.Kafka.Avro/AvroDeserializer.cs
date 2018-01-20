@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Serialization
 {
     /// <summary>
     ///     Avro specific deserializer. Use this deserializer with types 
-    ///     generated with the avrogen.exe tool.
+    ///     generated using the avrogen.exe tool.
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -48,13 +48,13 @@ namespace Confluent.Kafka.Serialization
         private bool disposeClientOnDispose;
 
         /// <remarks>
-        ///     A deserializer cache is maintained, so that they only need to be constructed once.
+        ///     A reader cache is maintained, so that they only need to be constructed once.
         /// </remarks>
         private readonly Dictionary<int, DatumReader<T>> readerBySchemaIdBigEndian = new Dictionary<int, DatumReader<T>>();
         private object readerLock = new object();
 
         /// <summary>
-        ///     The avro schema corresponding to type <see cref="T"/>
+        ///     The avro schema used to read values of type <see cref="T"/>
         /// </summary>
         public Avro.Schema ReaderSchema { get; private set; }
 
@@ -96,15 +96,17 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException($"{nameof(AvroDeserializer<T>)} " +
-                    "only accepts int, bool, double, string, float, long, byte[], " +
-                    "ISpecificRecord subclass and SpecificFixed");
+                throw new InvalidOperationException(
+                    $"{nameof(AvroDeserializer<T>)} " +
+                    " only accepts type parameters of int, bool, double, string, float, " +
+                    "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
+                );
             }
         }
 
         /// <summary>
         ///     Initialize a new instance of AvroDeserializer. Relevant configuration properties
-        ///     will be extracted from the collection passed into the consumer constructor.
+        ///     will be extracted from the collection passed into the consumer constructor. 
         /// </summary>
         public AvroDeserializer() { }
 
@@ -112,7 +114,7 @@ namespace Confluent.Kafka.Serialization
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegisterClient">
-        ///	    Client used for communication with Confluent's Schema Registry.
+        ///	    An ISchemaRegistryClient instance used for communication with Confluent Schema Registry.
         ///	</param>
         /// <exception cref="InvalidOperationException">
         ///	    The generic type <see cref="T"/> is not supported.
@@ -138,15 +140,15 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public T Deserialize(string topic, byte[] array)
         {
-            // topic is not necessary for deserialization (or knowing if it's key or not)
-            // we only care about the schema id.
+            // topic is not necessary for deserialization (or knowing if it's a key or value)
+            // only the schema id is needed.
             using (var stream = new MemoryStream(array))
             using (var reader = new BinaryReader(stream))
             {
                 int magicByte = reader.ReadByte();
                 if (magicByte != Constants.MagicByte)
                 {
-                    //may change in the future with new format
+                    // may change in the future.
                     throw new InvalidDataException("magic byte should be 0");
                 }
                 int writerIdBigEndian = reader.ReadInt32();
@@ -159,13 +161,11 @@ namespace Confluent.Kafka.Serialization
                 }
                 if (datumReader == null)
                 {
-                    int witerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
-                    string writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(witerId).Result;
+                    int writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
+                    string writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
                     var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
-                    // can be of multiple type: Record, Primitive...
-                    // we don't read against a given schema, so writer and reader schema are same
-                    datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
+                    datumReader = new SpecificReader<T>(writerSchema, this.ReaderSchema);
                     lock (readerLock)
                     {
                         readerBySchemaIdBigEndian[writerIdBigEndian] = datumReader;

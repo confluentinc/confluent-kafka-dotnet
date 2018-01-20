@@ -76,7 +76,7 @@ namespace Confluent.Kafka.Serialization
         public bool IsKey { get; private set; }
 
         /// <summary>
-        ///     The avro schema corresponding to type <see cref="T"/>
+        ///     The avro schema used to write values of type <see cref="T"/>
         /// </summary>
         public Avro.Schema WriterSchema { get; private set; }
 
@@ -169,7 +169,8 @@ namespace Confluent.Kafka.Serialization
         ///     Initialize a new instance of the AvroSerializer class.
         /// </summary>
         /// <param name="schemaRegistryClient">
-        ///		 A <see cref="ISchemaRegistryClient"/> instance used to communicate with Confluent Schema Registry.
+        ///		 A <see cref="ISchemaRegistryClient"/> instance used to communicate with Confluent 
+        ///		 Schema Registry.
         ///	</param>
         /// <param name="initialBufferSize">
         ///     The initial size (in bytes) of the buffer used for serializing messages (note: 
@@ -228,7 +229,7 @@ namespace Confluent.Kafka.Serialization
                 writer.Write(schemaIdBigEndian);
                 avroWriter.Write(data, new BinaryEncoder(stream));
 
-                // TODO: change the ISerializer interface so that this copy isn't necessary.
+                // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
                 return stream.ToArray();
             }
         }
