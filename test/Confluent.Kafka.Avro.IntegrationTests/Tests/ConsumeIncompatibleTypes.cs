@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+﻿// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,23 +15,24 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
+using Confluent.Kafka.Examples.AvroSpecific;
+using Confluent.Kafka.Serialization;
+using Confluent.SchemaRegistry;
+using Xunit;
+
 
 namespace Confluent.Kafka.Avro.IntegrationTests
 {
-    public class Program
+    public static partial class Tests
     {
-        private static void PrintUsage()
-            => Console.WriteLine("Usage: .. <schema_registry_server> <kafka_broker>");
-
-        public static void Main(string[] args)
+        /// <summary>
+        ///     Test that messages produced with the avro serializer can be consumed with the
+        ///     avro deserializer.
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        public static void ConsumeIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
-            if (args.Length < 2)
-            {
-                PrintUsage();
-                return;
-            }
-
-            Tests.ProduceConsume(args[0], args[1]);
         }
     }
 }

@@ -57,6 +57,25 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 { "schema.registry.url", schemaRegistryUrl }
             };
 
+            // Note: Each AvroSerializer and AvroDeserializer instance below internally creates and manages the 
+            // lifecycle of a CachedSchemaRegistry instance, taking it's configuration properties from the 
+            // dictionary supplied to the Producer/Consumer constructor. This is the most straightforward way 
+            // to use these (de)serializers, however you can also pass a CachedSchemaRegistry instance into the 
+            // constructors directly, which avoids duplicate connections to Schema Registry in the case where 
+            // you're using more than one AvroSerializer/Deserializer. E.g.:
+            // 
+            // var schemaRegistryConfig = new Dictionary<string, object>
+            // {
+            //    { "schema.registry.url", schemaRegistryUrl },
+            //    { "avro.buffer.bytes", 50 }
+            // };
+            // 
+            // using (var schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            // using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(schemaRegistryClient), new AvroDeserializer<User>(schemaRegistryClient)))
+            // using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(schemaRegistryClient), new AvroSerializer<User>(schemaRegistryClient)))
+            // {
+            // ...
+
             using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(), new AvroDeserializer<User>()))
             using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(), new AvroSerializer<User>()))
             {

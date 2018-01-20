@@ -20,7 +20,6 @@ using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
-
 namespace Confluent.Kafka.Avro.IntegrationTests
 {
     public static partial class Tests
@@ -29,29 +28,24 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         ///     Test that messages produced with the avro serializer can be consumed with the
         ///     avro deserializer.
         /// </summary>
-        public static void ProduceConsume(string schemaRegistryServers, string bootstrapServers)
+        [Theory, MemberData(nameof(TestParameters))]
+        public static void ProduceConsume(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
 
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true },
-                { "schema.registry.urls", schemaRegistryServers }
+                { "schema.registry.url", schemaRegistryServers }
             };
 
             var consumerConfig = new Dictionary<string, object>
             {
-                { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
+                { "group.id", Guid.NewGuid().ToString() },
                 { "session.timeout.ms", 6000 },
-                { "api.version.request", true },
-                { "schema.registry.urls", schemaRegistryServers },
-                { "default.topic.config", new Dictionary<string, object>()
-                    {
-                        { "auto.offset.reset", "smallest" }
-                    }
-                }
+                { "auto.offset.reset", "smallest" },
+                { "schema.registry.url", schemaRegistryServers }
             };
 
             using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))

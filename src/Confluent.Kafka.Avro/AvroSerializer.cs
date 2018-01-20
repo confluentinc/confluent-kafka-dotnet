@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Serialization
     /// <remarks>
     ///     Serialization format:
     ///       byte 0:           Magic byte use to identify the protocol format.
-    ///       bytes 1-4:        Unique global id of the avro schema used for encoding (as registered in Confluent Schema Registry), big endian.
+    ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
     public class AvroSerializer<T> : ISerializer<T>
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Serialization
         public ISchemaRegistryClient SchemaRegistryClient { get; private set; }
 
         /// <summary>
-        ///     The default initial size (in bytes) of the buffer used for message 
+        ///     The default initial size (in bytes) of buffers used for message 
         ///     serialization.
         /// </summary>
         public const int DefaultInitialBufferSize = 128;
@@ -184,8 +184,8 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Serialize an instance of type <see cref="T"/> to a byte array in avro format. The serialized
         ///     data is preceeded by a "magic byte" (1 byte) and the id of the schema as registered
-        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block
-        ///     or throw on first use during schema registration.
+        ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
+        ///     on first use for a particular topic during schema registration.
         /// </summary>
         /// <param name="topic">
         ///     The topic associated wih the data.
