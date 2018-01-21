@@ -36,8 +36,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new Dictionary<string, object> { { "schema.registry.url", server } });
 
             var subject = sr.ConstructKeySubjectName(topicName);
-            var id = sr.RegisterAsync(subject, testSchema1).Result;
-            var id2 = sr.GetIdAsync(subject, testSchema1).Result;
+            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+            var id2 = sr.GetSchemaIdAsync(subject, testSchema1).Result;
 
             Assert.Equal(id, id2);
 
@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 try
                 {
-                    sr.GetIdAsync(subject, "{\"type\": \"string\"}").Wait();
+                    sr.GetSchemaIdAsync(subject, "{\"type\": \"string\"}").Wait();
                 }
                 catch (AggregateException e)
                 {

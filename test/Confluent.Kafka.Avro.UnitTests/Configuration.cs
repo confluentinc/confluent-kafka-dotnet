@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Avro.UnitTests
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
             schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic)).Returns($"{testTopic}-value");
-            schemaRegistryMock.Setup(x => x.RegisterAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
+            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
                 (string topic, string schema) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
             schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>())).ReturnsAsync((int id) => store.Where(x => x.Value == id).First().Key);

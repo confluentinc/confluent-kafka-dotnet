@@ -24,10 +24,10 @@ namespace Confluent.SchemaRegistry
     public interface ISchemaRegistryClient : IDisposable
     {
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
-        Task<int> RegisterAsync(string subject, string schema);
+        Task<int> RegisterSchemaAsync(string subject, string schema);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetIdAsync"]/*' />
-        Task<int> GetIdAsync(string subject, string schema);
+        Task<int> GetSchemaIdAsync(string subject, string schema);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         Task<string> GetSchemaAsync(int id);

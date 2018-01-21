@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                         var subject = sr.ConstructValueSubjectName(topicName);
                         subjects.Add(subject);
 
-                        var id = sr.RegisterAsync(subject, testSchema).Result;
+                        var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
                         ids.Add(id);
                     }
                 }

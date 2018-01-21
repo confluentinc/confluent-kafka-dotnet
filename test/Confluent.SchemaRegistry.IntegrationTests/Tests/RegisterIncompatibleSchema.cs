@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>{ { "schema.registry.url", server } });
 
             var subject = sr.ConstructKeySubjectName(topicName);
-            var id = sr.RegisterAsync(subject, testSchema1).Result;
+            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var testSchema2 = // incompatible with testSchema1
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
 
-            Assert.Throws<AggregateException>(() => sr.RegisterAsync(subject, testSchema2).Result);
+            Assert.Throws<AggregateException>(() => sr.RegisterSchemaAsync(subject, testSchema2).Result);
 
             Assert.True(sr.GetAllSubjectsAsync().Result.Contains(subject));
         }

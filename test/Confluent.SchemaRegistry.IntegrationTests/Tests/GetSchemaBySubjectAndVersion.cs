@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>{ { "schema.registry.url", server } });
 
             var subject = sr.ConstructValueSubjectName(topicName);
-            var id = sr.RegisterAsync(subject, testSchema1).Result;
+            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var schema = sr.GetLatestSchemaAsync(subject).Result;
             var schemaString = sr.GetSchemaAsync(subject, schema.Version).Result;

@@ -137,7 +137,6 @@ namespace Confluent.SchemaRegistry
             if (result == 0)
             {
                 return Version.CompareTo(other.Version);
-                // TODO: potentially check for id and schemaString equality here and fail fast if !=
             }
 
             return result;

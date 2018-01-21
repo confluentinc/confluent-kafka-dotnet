@@ -30,7 +30,8 @@ namespace Confluent.Kafka.Serialization
 {
     /// <summary>
     ///     Avro specific deserializer. Use this deserializer with types 
-    ///     generated using the avrogen.exe tool.
+    ///     generated using the avrogen.exe tool or one of the following 
+    ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -97,29 +98,32 @@ namespace Confluent.Kafka.Serialization
             {
                 throw new InvalidOperationException(
                     $"{nameof(AvroDeserializer<T>)} " +
-                    " only accepts type parameters of int, bool, double, string, float, " +
+                    "only accepts type parameters of int, bool, double, string, float, " +
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
                 );
             }
         }
 
         /// <summary>
-        ///     Initialize a new instance of AvroDeserializer. An instance of CachedSchemaRegistryClient
-        ///     will be created and managed internally based on configuration properties extracted
-        ///     from the collection passed into the Consumer constructor.
+        ///     Initialize a new instance of AvroDeserializer.
         /// </summary>
+        /// <remarks>
+        ///     An instance of CachedSchemaRegistryClient will be created and managed 
+        ///     internally based on configuration properties extracted from the collection
+        ///     passed into the Consumer constructor.
+        /// </remarks>
         public AvroDeserializer() { }
 
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegisteryClient">
-        ///	    An instance of an implementation of ISchemaRegistryClient used for
-        ///	    communication with Confluent Schema Registry.
-        ///	</param>
+        ///     An instance of an implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <exception cref="InvalidOperationException">
         ///	    The generic type <see cref="T"/> is not supported.
-        ///	</exception>
+        /// </exception>
         public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient)
         {
             disposeClientOnDispose = false;
@@ -141,8 +145,9 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public T Deserialize(string topic, byte[] array)
         {
-            // topic is not necessary for deserialization (or knowing if it's a key or value)
-            // only the schema id is needed.
+            // Note: topic is not necessary for deserialization (or knowing if it's a key 
+            // or value) only the schema id is needed.
+
             using (var stream = new MemoryStream(array))
             using (var reader = new BinaryReader(stream))
             {
@@ -155,7 +160,7 @@ namespace Confluent.Kafka.Serialization
                 int writerIdBigEndian = reader.ReadInt32();
 
                 DatumReader<T> datumReader = null;
-                // TODO: A r/w lock would be better, but the improvement would be negligible here.
+                // TODO: A r/w lock would be better, but the improvement probably negligible.
                 lock (datumReaderLock)
                 {
                     datumReaderBySchemaIdBigEndian.TryGetValue(writerIdBigEndian, out datumReader);

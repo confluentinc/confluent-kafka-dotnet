@@ -22,7 +22,7 @@ namespace Confluent.SchemaRegistry
     [DataContract]
     internal class CompatibilityCheck
     {
-        [DataMember(Name ="is_compatible")]
+        [DataMember(Name="is_compatible")]
         public bool IsCompatible { get; set; }
 
         public CompatibilityCheck(bool isCompatible)

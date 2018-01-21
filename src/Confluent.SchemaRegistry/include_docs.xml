@@ -1,8 +1,9 @@
 <API>
 
-<Member name="ISchemaRegistryClient_RegisterAsync">  
+<Member name="ISchemaRegistryClient_RegisterSchemaAsync">  
     <summary>
-        Register a schema.
+        Register a schema or get the schema id if it's already 
+        registered.
     </summary>
     <param name="subject">
         The subject to register the schema against.
@@ -15,7 +16,7 @@
     </returns>
 </Member>
 
-<Member name="ISchemaRegistryClient_GetIdAsync">
+<Member name="ISchemaRegistryClient_GetSchemaIdAsync">
     <summary>
       Get the unique id of the specified schema registered against 
       the specified subject.
@@ -24,12 +25,14 @@
       The subject the schema is registered against.
     </param>
     <param name="schema">
-      The schema to check.
+      The schema to get the id for.
     </param>
     <returns>
-      The unique id identifying the schema. A SchemaRegistryException
-      is thrown if the schema is not registered against the subject.
+      The unique id identifying the schema.
     </returns>
+    <exception cref="SchemaRegistryException">
+      Thrown if the schema is not registered against the subject.
+    </exception>
 </Member>
 
 <Member name="ISchemaRegistryClient_GetSchemaAsync">

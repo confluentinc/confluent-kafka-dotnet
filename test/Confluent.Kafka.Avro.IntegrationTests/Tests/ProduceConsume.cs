@@ -20,6 +20,7 @@ using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
+
 namespace Confluent.Kafka.Avro.IntegrationTests
 {
     public static partial class Tests

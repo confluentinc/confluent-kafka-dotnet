@@ -87,8 +87,8 @@ namespace Confluent.SchemaRegistry
             }
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetIdAsync"]/*' />
-        public async Task<int> GetIdAsync(string subject, string schema)
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaIdAsync"]/*' />
+        public async Task<int> GetSchemaIdAsync(string subject, string schema)
         {
             CheckIfCacheFull();
 
@@ -97,6 +97,10 @@ namespace Confluent.SchemaRegistry
                 idBySchema = new Dictionary<string, int>();
                 this.idBySchemaBySubject[subject] = idBySchema;
             }
+
+            // TODO: This could be optimized in the usual case where idBySchema only
+            // contains very few elements and the schema string passed in is always
+            // the same instance.
 
             if (!idBySchema.TryGetValue(schema, out int schemaId))
             {
@@ -108,8 +112,8 @@ namespace Confluent.SchemaRegistry
             return schemaId;
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
-        public async Task<int> RegisterAsync(string subject, string schema)
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterSchemaAsync"]/*' />
+        public async Task<int> RegisterSchemaAsync(string subject, string schema)
         {
             CheckIfCacheFull();
             
@@ -118,6 +122,10 @@ namespace Confluent.SchemaRegistry
                 idBySchema = new Dictionary<string, int>();
                 this.idBySchemaBySubject[subject] = idBySchema;
             }
+
+            // TODO: This could be optimized in the usual case where idBySchema only
+            // contains very few elements and the schema string passed in is always
+            // the same instance.
 
             if (!idBySchema.TryGetValue(schema, out int schemaId))
             {
@@ -185,6 +193,9 @@ namespace Confluent.SchemaRegistry
         public string ConstructValueSubjectName(string topic)
             => $"{topic}-value";
 
+        /// <summary>
+        ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
+        /// </summary>
         public void Dispose()
             => restService.Dispose();
     }

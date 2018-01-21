@@ -38,8 +38,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var subject = sr.ConstructKeySubjectName(topicName);
             Assert.Equal(topicName + "-key", subject);
 
-            var id1 = sr.RegisterAsync(subject, testSchema1).Result;
-            var id2 = sr.RegisterAsync(subject, testSchema1).Result;
+            var id1 = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+            var id2 = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             Assert.Equal(id1, id2);
             

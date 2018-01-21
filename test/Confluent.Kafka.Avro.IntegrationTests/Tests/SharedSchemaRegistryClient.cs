@@ -21,6 +21,7 @@ using Confluent.Kafka.Serialization;
 using Confluent.SchemaRegistry;
 using Xunit;
 
+
 namespace Confluent.Kafka.Avro.IntegrationTests
 {
     public static partial class Tests

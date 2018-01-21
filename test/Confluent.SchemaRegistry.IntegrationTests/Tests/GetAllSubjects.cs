@@ -38,13 +38,13 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var subjectsBefore = sr.GetAllSubjectsAsync().Result;
 
             var subject = sr.ConstructKeySubjectName(topicName);
-            var id = sr.RegisterAsync(subject, testSchema1).Result;
+            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var subjectsAfter = sr.GetAllSubjectsAsync().Result;
 
             Assert.Equal(1, subjectsAfter.Count - subjectsBefore.Count);
 
-            sr.RegisterAsync(subject, testSchema1).Wait();
+            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
 
             var subjectsAfter2 = sr.GetAllSubjectsAsync().Result;
 

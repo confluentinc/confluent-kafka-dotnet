@@ -38,8 +38,8 @@ namespace Confluent.SchemaRegistry
         Task<List<string>> GetSubjectsAsync();
         Task<List<string>> GetSubjectVersionsAsync(string subject);
         Task<int> RegisterSchemaAsync(string subject, string schema);
-        Task<Config> PutCompatibilityAsync(string subject, Compatibility compatibility);
-        Task<Config> PutGlobalCompatibilityAsync(Compatibility compatibility);
+        Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility);
+        Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility);
         Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema);
         Task<bool> TestLatestCompatibilityAsync(string subject, string avroSchema);
     }

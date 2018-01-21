@@ -45,11 +45,12 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 // The property name is not plural to follow the convention set by
                 // the Java implementation.
                 { "schema.registry.url", schemaRegistryUrl },
-                // optional avro / schema registry client properties:
-                { "avro.buffer.bytes", 50 },
-                { "avro.auto.register.schema", true },
+                // optional schema registry client properties:
                 { "schema.registry.timeout.ms", 5000 },
-                { "schema.registry.cache.capacity", 10 }
+                { "schema.registry.cache.capacity", 10 },
+                // optional avro serde properties:
+                { "avro.buffer.bytes", 50 },
+                { "avro.auto.register.schema", true }
             };
             var consumerConfig = new Dictionary<string, object>
             {
@@ -68,12 +69,13 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             // var schemaRegistryConfig = new Dictionary<string, object>
             // {
             //    { "schema.registry.url", schemaRegistryUrl },
-            //    { "avro.buffer.bytes", 50 }
+            //    { "schema.registry.timeout.ms", 5000 }, // optional
+            //    { "schema.registry.cache.capacity", 10 } // optional
             // };
             // 
             // using (var schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            // using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(schemaRegistryClient), new AvroDeserializer<User>(schemaRegistryClient)))
-            // using (var producer = new Producer<User, User>(producerConfig, new AvroSerializer<User>(schemaRegistryClient), new AvroSerializer<User>(schemaRegistryClient)))
+            // using (var consumer = new Consumer<int, User>(consumerConfig, new AvroDeserializer<int>(schemaRegistryClient), new AvroDeserializer<User>(schemaRegistryClient)))
+            // using (var producer = new Producer<int, User>(producerConfig, new AvroSerializer<int>(schemaRegistryClient), new AvroSerializer<User>(schemaRegistryClient)))
             // {
             // ...
 

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
+
 namespace Confluent.Kafka.Avro.IntegrationTests
 {
     public static partial class Tests

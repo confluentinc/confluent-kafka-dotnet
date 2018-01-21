@@ -29,7 +29,8 @@ namespace Confluent.Kafka.Serialization
 {
     /// <summary>
     ///     Avro specific serializer. Use this serializer with types generated
-    ///     using the avrogen.exe tool.
+    ///     using the avrogen.exe tool or one of the following primitive types: 
+    ///     int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -47,6 +48,10 @@ namespace Confluent.Kafka.Serialization
 
         private string writerSchemaString { get; set; }
 
+        private const string InitialBufferSizePropertyName = "avro.buffer.bytes";
+
+        private const string AutoRegisterSchemaPropertyName = "avro.auto.register.schema";
+
         /// <summary>
         ///     The schema id corresponding to the schema of T in big-endian 
         ///     (network) byte ordering.
@@ -60,7 +65,8 @@ namespace Confluent.Kafka.Serialization
         public int? SchemaId { get; private set; } = null;
 
         /// <summary>
-        ///	    The <see cref="ISchemaRegistryClient"/> instance used for communication with Confluent Schema Registry.
+        ///	    The <see cref="ISchemaRegistryClient"/> instance used for communication
+        ///	    with Confluent Schema Registry.
         /// </summary>
         public ISchemaRegistryClient SchemaRegistryClient { get; private set; }
 
@@ -69,10 +75,6 @@ namespace Confluent.Kafka.Serialization
         ///     serialization.
         /// </summary>
         public const int DefaultInitialBufferSize = 128;
-
-        public const string InitialBufferSizePropertyName = "avro.buffer.bytes";
-
-        public const string AutoRegisterSchemaPropertyName = "avro.auto.register.schema";
 
         /// <summary>
         ///     True if the serializer will attempt to auto-register un-recognized schemas
@@ -145,9 +147,11 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException($"{nameof(AvroSerializer<T>)} " +
-                    "only accepts int, bool, double, string, float, long, byte[], " +
-                    "ISpecificRecord subclass and SpecificFixed");
+                throw new InvalidOperationException(
+                    $"{nameof(AvroSerializer<T>)} " +
+                    "only accepts type parameters of int, bool, double, string, float, " +
+                    "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
+                );
             }
 
             avroWriter = new SpecificWriter<T>(WriterSchema);
@@ -155,10 +159,13 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Initialize a new instance of AvroSerializer. An instance of CachedSchemaRegistryClient
-        ///     will be created and managed internally based on configuration properties extracted
-        ///     from the collection passed into the Producer constructor.
+        ///     Initialize a new instance of AvroSerializer.
         /// </summary>
+        /// <remarks>
+        ///     An instance of CachedSchemaRegistryClient will be created and managed 
+        ///     internally based on configuration properties extracted from the collection
+        ///     passed into the Producer constructor.
+        /// </remarks>
         public AvroSerializer() { }
 
         /// <summary>
@@ -196,19 +203,19 @@ namespace Confluent.Kafka.Serialization
         {
             if (!topicsRegistered.Contains(topic))
             {
-                // first usage: register/get schema to check compatibility.
-
                 string subject = IsKey
                     ? SchemaRegistryClient.ConstructKeySubjectName(topic)
                     : SchemaRegistryClient.ConstructValueSubjectName(topic);
 
+                // first usage: register/get schema to check compatibility
+
                 if (AutoRegisterSchema)
                 {
-                    SchemaId = SchemaRegistryClient.RegisterAsync(subject, writerSchemaString).Result;
+                    SchemaId = SchemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result;
                 }
                 else
                 {
-                    SchemaId = SchemaRegistryClient.GetIdAsync(subject, writerSchemaString).Result;
+                    SchemaId = SchemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
                 }
 
                 schemaIdBigEndian = IPAddress.NetworkToHostOrder(SchemaId.Value);

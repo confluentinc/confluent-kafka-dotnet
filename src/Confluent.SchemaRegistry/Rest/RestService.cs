@@ -277,13 +277,13 @@ namespace Confluent.SchemaRegistry
                     $"/config/{subject}", 
                     HttpMethod.Get)).CompatibilityLevel;
 
-        public Task<Config> PutGlobalCompatibilityAsync(Compatibility compatibility)
+        public Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
             => RequestAsync<Config>(
                     "/config", 
                     HttpMethod.Put, 
                     new Config(compatibility));
 
-        public Task<Config> PutCompatibilityAsync(string subject, Compatibility compatibility)
+        public Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
             => RequestAsync<Config>(
                     $"/config/{subject}", 
                     HttpMethod.Put, 
