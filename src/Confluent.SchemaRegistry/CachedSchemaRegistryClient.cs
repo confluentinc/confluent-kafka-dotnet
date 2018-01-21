@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.SchemaRegistry.Rest;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
@@ -74,14 +73,9 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <remarks>
-        ///     This is to make sure memory doesn't explode in the case of incorrect usage.
-        /// 
-        ///     It's behavior is pretty extreme - remove everything and start again if the 
-        ///     cache gets full. However, in practical situations this is not expected.
-        /// 
-        ///     TODO: Implement an LRU Cache here or something instead (not high priority).
+        ///     Ensure memory doesn't explode in the case of incorrect usage.
         /// </remarks>
-        private bool CleanCacheIfFull()
+        private void CheckIfCacheFull()
         {
             if (
                 this.schemaById.Count + 
@@ -89,20 +83,14 @@ namespace Confluent.SchemaRegistry
                 this.idBySchemaBySubject.Sum(x => x.Value.Count)
                     >= identityMapCapacity)
             {
-                // TODO: log if this happens.
-                this.schemaById.Clear();
-                this.idBySchemaBySubject.Clear();
-                this.schemaByVersionBySubject.Clear();
-                return true;
+                throw new OutOfMemoryException("Local schema cache maximum capacity exceeded");
             }
-
-            return false;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetIdAsync"]/*' />
         public async Task<int> GetIdAsync(string subject, string schema)
         {
-            CleanCacheIfFull();
+            CheckIfCacheFull();
 
             if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
             {
@@ -123,7 +111,7 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         public async Task<int> RegisterAsync(string subject, string schema)
         {
-            CleanCacheIfFull();
+            CheckIfCacheFull();
             
             if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
             {
@@ -144,7 +132,7 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         public async Task<string> GetSchemaAsync(int id)
         {
-            CleanCacheIfFull();
+            CheckIfCacheFull();
 
             if (!this.schemaById.TryGetValue(id, out string schema))
             {
@@ -158,7 +146,7 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
         public async Task<string> GetSchemaAsync(string subject, int version)
         {
-            CleanCacheIfFull();
+            CheckIfCacheFull();
 
             if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
             {
@@ -186,8 +174,8 @@ namespace Confluent.SchemaRegistry
             => restService.GetSubjectsAsync();
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
-        public async Task<bool> IsCompatibleAsync(string subject, string schemaString)
-            => await restService.TestLatestCompatibilityAsync(subject, schemaString).ConfigureAwait(false);
+        public async Task<bool> IsCompatibleAsync(string subject, string schema)
+            => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(false);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
         public string ConstructKeySubjectName(string topic)

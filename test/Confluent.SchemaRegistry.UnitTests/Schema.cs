@@ -46,6 +46,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         {
             var schema1 = new Schema("test-key", 1, 42, "test-schema-string");
             var schema2 = new Schema("test-value", 1, 42, "test-schema-string");
+            // (very unlikely)
             Assert.NotEqual(schema1.GetHashCode(), schema2.GetHashCode());
         }
 

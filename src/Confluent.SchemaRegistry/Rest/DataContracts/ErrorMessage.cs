@@ -17,7 +17,7 @@
 using System.Runtime.Serialization;
 
 
-namespace Confluent.SchemaRegistry.Rest.Entities
+namespace Confluent.SchemaRegistry
 {
     /// <summary>
     ///     Generic JSON error message.

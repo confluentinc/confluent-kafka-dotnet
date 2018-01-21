@@ -42,16 +42,16 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             Assert.Equal(id, id2);
 
             Assert.Throws<SchemaRegistryException>(() => 
+            {
+                try
                 {
-                    try
-                    {
-                        var id3 = sr.GetIdAsync(subject, "{\"type\": \"string\"}").Result;
-                    }
-                    catch (AggregateException e)
-                    {
-                        throw e.InnerException;
-                    }
-                });
+                    sr.GetIdAsync(subject, "{\"type\": \"string\"}").Wait();
+                }
+                catch (AggregateException e)
+                {
+                    throw e.InnerException;
+                }
+            });
         }
     }
 }

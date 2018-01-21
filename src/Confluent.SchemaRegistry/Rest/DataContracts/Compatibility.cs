@@ -19,7 +19,7 @@ using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 
-namespace Confluent.SchemaRegistry.Rest
+namespace Confluent.SchemaRegistry
 {
     [DataContract(Name = "compatibility")]
     [JsonConverter(typeof(StringEnumConverter))]

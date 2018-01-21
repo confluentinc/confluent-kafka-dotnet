@@ -17,17 +17,22 @@
 using System.Runtime.Serialization;
 
 
-namespace Confluent.SchemaRegistry.Rest.Entities.Requests
+namespace  Confluent.SchemaRegistry
 {
     [DataContract]
-    internal class CompatibilityCheck
+    internal class SchemaString
     {
-        [DataMember(Name ="is_compatible")]
-        public bool IsCompatible { get; set; }
+        [DataMember(Name = "schema")]
+        public string Schema { get; set; }
 
-        public CompatibilityCheck(bool isCompatible)
+        /// <summary>
+        ///     Empty constructor for serialization
+        /// </summary>
+        private SchemaString() { }
+
+        public SchemaString(string schemaString)
         {
-            IsCompatible = isCompatible;
+            Schema = schemaString;
         }
     }
 }

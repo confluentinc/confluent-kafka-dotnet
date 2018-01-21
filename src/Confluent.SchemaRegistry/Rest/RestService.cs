@@ -20,13 +20,11 @@ using System.Linq;
 using System.Net.Http;
 using System;
 using System.Threading.Tasks;
-using Confluent.SchemaRegistry.Rest.Entities.Requests;
-using Confluent.SchemaRegistry.Rest.Entities;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
 
-namespace Confluent.SchemaRegistry.Rest
+namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publically, but this is not
@@ -253,17 +251,17 @@ namespace Confluent.SchemaRegistry.Rest
 
         #region Compatibility
 
-        public async Task<bool> TestCompatibilityAsync(string subject, int versionId, string avroSchema)
+        public async Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema)
             => (await RequestAsync<CompatibilityCheck>(
                     $"/compatibility/subjects/{subject}/versions/{versionId}",
                     HttpMethod.Post,
-                    new SchemaString(avroSchema))).IsCompatible;
+                    new SchemaString(schema))).IsCompatible;
 
-        public async Task<bool> TestLatestCompatibilityAsync(string subject, string avroSchema)
+        public async Task<bool> TestLatestCompatibilityAsync(string subject, string schema)
             => (await RequestAsync<CompatibilityCheck>(
                     $"/compatibility/subjects/{subject}/versions/latest",
                     HttpMethod.Post,
-                    new SchemaString(avroSchema))).IsCompatible;
+                    new SchemaString(schema))).IsCompatible;
 
         #endregion Compatibility
 

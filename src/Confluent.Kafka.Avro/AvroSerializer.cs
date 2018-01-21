@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Serialization
     {
         private SpecificWriter<T> avroWriter;
 
-        private HashSet<string> topicsRegistred = new HashSet<string>();
+        private HashSet<string> topicsRegistered = new HashSet<string>();
 
         private bool disposeClientOnDispose;
 
@@ -194,7 +194,7 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public byte[] Serialize(string topic, T data)
         {
-            if (!topicsRegistred.Contains(topic))
+            if (!topicsRegistered.Contains(topic))
             {
                 // first usage: register/get schema to check compatibility.
 
@@ -212,7 +212,7 @@ namespace Confluent.Kafka.Serialization
                 }
 
                 schemaIdBigEndian = IPAddress.NetworkToHostOrder(SchemaId.Value);
-                topicsRegistred.Add(topic);
+                topicsRegistered.Add(topic);
             }
 			
             using (var stream = new MemoryStream(InitialBufferSize))
@@ -257,7 +257,7 @@ namespace Confluent.Kafka.Serialization
             {
                 if (SchemaRegistryClient != null)
                 {
-                    throw new ArgumentException($"{keyOrValue} AvroSerializer schema registry client was configured using both via the constructor and configuration parameters.");
+                    throw new ArgumentException($"{keyOrValue} AvroSerializer schema registry client was configured via both the constructor and configuration parameters.");
                 }
  
                 disposeClientOnDispose = true;

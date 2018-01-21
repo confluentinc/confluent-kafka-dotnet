@@ -17,16 +17,18 @@
 
 <Member name="ISchemaRegistryClient_GetIdAsync">
     <summary>
-      Get the unique id of the schema specified by 
+      Get the unique id of the specified schema registered against 
+      the specified subject.
     </summary>
     <param name="subject">
-      The subject to get the scham
+      The subject the schema is registered against.
     </param>
     <param name="schema">
-      The schema to register.
+      The schema to check.
     </param>
     <returns>
-      A unique id identifying the schema.
+      The unique id identifying the schema. A SchemaRegistryException
+      is thrown if the schema is not registered against the subject.
     </returns>
 </Member>
 
@@ -86,11 +88,11 @@
     <param name="subject">
         The subject to check.
     </param>
-    <param name="avroSchema">
+    <param name="schame">
         The schema to check.
     </param>
     <returns>
-        true if <paramref name="avroSchema" /> is compatible with the latest version 
+        true if <paramref name="schema" /> is compatible with the latest version 
         registered against a specified subject, false otherwise.
     </returns>
 </Member>

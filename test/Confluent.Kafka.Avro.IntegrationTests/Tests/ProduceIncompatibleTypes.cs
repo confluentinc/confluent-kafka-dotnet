@@ -56,36 +56,32 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             using (var producer = new Producer<int, string>(producerConfig, new AvroSerializer<int>(), new AvroSerializer<string>()))
             {
-                Assert.Throws<SchemaRegistryException>(
-                    () =>
+                Assert.Throws<SchemaRegistryException>(() =>
+                {
+                    try
                     {
-                        try
-                        {
-                            producer.ProduceAsync(topic, 42, "world").Wait();
-                        }
-                        catch (AggregateException e)
-                        {
-                            throw e.InnerException;
-                        }
+                        producer.ProduceAsync(topic, 42, "world").Wait();
                     }
-                );
+                    catch (AggregateException e)
+                    {
+                        throw e.InnerException;
+                    }
+                });
             }
 
             using (var producer = new Producer<string, int>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<int>()))
             {
-                Assert.Throws<SchemaRegistryException>(
-                    () =>
+                Assert.Throws<SchemaRegistryException>(() =>
+                {
+                    try
                     {
-                        try
-                        {
-                            producer.ProduceAsync(topic, "world", 42).Wait();
-                        }
-                        catch (AggregateException e)
-                        {
-                            throw e.InnerException;
-                        }
+                        producer.ProduceAsync(topic, "world", 42).Wait();
                     }
-                );
+                    catch (AggregateException e)
+                    {
+                        throw e.InnerException;
+                    }
+                });
             }
         }
     }

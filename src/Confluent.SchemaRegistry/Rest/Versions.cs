@@ -17,7 +17,7 @@
 using System.Collections.Generic;
 
 
-namespace  Confluent.SchemaRegistry.Rest
+namespace  Confluent.SchemaRegistry
 {
     internal static class Versions
     {

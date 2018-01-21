@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry
         Task<List<string>> GetAllSubjectsAsync();
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
-        Task<bool> IsCompatibleAsync(string subject, string avroSchema);
+        Task<bool> IsCompatibleAsync(string subject, string schema);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
         string ConstructKeySubjectName(string topic);

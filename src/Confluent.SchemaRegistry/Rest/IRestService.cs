@@ -17,10 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.SchemaRegistry.Rest.Entities;
 
 
-namespace Confluent.SchemaRegistry.Rest
+namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publically, but this is not
@@ -41,7 +40,7 @@ namespace Confluent.SchemaRegistry.Rest
         Task<int> RegisterSchemaAsync(string subject, string schema);
         Task<Config> PutCompatibilityAsync(string subject, Compatibility compatibility);
         Task<Config> PutGlobalCompatibilityAsync(Compatibility compatibility);
-        Task<bool> TestCompatibilityAsync(string subject, int versionId, string avroSchema);
+        Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema);
         Task<bool> TestLatestCompatibilityAsync(string subject, string avroSchema);
     }
 }
