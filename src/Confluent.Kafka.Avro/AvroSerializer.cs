@@ -41,13 +41,23 @@ namespace Confluent.Kafka.Serialization
     {
         private SpecificWriter<T> avroWriter;
 
+        private HashSet<string> topicsRegistred = new HashSet<string>();
+
+        private bool disposeClientOnDispose;
+
+        private string writerSchemaString { get; set; }
+
+        /// <summary>
+        ///     The schema id corresponding to the schema of T in big-endian 
+        ///     (network) byte ordering.
+        /// </summary>
+        private int schemaIdBigEndian;
+
         /// <summary>
         ///     The SchemaId corresponding to type <see cref="T"/>, or null if 
         ///     the serializer has yet to be invoked.
         /// </summary>
         public int? SchemaId { get; private set; } = null;
-
-        private HashSet<string> topicsRegistred = new HashSet<string>();
 
         /// <summary>
         ///	    The <see cref="ISchemaRegistryClient"/> instance used for communication with Confluent Schema Registry.
@@ -59,8 +69,6 @@ namespace Confluent.Kafka.Serialization
         ///     serialization.
         /// </summary>
         public const int DefaultInitialBufferSize = 128;
-
-        private bool disposeClientOnDispose;
 
         public const string InitialBufferSizePropertyName = "avro.buffer.bytes";
 
@@ -93,14 +101,6 @@ namespace Confluent.Kafka.Serialization
         ///     The avro schema used to write values of type <see cref="T"/>
         /// </summary>
         public Avro.Schema WriterSchema { get; private set; }
-
-        private string writerSchemaString { get; set; }
-
-        /// <summary>
-        ///     The schema id corresponding to the schema of T in big-endian 
-        ///     (network) byte ordering.
-        /// </summary>
-        private int schemaIdBigEndian;
 
         private void Initialize()
         {
@@ -155,8 +155,9 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Initialize a new AvroSerializer instance. Relevant configuration properties
-        ///     will be extracted from the collection passed into the producer constructor.
+        ///     Initialize a new instance of AvroSerializer. An instance of CachedSchemaRegistryClient
+        ///     will be created and managed internally based on configuration properties extracted
+        ///     from the collection passed into the Producer constructor.
         /// </summary>
         public AvroSerializer() { }
 
@@ -164,7 +165,8 @@ namespace Confluent.Kafka.Serialization
         ///     Initiliaze an new instance of the AvroSerializer class.
         /// </summary>
         /// <param name="schemaRegistryClient">
-        ///     A client instance used to communicate with Confluent Schema Registry.
+        ///	    An instance of an implementation of ISchemaRegistryClient used for
+        ///	    communication with Confluent Schema Registry.
         /// </param>
         /// <exception cref="InvalidOperationException">
         ///	    The generic type <see cref="T"/> is not supported.

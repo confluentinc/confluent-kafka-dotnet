@@ -40,23 +40,24 @@ namespace Confluent.Kafka.Serialization
     /// </remarks>
     public class AvroDeserializer<T> : IDeserializer<T>
     {
-        /// <summary>
-        ///	    The client used to communicate with Confluent Schema Registry.
-        /// </summary>
-        public ISchemaRegistryClient SchemaRegistryClient { get; private set;  }
-
         private bool disposeClientOnDispose;
 
         /// <remarks>
-        ///     A reader cache is maintained, so that they only need to be constructed once.
+        ///     A datum reader cache (one corresponding to each write schema that's been seen) 
+        ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<T>> readerBySchemaIdBigEndian = new Dictionary<int, DatumReader<T>>();
-        private object readerLock = new object();
+        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaIdBigEndian = new Dictionary<int, DatumReader<T>>();
+        private object datumReaderLock = new object();
 
         /// <summary>
         ///     The avro schema used to read values of type <see cref="T"/>
         /// </summary>
         public Avro.Schema ReaderSchema { get; private set; }
+
+        /// <summary>
+        ///	    The client used to communicate with Confluent Schema Registry.
+        /// </summary>
+        public ISchemaRegistryClient SchemaRegistryClient { get; private set; }
 
         private void Initialize()
         {
@@ -103,8 +104,9 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Initialize a new instance of AvroDeserializer. Relevant configuration properties
-        ///     will be extracted from the collection passed into the consumer constructor. 
+        ///     Initialize a new instance of AvroDeserializer. An instance of CachedSchemaRegistryClient
+        ///     will be created and managed internally based on configuration properties extracted
+        ///     from the collection passed into the Consumer constructor.
         /// </summary>
         public AvroDeserializer() { }
 
@@ -112,7 +114,8 @@ namespace Confluent.Kafka.Serialization
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegisteryClient">
-        ///	    An ISchemaRegistryClient instance used for communication with Confluent Schema Registry.
+        ///	    An instance of an implementation of ISchemaRegistryClient used for
+        ///	    communication with Confluent Schema Registry.
         ///	</param>
         /// <exception cref="InvalidOperationException">
         ///	    The generic type <see cref="T"/> is not supported.
@@ -153,9 +156,9 @@ namespace Confluent.Kafka.Serialization
 
                 DatumReader<T> datumReader = null;
                 // TODO: A r/w lock would be better, but the improvement would be negligible here.
-                lock (readerLock)
+                lock (datumReaderLock)
                 {
-                    readerBySchemaIdBigEndian.TryGetValue(writerIdBigEndian, out datumReader);
+                    datumReaderBySchemaIdBigEndian.TryGetValue(writerIdBigEndian, out datumReader);
                 }
                 if (datumReader == null)
                 {
@@ -164,9 +167,9 @@ namespace Confluent.Kafka.Serialization
                     var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
                     datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                    lock (readerLock)
+                    lock (datumReaderLock)
                     {
-                        readerBySchemaIdBigEndian[writerIdBigEndian] = datumReader;
+                        datumReaderBySchemaIdBigEndian[writerIdBigEndian] = datumReader;
                     }
                 }
 
