@@ -13,7 +13,22 @@
     <returns>
         A unique id identifying the schema.
     </returns>
-</Member>  
+</Member>
+
+<Member name="ISchemaRegistryClient_GetIdAsync">
+    <summary>
+      Get the unique id of the schema specified by 
+    </summary>
+    <param name="subject">
+      The subject to get the scham
+    </param>
+    <param name="schema">
+      The schema to register.
+    </param>
+    <returns>
+      A unique id identifying the schema.
+    </returns>
+</Member>
 
 <Member name="ISchemaRegistryClient_GetSchemaAsync">
     <summary>

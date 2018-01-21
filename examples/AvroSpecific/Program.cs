@@ -47,6 +47,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 { "schema.registry.url", schemaRegistryUrl },
                 // optional avro / schema registry client properties:
                 { "avro.buffer.bytes", 50 },
+                { "avro.auto.register.schema", true },
                 { "schema.registry.timeout.ms", 5000 },
                 { "schema.registry.cache.capacity", 10 }
             };

@@ -58,10 +58,8 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         public Avro.Schema ReaderSchema { get; private set; }
 
-        private void Initialize(ISchemaRegistryClient schemaRegistryClient)
+        private void Initialize()
         {
-            SchemaRegistryClient = schemaRegistryClient;
-
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)) || typeof(T).IsSubclassOf(typeof(SpecificFixed)))
             {
                 ReaderSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
@@ -113,16 +111,16 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
-        /// <param name="schemaRegisterClient">
+        /// <param name="schemaRegisteryClient">
         ///	    An ISchemaRegistryClient instance used for communication with Confluent Schema Registry.
         ///	</param>
         /// <exception cref="InvalidOperationException">
         ///	    The generic type <see cref="T"/> is not supported.
         ///	</exception>
-        public AvroDeserializer(ISchemaRegistryClient schemaRegisterClient)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient)
         {
             disposeClientOnDispose = false;
-            Initialize(schemaRegisterClient);
+            SchemaRegistryClient = schemaRegisteryClient;
         }
 
         /// <summary>
@@ -165,7 +163,7 @@ namespace Confluent.Kafka.Serialization
                     string writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
                     var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
-                    datumReader = new SpecificReader<T>(writerSchema, this.ReaderSchema);
+                    datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                     lock (readerLock)
                     {
                         readerBySchemaIdBigEndian[writerIdBigEndian] = datumReader;
@@ -181,26 +179,31 @@ namespace Confluent.Kafka.Serialization
         {
             var keyOrValue = isKey ? "Key" : "Value";
             var srConfig = config.Where(item => item.Key.StartsWith("schema.registry."));
+            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
+
+            if (avroConfig.Count() != 0)
+            {
+                throw new ArgumentException($"{keyOrValue} AvroDeserializer: unexpected configuration parameter {avroConfig.First().Key}");
+            }
 
             if (srConfig.Count() != 0)
             {
                 if (SchemaRegistryClient != null)
                 {
-                    throw new ArgumentException($"{keyOrValue} AvroDeserializer was configured using both constructor arguments and configuration parameters.");
+                    throw new ArgumentException($"{keyOrValue} AvroDeserializer schema registry client was configured via both the constructor and configuration parameters.");
                 }
 
                 disposeClientOnDispose = true;
-                Initialize(new CachedSchemaRegistryClient(config));
-
-                return config.Where(item => !item.Key.StartsWith("schema.registry."));
+                SchemaRegistryClient = new CachedSchemaRegistryClient(config);
             }
 
             if (SchemaRegistryClient == null)
             {
-                throw new ArgumentException($"{keyOrValue} AvroDeserializer was not configured.");
+                throw new ArgumentException($"{keyOrValue} AvroDeserializer schema registry client was not supplied or configured.");
             }
 
-            return config;
+            Initialize();
+            return config.Where(item => !item.Key.StartsWith("schema.registry.") && !item.Key.StartsWith("avro."));
         }
 
         /// <summary>
@@ -210,7 +213,7 @@ namespace Confluent.Kafka.Serialization
         {
             if (disposeClientOnDispose)
             {
-                this.SchemaRegistryClient.Dispose();
+                SchemaRegistryClient.Dispose();
             }
         }
     }

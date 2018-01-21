@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+﻿// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,24 @@
 //
 // Refer to LICENSE for more information.
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 
-namespace  Confluent.SchemaRegistry.Rest.Entities
+namespace Confluent.SchemaRegistry.Rest
 {
-    [DataContract]
-    internal class SchemaId
+    [DataContract(Name = "compatibility")]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum Compatibility
     {
-        [DataMember(Name = "id")]
-        public int Id { get; set; }
-
-        /// <summary>
-        ///     Empty constructor for serialization
-        /// </summary>
-        private SchemaId() { }
-
-        public SchemaId(int schemaId)
-        {
-            Id = schemaId;
-        }
+        [EnumMember(Value = "NONE")]
+        None,
+        [EnumMember(Value = "FORWARD")]
+        Forward,
+        [EnumMember(Value = "BACKWARD")]
+        Backward,
+        [EnumMember(Value = "FULL")]
+        Full
     }
 }

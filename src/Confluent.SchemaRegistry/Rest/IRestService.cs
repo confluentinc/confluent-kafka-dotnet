@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Rest.Entities;
-using Confluent.SchemaRegistry.Rest.Entities.Requests;
 
 
 namespace Confluent.SchemaRegistry.Rest
@@ -31,17 +30,18 @@ namespace Confluent.SchemaRegistry.Rest
     internal interface IRestService : IDisposable
     {
         Task<Schema> CheckSchemaAsync(string subject, string schema);
-        Task<Config> GetCompatibilityAsync(string subject);
-        Task<Config> GetGlobalCompatibilityAsync();
+        Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas);
+        Task<Compatibility> GetCompatibilityAsync(string subject);
+        Task<Compatibility> GetGlobalCompatibilityAsync();
         Task<Schema> GetLatestSchemaAsync(string subject);
-        Task<SchemaString> GetSchemaAsync(int id);
+        Task<string> GetSchemaAsync(int id);
         Task<Schema> GetSchemaAsync(string subject, int version);
         Task<List<string>> GetSubjectsAsync();
-        Task<List<string>> GetSubjectVersions(string subject);
-        Task<SchemaId> PostSchemaAsync(string subject, string schema);
-        Task<Config> PutCompatibilityAsync(string subject, Config.Compatbility compatibility);
-        Task<Config> PutGlobalCompatibilityAsync(Config.Compatbility compatibility);
-        Task<CompatibilityCheck> TestCompatibilityAsync(string subject, int versionId, string avroSchema);
-        Task<CompatibilityCheck> TestLatestCompatibilityAsync(string subject, string avroSchema);
+        Task<List<string>> GetSubjectVersionsAsync(string subject);
+        Task<int> RegisterSchemaAsync(string subject, string schema);
+        Task<Config> PutCompatibilityAsync(string subject, Compatibility compatibility);
+        Task<Config> PutGlobalCompatibilityAsync(Compatibility compatibility);
+        Task<bool> TestCompatibilityAsync(string subject, int versionId, string avroSchema);
+        Task<bool> TestLatestCompatibilityAsync(string subject, string avroSchema);
     }
 }

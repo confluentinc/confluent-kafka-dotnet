@@ -26,6 +26,9 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         Task<int> RegisterAsync(string subject, string schema);
 
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetIdAsync"]/*' />
+        Task<int> GetIdAsync(string subject, string schema);
+
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         Task<string> GetSchemaAsync(int id);
 

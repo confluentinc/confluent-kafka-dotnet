@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Linq;
 using System.Net.Http;
-using System.IO;
 using System;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry.Rest.Entities.Requests;
@@ -205,62 +204,92 @@ namespace Confluent.SchemaRegistry.Rest
 
         #region Schemas
 
-        public Task<SchemaString> GetSchemaAsync(int id)
-            => RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get);
+        public async Task<string> GetSchemaAsync(int id)
+            => (await RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get)).Schema;
 
         #endregion Schemas
 
         #region Subjects
 
         public Task<List<string>> GetSubjectsAsync()
-            => RequestListOfAsync<string>("/subjects", HttpMethod.Get);
+            => RequestListOfAsync<string>(
+                    "/subjects", 
+                    HttpMethod.Get);
 
-        public Task<List<string>> GetSubjectVersions(string subject)
-            => RequestListOfAsync<string>($"/subjects/{subject}/versions", HttpMethod.Get);
+        public Task<List<string>> GetSubjectVersionsAsync(string subject)
+            => RequestListOfAsync<string>(
+                    $"/subjects/{subject}/versions", 
+                    HttpMethod.Get);
 
         public Task<Schema> GetSchemaAsync(string subject, int version)
-            => RequestAsync<Schema>($"/subjects/{subject}/versions/{version}", HttpMethod.Get);
+            => RequestAsync<Schema>(
+                    $"/subjects/{subject}/versions/{version}", 
+                    HttpMethod.Get);
 
         public Task<Schema> GetLatestSchemaAsync(string subject)
-            => RequestAsync<Schema>($"/subjects/{subject}/versions/latest", HttpMethod.Get);
+            => RequestAsync<Schema>(
+                    $"/subjects/{subject}/versions/latest", 
+                    HttpMethod.Get);
 
-        public Task<SchemaId> PostSchemaAsync(string subject, string schema)
-            => RequestAsync<SchemaId>($"/subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema));
+        public async Task<int> RegisterSchemaAsync(string subject, string schema)
+            => (await RequestAsync<SchemaId>(
+                    $"/subjects/{subject}/versions", 
+                    HttpMethod.Post, 
+                    new SchemaString(schema))).Id;
+
+        public Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas)
+            => RequestAsync<Schema>(
+                    $"/subjects/{subject}?deleted={!ignoreDeletedSchemas}",
+                    HttpMethod.Post, 
+                    new SchemaString(schema));
 
         public Task<Schema> CheckSchemaAsync(string subject, string schema)
-            => RequestAsync<Schema>($"/subjects/{subject}", HttpMethod.Post, new SchemaString(schema));
+            => RequestAsync<Schema>(
+                    $"/subjects/{subject}", 
+                    HttpMethod.Post, 
+                    new SchemaString(schema));
 
         #endregion Subjects
 
         #region Compatibility
 
-        public Task<CompatibilityCheck> TestCompatibilityAsync(string subject, int versionId, string avroSchema)
-            => RequestAsync<CompatibilityCheck>(
+        public async Task<bool> TestCompatibilityAsync(string subject, int versionId, string avroSchema)
+            => (await RequestAsync<CompatibilityCheck>(
                     $"/compatibility/subjects/{subject}/versions/{versionId}",
                     HttpMethod.Post,
-                    new SchemaString(avroSchema));
+                    new SchemaString(avroSchema))).IsCompatible;
 
-        public Task<CompatibilityCheck> TestLatestCompatibilityAsync(string subject, string avroSchema)
-            => RequestAsync<CompatibilityCheck>(
+        public async Task<bool> TestLatestCompatibilityAsync(string subject, string avroSchema)
+            => (await RequestAsync<CompatibilityCheck>(
                     $"/compatibility/subjects/{subject}/versions/latest",
                     HttpMethod.Post,
-                    new SchemaString(avroSchema));
+                    new SchemaString(avroSchema))).IsCompatible;
 
         #endregion Compatibility
 
         #region Config
 
-        public Task<Config> GetGlobalCompatibilityAsync()
-            => RequestAsync<Config>("/config", HttpMethod.Get);
+        public async Task<Compatibility> GetGlobalCompatibilityAsync()
+            => (await RequestAsync<Config>(
+                    "/config", 
+                    HttpMethod.Get)).CompatibilityLevel;
 
-        public Task<Config> GetCompatibilityAsync(string subject)
-            => RequestAsync<Config>($"/config/{subject}", HttpMethod.Get);
+        public async Task<Compatibility> GetCompatibilityAsync(string subject)
+            => (await RequestAsync<Config>(
+                    $"/config/{subject}", 
+                    HttpMethod.Get)).CompatibilityLevel;
 
-        public Task<Config> PutGlobalCompatibilityAsync(Config.Compatbility compatibility)
-            => RequestAsync<Config>("/config", HttpMethod.Put, new Config(compatibility));
+        public Task<Config> PutGlobalCompatibilityAsync(Compatibility compatibility)
+            => RequestAsync<Config>(
+                    "/config", 
+                    HttpMethod.Put, 
+                    new Config(compatibility));
 
-        public Task<Config> PutCompatibilityAsync(string subject, Config.Compatbility compatibility)
-            => RequestAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility));
+        public Task<Config> PutCompatibilityAsync(string subject, Compatibility compatibility)
+            => RequestAsync<Config>(
+                    $"/config/{subject}", 
+                    HttpMethod.Put, 
+                    new Config(compatibility));
             
         #endregion Config
 

@@ -14,8 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 
@@ -24,24 +22,10 @@ namespace Confluent.SchemaRegistry.Rest.Entities
     [DataContract]
     internal class Config
     {
-        [DataContract(Name = "compatibility")]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public enum Compatbility
-        {
-            [EnumMember(Value = "NONE")]
-            None,
-            [EnumMember(Value = "FORWARD")]
-            Forward,
-            [EnumMember(Value = "BACKWARD")]
-            Backward,
-            [EnumMember(Value = "FULL")]
-            Fulll
-        }
-
         [DataMember(Name = "compatibility")]
-        public Compatbility CompatibilityLevel { get; }
+        public Compatibility CompatibilityLevel { get; }
         
-        public Config(Compatbility compatibilityLevel)
+        public Config(Compatibility compatibilityLevel)
         {
             CompatibilityLevel = compatibilityLevel;
         }

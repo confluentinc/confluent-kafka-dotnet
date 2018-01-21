@@ -1,4 +1,4 @@
-// Copyright 20 Confluent Inc.
+﻿// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,30 +24,34 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void RegisterIncompatibleSchema(string server)
+        public static void GetId(string server)
         {
             var topicName = Guid.NewGuid().ToString();
 
-            var testSchema1 = 
+            var testSchema1 =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>{ { "schema.registry.url", server } });
+            var sr = new CachedSchemaRegistryClient(new Dictionary<string, object> { { "schema.registry.url", server } });
 
             var subject = sr.ConstructKeySubjectName(topicName);
             var id = sr.RegisterAsync(subject, testSchema1).Result;
+            var id2 = sr.GetIdAsync(subject, testSchema1).Result;
 
-            var testSchema2 = // incompatible with testSchema1
-                "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
-                "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
-                "nt\",\"null\"]},{\"name\":\"favorite_shape\",\"type\":[\"string\",\"null\"]}]}";
+            Assert.Equal(id, id2);
 
-            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
-
-            Assert.Throws<AggregateException>(() => sr.RegisterAsync(subject, testSchema2).Result);
-
-            Assert.True(sr.GetAllSubjectsAsync().Result.Contains(subject));
+            Assert.Throws<SchemaRegistryException>(() => 
+                {
+                    try
+                    {
+                        var id3 = sr.GetIdAsync(subject, "{\"type\": \"string\"}").Result;
+                    }
+                    catch (AggregateException e)
+                    {
+                        throw e.InnerException;
+                    }
+                });
         }
     }
 }

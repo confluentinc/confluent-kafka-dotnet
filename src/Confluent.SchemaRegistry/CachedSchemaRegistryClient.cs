@@ -99,6 +99,27 @@ namespace Confluent.SchemaRegistry
             return false;
         }
 
+        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetIdAsync"]/*' />
+        public async Task<int> GetIdAsync(string subject, string schema)
+        {
+            CleanCacheIfFull();
+
+            if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+            {
+                idBySchema = new Dictionary<string, int>();
+                this.idBySchemaBySubject[subject] = idBySchema;
+            }
+
+            if (!idBySchema.TryGetValue(schema, out int schemaId))
+            {
+                schemaId = (await restService.CheckSchemaAsync(subject, schema, true)).Id;
+                idBySchema[schema] = schemaId;
+                schemaById[schemaId] = schema;
+            }
+
+            return schemaId;
+        }
+
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         public async Task<int> RegisterAsync(string subject, string schema)
         {
@@ -112,8 +133,7 @@ namespace Confluent.SchemaRegistry
 
             if (!idBySchema.TryGetValue(schema, out int schemaId))
             {
-                var registered = await restService.PostSchemaAsync(subject, schema).ConfigureAwait(false);
-                schemaId = registered.Id;
+                schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(false);
                 idBySchema[schema] = schemaId;
                 schemaById[schemaId] = schema;
             }
@@ -128,7 +148,7 @@ namespace Confluent.SchemaRegistry
 
             if (!this.schemaById.TryGetValue(id, out string schema))
             {
-                schema = (await restService.GetSchemaAsync(id).ConfigureAwait(false)).Schema;
+                schema = await restService.GetSchemaAsync(id).ConfigureAwait(false);
                 schemaById[id] = schema;
             }
 
@@ -167,7 +187,7 @@ namespace Confluent.SchemaRegistry
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
         public async Task<bool> IsCompatibleAsync(string subject, string schemaString)
-            => (await restService.TestLatestCompatibilityAsync(subject, schemaString).ConfigureAwait(false)).IsCompatible;
+            => await restService.TestLatestCompatibilityAsync(subject, schemaString).ConfigureAwait(false);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
         public string ConstructKeySubjectName(string topic)
