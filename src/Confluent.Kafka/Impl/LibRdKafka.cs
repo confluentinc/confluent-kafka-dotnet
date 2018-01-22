@@ -204,10 +204,18 @@ namespace Confluent.Kafka.Impl
 
 #if NET45 || NET46 || NET47
 
+        private static bool IsWindows()
+        {
+            var os = Environment.OSVersion;
+            var platform = os.Platform;
+            return platform != PlatformID.MacOSX && platform != PlatformID.Unix;
+        }
+
         private static bool InitializeDotNetFramework(string userSpecifiedPath)
         {
             string path = userSpecifiedPath;
-            if (path == null)
+            bool isWindows = IsWindows();
+            if (path == null && isWindows)
             {
                 // in net45, librdkafka.dll is not in the process directory, we have to load it manually
                 // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
@@ -232,7 +240,10 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            if (isWindows && WindowsNative.LoadLibraryEx(
+                path,
+                IntPtr.Zero,
+                WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
             {
                 // catch the last win32 error by default and keep the associated default message
                 var win32Exception = new Win32Exception();
