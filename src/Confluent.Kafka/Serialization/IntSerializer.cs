@@ -35,7 +35,7 @@ namespace Confluent.Kafka.Serialization
         ///     The topic associated with the data (ignored by this serializer).
         /// </param>
         /// <returns>
-        ///     The <see cref="System.Int32"/> value <paramref name="data" /> encoded as a byte array of length 8 (network byte order).
+        ///     The <see cref="System.Int32"/> value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
         /// </returns>
         public byte[] Serialize(string topic, int data)
         {
