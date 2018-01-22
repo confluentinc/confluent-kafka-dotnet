@@ -978,6 +978,35 @@ namespace Confluent.Kafka
             => kafkaHandle.Unsubscribe();
 
         /// <summary>
+        ///     Update the assignment set to a single <paramref name="partition" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partition">
+        ///     The partition to consume from. Consumption will resume from the last
+        ///     committed offset, or according to the 'auto.offset.reset' configuration
+        ///     parameter if no offsets have been committed yet.
+        /// </param>
+        public void Assign(TopicPartition partition)
+            => this.Assign(new List<TopicPartition> { partition });
+
+        /// <summary>
+        ///     Update the assignment set to a single <paramref name="partition" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partition">
+        ///     The partition to consume from. If an offset value of Offset.Invalid
+        ///     (-1001) is specified, consumption will resume from the last committed
+        ///     offset, or according to the 'auto.offset.reset' configuration parameter
+        ///     if no offsets have been committed yet.
+        /// </param>
+        public void Assign(TopicPartitionOffset partition)
+            => this.Assign(new List<TopicPartitionOffset> { partition });
+
+        /// <summary>
         ///     Update the assignment set to <paramref name="partitions" />.
         ///
         ///     The assignment set is the complete set of partitions to consume
