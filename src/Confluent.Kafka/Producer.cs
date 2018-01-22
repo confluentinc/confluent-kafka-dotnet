@@ -211,7 +211,7 @@ namespace Confluent.Kafka
                 var deliveryCompletionSource = deliveryHandler;
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
-
+                
                 var err = kafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,

@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Internal;
 using System.Threading.Tasks;
@@ -186,6 +187,19 @@ namespace Confluent.Kafka.Impl
             var gchValue = default(GCHandle);
             var gchKey = default(GCHandle);
 
+            var matcher = new Regex("\\/([^:]+):(.*)");
+            var full_topic = topic;
+            /*if (matcher.Match(topic) == null)
+            {
+                var dest_def_producer = new StringBuilder();
+                var dest_prod_size = UIntPtr.Zero;// dest_def_producer.Length;
+                var default_stream = LibRdKafka.conf_get(handle, "Defaults.stream.producer", dest_def_producer, ref dest_prod_size);
+                if (default_stream == ConfRes.Ok) // Found default stream
+                {
+                    full_topic = string.Format("\\{0}:{1}", dest_def_producer.ToString(), topic);
+                }
+            }*/
+
             if (val == null)
             {
                 if (valOffset != 0 || valLength != 0)
@@ -219,7 +233,7 @@ namespace Confluent.Kafka.Impl
                 // thread of the application calls poll() for a blocking produce() to ever unblock.
                 return LibRdKafka.producev(
                     handle,
-                    topic,
+                    full_topic,
                     partition,
                     (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
                     pValue, (UIntPtr)valLength,
@@ -320,8 +334,9 @@ namespace Confluent.Kafka.Impl
 
         internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)
         {
+            long low, high;
             ThrowIfHandleClosed();
-            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out long low, out long high, (IntPtr)millisecondsTimeout);
+            ErrorCode err = LibRdKafka.query_watermark_offsets(handle, topic, partition, out low, out high, (IntPtr)millisecondsTimeout);
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
@@ -332,8 +347,9 @@ namespace Confluent.Kafka.Impl
 
         internal WatermarkOffsets GetWatermarkOffsets(string topic, int partition)
         {
+            long low, high;
             ThrowIfHandleClosed();
-            ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out long low, out long high);
+            ErrorCode err = LibRdKafka.get_watermark_offsets(handle, topic, partition, out low, out high);
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
@@ -427,7 +443,8 @@ namespace Confluent.Kafka.Impl
                 topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt));
             }
 
-            long timestamp = LibRdKafka.message_timestamp(msgPtr, out IntPtr timestampType);
+            IntPtr timestampType;
+            long timestamp = LibRdKafka.message_timestamp(msgPtr, out timestampType);
 
             LibRdKafka.message_destroy(msgPtr);
 
@@ -811,8 +828,9 @@ namespace Confluent.Kafka.Impl
 
         private List<GroupInfo> ListGroupsImpl(string group, int millisecondsTimeout)
         {
+            IntPtr grplistPtr;
             ThrowIfHandleClosed();
-            ErrorCode err = LibRdKafka.list_groups(handle, group, out IntPtr grplistPtr, (IntPtr)millisecondsTimeout);
+            ErrorCode err = LibRdKafka.list_groups(handle, group, out grplistPtr, (IntPtr)millisecondsTimeout);
             if (err == ErrorCode.NoError)
             {
                 var list = Util.Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
