@@ -25,7 +25,7 @@ namespace Confluent.Kafka.Benchmark
         {
             if (args.Length != 2)
             {
-                Console.WriteLine($"Usage: dotnet run <broker,broker..> <topic>");
+                Console.WriteLine($"Usage: .. <broker,broker..> <topic>");
                 return;
             }
 

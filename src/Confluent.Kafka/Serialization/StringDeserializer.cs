@@ -123,5 +123,10 @@ namespace Confluent.Kafka.Serialization
 
             return config;
         }
+
+        /// <summary>
+        ///     Releases any unmanaged resources owned by the deserializer (noop for this type).
+        /// </summary>
+        public void Dispose() {}
     }
 }

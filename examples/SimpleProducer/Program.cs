@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Examples.SimpleProducer
         {
             if (args.Length != 2)
             {
-                Console.WriteLine("Usage:  SimpleProducer brokerList topicName");
+                Console.WriteLine("Usage: .. brokerList topicName");
                 return;
             }
 

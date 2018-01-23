@@ -72,5 +72,10 @@ namespace Confluent.Kafka.Serialization
         /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
             => config;
+
+        /// <summary>
+        ///     Releases any unmanaged resources owned by the deserializer (noop for this type).
+        /// </summary>
+        public void Dispose() {}
     }
 }

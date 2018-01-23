@@ -18,6 +18,10 @@ build_script:
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%  &  dotnet pack src/Confluent.Kafka/Confluent.Kafka.csproj -c %CONFIGURATION% %STRONG_NAME_OPTIONS% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
   - docfx doc/docfx.json
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
 after_build:
   - 7z a docs-%APPVEYOR_REPO_COMMIT%.zip doc/_site/*
@@ -28,6 +32,8 @@ test_script:
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
+  - path: ./src/Confluent.Kafka.Avro/bin*/Release/*.nupkg
+  - path: ./src/Confluent.SchemaRegistry/bin*/Release/*.nupkg
   - path: ./docs*.zip
     name: docs
 

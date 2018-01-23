@@ -183,7 +183,7 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
         }
 
         private static void PrintUsage()
-            => Console.WriteLine("usage: <poll|consume> <broker,broker,..> <topic> [topic..]");
+            => Console.WriteLine("Usage: .. <poll|consume> <broker,broker,..> <topic> [topic..]");
 
         public static void Main(string[] args)
         {

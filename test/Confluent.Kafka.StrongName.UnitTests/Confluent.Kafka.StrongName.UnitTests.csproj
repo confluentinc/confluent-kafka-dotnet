@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>Confluent.Kafka.StrongName.UnitTests</AssemblyName>
-    <TargetFrameworks>netcoreapp1.1;netcoreapp2.0;net452;</TargetFrameworks>
+    <TargetFrameworks>net452;netcoreapp1.1;netcoreapp2.0;</TargetFrameworks>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.Kafka.StrongName.UnitTests.snk</AssemblyOriginatorKeyFile>

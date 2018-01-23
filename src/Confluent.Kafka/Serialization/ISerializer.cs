@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Serialization
     ///     Implement this interface to define a serializer 
     ///     for a particular type T.
     /// </summary>
-    public interface ISerializer<T>
+    public interface ISerializer<T> : IDisposable
     {
         /// <summary>
         ///     Serialize an instance of type T to a byte array.
