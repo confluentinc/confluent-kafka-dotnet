@@ -492,8 +492,16 @@ namespace Confluent.Kafka
         /// </summary>
         public void Dispose()
         {
-            KeyDeserializer.Dispose();
-            ValueDeserializer.Dispose();
+            if (KeyDeserializer != null)
+            {
+                KeyDeserializer.Dispose();
+            }
+
+            if (ValueDeserializer != null)
+            {
+                ValueDeserializer.Dispose();
+            }
+
             consumer.Dispose();
         }
 

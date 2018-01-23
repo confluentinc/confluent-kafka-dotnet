@@ -1334,8 +1334,16 @@ namespace Confluent.Kafka
         /// </remarks>
         public void Dispose()
         {
-            KeySerializer.Dispose();
-            ValueSerializer.Dispose();
+            if (KeySerializer != null)
+            {
+                KeySerializer.Dispose();
+            }
+
+            if (ValueSerializer != null)
+            {
+                ValueSerializer.Dispose();
+            }
+
             producer.Dispose();
         }
 

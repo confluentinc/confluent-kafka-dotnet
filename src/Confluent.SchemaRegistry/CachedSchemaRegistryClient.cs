@@ -77,6 +77,11 @@ namespace Confluent.SchemaRegistry
 
             foreach (var property in config)
             {
+                if (!property.Key.StartsWith("schema.registry."))
+                {
+                    continue;
+                }
+
                 if (property.Key != SchemaRegistryUrlPropertyName && 
                     property.Key != SchemaRegistryConnectionTimeoutMsPropertyName && 
                     property.Key != SchemaRegistryMaxCachedSchemasPropertyName)

@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Authors>Confluent Inc.;Andreas Heider</Authors>
     <Description>Confluent's .NET Client for Apache Kafka</Description>

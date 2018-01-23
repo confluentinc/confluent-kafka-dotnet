@@ -28,7 +28,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         {
             const int capacity = 16;
 
-            const string testSchema = 
+            const string testSchema =
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
@@ -47,26 +47,16 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var subjects = new List<string>();
             var ids = new List<int>();
 
-            Assert.Throws<OutOfMemoryException>(() =>
+            // test is that this does not throw. Also, inspect in debugger.
+            for (int i = 0; i < registerCount; ++i)
             {
-                try
-                {
-                    for (int i = 0; i < registerCount; ++i)
-                    {
-                        var topicName = Guid.NewGuid().ToString();
-                        var subject = sr.ConstructValueSubjectName(topicName);
-                        subjects.Add(subject);
+                var topicName = Guid.NewGuid().ToString();
+                var subject = sr.ConstructValueSubjectName(topicName);
+                subjects.Add(subject);
 
-                        var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
-                        ids.Add(id);
-                    }
-                }
-                catch (AggregateException e)
-                {
-                    throw e.InnerException;
-                }
-            });
-
+                var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
+                ids.Add(id);
+            }
         }
     }
 }

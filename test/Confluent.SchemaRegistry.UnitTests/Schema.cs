@@ -38,7 +38,6 @@ namespace Confluent.SchemaRegistry.UnitTests
             Assert.Contains("test-key", schema.ToString());
             Assert.Contains("1", schema.ToString());
             Assert.Contains("42", schema.ToString());
-            Assert.Contains("test-schema-string", schema.ToString());
         }
 
         [Fact]
