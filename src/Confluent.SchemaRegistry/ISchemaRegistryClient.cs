@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
         string ConstructKeySubjectName(string topic);
-        
+
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructValueSubjectName"]/*' />
         string ConstructValueSubjectName(string topic);
     }

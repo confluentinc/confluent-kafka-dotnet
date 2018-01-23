@@ -73,7 +73,6 @@ namespace Confluent.SchemaRegistry
 
             string aggregatedErrorMessage = null;
             HttpResponseMessage response = null;
-            bool gotOkAnswer = false;
             bool firstError = true;
             
             int startClientIndex;
@@ -84,7 +83,7 @@ namespace Confluent.SchemaRegistry
 
             int loopIndex = startClientIndex;
             int clientIndex = -1; // prevent uninitialized variable compiler error.
-            for (; loopIndex < clients.Count + startClientIndex && !gotOkAnswer; ++loopIndex)
+            for (; loopIndex < clients.Count + startClientIndex; ++loopIndex)
             {
                 clientIndex = loopIndex % clients.Count;
 
@@ -93,39 +92,47 @@ namespace Confluent.SchemaRegistry
                     response = await clients[clientIndex]
                             .SendAsync(request).ConfigureAwait(false);
 
-                    // In the case of an internal server error, try another server 
-                    //   (reason could be e.g. "error while forwarding the request to the master")
-                    // 4xx errors should not be retried (these are conclusive)
-                    if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    if (response.StatusCode == HttpStatusCode.OK ||
+                        response.StatusCode == HttpStatusCode.NoContent)
                     {
-                        if (!firstError)
+                        lock (lastClientUsedLock)
                         {
-                            aggregatedErrorMessage += "; ";
-                        }
-                        else 
-                        {
-                            firstError = false;
+                            this.lastClientUsed = clientIndex;
                         }
 
-                        string message = "";
-                        int errorCode = -1;
-                        try
-                        {
-                            var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                            message = errorObject.Value<string>("message");
-                            errorCode = errorObject.Value<int>("error_code");
-                        }
-                        catch
-                        {
-                            aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
-                        }
+                        return response;
+                    }
 
-                        aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
-                    }
-                    else 
+                    string message = "";
+                    int errorCode = -1;
+
+                    // 4xx errors with valid SR error message as content should not be retried (these are conclusive).
+                    if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                     {
-                        gotOkAnswer = true;
+                        var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                        message = errorObject.Value<string>("message");
+                        errorCode = errorObject.Value<int>("error_code");
+                        throw new SchemaRegistryException(message, response.StatusCode, errorCode);
                     }
+
+                    if (!firstError)
+                    {
+                        aggregatedErrorMessage += "; ";
+                    }
+                    firstError = false;
+
+                    try
+                    {
+                        var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                        message = errorObject.Value<string>("message");
+                        errorCode = errorObject.Value<int>("error_code");
+                    }
+                    catch
+                    {
+                        aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
+                    }
+
+                    aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
                 }
                 catch (HttpRequestException e)
                 {
@@ -133,38 +140,13 @@ namespace Confluent.SchemaRegistry
                     {
                         aggregatedErrorMessage += "; ";
                     }
-                    else 
-                    {
-                        firstError = false;
-                    }
+                    firstError = false;
 
                     aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
                 }
             }
 
-            if (!gotOkAnswer)
-            {
-                // All SR calls failed, return an exception containing information about each failure.
-                // TODO: Allow non-empty aggregatedErrorMessage to be logged even when gotOkAnswer == true.
-                throw new HttpRequestException(aggregatedErrorMessage);
-            }
-
-            if (!response.IsSuccessStatusCode)
-            {
-                // 4xx errors
-                var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                var message = errorObject.Value<string>("message");
-                var errorCode = errorObject.Value<int>("error_code");
-                throw new SchemaRegistryException(message, response.StatusCode, errorCode);
-            }
-
-            // if we had success, set last client used so we start with this next time.
-            lock (lastClientUsedLock)
-            {
-                this.lastClientUsed = clientIndex;
-            }
-
-            return response;
+            throw new HttpRequestException(aggregatedErrorMessage);
         }
 
 

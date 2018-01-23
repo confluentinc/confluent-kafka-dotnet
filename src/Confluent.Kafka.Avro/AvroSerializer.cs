@@ -160,7 +160,7 @@ namespace Confluent.Kafka.Serialization
         ///     configuration property collection:
         ///     
         ///     schema.registry.url (required) - A comma-separated list of URLs for schema registry 
-        ///         instances that can be used to register or lookup schemas.
+        ///         instances that are used to register or lookup schemas.
         ///                           
         ///     schema.registry.connection.timeout.ms (default: 30000) - Timeout for requests to 
         ///         Confluent Schema Registry.
@@ -168,13 +168,14 @@ namespace Confluent.Kafka.Serialization
         ///     schema.registry.max.cached.schemas (default: 1000) - The maximum number of schemas 
         ///         to cache locally.
         ///     
-        ///     avro.serializer.buffer.bytes (default: 128) - Use a value high enough to avoid resizing 
-        ///         of buffer, but small enough to avoid excessive memory use. Inspect the size of byte 
-        ///         array returned by the Serialize method to estimate an appropriate value. Note: each 
-        ///         call to serialize creates a new buffer.
+        ///     avro.serializer.buffer.bytes (default: 128) - Initial size (in bytes) of the buffer 
+        ///         used for message serialization. Use a value high enough to avoid resizing 
+        ///         the buffer, but small enough to avoid excessive memory use. Inspect the size of 
+        ///         the byte array returned by the Serialize method to estimate an appropriate value. 
+        ///         Note: each call to serialize creates a new buffer.
         ///     
         ///     avro.serializer.auto.register.schemas (default: true) - true if the serializer should 
-        ///         attempt to auto-register un-recognized schemas with Confluent Schema Registry, 
+        ///         attempt to auto-register unrecognized schemas with Confluent Schema Registry, 
         ///         false if not.
         /// </summary>
         /// <remarks>

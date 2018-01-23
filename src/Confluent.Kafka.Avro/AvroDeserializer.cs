@@ -174,27 +174,23 @@ namespace Confluent.Kafka.Serialization
                 var writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
 
                 DatumReader<T> datumReader = null;
-                // TODO: A r/w lock would be better, but the improvement probably negligible.
+
                 lock (datumReaderLock)
                 {
                     datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
-                }
-                if (datumReader == null)
-                {
-
-                    var writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
-                    var writerSchema = Avro.Schema.Parse(writerSchemaJson);
-
-                    datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                    lock (datumReaderLock)
+                    if (datumReader == null)
                     {
-                        if (!datumReaderBySchemaId.ContainsKey(writerId))
-                        {
-                            datumReaderBySchemaId[writerId] = datumReader;
-                        }
+                        // it's a good idea to retain the lock over this blocking call since there
+                        // may be concurrent deserialize calls for the same T, and in that case it's
+                        // best not to hit Schema Registry more than once for the same information.
+                        var writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
+                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+
+                        datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
+                        datumReaderBySchemaId[writerId] = datumReader;
                     }
                 }
-
+                
                 return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }

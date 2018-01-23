@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Threading;
 
 
 namespace Confluent.SchemaRegistry
@@ -36,7 +37,8 @@ namespace Confluent.SchemaRegistry
         private readonly Dictionary<int, string> schemaById = new Dictionary<int, string>();
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
-        
+        private readonly object cacheLock = new object();
+
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
@@ -87,103 +89,123 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <remarks>
-        ///     Ensure memory doesn't explode in the case of incorrect usage.
+        ///     This is to make sure memory doesn't explode in the case of incorrect usage.
+        /// 
+        ///     It's behavior is pretty extreme - remove everything and start again if the 
+        ///     cache gets full. However, in practical situations this is not expected.
+        /// 
+        ///     TODO: Implement an LRU Cache here or something instead.
         /// </remarks>
-        private void CheckIfCacheFull()
+        private bool CleanCacheIfFull()
         {
-            // TODO: an LRU cache is arguably better, though if the cache fills up this
-            // will usually be unexpected behavior, so failing fast is actually pretty 
-            // good.
-            if (this.schemaById.Count >= identityMapCapacity)
+            if (schemaById.Count >= identityMapCapacity)
             {
-                throw new OutOfMemoryException("Local schema cache maximum capacity exceeded");
+                // TODO: maybe log something somehow if this happens. Maybe throwing an exception (fail fast) is better.
+                this.schemaById.Clear();
+                this.idBySchemaBySubject.Clear();
+                this.schemaByVersionBySubject.Clear();
+                return true;
             }
+
+            return false;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaIdAsync"]/*' />
-        public async Task<int> GetSchemaIdAsync(string subject, string schema)
+        public Task<int> GetSchemaIdAsync(string subject, string schema)
         {
-            if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
-            {
-                idBySchema = new Dictionary<string, int>();
-                this.idBySchemaBySubject[subject] = idBySchema;
+            lock (cacheLock)
+            { 
+                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                {
+                    idBySchema = new Dictionary<string, int>();
+                    this.idBySchemaBySubject.Add(subject, idBySchema);
+                }
+
+                // TODO: This could be optimized in the usual case where idBySchema only
+                // contains very few elements and the schema string passed in is always
+                // the same instance.
+
+                if (!idBySchema.TryGetValue(schema, out int schemaId))
+                {
+                    CleanCacheIfFull();
+
+                    schemaId = restService.CheckSchemaAsync(subject, schema, true).Result.Id;
+                    idBySchema[schema] = schemaId;
+                    schemaById[schemaId] = schema;
+                }
+
+                return Task.FromResult(schemaId);
             }
-
-            // TODO: This could be optimized in the usual case where idBySchema only
-            // contains very few elements and the schema string passed in is always
-            // the same instance.
-
-            if (!idBySchema.TryGetValue(schema, out int schemaId))
-            {
-                CheckIfCacheFull();
-
-                schemaId = (await restService.CheckSchemaAsync(subject, schema, true)).Id;
-                idBySchema[schema] = schemaId;
-                schemaById[schemaId] = schema;
-            }
-
-            return schemaId;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterSchemaAsync"]/*' />
-        public async Task<int> RegisterSchemaAsync(string subject, string schema)
-        {   
-            if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
-            {
-                idBySchema = new Dictionary<string, int>();
-                this.idBySchemaBySubject[subject] = idBySchema;
+        public Task<int> RegisterSchemaAsync(string subject, string schema)
+        {
+            lock (cacheLock)
+            { 
+                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                {
+                    idBySchema = new Dictionary<string, int>();
+                    this.idBySchemaBySubject[subject] = idBySchema;
+                }
+
+                // TODO: This could be optimized in the usual case where idBySchema only
+                // contains very few elements and the schema string passed in is always
+                // the same instance.
+
+                if (!idBySchema.TryGetValue(schema, out int schemaId))
+                {
+                    CleanCacheIfFull();
+
+                    schemaId = restService.RegisterSchemaAsync(subject, schema).Result;
+                    idBySchema[schema] = schemaId;
+                    schemaById[schemaId] = schema;
+                }
+
+                return Task.FromResult(schemaId);
             }
-
-            // TODO: This could be optimized in the usual case where idBySchema only
-            // contains very few elements and the schema string passed in is always
-            // the same instance.
-
-            if (!idBySchema.TryGetValue(schema, out int schemaId))
-            {
-                CheckIfCacheFull();
-
-                schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(false);
-                idBySchema[schema] = schemaId;
-                schemaById[schemaId] = schema;
-            }
-
-            return schemaId;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
-        public async Task<string> GetSchemaAsync(int id)
+        public Task<string> GetSchemaAsync(int id)
         {
-            if (!this.schemaById.TryGetValue(id, out string schema))
-            {
-                CheckIfCacheFull();
+            lock (cacheLock)
+            { 
+                if (!this.schemaById.TryGetValue(id, out string schema))
+                {
+                    CleanCacheIfFull();
 
-                schema = await restService.GetSchemaAsync(id).ConfigureAwait(false);
-                schemaById[id] = schema;
+                    schema = restService.GetSchemaAsync(id).Result;
+                    schemaById[id] = schema;
+                }
+
+                return Task.FromResult(schema);
             }
-
-            return schema;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
-        public async Task<string> GetSchemaAsync(string subject, int version)
+        public Task<string> GetSchemaAsync(string subject, int version)
         {
-            if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
-            {
-                schemaByVersion = new Dictionary<int, string>();
-                schemaByVersionBySubject[subject] = schemaByVersion;
+            lock (cacheLock)
+            { 
+                CleanCacheIfFull();
+
+                if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
+                {
+                    schemaByVersion = new Dictionary<int, string>();
+                    schemaByVersionBySubject[subject] = schemaByVersion;
+                }
+
+                if (!schemaByVersion.TryGetValue(version, out string schemaString))
+                {
+                    var schema = restService.GetSchemaAsync(subject, version).Result;
+                    schemaString = schema.SchemaString;
+                    schemaByVersion[version] = schemaString;
+                    schemaById[schema.Id] = schemaString;
+                }
+
+                return Task.FromResult(schemaString);
             }
-
-            if (!schemaByVersion.TryGetValue(version, out string schemaString))
-            {
-                CheckIfCacheFull();
-
-                var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(false);
-                schemaString = schema.SchemaString;
-                schemaByVersion[version] = schemaString;
-                schemaById[schema.Id] = schemaString;
-            }
-
-            return schemaString;
         }
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
