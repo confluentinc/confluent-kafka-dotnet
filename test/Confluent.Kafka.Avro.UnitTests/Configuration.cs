@@ -50,8 +50,8 @@ namespace Confluent.Kafka.Avro.UnitTests
 
             var config = new Dictionary<string, object>
             {
-                { "avro.buffer.bytes", 42 },
-                { "avro.auto.register.schema", false }
+                { "avro.serializer.buffer.bytes", 42 },
+                { "avro.serializer.auto.register.schemas", false }
             };
 
             var modifiedConfig = avroSerializer.Configure(config, true);
@@ -128,8 +128,8 @@ namespace Confluent.Kafka.Avro.UnitTests
 
             var config = new Dictionary<string, object>
             {
-                { "avro.buffer.bytes", 42 },
-                { "avro.auto.register.schema", false },
+                { "avro.serializer.buffer.bytes", 42 },
+                { "avro.serializer.auto.register.schemas", false },
                 { "avro.unknown", 70 }
             };
 
@@ -143,7 +143,7 @@ namespace Confluent.Kafka.Avro.UnitTests
 
             var config = new Dictionary<string, object>
             {
-                { "avro.auto.register.schema", false }
+                { "avro.serializer.auto.register.schemas", false }
             };
 
             Assert.Throws<ArgumentException>(() => { avroDeserializer.Configure(config, true); });

@@ -21,7 +21,7 @@ using System.Net;
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
-    ///     Represents an error returned by Confuent Schema Registry.
+    ///     Represents an error returned by Confluent Schema Registry.
     /// </summary>
     public class SchemaRegistryException : Exception
     {

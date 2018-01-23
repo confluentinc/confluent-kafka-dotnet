@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test behavior when avro.auto.register.schema == false.
+        ///     Test behavior when avro.serializer.auto.register.schemas == false.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void AutoRegisterSchemaDisabled(string bootstrapServers, string schemaRegistryServers)
@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
-                { "avro.auto.register.schema", false }
+                { "avro.serializer.auto.register.schemas", false }
             };
 
             var consumerConfig = new Dictionary<string, object>
@@ -83,10 +83,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "schema.registry.url", schemaRegistryServers },
-                { "avro.auto.register.schema", false }
+                { "avro.serializer.auto.register.schemas", false }
             };
 
-            // config with avro.auto.register.schema == false should work now.
+            // config with avro.serializer.auto.register.schemas == false should work now.
             using (var producer = new Producer<string, int>(producerConfig3, new AvroSerializer<string>(), new AvroSerializer<int>()))
             {
                 producer.ProduceAsync(topic, "test", 112).Wait();

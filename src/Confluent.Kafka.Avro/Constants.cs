@@ -20,7 +20,7 @@ namespace Confluent.Kafka.Serialization
     internal static class Constants
     {
         /// <summary>
-        ///     Magic byte that identifies an avro serialized message.
+        ///     Magic byte that identifies an avro serialized message with Confluent Platform framing.
         /// </summary>
         public const byte MagicByte = 0;
     }

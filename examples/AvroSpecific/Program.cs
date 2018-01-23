@@ -29,7 +29,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
         {
             if (args.Length != 3)
             {
-                Console.WriteLine("Usage: .. bootstrapServers schemaregistryurl topicName");
+                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
                 return;
             }
 
@@ -46,11 +46,11 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 // the Java implementation.
                 { "schema.registry.url", schemaRegistryUrl },
                 // optional schema registry client properties:
-                { "schema.registry.timeout.ms", 5000 },
-                { "schema.registry.cache.capacity", 10 },
-                // optional avro serde properties:
-                { "avro.buffer.bytes", 50 },
-                { "avro.auto.register.schema", true }
+                { "schema.registry.connection.timeout.ms", 5000 },
+                { "schema.registry.max.cached.schemas", 10 },
+                // optional avro serializer properties:
+                { "avro.serializer.buffer.bytes", 50 },
+                { "avro.serializer.auto.register.schemas", true }
             };
             var consumerConfig = new Dictionary<string, object>
             {
@@ -69,8 +69,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             // var schemaRegistryConfig = new Dictionary<string, object>
             // {
             //    { "schema.registry.url", schemaRegistryUrl },
-            //    { "schema.registry.timeout.ms", 5000 }, // optional
-            //    { "schema.registry.cache.capacity", 10 } // optional
+            //    { "schema.registry.connection.timeout.ms", 5000 }, // optional
+            //    { "schema.registry.max.cached.schemas", 10 } // optional
             // };
             // 
             // using (var schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryConfig))
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     }
                 });
 
-                Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
+                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 int i = 0;
                 string text;

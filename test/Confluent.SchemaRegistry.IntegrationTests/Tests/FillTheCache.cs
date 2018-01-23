@@ -36,8 +36,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var config = new Dictionary<string, object>
             {
                 { "schema.registry.url", server },
-                { "schema.registry.timeout.ms", 3000 },
-                { "schema.registry.cache.capacity", capacity }
+                { "schema.registry.connection.timeout.ms", 3000 },
+                { "schema.registry.max.cached.schemas", capacity }
             };
 
             var sr = new CachedSchemaRegistryClient(config);

@@ -50,9 +50,9 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUris, int timeoutMs)
+        public RestService(string schemaRegistryUrl, int timeoutMs)
         { 
-            this.clients = schemaRegistryUris
+            this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(uri => uri.StartsWith("http", StringComparison.Ordinal) ? uri : "http://" + uri) // need http or https - use http if not present.
                 .Select(uri => new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) })
@@ -82,11 +82,15 @@ namespace Confluent.SchemaRegistry
                 startClientIndex = this.lastClientUsed;
             }
 
-            for (int i = startClientIndex; i < clients.Count + startClientIndex && !gotOkAnswer; ++i)
+            int loopIndex = startClientIndex;
+            int clientIndex = -1; // prevent uninitialized variable compiler error.
+            for (; loopIndex < clients.Count + startClientIndex && !gotOkAnswer; ++loopIndex)
             {
+                clientIndex = loopIndex % clients.Count;
+
                 try
                 {
-                    response = await clients[startClientIndex % clients.Count]
+                    response = await clients[clientIndex]
                             .SendAsync(request).ConfigureAwait(false);
 
                     // In the case of an internal server error, try another server 
@@ -113,10 +117,10 @@ namespace Confluent.SchemaRegistry
                         }
                         catch
                         {
-                            aggregatedErrorMessage += $"[{clients[i].BaseAddress}] {response.StatusCode}";
+                            aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
                         }
 
-                        aggregatedErrorMessage += $"[{clients[i].BaseAddress}] {response.StatusCode} {errorCode} {message}";
+                        aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
                     }
                     else 
                     {
@@ -134,7 +138,7 @@ namespace Confluent.SchemaRegistry
                         firstError = false;
                     }
 
-                    aggregatedErrorMessage += $"[{clients[i].BaseAddress}] HttpRequestException: {e.Message}";
+                    aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
                 }
             }
 
@@ -157,7 +161,7 @@ namespace Confluent.SchemaRegistry
             // if we had success, set last client used so we start with this next time.
             lock (lastClientUsedLock)
             {
-                this.lastClientUsed = (this.lastClientUsed + 1) % clients.Count;
+                this.lastClientUsed = clientIndex;
             }
 
             return response;

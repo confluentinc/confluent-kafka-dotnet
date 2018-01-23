@@ -23,10 +23,14 @@ using System;
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
-    ///     A Schema Registry client that caches request responses.
+    ///     A caching Schema Registry client.
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
+        private const string SchemaRegistryUrlPropertyName = "schema.registry.url";
+        private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
+        private const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
+
         private IRestService restService;
         private readonly int identityMapCapacity;
         private readonly Dictionary<int, string> schemaById = new Dictionary<int, string>();
@@ -36,12 +40,12 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
-        public const int DefaultTimeout = 10000;
+        public const int DefaultTimeout = 30000;
 
         /// <summary>
         ///     The default maximum capacity of the local schema cache.
         /// </summary>
-        public const int DefaultMaxCapacity = 1024;
+        public const int DefaultMaxCapacity = 1000;
 
         /// <summary>
         ///     Initialize a new instance of the SchemaRegistryClient class.
@@ -56,18 +60,28 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentNullException("config properties must be specified.");
             }
 
-            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.url").FirstOrDefault();
+            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryUrlPropertyName).FirstOrDefault();
             if (schemaRegistryUrisMaybe.Value == null)
             {
                 throw new ArgumentException("schema.registry.url configuration property must be specified.");
             }
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
-            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.timeout.ms").FirstOrDefault();
+            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryConnectionTimeoutMsPropertyName).FirstOrDefault();
             var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
 
-            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == "schema.registry.cache.capacity").FirstOrDefault();
+            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
             this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCapacity : (int)identityMapCapacityMaybe.Value;
+
+            foreach (var property in config)
+            {
+                if (property.Key != SchemaRegistryUrlPropertyName && 
+                    property.Key != SchemaRegistryConnectionTimeoutMsPropertyName && 
+                    property.Key != SchemaRegistryMaxCachedSchemasPropertyName)
+                {
+                    throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");
+                }
+            }
 
             this.restService = new RestService(schemaRegistryUris, timeoutMs);
         }
@@ -77,11 +91,10 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         private void CheckIfCacheFull()
         {
-            if (
-                this.schemaById.Count + 
-                this.schemaByVersionBySubject.Sum(x => x.Value.Count) +
-                this.idBySchemaBySubject.Sum(x => x.Value.Count)
-                    >= identityMapCapacity)
+            // TODO: an LRU cache is arguably better, though if the cache fills up this
+            // will usually be unexpected behavior, so failing fast is actually pretty 
+            // good.
+            if (this.schemaById.Count >= identityMapCapacity)
             {
                 throw new OutOfMemoryException("Local schema cache maximum capacity exceeded");
             }
@@ -90,8 +103,6 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaIdAsync"]/*' />
         public async Task<int> GetSchemaIdAsync(string subject, string schema)
         {
-            CheckIfCacheFull();
-
             if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
             {
                 idBySchema = new Dictionary<string, int>();
@@ -104,6 +115,8 @@ namespace Confluent.SchemaRegistry
 
             if (!idBySchema.TryGetValue(schema, out int schemaId))
             {
+                CheckIfCacheFull();
+
                 schemaId = (await restService.CheckSchemaAsync(subject, schema, true)).Id;
                 idBySchema[schema] = schemaId;
                 schemaById[schemaId] = schema;
@@ -114,9 +127,7 @@ namespace Confluent.SchemaRegistry
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterSchemaAsync"]/*' />
         public async Task<int> RegisterSchemaAsync(string subject, string schema)
-        {
-            CheckIfCacheFull();
-            
+        {   
             if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
             {
                 idBySchema = new Dictionary<string, int>();
@@ -129,6 +140,8 @@ namespace Confluent.SchemaRegistry
 
             if (!idBySchema.TryGetValue(schema, out int schemaId))
             {
+                CheckIfCacheFull();
+
                 schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(false);
                 idBySchema[schema] = schemaId;
                 schemaById[schemaId] = schema;
@@ -140,10 +153,10 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
         public async Task<string> GetSchemaAsync(int id)
         {
-            CheckIfCacheFull();
-
             if (!this.schemaById.TryGetValue(id, out string schema))
             {
+                CheckIfCacheFull();
+
                 schema = await restService.GetSchemaAsync(id).ConfigureAwait(false);
                 schemaById[id] = schema;
             }
@@ -154,8 +167,6 @@ namespace Confluent.SchemaRegistry
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
         public async Task<string> GetSchemaAsync(string subject, int version)
         {
-            CheckIfCacheFull();
-
             if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
             {
                 schemaByVersion = new Dictionary<int, string>();
@@ -164,6 +175,8 @@ namespace Confluent.SchemaRegistry
 
             if (!schemaByVersion.TryGetValue(version, out string schemaString))
             {
+                CheckIfCacheFull();
+
                 var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(false);
                 schemaString = schema.SchemaString;
                 schemaByVersion[version] = schemaString;

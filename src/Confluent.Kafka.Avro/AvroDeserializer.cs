@@ -47,7 +47,7 @@ namespace Confluent.Kafka.Serialization
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaIdBigEndian = new Dictionary<int, DatumReader<T>>();
+        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId = new Dictionary<int, DatumReader<T>>();
         private object datumReaderLock = new object();
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException(
+                throw new ArgumentException(
                     $"{nameof(AvroDeserializer<T>)} " +
                     "only accepts type parameters of int, bool, double, string, float, " +
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
@@ -106,6 +106,19 @@ namespace Confluent.Kafka.Serialization
 
         /// <summary>
         ///     Initialize a new instance of AvroDeserializer.
+        ///     
+        ///     When passed as a parameter to the Confluent.Kafka.Consumer constructor,
+        ///     the following configuration properties will be extracted from the consumer's
+        ///     configuration property collection:
+        ///     
+        ///     schema.registry.url (required) - A comma-separated list of URLs for schema registry 
+        ///         instances that can be used to register or lookup schemas.
+        ///                           
+        ///     schema.registry.connection.timeout.ms (default: 30000) - Timeout for requests to 
+        ///         Confluent Schema Registry.
+        ///     
+        ///     schema.registry.max.cached.schemas (default: 1000) - The maximum number of schemas 
+        ///         to cache locally.
         /// </summary>
         /// <remarks>
         ///     An instance of CachedSchemaRegistryClient will be created and managed 
@@ -151,30 +164,34 @@ namespace Confluent.Kafka.Serialization
             using (var stream = new MemoryStream(array))
             using (var reader = new BinaryReader(stream))
             {
-                int magicByte = reader.ReadByte();
+                var magicByte = reader.ReadByte();
                 if (magicByte != Constants.MagicByte)
                 {
                     // may change in the future.
-                    throw new InvalidDataException("magic byte should be 0");
+                    throw new InvalidDataException($"magic byte should be 0, not {magicByte}");
                 }
-                int writerIdBigEndian = reader.ReadInt32();
+                var writerIdBigEndian = reader.ReadInt32();
+                var writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
 
                 DatumReader<T> datumReader = null;
                 // TODO: A r/w lock would be better, but the improvement probably negligible.
                 lock (datumReaderLock)
                 {
-                    datumReaderBySchemaIdBigEndian.TryGetValue(writerIdBigEndian, out datumReader);
+                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
                 }
                 if (datumReader == null)
                 {
-                    int writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
-                    string writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
+
+                    var writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
                     var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
                     datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                     lock (datumReaderLock)
                     {
-                        datumReaderBySchemaIdBigEndian[writerIdBigEndian] = datumReader;
+                        if (!datumReaderBySchemaId.ContainsKey(writerId))
+                        {
+                            datumReaderBySchemaId[writerId] = datumReader;
+                        }
                     }
                 }
 

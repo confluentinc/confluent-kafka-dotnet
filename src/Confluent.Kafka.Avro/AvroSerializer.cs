@@ -48,15 +48,9 @@ namespace Confluent.Kafka.Serialization
 
         private string writerSchemaString { get; set; }
 
-        private const string InitialBufferSizePropertyName = "avro.buffer.bytes";
+        private const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
 
-        private const string AutoRegisterSchemaPropertyName = "avro.auto.register.schema";
-
-        /// <summary>
-        ///     The schema id corresponding to the schema of T in big-endian 
-        ///     (network) byte ordering.
-        /// </summary>
-        private int schemaIdBigEndian;
+        private const string AutoRegisterSchemaPropertyName = "avro.serializer.auto.register.schemas";
 
         /// <summary>
         ///     The SchemaId corresponding to type <see cref="T"/>, or null if 
@@ -147,7 +141,7 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                throw new InvalidOperationException(
+                throw new ArgumentException(
                     $"{nameof(AvroSerializer<T>)} " +
                     "only accepts type parameters of int, bool, double, string, float, " +
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
@@ -160,6 +154,28 @@ namespace Confluent.Kafka.Serialization
 
         /// <summary>
         ///     Initialize a new instance of AvroSerializer.
+        ///     
+        ///     When passed as a parameter to the Confluent.Kafka.Producer constructor,
+        ///     the following configuration properties will be extracted from the producer's
+        ///     configuration property collection:
+        ///     
+        ///     schema.registry.url (required) - A comma-separated list of URLs for schema registry 
+        ///         instances that can be used to register or lookup schemas.
+        ///                           
+        ///     schema.registry.connection.timeout.ms (default: 30000) - Timeout for requests to 
+        ///         Confluent Schema Registry.
+        ///     
+        ///     schema.registry.max.cached.schemas (default: 1000) - The maximum number of schemas 
+        ///         to cache locally.
+        ///     
+        ///     avro.serializer.buffer.bytes (default: 128) - Use a value high enough to avoid resizing 
+        ///         of buffer, but small enough to avoid excessive memory use. Inspect the size of byte 
+        ///         array returned by the Serialize method to estimate an appropriate value. Note: each 
+        ///         call to serialize creates a new buffer.
+        ///     
+        ///     avro.serializer.auto.register.schemas (default: true) - true if the serializer should 
+        ///         attempt to auto-register un-recognized schemas with Confluent Schema Registry, 
+        ///         false if not.
         /// </summary>
         /// <remarks>
         ///     An instance of CachedSchemaRegistryClient will be created and managed 
@@ -169,7 +185,7 @@ namespace Confluent.Kafka.Serialization
         public AvroSerializer() { }
 
         /// <summary>
-        ///     Initiliaze an new instance of the AvroSerializer class.
+        ///     Initiliaze a new instance of the AvroSerializer class.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///	    An instance of an implementation of ISchemaRegistryClient used for
@@ -218,7 +234,6 @@ namespace Confluent.Kafka.Serialization
                     SchemaId = SchemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
                 }
 
-                schemaIdBigEndian = IPAddress.NetworkToHostOrder(SchemaId.Value);
                 topicsRegistered.Add(topic);
             }
 			
@@ -227,7 +242,7 @@ namespace Confluent.Kafka.Serialization
             {
                 stream.WriteByte(Constants.MagicByte);
 
-                writer.Write(schemaIdBigEndian);
+                writer.Write(IPAddress.HostToNetworkOrder(SchemaId.Value));
                 avroWriter.Write(data, new BinaryEncoder(stream));
 
                 // TODO: maybe change the ISerializer interface so that this copy isn't necessary.

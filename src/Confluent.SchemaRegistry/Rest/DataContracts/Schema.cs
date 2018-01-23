@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry
         public int Version { get; set; }
 
         /// <summary>
-        ///     Globally unique identifier of the schema.
+        ///     Unique identifier of the schema.
         /// </summary>
         [DataMember(Name = "id")]
         public int Id { get; set; }
@@ -99,7 +99,7 @@ namespace Confluent.SchemaRegistry
         ///     A string that represents the schema object.
         /// </returns>
         public override string ToString()
-            => $"{{subject={Subject}, version={Version}, id={Id}, schema={SchemaString}}}";
+            => $"{{subject={Subject}, version={Version}, id={Id}}}";
         
         /// <summary>
         ///     Returns a hash code for this Schema.
@@ -133,6 +133,11 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public int CompareTo(Schema other)
         {
+            if (other == null)
+            {
+                throw new ArgumentException("cannot compare object of type Schema with null.");
+            }
+
             int result = string.Compare(Subject, other.Subject, StringComparison.Ordinal);
             if (result == 0)
             {
@@ -165,7 +170,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Determines whether this instance and another specified Schema object have the same value.
+        ///     Determines whether this instance and another specified Schema object are the same.
         /// </summary>
         /// <param name="other">
         ///     The schema to compare to this instance.
