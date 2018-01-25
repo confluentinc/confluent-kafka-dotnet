@@ -145,7 +145,7 @@ namespace Confluent.Kafka
             }
 
             var gch = GCHandle.FromIntPtr(msg._private);
-            var deliveryHandler = (IDeliveryHandler) gch.Target;
+            var deliveryHandler = (IDeliveryHandler)gch.Target;
             gch.Free();
 
             byte[] key = null;
@@ -168,7 +168,7 @@ namespace Confluent.Kafka
             long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType);
 
             deliveryHandler.HandleDeliveryReport(
-                new Message (
+                new Message(
                     // TODO: tracking handle -> topicName in addition to topicName -> handle could
                     //       avoid this marshalling / memory allocation cost.
                     Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)),
@@ -214,7 +214,7 @@ namespace Confluent.Kafka
                 var deliveryCompletionSource = deliveryHandler;
                 var gch = GCHandle.Alloc(deliveryCompletionSource);
                 var ptr = GCHandle.ToIntPtr(gch);
-                
+
                 var err = kafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
@@ -323,7 +323,7 @@ namespace Confluent.Kafka
         ///     Topic configuration parameters are specified via the "default.topic.config" sub-dictionary config parameter.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
-            : this(config, false, false) {}
+            : this(config, false, false) { }
 
 
         /// <summary>
@@ -1016,14 +1016,14 @@ namespace Confluent.Kafka
             var configWithoutKeySerializerProperties = keySerializer?.Configure(config, true) ?? config;
             var configWithoutValueSerializerProperties = valueSerializer?.Configure(config, false) ?? config;
 
-            var configWithoutSerializerProperties = config.Where(item => 
+            var configWithoutSerializerProperties = config.Where(item =>
                 configWithoutKeySerializerProperties.Any(ci => ci.Key == item.Key) &&
                 configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
             );
 
             producer = new Producer(
-                configWithoutSerializerProperties, 
-                manualPoll, 
+                configWithoutSerializerProperties,
+                manualPoll,
                 disableDeliveryReports
             );
 
@@ -1047,7 +1047,7 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
             ISerializer<TValue> valueSerializer
-        ) : this(config, keySerializer, valueSerializer, false, false) {}
+        ) : this(config, keySerializer, valueSerializer, false, false) { }
 
 
         /// <summary>
@@ -1444,3 +1444,4 @@ namespace Confluent.Kafka
         public int AddBrokers(string brokers)
             => producer.AddBrokers(brokers);
     }
+}
