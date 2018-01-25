@@ -187,18 +187,18 @@ namespace Confluent.Kafka.Impl
             var gchValue = default(GCHandle);
             var gchKey = default(GCHandle);
 
-            var matcher = new Regex("\\/([^:]+):(.*)");
+            var matcher = new Regex("/([^:]+):(.*)");
             var full_topic = topic;
-            /*if (matcher.Match(topic) == null)
+            if (matcher.Match(topic) == null)
             {
                 var dest_def_producer = new StringBuilder();
                 var dest_prod_size = UIntPtr.Zero;// dest_def_producer.Length;
                 var default_stream = LibRdKafka.conf_get(handle, "Defaults.stream.producer", dest_def_producer, ref dest_prod_size);
                 if (default_stream == ConfRes.Ok) // Found default stream
                 {
-                    full_topic = string.Format("\\{0}:{1}", dest_def_producer.ToString(), topic);
+                    full_topic = string.Format("/{0}:{1}", dest_def_producer.ToString(), topic);
                 }
-            }*/
+            }
 
             if (val == null)
             {

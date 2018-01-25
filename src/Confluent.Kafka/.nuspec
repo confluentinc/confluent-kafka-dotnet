@@ -1,0 +1,18 @@
+﻿<?xml version="1.0"?>
+<package>
+    <metadata>
+    <id>MapR.Streams.Dotnet</id>
+    <version>0.11.3</version>
+    <title>MapR Streams client for .Net</title>
+    <authors>MapR Inc.</authors>
+    <owners>MapR Inc.</owners>
+    <!--<licenseUrl></licenseUrl>
+    <projectUrl></projectUrl>
+    <iconUrl></iconUrl>-->
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>MapR Streams client for .Net</description>
+    <releaseNotes>Firs release of MapR dotnet client</releaseNotes>
+    <copyright>Copyright 2018</copyright>
+    <tags>MapR Kafka</tags>
+    </metadata>
+</package>

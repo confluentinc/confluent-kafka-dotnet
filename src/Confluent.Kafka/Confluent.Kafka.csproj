@@ -28,9 +28,11 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NET45</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -106,6 +108,7 @@
     <Compile Include="WatermarkOffsets.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".nuspec" />
     <None Include="Confluent.Kafka.snk" />
   </ItemGroup>
   <ItemGroup>
