@@ -63,7 +63,10 @@ namespace Confluent.Kafka
         private LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            OnError?.Invoke(this, new Error(err, reason));
+            if (err != ErrorCode.Local_Resolve) // Broker not resolved error. Pass if with MapR.
+            {
+                OnError?.Invoke(this, new Error(err, reason));
+            }
         }
 
         private LibRdKafka.StatsDelegate statsDelegate;
@@ -1441,4 +1444,3 @@ namespace Confluent.Kafka
         public int AddBrokers(string brokers)
             => producer.AddBrokers(brokers);
     }
-}
