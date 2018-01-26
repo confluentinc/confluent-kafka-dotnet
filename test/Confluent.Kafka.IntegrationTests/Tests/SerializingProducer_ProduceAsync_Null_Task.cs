@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -34,16 +36,15 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var drs = new List<Task<Message<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, 0, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, 0));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, true));
+                drs.Add(producer.ProduceAsync(new Message<Null, Null>(partitionedTopic, 0, Offset.Invalid, null, null, Timestamp.Default, null, null)));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 0, null, null, Timestamp.Default, null));
+                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
@@ -62,8 +63,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             }
 
-            Assert.Equal(0, drs[0].Result.Partition);
-            Assert.Equal(0, drs[1].Result.Partition);
+            Assert.Equal((Partition)0, drs[0].Result.Partition);
+            Assert.Equal((Partition)0, drs[1].Result.Partition);
         }
 
     }

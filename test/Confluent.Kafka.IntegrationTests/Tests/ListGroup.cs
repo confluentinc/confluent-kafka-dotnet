@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Linq;
 using System.Text;
@@ -53,7 +55,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(partitions.Count, 1);
+                    Assert.Single(partitions);
                     Assert.Equal(partitions[0], firstProduced.TopicPartition);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
@@ -70,7 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(ErrorCode.NoError, g.Error.Code);
                 Assert.Equal(groupId, g.Group);
                 Assert.Equal("consumer", g.ProtocolType);
-                Assert.Equal(1, g.Members.Count);
+                Assert.Single(g.Members);
 
                 g = consumer.ListGroup("non-existent-cg");
                 Assert.Null(g);

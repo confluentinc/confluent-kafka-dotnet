@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -46,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
             public void HandleDeliveryReport(Message dr)
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(0, dr.Partition);
+                Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(Topic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
@@ -72,49 +74,53 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var dh = new DeliveryHandler_P(singlePartitionTopic);
 
             using (var producer = new Producer(producerConfig))
             {
-                producer.ProduceAsync(
-                    singlePartitionTopic,
+                producer.Produce(
+                    singlePartitionTopic, 0,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    0, true, dh
+                    Timestamp.Default, null, dh
                 );
 
-                producer.ProduceAsync(
-                    singlePartitionTopic,
+                producer.Produce(
+                    singlePartitionTopic, 0,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    0, dh
+                    Timestamp.Default, null, dh
                 );
 
-                producer.ProduceAsync(
-                    singlePartitionTopic,
+                producer.Produce(
+                    singlePartitionTopic, 0,
                     DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
-                    true, dh
+                    Timestamp.Default, null, dh
                 );
 
-                producer.ProduceAsync(
+                producer.Produce(
                     singlePartitionTopic,
-                    DeliveryHandler_P.TestKey, 0, DeliveryHandler_P.TestKey.Length,
-                    DeliveryHandler_P.TestValue, 0, DeliveryHandler_P.TestValue.Length,
+                    DeliveryHandler_P.TestKey,
+                    DeliveryHandler_P.TestValue,
                     dh
                 );
 
-                producer.ProduceAsync(singlePartitionTopic, DeliveryHandler_P.TestKey, DeliveryHandler_P.TestValue, dh);
+                producer.Produce(
+                    singlePartitionTopic, 
+                    DeliveryHandler_P.TestKey, 
+                    DeliveryHandler_P.TestValue, 
+                    dh
+                );
 
-                producer.ProduceAsync(
-                    singlePartitionTopic,
+                producer.Produce(
+                    singlePartitionTopic, Partition.NotSpecified,
                     DeliveryHandler_P.TestKey, 1, DeliveryHandler_P.TestKey.Length-2,
                     DeliveryHandler_P.TestValue, 2, DeliveryHandler_P.TestValue.Length-3,
-                    dh
+                    Timestamp.Default, null, dh
                 );
 
                 producer.Flush(TimeSpan.FromSeconds(10));

@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -24,8 +26,7 @@ namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
     ///     Test every Producer.ProduceAsync method overload that provides
-    ///     delivery reports via a Task
-    ///     (null key/value case)
+    ///     delivery reports via a Task (null key/value case)
     /// </summary>
     public static partial class Tests
     {
@@ -34,23 +35,22 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, 0, 0, null, 0, 0));
+                drs.Add(producer.ProduceAsync(new Message(partitionedTopic, 1, Offset.Invalid, null, null, Timestamp.Default, null, null)));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 1, null, 0, 0, null, 0, 0, Timestamp.Default, null));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
-                Assert.Throws<ArgumentException>(() => { producer.ProduceAsync(partitionedTopic, null, 8, 100, null, -33, int.MaxValue); });
+                Assert.Throws<ArgumentException>(() => { 
+                    producer.ProduceAsync(partitionedTopic, 0, null, 8, 100, null, -33, int.MaxValue, Timestamp.Default, null); 
+                });
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            for (int i=0; i<5; ++i)
+            for (int i=0; i<3; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -63,8 +63,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal(1, drs[0].Result.Partition);
-            Assert.Equal(1, drs[1].Result.Partition);
+            Assert.Equal((Partition)1, drs[0].Result.Partition);
+            Assert.Equal((Partition)1, drs[1].Result.Partition);
         }
     }
 }

@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -82,8 +84,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(msg);
                 Assert.Null(msg.Key);
                 Assert.NotNull(msg.Value);
-                Assert.Equal(msg.Value[0], 42);
-                Assert.Equal(msg.Value[1], 240);
+                Assert.Equal(42, msg.Value[0]);
+                Assert.Equal(240, msg.Value[1]);
             }
         }
 

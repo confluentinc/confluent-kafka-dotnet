@@ -80,7 +80,7 @@ namespace Confluent.Kafka.Benchmark
 
                         for (int i = 0; i < nMessages; i++)
                         {
-                            producer.ProduceAsync(topic, null, val, deliveryHandler);
+                            producer.Produce(topic, null, val, deliveryHandler);
                         }
 
                         deliveryHandler.AutoEvent.WaitOne();

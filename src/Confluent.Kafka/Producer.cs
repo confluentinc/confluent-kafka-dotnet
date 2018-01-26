@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2018 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,18 +27,55 @@ using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
 using System.Collections.Concurrent;
 
+
 namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka producer (without serialization).
     /// </summary>
-    public class Producer : IDisposable
+    public class Producer : IProducer
     {
+        /// <summary>
+        ///     Name of the configuration property that specifies whether or not to
+        ///     block if the send queue is full when producing messages. If false, a 
+        ///     KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) will be 
+        ///     thrown if an attempt is made to produce a messageand the send queue is 
+        ///     full.
+        ///
+        ///     Warning: if this configuration property is set to true, the
+        ///     dotnet.producer.manual.poll configuration property is set to true, 
+        ///     and Poll is not being called in another thread, this method will 
+        ///     block indefinitely in the event it is called when the send queue
+        ///     is full.
+        /// 
+        ///     default: true
+        /// </summary>
+        public string BlockIfQueueFullPropertyName = "dotnet.producer.block.if.queue.full";
+
+        /// <summary>
+        ///     Name of the configuration property that specifies whether or not 
+        ///     the producer should start a background poll thread to receive 
+        ///     delivery reports and event notifications. Generally, this should be
+        ///     set to true. If set to false, you will need to do this manually
+        ///     using the Poll function.
+        /// 
+        ///     default: true
+        /// </summary>
+        public string EnableBackgroundPollPropertyName = "dotnet.producer.enable.background.poll";
+
+        /// <summary>
+        ///     Name of the configuration property that specifies whether to enable 
+        ///     notification of delivery reports. If set to false and you use a 
+        ///     a ProduceAsync variant, the returned Tasks will never complete and
+        ///     will leak memory. Typically you should set this parameter to true. 
+        ///     Set it to false for "fire and forget" semantics and a small boost in
+        ///     performance.
+        /// </summary>
+        public string EnableDeliveryReportsPropertyName = "dotnet.producer.enable.delivery.reports";
+
         private bool manualPoll;
         private bool disableDeliveryReports;
-
-        internal const int RD_KAFKA_PARTITION_UA = -1;
-        internal const long RD_KAFKA_NO_TIMESTAMP = 0;
+        internal bool blockIfQueueFullPropertyValue = true;
 
         private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
             = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
@@ -156,6 +193,7 @@ namespace Confluent.Kafka
                     key,
                     val,
                     new Timestamp(timestamp, (TimestampType)timestampType),
+                    null,
                     msg.err
                 )
             );
@@ -179,14 +217,21 @@ namespace Confluent.Kafka
             }
         }
 
-        internal void Produce(
+        internal void ProduceImpl(
             string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
-            DateTime? timestamp,
-            Int32 partition, bool blockIfQueueFull,
+            Timestamp timestamp,
+            Partition partition, 
+            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
+            if (timestamp.Type != TimestampType.CreateTime)
+            {
+                throw new ArgumentException("Timestamp type must be CreateTime");
+            }
+
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
@@ -198,9 +243,11 @@ namespace Confluent.Kafka
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
-                    partition,
-                    timestamp == null ? RD_KAFKA_NO_TIMESTAMP : Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
-                    ptr, blockIfQueueFull);
+                    partition.Value,
+                    timestamp.UnixTimestampMs,
+                    headers,
+                    ptr, 
+                    blockIfQueueFull);
                 if (err != ErrorCode.NoError)
                 {
                     gch.Free();
@@ -213,9 +260,11 @@ namespace Confluent.Kafka
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
-                    partition,
-                    timestamp == null ? RD_KAFKA_NO_TIMESTAMP : Timestamp.DateTimeToUnixTimestampMs(timestamp.Value),
-                    IntPtr.Zero, blockIfQueueFull);
+                    partition.Value,
+                    timestamp.UnixTimestampMs,
+                    headers,
+                    IntPtr.Zero, 
+                    blockIfQueueFull);
                 if (err != ErrorCode.NoError)
                 {
                     throw new KafkaException(err);
@@ -223,16 +272,17 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<Message> Produce(
+        private Task<Message> ProduceImpl(
             string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
-            DateTime? timestamp,
-            Int32? partition, bool blockIfQueueFull
-        )
+            Timestamp timestamp,
+            Partition partition, 
+            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            bool blockIfQueueFull)
         {
             var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
+            ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, deliveryCompletionSource);
             return deliveryCompletionSource.Task;
         }
 
@@ -251,17 +301,43 @@ namespace Confluent.Kafka
         ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
         ///     forget" semantics and a small boost in performance.
         /// </param>
+        [Obsolete("Use dotnet.producer.enable.background.poll and dotnet.producer.enable.delivery.reports configuration properties " +
+                  "instead of manualPoll and disableDeliveryReports constructor parameters.")]
         public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
         {
+            // TODO: Make Tasks auto complete when dotnet.producer.enable.delivery.reports is set to false.
+            // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
+            //       that never complete are never created when this is set to true.
+
             LibRdKafka.Initialize(null);
 
             this.manualPoll = manualPoll;
             this.disableDeliveryReports = disableDeliveryReports;
 
-            var configHandle = SafeConfigHandle.Create();
-
             var modifiedConfig = config
-                .Where(prop => prop.Key != "default.topic.config");
+                .Where(
+                    prop => prop.Key != "default.topic.config" && 
+                    prop.Key != BlockIfQueueFullPropertyName &&
+                    prop.Key != EnableBackgroundPollPropertyName &&
+                    prop.Key != EnableDeliveryReportsPropertyName);
+
+            var enableBackgroundPollStr = (string)config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
+            if (enableBackgroundPollStr != null)
+            {
+                this.manualPoll = !bool.Parse(enableBackgroundPollStr);
+            }
+
+            var enableDeliveryReportsStr = (string)config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportsPropertyName).Value;
+            if (enableDeliveryReportsStr != null)
+            {
+                this.disableDeliveryReports = !bool.Parse(enableDeliveryReportsStr);
+            }
+
+            var blockIfQueueFullStr = (string)config.FirstOrDefault(prop => prop.Key == BlockIfQueueFullPropertyName).Value;
+            if (blockIfQueueFullStr != null)
+            {
+                this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullStr);
+            }
 
             // Note: Setting default topic configuration properties via default.topic.config is depreciated 
             // and this functionality will be removed in a future version of the library.
@@ -279,10 +355,9 @@ namespace Confluent.Kafka
                 modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, object>[] { new KeyValuePair<string, object>("produce.offset.report", "true") });
             }
 
-            modifiedConfig.ToList().ForEach((kvp) => {
-                if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
-                configHandle.Set(kvp.Key, kvp.Value.ToString());
-            });
+            var configHandle = SafeConfigHandle.Create();
+
+            modifiedConfig.ToList().ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
@@ -332,20 +407,7 @@ namespace Confluent.Kafka
             : this(config, false, false) {}
 
 
-        /// <summary>
-        ///     Poll for callback events. You will not typically need
-        ///     to call this method. Only call on producer instances 
-        ///     where background polling is not enabled.
-        /// </summary>
-        /// <param name="millisecondsTimeout">
-        ///     The maximum period of time to block (in milliseconds) if no
-        ///     callback events are waiting or -1 to block indefinitely. 
-        ///     You should typically use a relatively short timout period 
-        ///     because this operation cannot be cancelled.
-        /// </param>
-        /// <returns>
-        ///     Returns the number of events served.
-        /// </returns>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
         public int Poll(int millisecondsTimeout)
         {
             if (!manualPoll)
@@ -355,329 +417,175 @@ namespace Confluent.Kafka
             return this.kafkaHandle.Poll((IntPtr)millisecondsTimeout);
         }
 
-        /// <summary>
-        ///     Poll for callback events. You will not typically need
-        ///     to call this method. Only call on producer instances 
-        ///     where background polling is not enabled.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum period of time to block if no callback events
-        ///     are waiting. You should typically use a relatively short 
-        ///     timout period because this operation cannot be cancelled.
-        /// </param>
-        /// <returns>
-        ///     Returns the number of events served.
-        /// </returns>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public int Poll(TimeSpan timeout)
             => Poll(timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Poll for callback events. You will not typically need
-        ///     to call this method. Only call on producer
-        ///     instances where background polling is not enabled.
-        ///     Blocks until there is a callback event ready to be served.
-        /// </summary>
-        /// <returns>
-        ///     Returns the number of events served.
-        /// </returns>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll"]/*' />
         [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public int Poll()
             => Poll(-1);
 
-
-        /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all 
-        ///     brokers down. Note that the client will try to automatically 
-        ///     recover from errors - these errors should be seen as 
-        ///     informational rather than catastrophic
-        /// </summary>
-        /// <remarks>
-        ///     Called on the Producer poll thread.
-        /// </remarks>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError;
 
-        /// <summary>
-        ///     Raised on librdkafka statistics events. JSON formatted
-        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
-        /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        ///
-        ///     Called on the Producer poll thread.
-        /// </remarks>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics;
 
-        /// <summary>
-        ///     Raised when there is information that should be logged.
-        /// </summary>
-        /// <remarks>
-        ///     By default not many log messages are generated.
-        /// 
-        ///     You can specify one or more debug contexts using the 'debug'
-        ///     configuration property and a log level using the 'log_level'
-        ///     configuration property to enable more verbose logging,
-        ///     however you shouldn't typically need to do this.
-        ///
-        ///     Warning: Log handlers are called spontaneously from internal librdkafka 
-        ///     threads and the application must not call any Confluent.Kafka APIs from 
-        ///     within a log handler or perform any prolonged operations.
-        /// </remarks>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog;
 
-        /// <summary>
-        ///     Returns a serializing producer that uses this Producer to 
-        ///     produce messages. The same underlying Producer can be used
-        ///     as the basis of many serializing producers (potentially with
-        ///     different TKey and TValue types). Threadsafe.
-        /// </summary>
-        /// <param name="keySerializer">
-        ///     The key serializer.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The value serializer.
-        /// </param>
-        /// <typeparam name="TKey">
-        ///     The key type.
-        /// </typeparam>
-        /// <typeparam name="TValue">
-        ///     The value type.
-        /// </typeparam>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="GetSerializingProducer"]/*' />
         public ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
             => new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
 
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        public Task<Message> ProduceAsync(Message message)
+            => ProduceImpl(
+                message.Topic, 
+                message.Value, 0, message.Value?.Length ?? 0, 
+                message.Key, 0, message.Key?.Length ?? 0, 
+                message.Timestamp.Type == TimestampType.CreateTime ? message.Timestamp : Timestamp.Default,
+                message.Partition, 
+                message.Headers, 
+                this.blockIfQueueFullPropertyValue);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true);
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue);
 
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        public Task<Message> ProduceAsync(
+            string topic, Partition partition, 
+            byte[] key, byte[] val, 
+            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers
+        )
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        public Task<Message> ProduceAsync(
+            string topic, Partition partition, 
+            byte[] key, int keyOffset, int keyLength, 
+            byte[] val, int valOffset, int valLength, 
+            Timestamp timestamp, 
+            IEnumerable<KeyValuePair<string, byte[]>> headers
+        )
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        public void Produce(Message message, IDeliveryHandler deliveryHandler)
+            => ProduceImpl(
+                message.Topic, 
+                message.Value, 0, message.Value?.Length ?? 0, 
+                message.Key, 0, message.Key?.Length ?? 0, 
+                message.Timestamp.Type == TimestampType.CreateTime ? message.Timestamp : Timestamp.Default,
+                message.Partition, 
+                message.Headers, 
+                this.blockIfQueueFullPropertyValue, 
+                deliveryHandler);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        public void Produce(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        public void Produce(
+            string topic, Partition partition, 
+            byte[] key, byte[] val, 
+            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers, 
+            IDeliveryHandler deliveryHandler
+        )
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        public void Produce(
+            string topic, Partition partition, 
+            byte[] key, int keyOffset, int keyLength, 
+            byte[] val, int valOffset, int valLength, 
+            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers, 
+            IDeliveryHandler deliveryHandler
+        )
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
+
+#region obsolete produce methods
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        /// </summary>
-        /// <param name="topic">
-        ///     The target topic.
-        /// </param>
-        /// <param name="partition">
-        ///     The target partition (if -1, this is determined by the partitioner
-        ///     configured for the topic).
-        /// </param>
-        /// <param name="key">
-        ///     null, or a byte array that contains the message key.
-        /// </param>
-        /// <param name="keyOffset">
-        ///     for non-null values, the offset into the key array of the
-        ///     sub-array to use as the message key.
-        ///     if <paramref name="key" />  is null, keyOffset must be 0.
-        /// </param>
-        /// <param name="keyLength">
-        ///     for non-null keys, the length of the sequence of bytes that
-        ///     constitutes the key.
-        ///     if <paramref name="key" />  is null, keyOffset must be 0.
-        /// </param>
-        /// <param name="val">
-        ///     null, or a byte array that contains the message value.
-        /// </param>
-        /// <param name="valOffset">
-        ///     for non-null values, the offset into the val array of the
-        ///     sub-array to use as the message value.
-        ///     if <paramref name="val" /> is null, valOffset must be 0.
-        /// </param>
-        /// <param name="valLength">
-        ///     for non-null values, the length of the sequence of bytes that
-        ///     constitutes the value.
-        ///     if <paramref name="val" /> is null, valLength must be 0.
-        /// </param>
-        /// <param name="blockIfQueueFull">
-        ///     Whether or not to block if the send queue is full.
-        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
-        ///     will be thrown if an attempt is made to produce a message
-        ///     and the send queue is full.
-        /// 
-        ///     Warning: blockIfQueueFull is set to true, background polling is 
-        ///     disabled and Poll is not being called in another thread, this
-        ///     will block indefinitely.
-        /// </param>
-        /// <returns>
-        ///     A Task which will complete with the corresponding delivery report
-        ///     for this request.
-        /// </returns>
-        /// <remarks>
-        ///     If you require strict ordering of delivery reports to be maintained, 
-        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
-        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
-        ///     Tasks are completed on arbitrary thread pool threads and can 
-        ///     be executed out of order.
-        /// </remarks>
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, this.blockIfQueueFullPropertyValue);
+        
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, blockIfQueueFull);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, blockIfQueueFull);
 
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" />
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true, deliveryHandler);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        /// </summary>
-        /// <remarks>
-        ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
-        ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
-        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
-        ///     callbacks are executed on the Poll thread.
-        ///     
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" /> 
-        ///     for more information.
-        /// </remarks>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete(
+            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
+            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull, deliveryHandler);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, blockIfQueueFull, deliveryHandler);
 
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
-        ///     for more information.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete(
+            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
+            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, blockIfQueueFull, deliveryHandler);
 
-        /// <summary>
-        ///     Gets the name of this producer instance.
-        ///     Contains (but is not equal to) the client.id configuration parameter.
-        /// </summary>
-        /// <remarks>
-        ///     This name will be unique across all producer instances
-        ///     in a given application which allows log messages to be
-        ///     associated with the corresponding instance.
-        /// </remarks>
+#endregion
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
             => kafkaHandle.Name;
 
-        /// <summary>
-        ///     Wait until all outstanding produce requests and delievery report
-        ///     callbacks are completed.
-        /// 
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
-        /// </summary>
-        /// <param name="millisecondsTimeout">
-        ///     The maximum time to block in milliseconds or -1 to block
-        ///     indefinitely. You should typically use a relatively short timout 
-        ///     period because this operation cannot be cancelled.
-        /// </param>
-        /// <returns>
-        ///     The current librdkafka out queue length. This should be interpreted
-        ///     as a rough indication of the number of messages waiting to be sent
-        ///     to or acknowledged by the broker. If zero, there are no outstanding
-        ///     messages or callbacks. Specifically, the value is equal to the sum
-        ///     of the number of produced messages for which a delivery report has
-        ///     not yet been handled and a number which is less than or equal to the
-        ///     number of pending delivery report callback events (as determined by
-        ///     an internal librdkafka implementation detail).
-        /// </returns>
-        /// <remarks>
-        ///     This method should typically be called prior to destroying a producer
-        ///     instance to make sure all queued and in-flight produce requests are
-        ///     completed before terminating. The wait time is bounded by the
-        ///     millisecondsTimeout parameter.
-        ///
-        ///     A related configuration parameter is message.timeout.ms which determines
-        ///     the maximum length of time librdkafka attempts to deliver a message 
-        ///     before giving up and so also affects the maximum time a call to Flush 
-        ///     may block.
-        /// </remarks>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
         public int Flush(int millisecondsTimeout)
             => kafkaHandle.Flush(millisecondsTimeout);
 
-        /// <summary>
-        ///     Wait until all outstanding produce requests and delievery report
-        ///     callbacks are completed. Refer to <see cref="Flush(int)" /> for
-        ///     more information.
-        /// 
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum length of time to block. You should typically use a
-        ///     relatively short timout period because this operation cannot be 
-        ///     cancelled.
-        /// </param>
-        /// <returns>
-        ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
-        ///     for more information.
-        /// </returns>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
         public int Flush(TimeSpan timeout)
             => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Equivalent to <see cref="Flush(int)" /> with infinite timeout.
-        ///
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
-        /// </summary>
-        /// <returns>
-        ///     Refer to <see cref="Flush(int)" />.
-        /// </returns>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush"]/*' />
         [Obsolete("Use an overload of Flush with a finite timeout.", false)]
         public int Flush()
             => kafkaHandle.Flush(-1);
 
-        /// <summary>
-        ///     Releases all resources used by this Producer.
-        /// </summary>
-        /// <remarks>
-        ///     You will often want to call <see cref="Flush()" />
-        ///     before disposing a Producer instance.
-        /// </remarks>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
         {
             foreach (var kv in topicHandles)
@@ -710,772 +618,43 @@ namespace Confluent.Kafka
             kafkaHandle.Dispose();
         }
 
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster (blocking)
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-
-        /// <summary>
-        ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster (blocking).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="group">
-        ///     The group of interest.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     Returns information pertaining to the specified group
-        ///     or null if this group does not exist.
-        /// </returns>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="group">
-        ///     The group of interest.
-        /// </param>
-        /// <returns>
-        ///     Returns information pertaining to the specified group
-        ///     or null if this group does not exist.
-        /// </returns>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
         public GroupInfo ListGroup(string group)
             => kafkaHandle.ListGroup(group, -1);
 
-
-        /// <summary>
-        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocking).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets.
-        /// </returns>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets.
-        /// </returns>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
 
         private Metadata GetMetadata(bool allTopics, string topic, int millisecondsTimeout)
             => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), millisecondsTimeout);
 
-        /// <summary>
-        ///     Query the cluster for metadata (blocking).
-        ///
-        ///     - allTopics = true - request all topics from cluster
-        ///     - allTopics = false, topic = null - request only locally known topics.
-        ///     - allTopics = false, topic = valid - request specific topic
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string_TimeSpan"]/*' />
         public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
             => GetMetadata(allTopics, topic, timeout.TotalMillisecondsAsInt());
 
-        /// <summary>
-        ///     Refer to <see cref="GetMetadata(bool,string,TimeSpan)" />
-        /// 
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string"]/*' />
         public Metadata GetMetadata(bool allTopics, string topic)
             => GetMetadata(allTopics, topic, -1);
 
-        /// <summary>
-        ///     Refer to <see cref="GetMetadata(bool,string,TimeSpan)" />
-        /// 
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata"]/*' />
         public Metadata GetMetadata()
             => GetMetadata(true, null, -1);
 
-        /// <summary>
-        ///     Adds one or more brokers to the Producer's list of initial
-        ///     bootstrap brokers. 
-        ///
-        ///     Note: Additional brokers are discovered automatically as 
-        ///     soon as the Producer connects to any broker by querying the 
-        ///     broker metadata. Calling this method is only required in 
-        ///     some scenarios where the address of all brokers in the 
-        ///     cluster changes.
-        /// </summary>
-        /// <param name="brokers">
-        ///     Coma-separated list of brokers in the same format as 
-        ///     the bootstrap.server configuration parameter.
-        /// </param>
-        /// <remarks>
-        ///     There is currently no API to remove existing configured, 
-        ///     added or learnt brokers.
-        /// </remarks>
-        /// <returns>
-        ///     The number of brokers added. This value includes brokers
-        ///     that may have been specified a second time.
-        /// </returns>
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />  
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
-    }
-
-
-    internal class SerializingProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>
-    {
-        protected readonly Producer producer;
-
-        public ISerializer<TKey> KeySerializer { get; }
-
-        public ISerializer<TValue> ValueSerializer { get; }
-
-        public SerializingProducer(Producer producer, ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
-        {
-            this.producer = producer;
-            KeySerializer = keySerializer;
-            ValueSerializer = valueSerializer;
-
-            if (keySerializer != null && keySerializer == valueSerializer)
-            {
-                throw new ArgumentException("Key and value serializers must not be the same object.");
-            }
-
-            if (KeySerializer == null)
-            {
-                if (typeof(TKey) != typeof(Null))
-                {
-                    throw new ArgumentNullException("Key serializer must be specified.");
-                }
-            }
-
-            if (ValueSerializer == null)
-            {
-                if (typeof(TValue) != typeof(Null))
-                {
-                    throw new ArgumentNullException("Value serializer must be specified.");
-                }
-            }
-        }
-
-        private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<Message<TKey, TValue>>, IDeliveryHandler
-        {
-            public TypedTaskDeliveryHandlerShim(TKey key, TValue val)
-#if !NET45
-                : base(TaskCreationOptions.RunContinuationsAsynchronously)
-#endif
-            {
-                Key = key;
-                Value = val;
-            }
-
-            public TKey Key;
-
-            public TValue Value;
-
-            public bool MarshalData { get { return false; } }
-
-            public void HandleDeliveryReport(Message message)
-            {
-                var mi = new Message<TKey, TValue>(
-                    message.Topic,
-                    message.Partition,
-                    message.Offset,
-                    Key,
-                    Value,
-                    message.Timestamp,
-                    message.Error
-                );
-
-#if NET45
-                System.Threading.Tasks.Task.Run(() => SetResult(mi));
-#else
-                SetResult(mi);
-#endif
-            }
-        }
-
-        private Task<Message<TKey, TValue>> Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull)
-        {
-            var handler = new TypedTaskDeliveryHandlerShim(key, val);
-            var keyBytes = KeySerializer?.Serialize(topic, key);
-            var valBytes = ValueSerializer?.Serialize(topic, val);
-            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
-            return handler.Task;
-        }
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
-            => Produce(topic, key, val, null, partition, blockIfQueueFull);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
-            => Produce(topic, key, val, null, partition, true);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull);
-
-
-        private class TypedDeliveryHandlerShim : IDeliveryHandler
-        {
-            public TypedDeliveryHandlerShim(TKey key, TValue val, IDeliveryHandler<TKey, TValue> handler)
-            {
-                Key = key;
-                Value = val;
-                Handler = handler;
-            }
-
-            public TKey Key;
-
-            public TValue Value;
-
-            public bool MarshalData { get { return false; } }
-
-            public IDeliveryHandler<TKey, TValue> Handler;
-
-            public void HandleDeliveryReport(Message message)
-            {
-                Handler.HandleDeliveryReport(new Message<TKey, TValue>(
-                    message.Topic,
-                    message.Partition,
-                    message.Offset,
-                    Key,
-                    Value,
-                    message.Timestamp,
-                    message.Error
-                ));
-            }
-        }
-
-        private void Produce(string topic, TKey key, TValue val, DateTime? timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-        {
-            var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
-            var keyBytes = KeySerializer?.Serialize(topic, key);
-            var valBytes = ValueSerializer?.Serialize(topic, val);
-            producer.Produce(topic, valBytes, 0, valBytes == null ? 0 : valBytes.Length, keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, timestamp, partition, blockIfQueueFull, handler);
-        }
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, partition, blockIfQueueFull, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, partition, true, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => Produce(topic, key, val, null, Producer.RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-
-        public string Name
-            => producer.Name;
-    }
-
-
-    /// <summary>
-    ///     Implements a high-level Apache Kafka producer with key
-    ///     and value serialization.
-    /// </summary>
-    public class Producer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable
-    {
-        private readonly Producer producer;
-        private readonly ISerializingProducer<TKey, TValue> serializingProducer;
-
-        /// <summary>
-        ///     Creates a new Producer instance.
-        /// </summary>
-        /// <param name="config">
-        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        /// </param>
-        /// <param name="keySerializer">
-        ///     An ISerializer implementation instance that will be used to serialize keys.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     An ISerializer implementation instance that will be used to serialize values.
-        /// </param>
-        /// <param name="manualPoll">
-        ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
-        ///     you must call the Poll method periodically instead. Typically you should set this parameter to false.
-        /// </param>
-        /// <param name="disableDeliveryReports">
-        ///     If true, disables delivery report notification. Note: if set to true and you use a ProduceAsync variant that returns
-        ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
-        ///     forget" semantics and a small boost in performance.
-        /// </param>
-        private Producer(
-            IEnumerable<KeyValuePair<string, object>> config,
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer,
-            bool manualPoll, bool disableDeliveryReports)
-        {
-            var configWithoutKeySerializerProperties = keySerializer?.Configure(config, true) ?? config;
-            var configWithoutValueSerializerProperties = valueSerializer?.Configure(config, false) ?? config;
-
-            var configWithoutSerializerProperties = config.Where(item => 
-                configWithoutKeySerializerProperties.Any(ci => ci.Key == item.Key) &&
-                configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
-            );
-
-            producer = new Producer(
-                configWithoutSerializerProperties, 
-                manualPoll, 
-                disableDeliveryReports
-            );
-
-            serializingProducer = producer.GetSerializingProducer(keySerializer, valueSerializer);
-        }
-
-        /// <summary>
-        ///     Initializes a new Producer instance.
-        /// </summary>
-        /// <param name="config">
-        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        /// </param>
-        /// <param name="keySerializer">
-        ///     An ISerializer implementation instance that will be used to serialize keys.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     An ISerializer implementation instance that will be used to serialize values.
-        /// </param>
-        public Producer(
-            IEnumerable<KeyValuePair<string, object>> config,
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer
-        ) : this(config, keySerializer, valueSerializer, false, false) {}
-
-
-        /// <summary>
-        ///     Gets the ISerializer implementation instance used to serialize keys.
-        /// </summary>
-        public ISerializer<TKey> KeySerializer
-            => serializingProducer.KeySerializer;
-
-        /// <summary>
-        ///     Gets the ISerializer implementation instance used to serialize values.
-        /// </summary>
-        public ISerializer<TValue> ValueSerializer
-            => serializingProducer.ValueSerializer;
-
-        /// <summary>
-        ///     Gets the name of this producer instance.
-        ///     Contains (but is not equal to) the client.id configuration parameter.
-        /// </summary>
-        /// <remarks>
-        ///     This name will be unique across all producer instances
-        ///     in a given application which allows log messages to be
-        ///     associated with the corresponding instance.
-        /// </remarks>
-        public string Name
-            => serializingProducer.Name;
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        ///     
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => serializingProducer.ProduceAsync(topic, key, val);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        /// </summary>
-        /// <param name="topic">
-        ///     The target topic.
-        /// </param>
-        /// <param name="partition">
-        ///     The target partition (if -1, this is determined by the partitioner
-        ///     configured for the topic).
-        /// </param>
-        /// <param name="key">
-        ///     the message key (possibly null if allowed by the key serializer).
-        /// </param>
-        /// <param name="val">
-        ///     the message value (possibly null if allowed by the value serializer).
-        /// </param>
-        /// <param name="blockIfQueueFull">
-        ///     Whether or not to block if the send queue is full.
-        ///     If false, a KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) 
-        ///     will be thrown if an attempt is made to produce a message
-        ///     and the send queue is full.
-        ///      
-        ///     Warning: blockIfQueueFull is set to true, background polling is 
-        ///     disabled and Poll is not being called in another thread, 
-        ///     this will block indefinitely.
-        /// </param>
-        /// <returns>
-        ///     A Task which will complete with the corresponding delivery report
-        ///     for this request.
-        /// </returns>
-        /// <remarks>
-        ///     If you require strict ordering of delivery reports to be maintained, 
-        ///     you should use a variant of ProduceAsync that takes an IDeliveryHandler
-        ///     parameter, not a variant that returns a Task&lt;Message&gt; because 
-        ///     Tasks are completed on arbitrary thread pool threads and can 
-        ///     be executed out of order.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
-            => serializingProducer.ProduceAsync(topic, key, val, partition);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker.
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" /> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        /// </remarks>
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull);
-
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        ///     
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        /// </summary>
-        /// <remarks>
-        ///     Notification of delivery reports is via an IDeliveryHandler instance. Use IDeliveryHandler variants of 
-        ///     ProduceAsync if you require notification of delivery reports strictly in the order they were 
-        ///     acknowledged by the broker / failed (failure may be via broker or local). IDeliveryHandler.HandleDeliveryReport
-        ///     callbacks are executed on the Poll thread.
-        ///     
-        ///     Refer to <see cref="ProduceAsync(string, TKey, TValue, int, bool)" />
-        ///     for more information.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     Blocks if the send queue is full. Warning: if background polling is disabled and Poll is
-        ///     not being called in another thread, this will block indefinitely.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, deliveryHandler);
-
-        /// <summary>
-        ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
-        ///     See <see cref="ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/> for more information.
-        /// </summary>
-        /// <remarks>
-        ///     The partition the message is produced to is determined using the configured partitioner.
-        /// </remarks>
-        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull, deliveryHandler);
-
-
-        /// <summary>
-        ///     Raised when there is information that should be logged.
-        /// </summary>
-        /// <remarks>
-        ///     Note: By default not many log messages are generated.
-        /// 
-        ///     You can specify one or more debug contexts using the 'debug'
-        ///     configuration property and a log level using the 'log_level'
-        ///     configuration property to enable more verbose logging,
-        ///     however you shouldn't typically need to do this.
-        ///
-        ///     Warning: Log handlers are called spontaneously from internal librdkafka 
-        ///     threads and the application must not call any Confluent.Kafka APIs from 
-        ///     within a log handler or perform any prolonged operations.
-        /// </remarks>
-        public event EventHandler<LogMessage> OnLog
-        {
-            add { producer.OnLog += value; }
-            remove { producer.OnLog -= value; }
-        }
-
-        /// <summary>
-        ///     Raised on librdkafka statistics events. JSON formatted
-        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
-        /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        ///
-        ///     Called on the Producer poll thread.
-        /// </remarks>
-        public event EventHandler<string> OnStatistics
-        {
-            add { producer.OnStatistics += value; }
-            remove { producer.OnStatistics -= value; }
-        }
-
-        /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all 
-        ///     brokers down. Note that the client will try to automatically 
-        ///     recover from errors - these errors should be seen as 
-        ///     informational rather than catastrophic
-        /// </summary>
-        /// <remarks>
-        ///     Called on the Producer poll thread.
-        /// </remarks>
-        public event EventHandler<Error> OnError
-        {
-            add { producer.OnError += value; }
-            remove { producer.OnError -= value; }
-        }
-
-
-        /// <summary>
-        ///     Wait until all outstanding produce requests and delievery report
-        ///     callbacks are completed.
-        /// 
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
-        /// </summary>
-        /// <param name="millisecondsTimeout">
-        ///     The maximum time to block in milliseconds, or -1 to block
-        ///     indefinitely. You should typically use a relatively short timout 
-        ///     period because this operation cannot be cancelled.
-        /// </param>
-        /// <returns>
-        ///     The current librdkafka out queue length. This should be interpreted
-        ///     as a rough indication of the number of messages waiting to be sent
-        ///     to or acknowledged by the broker. If zero, there are no outstanding
-        ///     messages or callbacks. Specifically, the value is equal to the sum
-        ///     of the number of produced messages for which a delivery report has
-        ///     not yet been handled and a number which is less than or equal to the
-        ///     number of pending delivery report callback events (as determined by
-        ///     an internal librdkafka implementation detail).
-        /// </returns>
-        /// <remarks>
-        ///     This method should typically be called prior to destroying a producer
-        ///     instance to make sure all queued and in-flight produce requests are
-        ///     completed before terminating. The wait time is bounded by the
-        ///     millisecondsTimeout parameter.
-        ///
-        ///     A related topic configuration parameter is message.timeout.ms which 
-        ///     determines the maximum length of time librdkafka attempts to deliver
-        ///     a message before giving up and so also affects the maximum time a call
-        ///     to Flush may block.
-        /// </remarks>
-        public int Flush(int millisecondsTimeout)
-            => producer.Flush(millisecondsTimeout);
-
-        /// <summary>
-        ///     Wait until all outstanding produce requests and delievery report
-        ///     callbacks are completed. Refer to <see cref="Flush(int)" /> for
-        ///     more information.
-        /// 
-        ///     [UNSTABLE-API] - the semantics and/or type of the return value is
-        ///     subject to change.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum length of time to block. You should typically use a
-        ///     relatively short timout period because this operation cannot be 
-        ///     cancelled.
-        /// </param>
-        /// <returns>
-        ///     The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
-        ///     for more information.
-        /// </returns>
-        public int Flush(TimeSpan timeout)
-            => producer.Flush(timeout.TotalMillisecondsAsInt());
-
-
-        /// <summary>
-        ///     Releases all resources used by this Producer.
-        /// </summary>
-        /// <remarks>
-        ///     You will often want to call <see cref="Flush(int)" />
-        ///     before disposing a Producer instance.
-        /// </remarks>
-        public void Dispose()
-        {
-            if (KeySerializer != null)
-            {
-                KeySerializer.Dispose();
-            }
-
-            if (ValueSerializer != null)
-            {
-                ValueSerializer.Dispose();
-            }
-
-            producer.Dispose();
-        }
-
-
-        /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster (blocking)
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        public List<GroupInfo> ListGroups(TimeSpan timeout)
-            => producer.ListGroups(timeout);
-
-
-        /// <summary>
-        ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster (blocks)
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="group">
-        ///     The group of interest.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     Returns information pertaining to the specified group
-        ///     or null if this group does not exist.
-        /// </returns>
-        public GroupInfo ListGroup(string group, TimeSpan timeout)
-            => producer.ListGroup(group, timeout);
-
-        /// <summary>
-        ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster (blocks, potentially indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="group">
-        ///     The group of interest.
-        /// </param>
-        /// <returns>
-        ///     Returns information pertaining to the specified group
-        ///     or null if this group does not exist.
-        /// </returns>
-        public GroupInfo ListGroup(string group)
-            => producer.ListGroup(group);
-
-
-        /// <summary>
-        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocking).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets.
-        /// </returns>
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
-            => producer.QueryWatermarkOffsets(topicPartition, timeout);
-
-        /// <summary>
-        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocks, potentialy indefinitely).
-        ///
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets.
-        /// </returns>
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
-            => producer.QueryWatermarkOffsets(topicPartition);
-
-
-        /// <summary>
-        ///     Refer to Producer.GetMetadata(bool, string, TimeSpan) for more information.
-        ///     
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
-            => producer.GetMetadata(allTopics, topic, timeout);
-
-        /// <summary>
-        ///     Refer to Producer.GetMetadata(bool, string) for more information
-        ///     
-        ///     [UNSTABLE-API] - The API associated with this functionality is subject to change.
-        /// </summary>
-        public Metadata GetMetadata(bool allTopics, string topic)
-            => producer.GetMetadata(allTopics, topic);
-
-        /// <summary>
-        ///     Adds one or more brokers to the Producer's list of initial
-        ///     bootstrap brokers. 
-        ///
-        ///     Note: Additional brokers are discovered automatically as 
-        ///     soon as the Producer connects to any broker by querying the 
-        ///     broker metadata. Calling this method is only required in 
-        ///     some scenarios where the address of all brokers in the 
-        ///     cluster changes.
-        /// </summary>
-        /// <param name="brokers">
-        ///     Coma-separated list of brokers in the same format as 
-        ///     the bootstrap.server configuration parameter.
-        /// </param>
-        /// <remarks>
-        ///     There is currently no API to remove existing configured, 
-        ///     added or learnt brokers.
-        /// </remarks>
-        /// <returns>
-        ///     The number of brokers added. This value includes brokers
-        ///     that may have been specified a second time.
-        /// </returns>
-        public int AddBrokers(string brokers)
-            => producer.AddBrokers(brokers);
     }
 }

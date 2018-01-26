@@ -115,9 +115,10 @@ namespace Confluent.Kafka.VerifiableClient
         public VerifiableClientConfig()
         {
             this.Conf = new Dictionary<string, object>
-                { { "log.thread.name", true },
-                  { "api.version.request", true },
-                  { "default.topic.config", new Dictionary<string, object>() } };
+            { 
+                { "log.thread.name", true },
+                { "default.topic.config", new Dictionary<string, object>() } 
+            };
         }
     }
 
@@ -221,7 +222,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             try
             {
-                Handle.ProduceAsync(topic, null, value, deliveryHandler);
+                Handle.Produce(topic, null, value, deliveryHandler);
             }
             catch (KafkaException e)
             {

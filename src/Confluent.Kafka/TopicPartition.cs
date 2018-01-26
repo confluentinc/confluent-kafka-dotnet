@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         /// <param name="partition">
         ///     A Kafka partition.
         /// </param>
-        public TopicPartition(string topic, int partition)
+        public TopicPartition(string topic, Partition partition)
         {
             Topic = topic;
             Partition = partition;
@@ -46,7 +46,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Kafka partition.
         /// </summary>
-        public int Partition { get; }
+        public Partition Partition { get; }
 
         /// <summary>
         ///     Tests whether this TopicPartition instance is equal to the specified object.

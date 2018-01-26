@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -29,27 +31,22 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public static partial class Tests
     {
-        public static async Task SerializingProducer_ProduceAsync_Await_Task(Dictionary<string, object> config, string topic)
-        {
-            using (var producer = new Producer<Null, string>(config, null, new StringSerializer(Encoding.UTF8)))
-            {
-                var dr = await producer.ProduceAsync(topic, null, "test string");
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
-        }
-
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SerializingProducer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+            Func<Task> mthd = async () => 
+            {
+                 using (var producer = new Producer<Null, string>(
+                     new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
+                     null, new StringSerializer(Encoding.UTF8)))
+                {
+                    var dr = await producer.ProduceAsync(singlePartitionTopic, null, "test string");
+                    Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                    producer.Flush(TimeSpan.FromSeconds(10));
+                }
             };
 
-            var task = SerializingProducer_ProduceAsync_Await_Task(producerConfig, singlePartitionTopic);
-            task.Wait();
+            mthd().Wait();
         }
     }
 }

@@ -31,8 +31,8 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(123456789, ts1.UnixTimestampMs);
             Assert.Equal(-123456789, ts2.UnixTimestampMs);
 
-            Assert.Equal(ts1.Type, TimestampType.CreateTime);
-            Assert.Equal(ts2.Type, TimestampType.LogAppendTime);
+            Assert.Equal(TimestampType.CreateTime, ts1.Type);
+            Assert.Equal(TimestampType.LogAppendTime, ts2.Type);
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.UnitTests
             var ts2 = Timestamp.UnixTimestampMsToDateTime(unixTime);
             Assert.Equal(1336305843220, unixTime);
             Assert.Equal(ts, ts2);
-            Assert.Equal(ts2.Kind, DateTimeKind.Utc);
+            Assert.Equal(DateTimeKind.Utc, ts2.Kind);
         }
 
         [Fact]

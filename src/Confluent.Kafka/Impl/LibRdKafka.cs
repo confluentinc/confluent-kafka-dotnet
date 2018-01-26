@@ -106,7 +106,12 @@ namespace Confluent.Kafka.Impl
             _topic_partition_list_new = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_new").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_partition_list_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _topic_partition_list_add = (Func<IntPtr, string, int, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_add").Single().CreateDelegate(typeof(Func<IntPtr, string, int, IntPtr>));
+            _headers_new = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_headers_new").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _headers_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_headers_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
+            _header_add = (Func<IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_header_add").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, ErrorCode>));
+            _header_get_all = (headerGetAllDelegate)methods.Where(m => m.Name == "rd_kafka_header_get_all").Single().CreateDelegate(typeof(headerGetAllDelegate));
             _message_timestamp = (messageTimestampDelegate)methods.Where(m => m.Name == "rd_kafka_message_timestamp").Single().CreateDelegate(typeof(messageTimestampDelegate));
+            _message_headers = (messageHeadersDelegate)methods.Where(m => m.Name == "rd_kafka_message_headers").Single().CreateDelegate(typeof(messageHeadersDelegate));
             _message_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_message_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _conf_new = (Func<SafeConfigHandle>)methods.Where(m => m.Name == "rd_kafka_conf_new").Single().CreateDelegate(typeof(Func<SafeConfigHandle>));
             _conf_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_conf_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
@@ -411,12 +416,48 @@ namespace Confluent.Kafka.Impl
                 string topic, int partition)
             => _topic_partition_list_add(rktparlist, topic, partition);
 
+        private static Func<IntPtr, IntPtr> _headers_new;
+        internal static IntPtr headers_new(IntPtr size)
+            => _headers_new(size);
+
+        private static Action<IntPtr> _headers_destroy;
+        internal static void headers_destroy(IntPtr hdrs)
+            => _headers_destroy(hdrs);
+
+        private static Func<IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, ErrorCode> _header_add;
+        internal static ErrorCode headers_add(
+                IntPtr hdrs,
+                IntPtr keydata,
+                UIntPtr keylen, // TODO: what is ssize_t? 
+                IntPtr valdata,
+                UIntPtr vallen)
+            => _header_add(hdrs, keydata, keylen, valdata, vallen);
+
+        internal delegate ErrorCode headerGetAllDelegate(
+            IntPtr hdrs, 
+            IntPtr idx,
+            out IntPtr namep,
+            out IntPtr valuep,
+            out IntPtr sizep);
+        private static headerGetAllDelegate _header_get_all;
+        internal static ErrorCode header_get_all(
+            /* const rd_kafka_headers_t * */ IntPtr hdrs,
+            /* const size_t */ IntPtr idx,
+            /* const char ** */ out IntPtr namep,
+            /* const void ** */ out IntPtr valuep,
+            /* size_t * */ out IntPtr sizep)
+            => _header_get_all(hdrs, idx, out namep, out valuep, out sizep);
+
         private static Func<ErrorCode> _last_error;
         internal static ErrorCode last_error() => _last_error();
 
         internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
         private static messageTimestampDelegate _message_timestamp;
         internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
+
+        internal delegate ErrorCode messageHeadersDelegate(IntPtr rkmessage, out IntPtr hdrsType);
+        private static messageHeadersDelegate _message_headers;
+        internal static ErrorCode message_headers(IntPtr rkmessage, out IntPtr hdrs) => _message_headers(rkmessage, out hdrs);
 
         private static Action<IntPtr> _message_destroy;
         internal static void message_destroy(IntPtr rkmessage) => _message_destroy(rkmessage);
@@ -639,6 +680,8 @@ namespace Confluent.Kafka.Impl
             Opaque,    // (void *) Application opaque
             MsgFlags,  // (int) RD_KAFKA_MSG_F_.. flags
             Timestamp, // (int64_t) Milliseconds since epoch UTC
+            Header,    // (const char *, const void *, ssize_t) Message Header
+            Headers,   // (rd_kafka_headers_t *) Headers list
         }
 
         private delegate ErrorCode Producev(IntPtr rk,
@@ -649,6 +692,7 @@ namespace Confluent.Kafka.Impl
                 ProduceVarTag msgflagsTag, IntPtr msgflags,
                 ProduceVarTag msg_opaqueTag, IntPtr msg_opaque,
                 ProduceVarTag timestampTag, long timestamp,
+                ProduceVarTag headersTag, IntPtr headers,
                 ProduceVarTag endTag);
         private static Producev _producev;
         internal static ErrorCode producev(
@@ -659,6 +703,7 @@ namespace Confluent.Kafka.Impl
                 IntPtr val, UIntPtr len,
                 IntPtr key, UIntPtr keylen,
                 long timestamp,
+                IntPtr headers,
                 IntPtr msg_opaque)
             => _producev(rk,
                     ProduceVarTag.Topic, topic,
@@ -668,6 +713,7 @@ namespace Confluent.Kafka.Impl
                     ProduceVarTag.Opaque, msg_opaque,
                     ProduceVarTag.MsgFlags, msgflags,
                     ProduceVarTag.Timestamp, timestamp,
+                    ProduceVarTag.Headers, headers,
                     ProduceVarTag.End);
 
         private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);

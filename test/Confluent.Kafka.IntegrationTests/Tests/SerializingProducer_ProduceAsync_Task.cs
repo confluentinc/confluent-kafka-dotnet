@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -35,21 +37,19 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var drs = new List<Task<Message<string, string>>>();
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 0", "test val 0", 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 1", "test val 1", 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 2", "test val 2", true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 3", "test val 3"));
+                drs.Add(producer.ProduceAsync(new Message<string, string>(partitionedTopic, 1, Offset.Invalid, "test key 0", "test val 0", Timestamp.Default, null, null)));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 1, "test key 1", "test val 1", Timestamp.Default, null));
+                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 2", "test val 2"));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            for (int i=0; i<4; ++i)
+            for (int i=0; i<3; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -62,8 +62,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal(1, drs[0].Result.Partition);
-            Assert.Equal(1, drs[1].Result.Partition);
+            Assert.Equal((Partition)1, drs[0].Result.Partition);
+            Assert.Equal((Partition)1, drs[1].Result.Partition);
         }
     }
 }

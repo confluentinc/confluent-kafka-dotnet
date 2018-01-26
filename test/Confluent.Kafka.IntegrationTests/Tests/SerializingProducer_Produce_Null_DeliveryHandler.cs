@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -44,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             public void HandleDeliveryReport(Message<Null, Null> dr)
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(0, dr.Partition);
+                Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(Topic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.Null(dr.Key);
@@ -60,22 +62,20 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var dh = new DeliveryHandler_SPN(singlePartitionTopic);
 
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.ProduceAsync(singlePartitionTopic, null, null, 0, true, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, 0, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, true, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, dh);
+                producer.Produce(new Message<Null, Null>(singlePartitionTopic, 0, Offset.Invalid, null, null, Timestamp.Default, null, null), dh);
+                producer.Produce(singlePartitionTopic, 0, null, null, Timestamp.Default, null, dh);
+                producer.Produce(singlePartitionTopic, null, null, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(4, dh.Count);
+            Assert.Equal(3, dh.Count);
         }
     }
 }

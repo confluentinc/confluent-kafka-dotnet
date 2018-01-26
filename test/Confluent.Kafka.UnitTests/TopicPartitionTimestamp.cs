@@ -26,8 +26,8 @@ namespace Confluent.Kafka.Tests
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.Equal(tpt.Topic, "mytopic");
-            Assert.Equal(tpt.Partition, 42);
+            Assert.Equal("mytopic", tpt.Topic);
+            Assert.Equal((Partition)42, tpt.Partition);
             Assert.Equal(tpt.Timestamp, timestamp);
         }
 
@@ -63,9 +63,9 @@ namespace Confluent.Kafka.Tests
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.True(tpt.ToString().Contains(tpt.Topic));
-            Assert.True(tpt.ToString().Contains(tpt.Partition.ToString()));
-            Assert.True(tpt.ToString().Contains(tpt.Timestamp.ToString()));
+            Assert.Contains(tpt.ToString(), tpt.Topic);
+            Assert.Contains(tpt.ToString(), tpt.Partition.ToString());
+            Assert.Contains(tpt.ToString(), tpt.Timestamp.ToString());
         }
 
         [Fact]
@@ -73,10 +73,10 @@ namespace Confluent.Kafka.Tests
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.Equal(tpt.Topic, "mytopic");
-            Assert.Equal(tpt.Partition, 42);
-            Assert.Equal(tpt.TopicPartition, new TopicPartition("mytopic", 42));
-            Assert.Equal(tpt.Timestamp, timestamp);
+            Assert.Equal("mytopic", tpt.Topic);
+            Assert.Equal((Partition)42, tpt.Partition);
+            Assert.Equal(new TopicPartition("mytopic", 42), tpt.TopicPartition);
+            Assert.Equal(timestamp, tpt.Timestamp);
         }
     }
 }

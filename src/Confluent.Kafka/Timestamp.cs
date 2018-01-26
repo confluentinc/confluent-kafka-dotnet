@@ -26,6 +26,17 @@ namespace Confluent.Kafka
     /// </summary>
     public struct Timestamp
     {
+        private const long RD_KAFKA_NO_TIMESTAMP = 0;
+
+        /// <summary>
+        ///     A read-only field that represents .. TODO.
+        /// </summary>
+        /// <returns></returns>
+        public static Timestamp Default
+        {
+            get { return new Timestamp(RD_KAFKA_NO_TIMESTAMP, TimestampType.CreateTime); }
+        }
+
         /// <summary>
         ///     Unix epoch as a UTC DateTime. Unix time is defined as 
         ///     the number of seconds past this UTC time, excluding 
@@ -36,6 +47,7 @@ namespace Confluent.Kafka
 
         private const long UnixTimeEpochMilliseconds 
             = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
+
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -58,7 +70,7 @@ namespace Confluent.Kafka
         ///     if it is not already.
         /// </summary>
         /// <param name="dateTime">
-        ///     The DateTime value to create Timestamp from.
+        ///     The DateTime value to corresponding to the timestamp.
         /// </param>
         /// <param name="type">
         ///     The type of the timestamp.
@@ -68,6 +80,30 @@ namespace Confluent.Kafka
             Type = type;
             UnixTimestampMs = DateTimeToUnixTimestampMs(dateTime);
         }
+
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        ///     Note: <paramref name="dateTime" /> is first converted
+        ///     to UTC if it is not already and TimestampType is set
+        ///     to CreationTime.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The DateTime value corresponding to the timestamp.
+        /// </param>
+        public Timestamp(DateTime dateTime)
+            : this(dateTime, TimestampType.CreateTime) 
+        {}
+
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        ///     Note: TimestampType is set to CreationTime.
+        /// </summary>
+        /// <param name="dateTimeOffset">
+        ///     The DateTimeOffset value corresponding to the timestamp.
+        /// </param>
+        public Timestamp(DateTimeOffset dateTimeOffset)
+            : this(dateTimeOffset.DateTime, TimestampType.CreateTime) 
+        {}
 
         /// <summary>
         ///     Gets the timestamp type.

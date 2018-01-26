@@ -26,8 +26,8 @@ namespace Confluent.Kafka.UnitTests
         public void Constuctor()
         {
             var tp = new TopicPartition("mytopic", 42);
-            Assert.Equal(tp.Topic, "mytopic");
-            Assert.Equal(tp.Partition, 42);
+            Assert.Equal("mytopic", tp.Topic);
+            Assert.Equal((Partition)42, tp.Partition);
         }
 
         [Fact]
@@ -79,8 +79,8 @@ namespace Confluent.Kafka.UnitTests
         public void ToStringTest()
         {
             var tp = new TopicPartition("mytopic", 42);
-            Assert.True(tp.ToString().Contains(tp.Topic));
-            Assert.True(tp.ToString().Contains(tp.Partition.ToString()));
+            Assert.Contains(tp.ToString(), tp.Topic);
+            Assert.Contains(tp.ToString(), tp.Partition.ToString());
         }
     }
 }
