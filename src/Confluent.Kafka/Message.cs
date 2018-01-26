@@ -16,8 +16,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-
 
 namespace Confluent.Kafka
 {
@@ -27,7 +25,61 @@ namespace Confluent.Kafka
     public class Message
     {
         /// <summary>
-        ///     Gets the message value (possibly null).
+        ///     Instantiates a new Message class instance.
+        /// </summary>
+        /// <param name="topic">
+        ///     The Kafka topic name associated with this message.
+        /// </param>
+        /// <param name="partition">
+        ///     The topic partition id associated with this message.
+        /// </param>
+        /// <param name="offset">
+        ///     The offset of this message in the Kafka topic partition.
+        /// </param>
+        /// <param name="key">
+        ///     The message key value (or null).
+        /// </param>
+        /// <param name="val">
+        ///     The message value (or null).
+        /// </param>
+        /// <param name="timestamp">
+        ///     The message timestamp.
+        /// </param>
+        /// <param name="headers">
+        ///     A collection of Kafka message headers (or null).
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> associated with the message.
+        /// </param>
+        public Message(string topic, Partition partition, long offset, byte[] key, byte[] val, Timestamp timestamp, Headers headers, Error error)
+        {
+            Topic = topic;
+            Partition = partition;
+            Offset = offset;
+            Key = key;
+            Value = val;
+            Timestamp = timestamp;
+            Headers = headers;
+            Error = error;
+        }
+        
+        /// <summary>
+        ///     Gets the Kafka topic name associated with this message.
+        /// </summary>
+        public string Topic { get; }
+
+        /// <summary>
+        ///     Gets the topic partition associated with this message.
+        /// </summary>
+        public Partition Partition { get; }
+
+        /// <summary>
+        ///     Gets the offset of this message in the Kafka topic partition.
+        /// </summary>
+        public Offset Offset { get; }
+
+        /// <summary>
+        ///     Gets the message value.
         /// </summary>
         public byte[] Value { get; set; }
 
@@ -44,9 +96,12 @@ namespace Confluent.Kafka
         public Timestamp Timestamp { get; set; }
 
         /// <summary>
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
-        ///     duplicate header keys are allowed.
+        ///     A collection of message headers.
+        /// </summary>
+        public Headers Headers { get; }
+        
+        /// <summary>
+        ///     Gets a rich <see cref="Error"/> associated with the message.
         /// </summary>
         public Headers Headers { get; set; }
     }

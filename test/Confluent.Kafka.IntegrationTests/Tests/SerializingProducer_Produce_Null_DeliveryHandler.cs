@@ -25,41 +25,57 @@ namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
     ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via an Action callback
+    ///     that provides delivery reports via an IDeliveryHandler instance
     ///     (null key/value case)
     /// </summary>
     public static partial class Tests
     {
+        class DeliveryHandler_SPN : IDeliveryHandler<Null, Null>
+        {
+            public DeliveryHandler_SPN(string topic)
+            {
+                Topic = topic;
+            }
+
+            public bool MarshalData { get { return true; } }
+
+            public int Count { get; private set; }
+
+            public string Topic { get; }
+
+            public void HandleDeliveryReport(Message<Null, Null> dr)
+            {
+                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal(Topic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.Null(dr.Key);
+                Assert.Null(dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Count += 1;
+            }
+        }
+
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void SerializingProducer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            int count = 0;
-            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
-            {
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal((Partition)0, dr.Partition);
-                Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Message.Key);
-                Assert.Null(dr.Message.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                count += 1;  
-            };
+            var dh = new DeliveryHandler_SPN(singlePartitionTopic);
 
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
-                producer.Produce(singlePartitionTopic, new Message<Null, Null> {}, dh);
+                producer.Produce(new Message<Null, Null>(singlePartitionTopic, 0, Offset.Invalid, null, null, Timestamp.Default, null, null), dh);
+                producer.Produce(singlePartitionTopic, 0, null, null, Timestamp.Default, null, dh);
+                producer.Produce(singlePartitionTopic, null, null, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(2, count);
+            Assert.Equal(3, dh.Count);
         }
     }
 }

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
+//
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 
 
@@ -24,13 +24,8 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A collection of Kafka message headers.
     /// </summary>
-    /// <remarks>
-    ///     Message headers are supported by v0.11 brokers and above.
-    /// </remarks>
-    public class Headers : IEnumerable<Header>
+    public class Headers : List<KeyValuePair<string, byte[]>>
     {
-        private List<Header> headers = new List<Header>();
-
         /// <summary>
         ///     Append a new header to the collection.
         /// </summary>
@@ -38,33 +33,13 @@ namespace Confluent.Kafka
         ///     The header key.
         /// </param>
         /// <param name="val">
-        ///     The header value (possibly null). Note: A null
-        ///     header value is distinct from an empty header
-        ///     value (array of length 0).
+        ///     The header value.
         /// </param>
         public void Add(string key, byte[] val)
-        {
-            if (key == null) 
-            {
-                throw new ArgumentNullException("Kafka message header key cannot be null.");
-            }
-
-            headers.Add(new Header(key, val));
-        }
+            => Add(new KeyValuePair<string, byte[]>(key, val));
 
         /// <summary>
-        ///     Append a new header to the collection.
-        /// </summary>
-        /// <param name="header">
-        ///     The header to add to the collection.
-        /// </param>
-        public void Add(Header header)
-        {
-            headers.Add(header);
-        }
-
-        /// <summary>
-        ///     Get the value of the latest header with the specified key.
+        ///     Get the value of the latest message with the specified key.
         /// </summary>
         /// <param name="key">
         ///     The key to get the associated value of.
@@ -86,7 +61,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Try to get the value of the latest header with the specified key.
+        ///     Try to get the value of the latest message with the specified key.
         /// </summary>
         /// <param name="key">
         ///     The key to get the associated value of.
@@ -102,11 +77,11 @@ namespace Confluent.Kafka
         /// </returns>
         public bool TryGetLast(string key, out byte[] lastHeader)
         {
-            for (int i=headers.Count-1; i>=0; --i)
+            for (int i=this.Count-1; i>=0; --i)
             {
-                if (headers[i].Key == key)
+                if (this[i].Key == key)
                 {
-                    lastHeader = headers[i].Value;
+                    lastHeader = this[i].Value;
                     return true;
                 }
             }
@@ -114,85 +89,5 @@ namespace Confluent.Kafka
             lastHeader = null;
             return false;
         }
-
-        /// <summary>
-        ///     Removes all headers for the given key.
-        /// </summary>
-        /// <param name="key">
-        ///     The key to remove all headers for
-        /// </param>
-        public void Remove(string key)
-            => headers.RemoveAll(a => a.Key == key);
-
-        internal class HeadersEnumerator : IEnumerator<Header>
-        {
-            private Headers headers;
-
-            private int location = -1;
-
-            public HeadersEnumerator(Headers headers)
-            {
-                this.headers = headers;
-            }
-
-            public object Current 
-                => ((IEnumerator<Header>)this).Current;
-
-            Header IEnumerator<Header>.Current
-                => new Header(headers.headers[location].Key, headers.headers[location].Value);
-
-            public void Dispose() {}
-
-            public bool MoveNext()
-            {
-                location += 1;
-                if (location >= headers.headers.Count)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            public void Reset()
-            {
-                this.location = -1;
-            }
-        }
-
-        /// <summary>
-        ///     Returns an enumerator that iterates through the headers collection.
-        /// </summary>
-        /// <returns>
-        ///     An enumerator object that can be used to iterate through the headers collection.
-        /// </returns>
-        public IEnumerator<Header> GetEnumerator()
-            => new HeadersEnumerator(this);
-
-        /// <summary>
-        ///     Returns an enumerator that iterates through the headers collection.
-        /// </summary>
-        /// <returns>
-        ///     An enumerator object that can be used to iterate through the headers collection.
-        /// </returns>
-        IEnumerator IEnumerable.GetEnumerator()
-            => new HeadersEnumerator(this);
-
-        /// <summary>
-        ///     Gets the header at the specified index
-        /// </summary>
-        /// <param key="index">
-        ///     The zero-based index of the element to get.
-        /// </param>
-        public Header this[int index]
-        {
-            get { return headers[index]; }
-        }
-
-        /// <summary>
-        ///     The number of headers in the collection.
-        /// </summary>
-        public int Count
-            => headers.Count;
     }
 }

@@ -17,9 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using Xunit;
 using System.Threading.Tasks;
 
@@ -27,25 +25,29 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via a Task.
+    ///     Test every Producer.ProduceAsync method overload that provides
+    ///     delivery reports via a Task
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_ProduceAsync_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            var drs = new List<Task<DeliveryReport<string, string>>>();
-            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            var key = new byte[] { 1, 2, 3, 4 };
+            var val = new byte[] { 5, 6, 7, 8 };
+
+            var drs = new List<Task<Message>>();
+            using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(new Message<string, string>(partitionedTopic, 1, Offset.Invalid, "test key 0", "test val 0", Timestamp.Default, null, null)));
-                drs.Add(producer.ProduceAsync(partitionedTopic, 1, "test key 1", "test val 1", Timestamp.Default, null));
-                drs.Add(producer.ProduceAsync(partitionedTopic, "test key 2", "test val 2"));
+                drs.Add(producer.ProduceAsync(new Message(partitionedTopic, 1, Offset.Invalid, key, val, Timestamp.Default, null, null)));
+                drs.Add(producer.ProduceAsync(partitionedTopic, key, val));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 1, key, 0, key.Length, val, 0, val.Length, Timestamp.Default, null));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 0, key, 1, key.Length-1, val, 2, val.Length - 2, Timestamp.Default, null));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -56,14 +58,17 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
-                Assert.Equal($"test key {i}", dr.Message.Key);
-                Assert.Equal($"test val {i}", dr.Message.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal(key, dr.Key);
+                Assert.Equal(val, dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
+            Assert.Equal(new byte[] { 2, 3, 4 }, drs[3].Result.Key);
+            Assert.Equal(new byte[] { 7, 8 }, drs[3].Result.Value);
+
             Assert.Equal((Partition)1, drs[0].Result.Partition);
-            Assert.Equal((Partition)1, drs[1].Result.Partition);
+            Assert.Equal((Partition)1, drs[2].Result.Partition);
         }
     }
 }

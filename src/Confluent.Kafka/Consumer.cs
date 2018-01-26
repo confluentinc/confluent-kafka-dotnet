@@ -29,21 +29,14 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer (without deserialization).
+    /// 
+    ///     [API-SUBJECT-TO-CHANGE] We are considering making this class private in a 
+    ///     future version so as to limit API surface area. Prefer to use the deserializing
+    ///     consumer <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> where possible
+    ///     (use the byte[] deserializer).
     /// </summary>
-    internal class Consumer : IConsumer
+    public class Consumer : IConsumer, IDisposable
     {
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     disable marshaling of headers when consuming messages. Note that 
-        ///     disabling header marshaling will measurably improve maximum throughput 
-        ///     even for the case where messages do not have any headers.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableHeaderMarshalingPropertyName = "dotnet.consumer.enable.header.marshaling";
-
-        private bool enableHeaderMarshaling = true;
-
         private SafeKafkaHandle kafkaHandle;
 
         private LibRdKafka.ErrorDelegate errorDelegate;
@@ -208,7 +201,7 @@ namespace Confluent.Kafka
         public event EventHandler<Error> OnError;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
-        public event EventHandler<ConsumerRecord> OnConsumeError;
+        public event EventHandler<Message> OnConsumeError;
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics;
@@ -216,8 +209,8 @@ namespace Confluent.Kafka
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnRecord"]/*' />
-        public event EventHandler<ConsumerRecord> OnRecord;
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
+        public event EventHandler<Message> OnMessage;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
@@ -262,9 +255,9 @@ namespace Confluent.Kafka
         public void Unassign()
             => kafkaHandle.Assign(null);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
-        public bool Consume(out ConsumerRecord record, int millisecondsTimeout)
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_int"]/*' />
+        public bool Consume(out Message message, int millisecondsTimeout)
         {
             if (kafkaHandle.ConsumerPoll(out record, enableHeaderMarshaling, (IntPtr)millisecondsTimeout))
             {
@@ -284,10 +277,10 @@ namespace Confluent.Kafka
             return false;
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
-        public bool Consume(out ConsumerRecord record, TimeSpan timeout)
-            => Consume(out record, timeout.TotalMillisecondsAsInt());
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_TimeSpan"]/*' />
+        public bool Consume(out Message message, TimeSpan timeout)
+            => Consume(out message, timeout.TotalMillisecondsAsInt());
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public void Poll(TimeSpan timeout)
@@ -309,9 +302,10 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_ConsumerRecord"]/*' />
-        public TopicPartitionOffsetError StoreOffset(ConsumerRecord record)
-            => StoreOffsets(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) })[0];
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll"]/*' />
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
+        public void Poll()
+            => Poll(-1);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
         public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
@@ -321,19 +315,37 @@ namespace Confluent.Kafka
         public CommittedOffsets Commit()
             => kafkaHandle.Commit();
         
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
-        public CommittedOffsets Commit(ConsumerRecord record)
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_Message"]/*' />
+        public CommittedOffsets Commit(Message message)
         {
-            if (record.Error.Code != ErrorCode.NoError)
+            if (message.Error.Code != ErrorCode.NoError)
             {
-                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an errored message");
+                throw new InvalidOperationException("Attempt to commit offset corresponding to an errored message");
             }
-            return Commit(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) });
+            return Commit(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
         public CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.Commit(offsets);
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
+        public Task<CommittedOffsets> CommitAsync()
+            => kafkaHandle.CommitAsync();
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_Message"]/*' />
+        public Task<CommittedOffsets> CommitAsync(Message message)
+        {
+            if (record.Error.Code != ErrorCode.NoError)
+            {
+                throw new InvalidOperationException("Attempt to commit offset corresponding to an errored message");
+            }
+            return Commit(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) });
+        }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
+        public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
+            => kafkaHandle.CommitAsync(offsets);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Seek"]/*' />
         public void Seek(TopicPartitionOffset tpo)
@@ -347,7 +359,7 @@ namespace Confluent.Kafka
         public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Resume(partitions);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
         public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMillisecondsAsInt());
 
@@ -363,14 +375,6 @@ namespace Confluent.Kafka
             kafkaHandle.Dispose();
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
-            => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
-        public int AddBrokers(string brokers)
-            => kafkaHandle.AddBrokers(brokers);
-
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
             => kafkaHandle.Name;
@@ -379,10 +383,44 @@ namespace Confluent.Kafka
         public string MemberId
             => kafkaHandle.MemberId;
 
-        /// <summary>
-        ///     An opaque reference to the underlying librdkafka client instance.
-        /// </summary>
-        public Handle Handle 
-            => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
+        public List<GroupInfo> ListGroups(TimeSpan timeout)
+            => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
+        public GroupInfo ListGroup(string group, TimeSpan timeout)
+            => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
+        public GroupInfo ListGroup(string group)
+            => kafkaHandle.ListGroup(group, -1);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
+            => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
+        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+            => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
+            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
+            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
+        public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
+            => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool"]/*' />
+        public Metadata GetMetadata(bool allTopics)
+            => kafkaHandle.GetMetadata(allTopics, null, -1);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        public int AddBrokers(string brokers)
+            => kafkaHandle.AddBrokers(brokers);
     }
 }

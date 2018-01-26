@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -24,34 +23,12 @@ namespace Confluent.Kafka.UnitTests
     public class HeadersTests
     {
         [Fact]
-        public void Add()
-        {
-            var hdrs = new Headers();
-            hdrs.Add("aaa", new byte[] { 32, 42 } );
-
-            Assert.Single(hdrs);
-            Assert.Equal("aaa", hdrs[0].Key);
-            Assert.Equal(new byte[] {32, 42}, hdrs[0].Value);
-        }
-
-        [Fact]
-        public void AddHeader()
-        {
-            var hdrs = new Headers();
-            hdrs.Add(new Header("bbb", new byte[] { 1, 2, 3 }));
-
-            Assert.Single(hdrs);
-            Assert.Equal("bbb", hdrs[0].Key);
-            Assert.Equal(new byte[] { 1, 2, 3 }, hdrs[0].Value);
-        }
-
-        [Fact]
         public void GetLast()
         {
             var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
-            hdrs.Add(new Header("my-header", new byte[] { 44 }));
-            hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 42 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 44 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header-2", new byte[] { 45 }));
 
             Assert.Single(hdrs.GetLast("my-header"));
             Assert.Equal(44, hdrs.GetLast("my-header")[0]);
@@ -61,7 +38,7 @@ namespace Confluent.Kafka.UnitTests
         public void GetLast_NotExist()
         {
             var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 42 }));
 
             Assert.Throws<KeyNotFoundException>(() => { hdrs.GetLast("my-header-2"); });
         }
@@ -70,20 +47,20 @@ namespace Confluent.Kafka.UnitTests
         public void TryGetLast()
         {
             var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
-            hdrs.Add(new Header("my-header", new byte[] { 44 }));
-            hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 42 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 44 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header-2", new byte[] { 45 }));
 
             Assert.True(hdrs.TryGetLast("my-header", out byte[] val));
             Assert.Single(val);
-            Assert.Equal(44, val[0]);
+            Assert.Equal(42, val[0]);
         }
 
         [Fact]
         public void TryGetLast_NotExist()
         {
             var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 42 }));
 
             Assert.False(hdrs.TryGetLast("my-header-2", out byte[] val));
         }
@@ -91,89 +68,15 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void NullKey()
         {
-            var hdrs = new Headers();
-            Assert.Throws<ArgumentNullException>(() => hdrs.Add(null, new byte[] {}));
+            // TODO: ?? presumably allowed.
         }
 
         [Fact]
         public void NullValue()
         {
             var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", null));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", null));
             Assert.Null(hdrs.GetLast("my-header"));
-        }
-
-        [Fact]
-        public void Remove()
-        {
-            var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
-            hdrs.Add(new Header("my-header", new byte[] { 44 }));
-            hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
-
-            hdrs.Remove("my-header");
-            Assert.Single(hdrs);
-            Assert.Equal("my-header-2", hdrs[0].Key);
-            Assert.Equal(45, hdrs[0].Value[0]);
-        }
-
-        [Fact]
-        public void Indexer()
-        {
-            var h1 = new Header("my-header", new byte[] { 42 });
-            var h2 = new Header("my-header", new byte[] { 44 });
-            var h3 = new Header("my-header-2", new byte[] { 45 });
-
-            var hdrs = new Headers();
-            hdrs.Add(h1);
-            hdrs.Add(h2);
-            hdrs.Add(h3);
-
-            Assert.Equal(h1, hdrs[0]);
-            Assert.Equal(h2, hdrs[1]);
-            Assert.Equal(h3, hdrs[2]);
-        }
-
-        [Fact]
-        public void Count()
-        {
-            var hdrs = new Headers();
-            Assert.Equal(0, hdrs.Count);
-
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
-            hdrs.Add(new Header("my-header", new byte[] { 44 }));
-            hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
-
-            Assert.Equal(3, hdrs.Count);
-        }
-
-        [Fact]
-        public void Enumerator()
-        {
-            var hdrs = new Headers();
-            hdrs.Add(new Header("my-header", new byte[] { 42 }));
-            hdrs.Add(new Header("my-header", new byte[] { 44 }));
-            hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
-
-            int cnt = 0;
-            foreach (var hdr in hdrs)
-            {
-                switch (cnt)
-                {
-                    case 0:
-                        Assert.Equal(new byte[] { 42 }, hdr.Value);
-                        break;
-                    case 1:
-                        Assert.Equal(new byte[] { 44 }, hdr.Value);
-                        break;
-                    case 2:
-                        Assert.Equal(new byte[] { 45 }, hdr.Value);
-                        break;
-                }
-                cnt += 1;
-            }
-
-            Assert.Equal(3, cnt);
         }
     }
 }

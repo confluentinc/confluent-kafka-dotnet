@@ -51,9 +51,9 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnRecord += (_, record) =>
                 {
-                    Assert.Equal(ErrorCode.NoError, record.Error.Code);
-                    Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                    Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                    Assert.Equal(ErrorCode.NoError, msg.Error.Code);
+                    Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
+                    Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                     msgCnt += 1;
                 };
 

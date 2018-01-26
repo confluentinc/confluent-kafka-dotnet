@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
 //
 // Refer to LICENSE for more information.
 
@@ -27,12 +29,14 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Defines a high-level Apache Kafka consumer (without deserialization).
+    /// 
+    ///     [API-SUBJECT-TO-CHANGE] We are considering making this interface private in a 
+    ///     future version so as to limit API surface area. Prefer to use the deserializing
+    ///     consumer <see cref="Confluent.Kafka.IConsumer{TKey,TValue}" /> where possible
+    ///     (use the byte[] deserializer).
     /// </summary>
-    internal interface IConsumer : IClient
+    public interface IConsumer
     {
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="MemberId"]/*' />
-        string MemberId { get; }
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsAssigned"]/*' />
         event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
@@ -43,14 +47,22 @@ namespace Confluent.Kafka
         event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
-        event EventHandler<ConsumerRecord> OnConsumeError;
+        event EventHandler<Message> OnConsumeError;
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
+        event EventHandler<Error> OnError;
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
+        event EventHandler<string> OnStatistics;
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
+        event EventHandler<LogMessage> OnLog;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
-        event EventHandler<ConsumerRecord> OnRecord;
+        event EventHandler<Message> OnMessage;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
         event EventHandler<TopicPartitionOffset> OnPartitionEOF;
-
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assignment"]/*' />
         List<TopicPartition> Assignment { get; }
@@ -82,13 +94,13 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Unassign"]/*' />
         void Unassign();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
-        bool Consume(out ConsumerRecord record, int millisecondsTimeout);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_int"]/*' />
+        bool Consume(out Message message, int millisecondsTimeout);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
-        bool Consume(out ConsumerRecord record, TimeSpan timeout);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_TimeSpan"]/*' />
+        bool Consume(out Message message, TimeSpan timeout);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         void Poll(TimeSpan timeout);
@@ -96,8 +108,9 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
         void Poll(int millisecondsTimeout);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_ConsumerRecord"]/*' />
-        TopicPartitionOffsetError StoreOffset(ConsumerRecord record);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll"]/*' />
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
+        void Poll();
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
         List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
@@ -105,8 +118,8 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
         CommittedOffsets Commit();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
-        CommittedOffsets Commit(ConsumerRecord record);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_Message"]/*' />
+        CommittedOffsets Commit(Message message);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
         CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets);
@@ -120,13 +133,46 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Resume"]/*' />
         List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
         List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Position_IEnumerable"]/*' />
         List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions);
 
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
+        string Name { get; }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="MemberId"]/*' />
+        string MemberId { get; }
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups"]/*' />
+        List<GroupInfo> ListGroups(TimeSpan timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
+        GroupInfo ListGroup(string group, TimeSpan timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
+        GroupInfo ListGroup(string group);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
         IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
+        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
+        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
+        Metadata GetMetadata(bool allTopics, TimeSpan timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool"]/*' />
+        Metadata GetMetadata(bool allTopics);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        int AddBrokers(string brokers);
     }
 }

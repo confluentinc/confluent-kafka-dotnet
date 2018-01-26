@@ -167,44 +167,103 @@
     </summary>
 </Member>
 
+<Member name="ProduceAsync_Obsolete">
+    <summary>
+        This variant of ProduceAsync is obsolete and is superceeded by other 
+        overloads of ProduceAsync or Produce.
+    </summary>
+</Member>
+
 <Member name="ProduceAsync_Common">
     <returns>
         A Task which will complete with the corresponding delivery report
         for this request.
     </returns>
     <remarks>
-        If you require strict ordering of delivery reports to be maintained,
-        you should use the Produce method which provides these via a callback
-        on a single poll thread. The Tasks returned by ProduceAsync are 
-        completed on arbitrary thread pool threads and so they can be executed
-        out of order.
+        If you require strict ordering of delivery reports to be maintained, 
+        you should use a variant of the Produce method whic takes an IDeliveryHandler
+        parameter, not a variant of the ProduceAsync method because 
+        Tasks are completed on arbitrary thread pool threads and can 
+        be executed out of order.
     </remarks>
 </Member>
 
-<Member name="ProduceAsync_string_Message">
+<Member name="ProduceAsync_Message">
+    <summary>
+        Asynchronously send a single message to a Kafka topic. Properties
+        of the message instance are interpreted as follows:
+
+        Topic: The topic to produce the message to.
+
+        Partition:  The partition to produce the message to. If Partition.NotSpecified,
+        a partitioner specified via the 'partitioner' configuration property
+        will be used to determine the partition the message is sent to.
+
+        Key: The message key (possibly null).
+
+        Value: The message value (possibly null).
+
+        Offset: Ignored.
+
+        Error: Ignored.
+
+        Timestamp: If the timestamp type is CreationTime, then this is used as the
+        message timestamp, else this property is ignored and the message timestamp
+        is set to Timestamp.Default (the time of this function call).
+
+        Headers: The collection of message headers (or null).
+    </summary>
+    <param name="message">
+        The message to produce.
+    </param>
+</Member>
+
+<Member name="ProduceAsync_string_TKey_TValue">
     <summary>
         Asynchronously send a single message to a Kafka topic.
         The partition the message is sent to is determined using
         the partitioner defined using the 'partitioner' 
-        configuration property.
+        configuration property. The message timestamp is set to 
+        the time of this function call. 
     </summary>
     <param name="topic">
         The topic to produce the message to.
     </param>
-    <param name="message">
-        The message to produce.
+    <param name="key">
+        the message key (possibly null).
+    </param>
+    <param name="val">
+        the message value (possibly null).
     </param>
 </Member>
 
-<Member name="ProduceAsync_TopicPartition_Message">
+<Member name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable">
     <summary>
         Asynchronously send a single message to a Kafka topic.
     </summary>
-    <param name="topicPartition">
-        The topic/partition to produce the message to.
+    <param name="topic">
+        The topic to produce the message to.
     </param>
-    <param name="message">
-        The message to produce.
+    <param name="partition">
+        The partition to produce the message to. If Partition.NotSpecified,
+        a partitioner specified via the 'partitioner' configuration property
+        will be used to determine the partition the message is sent to.
+    </param>
+    <param name="key">
+        The message key (possibly null).
+    </param>
+    <param name="val">
+        The message value (possibly null).
+    </param>
+    <param name="timestamp">
+        The message timestamp. The timestamp type must be set to CreateTime. 
+        Specify Timestamp.Default to set the message timestamp to the time
+        of this function call.
+    </param>
+    <param name="headers">
+        The collection of message headers (or null). Specifying null or an 
+        empty list are equivalent. The order of headers is maintained, and
+        duplicate header keys are allowed.
     </param>
 </Member>
 
@@ -216,7 +275,7 @@
         The topic to produce the message to.
     </param>
     <param name="partition">
-        The partition to produce the message to. If Partition.Any,
+        The partition to produce the message to. If Partition.NotSpecified,
         a partitioner specified via the 'partitioner' configuration property
         will be used to determine the partition the message is sent to.
     </param>
@@ -258,16 +317,17 @@
     </param>
 </Member>
 
-<Member name="Produce_Action">
+<Member name="Produce_IDeliveryHandler">
     <param name="deliveryHandler">
-        The Action&lt;Message&gt; instance to used to receive delivery report 
+        The IDeliveryHandler instance to used to receive delivery report 
         notifications.
     </param>
     <remarks>
-        Use a Produce method variant rather than ProduceAsync if you require 
+        Use a Produce method variant rather than ProduceAdync if you require 
         notification of delivery reports strictly in the order they were 
         acknowledged by the broker / failed (failure may be via broker or 
-        local). deliveryHandler callbacks are executed on the Poll thread.
+        local). IDeliveryHandler.HandleDeliveryReport callbacks are executed 
+        on the Poll thread.
     </remarks>
 </Member>
 

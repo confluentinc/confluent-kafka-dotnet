@@ -65,7 +65,16 @@ namespace Confluent.Kafka.Serialization
                 throw new KafkaException(new Error(ErrorCode.Local_ValueDeserialization, ex.ToString()), ex);
             }
 
-            return new Message<TKey, TValue> { Key = key, Value = val, Timestamp = message.Timestamp, Headers = message.Headers };
+            return new Message<TKey, TValue> (
+                message.Topic,
+                message.Partition,
+                message.Offset,
+                key,
+                val,
+                message.Timestamp,
+                message.Headers,
+                message.Error
+            );
         }
     }
 }

@@ -80,12 +80,12 @@
     </param>
 </Member>
 
-<Member name="Committed_IEnumerable_TimeSpan">
+<Member name="Committed">
     <summary>
         Retrieve current committed offsets for topics + partitions.
     
         The offset field of each requested partition will be set to the offset
-        of the last consumed message, or Offset.Invalid in case there was
+        of the last consumed message, or RD_KAFKA_OFFSET_INVALID in case there was
         no previous message, or, alternately a partition specific error may also be
         returned.
     
@@ -93,12 +93,12 @@
     </summary>
 </Member>
 
-<Member name="Position_IEnumerable">
+<Member name="Position">
     <summary>
         Retrieve current positions (offsets) for topics + partitions.
     
         The offset field of each requested partition will be set to the offset
-        of the last consumed message + 1, or Offset.Invalid in case there was
+        of the last consumed message + 1, or RD_KAFKA_OFFSET_INVALID in case there was
         no previous message, or, alternately a partition specific error may also be
         returned.
     
@@ -123,17 +123,17 @@
     </remarks>
 </Member>
 
-<Member name="Commit_ConsumerRecord">
+<Member name="Commit_Message">
     <summary>
         Commits an offset based on the topic/partition/offset of a message.
-        The next message to be read will be that following <paramref name="record" />.
+        The next message to be read will be that following <paramref name="message" />.
     </summary>
-    <param name="record">
-        The ConsnumerRecord instance used to determine the committed offset.
+    <param name="message">
+        The message used to determine the committed offset.
     </param>
     <remarks>
         A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
-        Hence, this method commits an offset of <paramref name="record" />.Offset + 1.
+        Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
     </remarks>
 </Member>
 
@@ -143,10 +143,10 @@
     </summary>
 </Member>
 
-<Member name="StoreOffset_ConsumerRecord">
+<Member name="StoreOffset_Message">
     <summary>
         Store offsets for a single partition based on the topic/partition/offset
-        of a consumer record.
+        of a message.
          
         The offset will be committed (written) to the offset store according
         to `auto.commit.interval.ms` or manual offset-less commit().
@@ -154,8 +154,8 @@
     <remarks>
         `enable.auto.offset.store` must be set to "false" when using this API.
     </remarks>
-    <param name="record">
-        A consumer record used to determine the offset to store and topic/partition.
+    <param name="message">
+        A message used to determine the offset to store and topic/partition.
     </param>
     <returns>
         Current stored offset or a partition specific error.
@@ -234,7 +234,7 @@
     </summary>
 </Member>
 
-<Member name="Subscribe_string">
+<Member name="Subscribe">
     <summary>
         Update the subscription set to a single topic.
     
@@ -345,14 +345,14 @@
     </remarks>
 </Member>
 
-<Member name="Consume_ConsumerRecord">
+<Member name="Consume_Message">
     <summary>
         Poll for new messages / consumer events. Blocks until a new 
         message or event is ready to be handled or the timeout period
         has elapsed.
     </summary>
-    <param name="record">
-        A consumed record, or null if no messages are 
+    <param name="message">
+        A consumed message, or null if no messages are 
         available for consumption.
     </param>
     <returns>
@@ -366,7 +366,7 @@
     </remarks>
 </Member>
 
-<Member name="Consume_ConsumerRecord_int">
+<Member name="Consume_Message_int">
     <param name="millisecondsTimeout">
         The maximum time to block (in milliseconds), or -1 to 
         block indefinitely. You should typically use a
@@ -375,7 +375,7 @@
     </param>
 </Member>
 
-<Member name="Consume_ConsumerRecord_TimeSpan">
+<Member name="Consume_Message_TimeSpan">
     <param name="timeout">
         The maximum time to block. You should typically use a
         relatively short timout period because this operation
@@ -433,8 +433,8 @@
         calling the rebalance event if it is configured, committed offsets to 
         broker, and left the consumer group.
      
-        [API-SUBJECT-TO-CHANGE] - The Dispose method should not block. We 
-        plan to separate out consumer close functionality from this method.
+        [API-SUBJECT-TO-CHANGE] - The Dispose method should not block. We will
+        separate out consumer close functionality from this method.
     </summary>
 </Member>
 
@@ -448,29 +448,6 @@
     <summary>
         The IDeserializer implementation instance used to deserialize values.
     </summary>
-</Member>
-
-<Member name="GetWatermarkOffsets_TopicPartition">
-    <summary>
-        Get last known low (oldest/beginning) and high (newest/end)
-        offsets for a topic/partition.
-         
-        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
-        is subject to change.
-    </summary>
-    <remarks>
-        The low offset is updated periodically (if statistics.interval.ms is set)
-        while the high offset is updated on each fetched message set from the broker.
-    
-        If there is no cached offset (either low or high, or both) then
-        Offset.Invalid will be returned for the respective offset.
-    </remarks>
-    <param name="topicPartition">
-        The topic/partition of interest.
-    </param>
-    <returns>
-        The requested WatermarkOffsets.
-    </returns>
 </Member>
 
 </API>

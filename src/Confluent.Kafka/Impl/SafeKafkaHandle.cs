@@ -178,9 +178,17 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        private IntPtr marshalHeaders(IEnumerable<Header> headers)
+        internal ErrorCode Produce(
+            string topic, 
+            byte[] val, int valOffset, int valLength, 
+            byte[] key, int keyOffset, int keyLength, 
+            int partition, 
+            long timestamp, 
+            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            IntPtr opaque, 
+            bool blockIfQueueFull)
         {
-            var headersPtr = IntPtr.Zero;
+            IntPtr headersPtr = IntPtr.Zero;
 
             if (headers != null)
             {
@@ -189,7 +197,6 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new Exception("Failed to create headers list.");
                 }
-
                 foreach (var header in headers)
                 {
                     if (header.Key == null)
@@ -206,7 +213,7 @@ namespace Confluent.Kafka.Impl
                         pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
                         valuePtr = pinnedValue.AddrOfPinnedObject();
                     }
-                    ErrorCode err = LibRdKafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)header.Value.Length);
+                    ErrorCode err = LibRdKafka.headers_add(headersPtr, keyPtr, (UIntPtr)keyBytes.Length, valuePtr, (UIntPtr)header.Value.Length);
                     // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
                     pinnedKey.Free();
                     if (header.Value != null)
@@ -220,19 +227,6 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            return headersPtr;
-        }
-
-        internal ErrorCode Produce(
-            string topic, 
-            byte[] val, int valOffset, int valLength, 
-            byte[] key, int keyOffset, int keyLength, 
-            int partition, 
-            long timestamp, 
-            IEnumerable<Header> headers,
-            IntPtr opaque, 
-            bool blockIfQueueFull)
-        {
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
 
@@ -277,7 +271,7 @@ namespace Confluent.Kafka.Impl
                     pValue, (UIntPtr)valLength,
                     pKey, (UIntPtr)keyLength,
                     timestamp,
-                    headersPtr,
+                    headersPtr, // TODO: make sure that this is indeed owned by the dr.
                     opaque);
 
                 if (errorCode != ErrorCode.NoError)
@@ -500,38 +494,36 @@ namespace Confluent.Kafka.Impl
 
             long timestamp = LibRdKafka.message_timestamp(msgPtr, out IntPtr timestampType);
 
-            Headers headers = null;
-            if (enableHeaderMarshaling)
+            Headers headers = new Headers();
+            LibRdKafka.message_headers(msgPtr, out IntPtr hdrsPtr);
+            if (hdrsPtr != IntPtr.Zero)
             {
-                headers = new Headers();
-                LibRdKafka.message_headers(msgPtr, out IntPtr hdrsPtr);
-                if (hdrsPtr != IntPtr.Zero)
+                for (var i=0; ; ++i)
                 {
-                    for (var i=0; ; ++i)
+                    var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                    if (err != ErrorCode.NoError)
                     {
-                        var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
-                        if (err != ErrorCode.NoError)
-                        {
-                            break;
-                        }
-                        var headerName = Util.Marshal.PtrToStringUTF8(namep);
-                        var headerValue = new byte[(int)sizep];
-                        Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                        headers.Add(new Header(headerName, headerValue));
+                        break;
                     }
+                    var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                    var headerValue = new byte[(int)sizep];
+                    Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                    headers.Add(new KeyValuePair<string, byte[]>(headerName, headerValue));
                 }
             }
 
             LibRdKafka.message_destroy(msgPtr);
 
-            record = new ConsumerRecord
-            {
-                Topic = topic,
-                Partition = msg.partition,
-                Offset = msg.offset,
-                Error = msg.err,
-                Message = new Message { Key = key, Value = val, Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
-            };
+            message = new Message(
+                topic,
+                msg.partition,
+                msg.offset,
+                key,
+                val,
+                new Timestamp(timestamp, (TimestampType)timestampType),
+                headers,
+                msg.err
+            );
 
             return true;
         }

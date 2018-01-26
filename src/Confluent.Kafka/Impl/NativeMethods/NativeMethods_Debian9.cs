@@ -82,19 +82,19 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ErrorCode rd_kafka_header_add(
                 /* rd_kafka_headers_t * */ IntPtr hdrs,
                 /* const char * */ IntPtr name,
-                /* ssize_t */ IntPtr name_size,
+                /* ssize_t */ UIntPtr name_size,
                 /* const void * */ IntPtr value,
-                /* ssize_t */ IntPtr value_size
+                /* ssize_t */ UIntPtr value_size
         );
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_header_get_all(
+        internal static extern void rd_kafka_header_get_all(
             /* const rd_kafka_headers_t * */ IntPtr hdrs,
             /* const size_t */ IntPtr idx,
             /* const char ** */ out IntPtr namep,
             /* const void ** */ out IntPtr valuep,
             /* size_t * */ out IntPtr sizep);
-
+            
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* int64_t */ long rd_kafka_message_timestamp(
                 /* rd_kafka_message_t * */ IntPtr rkmessage,

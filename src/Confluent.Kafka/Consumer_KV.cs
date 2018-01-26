@@ -31,7 +31,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer (with 
     ///     key and value deserialization).
     /// </summary>
-    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
+    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IDisposable
     {
         private readonly Consumer consumer;
 
@@ -113,74 +113,71 @@ namespace Confluent.Kafka
                 => OnConsumeError?.Invoke(this, msg);
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
-        public bool Consume(out ConsumerRecord<TKey, TValue> record, int millisecondsTimeout)
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_int"]/*' />
+        public bool Consume(out Message<TKey, TValue> message, int millisecondsTimeout)
         {
-            ConsumerRecord recordUntyped;
-            if (!consumer.Consume(out recordUntyped, millisecondsTimeout))
+            Message msg;
+            if (!consumer.Consume(out msg, millisecondsTimeout))
             {
-                record = null;
+                message = null;
                 return false;
             }
 
-            Message<TKey, TValue> message = null;
             try
             {
-                message = recordUntyped.Message.Deserialize(recordUntyped.Topic, KeyDeserializer, ValueDeserializer);
+                message = msg.Deserialize(KeyDeserializer, ValueDeserializer);
             }
             catch (KafkaException ex)
             {
-                OnConsumeError?.Invoke(
-                    this, 
-                    new ConsumerRecord
-                    {
-                        Topic = recordUntyped.Topic, 
-                        Partition = recordUntyped.Partition, 
-                        Offset = recordUntyped.Offset, 
-                        Error = ex.Error,
-                        Message = recordUntyped.Message
-                    }
+                var erroredMsg = new Message(
+                    msg.Topic,
+                    msg.Partition,
+                    msg.Offset,
+                    msg.Key,
+                    msg.Value,
+                    msg.Timestamp,
+                    null,
+                    ex.Error
                 );
-
-                record = null;
+                OnConsumeError?.Invoke(this, erroredMsg);
+                message = null;
                 return false;
             }
-
-            record = new ConsumerRecord<TKey, TValue> 
-            { 
-                TopicPartitionOffsetError = recordUntyped.TopicPartitionOffsetError,
-                Message = message 
-            };
 
             return true;
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
-        public bool Consume(out ConsumerRecord<TKey, TValue> record, TimeSpan timeout)
-            => Consume(out record, timeout.TotalMillisecondsAsInt());
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_TimeSpan"]/*' />
+        public bool Consume(out Message<TKey, TValue> message, TimeSpan timeout)
+            => Consume(out message, timeout.TotalMillisecondsAsInt());
 
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
         public void Poll(int millisecondsTimeout)
         {
-            ConsumerRecord<TKey, TValue> record;
-            if (Consume(out record, millisecondsTimeout))
+            Message<TKey, TValue> msg;
+            if (Consume(out msg, millisecondsTimeout))
             {
-                OnRecord?.Invoke(this, record);
+                OnMessage?.Invoke(this, msg);
             }
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public void Poll(TimeSpan timeout)
         {
-            ConsumerRecord<TKey, TValue> record;
-            if (Consume(out record, timeout))
+            Message<TKey, TValue> msg;
+            if (Consume(out msg, timeout))
             {
-                OnRecord?.Invoke(this, record);
+                OnMessage?.Invoke(this, msg);
             }
         }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll"]/*' />
+        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
+        public void Poll()
+            => Poll(-1);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsAssigned"]/*' />
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
@@ -218,7 +215,7 @@ namespace Confluent.Kafka
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
-        public event EventHandler<ConsumerRecord> OnConsumeError;
+        public event EventHandler<Message> OnConsumeError;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError
@@ -235,7 +232,7 @@ namespace Confluent.Kafka
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
-        public event EventHandler<ConsumerRecord<TKey, TValue>> OnRecord;
+        public event EventHandler<Message<TKey, TValue>> OnMessage;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assignment"]/*' />
         public List<TopicPartition> Assignment
@@ -257,14 +254,6 @@ namespace Confluent.Kafka
         public void Unsubscribe()
             => consumer.Unsubscribe();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_TopicPartition"]/*' />
-        public void Assign(TopicPartition partition)
-            => this.Assign(new List<TopicPartition> { partition });
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_TopicPartitionOffset"]/*' />
-        public void Assign(TopicPartitionOffset partition)
-            => this.Assign(new List<TopicPartitionOffset> { partition });
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_IEnumerable_TopicPartitionOffset"]/*' />
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
             => consumer.Assign(partitions);
@@ -277,21 +266,33 @@ namespace Confluent.Kafka
         public void Unassign()
             => consumer.Unassign();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_ConsumerRecord"]/*' />
-        public TopicPartitionOffsetError StoreOffset(ConsumerRecord<TKey, TValue> record)
-            => consumer.StoreOffsets(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) })[0];
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_Message"]/*' />
+        public TopicPartitionOffsetError StoreOffset(Message<TKey, TValue> message)
+            => consumer.StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) })[0];
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
         public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => consumer.StoreOffsets(offsets);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
+        public Task<CommittedOffsets> CommitAsync()
+            => consumer.CommitAsync();
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_Message"]/*' />
+        public Task<CommittedOffsets> CommitAsync(Message<TKey, TValue> message)
+            => consumer.CommitAsync(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
+        public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
+            => consumer.CommitAsync(offsets);
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
         public CommittedOffsets Commit()
             => consumer.Commit();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
-        public CommittedOffsets Commit(ConsumerRecord<TKey, TValue> record)
-            => consumer.Commit(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) });
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_Message"]/*' />
+        public CommittedOffsets Commit(Message<TKey, TValue> message)
+            => consumer.Commit(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
         public CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
@@ -300,8 +301,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
         {
-            // note: consumers always own their own handles.
-            
             if (KeyDeserializer != null)
             {
                 KeyDeserializer.Dispose();
@@ -327,21 +326,13 @@ namespace Confluent.Kafka
         public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
             => consumer.Resume(partitions);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
         public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             => consumer.Committed(partitions, timeout);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Position_IEnumerable"]/*' />
         public List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
             => consumer.Position(partitions);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
-            => consumer.OffsetsForTimes(timestampsToSearch, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
-        public int AddBrokers(string brokers)
-            => consumer.AddBrokers(brokers);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
@@ -351,10 +342,44 @@ namespace Confluent.Kafka
         public string MemberId
             => consumer.MemberId;
 
-        /// <summary>
-        ///     An opaque reference to the underlying librdkafka client instance.
-        /// </summary>
-        public Handle Handle
-            => consumer.Handle;
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
+        public List<GroupInfo> ListGroups(TimeSpan timeout)
+            => consumer.ListGroups(timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
+        public GroupInfo ListGroup(string group, TimeSpan timeout)
+            => consumer.ListGroup(group, timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
+        public GroupInfo ListGroup(string group)
+            => consumer.ListGroup(group);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
+            => consumer.GetWatermarkOffsets(topicPartition);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
+            => consumer.QueryWatermarkOffsets(topicPartition, timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
+        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
+            => consumer.QueryWatermarkOffsets(topicPartition);
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
+        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+            => consumer.OffsetsForTimes(timestampsToSearch, timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
+        public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
+            => consumer.GetMetadata(allTopics, timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool"]/*' />
+        public Metadata GetMetadata(bool allTopics)
+            => consumer.GetMetadata(allTopics);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        public int AddBrokers(string brokers)
+            => consumer.AddBrokers(brokers);
     }
 }

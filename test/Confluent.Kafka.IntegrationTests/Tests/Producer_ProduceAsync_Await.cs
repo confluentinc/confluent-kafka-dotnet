@@ -17,30 +17,26 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Ensures that awaiting ProduceAsync does not deadlock.
+    ///     Ensures that awaiting ProduceAsync does not deadlock in Dispose.
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             Func<Task> mthd = async () => 
             {
-                 using (var producer = new Producer<Null, string>(
-                     new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
-                     null, new StringSerializer(Encoding.UTF8)))
+                using (var producer = new Producer(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
                 {
-                    var dr = await producer.ProduceAsync(singlePartitionTopic, null, "test string");
+                    var dr = await producer.ProduceAsync(singlePartitionTopic, new byte[] {42}, new byte[] {44});
                     Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                     producer.Flush(TimeSpan.FromSeconds(10));
                 }

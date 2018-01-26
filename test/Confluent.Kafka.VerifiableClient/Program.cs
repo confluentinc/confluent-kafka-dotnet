@@ -203,11 +203,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             try
             {
-                Handle.Produce(
-                    topic, 
-                    new Message<Null, string> { Value = value }, 
-                    (DeliveryReport<Null, string> record) => HandleDelivery(record)
-                );
+                Handle.Produce(topic, null, value, deliveryHandler);
             }
             catch (KafkaException e)
             {
