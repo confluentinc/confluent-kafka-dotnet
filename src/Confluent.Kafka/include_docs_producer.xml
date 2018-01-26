@@ -1,0 +1,334 @@
+<API>
+
+<Member name="OnError">
+    <summary>
+        Raised on critical errors, e.g. connection failures or all 
+        brokers down. Note that the client will try to automatically 
+        recover from errors - these errors should be seen as 
+        informational rather than catastrophic
+    </summary>
+    <remarks>
+        Called on the Producer poll thread.
+    </remarks>
+</Member>
+
+<Member name="Poll">
+    <summary>
+        Poll for callback events. You will not typically need
+        to call this method. Only call on producer
+        instances where background polling is not enabled.
+        Blocks until there is a callback event ready to be served.
+    </summary>
+    <returns>
+        Returns the number of events served.
+    </returns>
+</Member>
+
+<Member name="Poll_TimeSpan">
+    <summary>
+        Poll for callback events. You will not typically need
+        to call this method. Only call on producer instances 
+        where background polling is not enabled.
+    </summary>
+    <param name="timeout">
+        The maximum period of time to block if no callback events
+        are waiting. You should typically use a relatively short 
+        timout period because this operation cannot be cancelled.
+    </param>
+    <returns>
+        Returns the number of events served.
+    </returns>
+</Member>
+
+<Member name="Poll_int">
+    <summary>
+        Poll for callback events. You will not typically need
+        to call this method. Only call on producer instances 
+        where background polling is not enabled.
+    </summary>
+    <param name="millisecondsTimeout">
+        The maximum period of time to block (in milliseconds) if no
+        callback events are waiting or -1 to block indefinitely. 
+        You should typically use a relatively short timout period 
+        because this operation cannot be cancelled.
+    </param>
+    <returns>
+        Returns the number of events served.
+    </returns>
+</Member>
+
+<Member name="GetSerializingProducer">
+    <summary>
+        Returns a serializing producer that uses this Producer to 
+        produce messages. The same underlying Producer can be used
+        as the basis of many serializing producers (potentially with
+        different TKey and TValue types). Threadsafe.
+    </summary>
+    <param name="keySerializer">
+        The key serializer.
+    </param>
+    <param name="valueSerializer">
+        The value serializer.
+    </param>
+    <typeparam name="TKey">
+        The key type.
+    </typeparam>
+    <typeparam name="TValue">
+        The value type.
+    </typeparam>
+</Member>
+
+<Member name="Flush_int">
+    <summary>
+        Wait until all outstanding produce requests and delievery report
+        callbacks are completed.
+        
+        [API-SUBJECT-TO-CHANGE] - the semantics and/or type of the return value is
+        subject to change.
+    </summary>
+    <param name="millisecondsTimeout">
+        The maximum time to block in milliseconds or -1 to block
+        indefinitely. You should typically use a relatively short timout 
+        period because this operation cannot be cancelled.
+    </param>
+    <returns>
+        The current librdkafka out queue length. This should be interpreted
+        as a rough indication of the number of messages waiting to be sent
+        to or acknowledged by the broker. If zero, there are no outstanding
+        messages or callbacks. Specifically, the value is equal to the sum
+        of the number of produced messages for which a delivery report has
+        not yet been handled and a number which is less than or equal to the
+        number of pending delivery report callback events (as determined by
+        an internal librdkafka implementation detail).
+    </returns>
+    <remarks>
+        This method should typically be called prior to destroying a producer
+        instance to make sure all queued and in-flight produce requests are
+        completed before terminating. The wait time is bounded by the
+        millisecondsTimeout parameter.
+        
+        A related configuration parameter is message.timeout.ms which determines
+        the maximum length of time librdkafka attempts to deliver a message 
+        before giving up and so also affects the maximum time a call to Flush 
+        may block.
+    </remarks>
+</Member>
+
+<Member name="Flush_TimeSpan">
+    <summary>
+        Wait until all outstanding produce requests and delievery report
+        callbacks are completed. Refer to <see cref="Flush(int)" /> for
+        more information.
+     
+        [API-SUBJECT-TO-CHANGE] - the semantics and/or type of the return value is
+        subject to change.
+    </summary>
+    <param name="timeout">
+        The maximum length of time to block. You should typically use a
+        relatively short timout period because this operation cannot be 
+        cancelled.
+    </param>
+    <returns>
+        The current librdkafka out queue length. Refer to <see cref="Flush(int)" />
+        for more information.
+    </returns>
+</Member>
+
+<Member name="Flush">
+    <summary>
+        Equivalent to <see cref="Flush(int)" /> with infinite timeout.
+        [API-SUBJECT-TO-CHANGE] - this method will be removed in a future
+        version of the library.
+    </summary>
+    <returns>
+        Refer to <see cref="Flush(int)" />.
+    </returns>
+</Member>
+
+<Member name="Dispose">
+    <summary>
+        Releases all resources used by this Producer.
+    </summary>
+    <remarks>
+        You will often want to call <see cref="Flush(int)" />
+        before disposing a Producer instance.
+    </remarks>
+</Member>
+
+<Member name="KeySerializer">
+    <summary>
+        Gets the ISerializer implementation instance used to serialize keys.
+    </summary>
+</Member>
+
+<Member name="ValueSerializer">
+    <summary>
+        Gets the ISerializer implementation instance used to serialize values.
+    </summary>
+</Member>
+
+<Member name="ProduceAsync_Obsolete">
+    <summary>
+        This variant of ProduceAsync is obsolete and is superceeded by other 
+        overloads of ProduceAsync or Produce.
+    </summary>
+</Member>
+
+<Member name="ProduceAsync_Common">
+    <returns>
+        A Task which will complete with the corresponding delivery report
+        for this request.
+    </returns>
+    <remarks>
+        If you require strict ordering of delivery reports to be maintained, 
+        you should use a variant of the Produce method whic takes an IDeliveryHandler
+        parameter, not a variant of the ProduceAsync method because 
+        Tasks are completed on arbitrary thread pool threads and can 
+        be executed out of order.
+    </remarks>
+</Member>
+
+<Member name="ProduceAsync_Message">
+    <summary>
+        Asynchronously send a single message to a Kafka topic. Properties
+        of the message instance are interpreted as follows:
+
+        Topic: The topic to produce the message to.
+
+        Partition:  The partition to produce the message to. If Partition.NotSpecified,
+        a partitioner specified via the 'partitioner' configuration property
+        will be used to determine the partition the message is sent to.
+
+        Key: The message key (possibly null).
+
+        Value: The message value (possibly null).
+
+        Offset: Ignored.
+
+        Error: Ignored.
+
+        Timestamp: If the timestamp type is CreationTime, then this is used as the
+        message timestamp, else this property is ignored and the message timestamp
+        is set to Timestamp.Default (the time of this function call).
+
+        Headers: The collection of message headers (or null).
+    </summary>
+    <param name="message">
+        The message to produce.
+    </param>
+</Member>
+
+<Member name="ProduceAsync_string_TKey_TValue">
+    <summary>
+        Asynchronously send a single message to a Kafka topic.
+        The partition the message is sent to is determined using
+        the partitioner defined using the 'partitioner' 
+        configuration property. The message timestamp is set to 
+        the time of this function call. 
+    </summary>
+    <param name="topic">
+        The topic to produce the message to.
+    </param>
+    <param name="key">
+        the message key (possibly null).
+    </param>
+    <param name="val">
+        the message value (possibly null).
+    </param>
+</Member>
+
+<Member name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable">
+    <summary>
+        Asynchronously send a single message to a Kafka topic.
+    </summary>
+    <param name="topic">
+        The topic to produce the message to.
+    </param>
+    <param name="partition">
+        The partition to produce the message to. If Partition.NotSpecified,
+        a partitioner specified via the 'partitioner' configuration property
+        will be used to determine the partition the message is sent to.
+    </param>
+    <param name="key">
+        The message key (possibly null).
+    </param>
+    <param name="val">
+        The message value (possibly null).
+    </param>
+    <param name="timestamp">
+        The message timestamp. The timestamp type must be set to CreateTime. 
+        Specify Timestamp.Default to set the message timestamp to the time
+        of this function call.
+    </param>
+    <param name="headers">
+        The collection of message headers (or null). Specifying null or an 
+        empty list are equivalent. The order of headers is maintained, and
+        duplicate header keys are allowed.
+    </param>
+</Member>
+
+<Member name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable">
+    <summary>
+        Asynchronously send a single message to a Kafka topic.
+    </summary>
+    <param name="topic">
+        The topic to produce the message to.
+    </param>
+    <param name="partition">
+        The partition to produce the message to. If Partition.NotSpecified,
+        a partitioner specified via the 'partitioner' configuration property
+        will be used to determine the partition the message is sent to.
+    </param>
+    <param name="key">
+        A byte array from which to extract the message key (possibly null).
+    </param>
+    <param name="keyOffset">
+        The start offset of the message key in the <paramref name="key" /> 
+        byte array parameter. If <paramref name="key" /> is set to null, then 
+        keyOffset must be set to 0.
+    </param>
+    <param name="keyLength">
+        The number of bytes to extract from the <paramref name="key" /> parmeter
+        to use as the message key. If <paramref name="key" /> is set to null,
+        then keyLength must be set to 0.
+    </param>
+    <param name="val">
+        The message value (possibly null).
+    </param>
+    <param name="valOffset">
+        The start offset of the message value in the <paramref name="val" /> 
+        byte array parameter. If <paramref name="val" /> is set to null, then 
+        valOffset must be set to 0.
+    </param>
+    <param name="valLength">
+        The number of bytes to extract from the <paramref name="val" /> parmeter
+        to use as the message value. If <paramref name="val" /> is set to null,
+        then valLength must be set to 0.
+    </param>
+    <param name="timestamp">
+        The message timestamp. The timestamp type must be set to CreateTime. 
+        Specify Timestamp.Default to set the message timestamp to the time
+        of this function call.
+    </param>
+    <param name="headers">
+        The collection of message headers (or null). Specifying null or an 
+        empty list are equivalent. The order of headers is maintained, and
+        duplicate header keys are allowed.
+    </param>
+</Member>
+
+<Member name="Produce_IDeliveryHandler">
+    <param name="deliveryHandler">
+        The IDeliveryHandler instance to used to receive delivery report 
+        notifications.
+    </param>
+    <remarks>
+        Use a Produce method variant rather than ProduceAdync if you require 
+        notification of delivery reports strictly in the order they were 
+        acknowledged by the broker / failed (failure may be via broker or 
+        local). IDeliveryHandler.HandleDeliveryReport callbacks are executed 
+        on the Poll thread.
+    </remarks>
+</Member>
+
+</API>

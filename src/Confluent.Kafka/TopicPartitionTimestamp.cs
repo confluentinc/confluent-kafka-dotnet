@@ -49,7 +49,7 @@ namespace Confluent.Kafka
         /// <param name="timestamp">
         ///     A Kafka timestamp value.
         /// </param>
-        public TopicPartitionTimestamp(string topic, int partition, Timestamp timestamp)
+        public TopicPartitionTimestamp(string topic, Partition partition, Timestamp timestamp)
         {
             Topic = topic;
             Partition = partition;
@@ -64,7 +64,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Kafka partition.
         /// </summary>
-        public int Partition { get; }
+        public Partition Partition { get; }
 
         /// <summary>
         ///     Gets the Kafka timestamp.

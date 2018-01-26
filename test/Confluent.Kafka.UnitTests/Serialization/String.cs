@@ -32,7 +32,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             Assert.Equal("hello world", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "hello world")));
             Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "ឆ្មាត្រូវបានហែលទឹក")));
             Assert.Equal("вы не банан", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "вы не банан")));
-            Assert.Equal(null, new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", null)));
+            Assert.Null(new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", null)));
 
             // TODO: check some serialize / deserialize operations that are not expected to work, including some
             //       cases where Deserialize can be expected to throw an exception.
@@ -47,7 +47,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             config.Add("dotnet.string.deserializer.encoding.key", "utf-8");
             var deserializer = new StringDeserializer();
             var newConfig = deserializer.Configure(config, true);
-            Assert.Equal(0, newConfig.Count());
+            Assert.Empty(newConfig);
             Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized));
         }
 
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             config.Add("dotnet.string.deserializer.encoding.value", "utf-8");
             var deserializer = new StringDeserializer();
             var newConfig = deserializer.Configure(config, false);
-            Assert.Equal(0, newConfig.Count());
+            Assert.Empty(newConfig);
             Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized));
         }
 
@@ -72,7 +72,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             config.Add("dotnet.string.serializer.encoding.key", "utf-8");
             var serializer = new StringSerializer();
             var newConfig = serializer.Configure(config, true);
-            Assert.Equal(0, newConfig.Count());
+            Assert.Empty(newConfig);
             var serialized = serializer.Serialize("mytopic", testString);
             Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized), testString);
         }
@@ -85,7 +85,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             config.Add("dotnet.string.serializer.encoding.value", "utf-8");
             var serializer = new StringSerializer();
             var newConfig = serializer.Configure(config, false);
-            Assert.Equal(0, newConfig.Count());
+            Assert.Empty(newConfig);
             var serialized = serializer.Serialize("mytopic", testString);
             Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized), testString);
         }

@@ -24,16 +24,16 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Timestamp type is unknown.
         /// </summary>
-        NotAvailable,
+        NotAvailable = 0,
 
         /// <summary>
         ///     Timestamp relates to message creation time as set by a Kafka client.
         /// </summary>
-        CreateTime,
+        CreateTime = 1,
 
         /// <summary>
         ///     Timestamp relates to the time a message was appended to a Kafka log.
         /// </summary>
-        LogAppendTime
+        LogAppendTime = 2
     }
 }

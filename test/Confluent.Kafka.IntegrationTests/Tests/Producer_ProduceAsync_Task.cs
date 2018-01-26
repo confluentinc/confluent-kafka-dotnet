@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -33,8 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var key = new byte[] { 1, 2, 3, 4 };
@@ -43,16 +44,14 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length));
+                drs.Add(producer.ProduceAsync(new Message(partitionedTopic, 1, Offset.Invalid, key, val, Timestamp.Default, null, null)));
                 drs.Add(producer.ProduceAsync(partitionedTopic, key, val));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 1, key.Length-1, val, 2, val.Length-2));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 1, key, 0, key.Length, val, 0, val.Length, Timestamp.Default, null));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 0, key, 1, key.Length-1, val, 2, val.Length - 2, Timestamp.Default, null));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            for (int i=0; i<5; ++i)
+            for (int i=0; i<3; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -65,11 +64,11 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal(new byte[] { 2, 3, 4 }, drs[5].Result.Key);
-            Assert.Equal(new byte[] { 7, 8 }, drs[5].Result.Value);
+            Assert.Equal(new byte[] { 2, 3, 4 }, drs[3].Result.Key);
+            Assert.Equal(new byte[] { 7, 8 }, drs[3].Result.Value);
 
-            Assert.Equal(1, drs[0].Result.Partition);
-            Assert.Equal(1, drs[1].Result.Partition);
+            Assert.Equal((Partition)1, drs[0].Result.Partition);
+            Assert.Equal((Partition)1, drs[2].Result.Partition);
         }
     }
 }

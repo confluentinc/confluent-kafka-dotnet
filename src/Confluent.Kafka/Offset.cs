@@ -16,6 +16,7 @@
 //
 // Refer to LICENSE for more information.
 
+
 namespace Confluent.Kafka
 {
     /// <summary>
@@ -210,7 +211,7 @@ namespace Confluent.Kafka
         ///     Converts the specified long value to an Offset value.
         /// </summary>
         /// <param name="v">
-        ///     THe long value to convert.
+        ///     The long value to convert.
         /// </param>
         public static implicit operator Offset(long v)
             => new Offset(v);

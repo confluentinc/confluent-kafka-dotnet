@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,8 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             var consumerConfig = new Dictionary<string, object>
             {
                 {"group.id", Guid.NewGuid().ToString()},
-                {"bootstrap.servers", bootstrapServers},
-                {"api.version.request", true}
+                {"bootstrap.servers", bootstrapServers}
             };
 
             var firstMessage = messages[0];
@@ -59,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
+                Assert.Single(result);
                 Assert.Equal(result[0].Offset, firstMessage.Offset);
                 Assert.False(result[0].Error.HasError);
 
@@ -69,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
+                Assert.Single(result);
                 Assert.Equal(result[0].Offset, lastMessage.Offset);
                 Assert.False(result[0].Error.HasError);
 
@@ -80,8 +81,8 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, 0);
+                Assert.Single(result);
+                Assert.Equal(0, result[0].Offset);
                 Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the timestamp that very far in the future
@@ -90,8 +91,8 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, 0);
+                Assert.Single(result);
+                Assert.Equal(0, result[0].Offset);
                 Assert.False(result[0].Error.HasError);
             }
         }
@@ -100,8 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object>
             {
-                {"bootstrap.servers", bootstrapServers},
-                {"api.version.request", true}
+                {"bootstrap.servers", bootstrapServers}
             };
 
             var messages = new Message<string, string>[count];
@@ -109,7 +109,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (var index = 0; index < count; index++)
                 {
-                    var message = producer.ProduceAsync(topic, $"test key {index}", $"test val {index}", partition).Result;
+                    var message = producer.ProduceAsync(topic, partition, $"test key {index}", $"test val {index}", Timestamp.Default, null).Result;
                     messages[index] = message;
                     Task.Delay(200).Wait();
                 }

@@ -1,0 +1,203 @@
+<API> 
+
+<Member name="Name">
+    <summary>
+        Gets the name of this client instance.
+        Contains (but is not equal to) the client.id configuration parameter.
+    </summary>
+    <remarks>
+        This name will be unique across all client instances
+        in a given application which allows log messages to be
+        associated with the corresponding instance.
+    </remarks>
+</Member>
+
+<Member name="OnLog">
+    <summary>
+        Raised when there is information that should be logged.
+    </summary>
+    <remarks>
+        By default not many log messages are generated.
+     
+        You can specify one or more debug contexts using the 'debug'
+        configuration property and a log level using the 'log_level'
+        configuration property to enable more verbose logging,
+        however you shouldn't typically need to do this.
+    
+        Warning: Log handlers are called spontaneously from internal librdkafka 
+        threads and the application must not call any Confluent.Kafka APIs from 
+        within a log handler or perform any prolonged operations.
+    </remarks>
+</Member>
+
+<Member name="OnStatistics">
+    <summary>
+        Raised on librdkafka statistics events. JSON formatted
+        string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
+    </summary>
+    <remarks>
+        You can enable statistics and set the statistics interval
+        using the statistics.interval.ms configuration parameter
+        (disabled by default).
+    
+        Called on the Producer poll thread.
+    </remarks>
+</Member>
+
+<Member name="AddBrokers_string">
+    <summary>
+        Adds one or more brokers to the Client's list of initial
+        bootstrap brokers. 
+    
+        Note: Additional brokers are discovered automatically as 
+        soon as the Client connects to any broker by querying the 
+        broker metadata. Calling this method is only required in 
+        some scenarios where the address of all brokers in the 
+        cluster changes.
+    </summary>
+    <param name="brokers">
+        Coma-separated list of brokers in the same format as 
+        the bootstrap.server configuration parameter.
+    </param>
+    <remarks>
+        There is currently no API to remove existing configured, 
+        added or learnt brokers.
+    </remarks>
+    <returns>
+        The number of brokers added. This value includes brokers
+        that may have been specified a second time.
+    </returns>
+</Member>
+
+<Member name="GetMetadata_bool_string_TimeSpan">
+    <summary>
+        Query the cluster for metadata (blocking).
+    
+        - allTopics = true - request all topics from cluster
+        - allTopics = false, topic = null - request only locally known topics.
+        - allTopics = false, topic = valid - request specific topic
+    
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+</Member>
+
+<Member name="GetMetadata_bool_string">
+    <summary>
+        Refer to <see cref="GetMetadata(bool,string)" />
+     
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+</Member>
+
+<Member name="GetMetadata">
+    <summary>
+        Refer to <see cref="GetMetadata(bool,string,TimeSpan)" />
+     
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+</Member>
+
+<Member name="QueryWatermarkOffsets_TopicPartition_TimeSpan">
+    <summary>
+        Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        offsets for the specified topic/partition (blocking).
+    
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+    <param name="topicPartition">
+        The topic/partition of interest.
+    </param>
+    <param name="timeout">
+        The maximum period of time the call may block.
+    </param>
+    <returns>
+        The requested WatermarkOffsets.
+    </returns>
+</Member>
+
+<Member name="QueryWatermarkOffsets_TopicPartition">
+    <summary>
+        Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        offsets for the specified topic/partition (blocks, potentially indefinitely).
+    
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+    <param name="topicPartition">
+        The topic/partition of interest.
+    </param>
+    <returns>
+        The requested WatermarkOffsets.
+    </returns>
+</Member>
+
+<Member name="GetWatermarkOffsets_TopicPartition">
+    <summary>
+        Get last known low (oldest/beginning) and high (newest/end)
+        offsets for a topic/partition.
+         
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
+        is subject to change.
+    </summary>
+    <remarks>
+        The low offset is updated periodically (if statistics.interval.ms is set)
+        while the high offset is updated on each fetched message set from the broker.
+    
+        If there is no cached offset (either low or high, or both) then
+        Offset.Invalid will be returned for the respective offset.
+    </remarks>
+    <param name="topicPartition">
+        The topic/partition of interest.
+    </param>
+    <returns>
+        The requested WatermarkOffsets.
+    </returns>
+</Member>
+
+<Member name="ListGroups">
+    <summary>
+        Get information pertaining to all groups in the Kafka cluster (blocking)
+    
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
+        is subject to change.
+    </summary>
+    <param name="timeout">
+        The maximum period of time the call may block.
+    </param>
+</Member>
+
+<Member name="ListGroup_string_TimeSpan">
+    <summary>
+        Get information pertaining to a particular group in the
+        Kafka cluster (blocking).
+    
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+    <param name="group">
+        The group of interest.
+    </param>
+    <param name="timeout">
+        The maximum period of time the call may block.
+    </param>
+    <returns>
+        Returns information pertaining to the specified group
+        or null if this group does not exist.
+    </returns>
+</Member>
+
+<Member name="ListGroup_string">
+    <summary>
+        Get information pertaining to a particular group in the
+        Kafka cluster (blocks, potentially indefinitely).
+    
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+    <param name="group">
+        The group of interest.
+    </param>
+    <returns>
+        Returns information pertaining to the specified group
+        or null if this group does not exist.
+    </returns>
+</Member>
+
+</API>

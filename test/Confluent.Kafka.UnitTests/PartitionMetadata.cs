@@ -27,11 +27,11 @@ namespace Confluent.Kafka.UnitTests
             int[] replicas = new int[0];
             int[] inSyncReplicas = new int[0];
             var pm = new PartitionMetadata(33, 1, replicas, inSyncReplicas, ErrorCode.Local_AllBrokersDown);
-            Assert.Equal(pm.PartitionId, 33);
-            Assert.Equal(pm.Leader, 1);
-            Assert.Same(pm.Replicas, replicas);
-            Assert.Same(pm.InSyncReplicas, inSyncReplicas);
-            Assert.Equal(pm.Error, new Error(ErrorCode.Local_AllBrokersDown));
+            Assert.Equal(33, pm.PartitionId);
+            Assert.Equal(1, pm.Leader);
+            Assert.Same(replicas, pm.Replicas);
+            Assert.Same(inSyncReplicas, pm.InSyncReplicas);
+            Assert.Equal(new Error(ErrorCode.Local_AllBrokersDown), pm.Error);
         }
 
         // TODO: ToString() tests. Note: there is coverage of this already in the Metdata integration test.

@@ -14,23 +14,26 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
+using System.Text;
 using System.Collections.Generic;
+using Confluent.Kafka.Serialization;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer.ProduceAsync method overload that provides
-    ///     delivery reports via an IDeliveryHandler instance.
-    ///     (null key/value case)
+    ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
+    ///     that provides delivery reports via an IDeliveryHandler instance.
     /// </summary>
     public static partial class Tests
     {
-        class DeliveryHandler_PN : IDeliveryHandler
+        class DeliveryHandler_SP : IDeliveryHandler<string, string>
         {
-            public DeliveryHandler_PN(string topic)
+            public DeliveryHandler_SP(string topic)
             {
                 Topic = topic;
             }
@@ -41,14 +44,14 @@ namespace Confluent.Kafka.IntegrationTests
 
             public string Topic { get; }
 
-            public void HandleDeliveryReport(Message dr)
+            public void HandleDeliveryReport(Message<string, string> dr)
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(0, dr.Partition);
+                Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(Topic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Key);
-                Assert.Null(dr.Value);
+                Assert.Equal($"test key {Count}", dr.Key);
+                Assert.Equal($"test val {Count}", dr.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                 Count += 1;
@@ -56,28 +59,26 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void SerializingProducer_ProduceAsync_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
-            var dh = new DeliveryHandler_PN(singlePartitionTopic);
+            var dh = new DeliveryHandler_SP(singlePartitionTopic);
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, 0, true, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, 0, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, true, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, 0, 0, null, 0, 0, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, dh);
-                Assert.Throws<ArgumentException>(() => producer.ProduceAsync(singlePartitionTopic, null, -123, int.MinValue, null, int.MaxValue, 44, dh));
+                producer.Produce(
+                    new Message<string, string>(singlePartitionTopic, 0, Offset.Invalid, "test key 0", "test val 0", Timestamp.Default, null, null),
+                    dh);
+                producer.Produce(singlePartitionTopic, 0, "test key 1", "test val 1", Timestamp.Default, null, dh);
+                producer.Produce(singlePartitionTopic, "test key 2", "test val 2", dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(5, dh.Count);
+            Assert.Equal(3, dh.Count);
         }
     }
 }
