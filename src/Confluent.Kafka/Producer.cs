@@ -582,15 +582,15 @@ namespace Confluent.Kafka
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryHandler);
-			
-	    /// <summary>
+
+        /// <summary>
         ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, DateTime?, int, bool, IDeliveryHandler)" /> 
         ///     for more information.
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, DateTime? timestamp, int partition, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, blockIfQueueFull, deliveryHandler);
-			
+
         /// <summary>
         ///     Gets the name of this producer instance.
         ///     Contains (but is not equal to) the client.id configuration parameter.
