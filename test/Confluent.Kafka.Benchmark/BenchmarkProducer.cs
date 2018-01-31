@@ -55,7 +55,8 @@ namespace Confluent.Kafka.Benchmark
                 { "bootstrap.servers", bootstrapServers },
                 { "queue.buffering.max.messages", 2000000 },
                 { "message.send.max.retries", 3 },
-                { "retry.backoff.ms", 500 }
+                { "retry.backoff.ms", 500 },
+                { "linger.ms", 100 }
             };
 
             Message firstDeliveryReport = null;
