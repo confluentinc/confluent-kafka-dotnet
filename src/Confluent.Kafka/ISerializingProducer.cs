@@ -23,7 +23,8 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Describes the minimum functionality provided by a high level (serializing) Kafka producer.
+    ///     A focused interface for producing messages to Kafka with key and 
+    ///     value serialization (excludes general client functionality).
     /// </summary>
     public interface ISerializingProducer<TKey, TValue>
     {
@@ -32,9 +33,6 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ValueSerializer"]/*' />
         ISerializer<TValue> ValueSerializer { get; }
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
-        string Name { get; }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />

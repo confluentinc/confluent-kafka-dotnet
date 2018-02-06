@@ -178,13 +178,16 @@
     <returns>
         A Task which will complete with the corresponding delivery report
         for this request.
+
+        Note: As a performance optimization, message headers are not included
+        in delivery reports.
     </returns>
     <remarks>
-        If you require strict ordering of delivery reports to be maintained, 
-        you should use a variant of the Produce method whic takes an IDeliveryHandler
-        parameter, not a variant of the ProduceAsync method because 
-        Tasks are completed on arbitrary thread pool threads and can 
-        be executed out of order.
+        If you require strict ordering of delivery reports to be maintained,
+        you should use the Produce method which provides these via a callback
+        on a single poll thread. The Tasks returned by ProduceAsync are 
+        completed on arbitrary thread pool threads and so they can be executed
+        out of order.
     </remarks>
 </Member>
 
@@ -321,6 +324,9 @@
     <param name="deliveryHandler">
         The IDeliveryHandler instance to used to receive delivery report 
         notifications.
+
+        Note: As a performance optimization, message headers are not included
+        in delivery reports.
     </param>
     <remarks>
         Use a Produce method variant rather than ProduceAdync if you require 
@@ -332,3 +338,4 @@
 </Member>
 
 </API>
+

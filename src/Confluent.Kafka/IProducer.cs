@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
 //
 // Refer to LICENSE for more information.
 
@@ -31,7 +29,8 @@ using System.Collections.Concurrent;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka producer (without serialization).
+    ///     Defines a high-level Apache Kafka producer client (without 
+    ///     serialization capability).
     /// </summary>
     public interface IProducer : IDisposable
     {

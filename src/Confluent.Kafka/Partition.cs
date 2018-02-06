@@ -36,8 +36,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     A special value that refers to an unspecified / unknown partition.
         /// </summary>
-        /// <returns></returns>
-        public static Partition NotSpecified { get { return new Partition(RD_KAFKA_PARTITION_UA); } }
+        public static Partition Any { get { return new Partition(RD_KAFKA_PARTITION_UA); } }
 
         /// <summary>
         ///     Initializes a new instance of the Partition structure.

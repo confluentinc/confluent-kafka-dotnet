@@ -19,17 +19,28 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test dotnet.producer.enable.delivery.reports == true
-    ///     results in no delivery report.
+    ///     Test every Producer.ProduceAsync method overload that provides
+    ///     delivery reports via an IDeliveryHandler instance.
     /// </summary>
     public static partial class Tests
     {
+        class DeliveryHandler_DDR : IDeliveryHandler
+        {
+            public bool MarshalData { get { return true; } }
+
+            public int Count { get; private set; }
+
+            public void HandleDeliveryReport(Message dr)
+            {
+                Count += 1;
+            }
+        }
+
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_DisableDeliveryReports(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
@@ -40,26 +51,24 @@ namespace Confluent.Kafka.IntegrationTests
             { 
                 { "bootstrap.servers", bootstrapServers },
                 { "dotnet.producer.enable.delivery.reports", false },
-                // the below are just tests that the property is recognized. the functionality is not tested.
-                { "dotnet.producer.block.if.queue.full", false }, 
-                { "dotnet.producer.enable.background.poll", true },
-                { "dotnet.producer.enable.deivery.report.header.marshaling", true },
-                { "dotnet.producer.enable.deivery.report.data.marshaling", true}
+                { "dotnet.producer.block.if.queue.full", false } // to test that this property is recognized.
             };
 
-            int count = 0;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
+            var dh = new DeliveryHandler_DDR();
+
+            using (var producer = new Producer(producerConfig))
             {
                 producer.Produce(
-                    singlePartitionTopic,
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
-                    (DeliveryReport<byte[], byte[]> dr) => count += 1
+                    singlePartitionTopic, 0,
+                    TestKey, 0, TestKey.Length,
+                    TestValue, 0, TestValue.Length,
+                    Timestamp.Default, null, dh
                 );
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(0, count);
+            Assert.Equal(0, dh.Count);
         }
     }
 }

@@ -31,7 +31,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer (with 
     ///     key and value deserialization).
     /// </summary>
-    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IDisposable
+    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
         private readonly Consumer consumer;
 

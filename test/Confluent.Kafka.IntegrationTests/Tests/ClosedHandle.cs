@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers },
                 { "dotnet.producer.enable.background.poll", false }
             };
-            var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer());
+            var producer = new Producer(producerConfig);
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));

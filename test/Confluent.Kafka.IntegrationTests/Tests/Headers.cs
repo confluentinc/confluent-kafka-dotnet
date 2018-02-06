@@ -80,20 +80,24 @@ namespace Confluent.Kafka.IntegrationTests
                 // single header value.
                 var headers = new Dictionary<string, byte[]>();
                 headers.Add("test-header", new byte[] { 142 } );
-                dr_single = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, "the value", Timestamp.Default, headers).Result;
+                dr_single = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers).Result;
+                Assert.Single(dr_single.Headers);
 
                 // empty header values
                 var headers0 = new Dictionary<string, byte[]>();
-                dr_empty = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, "the value", Timestamp.Default, headers0).Result;
+                dr_empty = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers0).Result;
+                Assert.Empty(dr_empty.Headers);
 
                 // null header value
-                dr_null = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, "the value", Timestamp.Default, null).Result;
+                dr_null = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, null).Result;
+                Assert.Empty(dr_null.Headers);
 
                 // multiple header values (also Headers no Dictionary, since order is tested).
                 var headers2 = new Headers();
                 headers2.Add("test-header-a", new byte[] { 111 } );
                 headers2.Add("test-header-b", new byte[] { 112 } );
-                dr_multiple = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, "the value", Timestamp.Default, headers2).Result;
+                dr_multiple = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers2).Result;
+                Assert.Equal(2, dr_multiple.Headers.Count);
 
                 // duplicate header values (also List not Dictionary)
                 var headers3 = new List<KeyValuePair<string, byte[]>>();
@@ -102,13 +106,17 @@ namespace Confluent.Kafka.IntegrationTests
                 headers3.Add(new KeyValuePair<string, byte[]>("test-header-a", new byte[] { 113 } ));
                 headers3.Add(new KeyValuePair<string, byte[]>("test-header-b", new byte[] { 114 } ));
                 headers3.Add(new KeyValuePair<string, byte[]>("test-header-c", new byte[] { 115 } ));
-                dr_duplicate = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, "the value", Timestamp.Default, headers3).Result;
+                dr_duplicate = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers3).Result;
+                Assert.Equal(5, dr_duplicate.Headers.Count);
 
                 // Test headers work as expected with all serializing ProduceAsync variants. 
 
                 dr_ol1 = producer.ProduceAsync(singlePartitionTopic, null, "the value").Result;
+                Assert.Empty(dr_ol1.Headers);
                 dr_ol2 = producer.ProduceAsync(new Message<Null, string>(singlePartitionTopic, 0, 0, null, "the value", Timestamp.Default, headers2, null)).Result;
+                Assert.Equal(2, dr_ol2.Headers.Count);
                 dr_ol3 = producer.ProduceAsync(singlePartitionTopic, 0, null, "the value", Timestamp.Default, headers).Result;
+                Assert.Single(dr_ol3.Headers);
 
                 var dh = new DeliveryHandler_MHPC();
 
@@ -119,7 +127,11 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Produce(new Message<Null, string>(singlePartitionTopic, 0, 0, null, "the value", Timestamp.Default, headers2, null), dh);
                 producer.Produce(singlePartitionTopic, 0, null, "the value", Timestamp.Default, headers, dh);
 
-                producer.Flush(TimeSpan.FromSeconds(30));
+                producer.Flush(TimeSpan.FromSeconds(10));
+
+                Assert.Empty(DeliveryHandler_MHPC.drs[0].Headers);
+                Assert.Equal(2, DeliveryHandler_MHPC.drs[1].Headers.Count);
+                Assert.Single(DeliveryHandler_MHPC.drs[2].Headers);
             }
 
             Message dr_ol4, dr_ol5, dr_ol6, dr_ol7;
@@ -131,19 +143,28 @@ namespace Confluent.Kafka.IntegrationTests
                 // Test headers work as expected with all non-serializing ProduceAsync variants. 
 
                 dr_ol4 = producer.ProduceAsync(new Message(singlePartitionTopic, 0, Offset.Invalid, null, null, Timestamp.Default, headers, null)).Result;
+                Assert.Single(dr_ol4.Headers);
                 dr_ol5 = producer.ProduceAsync(singlePartitionTopic, null, null).Result;
-                dr_ol6 = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, null, Timestamp.Default, headers).Result;
-                dr_ol7 = producer.ProduceAsync(singlePartitionTopic, Partition.NotSpecified, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
+                Assert.Empty(dr_ol5.Headers);
+                dr_ol6 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, null, Timestamp.Default, headers).Result;
+                Assert.Single(dr_ol6.Headers);
+                dr_ol7 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
+                Assert.Single(dr_ol7.Headers);
 
                 // Test headers work as expected with all non-serializing Produce variants.
 
                 var dh = new DeliveryHandler_MHPC_2();
                 producer.Produce(new Message(singlePartitionTopic, 0, Offset.Invalid, null, null, Timestamp.Default, headers, null), dh);
                 producer.Produce(singlePartitionTopic, null, null, dh);
-                producer.Produce(singlePartitionTopic, Partition.NotSpecified, null, null, Timestamp.Default, headers, dh);
-                producer.Produce(singlePartitionTopic, Partition.NotSpecified, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
+                producer.Produce(singlePartitionTopic, Partition.Any, null, null, Timestamp.Default, headers, dh);
+                producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
 
                 producer.Flush(TimeSpan.FromSeconds(10));
+
+                Assert.Single(DeliveryHandler_MHPC_2.drs[0].Headers);
+                Assert.Empty(DeliveryHandler_MHPC_2.drs[1].Headers);
+                Assert.Single(DeliveryHandler_MHPC_2.drs[2].Headers);
+                Assert.Single(DeliveryHandler_MHPC_2.drs[3].Headers);
             }
 
             using (var consumer = new Consumer(consumerConfig))
