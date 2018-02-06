@@ -34,7 +34,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka producer with key
     ///     and value serialization.
     /// </summary>
-    public class Producer<TKey, TValue> : IProducer<TKey, TValue>, IDisposable
+    public class Producer<TKey, TValue> : IProducer<TKey, TValue>
     {
         private readonly Producer producer;
         private readonly ISerializingProducer<TKey, TValue> serializingProducer;
@@ -60,6 +60,8 @@ namespace Confluent.Kafka
         ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
         ///     forget" semantics and a small boost in performance.
         /// </param>
+        [Obsolete("Use dotnet.producer.enable.background.poll and dotnet.producer.enable.delivery.reports configuration properties " +
+                  "instead of manualPoll and disableDeliveryReports constructor parameters.")]
         private Producer(
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
@@ -99,7 +101,9 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
             ISerializer<TValue> valueSerializer
+#pragma warning disable CS0618
         ) : this(config, keySerializer, valueSerializer, false, false) {}
+#pragma warning restore CS0618
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="KeySerializer"]/*' />
         public ISerializer<TKey> KeySerializer
@@ -111,7 +115,7 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
-            => serializingProducer.Name;
+            => producer.Name;
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_topic_TKey_TValue"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />

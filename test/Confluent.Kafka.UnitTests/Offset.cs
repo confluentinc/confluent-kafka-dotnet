@@ -92,14 +92,14 @@ namespace Confluent.Kafka.UnitTests
         {
             Assert.Equal(new Offset(42).ToString(), 42.ToString());
             Assert.Equal(new Offset(-42).ToString(), (-42).ToString());
-            Assert.Contains(Offset.Invalid.ToString(), "Invalid");
-            Assert.Contains(Offset.Invalid.ToString(), (-1001).ToString());
-            Assert.Contains(Offset.Stored.ToString(), "Stored");
-            Assert.Contains(Offset.Stored.ToString(), (-1000).ToString());
-            Assert.Contains(Offset.Beginning.ToString(), "Beginning");
-            Assert.Contains(Offset.Beginning.ToString(), (-2).ToString());
-            Assert.Contains(Offset.End.ToString(), "End");
-            Assert.Contains(Offset.End.ToString(), (-1).ToString());
+            Assert.Contains("Invalid", Offset.Invalid.ToString());
+            Assert.Contains((-1001).ToString(), Offset.Invalid.ToString());
+            Assert.Contains("Stored", Offset.Stored.ToString());
+            Assert.Contains((-1000).ToString(), Offset.Stored.ToString());
+            Assert.Contains("Beginning", Offset.Beginning.ToString());
+            Assert.Contains((-2).ToString(), Offset.Beginning.ToString());
+            Assert.Contains("End", Offset.End.ToString());
+            Assert.Contains((-1).ToString(), Offset.End.ToString());
         }
     }
 }

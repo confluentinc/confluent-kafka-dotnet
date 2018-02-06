@@ -35,8 +35,9 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
+                { "dotnet.producer.enable.background.poll", false }
             };
-            var producer = new Producer(producerConfig, true, false);
+            var producer = new Producer(producerConfig);
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));

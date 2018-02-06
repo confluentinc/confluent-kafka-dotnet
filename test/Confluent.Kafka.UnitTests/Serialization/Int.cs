@@ -64,7 +64,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         }
 
         [Fact]
-        public void CanReconstruct()
+        public void CanReconstructInt()
         {
             var serializer = new IntSerializer();
             var deserializer = new IntDeserializer();

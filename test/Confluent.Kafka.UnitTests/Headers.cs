@@ -53,7 +53,7 @@ namespace Confluent.Kafka.UnitTests
 
             Assert.True(hdrs.TryGetLast("my-header", out byte[] val));
             Assert.Single(val);
-            Assert.Equal(42, val[0]);
+            Assert.Equal(44, val[0]);
         }
 
         [Fact]

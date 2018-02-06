@@ -34,9 +34,9 @@ namespace Confluent.Kafka.UnitTests
         public void ToStringTest()
         {
             var bm = new BrokerMetadata(42, "myhost", 8080);
-            Assert.Contains(bm.ToString(), 42.ToString());
-            Assert.Contains(bm.ToString(), "myhost");
-            Assert.Contains(bm.ToString(), 8080.ToString());
+            Assert.Contains(42.ToString(), bm.ToString());
+            Assert.Contains("myhost", bm.ToString());
+            Assert.Contains(8080.ToString(), bm.ToString());
 
             // TODO: JSON based test. Note: there is coverage of this already in the Metdata integration test.
         }

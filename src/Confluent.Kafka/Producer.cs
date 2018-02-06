@@ -150,6 +150,24 @@ namespace Confluent.Kafka
         {
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
+            Headers headers = new Headers();
+            LibRdKafka.message_headers(rkmessage, out IntPtr hdrsPtr);
+            if (hdrsPtr != IntPtr.Zero)
+            {
+                for (var i=0; ; ++i)
+                {
+                    var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                    if (err != ErrorCode.NoError)
+                    {
+                        break;
+                    }
+                    var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                    var headerValue = new byte[(int)sizep];
+                    Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                    headers.Add(new KeyValuePair<string, byte[]>(headerName, headerValue));
+                }
+            }
+
             // the msg._private property has dual purpose. Here, it is an opaque pointer set
             // by Topic.Produce to be an IDeliveryHandler. When Consuming, it's for internal
             // use (hence the name).
@@ -193,7 +211,7 @@ namespace Confluent.Kafka
                     key,
                     val,
                     new Timestamp(timestamp, (TimestampType)timestampType),
-                    null,
+                    headers,
                     msg.err
                 )
             );
@@ -321,22 +339,22 @@ namespace Confluent.Kafka
                     prop.Key != EnableBackgroundPollPropertyName &&
                     prop.Key != EnableDeliveryReportsPropertyName);
 
-            var enableBackgroundPollStr = (string)config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
-            if (enableBackgroundPollStr != null)
+            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
+            if (enableBackgroundPollObj != null)
             {
-                this.manualPoll = !bool.Parse(enableBackgroundPollStr);
+                this.manualPoll = !bool.Parse(enableBackgroundPollObj.ToString());
             }
 
-            var enableDeliveryReportsStr = (string)config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportsPropertyName).Value;
-            if (enableDeliveryReportsStr != null)
+            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportsPropertyName).Value;
+            if (enableDeliveryReportsObj != null)
             {
-                this.disableDeliveryReports = !bool.Parse(enableDeliveryReportsStr);
+                this.disableDeliveryReports = !bool.Parse(enableDeliveryReportsObj.ToString());
             }
 
-            var blockIfQueueFullStr = (string)config.FirstOrDefault(prop => prop.Key == BlockIfQueueFullPropertyName).Value;
-            if (blockIfQueueFullStr != null)
+            var blockIfQueueFullObj = config.FirstOrDefault(prop => prop.Key == BlockIfQueueFullPropertyName).Value;
+            if (blockIfQueueFullObj != null)
             {
-                this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullStr);
+                this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullObj.ToString());
             }
 
             // Note: Setting default topic configuration properties via default.topic.config is depreciated 
@@ -404,8 +422,9 @@ namespace Confluent.Kafka
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, object>> config)
+#pragma warning disable CS0618
             : this(config, false, false) {}
-
+#pragma warning restore CS0618
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
         public int Poll(int millisecondsTimeout)
@@ -454,7 +473,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val)
-            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue);
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
@@ -492,7 +511,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
         public void Produce(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
@@ -520,7 +539,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
@@ -535,17 +554,17 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, blockIfQueueFull);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, blockIfQueueFull);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
+            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
@@ -564,7 +583,7 @@ namespace Confluent.Kafka
             "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
             "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
         public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.NotSpecified, null, blockIfQueueFull, deliveryHandler);
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, blockIfQueueFull, deliveryHandler);
 
 #endregion
 

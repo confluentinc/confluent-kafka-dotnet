@@ -38,8 +38,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void DebugContexts()
         {
-            // test that an exception is not thrown.      
-            Assert.Empty(Library.DebugContexts);
+            // test that an exception is not thrown.
+            Assert.NotEmpty(Library.DebugContexts);
         }
     }
 }

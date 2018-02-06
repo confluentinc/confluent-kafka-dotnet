@@ -63,9 +63,9 @@ namespace Confluent.Kafka.Tests
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.Contains(tpt.ToString(), tpt.Topic);
-            Assert.Contains(tpt.ToString(), tpt.Partition.ToString());
-            Assert.Contains(tpt.ToString(), tpt.Timestamp.ToString());
+            Assert.Contains(tpt.Topic, tpt.ToString());
+            Assert.Contains(tpt.Partition.ToString(), tpt.ToString());
+            Assert.Contains(tpt.Timestamp.ToString(), tpt.ToString());
         }
 
         [Fact]

@@ -35,7 +35,7 @@ namespace Confluent.Kafka
     ///     consumer <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> where possible
     ///     (use the byte[] deserializer).
     /// </summary>
-    public class Consumer : IConsumer, IDisposable
+    public class Consumer : IConsumer
     {
         private SafeKafkaHandle kafkaHandle;
 

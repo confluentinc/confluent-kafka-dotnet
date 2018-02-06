@@ -233,6 +233,26 @@ namespace Confluent.Kafka
         /// </summary>
         Local_ValueDeserialization = -159,
 
+        /// <summary>
+        ///     Partial response
+        /// </summary>
+        Local_Partial = -158,
+
+        /// <summary>
+        ///     Modification attempted on read-only object
+        /// </summary>
+        Local_ReadOnly = -157,
+
+        /// <summary>
+        ///     No such entry / item not found
+        /// </summary>
+        Local_NoEnt = -156,
+
+        /// <summary>
+        ///     Read underflow
+        /// </summary>
+        Local_Underflow = -155,
+
 
         /// <summary>
         ///     Unknown broker error

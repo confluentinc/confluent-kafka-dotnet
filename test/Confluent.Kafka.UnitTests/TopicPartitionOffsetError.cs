@@ -85,11 +85,11 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.Local_BadMsg);
 
-            Assert.Contains(tpoe.ToString(), tpoe.Topic);
-            Assert.Contains(tpoe.ToString(), tpoe.Partition.ToString());
-            Assert.Contains(tpoe.ToString(), tpoe.Offset.ToString());
-            Assert.Contains(tpoe.ToString(), tpoe.Error.ToString());
-            Assert.Contains(tpoe.ToString(), tpoe.Error.Reason);
+            Assert.Contains(tpoe.Topic, tpoe.ToString());
+            Assert.Contains(tpoe.Partition.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Offset.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Error.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Error.Reason, tpoe.ToString());
         }
 
         [Fact]

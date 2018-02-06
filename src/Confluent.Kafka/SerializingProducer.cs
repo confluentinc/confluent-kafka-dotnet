@@ -92,7 +92,7 @@ namespace Confluent.Kafka
                     Key,
                     Value,
                     message.Timestamp,
-                    null,
+                    message.Headers,
                     message.Error
                 );
 
@@ -151,7 +151,7 @@ namespace Confluent.Kafka
                     Key,
                     Value,
                     message.Timestamp,
-                    null,
+                    message.Headers,
                     message.Error
                 ));
             }
@@ -187,10 +187,10 @@ namespace Confluent.Kafka
             => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue);
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => ProduceImpl(topic, Partition.NotSpecified, key, val, Timestamp.Default, null, blockIfQueueFull);
+            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, blockIfQueueFull);
 
         public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, Partition.NotSpecified, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
+            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
 
         public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, blockIfQueueFull, deliveryHandler);
@@ -199,12 +199,12 @@ namespace Confluent.Kafka
             => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
 
         public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, Partition.NotSpecified, key, val, Timestamp.Default, null, blockIfQueueFull, deliveryHandler);
+            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, blockIfQueueFull, deliveryHandler);
 
 #endregion
 
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => ProduceImpl(topic, Partition.NotSpecified, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue);
+            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue);
 
         public Task<Message<TKey, TValue>> ProduceAsync(Message<TKey, TValue> message)
             => ProduceImpl(
@@ -227,12 +227,9 @@ namespace Confluent.Kafka
                 deliveryHandler);
 
         public void Produce(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, Partition.NotSpecified, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
+            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
 
         public void Produce(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => ProduceImpl(topic, partition, key, val, timestamp, headers, producer.blockIfQueueFullPropertyValue, deliveryHandler);
-
-        public string Name
-            => producer.Name;
     }
 }
