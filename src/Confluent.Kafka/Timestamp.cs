@@ -29,9 +29,8 @@ namespace Confluent.Kafka
         private const long RD_KAFKA_NO_TIMESTAMP = 0;
 
         /// <summary>
-        ///     A read-only field that represents .. TODO.
+        ///     A read-only field representing an unspecified timestamp.
         /// </summary>
-        /// <returns></returns>
         public static Timestamp Default
         {
             get { return new Timestamp(RD_KAFKA_NO_TIMESTAMP, TimestampType.CreateTime); }
@@ -122,7 +121,7 @@ namespace Confluent.Kafka
             => UnixTimestampMsToDateTime(UnixTimestampMs);
 
         /// <summary>
-        ///     Determines whether two Timestamps have the same value
+        ///     Determines whether two Timestamps have the same value.
         /// </summary>
         /// <param name="obj">
         ///     Determines whether this instance and a specified object, 

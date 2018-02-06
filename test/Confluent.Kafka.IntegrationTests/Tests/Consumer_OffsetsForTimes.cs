@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(result[0].Offset, lastMessage.Offset);
                 Assert.False(result[0].Error.HasError);
 
-                // Getting the offset for the timestamp that very far in the past
+                // Getting the offset for the timestamp that is very far in the past
                 var unixTimeEpoch = Timestamp.UnixTimeEpoch;
                 result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },

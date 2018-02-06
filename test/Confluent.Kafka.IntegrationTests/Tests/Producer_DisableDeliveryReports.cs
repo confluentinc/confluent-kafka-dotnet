@@ -1,0 +1,74 @@
+// Copyright 2018 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+#pragma warning disable xUnit1026
+
+using System;
+using System.Collections.Generic;
+using Xunit;
+
+
+namespace Confluent.Kafka.IntegrationTests
+{
+    /// <summary>
+    ///     Test every Producer.ProduceAsync method overload that provides
+    ///     delivery reports via an IDeliveryHandler instance.
+    /// </summary>
+    public static partial class Tests
+    {
+        class DeliveryHandler_DDR : IDeliveryHandler
+        {
+            public bool MarshalData { get { return true; } }
+
+            public int Count { get; private set; }
+
+            public void HandleDeliveryReport(Message dr)
+            {
+                Count += 1;
+            }
+        }
+
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public static void Producer_DisableDeliveryReports(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        {
+            byte[] TestKey = new byte[] { 1, 2, 3, 4 };
+            byte[] TestValue = new byte[] { 5, 6, 7, 8 };
+
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers },
+                { "dotnet.producer.enable.delivery.reports", false },
+                { "dotnet.producer.block.if.queue.full", false } // to test that this property is recognized.
+            };
+
+            var dh = new DeliveryHandler_DDR();
+
+            using (var producer = new Producer(producerConfig))
+            {
+                producer.Produce(
+                    singlePartitionTopic, 0,
+                    TestKey, 0, TestKey.Length,
+                    TestValue, 0, TestValue.Length,
+                    Timestamp.Default, null, dh
+                );
+
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+
+            Assert.Equal(0, dh.Count);
+        }
+    }
+}

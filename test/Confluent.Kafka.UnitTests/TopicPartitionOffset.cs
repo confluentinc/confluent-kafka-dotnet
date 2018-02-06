@@ -81,9 +81,9 @@ namespace Confluent.Kafka.UnitTests
         public void ToStringTest()
         {
             var tpo = new TopicPartitionOffset("mytopic", 42, 107);
-            Assert.Contains(tpo.ToString(), tpo.Topic);
-            Assert.Contains(tpo.ToString(), tpo.Partition.ToString());
-            Assert.Contains(tpo.ToString(), tpo.Offset.ToString());
+            Assert.Contains(tpo.Topic, tpo.ToString());
+            Assert.Contains(tpo.Partition.ToString(), tpo.ToString());
+            Assert.Contains(tpo.Offset.ToString(), tpo.ToString());
         }
 
         [Fact]

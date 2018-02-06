@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
-//
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;

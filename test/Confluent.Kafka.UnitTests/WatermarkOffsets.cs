@@ -34,8 +34,8 @@ namespace Confluent.Kafka.UnitTests
         {
             var wo = new WatermarkOffsets(42, 43);
             var str = wo.ToString();
-            Assert.Contains(str, "42");
-            Assert.Contains(str, "43");
+            Assert.Contains("42", str);
+            Assert.Contains("43", str);
             Assert.True(str.IndexOf("43") > str.IndexOf("42"));
         }
     }

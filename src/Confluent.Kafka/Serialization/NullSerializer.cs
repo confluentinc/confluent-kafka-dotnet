@@ -21,12 +21,12 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     A dummy serializer for use with values that must be null (the <see cref="Null"/> class cannot be instantiated).
+    ///     A dummy serializer for use with values that must be null (the <see cref="Confluent.Kafka.Null"/> class cannot be instantiated).
     /// </summary>
     public class NullSerializer : ISerializer<Null>
     {
         /// <param name="data">
-        ///     Can only be null (the <see cref="Null"/> class cannot be instantiated).
+        ///     Can only be null (the <see cref="Confluent.Kafka.Null"/> class cannot be instantiated).
         /// </param>
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this serializer).

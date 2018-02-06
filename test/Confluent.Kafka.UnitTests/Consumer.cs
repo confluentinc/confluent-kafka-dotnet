@@ -36,9 +36,9 @@ namespace Confluent.Kafka.UnitTests
         {
             var config = new Dictionary<string, object>();
             var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
-            Assert.Contains(e.Message, "group.id");
+            Assert.Contains("group.id", e.Message);
             e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
-            Assert.Contains(e.Message, "group.id");
+            Assert.Contains("group.id", e.Message);
 
             e = Assert.Throws<ArgumentException>(() => 
             {
@@ -50,7 +50,7 @@ namespace Confluent.Kafka.UnitTests
                 var deserializer = new StringDeserializer(Encoding.UTF8);
                 var c = new Consumer<string, string>(validConfig, deserializer, deserializer); 
             });
-            Assert.Contains(e.Message, "must not be the same object");
+            Assert.Contains("must not be the same object", e.Message);
 
             // positve case covered by integration tests. here, avoiding creating a rd_kafka_t instance.
         }
