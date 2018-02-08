@@ -89,6 +89,14 @@
     </summary>
 </Member>
 
+<Member name="GetMetadata_bool">
+    <summary>
+        Refer to <see cref="GetMetadata(bool,string,TimeSpan)" />
+     
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+    </summary>
+</Member>
+
 <Member name="GetMetadata">
     <summary>
         Refer to <see cref="GetMetadata(bool,string,TimeSpan)" />
@@ -130,30 +138,7 @@
     </returns>
 </Member>
 
-<Member name="GetWatermarkOffsets_TopicPartition">
-    <summary>
-        Get last known low (oldest/beginning) and high (newest/end)
-        offsets for a topic/partition.
-         
-        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
-        is subject to change.
-    </summary>
-    <remarks>
-        The low offset is updated periodically (if statistics.interval.ms is set)
-        while the high offset is updated on each fetched message set from the broker.
-    
-        If there is no cached offset (either low or high, or both) then
-        Offset.Invalid will be returned for the respective offset.
-    </remarks>
-    <param name="topicPartition">
-        The topic/partition of interest.
-    </param>
-    <returns>
-        The requested WatermarkOffsets.
-    </returns>
-</Member>
-
-<Member name="ListGroups">
+<Member name="ListGroups_TimeSpan">
     <summary>
         Get information pertaining to all groups in the Kafka cluster (blocking)
     

@@ -143,7 +143,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="MemberId"]/*' />
         string MemberId { get; }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups"]/*' />
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
         List<GroupInfo> ListGroups(TimeSpan timeout);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
@@ -152,7 +152,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
         GroupInfo ListGroup(string group);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
         WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
