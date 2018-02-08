@@ -244,7 +244,7 @@ namespace Confluent.Kafka
             producer.Dispose();
         }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups"]/*' />
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
 

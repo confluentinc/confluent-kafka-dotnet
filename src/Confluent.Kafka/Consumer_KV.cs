@@ -254,6 +254,14 @@ namespace Confluent.Kafka
         public void Unsubscribe()
             => consumer.Unsubscribe();
 
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_TopicPartition"]/*' />
+        public void Assign(TopicPartition partition)
+            => this.Assign(new List<TopicPartition> { partition });
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_TopicPartitionOffset"]/*' />
+        public void Assign(TopicPartitionOffset partition)
+            => this.Assign(new List<TopicPartitionOffset> { partition });
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_IEnumerable_TopicPartitionOffset"]/*' />
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
             => consumer.Assign(partitions);
@@ -326,7 +334,7 @@ namespace Confluent.Kafka
         public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
             => consumer.Resume(partitions);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
         public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             => consumer.Committed(partitions, timeout);
 
@@ -354,7 +362,7 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => consumer.ListGroup(group);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => consumer.GetWatermarkOffsets(topicPartition);
 
