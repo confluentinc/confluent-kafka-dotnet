@@ -110,7 +110,7 @@ namespace Confluent.Kafka
         [Obsolete("Use an overload of Flush with a finite timeout.", false)]
         int Flush();
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups"]/*' />
+        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
         List<GroupInfo> ListGroups(TimeSpan timeout);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />   

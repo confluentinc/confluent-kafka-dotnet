@@ -310,7 +310,7 @@ namespace Confluent.Kafka
         {
             if (message.Error.Code != ErrorCode.NoError)
             {
-                throw new InvalidOperationException("Attempt to commit offset corresponding to an errored message");
+                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an errored message");
             }
             return Commit(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) });
         }
@@ -349,7 +349,7 @@ namespace Confluent.Kafka
         public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Resume(partitions);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
         public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMillisecondsAsInt());
 
@@ -384,7 +384,7 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => kafkaHandle.ListGroup(group, -1);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 

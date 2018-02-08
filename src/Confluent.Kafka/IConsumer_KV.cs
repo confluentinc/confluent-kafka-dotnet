@@ -151,7 +151,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
         GroupInfo ListGroup(string group);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
         WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
@@ -160,7 +160,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
         WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
         IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />

@@ -80,12 +80,12 @@
     </param>
 </Member>
 
-<Member name="Committed">
+<Member name="Committed_IEnumerable_TimeSpan">
     <summary>
         Retrieve current committed offsets for topics + partitions.
     
         The offset field of each requested partition will be set to the offset
-        of the last consumed message, or RD_KAFKA_OFFSET_INVALID in case there was
+        of the last consumed message, or Offset.Invalid in case there was
         no previous message, or, alternately a partition specific error may also be
         returned.
     
@@ -93,12 +93,12 @@
     </summary>
 </Member>
 
-<Member name="Position">
+<Member name="Position_IEnumerable">
     <summary>
         Retrieve current positions (offsets) for topics + partitions.
     
         The offset field of each requested partition will be set to the offset
-        of the last consumed message + 1, or RD_KAFKA_OFFSET_INVALID in case there was
+        of the last consumed message + 1, or Offset.Invalid in case there was
         no previous message, or, alternately a partition specific error may also be
         returned.
     
@@ -234,7 +234,7 @@
     </summary>
 </Member>
 
-<Member name="Subscribe">
+<Member name="Subscribe_string">
     <summary>
         Update the subscription set to a single topic.
     
@@ -433,8 +433,8 @@
         calling the rebalance event if it is configured, committed offsets to 
         broker, and left the consumer group.
      
-        [API-SUBJECT-TO-CHANGE] - The Dispose method should not block. We will
-        separate out consumer close functionality from this method.
+        [API-SUBJECT-TO-CHANGE] - The Dispose method should not block. We 
+        plan to separate out consumer close functionality from this method.
     </summary>
 </Member>
 
@@ -448,6 +448,29 @@
     <summary>
         The IDeserializer implementation instance used to deserialize values.
     </summary>
+</Member>
+
+<Member name="GetWatermarkOffsets_TopicPartition">
+    <summary>
+        Get last known low (oldest/beginning) and high (newest/end)
+        offsets for a topic/partition.
+         
+        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
+        is subject to change.
+    </summary>
+    <remarks>
+        The low offset is updated periodically (if statistics.interval.ms is set)
+        while the high offset is updated on each fetched message set from the broker.
+    
+        If there is no cached offset (either low or high, or both) then
+        Offset.Invalid will be returned for the respective offset.
+    </remarks>
+    <param name="topicPartition">
+        The topic/partition of interest.
+    </param>
+    <returns>
+        The requested WatermarkOffsets.
+    </returns>
 </Member>
 
 </API>
