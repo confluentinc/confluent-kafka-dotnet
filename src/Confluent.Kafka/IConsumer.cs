@@ -110,6 +110,9 @@ namespace Confluent.Kafka
         [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         void Poll();
 
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_Message"]/*' />
+        TopicPartitionOffsetError StoreOffset(Message message);
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
         List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
 

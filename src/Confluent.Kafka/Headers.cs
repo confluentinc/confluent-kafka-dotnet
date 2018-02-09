@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 
 
@@ -34,7 +35,15 @@ namespace Confluent.Kafka
         ///     The header value.
         /// </param>
         public void Add(string key, byte[] val)
-            => Add(new KeyValuePair<string, byte[]>(key, val));
+        {
+            if (key == null) 
+            {
+                throw new ArgumentNullException("Kafka message header key cannot be null.");
+            }
+
+            Add(new KeyValuePair<string, byte[]>(key, val));
+        }
+
 
         /// <summary>
         ///     Get the value of the latest message with the specified key.

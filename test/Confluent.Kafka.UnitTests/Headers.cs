@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -68,7 +69,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void NullKey()
         {
-            // TODO: ?? presumably allowed.
+            var hdrs = new Headers();
+            Assert.Throws<ArgumentNullException>(() => hdrs.Add(null, new byte[] {}));
         }
 
         [Fact]
