@@ -297,6 +297,10 @@ namespace Confluent.Kafka
         public void Poll()
             => Poll(-1);
 
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_Message"]/*' />
+        public TopicPartitionOffsetError StoreOffset(Message message)
+            => StoreOffsets(new[] { new TopicPartitionOffset(message.TopicPartition, message.Offset + 1) })[0];
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
         public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.StoreOffsets(offsets);

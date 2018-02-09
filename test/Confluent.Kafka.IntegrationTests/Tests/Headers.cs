@@ -273,6 +273,30 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(consumer.Consume(out Message msg19, TimeSpan.FromSeconds(10)));
                 Assert.Single(msg19.Headers);
             }
+
+            // null key
+            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            {
+                var headers = new Headers();
+                var threw = false;
+                try
+                {
+                    headers.Add(null, new byte[] { 142 } );
+                }
+                catch
+                {
+                    threw = true;
+                }
+                finally
+                {
+                    Assert.True(threw);
+                }
+
+                var headers2 = new List<KeyValuePair<string, byte[]>>();
+                headers2.Add(new KeyValuePair<string, byte[]>(null, new byte[] { 42 }));
+                Assert.Throws<ArgumentNullException>(() => producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers2).Wait());
+            }
+
         }
     }
 }
