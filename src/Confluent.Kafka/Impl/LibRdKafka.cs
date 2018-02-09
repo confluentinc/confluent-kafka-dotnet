@@ -428,7 +428,7 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode headers_add(
                 IntPtr hdrs,
                 IntPtr keydata,
-                UIntPtr keylen, // TODO: what is ssize_t? 
+                UIntPtr keylen,
                 IntPtr valdata,
                 UIntPtr vallen)
             => _header_add(hdrs, keydata, keylen, valdata, vallen);
