@@ -31,7 +31,7 @@ namespace Confluent.Kafka
     ///     [API-SUBJECT-TO-CHANGE] We are considering making this interface private in a 
     ///     future version so as to limit API surface area. Prefer to use the deserializing
     ///     consumer <see cref="Confluent.Kafka.IConsumer{TKey,TValue}" /> where possible
-    ///     (use the byte[] deserializer).
+    ///     (use the ByteArrayDeserializer).
     /// </summary>
     public interface IConsumer : IDisposable
     {
@@ -134,7 +134,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Resume"]/*' />
         List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
         List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Position_IEnumerable"]/*' />
