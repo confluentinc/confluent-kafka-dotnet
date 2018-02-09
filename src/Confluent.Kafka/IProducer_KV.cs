@@ -34,6 +34,9 @@ namespace Confluent.Kafka
     /// </summary>
     public interface IProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>, IDisposable
     {
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
+        string Name { get; }
+
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         event EventHandler<LogMessage> OnLog;
 

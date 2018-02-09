@@ -271,7 +271,7 @@ namespace Confluent.Kafka.Impl
                     pValue, (UIntPtr)valLength,
                     pKey, (UIntPtr)keyLength,
                     timestamp,
-                    headersPtr, // TODO: make sure that this is indeed owned by the dr.
+                    headersPtr,
                     opaque);
 
                 if (errorCode != ErrorCode.NoError)
