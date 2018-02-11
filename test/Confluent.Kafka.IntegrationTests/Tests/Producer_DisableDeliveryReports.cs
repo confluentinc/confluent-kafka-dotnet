@@ -24,8 +24,8 @@ using Xunit;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer.ProduceAsync method overload that provides
-    ///     delivery reports via an IDeliveryHandler instance.
+    ///     Test dotnet.producer.enable.delivery.reports == true
+    ///     results in no delivery report.
     /// </summary>
     public static partial class Tests
     {
