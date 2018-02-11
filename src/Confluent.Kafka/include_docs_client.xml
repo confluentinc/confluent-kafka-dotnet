@@ -19,14 +19,16 @@
     <remarks>
         By default not many log messages are generated.
      
-        You can specify one or more debug contexts using the 'debug'
-        configuration property and a log level using the 'log_level'
-        configuration property to enable more verbose logging,
-        however you shouldn't typically need to do this.
+        For more verbose logging, specify one or more debug contexts 
+        using the 'debug' configuration property. The 'log_level'
+        configuration property is also relevant, however logging is
+        verbose by default given a debug context has been specified,
+        so you typically shouldn't adjust this value.
     
-        Warning: Log handlers are called spontaneously from internal librdkafka 
-        threads and the application must not call any Confluent.Kafka APIs from 
-        within a log handler or perform any prolonged operations.
+        Warning: Log handlers are called spontaneously from internal 
+        librdkafka threads and the application must not call any 
+        Confluent.Kafka APIs from within a log handler or perform any
+        prolonged operations.
     </remarks>
 </Member>
 
@@ -40,7 +42,8 @@
         using the statistics.interval.ms configuration parameter
         (disabled by default).
     
-        Called on the Producer poll thread.
+        Called as a side effect of calls to `Poll` (producer/consumer) or 
+        `Consume` (consumer), on the same thread.
     </remarks>
 </Member>
 

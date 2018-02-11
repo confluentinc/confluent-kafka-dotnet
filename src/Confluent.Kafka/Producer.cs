@@ -39,8 +39,8 @@ namespace Confluent.Kafka
         ///     Name of the configuration property that specifies whether or not to
         ///     block if the send queue is full when producing messages. If false, a 
         ///     KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) will be 
-        ///     thrown if an attempt is made to produce a messageand the send queue is 
-        ///     full.
+        ///     thrown if an attempt is made to produce a message and the send queue
+        ///     is full.
         ///
         ///     Warning: if this configuration property is set to true, the
         ///     dotnet.producer.manual.poll configuration property is set to true, 
@@ -56,8 +56,8 @@ namespace Confluent.Kafka
         ///     Name of the configuration property that specifies whether or not 
         ///     the producer should start a background poll thread to receive 
         ///     delivery reports and event notifications. Generally, this should be
-        ///     set to true. If set to false, you will need to do this manually
-        ///     using the Poll function.
+        ///     set to true. If set to false, you will need to call the Poll function
+        ///     manually.
         /// 
         ///     default: true
         /// </summary>
@@ -70,11 +70,13 @@ namespace Confluent.Kafka
         ///     will leak memory. Typically you should set this parameter to true. 
         ///     Set it to false for "fire and forget" semantics and a small boost in
         ///     performance.
+        /// 
+        ///     default: true
         /// </summary>
         public string EnableDeliveryReportsPropertyName = "dotnet.producer.enable.delivery.reports";
 
-        private bool manualPoll;
-        private bool disableDeliveryReports;
+        private bool manualPoll = false;
+        private bool disableDeliveryReports = false;
         internal bool blockIfQueueFullPropertyValue = true;
 
         private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
