@@ -213,7 +213,7 @@ namespace Confluent.Kafka.Impl
                         pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
                         valuePtr = pinnedValue.AddrOfPinnedObject();
                     }
-                    ErrorCode err = LibRdKafka.headers_add(headersPtr, keyPtr, (UIntPtr)keyBytes.Length, valuePtr, (UIntPtr)header.Value.Length);
+                    ErrorCode err = LibRdKafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)header.Value.Length);
                     // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
                     pinnedKey.Free();
                     if (header.Value != null)
@@ -263,7 +263,10 @@ namespace Confluent.Kafka.Impl
 
             try
             {
-                var errorCode = LibRdKafka.producev(
+                // TODO: when refactor complete, reassess the below note.
+                // Note: since the message queue threshold limit also includes delivery reports, it is important that another
+                // thread of the application calls poll() for a blocking produce() to ever unblock.
+                var err = LibRdKafka.producev(
                     handle,
                     topic,
                     partition,
@@ -274,7 +277,7 @@ namespace Confluent.Kafka.Impl
                     headersPtr,
                     opaque);
 
-                if (errorCode != ErrorCode.NoError)
+                if (err != ErrorCode.NoError)
                 {
                     if (headersPtr != IntPtr.Zero)
                     {
@@ -282,15 +285,7 @@ namespace Confluent.Kafka.Impl
                     }
                 }
 
-                return errorCode;
-            }
-            catch 
-            {
-                if (headersPtr != IntPtr.Zero)
-                {
-                    LibRdKafka.headers_destroy(headersPtr);
-                }
-                throw;
+                return err;
             }
             finally
             {
