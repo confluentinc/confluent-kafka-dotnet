@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Impl
             _topic_partition_list_add = (Func<IntPtr, string, int, IntPtr>)methods.Where(m => m.Name == "rd_kafka_topic_partition_list_add").Single().CreateDelegate(typeof(Func<IntPtr, string, int, IntPtr>));
             _headers_new = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_headers_new").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _headers_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_headers_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
-            _header_add = (Func<IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_header_add").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, ErrorCode>));
+            _header_add = (Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_header_add").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ErrorCode>));
             _header_get_all = (headerGetAllDelegate)methods.Where(m => m.Name == "rd_kafka_header_get_all").Single().CreateDelegate(typeof(headerGetAllDelegate));
             _message_timestamp = (messageTimestampDelegate)methods.Where(m => m.Name == "rd_kafka_message_timestamp").Single().CreateDelegate(typeof(messageTimestampDelegate));
             _message_headers = (messageHeadersDelegate)methods.Where(m => m.Name == "rd_kafka_message_headers").Single().CreateDelegate(typeof(messageHeadersDelegate));
@@ -424,13 +424,13 @@ namespace Confluent.Kafka.Impl
         internal static void headers_destroy(IntPtr hdrs)
             => _headers_destroy(hdrs);
 
-        private static Func<IntPtr, IntPtr, UIntPtr, IntPtr, UIntPtr, ErrorCode> _header_add;
+        private static Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ErrorCode> _header_add;
         internal static ErrorCode headers_add(
                 IntPtr hdrs,
                 IntPtr keydata,
-                UIntPtr keylen,
+                IntPtr keylen,
                 IntPtr valdata,
-                UIntPtr vallen)
+                IntPtr vallen)
             => _header_add(hdrs, keydata, keylen, valdata, vallen);
 
         internal delegate ErrorCode headerGetAllDelegate(
