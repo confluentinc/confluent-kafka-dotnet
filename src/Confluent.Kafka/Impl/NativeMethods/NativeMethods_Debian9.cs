@@ -82,9 +82,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ErrorCode rd_kafka_header_add(
                 /* rd_kafka_headers_t * */ IntPtr hdrs,
                 /* const char * */ IntPtr name,
-                /* ssize_t */ UIntPtr name_size,
+                /* ssize_t */ IntPtr name_size,
                 /* const void * */ IntPtr value,
-                /* ssize_t */ UIntPtr value_size
+                /* ssize_t */ IntPtr value_size
         );
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
