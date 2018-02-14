@@ -80,5 +80,19 @@ namespace Confluent.Kafka.UnitTests
             hdrs.Add(new KeyValuePair<string, byte[]>("my-header", null));
             Assert.Null(hdrs.GetLast("my-header"));
         }
+
+        [Fact]
+        public void Remove()
+        {
+            var hdrs = new Headers();
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 42 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header", new byte[] { 44 }));
+            hdrs.Add(new KeyValuePair<string, byte[]>("my-header-2", new byte[] { 45 }));
+
+            hdrs.Remove("my-header");
+            Assert.Single(hdrs);
+            Assert.Equal("my-header-2", hdrs[0].Key);
+            Assert.Equal(45, hdrs[0].Value[0]);
+        }
     }
 }
