@@ -23,6 +23,9 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A collection of Kafka message headers.
     /// </summary>
+    /// <remarks>
+    ///     Message headers are supported by v0.11 brokers and above.
+    /// </remarks>
     public class Headers : List<KeyValuePair<string, byte[]>>
     {
         /// <summary>
@@ -32,7 +35,9 @@ namespace Confluent.Kafka
         ///     The header key.
         /// </param>
         /// <param name="val">
-        ///     The header value.
+        ///     The header value (possibly null). Note: A null
+        ///     header value is distinct from an empty header
+        ///     value (array of length 0).
         /// </param>
         public void Add(string key, byte[] val)
         {
@@ -44,9 +49,8 @@ namespace Confluent.Kafka
             Add(new KeyValuePair<string, byte[]>(key, val));
         }
 
-
         /// <summary>
-        ///     Get the value of the latest message with the specified key.
+        ///     Get the value of the latest header with the specified key.
         /// </summary>
         /// <param name="key">
         ///     The key to get the associated value of.
@@ -68,7 +72,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Try to get the value of the latest message with the specified key.
+        ///     Try to get the value of the latest header with the specified key.
         /// </summary>
         /// <param name="key">
         ///     The key to get the associated value of.
@@ -96,5 +100,15 @@ namespace Confluent.Kafka
             lastHeader = null;
             return false;
         }
+
+        /// <summary>
+        ///     Removes all headers for the given key.
+        /// </summary>
+        /// <param name="key">
+        ///     The key to remove all headers for
+        /// </param>
+        public void Remove(string key)
+            => RemoveAll(a => a.Key == key);
+
     }
 }
