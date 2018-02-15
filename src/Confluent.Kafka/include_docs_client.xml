@@ -59,7 +59,7 @@
         cluster changes.
     </summary>
     <param name="brokers">
-        Coma-separated list of brokers in the same format as 
+        Comma-separated list of brokers in the same format as 
         the bootstrap.server configuration parameter.
     </param>
     <remarks>
