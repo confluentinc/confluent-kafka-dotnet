@@ -178,17 +178,9 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        internal ErrorCode Produce(
-            string topic, 
-            byte[] val, int valOffset, int valLength, 
-            byte[] key, int keyOffset, int keyLength, 
-            int partition, 
-            long timestamp, 
-            IEnumerable<KeyValuePair<string, byte[]>> headers,
-            IntPtr opaque, 
-            bool blockIfQueueFull)
+        private IntPtr marshalHeaders(IEnumerable<Header> headers)
         {
-            IntPtr headersPtr = IntPtr.Zero;
+            var headersPtr = IntPtr.Zero;
 
             if (headers != null)
             {
@@ -197,6 +189,7 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new Exception("Failed to create headers list.");
                 }
+
                 foreach (var header in headers)
                 {
                     if (header.Key == null)
@@ -227,6 +220,19 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
+            return headersPtr;
+        }
+
+        internal ErrorCode Produce(
+            string topic, 
+            byte[] val, int valOffset, int valLength, 
+            byte[] key, int keyOffset, int keyLength, 
+            int partition, 
+            long timestamp, 
+            IEnumerable<Header> headers,
+            IntPtr opaque, 
+            bool blockIfQueueFull)
+        {
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
 
@@ -259,12 +265,11 @@ namespace Confluent.Kafka.Impl
                 pKey = Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset);
             }
 
+            IntPtr headersPtr = marshalHeaders(headers);
+
             try
             {
-                // TODO: when refactor complete, reassess the below note.
-                // Note: since the message queue threshold limit also includes delivery reports, it is important that another
-                // thread of the application calls poll() for a blocking produce() to ever unblock.
-                var err = LibRdKafka.producev(
+                var errorCode = LibRdKafka.producev(
                     handle,
                     topic,
                     partition,
@@ -275,7 +280,7 @@ namespace Confluent.Kafka.Impl
                     headersPtr,
                     opaque);
 
-                if (err != ErrorCode.NoError)
+                if (errorCode != ErrorCode.NoError)
                 {
                     if (headersPtr != IntPtr.Zero)
                     {
@@ -283,7 +288,15 @@ namespace Confluent.Kafka.Impl
                     }
                 }
 
-                return err;
+                return errorCode;
+            }
+            catch 
+            {
+                if (headersPtr != IntPtr.Zero)
+                {
+                    LibRdKafka.headers_destroy(headersPtr);
+                }
+                throw;
             }
             finally
             {
@@ -501,7 +514,7 @@ namespace Confluent.Kafka.Impl
                     var headerName = Util.Marshal.PtrToStringUTF8(namep);
                     var headerValue = new byte[(int)sizep];
                     Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                    headers.Add(new KeyValuePair<string, byte[]>(headerName, headerValue));
+                    headers.Add(new Header(headerName, headerValue));
                 }
             }
 

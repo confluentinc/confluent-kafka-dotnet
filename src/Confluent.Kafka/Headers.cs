@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 
@@ -26,8 +27,10 @@ namespace Confluent.Kafka
     /// <remarks>
     ///     Message headers are supported by v0.11 brokers and above.
     /// </remarks>
-    public class Headers : List<KeyValuePair<string, byte[]>>
+    public class Headers : IEnumerable<Header>
     {
+        private List<Header> headers = new List<Header>();
+
         /// <summary>
         ///     Append a new header to the collection.
         /// </summary>
@@ -46,7 +49,18 @@ namespace Confluent.Kafka
                 throw new ArgumentNullException("Kafka message header key cannot be null.");
             }
 
-            Add(new KeyValuePair<string, byte[]>(key, val));
+            headers.Add(new Header(key, val));
+        }
+
+        /// <summary>
+        ///     Append a new header to the collection.
+        /// </summary>
+        /// <param name="header">
+        ///     The header to add to the collection.
+        /// </param>
+        public void Add(Header header)
+        {
+            headers.Add(header);
         }
 
         /// <summary>
@@ -88,11 +102,11 @@ namespace Confluent.Kafka
         /// </returns>
         public bool TryGetLast(string key, out byte[] lastHeader)
         {
-            for (int i=this.Count-1; i>=0; --i)
+            for (int i=headers.Count-1; i>=0; --i)
             {
-                if (this[i].Key == key)
+                if (headers[i].Key == key)
                 {
-                    lastHeader = this[i].Value;
+                    lastHeader = headers[i].Value;
                     return true;
                 }
             }
@@ -108,7 +122,77 @@ namespace Confluent.Kafka
         ///     The key to remove all headers for
         /// </param>
         public void Remove(string key)
-            => RemoveAll(a => a.Key == key);
+            => headers.RemoveAll(a => a.Key == key);
 
+        internal class HeadersEnumerator : IEnumerator<Header>
+        {
+            private Headers headers;
+
+            private int location = -1;
+
+            public HeadersEnumerator(Headers headers)
+            {
+                this.headers = headers;
+            }
+
+            public object Current 
+                => ((IEnumerator<Header>)this).Current;
+
+            Header IEnumerator<Header>.Current
+                => new Header(headers.headers[location].Key, headers.headers[location].Value);
+
+            public void Dispose() {}
+
+            public bool MoveNext()
+            {
+                location += 1;
+                if (location >= headers.headers.Count)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            public void Reset()
+            {
+                this.location = -1;
+            }
+        }
+
+        /// <summary>
+        ///     Returns an enumerator that iterates through the headers collection.
+        /// </summary>
+        /// <returns>
+        ///     An enumerator object that can be used to iterate through the headers collection.
+        /// </returns>
+        public IEnumerator<Header> GetEnumerator()
+            => new HeadersEnumerator(this);
+
+        /// <summary>
+        ///     Returns an enumerator that iterates through the headers collection.
+        /// </summary>
+        /// <returns>
+        ///     An enumerator object that can be used to iterate through the headers collection.
+        /// </returns>
+        IEnumerator IEnumerable.GetEnumerator()
+            => new HeadersEnumerator(this);
+
+        /// <summary>
+        ///     Gets the header at the specified index
+        /// </summary>
+        /// <param key="index">
+        ///     The zero-based index of the element to get.
+        /// </param>
+        public Header this[int index]
+        {
+            get { return headers[index]; }
+        }
+
+        /// <summary>
+        ///     The number of headers in the collection.
+        /// </summary>
+        public int Count
+            => headers.Count;
     }
 }

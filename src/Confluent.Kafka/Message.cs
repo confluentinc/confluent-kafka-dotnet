@@ -62,7 +62,7 @@ namespace Confluent.Kafka
             Headers = headers;
             Error = error;
         }
-        
+
         /// <summary>
         ///     Gets the Kafka topic name associated with this message.
         /// </summary>

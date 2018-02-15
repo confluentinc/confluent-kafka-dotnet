@@ -28,7 +28,7 @@ namespace Confluent.Kafka.UnitTests
         {
             byte[] key = new byte[0];
             byte[] val = new byte[0];
-            var hdrs = new Confluent.Kafka.Headers { new KeyValuePair<string, byte[]>("sd", new byte[] { 42 }) };
+            var hdrs = new Confluent.Kafka.Headers { new Header("sd", new byte[] { 42 }) };
 
             var mi = new Message(
                 "tp1", 
@@ -54,7 +54,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void ConstuctorAndProps_Generic()
         {
-            var hdrs = new Confluent.Kafka.Headers { new KeyValuePair<string, byte[]>("sd", new byte[] { 42 }) };
+            var hdrs = new Confluent.Kafka.Headers { new Header("sd", new byte[] { 42 }) };
 
             var mi = new Message<string, string>(
                 "tp1", 

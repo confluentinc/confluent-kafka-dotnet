@@ -135,7 +135,7 @@ namespace Confluent.Kafka
             TKey key,
             TValue val, 
             Timestamp timestamp, 
-            IEnumerable<KeyValuePair<string, byte[]>> headers
+            IEnumerable<Header> headers
         )
             => serializingProducer.ProduceAsync(topic, partition, key, val, timestamp, headers);
 
@@ -157,7 +157,7 @@ namespace Confluent.Kafka
             TKey key,
             TValue val,
             Timestamp timestamp,
-            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            IEnumerable<Header> headers,
             IDeliveryHandler<TKey, TValue> deliveryHandler
         )
             => serializingProducer.Produce(topic, partition, key, val, timestamp, headers, deliveryHandler);
