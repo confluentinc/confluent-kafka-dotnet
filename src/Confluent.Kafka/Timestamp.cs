@@ -69,7 +69,7 @@ namespace Confluent.Kafka
         ///     if it is not already.
         /// </summary>
         /// <param name="dateTime">
-        ///     The DateTime value to corresponding to the timestamp.
+        ///     The DateTime value corresponding to the timestamp.
         /// </param>
         /// <param name="type">
         ///     The type of the timestamp.
@@ -84,7 +84,7 @@ namespace Confluent.Kafka
         ///     Initializes a new instance of the Timestamp structure.
         ///     Note: <paramref name="dateTime" /> is first converted
         ///     to UTC if it is not already and TimestampType is set
-        ///     to CreationTime.
+        ///     to CreateTime.
         /// </summary>
         /// <param name="dateTime">
         ///     The DateTime value corresponding to the timestamp.
@@ -95,7 +95,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
-        ///     Note: TimestampType is set to CreationTime.
+        ///     Note: TimestampType is set to CreateTime.
         /// </summary>
         /// <param name="dateTimeOffset">
         ///     The DateTimeOffset value corresponding to the timestamp.
