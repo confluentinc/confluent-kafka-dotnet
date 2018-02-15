@@ -61,7 +61,7 @@ namespace Confluent.Kafka
             string topic, Partition partition, 
             byte[] key, byte[] val, 
             Timestamp timestamp, 
-            IEnumerable<KeyValuePair<string, byte[]>> headers);
+            IEnumerable<Header> headers);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
@@ -69,7 +69,7 @@ namespace Confluent.Kafka
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers);
+            Timestamp timestamp, IEnumerable<Header> headers);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
@@ -85,7 +85,7 @@ namespace Confluent.Kafka
             string topic, Partition partition,
             byte[] key, byte[] val,
             Timestamp timestamp,
-            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            IEnumerable<Header> headers,
             IDeliveryHandler deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
@@ -94,7 +94,7 @@ namespace Confluent.Kafka
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength,
             byte[] val, int valOffset, int valLength,
-            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers,
+            Timestamp timestamp, IEnumerable<Header> headers,
             IDeliveryHandler deliveryHandler);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
