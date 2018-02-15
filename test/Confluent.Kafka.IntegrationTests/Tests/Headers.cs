@@ -78,13 +78,13 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 // single header value.
-                var headers = new Dictionary<string, byte[]>();
+                var headers = new Headers();
                 headers.Add("test-header", new byte[] { 142 } );
                 dr_single = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers).Result;
                 Assert.Single(dr_single.Headers);
 
                 // empty header values
-                var headers0 = new Dictionary<string, byte[]>();
+                var headers0 = new Headers();
                 dr_empty = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers0).Result;
                 Assert.Empty(dr_empty.Headers);
 
@@ -100,12 +100,12 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, dr_multiple.Headers.Count);
 
                 // duplicate header values (also List not Dictionary)
-                var headers3 = new List<KeyValuePair<string, byte[]>>();
-                headers3.Add(new KeyValuePair<string, byte[]>("test-header-a", new byte[] { 111 } ));
-                headers3.Add(new KeyValuePair<string, byte[]>("test-header-b", new byte[] { 112 } ));
-                headers3.Add(new KeyValuePair<string, byte[]>("test-header-a", new byte[] { 113 } ));
-                headers3.Add(new KeyValuePair<string, byte[]>("test-header-b", new byte[] { 114 } ));
-                headers3.Add(new KeyValuePair<string, byte[]>("test-header-c", new byte[] { 115 } ));
+                var headers3 = new List<Header>();
+                headers3.Add(new Header("test-header-a", new byte[] { 111 } ));
+                headers3.Add(new Header("test-header-b", new byte[] { 112 } ));
+                headers3.Add(new Header("test-header-a", new byte[] { 113 } ));
+                headers3.Add(new Header("test-header-b", new byte[] { 114 } ));
+                headers3.Add(new Header("test-header-c", new byte[] { 115 } ));
                 dr_duplicate = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers3).Result;
                 Assert.Equal(5, dr_duplicate.Headers.Count);
 
@@ -292,8 +292,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(threw);
                 }
 
-                var headers2 = new List<KeyValuePair<string, byte[]>>();
-                headers2.Add(new KeyValuePair<string, byte[]>(null, new byte[] { 42 }));
+                var headers2 = new List<Header>();
+                headers2.Add(new Header(null, new byte[] { 42 }));
                 Assert.Throws<ArgumentNullException>(() => producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers2).Wait());
             }
 

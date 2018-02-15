@@ -157,7 +157,7 @@ namespace Confluent.Kafka
                     var headerName = Util.Marshal.PtrToStringUTF8(namep);
                     var headerValue = new byte[(int)sizep];
                     Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                    headers.Add(new KeyValuePair<string, byte[]>(headerName, headerValue));
+                    headers.Add(headerName, headerValue);
                 }
             }
 
@@ -268,7 +268,7 @@ namespace Confluent.Kafka
             byte[] key, int keyOffset, int keyLength,
             Timestamp timestamp,
             Partition partition, 
-            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            IEnumerable<Header> headers,
             bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
@@ -323,7 +323,7 @@ namespace Confluent.Kafka
             byte[] key, int keyOffset, int keyLength,
             Timestamp timestamp,
             Partition partition, 
-            IEnumerable<KeyValuePair<string, byte[]>> headers,
+            IEnumerable<Header> headers,
             bool blockIfQueueFull)
         {
             var deliveryCompletionSource = new TaskDeliveryHandler();
@@ -550,7 +550,7 @@ namespace Confluent.Kafka
         public Task<Message> ProduceAsync(
             string topic, Partition partition, 
             byte[] key, byte[] val, 
-            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers
+            Timestamp timestamp, IEnumerable<Header> headers
         )
             => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
 
@@ -561,7 +561,7 @@ namespace Confluent.Kafka
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
             Timestamp timestamp, 
-            IEnumerable<KeyValuePair<string, byte[]>> headers
+            IEnumerable<Header> headers
         )
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
 
@@ -588,7 +588,7 @@ namespace Confluent.Kafka
         public void Produce(
             string topic, Partition partition, 
             byte[] key, byte[] val, 
-            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers, 
+            Timestamp timestamp, IEnumerable<Header> headers, 
             IDeliveryHandler deliveryHandler
         )
             => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
@@ -599,7 +599,7 @@ namespace Confluent.Kafka
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, IEnumerable<KeyValuePair<string, byte[]>> headers, 
+            Timestamp timestamp, IEnumerable<Header> headers, 
             IDeliveryHandler deliveryHandler
         )
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
