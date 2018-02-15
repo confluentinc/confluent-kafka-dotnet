@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         /// </summary>
         public static Timestamp Default
         {
-            get { return new Timestamp(RD_KAFKA_NO_TIMESTAMP, TimestampType.CreateTime); }
+            get { return new Timestamp(RD_KAFKA_NO_TIMESTAMP, TimestampType.NotAvailable); }
         }
 
         /// <summary>
