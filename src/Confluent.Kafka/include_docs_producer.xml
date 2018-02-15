@@ -198,7 +198,7 @@
 
         Topic: The topic to produce the message to.
 
-        Partition:  The partition to produce the message to. If Partition.NotSpecified,
+        Partition:  The partition to produce the message to. If Partition.Any,
         a partitioner specified via the 'partitioner' configuration property
         will be used to determine the partition the message is sent to.
 
@@ -248,7 +248,7 @@
         The topic to produce the message to.
     </param>
     <param name="partition">
-        The partition to produce the message to. If Partition.NotSpecified,
+        The partition to produce the message to. If Partition.Any,
         a partitioner specified via the 'partitioner' configuration property
         will be used to determine the partition the message is sent to.
     </param>
@@ -278,7 +278,7 @@
         The topic to produce the message to.
     </param>
     <param name="partition">
-        The partition to produce the message to. If Partition.NotSpecified,
+        The partition to produce the message to. If Partition.Any,
         a partitioner specified via the 'partitioner' configuration property
         will be used to determine the partition the message is sent to.
     </param>
