@@ -249,7 +249,10 @@ namespace Confluent.Kafka
         {
             if (timestamp.Type != TimestampType.CreateTime)
             {
-                throw new ArgumentException("Timestamp type must be CreateTime");
+                if (timestamp != Timestamp.Default)
+                {
+                    throw new ArgumentException("Timestamp must be either Timestamp.Default, or timestamp type must equal CreateTime.");
+                }
             }
 
             if (!this.disableDeliveryReports && deliveryHandler != null)
