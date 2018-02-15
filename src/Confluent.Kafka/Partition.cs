@@ -206,9 +206,9 @@ namespace Confluent.Kafka
             switch (Value)
             {
                 case RD_KAFKA_PARTITION_UA:
-                    return $"Unknown [{RD_KAFKA_PARTITION_UA}]";
+                    return $"[Any]";
                 default:
-                    return Value.ToString();
+                    return $"[{Value}]";
             }
         }
     }
