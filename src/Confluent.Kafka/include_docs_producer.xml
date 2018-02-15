@@ -210,7 +210,7 @@
 
         Error: Ignored.
 
-        Timestamp: If the timestamp type is CreationTime, then this is used as the
+        Timestamp: If the timestamp type is CreateTime, then this is used as the
         message timestamp, else this property is ignored and the message timestamp
         is set to Timestamp.Default (the time of this function call).
 
