@@ -199,6 +199,36 @@ namespace Confluent.Kafka
             => a.Value <= b.Value;
 
         /// <summary>
+        ///     Add an integer value to an Offset value.
+        /// </summary>
+        /// <param name="a">
+        ///     The Offset value to add the integer value to.
+        /// </param>
+        /// <param name="b">
+        ///     The integer value to add to the Offset value.
+        /// </param>
+        /// <returns>
+        ///     The Offset value incremented by the integer value b.
+        /// </returns>
+        public static Offset operator +(Offset a, int b)
+            => new Offset(a.Value + b);
+
+        /// <summary>
+        ///     Add a long value to an Offset value.
+        /// </summary>
+        /// <param name="a">
+        ///     The Offset value to add the long value to.
+        /// </param>
+        /// <param name="b">
+        ///     The long value to add to the Offset value.
+        /// </param>
+        /// <returns>
+        ///     The Offset value incremented by the long value b.
+        /// </returns>
+        public static Offset operator +(Offset a, long b)
+            => new Offset(a.Value + b);
+
+        /// <summary>
         ///     Returns a hash code for this Offset.
         /// </summary>
         /// <returns>

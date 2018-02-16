@@ -70,6 +70,20 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public void Addition_Int()
+        {
+            Offset a = new Offset(42);
+            Assert.Equal(45, a + 3);
+        }
+
+        [Fact]
+        public void Addition_Long()
+        {
+            Offset a = new Offset(42);
+            Assert.Equal(100, a + (long)58);
+        }
+
+        [Fact]
         public void Hash()
         {
             Offset offset = new Offset(42);
