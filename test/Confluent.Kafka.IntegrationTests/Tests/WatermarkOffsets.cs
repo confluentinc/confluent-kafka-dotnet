@@ -75,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
                 Assert.Equal(getOffsets.Low, Offset.Invalid);
                 // the offset of the next message to be read.
-                Assert.Equal((long)getOffsets.High, dr.Offset + 1);
+                Assert.Equal(getOffsets.High, dr.Offset + 1);
 
                 var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition);
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
