@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test of disabling marshaling of message headers.
+        ///     Basic test of Consumer.Seek.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_DisableHeaderMarshaling(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
@@ -40,21 +40,20 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.enable.header.marshaling", false }
+                { "dotnet.consumer.disable.header.marshaling", true }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
 
-            DeliveryReport<Null, string> dr;
+            Message<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(
-                    singlePartitionTopic,
-                    new Message<Null, string>
-                    {
-                        Value = "my-value", 
-                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
-                    }
+                    singlePartitionTopic, 
+                    Partition.Any, 
+                    null, "my-value", 
+                    Timestamp.Default, 
+                    new Headers() { new Header("my-header", new byte[] { 42 }) }
                 ).Result;
             }
 
@@ -68,8 +67,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                Assert.True(consumer.Consume(out ConsumerRecord<Null, string> record, TimeSpan.FromSeconds(30)));
-                Assert.Null(record.Message.Headers);
+                Assert.True(consumer.Consume(out Message<Null, string> message, TimeSpan.FromSeconds(30)));
+                Assert.Null(message.Headers);
             }
         }
 
