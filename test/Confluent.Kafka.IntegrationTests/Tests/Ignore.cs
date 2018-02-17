@@ -47,10 +47,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = new byte[1] { 1 } }).Wait();
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[1] { 0 }, Value = null }).Wait();
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[1] { 42 }, Value = new byte[2] { 42, 240 } }).Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, new Headers()).Result;
+                producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, new byte[] { 1 }, 0, 1, Timestamp.Default, null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, Partition.Any, new byte[] { 0 }, 0, 1, null, 0, 0, Timestamp.Default, null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, Partition.Any, new byte[] { 42 }, 0, 1, new byte[] { 42, 240 }, 0, 2, Timestamp.Default, null).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

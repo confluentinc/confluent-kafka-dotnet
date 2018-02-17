@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 using (var producer = new Producer(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
                 {
-                    var dr = await producer.ProduceAsync(singlePartitionTopic, new byte[] {42}, new byte[] {44});
+                    var dr = await producer.ProduceAsync(singlePartitionTopic, 0, new byte[] {42}, 0, 1, new byte[] {44}, 0, 1, Timestamp.Default, null);
                     Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                     producer.Flush(TimeSpan.FromSeconds(10));
                 }
