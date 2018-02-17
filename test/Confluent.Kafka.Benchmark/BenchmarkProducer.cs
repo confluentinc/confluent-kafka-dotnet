@@ -87,7 +87,7 @@ namespace Confluent.Kafka.Benchmark
                     var val = new byte[100].Select(a => ++cnt).ToArray();
 
                     // this avoids including connection setup, topic creation time, etc.. in result.
-                    firstDeliveryReport = producer.ProduceAsync(topic, Partition.Any, null, val, Timestamp.Default, headers).Result;
+                    firstDeliveryReport = producer.ProduceAsync(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers).Result;
 
                     var startTime = DateTime.Now.Ticks;
 
@@ -97,7 +97,7 @@ namespace Confluent.Kafka.Benchmark
 
                         for (int i = 0; i < nMessages; i++)
                         {
-                            producer.Produce(topic, Partition.Any, null, val, Timestamp.Default, headers, deliveryHandler);
+                            producer.Produce(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers, deliveryHandler);
                         }
 
                         deliveryHandler.AutoEvent.WaitOne();
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.Benchmark
                         var tasks = new Task[nMessages];
                         for (int i = 0; i < nMessages; i++)
                         {
-                            tasks[i] = producer.ProduceAsync(topic, Partition.Any, null, val, Timestamp.Default, headers);
+                            tasks[i] = producer.ProduceAsync(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers);
                         }
                         Task.WaitAll(tasks);
                     }

@@ -47,22 +47,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="GetSerializingProducer"]/*' />
         ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<Message> ProduceAsync(Message message);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<Message> ProduceAsync(string topic, byte[] key, byte[] val);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<Message> ProduceAsync(
-            string topic, Partition partition, 
-            byte[] key, byte[] val, 
-            Timestamp timestamp, 
-            IEnumerable<Header> headers);
-
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         Task<Message> ProduceAsync(
@@ -70,23 +54,6 @@ namespace Confluent.Kafka
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
             Timestamp timestamp, IEnumerable<Header> headers);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
-        void Produce(Message message, IDeliveryHandler deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
-        void Produce(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
-        void Produce(
-            string topic, Partition partition,
-            byte[] key, byte[] val,
-            Timestamp timestamp,
-            IEnumerable<Header> headers,
-            IDeliveryHandler deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />

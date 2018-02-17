@@ -55,14 +55,14 @@ namespace Confluent.Kafka.IntegrationTests
             var lastMessage = messages[N - 1];
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, 0));
+                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 
                 // Test #1
                 consumer.Consume(out Message<string, string> msg, TimeSpan.FromSeconds(10));
                 var os = consumer.Commit();
                 Assert.Equal(firstMsgOffset + 1, os.Offsets[0].Offset);
                 var ps = consumer.Position( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) });
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0)}, TimeSpan.FromSeconds(10));
+                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 1, co[0].Offset);
                 Assert.Equal(firstMsgOffset + 1, ps[0].Offset);
                 
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
             // Test #3
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
-                var os = consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, 5) });
+                var os = consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 5) });
                 Assert.Equal(firstMsgOffset + 5, os.Offsets[0].Offset);
                 var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 5, co[0].Offset);
@@ -87,6 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
+
                 consumer.Consume(out Message<string, string> msg, TimeSpan.FromSeconds(10));
                 var ps = consumer.Position( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) });
                 Assert.Equal(firstMsgOffset + 6, ps[0].Offset);
@@ -98,7 +99,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
-                var os = consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, 3) }).Result;
+                var os = consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 3) }).Result;
                 Assert.Equal(firstMsgOffset + 3, os.Offsets[0].Offset);
                 var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
@@ -116,7 +117,7 @@ namespace Confluent.Kafka.IntegrationTests
             // Test #5
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, 0));
+                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 consumer.Consume(out Message<string, string> msg, TimeSpan.FromSeconds(10));
                 consumer.Consume(out Message<string, string> msg2, TimeSpan.FromSeconds(10));
                 consumer.Consume(out Message<string, string> msg3, TimeSpan.FromSeconds(10));
@@ -138,7 +139,7 @@ namespace Confluent.Kafka.IntegrationTests
             // Test #6
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, 0));
+                consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 consumer.Consume(out Message<string, string> msg, TimeSpan.FromSeconds(10));
                 consumer.Consume(out Message<string, string> msg2, TimeSpan.FromSeconds(10));
                 consumer.Consume(out Message<string, string> msg3, TimeSpan.FromSeconds(10));

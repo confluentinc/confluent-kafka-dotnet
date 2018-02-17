@@ -41,9 +41,9 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message>>();
             using (var producer = new Producer(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(new Message(partitionedTopic, 1, Offset.Invalid, null, null, Timestamp.Default, null, null)));
                 drs.Add(producer.ProduceAsync(partitionedTopic, 1, null, 0, 0, null, 0, 0, Timestamp.Default, null));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
+                drs.Add(producer.ProduceAsync(partitionedTopic, 1, null, 0, 0, null, 0, 0, Timestamp.Default, null));
+                drs.Add(producer.ProduceAsync(partitionedTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null));
                 Assert.Throws<ArgumentException>(() => { 
                     producer.ProduceAsync(partitionedTopic, 0, null, 8, 100, null, -33, int.MaxValue, Timestamp.Default, null); 
                 });

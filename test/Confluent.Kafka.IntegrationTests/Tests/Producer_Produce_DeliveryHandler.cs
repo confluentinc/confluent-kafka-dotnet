@@ -104,17 +104,25 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.Produce(
                     singlePartitionTopic,
+                    Partition.Any,
                     DeliveryHandler_P.TestKey,
+                    0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue,
-                    dh
-                );
+                    0, DeliveryHandler_P.TestValue.Length,
+                    Timestamp.Default,
+                    null,
+                    dh);
 
                 producer.Produce(
-                    singlePartitionTopic, 
+                    singlePartitionTopic,
+                    Partition.Any,
                     DeliveryHandler_P.TestKey, 
+                    0, DeliveryHandler_P.TestKey.Length,
                     DeliveryHandler_P.TestValue, 
-                    dh
-                );
+                    0, DeliveryHandler_P.TestValue.Length,
+                    Timestamp.Default,
+                    null,
+                    dh);
 
                 producer.Produce(
                     singlePartitionTopic, Partition.Any,
