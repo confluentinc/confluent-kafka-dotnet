@@ -54,7 +54,9 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "bootstrap.servers", bootstrapServers }
             };
+#pragma warning disable CS0618
             var producer = new Producer(producerConfig, true, false);
+#pragma warning restore CS0618
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));

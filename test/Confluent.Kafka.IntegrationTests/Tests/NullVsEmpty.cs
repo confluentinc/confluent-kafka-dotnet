@@ -47,10 +47,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(singlePartitionTopic, (byte[])null, null).Result;
-                producer.ProduceAsync(singlePartitionTopic, null, new byte[0]).Wait();
-                producer.ProduceAsync(singlePartitionTopic, new byte[0], null).Wait();
-                producer.ProduceAsync(singlePartitionTopic, new byte[0], new byte[0]).Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, 0, (byte[])null, 0, 0, null, 0, 0, Timestamp.Default, null).Result;
+                producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, new byte[0], 0, 0, Timestamp.Default, null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, 0, new byte[0], 0, 0, null, 0, 0, Timestamp.Default, null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, 0, new byte[0], 0, 0, new byte[0], 0, 0, Timestamp.Default, null).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

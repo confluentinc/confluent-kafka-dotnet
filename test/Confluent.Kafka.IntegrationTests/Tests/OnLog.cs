@@ -55,7 +55,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
-                producer.ProduceAsync(singlePartitionTopic, null, (byte[])null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, (byte[])null, 0, 0, Timestamp.Default, null).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);

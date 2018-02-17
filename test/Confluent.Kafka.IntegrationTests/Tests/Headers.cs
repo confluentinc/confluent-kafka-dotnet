@@ -156,11 +156,11 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Test headers work as expected with all non-serializing ProduceAsync variants. 
 
-                dr_ol4 = producer.ProduceAsync(new Message(singlePartitionTopic, 0, Offset.Invalid, null, null, Timestamp.Default, headers, null)).Result;
+                dr_ol4 = producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
                 Assert.Single(dr_ol4.Headers);
-                dr_ol5 = producer.ProduceAsync(singlePartitionTopic, null, null).Result;
+                dr_ol5 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null).Result;
                 Assert.Empty(dr_ol5.Headers);
-                dr_ol6 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, null, Timestamp.Default, headers).Result;
+                dr_ol6 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
                 Assert.Single(dr_ol6.Headers);
                 dr_ol7 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
                 Assert.Single(dr_ol7.Headers);
@@ -168,9 +168,9 @@ namespace Confluent.Kafka.IntegrationTests
                 // Test headers work as expected with all non-serializing Produce variants.
 
                 var dh = new DeliveryHandler_MHPC_2();
-                producer.Produce(new Message(singlePartitionTopic, 0, Offset.Invalid, null, null, Timestamp.Default, headers, null), dh);
-                producer.Produce(singlePartitionTopic, null, null, dh);
-                producer.Produce(singlePartitionTopic, Partition.Any, null, null, Timestamp.Default, headers, dh);
+                producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
+                producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
+                producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
                 producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
 
                 producer.Flush(TimeSpan.FromSeconds(10));
@@ -307,8 +307,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 var headers2 = new List<Header>();
-                headers2.Add(new Header(null, new byte[] { 42 }));
-                Assert.Throws<ArgumentNullException>(() => producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, "the value", Timestamp.Default, headers2).Wait());
+                Assert.Throws<ArgumentNullException>(() => headers2.Add(new Header(null, new byte[] { 42 })));
             }
 
         }
