@@ -60,8 +60,7 @@ namespace Confluent.Kafka
         ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
         ///     forget" semantics and a small boost in performance.
         /// </param>
-        [Obsolete("Use dotnet.producer.enable.background.poll and dotnet.producer.enable.delivery.reports configuration properties " +
-                  "instead of manualPoll and disableDeliveryReports constructor parameters.")]
+        [Obsolete("Use " + Producer.EnableBackgroundPollPropertyName + " and " + Producer.EnableDeliveryReportsPropertyName + " configuration properties instead of manualPoll and disableDeliveryReports constructor parameters.")]
         private Producer(
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
