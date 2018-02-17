@@ -466,7 +466,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out Message message, IntPtr millisecondsTimeout)
+        internal bool ConsumerPoll(out Message message, bool disableHeaderMarshaling, IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
             // TODO: There is a newer librdkafka interface for this now. Use that.
@@ -500,21 +500,25 @@ namespace Confluent.Kafka.Impl
 
             long timestamp = LibRdKafka.message_timestamp(msgPtr, out IntPtr timestampType);
 
-            Headers headers = new Headers();
-            LibRdKafka.message_headers(msgPtr, out IntPtr hdrsPtr);
-            if (hdrsPtr != IntPtr.Zero)
+            Headers headers = null;
+            if (!disableHeaderMarshaling)
             {
-                for (var i=0; ; ++i)
+                headers = new Headers();
+                LibRdKafka.message_headers(msgPtr, out IntPtr hdrsPtr);
+                if (hdrsPtr != IntPtr.Zero)
                 {
-                    var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
-                    if (err != ErrorCode.NoError)
+                    for (var i=0; ; ++i)
                     {
-                        break;
+                        var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                        if (err != ErrorCode.NoError)
+                        {
+                            break;
+                        }
+                        var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                        var headerValue = new byte[(int)sizep];
+                        Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                        headers.Add(new Header(headerName, headerValue));
                     }
-                    var headerName = Util.Marshal.PtrToStringUTF8(namep);
-                    var headerValue = new byte[(int)sizep];
-                    Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                    headers.Add(new Header(headerName, headerValue));
                 }
             }
 

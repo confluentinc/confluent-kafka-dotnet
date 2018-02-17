@@ -40,11 +40,11 @@ namespace Confluent.Kafka.Benchmark
             const int NUMBER_OF_MESSAGES = 5000000;
             const int NUMBER_OF_TESTS = 1;
 
-            BenchmarkProducer.TaskProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS, headerCount);
-            var firstMessageOffset = BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS, headerCount);
+            BenchmarkProducer.TaskProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
+            var firstMessageOffset = BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
 
-            BenchmarkConsumer.Poll(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);
-            BenchmarkConsumer.Consume(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, NUMBER_OF_TESTS);
+            BenchmarkConsumer.Poll(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
+            BenchmarkConsumer.Consume(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
         }
     }
 }

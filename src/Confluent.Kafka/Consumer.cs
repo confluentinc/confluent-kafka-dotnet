@@ -37,6 +37,18 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer : IConsumer
     {
+        /// <summary>
+        ///     Name of the configuration property that specifies whether or not to
+        ///     disable marshaling of headers when consuming messages. Note that 
+        ///     this will measurably improve maximum throughput even for the case
+        ///     where messages do not have any headers.
+        /// 
+        ///     default: false
+        /// </summary>
+        public const string DisableHeaderMarshalingPropertyName = "dotnet.consumer.disable.header.marshaling";
+
+        private bool disableHeaderMarshaling = false;
+
         private SafeKafkaHandle kafkaHandle;
 
         private LibRdKafka.ErrorDelegate errorDelegate;
@@ -129,9 +141,19 @@ namespace Confluent.Kafka
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
             }
 
+            var modifiedConfig = config
+                .Where(
+                    prop => prop.Key != "default.topic.config" && 
+                    prop.Key != DisableHeaderMarshalingPropertyName);
+
+            var disableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == DisableHeaderMarshalingPropertyName).Value;
+            if (disableHeaderMarshalingObj != null)
+            {
+                this.disableHeaderMarshaling = bool.Parse(disableHeaderMarshalingObj.ToString());
+            }
+
             var configHandle = SafeConfigHandle.Create();
-            config
-                .Where(prop => prop.Key != "default.topic.config")
+            modifiedConfig
                 .ToList()
                 .ForEach((kvp) => {
                     if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
@@ -249,7 +271,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_int"]/*' />
         public bool Consume(out Message message, int millisecondsTimeout)
         {
-            if (kafkaHandle.ConsumerPoll(out message, (IntPtr)millisecondsTimeout))
+            if (kafkaHandle.ConsumerPoll(out message, disableHeaderMarshaling, (IntPtr)millisecondsTimeout))
             {
                 switch (message.Error.Code)
                 {

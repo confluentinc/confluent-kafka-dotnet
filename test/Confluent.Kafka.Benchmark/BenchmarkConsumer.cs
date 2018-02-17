@@ -22,13 +22,14 @@ namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkConsumer
     {
-        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, bool usePoll)
+        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders, bool usePoll)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", "benchmark-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                { "session.timeout.ms", 6000 },
+                { "dotnet.consumer.disable.header.marshaling", nHeaders == 0 }
             };
 
             using (var consumer = new Consumer(consumerConfig))
@@ -76,10 +77,10 @@ namespace Confluent.Kafka.Benchmark
             }
         }
 
-        public static void Poll(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, true);
+        public static void Poll(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
+            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, true);
 
-        public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, false);
+        public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
+            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, false);
     }
 }
