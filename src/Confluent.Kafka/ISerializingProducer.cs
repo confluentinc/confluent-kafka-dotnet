@@ -58,7 +58,7 @@ namespace Confluent.Kafka
 #region obsolete produce methods
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
+        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
@@ -66,7 +66,7 @@ namespace Confluent.Kafka
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
+        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
@@ -76,7 +76,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete(
             "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
-            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
+            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
@@ -86,7 +86,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
         [Obsolete(
             "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
-            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
+            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
 #endregion
