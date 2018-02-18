@@ -139,17 +139,17 @@ namespace Confluent.Kafka
             => serializingProducer.ProduceAsync(topic, partition, key, val, timestamp, headers);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
-        public void Produce(Message<TKey, TValue> message, IDeliveryHandler<TKey, TValue> deliveryHandler)
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        public void Produce(Message<TKey, TValue> message, Action<Message<TKey, TValue>> deliveryHandler)
             => serializingProducer.Produce(message, deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
-        public void Produce(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        public void Produce(string topic, TKey key, TValue val, Action<Message<TKey, TValue>> deliveryHandler)
             => serializingProducer.Produce(topic, key, val, deliveryHandler);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void Produce(
             string topic,
             Partition partition,
@@ -157,7 +157,7 @@ namespace Confluent.Kafka
             TValue val,
             Timestamp timestamp,
             IEnumerable<Header> headers,
-            IDeliveryHandler<TKey, TValue> deliveryHandler
+            Action<Message<TKey, TValue>> deliveryHandler
         )
             => serializingProducer.Produce(topic, partition, key, val, timestamp, headers, deliveryHandler);
 

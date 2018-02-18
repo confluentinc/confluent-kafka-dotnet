@@ -336,22 +336,18 @@ namespace Confluent.Kafka
 
         private class DeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public DeliveryHandlerShim_Action(bool marshalData, bool marshalHeaders, Action<DeliveryReport> handler)
+            public DeliveryHandlerShim_Action(Action<Message> handler)
             {
                 Handler = handler;
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
             }
 
-            public bool MarshalData { get; private set; }
+            public bool MarshalData { get { return true; } }
 
-            public bool MarshalHeaders { get; private set; }
+            public Action<Message> Handler;
 
-            public Action<DeliveryReport> Handler;
-
-            public void HandleDeliveryReport(DeliveryReport deliveryReport)
+            public void HandleDeliveryReport(Message message)
             {
-                Handler(deliveryReport);
+                Handler(message);
             }
         }
 
@@ -363,17 +359,9 @@ namespace Confluent.Kafka
             Partition partition, 
             IEnumerable<Header> headers,
             bool blockIfQueueFull,
-            Action<DeliveryReport> deliveryHandler
+            Action<Message> deliveryHandler
         )
-            => ProduceImpl(
-                topic, 
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                timestamp, 
-                partition, 
-                headers, 
-                blockIfQueueFull, 
-                new DeliveryHandlerShim_Action(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling, deliveryHandler));
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, new DeliveryHandlerShim_Action(deliveryHandler));
 
         /// <summary>
         ///     Initializes a new Producer instance.
@@ -543,13 +531,13 @@ namespace Confluent.Kafka
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void Produce(
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
             Timestamp timestamp, IEnumerable<Header> headers, 
-            IDeliveryHandler deliveryHandler
+            Action<Message> deliveryHandler
         )
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
 

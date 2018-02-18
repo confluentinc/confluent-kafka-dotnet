@@ -145,6 +145,7 @@ namespace Confluent.Kafka.VerifiableClient
         private object ProduceLock;  // Protects MsgCnt,LastProduce while Producing so that Produces() are sequencial
         System.Threading.Timer ProduceTimer; // Producer rate-limiter timer
         VerifiableProducerConfig Config;
+        Action<Message<Null, string>> deliveryHandler;
 
         public VerifiableProducer(VerifiableProducerConfig clientConfig)
         {
@@ -168,7 +169,7 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(DeliveryReport<Null, string> record)
+        public void HandleDelivery(Message<Null, string> msg)
         {
             var d = new Dictionary<string, object>
                     {
@@ -201,6 +202,9 @@ namespace Confluent.Kafka.VerifiableClient
 
         private void Produce(string topic, string value)
         {
+            Action<Message<Null, string>> deliveryHandler = (Message<Null, string> msg) 
+                => HandleDelivery(msg);
+
             try
             {
                 Handle.Produce(topic, null, value, deliveryHandler);

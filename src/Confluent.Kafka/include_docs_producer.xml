@@ -320,9 +320,9 @@
     </param>
 </Member>
 
-<Member name="Produce_IDeliveryHandler">
+<Member name="Produce_Action">
     <param name="deliveryHandler">
-        The IDeliveryHandler instance to used to receive delivery report 
+        The Action&lt;Message&gt; instance to used to receive delivery report 
         notifications.
 
         Note: As a performance optimization, message headers are not included
@@ -332,8 +332,7 @@
         Use a Produce method variant rather than ProduceAdync if you require 
         notification of delivery reports strictly in the order they were 
         acknowledged by the broker / failed (failure may be via broker or 
-        local). IDeliveryHandler.HandleDeliveryReport callbacks are executed 
-        on the Poll thread.
+        local). deliveryHandler callbacks are executed on the Poll thread.
     </remarks>
 </Member>
 
