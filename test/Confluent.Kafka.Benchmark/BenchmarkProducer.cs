@@ -25,28 +25,6 @@ namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkProducer
     {
-        private class BenchmarkProducerDeliveryHandler : IDeliveryHandler
-        {
-            public int NumberOfMessages { get; private set; }
-            public AutoResetEvent AutoEvent { get; private set; }
-
-            public BenchmarkProducerDeliveryHandler(int numberOfMessages)
-            {
-                this.NumberOfMessages = numberOfMessages;
-                this.AutoEvent = new AutoResetEvent(false);
-            }
-
-            public bool MarshalData { get { return false; } }
-
-            public void HandleDeliveryReport(Message deliveryReport)
-            {
-                if (--NumberOfMessages == 0)
-                {
-                    AutoEvent.Set();
-                }
-            }
-        }
-
         private static long BenchmarkProducerImpl(
             string bootstrapServers, 
             string topic, 
@@ -93,14 +71,21 @@ namespace Confluent.Kafka.Benchmark
 
                     if (useDeliveryHandler)
                     {
-                        var deliveryHandler = new BenchmarkProducerDeliveryHandler(nMessages);
+                        var autoEvent = new AutoResetEvent(false);
+                        Action<Message> deliveryHandler = (Message msg) => 
+                        {
+                            if (--nMessages == 0)
+                            {
+                                autoEvent.Set();
+                            }
+                        };
 
                         for (int i = 0; i < nMessages; i++)
                         {
                             producer.Produce(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers, deliveryHandler);
                         }
 
-                        deliveryHandler.AutoEvent.WaitOne();
+                        autoEvent.WaitOne();
                     }
                     else
                     {

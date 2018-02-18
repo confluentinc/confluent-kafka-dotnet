@@ -309,6 +309,35 @@ namespace Confluent.Kafka
             return deliveryCompletionSource.Task;
         }
 
+        private class DeliveryHandlerShim_Action : IDeliveryHandler
+        {
+            public DeliveryHandlerShim_Action(Action<Message> handler)
+            {
+                Handler = handler;
+            }
+
+            public bool MarshalData { get { return true; } }
+
+            public Action<Message> Handler;
+
+            public void HandleDeliveryReport(Message message)
+            {
+                Handler(message);
+            }
+        }
+
+        internal void ProduceImpl(
+            string topic,
+            byte[] val, int valOffset, int valLength,
+            byte[] key, int keyOffset, int keyLength,
+            Timestamp timestamp,
+            Partition partition, 
+            IEnumerable<Header> headers,
+            bool blockIfQueueFull,
+            Action<Message> deliveryHandler
+        )
+            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, new DeliveryHandlerShim_Action(deliveryHandler));
+
         /// <summary>
         ///     Initializes a new Producer instance.
         /// </summary>
@@ -475,13 +504,13 @@ namespace Confluent.Kafka
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_IDeliveryHandler"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void Produce(
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
             Timestamp timestamp, IEnumerable<Header> headers, 
-            IDeliveryHandler deliveryHandler
+            Action<Message> deliveryHandler
         )
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
 

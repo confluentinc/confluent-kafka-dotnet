@@ -27,34 +27,6 @@ namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
     {
-        class DeliveryHandler_MHPC : IDeliveryHandler<Null, string>
-        {
-            public static List<Message<Null, string>> drs 
-                = new List<Message<Null, string>>();
-
-            public bool MarshalData 
-                => true;
-
-            public void HandleDeliveryReport(Message<Null, string> message)
-            {
-                drs.Add(message);
-            }
-        }
-
-        class DeliveryHandler_MHPC_2 : IDeliveryHandler
-        {
-            public static List<Message> drs 
-                = new List<Message>();
-
-            public bool MarshalData 
-                => true;
-
-            public void HandleDeliveryReport(Message message)
-            {
-                drs.Add(message);
-            }
-        }
-
         /// <summary>
         ///     Test various message header produce / consume scenarios.
         /// </summary>
@@ -73,6 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
+            var drs = new List<Message<Null, string>>();
             Message<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
             Message<Null, string> dr_ol1, dr_ol2, dr_ol3;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
@@ -130,24 +103,23 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("test-header", dr_ol3.Headers[0].Key);
                 Assert.Equal(new byte[] { 142 }, dr_ol3.Headers[0].Value);
 
-
-                var dh = new DeliveryHandler_MHPC();
+                Action<Message<Null, string>> dh = (Message<Null, string> dr) => drs.Add(dr);
 
                 // Test headers work as expected with all serializing Produce variants. 
 
-                // TODO: Consider not requiring IDeliveryHandler - a simple delegate would be easier.
                 producer.Produce(singlePartitionTopic, null, "the value", dh);
                 producer.Produce(new Message<Null, string>(singlePartitionTopic, 0, 0, null, "the value", Timestamp.Default, headers2, null), dh);
                 producer.Produce(singlePartitionTopic, 0, null, "the value", Timestamp.Default, headers, dh);
 
                 producer.Flush(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(DeliveryHandler_MHPC.drs[0].Headers);
-                Assert.Equal(2, DeliveryHandler_MHPC.drs[1].Headers.Count);
-                Assert.Single(DeliveryHandler_MHPC.drs[2].Headers);
-                Assert.Equal("test-header", DeliveryHandler_MHPC.drs[2].Headers[0].Key);
+                Assert.Empty(drs[0].Headers);
+                Assert.Equal(2, drs[1].Headers.Count);
+                Assert.Single(drs[2].Headers);
+                Assert.Equal("test-header", drs[2].Headers[0].Key);
             }
 
+            List<Message> drs_2 = new List<Message>();
             Message dr_ol4, dr_ol5, dr_ol6, dr_ol7;
             using (var producer = new Producer(producerConfig))
             {
@@ -167,7 +139,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Test headers work as expected with all non-serializing Produce variants.
 
-                var dh = new DeliveryHandler_MHPC_2();
+                Action<Message> dh = (Message dr) => drs_2.Add(dr);
+
                 producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
                 producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
                 producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers, dh);
@@ -175,10 +148,10 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.Flush(TimeSpan.FromSeconds(10));
 
-                Assert.Single(DeliveryHandler_MHPC_2.drs[0].Headers);
-                Assert.Empty(DeliveryHandler_MHPC_2.drs[1].Headers);
-                Assert.Single(DeliveryHandler_MHPC_2.drs[2].Headers);
-                Assert.Single(DeliveryHandler_MHPC_2.drs[3].Headers);
+                Assert.Single(drs_2[0].Headers);
+                Assert.Empty(drs_2[1].Headers);
+                Assert.Single(drs_2[2].Headers);
+                Assert.Single(drs_2[3].Headers);
             }
 
             using (var consumer = new Consumer(consumerConfig))
@@ -241,15 +214,15 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(msg8.Headers);
 
                 // delivery-handler, serializing.
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC.drs[0].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs[0].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg9, TimeSpan.FromSeconds(10)));
                 Assert.Empty(msg9.Headers);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC.drs[1].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg10, TimeSpan.FromSeconds(10)));
                 Assert.Equal(2, msg10.Headers.Count);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC.drs[2].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs[2].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg11, TimeSpan.FromSeconds(10)));
                 Assert.Single(msg11.Headers);
 
@@ -271,19 +244,19 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(msg15.Headers);
 
                 // delivery handler, non-serializing
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC_2.drs[0].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_2[0].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg16, TimeSpan.FromSeconds(10)));
                 Assert.Single(msg16.Headers);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC_2.drs[1].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_2[1].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg17, TimeSpan.FromSeconds(10)));
                 Assert.Empty(msg17.Headers);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC_2.drs[2].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_2[2].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg18, TimeSpan.FromSeconds(10)));
                 Assert.Single(msg18.Headers);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_MHPC_2.drs[3].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_2[3].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out Message msg19, TimeSpan.FromSeconds(10)));
                 Assert.Single(msg19.Headers);
             }

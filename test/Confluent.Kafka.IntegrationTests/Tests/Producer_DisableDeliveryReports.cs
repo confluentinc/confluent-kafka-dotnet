@@ -29,18 +29,6 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public static partial class Tests
     {
-        class DeliveryHandler_DDR : IDeliveryHandler
-        {
-            public bool MarshalData { get { return true; } }
-
-            public int Count { get; private set; }
-
-            public void HandleDeliveryReport(Message dr)
-            {
-                Count += 1;
-            }
-        }
-
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_DisableDeliveryReports(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
@@ -54,21 +42,21 @@ namespace Confluent.Kafka.IntegrationTests
                 { "dotnet.producer.block.if.queue.full", false } // to test that this property is recognized.
             };
 
-            var dh = new DeliveryHandler_DDR();
-
+            int count = 0;
             using (var producer = new Producer(producerConfig))
             {
                 producer.Produce(
                     singlePartitionTopic, 0,
                     TestKey, 0, TestKey.Length,
                     TestValue, 0, TestValue.Length,
-                    Timestamp.Default, null, dh
+                    Timestamp.Default, null, 
+                    (Message msg) => count += 1
                 );
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(0, dh.Count);
+            Assert.Equal(0, count);
         }
     }
 }

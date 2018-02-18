@@ -25,47 +25,32 @@ namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
     ///     Test every Producer.ProduceAsync method overload that provides
-    ///     delivery reports via an IDeliveryHandler instance.
+    ///     delivery reports via an Action callback.
     ///     (null key/value case)
     /// </summary>
     public static partial class Tests
     {
-        class DeliveryHandler_PN : IDeliveryHandler
-        {
-            public DeliveryHandler_PN(string topic)
-            {
-                Topic = topic;
-            }
-
-            public bool MarshalData { get { return true; } }
-
-            public int Count { get; private set; }
-
-            public string Topic { get; }
-
-            public void HandleDeliveryReport(Message dr)
-            {
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal((Partition)0, dr.Partition);
-                Assert.Equal(Topic, dr.Topic);
-                Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Key);
-                Assert.Null(dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                Count += 1;
-            }
-        }
-
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            var dh = new DeliveryHandler_PN(singlePartitionTopic);
+            int count = 0;
+            Action<Message> dh = (Message dr) =>
+            {
+                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal(singlePartitionTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.Null(dr.Key);
+                Assert.Null(dr.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                count += 1;
+            };
 
             using (var producer = new Producer(producerConfig))
             {
@@ -78,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(3, dh.Count);
+            Assert.Equal(3, count);
         }
     }
 }

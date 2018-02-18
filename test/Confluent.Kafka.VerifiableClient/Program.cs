@@ -145,14 +145,13 @@ namespace Confluent.Kafka.VerifiableClient
         private object ProduceLock;  // Protects MsgCnt,LastProduce while Producing so that Produces() are sequencial
         System.Threading.Timer ProduceTimer; // Producer rate-limiter timer
         VerifiableProducerConfig Config;
-        DeliveryHandler deliveryHandler;
+        Action<Message<Null, string>> deliveryHandler;
 
         public VerifiableProducer(VerifiableProducerConfig clientConfig)
         {
             Config = clientConfig;
             Handle = new Producer<Null, string>(Config.Conf, new NullSerializer(), new StringSerializer(Encoding.UTF8));
             ProduceLock = new object();
-            deliveryHandler = new DeliveryHandler(this);
             Dbg("Created producer " + Handle.Name);
         }
 
@@ -169,7 +168,6 @@ namespace Confluent.Kafka.VerifiableClient
                 Handle.Dispose();
             }
         }
-
 
         public void HandleDelivery(Message<Null, string> msg)
         {
@@ -201,25 +199,12 @@ namespace Confluent.Kafka.VerifiableClient
                 Stop($"All messages accounted for: {DeliveryCnt} delivered + {ErrCnt} failed >= {Config.MaxMsgs}");
         }
 
-        private class DeliveryHandler : IDeliveryHandler<Null, string>
-        {
-            private VerifiableProducer vp;
-            public DeliveryHandler(VerifiableProducer producer)
-            {
-                vp = producer;
-            }
-
-            public bool MarshalData { get { return false; } }
-
-            public void HandleDeliveryReport(Message<Null, string> msg)
-            {
-                vp.HandleDelivery(msg);
-            }
-        }
-
 
         private void Produce(string topic, string value)
         {
+            Action<Message<Null, string>> deliveryHandler = (Message<Null, string> msg) 
+                => HandleDelivery(msg);
+
             try
             {
                 Handle.Produce(topic, null, value, deliveryHandler);

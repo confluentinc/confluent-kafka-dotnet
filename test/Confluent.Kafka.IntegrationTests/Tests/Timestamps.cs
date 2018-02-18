@@ -27,34 +27,6 @@ namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
     {
-        class DeliveryHandler_TCB : IDeliveryHandler<Null, string>
-        {
-            public static List<Message<Null, string>> drs 
-                = new List<Message<Null, string>>();
-
-            public bool MarshalData
-                => true;
-
-            public void HandleDeliveryReport(Message<Null, string> message)
-            {
-                drs.Add(message);
-            }
-        }
-
-        class DeliveryHandler_TCB_2 : IDeliveryHandler
-        {
-            public static List<Message> drs 
-                = new List<Message>();
-
-            public bool MarshalData
-                => true;
-
-            public void HandleDeliveryReport(Message message)
-            {
-                drs.Add(message);
-            }
-        }
-
         /// <summary>
         ///     Integration tests for Producing / consuming timestamps.
         /// </summary>
@@ -73,6 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
+            var drs_1 = new List<Message<Null, string>>();
             List<Message<Null, string>> drs = new List<Message<Null, string>>();
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
@@ -99,8 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() => producer.ProduceAsync(singlePartitionTopic, 0, null, "test-value", new Timestamp(10, TimestampType.NotAvailable), null).Result);
 
-
-                var dh = new DeliveryHandler_TCB();
+                Action<Message<Null, string>> dh = (Message<Null, string> dr) => drs_1.Add(dr);
 
                 producer.Produce(singlePartitionTopic, null, "testvalue", dh);
                 
@@ -123,6 +95,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, 0, null, "test-value", new Timestamp(10, TimestampType.NotAvailable), null, dh));
             }
 
+            var drs_2 = new List<Message>();
             List<Message> drs2 = new List<Message>();
             using (var producer = new Producer(producerConfig))
             {
@@ -137,7 +110,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() => producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(10, TimestampType.NotAvailable), null).Result);
 
-                var dh = new DeliveryHandler_TCB_2();
+                Action<Message> dh = (Message dr) => drs_2.Add(dr);
 
                 producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
 
@@ -175,25 +148,25 @@ namespace Confluent.Kafka.IntegrationTests
 
                 assertCloseToNow(consumer, drs[6].TopicPartitionOffset);
 
-                // serializing ideliveryhandler
+                // serializing deliveryhandler
 
-                assertCloseToNow(consumer, DeliveryHandler_TCB.drs[0].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[0].TopicPartitionOffset);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_TCB.drs[1].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_1[1].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
                 Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
                 Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
-                assertCloseToNow(consumer, DeliveryHandler_TCB.drs[2].TopicPartitionOffset);
-                assertCloseToNow(consumer, DeliveryHandler_TCB.drs[3].TopicPartitionOffset);
-                assertCloseToNow(consumer, DeliveryHandler_TCB.drs[4].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[2].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[3].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[4].TopicPartitionOffset);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_TCB.drs[5].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_1[5].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
                 Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
                 Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
-                assertCloseToNow(consumer, DeliveryHandler_TCB.drs[6].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[6].TopicPartitionOffset);
 
                 // non-serializing async
 
@@ -206,17 +179,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 assertCloseToNow(consumer, drs2[2].TopicPartitionOffset);
 
+                // non-serializing deliveryhandler
 
-                // non-serializing ideliveryhandler
+                assertCloseToNow(consumer, drs_2[0].TopicPartitionOffset);
 
-                assertCloseToNow(consumer, DeliveryHandler_TCB_2.drs[0].TopicPartitionOffset);
-
-                consumer.Assign(new List<TopicPartitionOffset>() {DeliveryHandler_TCB_2.drs[1].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_2[1].TopicPartitionOffset});
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
                 Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
                 Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
-                assertCloseToNow(consumer, DeliveryHandler_TCB_2.drs[2].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_2[2].TopicPartitionOffset);
             }
         }
         private static void assertCloseToNow(Consumer consumer, TopicPartitionOffset tpo)
