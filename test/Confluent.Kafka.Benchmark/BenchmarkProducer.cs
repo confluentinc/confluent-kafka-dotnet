@@ -72,9 +72,10 @@ namespace Confluent.Kafka.Benchmark
                     if (useDeliveryHandler)
                     {
                         var autoEvent = new AutoResetEvent(false);
+                        var msgCount = nMessages;
                         Action<Message> deliveryHandler = (Message msg) => 
                         {
-                            if (--nMessages == 0)
+                            if (--msgCount == 0)
                             {
                                 autoEvent.Set();
                             }
