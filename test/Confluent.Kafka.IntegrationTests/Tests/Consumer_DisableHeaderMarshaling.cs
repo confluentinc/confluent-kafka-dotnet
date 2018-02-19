@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.disable.header.marshaling", true }
+                { "dotnet.consumer.enable.header.marshaling", false }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};

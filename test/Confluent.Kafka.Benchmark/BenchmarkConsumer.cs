@@ -29,7 +29,7 @@ namespace Confluent.Kafka.Benchmark
                 { "group.id", "benchmark-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
-                { "dotnet.consumer.disable.header.marshaling", nHeaders == 0 }
+                { "dotnet.consumer.enable.header.marshaling", nHeaders != 0 }
             };
 
             using (var consumer = new Consumer(consumerConfig))

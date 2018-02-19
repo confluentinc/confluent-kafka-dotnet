@@ -43,11 +43,11 @@ namespace Confluent.Kafka
         ///     this will measurably improve maximum throughput even for the case
         ///     where messages do not have any headers.
         /// 
-        ///     default: false
+        ///     default: true
         /// </summary>
-        public const string DisableHeaderMarshalingPropertyName = "dotnet.consumer.disable.header.marshaling";
+        public const string EnableHeaderMarshalingPropertyName = "dotnet.consumer.enable.header.marshaling";
 
-        private bool disableHeaderMarshaling = false;
+        private bool enableHeaderMarshaling = true;
 
         private SafeKafkaHandle kafkaHandle;
 
@@ -144,12 +144,12 @@ namespace Confluent.Kafka
             var modifiedConfig = config
                 .Where(
                     prop => prop.Key != "default.topic.config" && 
-                    prop.Key != DisableHeaderMarshalingPropertyName);
+                    prop.Key != EnableHeaderMarshalingPropertyName);
 
-            var disableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == DisableHeaderMarshalingPropertyName).Value;
-            if (disableHeaderMarshalingObj != null)
+            var enableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableHeaderMarshalingPropertyName).Value;
+            if (enableHeaderMarshalingObj != null)
             {
-                this.disableHeaderMarshaling = bool.Parse(disableHeaderMarshalingObj.ToString());
+                this.enableHeaderMarshaling = bool.Parse(enableHeaderMarshalingObj.ToString());
             }
 
             var configHandle = SafeConfigHandle.Create();
@@ -271,7 +271,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_int"]/*' />
         public bool Consume(out Message message, int millisecondsTimeout)
         {
-            if (kafkaHandle.ConsumerPoll(out message, disableHeaderMarshaling, (IntPtr)millisecondsTimeout))
+            if (kafkaHandle.ConsumerPoll(out message, enableHeaderMarshaling, (IntPtr)millisecondsTimeout))
             {
                 switch (message.Error.Code)
                 {
