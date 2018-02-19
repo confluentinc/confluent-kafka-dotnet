@@ -466,7 +466,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out Message message, bool disableHeaderMarshaling, IntPtr millisecondsTimeout)
+        internal bool ConsumerPoll(out Message message, bool enableHeaderMarshaling, IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
             // TODO: There is a newer librdkafka interface for this now. Use that.
@@ -501,7 +501,7 @@ namespace Confluent.Kafka.Impl
             long timestamp = LibRdKafka.message_timestamp(msgPtr, out IntPtr timestampType);
 
             Headers headers = null;
-            if (!disableHeaderMarshaling)
+            if (enableHeaderMarshaling)
             {
                 headers = new Headers();
                 LibRdKafka.message_headers(msgPtr, out IntPtr hdrsPtr);
