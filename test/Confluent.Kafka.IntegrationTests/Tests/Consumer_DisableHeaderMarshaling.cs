@@ -30,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic test of Consumer.Seek.
+        ///     Test of disabling marshaling of message headers.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_DisableHeaderMarshaling(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)

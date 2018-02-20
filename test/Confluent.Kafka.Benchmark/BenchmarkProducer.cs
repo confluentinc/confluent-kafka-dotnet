@@ -41,7 +41,9 @@ namespace Confluent.Kafka.Benchmark
                 { "queue.buffering.max.messages", 2000000 },
                 { "message.send.max.retries", 3 },
                 { "retry.backoff.ms", 500 },
-                { "linger.ms", 100 }
+                { "linger.ms", 100 },
+                { "dotnet.producer.enable.deivery.report.header.marshaling", false },
+                { "dotnet.producer.enable.deivery.report.data.marshaling", false }
             };
 
             DeliveryReport<byte[], byte[]> firstDeliveryReport = null;

@@ -83,6 +83,8 @@ namespace Confluent.Kafka
 
             public bool MarshalData { get { return false; } }
 
+            public bool MarshalHeaders { get { return true; } }
+
             public void HandleDeliveryReport(Message message)
             {
                 var mi = new Message<TKey, TValue>(
@@ -127,11 +129,12 @@ namespace Confluent.Kafka
 
         private class TypedDeliveryHandlerShim : IDeliveryHandler
         {
-            public TypedDeliveryHandlerShim(TKey key, TValue val, IDeliveryHandler<TKey, TValue> handler)
+            public TypedDeliveryHandlerShim(TKey key, TValue val, bool marshalHeaders, IDeliveryHandler<TKey, TValue> handler)
             {
                 Key = key;
                 Value = val;
                 Handler = handler;
+                MarshalHeaders = marshalHeaders;
             }
 
             public TKey Key;
@@ -139,6 +142,8 @@ namespace Confluent.Kafka
             public TValue Value;
 
             public bool MarshalData { get { return false; } }
+
+            public bool MarshalHeaders { get; private set; }
 
             public IDeliveryHandler<TKey, TValue> Handler;
 
@@ -165,7 +170,7 @@ namespace Confluent.Kafka
             bool blockIfQueueFull, 
             IDeliveryHandler<TKey, TValue> deliveryHandler)
         {
-            var handler = new TypedDeliveryHandlerShim(key, val, deliveryHandler);
+            var handler = new TypedDeliveryHandlerShim(key, val, producer.enableDeliveryReportHeaderMarshaling, deliveryHandler);
             
             var keyBytes = KeySerializer?.Serialize(topic, key);
             var valBytes = ValueSerializer?.Serialize(topic, val);
@@ -180,11 +185,12 @@ namespace Confluent.Kafka
 
         private class TypedDeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public TypedDeliveryHandlerShim_Action(TKey key, TValue val, Action<Message<TKey, TValue>> handler)
+            public TypedDeliveryHandlerShim_Action(TKey key, TValue val, bool marshalHeaders, Action<Message<TKey, TValue>> handler)
             {
                 Key = key;
                 Value = val;
                 Handler = handler;
+                MarshalHeaders = marshalHeaders;
             }
 
             public TKey Key;
@@ -192,6 +198,8 @@ namespace Confluent.Kafka
             public TValue Value;
 
             public bool MarshalData { get { return false; } }
+
+            public bool MarshalHeaders { get; private set; }
 
             public Action<Message<TKey, TValue>> Handler;
 
@@ -218,7 +226,7 @@ namespace Confluent.Kafka
             bool blockIfQueueFull, 
             Action<Message<TKey, TValue>> deliveryHandler)
         {
-            var handler = new TypedDeliveryHandlerShim_Action(key, val, deliveryHandler);
+            var handler = new TypedDeliveryHandlerShim_Action(key, val, producer.enableDeliveryReportHeaderMarshaling, deliveryHandler);
             
             var keyBytes = KeySerializer?.Serialize(topic, key);
             var valBytes = ValueSerializer?.Serialize(topic, val);
