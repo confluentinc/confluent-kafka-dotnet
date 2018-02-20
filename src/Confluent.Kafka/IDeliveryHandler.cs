@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -33,11 +35,18 @@ namespace Confluent.Kafka
         ///     Gets whether or not to marshal key and value data 
         ///     from librdkafka when the delivery report is 
         ///     available. Usually this should return true.
-        ///     Return false for a small performance improvement
+        ///     Return false for a small improvement in throughput
         ///     if you don't need this information.
         /// </summary>
         bool MarshalData { get; }
 
+        /// <summary>
+        ///     Gets whether or not to marshal message headers.
+        ///     Set this to false for a increased throughput if
+        ///     you don't need this information.
+        /// </summary>
+        bool MarshalHeaders { get; }
+        
         /// <summary>
         ///     This method is called when the delivery report
         ///     is available
@@ -62,10 +71,17 @@ namespace Confluent.Kafka
         ///     Gets whether or not to marshal key and value data 
         ///     from librdkafka when the delivery report is 
         ///     available. Usually this should return true.
-        ///     Return false for a small performance improvement
+        ///     Return false for a small improvement in throughput
         ///     if you don't need this information.
         /// </summary>
         bool MarshalData { get; }
+
+        /// <summary>
+        ///     Gets whether or not to marshal message headers.
+        ///     Set this to false for a increased throughput if
+        ///     you don't need this information.
+        /// </summary>
+        bool MarshalHeaders { get; }
 
         /// <summary>
         ///     This method is called when the delivery report

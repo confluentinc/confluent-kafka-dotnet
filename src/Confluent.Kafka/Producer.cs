@@ -75,9 +75,30 @@ namespace Confluent.Kafka
         /// </summary>
         public const string EnableDeliveryReportsPropertyName = "dotnet.producer.enable.delivery.reports";
 
+        /// <summary>
+        ///     Name of the configuration property that specifies whether to make
+        ///     message headers available in delivery reports. Note that 
+        ///     disabling header marshaling will improve maximum throughput even 
+        ///     for the case where messages do not have any headers.
+        /// 
+        ///     default: true
+        /// </summary>
+        public const string EnableDeliveryReportHeaderMarshalingName = "dotnet.producer.enable.deivery.report.header.marshaling";
+
+        /// <summary>
+        ///     Name of the configuration property that specifies whether to make
+        ///     message keys and values available in delivery reports. Disabling
+        ///     this will improve maximum throughput.
+        /// 
+        ///     default: true
+        /// </summary>
+        public const string EnableDeliveryReportDataMarshalingName = "dotnet.producer.enable.deivery.report.data.marshaling";
+
         private bool manualPoll = false;
         private bool disableDeliveryReports = false;
         internal bool blockIfQueueFullPropertyValue = true;
+        internal bool enableDeliveryReportHeaderMarshaling = true;
+        internal bool enableDeliveryReportDataMarshaling = true;
 
         private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
             = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
@@ -152,24 +173,6 @@ namespace Confluent.Kafka
         {
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
-            Headers headers = new Headers();
-            LibRdKafka.message_headers(rkmessage, out IntPtr hdrsPtr);
-            if (hdrsPtr != IntPtr.Zero)
-            {
-                for (var i=0; ; ++i)
-                {
-                    var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
-                    if (err != ErrorCode.NoError)
-                    {
-                        break;
-                    }
-                    var headerName = Util.Marshal.PtrToStringUTF8(namep);
-                    var headerValue = new byte[(int)sizep];
-                    Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                    headers.Add(headerName, headerValue);
-                }
-            }
-
             // the msg._private property has dual purpose. Here, it is an opaque pointer set
             // by Topic.Produce to be an IDeliveryHandler. When Consuming, it's for internal
             // use (hence the name).
@@ -183,6 +186,28 @@ namespace Confluent.Kafka
             var gch = GCHandle.FromIntPtr(msg._private);
             var deliveryHandler = (IDeliveryHandler) gch.Target;
             gch.Free();
+
+            Headers headers = null;
+            if (deliveryHandler.MarshalHeaders) 
+            {
+                headers = new Headers();
+                LibRdKafka.message_headers(rkmessage, out IntPtr hdrsPtr);
+                if (hdrsPtr != IntPtr.Zero)
+                {
+                    for (var i=0; ; ++i)
+                    {
+                        var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                        if (err != ErrorCode.NoError)
+                        {
+                            break;
+                        }
+                        var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                        var headerValue = new byte[(int)sizep];
+                        Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                        headers.Add(headerName, headerValue);
+                    }
+                }
+            }
 
             byte[] key = null;
             byte[] val = null;
@@ -222,10 +247,21 @@ namespace Confluent.Kafka
         private sealed class TaskDeliveryHandler : TaskCompletionSource<Message>, IDeliveryHandler
         {
 #if !NET45
-            public TaskDeliveryHandler() : base(TaskCreationOptions.RunContinuationsAsynchronously)
-            { }
+            public TaskDeliveryHandler(bool marshalData, bool marshalHeaders) : base(TaskCreationOptions.RunContinuationsAsynchronously)
+            { 
+                MarshalData = marshalData;
+                MarshalHeaders = marshalHeaders;
+            }
+#else 
+            public TaskDeliveryHandler(bool marshalData, bool marshalHeaders)
+            {
+                MarshalData = marshalData;
+                MarshalHeaders = marshalHeaders;
+            }
 #endif
-            public bool MarshalData { get { return true; } }
+            public bool MarshalData { get; private set; }
+
+            public bool MarshalHeaders { get; private set; }
 
             public void HandleDeliveryReport(Message message)
             {
@@ -304,19 +340,23 @@ namespace Confluent.Kafka
             IEnumerable<Header> headers,
             bool blockIfQueueFull)
         {
-            var deliveryCompletionSource = new TaskDeliveryHandler();
+            var deliveryCompletionSource = new TaskDeliveryHandler(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling);
             ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, deliveryCompletionSource);
             return deliveryCompletionSource.Task;
         }
 
         private class DeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public DeliveryHandlerShim_Action(Action<Message> handler)
+            public DeliveryHandlerShim_Action(bool marshalData, bool marshalHeaders, Action<Message> handler)
             {
                 Handler = handler;
+                MarshalData = marshalData;
+                MarshalHeaders = marshalHeaders;
             }
 
-            public bool MarshalData { get { return true; } }
+            public bool MarshalData { get; private set; }
+
+            public bool MarshalHeaders { get; private set; }
 
             public Action<Message> Handler;
 
@@ -336,7 +376,15 @@ namespace Confluent.Kafka
             bool blockIfQueueFull,
             Action<Message> deliveryHandler
         )
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, new DeliveryHandlerShim_Action(deliveryHandler));
+            => ProduceImpl(
+                topic, 
+                val, valOffset, valLength, 
+                key, keyOffset, keyLength, 
+                timestamp, 
+                partition, 
+                headers, 
+                blockIfQueueFull, 
+                new DeliveryHandlerShim_Action(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling, deliveryHandler));
 
         /// <summary>
         ///     Initializes a new Producer instance.
@@ -371,7 +419,9 @@ namespace Confluent.Kafka
                     prop => prop.Key != "default.topic.config" && 
                     prop.Key != BlockIfQueueFullPropertyName &&
                     prop.Key != EnableBackgroundPollPropertyName &&
-                    prop.Key != EnableDeliveryReportsPropertyName);
+                    prop.Key != EnableDeliveryReportsPropertyName &&
+                    prop.Key != EnableDeliveryReportHeaderMarshalingName &&
+                    prop.Key != EnableDeliveryReportDataMarshalingName);
 
             var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
             if (enableBackgroundPollObj != null)
@@ -389,6 +439,18 @@ namespace Confluent.Kafka
             if (blockIfQueueFullObj != null)
             {
                 this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullObj.ToString());
+            }
+
+            var enableDeliveryReportHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportHeaderMarshalingName).Value;
+            if (enableDeliveryReportHeaderMarshalingObj != null)
+            {
+                this.enableDeliveryReportHeaderMarshaling = bool.Parse(enableDeliveryReportHeaderMarshalingObj.ToString());
+            }
+
+            var enableDeliveryReportDataMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportDataMarshalingName).Value;
+            if (enableDeliveryReportDataMarshalingObj != null)
+            {
+                this.enableDeliveryReportDataMarshaling = bool.Parse(enableDeliveryReportDataMarshalingObj.ToString());
             }
 
             // Note: Setting default topic configuration properties via default.topic.config is depreciated 
