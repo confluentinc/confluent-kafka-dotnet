@@ -40,8 +40,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
         ///     disable marshaling of headers when consuming messages. Note that 
-        ///     this will measurably improve maximum throughput even for the case
-        ///     where messages do not have any headers.
+        ///     disabling header marshaling will measurably improve maximum throughput 
+        ///     even for the case where messages do not have any headers.
         /// 
         ///     default: true
         /// </summary>
