@@ -1,3 +1,5 @@
+CI test do not merge2
+
 Confluent's .NET Client for Apache Kafka<sup>TM</sup>
 =====================================================
 
