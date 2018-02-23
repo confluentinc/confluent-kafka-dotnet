@@ -67,27 +67,31 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 producer.Produce(
+                    dh,
                     singlePartitionTopic, 0,
                     testKey, 0, testKey.Length,
                     testValue, 0, testValue.Length,
-                    Timestamp.Default, null, dh
+                    Timestamp.Default, null
                 );
 
                 producer.Produce(
+                    dh,
                     singlePartitionTopic, 0,
                     testKey, 0, testKey.Length,
                     testValue, 0, testValue.Length,
-                    Timestamp.Default, null, dh
+                    Timestamp.Default, null
                 );
 
                 producer.Produce(
+                    dh,
                     singlePartitionTopic, 0,
                     testKey, 0, testKey.Length,
                     testValue, 0, testValue.Length,
-                    Timestamp.Default, null, dh
+                    Timestamp.Default, null
                 );
 
                 producer.Produce(
+                    dh,
                     singlePartitionTopic,
                     Partition.Any,
                     testKey,
@@ -95,10 +99,10 @@ namespace Confluent.Kafka.IntegrationTests
                     testValue,
                     0, testValue.Length,
                     Timestamp.Default,
-                    null,
-                    dh);
+                    null);
 
                 producer.Produce(
+                    dh,
                     singlePartitionTopic,
                     Partition.Any,
                     testKey, 
@@ -106,14 +110,14 @@ namespace Confluent.Kafka.IntegrationTests
                     testValue, 
                     0, testValue.Length,
                     Timestamp.Default,
-                    null,
-                    dh);
+                    null);
 
                 producer.Produce(
+                    dh,
                     singlePartitionTopic, Partition.Any,
                     testKey, 1, testKey.Length-2,
                     testValue, 2, testValue.Length-3,
-                    Timestamp.Default, null, dh
+                    Timestamp.Default, null
                 );
 
                 producer.Flush(TimeSpan.FromSeconds(10));

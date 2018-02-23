@@ -85,7 +85,7 @@ namespace Confluent.Kafka.Benchmark
 
                         for (int i = 0; i < nMessages; i++)
                         {
-                            producer.Produce(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers, deliveryHandler);
+                            producer.Produce(deliveryHandler, topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers);
                         }
 
                         autoEvent.WaitOne();

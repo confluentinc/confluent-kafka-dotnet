@@ -54,11 +54,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer(producerConfig))
             {
-                producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
-                producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
-                producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
+                producer.Produce(dh, singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null);
+                producer.Produce(dh, singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null);
+                producer.Produce(dh, singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, null);
                 Assert.Throws<ArgumentException>(() => 
-                    producer.Produce(singlePartitionTopic, Partition.Any, null, -123, int.MinValue, null, int.MaxValue, 44, Timestamp.Default, null, dh)
+                    producer.Produce(dh, singlePartitionTopic, Partition.Any, null, -123, int.MinValue, null, int.MaxValue, 44, Timestamp.Default, null)
                 );
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
