@@ -51,18 +51,6 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 drs.Add(producer.ProduceAsync(singlePartitionTopic, null, "testvalue").Result);
                 
-                // Note: in the Message<K,V> case, timestamps of type LogAppendTime and NotAvailable are not considered errors 
-                // since normal use case is for re-trying failed messages. They are silently changed to Timestamp.Default.
-
-                // TimestampType: CreateTime
-                drs.Add(producer.ProduceAsync(new Message<Null, string>(singlePartitionTopic, 0, 5233, null, "test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null, null)).Result);
-                // TimestampType: CreateTime (default)
-                drs.Add(producer.ProduceAsync(new Message<Null, string>(singlePartitionTopic, 0, 342, null, "test-value", Timestamp.Default, null, null)).Result);
-                // TimestampType: LogAppendTime
-                drs.Add(producer.ProduceAsync(new Message<Null, string>(singlePartitionTopic, 0, 111, null, "tst", new Timestamp(DateTime.Now, TimestampType.LogAppendTime), null, null)).Result);
-                // TimestampType: NotAvailable
-                drs.Add(producer.ProduceAsync(new Message<Null, string>(singlePartitionTopic, 0, 111, null, "tst", new Timestamp(0, TimestampType.NotAvailable), null, null)).Result);
-
                 // TimestampType: CreateTime
                 drs.Add(producer.ProduceAsync(singlePartitionTopic, 0, null, "test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null).Result); 
                 // TimestampType: CreateTime (default)
@@ -74,25 +62,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Action<Message<Null, string>> dh = (Message<Null, string> dr) => drs_1.Add(dr);
 
-                producer.Produce(singlePartitionTopic, null, "testvalue", dh);
+                producer.Produce(dh, singlePartitionTopic, null, "testvalue");
                 
                 // TimestampType: CreateTime
-                producer.Produce(new Message<Null, string>(singlePartitionTopic, 0, 5233, null, "test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null, null), dh);
+                producer.Produce(dh, singlePartitionTopic, 0, null, "test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null);
                 // TimestampType: CreateTime (default)
-                producer.Produce(new Message<Null, string>(singlePartitionTopic, 0, 342, null, "test-value", Timestamp.Default, null, null), dh);
+                producer.Produce(dh, singlePartitionTopic, 0, null, "test-value", Timestamp.Default, null);
                 // TimestampType: LogAppendTime
-                producer.Produce(new Message<Null, string>(singlePartitionTopic, 0, 111, null, "tst", new Timestamp(DateTime.Now, TimestampType.LogAppendTime), null, null), dh);
+                Assert.Throws<ArgumentException>(() => producer.Produce(dh, singlePartitionTopic, 0, null, "test-value", new Timestamp(DateTime.Now, TimestampType.LogAppendTime), null));
                 // TimestampType: NotAvailable
-                producer.Produce(new Message<Null, string>(singlePartitionTopic, 0, 111, null, "tst", new Timestamp(0, TimestampType.NotAvailable), null, null), dh);
-
-                // TimestampType: CreateTime
-                producer.Produce(singlePartitionTopic, 0, null, "test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null, dh);
-                // TimestampType: CreateTime (default)
-                producer.Produce(singlePartitionTopic, 0, null, "test-value", Timestamp.Default, null, dh);
-                // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, 0, null, "test-value", new Timestamp(DateTime.Now, TimestampType.LogAppendTime), null, dh));
-                // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, 0, null, "test-value", new Timestamp(10, TimestampType.NotAvailable), null, dh));
+                Assert.Throws<ArgumentException>(() => producer.Produce(dh, singlePartitionTopic, 0, null, "test-value", new Timestamp(10, TimestampType.NotAvailable), null));
             }
 
             var drs_2 = new List<Message>();
@@ -112,16 +91,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Action<Message> dh = (Message dr) => drs_2.Add(dr);
 
-                producer.Produce(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
+                producer.Produce(dh, singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null);
 
                 // TimestampType: CreateTime
-                producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null, dh);
+                producer.Produce(dh, singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null);
                 // TimestampType: CreateTime (default)
-                producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, null, dh);
+                producer.Produce(dh, singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, null);
                 // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(DateTime.Now, TimestampType.LogAppendTime), null, dh));
+                Assert.Throws<ArgumentException>(() => producer.Produce(dh, singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(DateTime.Now, TimestampType.LogAppendTime), null));
                 // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(10, TimestampType.NotAvailable), null, dh));
+                Assert.Throws<ArgumentException>(() => producer.Produce(dh, singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(10, TimestampType.NotAvailable), null));
             }
 
             using (var consumer = new Consumer(consumerConfig))
@@ -138,15 +117,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
                 assertCloseToNow(consumer, drs[2].TopicPartitionOffset);
-                assertCloseToNow(consumer, drs[3].TopicPartitionOffset);
-                assertCloseToNow(consumer, drs[4].TopicPartitionOffset);
-
-                consumer.Assign(new List<TopicPartitionOffset>() {drs[5].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-                Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
-                Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
-
-                assertCloseToNow(consumer, drs[6].TopicPartitionOffset);
 
                 // serializing deliveryhandler
 
@@ -158,15 +128,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
                 assertCloseToNow(consumer, drs_1[2].TopicPartitionOffset);
-                assertCloseToNow(consumer, drs_1[3].TopicPartitionOffset);
-                assertCloseToNow(consumer, drs_1[4].TopicPartitionOffset);
-
-                consumer.Assign(new List<TopicPartitionOffset>() {drs_1[5].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-                Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
-                Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
-
-                assertCloseToNow(consumer, drs_1[6].TopicPartitionOffset);
 
                 // non-serializing async
 

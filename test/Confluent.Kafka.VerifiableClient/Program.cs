@@ -202,12 +202,9 @@ namespace Confluent.Kafka.VerifiableClient
 
         private void Produce(string topic, string value)
         {
-            Action<Message<Null, string>> deliveryHandler = (Message<Null, string> msg) 
-                => HandleDelivery(msg);
-
             try
             {
-                Handle.Produce(topic, null, value, deliveryHandler);
+                Handle.Produce((Message<Null, string> msg) => HandleDelivery(msg), topic, null, value);
             }
             catch (KafkaException e)
             {

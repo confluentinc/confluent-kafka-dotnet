@@ -178,9 +178,6 @@
     <returns>
         A Task which will complete with the corresponding delivery report
         for this request.
-
-        Note: As a performance optimization, message headers are not included
-        in delivery reports.
     </returns>
     <remarks>
         If you require strict ordering of delivery reports to be maintained,
@@ -189,36 +186,6 @@
         completed on arbitrary thread pool threads and so they can be executed
         out of order.
     </remarks>
-</Member>
-
-<Member name="ProduceAsync_Message">
-    <summary>
-        Asynchronously send a single message to a Kafka topic. Properties
-        of the message instance are interpreted as follows:
-
-        Topic: The topic to produce the message to.
-
-        Partition:  The partition to produce the message to. If Partition.Any,
-        a partitioner specified via the 'partitioner' configuration property
-        will be used to determine the partition the message is sent to.
-
-        Key: The message key (possibly null).
-
-        Value: The message value (possibly null).
-
-        Offset: Ignored.
-
-        Error: Ignored.
-
-        Timestamp: If the timestamp type is CreateTime, then this is used as the
-        message timestamp, else this property is ignored and the message timestamp
-        is set to Timestamp.Default (the time of this function call).
-
-        Headers: The collection of message headers (or null).
-    </summary>
-    <param name="message">
-        The message to produce.
-    </param>
 </Member>
 
 <Member name="ProduceAsync_string_TKey_TValue">
@@ -324,12 +291,9 @@
     <param name="deliveryHandler">
         The Action&lt;Message&gt; instance to used to receive delivery report 
         notifications.
-
-        Note: As a performance optimization, message headers are not included
-        in delivery reports.
     </param>
     <remarks>
-        Use a Produce method variant rather than ProduceAdync if you require 
+        Use a Produce method variant rather than ProduceAsync if you require 
         notification of delivery reports strictly in the order they were 
         acknowledged by the broker / failed (failure may be via broker or 
         local). deliveryHandler callbacks are executed on the Poll thread.
@@ -337,4 +301,3 @@
 </Member>
 
 </API>
-
