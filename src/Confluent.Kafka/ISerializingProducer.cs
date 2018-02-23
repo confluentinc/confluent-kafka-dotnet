@@ -34,10 +34,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ValueSerializer"]/*' />
         ISerializer<TValue> ValueSerializer { get; }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<Message<TKey, TValue>> ProduceAsync(Message<TKey, TValue> message);
-
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_topic_TKey_TValue"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);
@@ -46,14 +42,13 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         Task<Message<TKey, TValue>> ProduceAsync(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Message_Action"]/*' />
-        void Produce(Message<TKey, TValue> message, Action<Message<TKey, TValue>> deliveryHandler);
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, TKey key, TValue val);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_string_TKey_TValue_Action"]/*' />
-        void Produce(string topic, TKey key, TValue val, Action<Message<TKey, TValue>> deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_string_Partition_TKey_TValue_Timestamp_IEnumerable_Action"]/*' />
-        void Produce(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers, Action<Message<TKey, TValue>> deliveryHandler);
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers);
 
 #region obsolete produce methods
 

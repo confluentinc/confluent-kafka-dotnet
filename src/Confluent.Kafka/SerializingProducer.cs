@@ -272,14 +272,6 @@ namespace Confluent.Kafka
                 Timestamp.Default, null, 
                 producer.blockIfQueueFullPropertyValue);
 
-        public Task<Message<TKey, TValue>> ProduceAsync(Message<TKey, TValue> message)
-            => ProduceImpl(
-                message.Topic, message.Partition, 
-                message.Key, message.Value, 
-                message.Timestamp.Type == TimestampType.CreateTime ? message.Timestamp : Timestamp.Default, 
-                message.Headers, 
-                producer.blockIfQueueFullPropertyValue);
-
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers)
             => ProduceImpl(
                 topic, partition, 
@@ -287,23 +279,14 @@ namespace Confluent.Kafka
                 timestamp, headers, 
                 producer.blockIfQueueFullPropertyValue);
 
-        public void Produce(Message<TKey, TValue> message, Action<Message<TKey, TValue>> deliveryHandler)
-            => ProduceImpl(
-                message.Topic, message.Partition, 
-                message.Key, message.Value, 
-                message.Timestamp.Type == TimestampType.CreateTime ? message.Timestamp : Timestamp.Default, 
-                message.Headers, 
-                producer.blockIfQueueFullPropertyValue, 
-                deliveryHandler);
-
-        public void Produce(string topic, TKey key, TValue val, Action<Message<TKey, TValue>> deliveryHandler)
+        public void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, TKey key, TValue val)
             => ProduceImpl(
                 topic, Partition.Any,
                  key, val, 
                  Timestamp.Default, null, 
                  producer.blockIfQueueFullPropertyValue, deliveryHandler);
 
-        public void Produce(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers, Action<Message<TKey, TValue>> deliveryHandler)
+        public void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers)
             => ProduceImpl(
                 topic, partition, 
                 key, val, 

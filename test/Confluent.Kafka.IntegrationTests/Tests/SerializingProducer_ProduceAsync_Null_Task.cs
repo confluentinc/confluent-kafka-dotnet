@@ -42,14 +42,12 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<Message<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                drs.Add(producer.ProduceAsync(new Message<Null, Null>(partitionedTopic, 0, Offset.Invalid, null, null, Timestamp.Default, null, null)));
                 drs.Add(producer.ProduceAsync(partitionedTopic, 0, null, null, Timestamp.Default, null));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
                 drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            for (int i=0; i<4; ++i)
+            for (int i=0; i<2; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -64,7 +62,6 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal((Partition)0, drs[0].Result.Partition);
-            Assert.Equal((Partition)0, drs[1].Result.Partition);
         }
 
     }

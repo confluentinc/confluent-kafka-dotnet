@@ -568,11 +568,11 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void Produce(
+            Action<Message> deliveryHandler,
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, IEnumerable<Header> headers, 
-            Action<Message> deliveryHandler
+            Timestamp timestamp, IEnumerable<Header> headers
         )
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
