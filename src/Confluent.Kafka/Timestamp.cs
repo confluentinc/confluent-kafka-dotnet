@@ -101,7 +101,7 @@ namespace Confluent.Kafka
         ///     The DateTimeOffset value corresponding to the timestamp.
         /// </param>
         public Timestamp(DateTimeOffset dateTimeOffset)
-            : this(dateTimeOffset.DateTime, TimestampType.CreateTime) 
+            : this(dateTimeOffset.UtcDateTime, TimestampType.CreateTime) 
         {}
 
         /// <summary>
