@@ -21,9 +21,6 @@ using System.Collections.Generic;
 using Xunit;
 using System.Threading.Tasks;
 
-/*
-
-Resolve this problem before removing test.
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -46,35 +43,37 @@ namespace Confluent.Kafka.IntegrationTests
             var key = new byte[] { 1, 2, 3, 4 };
             var val = new byte[] { 5, 6, 7, 8 };
 
+            var deliveryHandler = new ObsoleteTestDeliveryHandler();
+
             using (var producer = new Producer(producerConfig))
             {
-                Action<DeliveryReport> dh = null;
-                var drs = new List<DeliveryReport>();
+                Action<Message> dh = null;
+                var drs = new List<Message>();
 
                 // TODO: This fails when assertInDH == true. I have no idea why.
                 bool assertInDH = false;
                 if (assertInDH)
                 {
                     int count = 0;
-                    dh = (DeliveryReport dr) =>
+                    dh = (Message dr) =>
                     {
                         switch (count) 
                         {
                             case 0: 
-                                Assert.Equal(new byte[] { 1, 2, 3, 4 }, dr.Message.Key);
-                                Assert.Equal(new byte[] { 5, 6, 7, 8 }, dr.Message.Value);
+                                Assert.Equal(new byte[] { 1, 2, 3, 4 }, dr.Key);
+                                Assert.Equal(new byte[] { 5, 6, 7, 8 }, dr.Value);
                                 break;
                             case 1:
-                                Assert.Equal(new byte[] { 1, 2 }, dr.Message.Key);
-                                Assert.Equal(new byte[] { 5, 6, 7 }, dr.Message.Value);
+                                Assert.Equal(new byte[] { 1, 2 }, dr.Key);
+                                Assert.Equal(new byte[] { 5, 6, 7 }, dr.Value);
                                 break;
                             case 2:
-                                Assert.Equal(new byte[] { 1, 2, 3 }, dr.Message.Key);
-                                Assert.Equal(new byte[] { 6, 7, 8 }, dr.Message.Value);
+                                Assert.Equal(new byte[] { 1, 2, 3 }, dr.Key);
+                                Assert.Equal(new byte[] { 6, 7, 8 }, dr.Value);
                                 break;
                             case 3:
-                                Assert.Equal(new byte[] { 1 }, dr.Message.Key);
-                                Assert.Equal(new byte[] { 7, 8 }, dr.Message.Value);
+                                Assert.Equal(new byte[] { 1 }, dr.Key);
+                                Assert.Equal(new byte[] { 7, 8 }, dr.Value);
                                 break;
                             default:
                                 Assert.True(false);
@@ -86,7 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 else
                 {
-                    dh = (DeliveryReport dr) => drs.Add(dr);
+                    dh = (Message dr) => drs.Add(dr);
                 }
 
                 producer.Produce(dh, partitionedTopic, Partition.Any, key, 0, 4, val, 0, 4, Timestamp.Default, null);
@@ -98,17 +97,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 if (!assertInDH)
                 {
-                    Assert.Equal(new byte[] { 1, 2, 3, 4 }, drs[0].Message.Key);
-                    Assert.Equal(new byte[] { 5, 6, 7, 8 }, drs[0].Message.Value);
-                    Assert.Equal(new byte[] { 1, 2 }, drs[1].Message.Key);
-                    Assert.Equal(new byte[] { 5, 6, 7 }, drs[1].Message.Value);
-                    Assert.Equal(new byte[] { 1, 2, 3 }, drs[2].Message.Key);
-                    Assert.Equal(new byte[] { 6, 7, 8 }, drs[2].Message.Value);
-                    Assert.Equal(new byte[] { 1 }, drs[3].Message.Key);
-                    Assert.Equal(new byte[] { 7, 8 }, drs[3].Message.Value);
+                    Assert.Equal(new byte[] { 1, 2, 3, 4 }, drs[0].Key);
+                    Assert.Equal(new byte[] { 5, 6, 7, 8 }, drs[0].Value);
+                    Assert.Equal(new byte[] { 1, 2 }, drs[1].Key);
+                    Assert.Equal(new byte[] { 5, 6, 7 }, drs[1].Value);
+                    Assert.Equal(new byte[] { 1, 2, 3 }, drs[2].Key);
+                    Assert.Equal(new byte[] { 6, 7, 8 }, drs[2].Value);
+                    Assert.Equal(new byte[] { 1 }, drs[3].Key);
+                    Assert.Equal(new byte[] { 7, 8 }, drs[3].Value);
                 }
             }
         }
     }
 }
-*/
