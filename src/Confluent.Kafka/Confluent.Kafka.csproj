@@ -18,8 +18,10 @@
   </PropertyGroup>
 
   <ItemGroup>		
-    <PackageReference Include="librdkafka.redist" Version="0.11.3" />
+    <PackageReference Include="librdkafka.redist" Version="0.11.3" />		
+    <PackageReference Include="System.Buffers" Version="4.4.0" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.0.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">

@@ -99,13 +99,13 @@ namespace Confluent.Kafka
         private SafeTopicHandle getKafkaTopicHandle(string topic) 
             => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
-        private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
+        private readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback;
 
         /// <remarks>
         ///     note: this property is set to that defined in rd_kafka_conf
         ///     (which is never used by confluent-kafka-dotnet).
         /// </remarks>
-        private static void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
+        private void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
@@ -146,7 +146,8 @@ namespace Confluent.Kafka
                 new Message (
                     // TODO: tracking handle -> topicName in addition to topicName -> handle could
                     //       avoid this marshalling / memory allocation cost.
-                    Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)),
+                    deliveryHandler.MarshalData ?
+                    Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)) : null,
                     msg.partition,
                     msg.offset,
                     key,
@@ -164,6 +165,23 @@ namespace Confluent.Kafka
             { }
 #endif
             public bool MarshalData { get { return true; } }
+
+            public void HandleDeliveryReport(Message message)
+            {
+#if NET45
+                System.Threading.Tasks.Task.Run(() => SetResult(message));
+#else
+                SetResult(message);
+#endif
+            }
+        }
+        private sealed class NoDataTaskDeliveryHandler : TaskCompletionSource<Message>, IDeliveryHandler
+        {
+#if !NET45
+            public NoDataTaskDeliveryHandler() : base(TaskCreationOptions.RunContinuationsAsynchronously)
+            { }
+#endif
+            public bool MarshalData { get { return false; } }
 
             public void HandleDeliveryReport(Message message)
             {
@@ -224,12 +242,17 @@ namespace Confluent.Kafka
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
             DateTime? timestamp,
-            Int32? partition, bool blockIfQueueFull
+            Int32? partition, bool blockIfQueueFull,
+            bool withoutDeliveryReportData
         )
         {
-            var deliveryCompletionSource = new TaskDeliveryHandler();
+            IDeliveryHandler deliveryCompletionSource;
+            if (withoutDeliveryReportData)
+                deliveryCompletionSource = new NoDataTaskDeliveryHandler();
+            else
+                deliveryCompletionSource = new TaskDeliveryHandler();
             Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
-            return deliveryCompletionSource.Task;
+            return ((TaskCompletionSource<Message>) deliveryCompletionSource).Task;
         }
 
         /// <summary>
@@ -281,6 +304,7 @@ namespace Confluent.Kafka
 
             if (!disableDeliveryReports)
             {
+                DeliveryReportCallback = DeliveryReportCallbackImpl;
                 LibRdKafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
             }
 
@@ -447,7 +471,7 @@ namespace Confluent.Kafka
         ///     for more information.
         /// </summary>
         public Task<Message> ProduceAsync(string topic, byte[] key, byte[] val)
-            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true);
+            => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true, false);
 
 
         /// <summary>
@@ -456,7 +480,7 @@ namespace Confluent.Kafka
         ///     for more information.
         /// </summary>
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true);
+            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, true, false);
 
         /// <summary>
         ///     Asynchronously send a single message to the broker.
@@ -464,7 +488,7 @@ namespace Confluent.Kafka
         ///     for more information.
         /// </summary>
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true);
+            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, true, false);
 
         /// <summary>
         ///     Asynchronously send a single message to the broker.
@@ -524,15 +548,15 @@ namespace Confluent.Kafka
         ///     be executed out of order.
         /// </remarks>
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull);
 
+            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, partition, blockIfQueueFull, false);
         /// <summary>
         ///     Asynchronously send a single message to the broker.
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool)" />
         ///     for more information.
         /// </summary>
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull)
-            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull);
+        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull , bool withoutDeliveryReportData)
+            => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull, withoutDeliveryReportData);
 
 
         /// <summary>

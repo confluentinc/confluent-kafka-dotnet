@@ -855,5 +855,17 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(err);
             }
         }
+
+        internal IntPtr ConsumerPoll(IntPtr millisecondsTimeout)
+        {
+            ThrowIfHandleClosed();
+            // TODO: There is a newer librdkafka interface for this now. Use that.
+            return LibRdKafka.consumer_poll(handle, millisecondsTimeout);
+        }
+
+        internal void MessageDestroy(IntPtr msgPtr)
+        {
+            LibRdKafka.message_destroy(msgPtr);
+        }
     }
 }
