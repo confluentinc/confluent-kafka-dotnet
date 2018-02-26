@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 #pragma warning disable xUnit1026
+#pragma warning disable CS0618
 
 using System;
 using System.Collections.Generic;
