@@ -39,7 +39,11 @@ namespace Confluent.Kafka.IntegrationTests
             { 
                 { "bootstrap.servers", bootstrapServers },
                 { "dotnet.producer.enable.delivery.reports", false },
-                { "dotnet.producer.block.if.queue.full", false } // just tests that this property is recognized.
+                // the below are just tests that the property is recognized. the functionality is not tested.
+                { "dotnet.producer.block.if.queue.full", false }, 
+                { "dotnet.producer.enable.background.poll", true },
+                { "dotnet.producer.enable.deivery.report.header.marshaling", true },
+                { "dotnet.producer.enable.deivery.report.data.marshaling", true}
             };
 
             int count = 0;
