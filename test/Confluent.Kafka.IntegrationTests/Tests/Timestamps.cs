@@ -63,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Action<Message<Null, string>> dh = (Message<Null, string> dr) => drs_1.Add(dr);
 
                 producer.Produce(dh, singlePartitionTopic, null, "testvalue");
-                
+
                 // TimestampType: CreateTime
                 producer.Produce(dh, singlePartitionTopic, 0, null, "test-value", new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null);
                 // TimestampType: CreateTime (default)
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 drs2.Add(producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null).Result);
-                
+
                 // TimestampType: CreateTime
                 drs2.Add(producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)), null).Result);
                 // TimestampType: CreateTime (default)
@@ -151,14 +151,51 @@ namespace Confluent.Kafka.IntegrationTests
 
                 assertCloseToNow(consumer, drs_2[2].TopicPartitionOffset);
             }
+
+            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            {
+                Message<Null, string> msg;
+
+                // serializing async
+
+                assertCloseToNowTyped(consumer, drs[0].TopicPartitionOffset);
+
+                consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
+                Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                
+                assertCloseToNowTyped(consumer, drs[2].TopicPartitionOffset);
+
+                // serializing deliveryhandler
+
+                assertCloseToNowTyped(consumer, drs_1[0].TopicPartitionOffset);
+
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_1[1].TopicPartitionOffset});
+                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
+                Assert.Equal(msg.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+
+                assertCloseToNowTyped(consumer, drs_1[2].TopicPartitionOffset);
+            }
         }
+
+        private static void assertCloseToNowTyped(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
+        {
+            Message<Null, string> msg;
+            consumer.Assign(new List<TopicPartitionOffset>() {tpo});
+            Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+            Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
+            Assert.True(Math.Abs((msg.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
+        }
+
         private static void assertCloseToNow(Consumer consumer, TopicPartitionOffset tpo)
         {
             Message msg;
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
             Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
-            Assert.True( Math.Abs((msg.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
+            Assert.True(Math.Abs((msg.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
         }
 
     }
