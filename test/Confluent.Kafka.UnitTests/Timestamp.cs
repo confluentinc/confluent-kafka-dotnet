@@ -23,7 +23,14 @@ namespace Confluent.Kafka.UnitTests
     public class TimestampTests
     {
         [Fact]
-        public void Constuctor()
+        public void ConstructorDefault()
+        {
+            var ts = new Timestamp();
+            Assert.Equal(ts, Timestamp.Default);
+        }
+
+        [Fact]
+        public void ConstuctorUnix()
         {
             var ts1 = new Timestamp(123456789, TimestampType.CreateTime);
             var ts2 = new Timestamp(-123456789, TimestampType.LogAppendTime);
@@ -33,6 +40,44 @@ namespace Confluent.Kafka.UnitTests
 
             Assert.Equal(TimestampType.CreateTime, ts1.Type);
             Assert.Equal(TimestampType.LogAppendTime, ts2.Type);
+        }
+
+        [Fact]
+        public void ConstructorDateTime()
+        {
+            var dt1 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Local);
+            var dt2 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var ts1 = new Timestamp(dt1, TimestampType.CreateTime);
+            var ts2 = new Timestamp(dt2, TimestampType.LogAppendTime);
+
+            var ts3 = new Timestamp(dt1);
+            var ts4 = new Timestamp(dt2);
+
+            Assert.Equal(ts1, ts3);
+            Assert.Equal(ts2.UnixTimestampMs, ts4.UnixTimestampMs);
+
+            var utcOffset = TimeZoneInfo.Local.GetUtcOffset(dt1);
+            var utcOffsetMs = utcOffset.TotalMilliseconds;
+
+            Assert.Equal(ts1.UnixTimestampMs + utcOffsetMs, ts2.UnixTimestampMs);
+            Assert.Equal(ts3.UnixTimestampMs + utcOffsetMs, ts4.UnixTimestampMs);
+        }
+
+        [Fact]
+        public void ConstructorDateTimeOffset()
+        {
+            var dt1 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var dto1 = new DateTimeOffset(new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), TimeSpan.FromHours(2));
+            var dto2 = new DateTimeOffset(new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc), TimeSpan.FromSeconds(0));
+
+            var ts1 = new Timestamp(dto1);
+            var ts2 = new Timestamp(dto2);
+            var ts3 = new Timestamp(dt1);
+
+            Assert.Equal(ts1.UnixTimestampMs + TimeSpan.FromHours(2).TotalMilliseconds, ts2.UnixTimestampMs);
+            Assert.Equal(ts3.UnixTimestampMs, ts2.UnixTimestampMs);
         }
 
         [Fact]
