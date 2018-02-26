@@ -43,6 +43,44 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public void ConstructorDateTime()
+        {
+            var dt1 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Local);
+            var dt2 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var ts1 = new Timestamp(dt1, TimestampType.CreateTime);
+            var ts2 = new Timestamp(dt2, TimestampType.LogAppendTime);
+
+            var ts3 = new Timestamp(dt1);
+            var ts4 = new Timestamp(dt2);
+
+            Assert.Equal(ts1, ts3);
+            Assert.Equal(ts2.UnixTimestampMs, ts4.UnixTimestampMs);
+
+            var utcOffset = TimeZoneInfo.Local.GetUtcOffset(dt1);
+            var utcOffsetMs = utcOffset.TotalMilliseconds;
+
+            Assert.Equal(ts1.UnixTimestampMs + utcOffsetMs, ts2.UnixTimestampMs);
+            Assert.Equal(ts3.UnixTimestampMs + utcOffsetMs, ts4.UnixTimestampMs);
+        }
+
+        [Fact]
+        public void ConstructorDateTimeOffset()
+        {
+            var dt1 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            var dto1 = new DateTimeOffset(new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), TimeSpan.FromHours(2));
+            var dto2 = new DateTimeOffset(new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc), TimeSpan.FromSeconds(0));
+
+            var ts1 = new Timestamp(dto1);
+            var ts2 = new Timestamp(dto2);
+            var ts3 = new Timestamp(dt1);
+
+            Assert.Equal(ts1.UnixTimestampMs + TimeSpan.FromHours(2).TotalMilliseconds, ts2.UnixTimestampMs);
+            Assert.Equal(ts3.UnixTimestampMs, ts2.UnixTimestampMs);
+        }
+
+        [Fact]
         public void Equality()
         {
             var ts1 = new Timestamp(1, TimestampType.CreateTime);
