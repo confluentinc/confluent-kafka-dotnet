@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             { 
                 { "bootstrap.servers", bootstrapServers },
                 { "dotnet.producer.enable.delivery.reports", false },
-                { "dotnet.producer.block.if.queue.full", false } // to test that this property is recognized.
+                { "dotnet.producer.block.if.queue.full", false } // just tests that this property is recognized.
             };
 
             int count = 0;
