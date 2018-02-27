@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Confluent Inc.
+﻿// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@
 
 namespace Confluent.Kafka.Serialization
 {
-    internal static class Constants
+    internal interface IAvroDeserializerImpl<T>
     {
-        /// <summary>
-        ///     Magic byte that identifies an avro serialized message with Confluent Platform framing.
-        /// </summary>
-        public const byte MagicByte = 0;
+        T Deserialize(string topic, byte[] array);
     }
 }

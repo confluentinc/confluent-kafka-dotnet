@@ -57,9 +57,6 @@ namespace Confluent.Kafka.Avro.UnitTests
             var modifiedConfig = avroSerializer.Configure(config, true);
 
             Assert.Equal(0, modifiedConfig.Count());
-            Assert.Equal(true, avroSerializer.IsKey);
-            Assert.False(avroSerializer.AutoRegisterSchema);
-            Assert.Equal(42, avroSerializer.InitialBufferSize);
         }
 
         [Fact]
@@ -74,20 +71,6 @@ namespace Confluent.Kafka.Avro.UnitTests
             var modifiedConfig = avroDeserializer.Configure(config, true);
 
             Assert.Equal(0, modifiedConfig.Count());
-        }
-
-        [Fact]
-        public void SerializerDefaults()
-        {
-            var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
-
-            var config = new Dictionary<string, object> { };
-
-            var modifiedConfig = avroSerializer.Configure(config, true);
-
-            Assert.Equal(0, modifiedConfig.Count());
-            Assert.Equal(AvroSerializer<int>.DefaultInitialBufferSize, avroSerializer.InitialBufferSize);
-            Assert.True(avroSerializer.AutoRegisterSchema);
         }
 
         [Fact]
@@ -118,7 +101,6 @@ namespace Confluent.Kafka.Avro.UnitTests
             var modifiedConfig = avroSerializer.Configure(config, true);
 
             Assert.Equal(1, modifiedConfig.Count());
-            Assert.True(avroSerializer.AutoRegisterSchema);
         }
 
         [Fact]

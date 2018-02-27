@@ -21,6 +21,9 @@ using System.Threading.Tasks;
 
 namespace Confluent.SchemaRegistry
 {
+    /// <summary>
+    ///     An interface implemented by Confluent Schema Registry clients.
+    /// </summary>
     public interface ISchemaRegistryClient : IDisposable
     {
         /// <include file='include_docs.xml' path='API.Member[@name="ISchemaRegistryClient_MaxCachedSchemas"]/*' />
