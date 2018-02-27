@@ -23,6 +23,9 @@ namespace Confluent.SchemaRegistry
 {
     public interface ISchemaRegistryClient : IDisposable
     {
+        /// <include file='include_docs.xml' path='API.Member[@name="ISchemaRegistryClient_MaxCachedSchemas"]/*' />
+        int MaxCachedSchemas { get; }
+
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterAsync"]/*' />
         Task<int> RegisterSchemaAsync(string subject, string schema);
 

@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27019.1
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{8859B121-D3C0-421E-8A0E-1C6F3B395A1F}"
 EndProject
@@ -43,6 +43,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.UnitTests", "test\Confluent.SchemaRegistry.UnitTests\Confluent.SchemaRegistry.UnitTests.csproj", "{29DA188E-CB20-4A9C-AC4E-50B442B9AC7D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.IntegrationTests", "test\Confluent.SchemaRegistry.IntegrationTests\Confluent.SchemaRegistry.IntegrationTests.csproj", "{2F5F0775-3708-40B7-A71F-442E83F6BB3D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroGeneric", "AvroGeneric\AvroGeneric.csproj", "{827D1767-5F11-4EF9-93B6-08A24B71DDDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -270,6 +272,18 @@ Global
 		{2F5F0775-3708-40B7-A71F-442E83F6BB3D}.Release|x64.Build.0 = Release|Any CPU
 		{2F5F0775-3708-40B7-A71F-442E83F6BB3D}.Release|x86.ActiveCfg = Release|Any CPU
 		{2F5F0775-3708-40B7-A71F-442E83F6BB3D}.Release|x86.Build.0 = Release|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Debug|x64.Build.0 = Debug|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Debug|x86.Build.0 = Debug|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Release|x64.ActiveCfg = Release|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Release|x64.Build.0 = Release|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Release|x86.ActiveCfg = Release|Any CPU
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -293,6 +307,7 @@ Global
 		{45B586D3-7CCA-46B0-A118-A070D84E8364} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
 		{29DA188E-CB20-4A9C-AC4E-50B442B9AC7D} = {399116BF-334E-4F4F-BB63-F128707EBA85}
 		{2F5F0775-3708-40B7-A71F-442E83F6BB3D} = {399116BF-334E-4F4F-BB63-F128707EBA85}
+		{827D1767-5F11-4EF9-93B6-08A24B71DDDA} = {5E013DDE-CA17-4B15-B1CA-E262B67DBD6A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CC489066-2768-4B90-9C6D-5F360D877242}

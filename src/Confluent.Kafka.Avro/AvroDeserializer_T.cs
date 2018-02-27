@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Confluent Inc.
+﻿// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ using System;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     Avro generic deserializer.
+    ///     Avro specific deserializer. Use this deserializer with types 
+    ///     generated using the avrogen.exe tool or one of the following 
+    ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -37,7 +39,7 @@ namespace Confluent.Kafka.Serialization
     ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroDeserializer : IDeserializer<GenericRecord>
+    public class AvroDeserializer<T> : IDeserializer<T>
     {
         private bool disposeClientOnDispose;
 
@@ -45,13 +47,62 @@ namespace Confluent.Kafka.Serialization
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId = new Dictionary<int, DatumReader<GenericRecord>>();
+        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId = new Dictionary<int, DatumReader<T>>();
         private object datumReaderLock = new object();
+
+        /// <summary>
+        ///     The avro schema used to read values of type <typeparamref name="T"/>
+        /// </summary>
+        public Avro.Schema ReaderSchema { get; private set; }
 
         /// <summary>
         ///	    The client used to communicate with Confluent Schema Registry.
         /// </summary>
         public ISchemaRegistryClient SchemaRegistryClient { get; private set; }
+
+        private void Initialize()
+        {
+            if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)) || typeof(T).IsSubclassOf(typeof(SpecificFixed)))
+            {
+                ReaderSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+            }
+            else if (typeof(T).Equals(typeof(int)))
+            {
+                ReaderSchema = Avro.Schema.Parse("int");
+            }
+            else if (typeof(T).Equals(typeof(bool)))
+            {
+                ReaderSchema = Avro.Schema.Parse("boolean");
+            }
+            else if (typeof(T).Equals(typeof(double)))
+            {
+                ReaderSchema = Avro.Schema.Parse("double");
+            }
+            else if (typeof(T).Equals(typeof(string)))
+            {
+                ReaderSchema = Avro.Schema.Parse("string");
+            }
+            else if (typeof(T).Equals(typeof(float)))
+            {
+                ReaderSchema = Avro.Schema.Parse("float");
+            }
+            else if (typeof(T).Equals(typeof(long)))
+            {
+                ReaderSchema = Avro.Schema.Parse("long");
+            }
+            else if (typeof(T).Equals(typeof(byte[])))
+            {
+                ReaderSchema = Avro.Schema.Parse("bytes");
+            }
+            else
+            {
+                throw new ArgumentException(
+                    $"{nameof(AvroDeserializer<T>)} " +
+                    "only accepts type parameters of int, bool, double, string, float, " +
+                    "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
+                );
+            }
+        }
 
         /// <summary>
         ///     Initialize a new instance of AvroDeserializer.
@@ -105,7 +156,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The deserialized <typeparamref name="T"/> value.
         /// </returns>
-        public GenericRecord Deserialize(string topic, byte[] array)
+        public T Deserialize(string topic, byte[] array)
         {
             // Note: topic is not necessary for deserialization (or knowing if it's a key 
             // or value) only the schema id is needed.
@@ -122,7 +173,7 @@ namespace Confluent.Kafka.Serialization
                 var writerIdBigEndian = reader.ReadInt32();
                 var writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
 
-                DatumReader<GenericRecord> datumReader = null;
+                DatumReader<T> datumReader = null;
 
                 lock (datumReaderLock)
                 {
@@ -135,12 +186,12 @@ namespace Confluent.Kafka.Serialization
                         var writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
                         var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
-                        datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
+                        datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                         datumReaderBySchemaId[writerId] = datumReader;
                     }
                 }
-
-                return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
+                
+                return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }
 
@@ -172,13 +223,14 @@ namespace Confluent.Kafka.Serialization
                 throw new ArgumentException($"{keyOrValue} AvroDeserializer schema registry client was not supplied or configured.");
             }
 
+            Initialize();
             return config.Where(item => !item.Key.StartsWith("schema.registry.") && !item.Key.StartsWith("avro."));
         }
 
         /// <summary>
         ///     Releases any unmanaged resources owned by the deserializer.
         /// </summary>
-        public void Dispose()
+        public void Dispose() 
         {
             if (disposeClientOnDispose)
             {

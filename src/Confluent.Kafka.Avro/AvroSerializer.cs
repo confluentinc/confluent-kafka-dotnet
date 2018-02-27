@@ -1,36 +1,18 @@
-﻿// Copyright 2016-2018 Confluent Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-// Refer to LICENSE for more information.
-
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
+using Confluent.SchemaRegistry;
+using Avro.Generic;
+using Avro.IO;
+using Confluent.Kafka;
 using System.IO;
 using System.Net;
-using Avro.Specific;
-using Avro.IO;
-using Confluent.SchemaRegistry;
-using System.Reflection;
 
 
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     Avro specific serializer. Use this serializer with types generated
-    ///     using the avrogen.exe tool or one of the following primitive types: 
-    ///     int, long, float, double, boolean, string, byte[].
+    ///     Avro generic serializer.
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -38,31 +20,21 @@ namespace Confluent.Kafka.Serialization
     ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T> : ISerializer<T>
+    public class AvroSerializer : ISerializer<GenericRecord>
     {
-        private SpecificWriter<T> avroWriter;
-
-        private HashSet<string> topicsRegistered = new HashSet<string>();
-
-        private bool disposeClientOnDispose;
-
-        private string writerSchemaString { get; set; }
-
-        private const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
-
-        private const string AutoRegisterSchemaPropertyName = "avro.serializer.auto.register.schemas";
-
         /// <summary>
-        ///     The SchemaId corresponding to type <see cref="T"/>, or null if 
-        ///     the serializer has yet to be invoked.
-        /// </summary>
-        public int? SchemaId { get; private set; } = null;
-
-        /// <summary>
-        ///	    The <see cref="ISchemaRegistryClient"/> instance used for communication
+        ///	    The ISchemaRegistryClient instance used for communication
         ///	    with Confluent Schema Registry.
         /// </summary>
         public ISchemaRegistryClient SchemaRegistryClient { get; private set; }
+
+        /// <summary>
+        ///	    True if this serializer is used for serializing Kafka message keys,
+        ///	    false if it is used for serializing Kafka message values.
+        /// </summary>
+        public bool IsKey { get; private set; }
+
+        private bool disposeClientOnDispose;
 
         /// <summary>
         ///     The default initial size (in bytes) of buffers used for message 
@@ -81,128 +53,38 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         /// <remarks>
         ///     Use a value high enough to avoid resizing of buffer, but small enough
-        ///     to avoid excessive memory use. Inspect the size of byte array returned by
-        ///     <see cref="Serialize(string, T)"/> to estimate an appropriate value.
-        ///     Note: each call to serialize creates a new buffer.
+        ///     to avoid excessive memory use.
         /// </remarks>
         public int InitialBufferSize { get; private set; } = DefaultInitialBufferSize;
 
-        /// <summary>
-        ///	    True if this serializer is used for serializing Kafka message keys,
-        ///	    false if it is used for serializing Kafka message values.
-        /// </summary>
-        public bool IsKey { get; private set; }
-
-        /// <summary>
-        ///     The avro schema used to write values of type <see cref="T"/>
-        /// </summary>
-        public Avro.Schema WriterSchema { get; private set; }
-
-        private void Initialize()
+        public AvroSerializer()
         {
-            Type writerType = typeof(T);
-            if (typeof(ISpecificRecord).IsAssignableFrom(writerType) || writerType.IsSubclassOf(typeof(SpecificFixed)))
-            {
-                WriterSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
-            }
-            else if (writerType.Equals(typeof(int)))
-            {
-                WriterSchema = Avro.Schema.Parse("int");
-            }
-            else if (writerType.Equals(typeof(bool)))
-            {
-                WriterSchema = Avro.Schema.Parse("boolean");
-            }
-            else if (writerType.Equals(typeof(double)))
-            {
-                WriterSchema = Avro.Schema.Parse("double");
-            }
-            else if (writerType.Equals(typeof(string)))
-            {
-                // Note: It would arguably be better to make this a union with null, to
-                // exactly match the .NET string type, however we don't for consistency
-                // with the Java avro serializer.
-                WriterSchema = Avro.Schema.Parse("string");
-            }
-            else if (writerType.Equals(typeof(float)))
-            {
-                WriterSchema = Avro.Schema.Parse("float");
-            }
-            else if (writerType.Equals(typeof(long)))
-            {
-                WriterSchema = Avro.Schema.Parse("long");
-            }
-            else if (writerType.Equals(typeof(byte[])))
-            {
-                // Note: It would arguably be better to make this a union with null, to
-                // exactly match the .NET byte[] type, however we don't for consistency
-                // with the Java avro serializer.
-                WriterSchema = Avro.Schema.Parse("bytes");
-            }
-            else
-            {
-                throw new ArgumentException(
-                    $"{nameof(AvroSerializer<T>)} " +
-                    "only accepts type parameters of int, bool, double, string, float, " +
-                    "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
-                );
-            }
 
-            avroWriter = new SpecificWriter<T>(WriterSchema);
-            writerSchemaString = WriterSchema.ToString();
         }
 
-        /// <summary>
-        ///     Initialize a new instance of AvroSerializer.
-        ///     
-        ///     When passed as a parameter to the Confluent.Kafka.Producer constructor,
-        ///     the following configuration properties will be extracted from the producer's
-        ///     configuration property collection:
-        ///     
-        ///     schema.registry.url (required) - A comma-separated list of URLs for schema registry 
-        ///         instances that are used to register or lookup schemas.
-        ///                           
-        ///     schema.registry.connection.timeout.ms (default: 30000) - Timeout for requests to 
-        ///         Confluent Schema Registry.
-        ///     
-        ///     schema.registry.max.cached.schemas (default: 1000) - The maximum number of schemas 
-        ///         to cache locally.
-        ///     
-        ///     avro.serializer.buffer.bytes (default: 128) - Initial size (in bytes) of the buffer 
-        ///         used for message serialization. Use a value high enough to avoid resizing 
-        ///         the buffer, but small enough to avoid excessive memory use. Inspect the size of 
-        ///         the byte array returned by the Serialize method to estimate an appropriate value. 
-        ///         Note: each call to serialize creates a new buffer.
-        ///     
-        ///     avro.serializer.auto.register.schemas (default: true) - true if the serializer should 
-        ///         attempt to auto-register unrecognized schemas with Confluent Schema Registry, 
-        ///         false if not.
-        /// </summary>
-        /// <remarks>
-        ///     An instance of CachedSchemaRegistryClient will be created and managed 
-        ///     internally based on configuration properties extracted from the collection
-        ///     passed into the Producer constructor.
-        /// </remarks>
-        public AvroSerializer() { }
-
-        /// <summary>
-        ///     Initiliaze a new instance of the AvroSerializer class.
-        /// </summary>
-        /// <param name="schemaRegistryClient">
-        ///	    An instance of an implementation of ISchemaRegistryClient used for
-        ///	    communication with Confluent Schema Registry.
-        /// </param>
-        /// <exception cref="InvalidOperationException">
-        ///	    The generic type <see cref="T"/> is not supported.
-        /// </exception>
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient)
         {
             disposeClientOnDispose = false;
             SchemaRegistryClient = schemaRegistryClient;
         }
 
+        public void Dispose()
+        {
+            if (disposeClientOnDispose)
+            {
+                SchemaRegistryClient.Dispose();
+            }
+        }
+
+        private Dictionary<Avro.RecordSchema, string> knownSchemas = new Dictionary<Avro.RecordSchema, string>();
+
+        private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
+
+        private Dictionary<string, int> schemaStrings = new Dictionary<string, int>();
+
+
         /// <summary>
-        ///     Serialize an instance of type <see cref="T"/> to a byte array in avro format. The serialized
+        ///     Serialize GenericRecord instance to a byte array in avro format. The serialized
         ///     data is preceeded by a "magic byte" (1 byte) and the id of the schema as registered
         ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
         ///     on first use for a particular topic during schema registration.
@@ -216,42 +98,82 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public byte[] Serialize(string topic, T data)
+        public byte[] Serialize(string topic, GenericRecord data)
         {
-            if (!topicsRegistered.Contains(topic))
+            // TODO: If any of these caches fills up, this is probably an
+            // indication of misuse. Ideally we would do something more 
+            // sophisticated than this & not allow the misuse to keep 
+            // happening without warning.
+            if (knownSchemas.Count > SchemaRegistryClient.MaxCachedSchemas ||
+                registeredSchemas.Count > SchemaRegistryClient.MaxCachedSchemas ||
+                schemaStrings.Count > SchemaRegistryClient.MaxCachedSchemas)
             {
-                string subject = IsKey
-                    ? SchemaRegistryClient.ConstructKeySubjectName(topic)
-                    : SchemaRegistryClient.ConstructValueSubjectName(topic);
+                knownSchemas.Clear();
+                registeredSchemas.Clear();
+                schemaStrings.Clear();
+            }
 
+            var writerSchema = data.Schema;
+            string writerSchemaString = null;
+
+            // Note: The default object hash used here is cheap - this is a quick
+            // lookup from writer schema object reference -> corresponding schema 
+            // string instance under expected usage.
+            if (knownSchemas.ContainsKey(writerSchema))
+            {
+                writerSchemaString = knownSchemas[writerSchema];
+            }
+            else
+            {
+                // Note: Even if the schema string used to construct two 
+                // GenericRecord instances is different, if they are represent
+                // the same schema, the output of ToString() will be identical.
+                writerSchemaString = writerSchema.ToString();
+                knownSchemas.Add(writerSchema, writerSchemaString);
+            }
+
+            string subject = IsKey
+                ? SchemaRegistryClient.ConstructKeySubjectName(topic)
+                : SchemaRegistryClient.ConstructValueSubjectName(topic);
+
+            // TODO: Optimize this lookup with a custom hash function that
+            // uses the writerSchemaString reference, not value.
+            var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
+            if (!registeredSchemas.Contains(subjectSchemaPair))
+            {
                 // first usage: register/get schema to check compatibility
-
                 if (AutoRegisterSchema)
                 {
-                    SchemaId = SchemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result;
+                    schemaStrings.Add(
+                        writerSchemaString, 
+                        SchemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result
+                    );
                 }
                 else
                 {
-                    SchemaId = SchemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
+                    schemaStrings.Add(
+                        writerSchemaString, 
+                        SchemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result
+                    );
                 }
 
-                topicsRegistered.Add(topic);
+                registeredSchemas.Add(subjectSchemaPair);
             }
-			
+
+            var schemaId = schemaStrings[writerSchemaString];
+
             using (var stream = new MemoryStream(InitialBufferSize))
             using (var writer = new BinaryWriter(stream))
             {
                 stream.WriteByte(Constants.MagicByte);
-
-                writer.Write(IPAddress.HostToNetworkOrder(SchemaId.Value));
-                avroWriter.Write(data, new BinaryEncoder(stream));
-
-                // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
+                writer.Write(IPAddress.HostToNetworkOrder(schemaId));
+                new GenericWriter<GenericRecord>(writerSchema)
+                    .Write(data, new BinaryEncoder(stream));
                 return stream.ToArray();
             }
         }
 
-        /// <include file='../../Confluent.Kafka/include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
+        /// <include file='../Confluent.Kafka/include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
             var keyOrValue = isKey ? "Key" : "Value";
@@ -261,15 +183,15 @@ namespace Confluent.Kafka.Serialization
 
             if (avroConfig.Count() != 0)
             {
-                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, InitialBufferSizePropertyName, "AvroSerializer", typeof(int));
+                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, Constants.InitialBufferSizePropertyName, "AvroSerializer", typeof(int));
                 if (initialBufferSize != null) { InitialBufferSize = initialBufferSize.Value; }
 
-                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, AutoRegisterSchemaPropertyName, "AvroSerializer", typeof(bool));
+                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, Constants.AutoRegisterSchemaPropertyName, "AvroSerializer", typeof(bool));
                 if (autoRegisterSchema != null) { AutoRegisterSchema = autoRegisterSchema.Value; }
 
                 foreach (var property in avroConfig)
                 {
-                    if (property.Key != AutoRegisterSchemaPropertyName && property.Key != InitialBufferSizePropertyName)
+                    if (property.Key != Constants.AutoRegisterSchemaPropertyName && property.Key != Constants.InitialBufferSizePropertyName)
                     {
                         throw new ArgumentException($"{keyOrValue} AvroSerializer: unexpected configuration parameter {property.Key}");
                     }
@@ -292,19 +214,8 @@ namespace Confluent.Kafka.Serialization
                 throw new ArgumentException($"{keyOrValue} AvroSerializer schema registry client was not supplied or configured.");
             }
 
-            Initialize();
             return config.Where(item => !item.Key.StartsWith("schema.registry.") && !item.Key.StartsWith("avro."));
         }
 
-        /// <summary>
-        ///     Releases any unmanaged resources owned by the serializer.
-        /// </summary>
-        public void Dispose() 
-        {
-            if (disposeClientOnDispose)
-            {
-                SchemaRegistryClient.Dispose();
-            }
-        }
     }
 }

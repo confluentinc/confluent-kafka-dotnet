@@ -23,5 +23,9 @@ namespace Confluent.Kafka.Serialization
         ///     Magic byte that identifies an avro serialized message with Confluent Platform framing.
         /// </summary>
         public const byte MagicByte = 0;
+
+        public const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
+
+        public const string AutoRegisterSchemaPropertyName = "avro.serializer.auto.register.schemas";
     }
 }

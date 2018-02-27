@@ -1,5 +1,11 @@
 <API>
 
+<Member name="ISchemaRegistryClient_MaxCachedSchemas">
+    <summary>
+        The maximum capacity of the local schema cache.
+    </summary>
+</Member>
+  
 <Member name="ISchemaRegistryClient_RegisterSchemaAsync">  
     <summary>
         Register a schema or get the schema id if it's already 
@@ -91,7 +97,7 @@
     <param name="subject">
         The subject to check.
     </param>
-    <param name="schame">
+    <param name="schema">
         The schema to check.
     </param>
     <returns>
