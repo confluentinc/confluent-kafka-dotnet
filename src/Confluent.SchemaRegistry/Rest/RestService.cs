@@ -46,12 +46,12 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         private readonly List<HttpClient> clients;
 
-        
+
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
         public RestService(string schemaRegistryUrl, int timeoutMs)
-        { 
+        {
             this.clients = schemaRegistryUrl
                 .Split(',')
                 .Select(uri => uri.StartsWith("http", StringComparison.Ordinal) ? uri : "http://" + uri) // need http or https - use http if not present.
@@ -74,7 +74,7 @@ namespace Confluent.SchemaRegistry
             string aggregatedErrorMessage = null;
             HttpResponseMessage response = null;
             bool firstError = true;
-            
+
             int startClientIndex;
             lock (lastClientUsedLock)
             {
@@ -189,7 +189,7 @@ namespace Confluent.SchemaRegistry
         #region Schemas
 
         public async Task<string> GetSchemaAsync(int id)
-            => (await RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get)).Schema;
+            => (await RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get).ConfigureAwait(false)).Schema;
 
         #endregion Schemas
 
@@ -197,40 +197,40 @@ namespace Confluent.SchemaRegistry
 
         public Task<List<string>> GetSubjectsAsync()
             => RequestListOfAsync<string>(
-                    "/subjects", 
+                    "/subjects",
                     HttpMethod.Get);
 
         public Task<List<string>> GetSubjectVersionsAsync(string subject)
             => RequestListOfAsync<string>(
-                    $"/subjects/{subject}/versions", 
+                    $"/subjects/{subject}/versions",
                     HttpMethod.Get);
 
         public Task<Schema> GetSchemaAsync(string subject, int version)
             => RequestAsync<Schema>(
-                    $"/subjects/{subject}/versions/{version}", 
+                    $"/subjects/{subject}/versions/{version}",
                     HttpMethod.Get);
 
         public Task<Schema> GetLatestSchemaAsync(string subject)
             => RequestAsync<Schema>(
-                    $"/subjects/{subject}/versions/latest", 
+                    $"/subjects/{subject}/versions/latest",
                     HttpMethod.Get);
 
         public async Task<int> RegisterSchemaAsync(string subject, string schema)
             => (await RequestAsync<SchemaId>(
-                    $"/subjects/{subject}/versions", 
-                    HttpMethod.Post, 
+                    $"/subjects/{subject}/versions",
+                    HttpMethod.Post,
                     new SchemaString(schema))).Id;
 
         public Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas)
             => RequestAsync<Schema>(
                     $"/subjects/{subject}?deleted={!ignoreDeletedSchemas}",
-                    HttpMethod.Post, 
+                    HttpMethod.Post,
                     new SchemaString(schema));
 
         public Task<Schema> CheckSchemaAsync(string subject, string schema)
             => RequestAsync<Schema>(
-                    $"/subjects/{subject}", 
-                    HttpMethod.Post, 
+                    $"/subjects/{subject}",
+                    HttpMethod.Post,
                     new SchemaString(schema));
 
         #endregion Subjects
@@ -255,26 +255,26 @@ namespace Confluent.SchemaRegistry
 
         public async Task<Compatibility> GetGlobalCompatibilityAsync()
             => (await RequestAsync<Config>(
-                    "/config", 
+                    "/config",
                     HttpMethod.Get)).CompatibilityLevel;
 
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
             => (await RequestAsync<Config>(
-                    $"/config/{subject}", 
+                    $"/config/{subject}",
                     HttpMethod.Get)).CompatibilityLevel;
 
         public Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
             => RequestAsync<Config>(
-                    "/config", 
-                    HttpMethod.Put, 
+                    "/config",
+                    HttpMethod.Put,
                     new Config(compatibility));
 
         public Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
             => RequestAsync<Config>(
-                    $"/config/{subject}", 
-                    HttpMethod.Put, 
+                    $"/config/{subject}",
+                    HttpMethod.Put,
                     new Config(compatibility));
-            
+
         #endregion Config
 
         public void Dispose()
@@ -282,7 +282,7 @@ namespace Confluent.SchemaRegistry
             foreach (var client in this.clients)
             {
                 client.Dispose();
-            }    
+            }
         }
     }
 }

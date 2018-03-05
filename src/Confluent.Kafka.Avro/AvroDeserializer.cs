@@ -24,7 +24,7 @@ using Avro.Specific;
 using Confluent.SchemaRegistry;
 using System.Reflection;
 using System;
-
+using System.Collections.Concurrent;
 
 namespace Confluent.Kafka.Serialization
 {
@@ -47,7 +47,7 @@ namespace Confluent.Kafka.Serialization
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId = new Dictionary<int, DatumReader<T>>();
+        private readonly ConcurrentDictionary<int, DatumReader<T>> datumReaderBySchemaId = new ConcurrentDictionary<int, DatumReader<T>>();
         private object datumReaderLock = new object();
 
         /// <summary>
@@ -173,24 +173,19 @@ namespace Confluent.Kafka.Serialization
                 var writerIdBigEndian = reader.ReadInt32();
                 var writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
 
-                DatumReader<T> datumReader = null;
-
-                lock (datumReaderLock)
+                datumReaderBySchemaId.TryGetValue(writerId, out var datumReader);
+                if (datumReader == null)
                 {
-                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
-                    if (datumReader == null)
-                    {
-                        // it's a good idea to retain the lock over this blocking call since there
-                        // may be concurrent deserialize calls for the same T, and in that case it's
-                        // best not to hit Schema Registry more than once for the same information.
-                        var writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).Result;
-                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+                    // it's a good idea to retain the lock over this blocking call since there
+                    // may be concurrent deserialize calls for the same T, and in that case it's
+                    // best not to hit Schema Registry more than once for the same information.
+                    var writerSchemaJson = SchemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(false).GetAwaiter().GetResult();
+                    var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
-                        datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                        datumReaderBySchemaId[writerId] = datumReader;
-                    }
+                    datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
+                    datumReaderBySchemaId[writerId] = datumReader;
                 }
-                
+
                 return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }
@@ -230,7 +225,7 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Releases any unmanaged resources owned by the deserializer.
         /// </summary>
-        public void Dispose() 
+        public void Dispose()
         {
             if (disposeClientOnDispose)
             {
