@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Avro.IO;
 using Avro.Specific;
 using Confluent.SchemaRegistry;
@@ -38,9 +38,10 @@ namespace Confluent.Kafka.Serialization
         private int? writerSchemaId;
 
         private SpecificWriter<T> avroWriter;
-
-        private HashSet<string> topicsRegistered = new HashSet<string>();
-
+       
+        // note: this colletion is used as a concurrent hashset - value is ignored.
+        private ConcurrentDictionary<string, object> topicsRegistered 
+            = new ConcurrentDictionary<string, object>();
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -107,7 +108,7 @@ namespace Confluent.Kafka.Serialization
 
         public byte[] Serialize(string topic, T data)
         {
-            if (!topicsRegistered.Contains(topic))
+            if (!topicsRegistered.ContainsKey(topic))
             {
                 string subject = isKey
                     ? schemaRegistryClient.ConstructKeySubjectName(topic)
@@ -119,7 +120,7 @@ namespace Confluent.Kafka.Serialization
                     ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result
                     : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
 
-                topicsRegistered.Add(topic);
+                topicsRegistered.TryAdd(topic, null);
             }
 
             using (var stream = new MemoryStream(initialBufferSize))

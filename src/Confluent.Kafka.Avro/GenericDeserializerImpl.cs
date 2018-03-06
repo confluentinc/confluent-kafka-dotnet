@@ -56,6 +56,10 @@ namespace Confluent.Kafka.Serialization
                 }
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
+                // Note: there is a race condition here in which more than one datumReader can
+                // be created for a given writerId, but this is benign (doesn't matter) and 
+                // happens very infrequently => doesn't affect the effectiveness of the cache.
+
                 datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<GenericRecord> datumReader);
                 if (datumReader == null)
                 {
