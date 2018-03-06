@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -32,17 +31,11 @@ namespace Confluent.Kafka.Serialization
         private int initialBufferSize;
         private bool isKey;
 
-        private ConcurrentDictionary<Avro.RecordSchema, string> knownSchemas 
-            = new ConcurrentDictionary<Avro.RecordSchema, string>();
+        private Dictionary<Avro.RecordSchema, string> knownSchemas = new Dictionary<Avro.RecordSchema, string>();
+        private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
+        private Dictionary<string, int> schemaIds = new Dictionary<string, int>();
 
-        // note: this colletion is used as a concurrent hashset - value is ignored.
-        private ConcurrentDictionary<KeyValuePair<string, string>, object> registeredSchemas 
-            = new ConcurrentDictionary<KeyValuePair<string, string>, object>();
-
-        private ConcurrentDictionary<string, int> schemaIds
-            = new ConcurrentDictionary<string, int>();
-
-        private object registeredSchemaAddLockObj = new object();
+        private object serializeLockObj = new object();
 
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -73,54 +66,68 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         public byte[] Serialize(string topic, GenericRecord data)
         {
-            // TODO: If any of these caches fills up, this is probably an
-            // indication of misuse of the serializer. Ideally we would do 
-            // something more sophisticated than the below + not allow 
-            // the misuse to keep happening without warning.
-            if (knownSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
-                registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
-                schemaIds.Count > schemaRegistryClient.MaxCachedSchemas)
+            int schemaId;
+            Avro.RecordSchema writerSchema;
+            lock (serializeLockObj)
             {
-                knownSchemas.Clear();
-                registeredSchemas.Clear();
-                schemaIds.Clear();
-            }
-
-            // Determine a schema string corresponding to the schema object.
-            // TODO: It would be more efficient to use a hash function based
-            // on the instance reference, not the implementation provided by 
-            // Schema.
-            var writerSchema = data.Schema;
-            if (!knownSchemas.TryGetValue(writerSchema, out string writerSchemaString))
-            {
-                writerSchemaString = writerSchema.ToString();
-                knownSchemas.TryAdd(writerSchema, writerSchemaString);
-            }
-
-            // Verify schema compatibility (& register as required) + get the 
-            // id corresponding to the schema.
-            // TODO: Again, the hash functions in use below are potentially 
-            // slow since writerSchemaString is potentially long. It would be
-            // better to use hash functions based on the writerSchemaString 
-            // object reference, not value.
-            string subject = this.isKey
-                ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                : schemaRegistryClient.ConstructValueSubjectName(topic);
-            var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
-
-            bool schemaIdIsCached = schemaIds.TryGetValue(writerSchemaString, out int schemaId);
-
-            if (!registeredSchemas.ContainsKey(subjectSchemaPair) || !schemaIdIsCached)
-            {
-                int retrievedSchemaId = autoRegisterSchema
-                    ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result
-                    : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
-
-                lock (registeredSchemaAddLockObj)
+                // TODO: If any of these caches fills up, this is probably an
+                // indication of misuse of the serializer. Ideally we would do 
+                // something more sophisticated than the below + not allow 
+                // the misuse to keep happening without warning.
+                if (knownSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
+                    registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
+                    schemaIds.Count > schemaRegistryClient.MaxCachedSchemas)
                 {
-                    schemaIds.TryAdd(writerSchemaString, retrievedSchemaId);
-                    registeredSchemas.TryAdd(subjectSchemaPair, null);
+                    knownSchemas.Clear();
+                    registeredSchemas.Clear();
+                    schemaIds.Clear();
                 }
+
+                // Determine a schema string corresponding to the schema object.
+                // TODO: It would be more efficient to use a hash function based
+                // on the instance reference, not the implementation provided by 
+                // Schema.
+                writerSchema = data.Schema;
+                string writerSchemaString = null;
+                if (knownSchemas.ContainsKey(writerSchema))
+                {
+                    writerSchemaString = knownSchemas[writerSchema];
+                }
+                else
+                {
+                    writerSchemaString = writerSchema.ToString();
+                    knownSchemas.Add(writerSchema, writerSchemaString);
+                }
+
+                // Verify schema compatibility (& register as required) + get the 
+                // id corresponding to the schema.
+                // TODO: Again, the hash functions in use below are potentially 
+                // slow since writerSchemaString is potentially long. It would be
+                // better to use hash functions based on the writerSchemaString 
+                // object reference, not value.
+                string subject = this.isKey
+                    ? schemaRegistryClient.ConstructKeySubjectName(topic)
+                    : schemaRegistryClient.ConstructValueSubjectName(topic);
+                var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
+                if (!registeredSchemas.Contains(subjectSchemaPair))
+                {
+                    // first usage: register/get schema to check compatibility
+                    if (autoRegisterSchema)
+                    {
+                        schemaIds.Add(
+                            writerSchemaString,
+                            schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                    }
+                    else
+                    {
+                        schemaIds.Add(
+                            writerSchemaString,
+                            schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                    }
+
+                    registeredSchemas.Add(subjectSchemaPair);
+                }
+                schemaId = schemaIds[writerSchemaString];
             }
 
             using (var stream = new MemoryStream(initialBufferSize))

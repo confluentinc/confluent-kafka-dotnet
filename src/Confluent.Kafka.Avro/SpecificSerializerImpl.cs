@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Avro.IO;
 using Avro.Specific;
 using Confluent.SchemaRegistry;
@@ -39,9 +39,9 @@ namespace Confluent.Kafka.Serialization
 
         private SpecificWriter<T> avroWriter;
        
-        // note: this colletion is used as a concurrent hashset - value is ignored.
-        private ConcurrentDictionary<string, object> topicsRegistered 
-            = new ConcurrentDictionary<string, object>();
+        private HashSet<string> topicsRegistered = new HashSet<string>();
+
+        private object serializeLockObj = new object();
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -108,19 +108,22 @@ namespace Confluent.Kafka.Serialization
 
         public byte[] Serialize(string topic, T data)
         {
-            if (!topicsRegistered.ContainsKey(topic))
+            lock (serializeLockObj)
             {
-                string subject = isKey
-                    ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                    : schemaRegistryClient.ConstructValueSubjectName(topic);
+                if (!topicsRegistered.Contains(topic))
+                {
+                    string subject = isKey
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
+                        : schemaRegistryClient.ConstructValueSubjectName(topic);
 
-                // first usage: register/get schema to check compatibility
+                    // first usage: register/get schema to check compatibility
 
-                writerSchemaId = autoRegisterSchema
-                    ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result
-                    : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
+                    writerSchemaId = autoRegisterSchema
+                        ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult()
+                        : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                topicsRegistered.TryAdd(topic, null);
+                    topicsRegistered.Add(topic);
+                }
             }
 
             using (var stream = new MemoryStream(initialBufferSize))

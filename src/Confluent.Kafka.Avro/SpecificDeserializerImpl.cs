@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
@@ -33,8 +33,10 @@ namespace Confluent.Kafka.Serialization
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly ConcurrentDictionary<int, DatumReader<T>> datumReaderBySchemaId 
-            = new ConcurrentDictionary<int, DatumReader<T>>();
+        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
+            = new Dictionary<int, DatumReader<T>>();
+
+        private object deserializeLockObj = new object();
 
         /// <summary>
         ///     The avro schema used to read values of type <typeparamref name="T"/>
@@ -105,26 +107,25 @@ namespace Confluent.Kafka.Serialization
                 }
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
-                // Note: there is a race condition here in which more than one datumReader can
-                // be created for a given writerId, but this is benign (doesn't matter) and 
-                // happens very infrequently => doesn't affect the effectiveness of the cache.
-
-                datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<T> datumReader);
-                if (datumReader == null)
+                lock (deserializeLockObj)
                 {
-                    if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
+                    datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<T> datumReader);
+                    if (datumReader == null)
                     {
-                        datumReaderBySchemaId.Clear();
+                        if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
+                        {
+                            datumReaderBySchemaId.Clear();
+                        }
+
+                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(false).GetAwaiter().GetResult();
+                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+
+                        datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
+                        datumReaderBySchemaId[writerId] = datumReader;
                     }
 
-                    var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).Result;
-                    var writerSchema = Avro.Schema.Parse(writerSchemaJson);
-
-                    datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                    datumReaderBySchemaId[writerId] = datumReader;
+                    return datumReader.Read(default(T), new BinaryDecoder(stream));
                 }
-
-                return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }
 

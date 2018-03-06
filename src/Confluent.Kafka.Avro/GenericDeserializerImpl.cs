@@ -14,7 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using Avro.IO;
@@ -30,8 +30,10 @@ namespace Confluent.Kafka.Serialization
         ///     A datum reader cache (one corresponding to each write schema that's been seen)
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly ConcurrentDictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
-            = new ConcurrentDictionary<int, DatumReader<GenericRecord>>();
+        private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
+            = new Dictionary<int, DatumReader<GenericRecord>>();
+       
+        private object deserializeLockObj = new object();
 
         private ISchemaRegistryClient schemaRegistryClient;
 
@@ -56,30 +58,29 @@ namespace Confluent.Kafka.Serialization
                 }
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
-                // Note: there is a race condition here in which more than one datumReader can
-                // be created for a given writerId, but this is benign (doesn't matter) and 
-                // happens very infrequently => doesn't affect the effectiveness of the cache.
-
-                datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<GenericRecord> datumReader);
-                if (datumReader == null)
+                lock (deserializeLockObj)
                 {
-                    // TODO: If any of this cache fills up, this is probably an
-                    // indication of misuse of the deserializer. Ideally we would do 
-                    // something more sophisticated than the below + not allow 
-                    // the misuse to keep happening without warning.
-                    if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
+                    datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<GenericRecord> datumReader);
+                    if (datumReader == null)
                     {
-                        datumReaderBySchemaId.Clear();
+                        // TODO: If any of this cache fills up, this is probably an
+                        // indication of misuse of the deserializer. Ideally we would do 
+                        // something more sophisticated than the below + not allow 
+                        // the misuse to keep happening without warning.
+                        if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
+                        {
+                            datumReaderBySchemaId.Clear();
+                        }
+
+                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(false).GetAwaiter().GetResult();
+                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+
+                        datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
+                        datumReaderBySchemaId[writerId] = datumReader;
                     }
 
-                    var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).Result;
-                    var writerSchema = Avro.Schema.Parse(writerSchemaJson);
-
-                    datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
-                    datumReaderBySchemaId[writerId] = datumReader;
+                    return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                 }
-
-                return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
             }
         }
 
