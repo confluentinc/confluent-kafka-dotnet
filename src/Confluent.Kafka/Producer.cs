@@ -52,11 +52,15 @@ namespace Confluent.Kafka
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
-                    while (true)
+                    try
                     {
-                        ct.ThrowIfCancellationRequested();
-                        this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                        while (true)
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                        }
                     }
+                    catch (OperationCanceledException) {}
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         private LibRdKafka.ErrorDelegate errorDelegate;
