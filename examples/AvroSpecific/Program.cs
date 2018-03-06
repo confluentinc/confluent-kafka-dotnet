@@ -116,8 +116,9 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { name = text, favorite_color = "green", favorite_number = i++ };
-                    var deliveryReport = producer.ProduceAsync(topicName, text, user).Result;
-                    Console.WriteLine($"Wrote to partition: {deliveryReport.Partition}, Offset: {deliveryReport.Offset}");
+                    producer
+                        .ProduceAsync(topicName, text, user)
+                        .ContinueWith(task => Console.WriteLine($"Wrote to: {task.Result.TopicPartitionOffset}"));
                 }
 
                 cts.Cancel();

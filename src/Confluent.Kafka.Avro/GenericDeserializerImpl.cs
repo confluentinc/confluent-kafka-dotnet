@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+﻿// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,8 +56,7 @@ namespace Confluent.Kafka.Serialization
                     // may change in the future.
                     throw new InvalidDataException($"magic byte should be 0, not {magicByte}");
                 }
-                var writerIdBigEndian = reader.ReadInt32();
-                var writerId = IPAddress.NetworkToHostOrder(writerIdBigEndian);
+                var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                 DatumReader<GenericRecord> datumReader = null;
 

@@ -48,11 +48,11 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 // the Java implementation.
                 { "schema.registry.url", schemaRegistryUrl },
                 // optional schema registry client properties:
-                { "schema.registry.connection.timeout.ms", 5000 },
-                { "schema.registry.max.cached.schemas", 10 },
+                // { "schema.registry.connection.timeout.ms", 5000 },
+                // { "schema.registry.max.cached.schemas", 10 },
                 // optional avro serializer properties:
-                { "avro.serializer.buffer.bytes", 50 },
-                { "avro.serializer.auto.register.schemas", true }
+                // { "avro.serializer.buffer.bytes", 50 },
+                // { "avro.serializer.auto.register.schemas", true }
             };
 
             var consumerConfig = new Dictionary<string, object>
@@ -62,6 +62,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 { "schema.registry.url", schemaRegistryUrl }
             };
 
+            // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));
             var s = (RecordSchema)Schema.Parse(
                 @"{
                     ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
@@ -109,8 +110,9 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     record.Add("favorite_number", i++);
                     record.Add("favorite_color", "blue");
 
-                    var deliveryReport = producer.ProduceAsync(topicName, text, record).Result;
-                    Console.WriteLine($"Wrote to partition: {deliveryReport.Partition}, Offset: {deliveryReport.Offset}");
+                    producer
+                        .ProduceAsync(topicName, text, record)
+                        .ContinueWith(task => Console.WriteLine($"Wrote to: {task.Result.TopicPartitionOffset}"));
                 }
                 
                 cts.Cancel();
