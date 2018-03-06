@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Reflection;
@@ -33,10 +33,8 @@ namespace Confluent.Kafka.Serialization
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
-            = new Dictionary<int, DatumReader<T>>();
-
-        private object datumReaderLock = new object();
+        private readonly ConcurrentDictionary<int, DatumReader<T>> datumReaderBySchemaId 
+            = new ConcurrentDictionary<int, DatumReader<T>>();
 
         /// <summary>
         ///     The avro schema used to read values of type <typeparamref name="T"/>
@@ -107,27 +105,19 @@ namespace Confluent.Kafka.Serialization
                 }
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
-                DatumReader<T> datumReader = null;
-
-                lock (datumReaderLock)
+                datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<T> datumReader);
+                if (datumReader == null)
                 {
-                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
-                    if (datumReader == null)
+                    if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
                     {
-                        if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
-                        {
-                            datumReaderBySchemaId.Clear();
-                        }
-
-                        // it's a good idea to retain the lock over this blocking call since there
-                        // may be concurrent deserialize calls for the same T, and in that case it's
-                        // best not to hit Schema Registry more than once for the same information.
-                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).Result;
-                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
-
-                        datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                        datumReaderBySchemaId[writerId] = datumReader;
+                        datumReaderBySchemaId.Clear();
                     }
+
+                    var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).Result;
+                    var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+
+                    datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
+                    datumReaderBySchemaId[writerId] = datumReader;
                 }
 
                 return datumReader.Read(default(T), new BinaryDecoder(stream));
