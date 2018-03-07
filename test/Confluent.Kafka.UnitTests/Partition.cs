@@ -84,8 +84,8 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void ToStringTest()
         {
-            Assert.Equal(new Partition(42).ToString(), 42.ToString());
-            Assert.Equal(new Partition(-42).ToString(), (-42).ToString());
+            Assert.Contains(42.ToString(), new Partition(42).ToString());
+            Assert.Contains((-42).ToString(), new Partition(-42).ToString());
             Assert.Contains("Any", Partition.Any.ToString());
         }
     }

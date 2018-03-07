@@ -145,7 +145,6 @@ namespace Confluent.Kafka.VerifiableClient
         private object ProduceLock;  // Protects MsgCnt,LastProduce while Producing so that Produces() are sequencial
         System.Threading.Timer ProduceTimer; // Producer rate-limiter timer
         VerifiableProducerConfig Config;
-        Action<Message<Null, string>> deliveryHandler;
 
         public VerifiableProducer(VerifiableProducerConfig clientConfig)
         {
