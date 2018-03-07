@@ -136,8 +136,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(boolTopic, 0, 0) });
                 consumer.Consume(out Message<bool, bool> message, TimeSpan.FromSeconds(10));
                 Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal(true, message.Key);
-                Assert.Equal(false, message.Value);
+                Assert.True(message.Key);
+                Assert.False(message.Value);
             }
 
             using (var consumer = new Consumer<float, float>(consumerConfig, new AvroDeserializer<float>(), new AvroDeserializer<float>()))

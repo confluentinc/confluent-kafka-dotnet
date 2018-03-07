@@ -57,7 +57,7 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-                            this.kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                            kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
                         }
                     }
                     catch (OperationCanceledException) {}

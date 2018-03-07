@@ -47,7 +47,11 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     The default maximum capacity of the local schema cache.
         /// </summary>
-        public const int DefaultMaxCapacity = 1000;
+        public const int DefaultMaxCachedSchemas = 1000;
+
+        /// <include file='include_docs.xml' path='API.Member[@name="ISchemaRegistryClient_MaxCachedSchemas"]/*' />
+        public int MaxCachedSchemas
+            => identityMapCapacity;
 
         /// <summary>
         ///     Initialize a new instance of the SchemaRegistryClient class.
@@ -73,7 +77,7 @@ namespace Confluent.SchemaRegistry
             var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
 
             var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
-            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCapacity : (int)identityMapCapacityMaybe.Value;
+            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : (int)identityMapCapacityMaybe.Value;
 
             foreach (var property in config)
             {
