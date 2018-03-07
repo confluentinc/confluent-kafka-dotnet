@@ -107,9 +107,10 @@ namespace Confluent.Kafka.Serialization
                 }
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
+                DatumReader<T> datumReader;
                 lock (deserializeLockObj)
                 {
-                    datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<T> datumReader);
+                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
                     if (datumReader == null)
                     {
                         if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
@@ -123,9 +124,8 @@ namespace Confluent.Kafka.Serialization
                         datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                         datumReaderBySchemaId[writerId] = datumReader;
                     }
-
-                    return datumReader.Read(default(T), new BinaryDecoder(stream));
                 }
+                return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }
 

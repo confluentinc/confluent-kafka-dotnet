@@ -58,9 +58,10 @@ namespace Confluent.Kafka.Serialization
                 }
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
+                DatumReader<GenericRecord> datumReader;
                 lock (deserializeLockObj)
                 {
-                    datumReaderBySchemaId.TryGetValue(writerId, out DatumReader<GenericRecord> datumReader);
+                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
                     if (datumReader == null)
                     {
                         // TODO: If any of this cache fills up, this is probably an
@@ -78,9 +79,8 @@ namespace Confluent.Kafka.Serialization
                         datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
                         datumReaderBySchemaId[writerId] = datumReader;
                     }
-
-                    return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                 }
+                return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
             }
         }
 
