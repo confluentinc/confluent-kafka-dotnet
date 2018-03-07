@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;

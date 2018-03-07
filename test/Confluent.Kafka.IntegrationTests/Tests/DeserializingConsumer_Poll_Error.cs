@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Linq;
 using System.Text;
@@ -35,15 +37,16 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             TopicPartitionOffset firstProduced = null;
             using (var producer = new Producer(producerConfig))
             {
-                firstProduced = producer.ProduceAsync(singlePartitionTopic, Encoding.UTF8.GetBytes("key"), null).Result.TopicPartitionOffset;
-                producer.ProduceAsync(singlePartitionTopic, null, Encoding.UTF8.GetBytes("val"));
+                var keyData = Encoding.UTF8.GetBytes("key");
+                firstProduced = producer.ProduceAsync(singlePartitionTopic, Partition.Any, keyData, 0, keyData.Length, null, 0, 0, Timestamp.Default, null).Result.TopicPartitionOffset;
+                var valData = Encoding.UTF8.GetBytes("val");
+                producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, valData, 0, valData.Length, Timestamp.Default, null);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -51,8 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 },
-                { "api.version.request", true }
+                { "session.timeout.ms", 6000 }
             };
 
             // test key deserialization error behavior
@@ -79,7 +81,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(1, partitions.Count);
+                    Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
@@ -94,8 +96,8 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                Assert.Equal(msgCnt, 1);
-                Assert.Equal(errCnt, 1);
+                Assert.Equal(1, msgCnt);
+                Assert.Equal(1, errCnt);
             }
 
             // test value deserialization error behavior
@@ -122,7 +124,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(1, partitions.Count);
+                    Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
@@ -137,8 +139,8 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                Assert.Equal(msgCnt, 1);
-                Assert.Equal(errCnt, 1);
+                Assert.Equal(1, msgCnt);
+                Assert.Equal(1, errCnt);
             }
 
         }

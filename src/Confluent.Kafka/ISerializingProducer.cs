@@ -14,72 +14,77 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     This interface describes the minimum functionality
-    ///     to be provided by a high level (serializing) Kafka 
-    ///     producer.
+    ///     A focused interface for producing messages to Kafka with key and 
+    ///     value serialization (excludes general client functionality).
     /// </summary>
     public interface ISerializingProducer<TKey, TValue>
     {
-        /// <summary>
-        ///     Gets the name of the underlying producer instance.
-        /// </summary>
-        string Name { get; }
-
-        /// <summary>
-        ///     Gets the ISerializer implementation instance used to serialize keys.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="KeySerializer"]/*' />
         ISerializer<TKey> KeySerializer { get; }
 
-        /// <summary>
-        ///     Gets the ISerializer implementation instance used to serialize values.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ValueSerializer"]/*' />
         ISerializer<TValue> ValueSerializer { get; }
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue)"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_topic_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int, bool)"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        Task<Message<TKey, TValue>> ProduceAsync(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, TKey key, TValue val);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers);
+
+#region obsolete produce methods
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int)"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, bool)"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, IDeliveryHandler{TKey, TValue})"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. ")]
         void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int, bool, IDeliveryHandler{TKey, TValue})"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete(
+            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
+            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, int, IDeliveryHandler{TKey, TValue})"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. ")]
         void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler);
 
-        /// <summary>
-        ///     Refer to <see cref="Producer{TKey, TValue}.ProduceAsync(string, TKey, TValue, bool, IDeliveryHandler{TKey, TValue})"/>.
-        /// </summary>
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
+        [Obsolete(
+            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
+            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + Producer.BlockIfQueueFullPropertyName + " configuration property instead.")]
         void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler);
+
+#endregion
+
     }
 }

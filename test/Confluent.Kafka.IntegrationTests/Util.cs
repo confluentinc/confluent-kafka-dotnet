@@ -35,8 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
             
             var sb = new StringBuilder(size);

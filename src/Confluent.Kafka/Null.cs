@@ -14,15 +14,13 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serialization;
-
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A type for use in conjunction with <see cref="Confluent.Kafka.Serialization.NullSerializer" />
-    ///     and <see cref="Confluent.Kafka.Serialization.NullDeserializer" /> that enables null key or 
-    ///     values to be enforced when producing or consuming messages.
+    ///     A type for use in conjunction with NullSerializer and NullDeserializer
+    ///     that enables null key or values to be enforced when producing or 
+    ///     consuming messages.
     /// </summary>
     public sealed class Null
     {

@@ -4,7 +4,7 @@
       "src": [
         {
           "files": [
-            "src/Confluent.Kafka/*.cs"
+            "src/**/*.cs"
           ],
           "cwd": ".."
         }

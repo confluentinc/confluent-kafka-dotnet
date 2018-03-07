@@ -28,10 +28,10 @@ namespace Confluent.Kafka.UnitTests
             var brokers = new List<BrokerMetadata>();
             var topics = new List<TopicMetadata>();
             var md = new Metadata(brokers, topics, 42, "broker1");
-            Assert.Same(md.Brokers, brokers);
-            Assert.Same(md.Topics, topics);
-            Assert.Equal(md.OriginatingBrokerId, 42);
-            Assert.Equal(md.OriginatingBrokerName, "broker1");
+            Assert.Same(brokers, md.Brokers);
+            Assert.Same(topics, md.Topics);
+            Assert.Equal(42, md.OriginatingBrokerId);
+            Assert.Equal("broker1", md.OriginatingBrokerName);
         }
 
         // TODO: ToString() tests. Note: there is coverage of this already in the Metdata integration test.

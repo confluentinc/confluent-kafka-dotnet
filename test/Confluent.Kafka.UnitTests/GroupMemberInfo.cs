@@ -27,11 +27,11 @@ namespace Confluent.Kafka.UnitTests
             var memberMetadata = new byte[0];
             var memberAssignment = new byte[0];
             var gmi = new GroupMemberInfo("mymember", "myclient", "clienthost", memberMetadata, memberAssignment);
-            Assert.Equal(gmi.MemberId, "mymember");
-            Assert.Equal(gmi.ClientId, "myclient");
-            Assert.Equal(gmi.ClientHost, "clienthost");
-            Assert.Same(gmi.MemberMetadata, memberMetadata);
-            Assert.Same(gmi.MemberAssignment, memberAssignment);
+            Assert.Equal("mymember", gmi.MemberId);
+            Assert.Equal("myclient", gmi.ClientId);
+            Assert.Equal("clienthost", gmi.ClientHost);
+            Assert.Same(memberMetadata, gmi.MemberMetadata);
+            Assert.Same(memberAssignment, gmi.MemberAssignment);
         }
     }
 }
