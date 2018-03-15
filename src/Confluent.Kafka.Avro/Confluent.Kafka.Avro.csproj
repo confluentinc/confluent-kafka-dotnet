@@ -13,13 +13,13 @@
     <Title>Confluent.Kafka.Avro</Title>
     <AssemblyName>Confluent.Kafka.Avro</AssemblyName>
     <VersionPrefix>0.11.3</VersionPrefix>
-    <TargetFrameworks>net452;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net452;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.3" />
+    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.4-RC3" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 

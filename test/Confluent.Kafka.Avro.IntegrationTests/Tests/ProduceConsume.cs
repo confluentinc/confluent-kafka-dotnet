@@ -80,12 +80,12 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
                 consumer.OnError += (o, e) =>
                 {
-                    Assert.True(false);
+                    Assert.True(false, e.Reason);
                 };
 
                 consumer.OnConsumeError += (o, e) =>
                 {
-                    Assert.True(false);
+                    Assert.True(false, e.Error.Reason);
                 };
 
                 consumer.OnPartitionEOF += (o, e)
