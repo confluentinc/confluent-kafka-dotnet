@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TestProjectType>UnitTest</TestProjectType>
     <AssemblyName>Confluent.Kafka.Avro.IntegrationTests</AssemblyName>
-    <TargetFrameworks>net452;</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.0;</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
