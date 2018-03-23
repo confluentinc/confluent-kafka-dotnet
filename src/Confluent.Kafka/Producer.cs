@@ -392,27 +392,13 @@ namespace Confluent.Kafka
         /// <param name="config">
         ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
         /// </param>
-        /// <param name="manualPoll">
-        ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
-        ///     you must call the Poll method periodically instead. Typically you should set this parameter to false.
-        /// </param>
-        /// <param name="disableDeliveryReports">
-        ///     If true, disables delivery report notification. Note: if set to true and you use a ProduceAsync variant that returns
-        ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
-        ///     forget" semantics and a small boost in performance.
-        /// </param>
-        [Obsolete("Use " + EnableBackgroundPollPropertyName + " and " + EnableDeliveryReportsPropertyName + " configuration properties " +
-                  "instead of manualPoll and disableDeliveryReports constructor parameters.")]
-        public Producer(IEnumerable<KeyValuePair<string, object>> config, bool manualPoll, bool disableDeliveryReports)
+        public Producer(IEnumerable<KeyValuePair<string, object>> config)
         {
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
 
             LibRdKafka.Initialize(null);
-
-            this.manualPoll = manualPoll;
-            this.disableDeliveryReports = disableDeliveryReports;
 
             var modifiedConfig = config
                 .Where(
@@ -511,17 +497,6 @@ namespace Confluent.Kafka
             };
         }
 
-        /// <summary>
-        ///     Initializes a new Producer instance.
-        /// </summary>
-        /// <param name="config">
-        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        /// </param>
-        public Producer(IEnumerable<KeyValuePair<string, object>> config)
-#pragma warning disable CS0618
-            : this(config, false, false) {}
-#pragma warning restore CS0618
-
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
         public int Poll(int millisecondsTimeout)
         {
@@ -535,11 +510,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public int Poll(TimeSpan timeout)
             => Poll(timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll"]/*' />
-        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
-        public int Poll()
-            => Poll(-1);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError;
@@ -576,59 +546,6 @@ namespace Confluent.Kafka
         )
             => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
-#region obsolete produce methods
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, this.blockIfQueueFullPropertyValue);
-        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + BlockIfQueueFullPropertyName + " configuration property instead.")]
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, blockIfQueueFull);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + BlockIfQueueFullPropertyName + " configuration property instead.")]
-        public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, blockIfQueueFull);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
-        public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead.")]
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, this.blockIfQueueFullPropertyValue, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete(
-            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
-            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + BlockIfQueueFullPropertyName + " configuration property instead.")]
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, int partition, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, partition, null, blockIfQueueFull, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete(
-            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
-            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the " + BlockIfQueueFullPropertyName + " configuration property instead.")]
-        public void ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull, IDeliveryHandler deliveryHandler)
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, Timestamp.Default, Partition.Any, null, blockIfQueueFull, deliveryHandler);
-
-#endregion
-
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
             => kafkaHandle.Name;
@@ -640,11 +557,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
         public int Flush(TimeSpan timeout)
             => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush"]/*' />
-        [Obsolete("Use an overload of Flush with a finite timeout.", false)]
-        public int Flush()
-            => kafkaHandle.Flush(-1);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()

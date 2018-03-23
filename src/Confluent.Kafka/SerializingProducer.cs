@@ -239,32 +239,6 @@ namespace Confluent.Kafka
                 handler);
         }
 
-
-#region obsolete produce methods
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
-            => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, blockIfQueueFull);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
-            => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, blockIfQueueFull);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, blockIfQueueFull, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, partition, key, val, Timestamp.Default, null, producer.blockIfQueueFullPropertyValue, deliveryHandler);
-
-        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => ProduceImpl(topic, Partition.Any, key, val, Timestamp.Default, null, blockIfQueueFull, deliveryHandler);
-
-#endregion
-
         public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
             => ProduceImpl(
                 topic, Partition.Any, 
