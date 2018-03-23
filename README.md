@@ -31,40 +31,110 @@ confluent-kafka-dotnet is derived from Andreas Heider's [rdkafka-dotnet](https:/
 We're fans of his work and were very happy to have been able to leverage rdkafka-dotnet as the basis of this
 client. Thanks Andreas!
 
-## Usage
+## Referencing
 
-Reference the [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) NuGet package (version 0.11.3).
+confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 
-To install confluent-kafka-dotnet from within Visual Studio, search for Confluent.Kafka in the NuGet Package 
-Manager UI, or run the following command in the Package Manager Console:
+- [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3]* - The core client library.
+- [Confluent.Kafka.Avro](https://www.nuget.org/packages/Confluent.Kafka.Avro/) *[net452 only, i.e. currently no support for .NET Core]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
+- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4]* - Confluent Schema Registry client (a dependency of Confluent.Kafka.Avro).
+
+To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
 Install-Package Confluent.Kafka -Version 0.11.3
 ```
 
-To reference in a dotnet core project, explicitly add a package reference to your .csproj file:
+To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-<ItemGroup>
-  ...
-  <PackageReference Include="Confluent.Kafka" Version="0.11.3" />
-  ...
-</ItemGroup>
+dotnet add package -v 0.11.3 Confluent.Kafka
 ```
 
-Pre-release nuget packages are available from the following nuget package source:
-[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). 
-
-The version suffix of these nuget packages matches the appveyor build number. You can see which commit a 
+Pre-release nuget packages are available from the following nuget package source (Note: this is not a web url - you should specify it in the nuget package manger):
+[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages matches the appveyor build number. You can see which commit a 
 particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
 
-See the [API documentation](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html) for more information. 
 
-## Examples
+## Usage
 
-Take a look in the [examples](examples) directory. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
+Take a look in the [examples](examples) directory for example usage. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
 
+For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
+
+API documentation is available on the [Confluent website](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html). Note that there is currently an issue with the build process that is preventing some of this documentation from being generated. For missing information, please refer instead to the XML doc comments in the source code.
+
+### Basic Producer Example
+
+```
+using System;
+using System.Text;
+using System.Collections.Generic;
+using Confluent.Kafka;
+using Confluent.Kafka.Serialization;
+
+public class Program
+{
+  public static void Main()
+  {
+    var config = new Dictionary<string, object> 
+    { 
+        { "bootstrap.servers", "localhost:9092" } 
+    };
+
+    using (var producer = new Producer<Null, string>(config, null, new StringSerializer(Encoding.UTF8)))
+    {
+      var dr = producer.ProduceAsync("my-topic", null, "test message text").Result;
+      Console.WriteLine($"Delivered '{dr.Value}' to: {dr.TopicPartitionOffset}");
+    }
+  }
+}
+```
+
+### Basic Consumer Example
+
+```
+using System;
+using System.Text;
+using System.Collections.Generic;
+using Confluent.Kafka;
+using Confluent.Kafka.Serialization;
+
+public class Program
+{
+  public static void Main()
+  {
+    var conf = new Dictionary<string, object> 
+    { 
+      { "group.id", "test-consumer-group" },
+      { "bootstrap.servers", "localhost:9092" },
+      { "auto.commit.interval.ms", 5000 },
+      { "auto.offset.reset", "earliest" }
+    };
+
+    using (var consumer = new Consumer<Null, string>(conf, null, new StringDeserializer(Encoding.UTF8)))
+    {
+      consumer.OnMessage += (_, msg)
+        => Console.WriteLine(
+          $"Read '{msg.Value}' from: {msg.TopicPartitionOffset}");
+
+      consumer.OnError += (_, error)
+        => Console.WriteLine($"Error: {error}");
+
+      consumer.OnConsumeError += (_, msg)
+        => Console.WriteLine($"Consume error ({msg.TopicPartitionOffset}): {msg.Error}");
+
+      consumer.Subscribe("my-topic");
+
+      while (true)
+      {
+        consumer.Poll(TimeSpan.FromMilliseconds(100));
+      }
+    }
+  }
+}
+```
 
 ## Build
 
