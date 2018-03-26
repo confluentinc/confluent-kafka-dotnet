@@ -178,7 +178,60 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        internal ErrorCode Produce(string topic, byte[] val, int valOffset, int valLength, byte[] key, int keyOffset, int keyLength, int partition, long timestamp, IntPtr opaque, bool blockIfQueueFull)
+        private IntPtr marshalHeaders(IEnumerable<Header> headers)
+        {
+            var headersPtr = IntPtr.Zero;
+
+            if (headers != null)
+            {
+                headersPtr = LibRdKafka.headers_new((IntPtr) headers.Count());
+                if (headersPtr == IntPtr.Zero)
+                {
+                    throw new Exception("Failed to create headers list.");
+                }
+
+                foreach (var header in headers)
+                {
+                    if (header.Key == null)
+                    {
+                        throw new ArgumentNullException("Message header keys must not be null.");
+                    }
+                    byte[] keyBytes = System.Text.UTF8Encoding.UTF8.GetBytes(header.Key);
+                    GCHandle pinnedKey = GCHandle.Alloc(keyBytes, GCHandleType.Pinned);
+                    IntPtr keyPtr = pinnedKey.AddrOfPinnedObject();
+                    IntPtr valuePtr = IntPtr.Zero;
+                    GCHandle pinnedValue = default(GCHandle);
+                    if (header.Value != null)
+                    {
+                        pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
+                        valuePtr = pinnedValue.AddrOfPinnedObject();
+                    }
+                    ErrorCode err = LibRdKafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)header.Value.Length);
+                    // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
+                    pinnedKey.Free();
+                    if (header.Value != null)
+                    {
+                        pinnedValue.Free();
+                    }
+                    if (err != ErrorCode.NoError)
+                    {
+                        throw new KafkaException(err);
+                    }
+                }
+            }
+
+            return headersPtr;
+        }
+
+        internal ErrorCode Produce(
+            string topic, 
+            byte[] val, int valOffset, int valLength, 
+            byte[] key, int keyOffset, int keyLength, 
+            int partition, 
+            long timestamp, 
+            IEnumerable<Header> headers,
+            IntPtr opaque, 
+            bool blockIfQueueFull)
         {
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
@@ -212,12 +265,11 @@ namespace Confluent.Kafka.Impl
                 pKey = Marshal.UnsafeAddrOfPinnedArrayElement(key, keyOffset);
             }
 
+            IntPtr headersPtr = marshalHeaders(headers);
+
             try
             {
-                // TODO: when refactor complete, reassess the below note.
-                // Note: since the message queue threshold limit also includes delivery reports, it is important that another
-                // thread of the application calls poll() for a blocking produce() to ever unblock.
-                return LibRdKafka.producev(
+                var errorCode = LibRdKafka.producev(
                     handle,
                     topic,
                     partition,
@@ -225,7 +277,26 @@ namespace Confluent.Kafka.Impl
                     pValue, (UIntPtr)valLength,
                     pKey, (UIntPtr)keyLength,
                     timestamp,
+                    headersPtr,
                     opaque);
+
+                if (errorCode != ErrorCode.NoError)
+                {
+                    if (headersPtr != IntPtr.Zero)
+                    {
+                        LibRdKafka.headers_destroy(headersPtr);
+                    }
+                }
+
+                return errorCode;
+            }
+            catch 
+            {
+                if (headersPtr != IntPtr.Zero)
+                {
+                    LibRdKafka.headers_destroy(headersPtr);
+                }
+                throw;
             }
             finally
             {
@@ -395,7 +466,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out Message message, IntPtr millisecondsTimeout)
+        internal bool ConsumerPoll(out Message message, bool enableHeaderMarshaling, IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
             // TODO: There is a newer librdkafka interface for this now. Use that.
@@ -429,6 +500,28 @@ namespace Confluent.Kafka.Impl
 
             long timestamp = LibRdKafka.message_timestamp(msgPtr, out IntPtr timestampType);
 
+            Headers headers = null;
+            if (enableHeaderMarshaling)
+            {
+                headers = new Headers();
+                LibRdKafka.message_headers(msgPtr, out IntPtr hdrsPtr);
+                if (hdrsPtr != IntPtr.Zero)
+                {
+                    for (var i=0; ; ++i)
+                    {
+                        var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                        if (err != ErrorCode.NoError)
+                        {
+                            break;
+                        }
+                        var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                        var headerValue = new byte[(int)sizep];
+                        Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                        headers.Add(new Header(headerName, headerValue));
+                    }
+                }
+            }
+
             LibRdKafka.message_destroy(msgPtr);
 
             message = new Message(
@@ -438,6 +531,7 @@ namespace Confluent.Kafka.Impl
                 key,
                 val,
                 new Timestamp(timestamp, (TimestampType)timestampType),
+                headers,
                 msg.err
             );
 
@@ -598,13 +692,19 @@ namespace Confluent.Kafka.Impl
             return committedOffsets;
         }
 
+        internal CommittedOffsets Commit()
+            => commitSync(null);
+
+        internal CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
+            => commitSync(offsets);
+
         internal Task<CommittedOffsets> CommitAsync()
             => Task.Run(() => commitSync(null));
 
         internal Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
             => Task.Run(() => commitSync(offsets));
 
-        internal void Seek(string topic, int partition, long offset, int millisecondsTimeout)
+        internal void Seek(string topic, Partition partition, Offset offset, int millisecondsTimeout)
         {
             ThrowIfHandleClosed();
             SafeTopicHandle rtk = Topic(topic, IntPtr.Zero);

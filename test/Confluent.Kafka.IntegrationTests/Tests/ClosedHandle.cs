@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -33,8 +35,28 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
+                { "dotnet.producer.enable.background.poll", false }
             };
+            var producer = new Producer(producerConfig);
+            producer.Poll(TimeSpan.FromMilliseconds(10));
+            producer.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
+        }
+
+        /// <summary>
+        ///     Tests that ObjectDisposedException is thrown rather than AccessViolationException
+        ///     when Dispose has been called (via obsolete Producer constructor)
+        /// </summary>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public static void Producer_ClosedHandleOld(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        {
+            var producerConfig = new Dictionary<string, object>
+            {
+                { "bootstrap.servers", bootstrapServers }
+            };
+#pragma warning disable CS0618
             var producer = new Producer(producerConfig, true, false);
+#pragma warning restore CS0618
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));

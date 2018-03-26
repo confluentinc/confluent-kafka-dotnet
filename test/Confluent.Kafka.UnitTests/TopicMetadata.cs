@@ -28,9 +28,9 @@ namespace Confluent.Kafka.UnitTests
             var partitions = new List<PartitionMetadata>();
             var tm = new TopicMetadata("mytopic", partitions, ErrorCode.Local_AllBrokersDown);
 
-            Assert.Equal(tm.Topic, "mytopic");
+            Assert.Equal("mytopic", tm.Topic);
             Assert.Same(partitions, tm.Partitions);
-            Assert.Equal(tm.Error, new Error(ErrorCode.Local_AllBrokersDown));
+            Assert.Equal(new Error(ErrorCode.Local_AllBrokersDown), tm.Error);
         }
 
         // TODO: ToString() tests. Note: there is coverage of this already in the Metdata integration test.

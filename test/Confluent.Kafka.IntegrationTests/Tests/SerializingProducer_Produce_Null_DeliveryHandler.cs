@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -23,59 +25,41 @@ namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
     ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via an IDeliveryHandler instance
+    ///     that provides delivery reports via an Action callback
     ///     (null key/value case)
     /// </summary>
     public static partial class Tests
     {
-        class DeliveryHandler_SPN : IDeliveryHandler<Null, Null>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public static void SerializingProducer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            public DeliveryHandler_SPN(string topic)
-            {
-                Topic = topic;
-            }
+            var producerConfig = new Dictionary<string, object> 
+            { 
+                { "bootstrap.servers", bootstrapServers }
+            };
 
-            public bool MarshalData { get { return true; } }
-
-            public int Count { get; private set; }
-
-            public string Topic { get; }
-
-            public void HandleDeliveryReport(Message<Null, Null> dr)
+            int count = 0;
+            Action<Message<Null, Null>> dh = (Message<Null, Null> dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(0, dr.Partition);
-                Assert.Equal(Topic, dr.Topic);
+                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.Null(dr.Key);
                 Assert.Null(dr.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                Count += 1;
-            }
-        }
-
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_ProduceAsync_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
-        {
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                count += 1;  
             };
-
-            var dh = new DeliveryHandler_SPN(singlePartitionTopic);
 
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.ProduceAsync(singlePartitionTopic, null, null, 0, true, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, 0, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, true, dh);
-                producer.ProduceAsync(singlePartitionTopic, null, null, dh);
+                producer.Produce(dh, singlePartitionTopic, 0, null, null, Timestamp.Default, null);
+                producer.Produce(dh, singlePartitionTopic, null, null);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(4, dh.Count);
+            Assert.Equal(2, count);
         }
     }
 }

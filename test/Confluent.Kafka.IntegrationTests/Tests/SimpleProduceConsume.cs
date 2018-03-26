@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -29,24 +31,18 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that produces a message then consumes it.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-
         public static void SimpleProduceConsume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            // This test assumes broker v0.10.0 or higher:
-            // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
-
             var producerConfig = new Dictionary<string, object>
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 },
-                { "api.version.request", true }
+                { "session.timeout.ms", 6000 }
             };
 
             string testString1 = "hello world";
@@ -74,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
             Assert.NotNull(msg);
             Assert.Equal(testString, msg.Value == null ? null : Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length));
-            Assert.Equal(null, msg.Key);
+            Assert.Null(msg.Key);
             Assert.Equal(msg.Timestamp.Type, dr.Timestamp.Type);
             Assert.Equal(msg.Timestamp.UnixTimestampMs, dr.Timestamp.UnixTimestampMs);
         }

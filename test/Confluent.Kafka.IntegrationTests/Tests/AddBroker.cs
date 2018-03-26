@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -42,16 +44,14 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new Dictionary<string, object>
             {
-                { "bootstrap.servers", "unknown" },
-                { "api.version.request", true }
+                { "bootstrap.servers", "unknown" }
             };
 
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", "unknown" },
-                { "session.timeout.ms", 6000 },
-                { "api.version.request", true }
+                { "session.timeout.ms", 6000 }
             };
 
             using (var typedProducer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))

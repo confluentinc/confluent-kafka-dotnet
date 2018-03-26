@@ -21,16 +21,34 @@ using System.Runtime.Serialization;
 
 namespace Confluent.SchemaRegistry
 {
+    /// <summary>
+    ///     Enumerates the schema compatibility types.
+    /// </summary>
     [DataContract(Name = "compatibility")]
     [JsonConverter(typeof(StringEnumConverter))]
     public enum Compatibility
     {
+        /// <summary>
+        ///     No schema compatibility.
+        /// </summary>
         [EnumMember(Value = "NONE")]
         None,
+
+        /// <summary>
+        ///     Forward schema compatibility.
+        /// </summary>
         [EnumMember(Value = "FORWARD")]
         Forward,
+
+        /// <summary>
+        ///     Backward schema compatibility.
+        /// </summary>
         [EnumMember(Value = "BACKWARD")]
         Backward,
+
+        /// <summary>
+        ///     Full schema compatibility.
+        /// </summary>
         [EnumMember(Value = "FULL")]
         Full
     }

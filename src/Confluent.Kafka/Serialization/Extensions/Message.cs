@@ -69,6 +69,7 @@ namespace Confluent.Kafka.Serialization
                 key,
                 val,
                 message.Timestamp,
+                message.Headers,
                 message.Error
             );
         }

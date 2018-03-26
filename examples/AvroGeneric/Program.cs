@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 { "schema.registry.url", schemaRegistryUrl }
             };
 
-            // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));
+            // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.asvc"));
             var s = (RecordSchema)Schema.Parse(
                 @"{
                     ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
