@@ -5,7 +5,7 @@
     <TargetFrameworks>net452;</TargetFrameworks>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup> 
     <ProjectReference Include="..\..\src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj" />
   </ItemGroup>
 

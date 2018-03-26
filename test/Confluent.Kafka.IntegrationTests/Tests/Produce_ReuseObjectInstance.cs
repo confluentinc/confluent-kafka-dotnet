@@ -43,8 +43,6 @@ namespace Confluent.Kafka.IntegrationTests
             var key = new byte[] { 1, 2, 3, 4 };
             var val = new byte[] { 5, 6, 7, 8 };
 
-            var deliveryHandler = new ObsoleteTestDeliveryHandler();
-
             using (var producer = new Producer(producerConfig))
             {
                 Action<Message> dh = null;

@@ -40,10 +40,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         int Poll(TimeSpan timeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll"]/*' />
-        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
-        int Poll();
-
         /// <include file='include_docs_producer.xml' path='API/Member[@name="GetSerializingProducer"]/*' />
         ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer);
 
@@ -72,10 +68,6 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
         int Flush(TimeSpan timeout);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush"]/*' />
-        [Obsolete("Use an overload of Flush with a finite timeout.", false)]
-        int Flush();
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
         List<GroupInfo> ListGroups(TimeSpan timeout);

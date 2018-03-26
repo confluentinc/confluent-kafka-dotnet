@@ -167,13 +167,6 @@
     </summary>
 </Member>
 
-<Member name="ProduceAsync_Obsolete">
-    <summary>
-        This variant of ProduceAsync is obsolete and is superceeded by other 
-        overloads of ProduceAsync or Produce.
-    </summary>
-</Member>
-
 <Member name="ProduceAsync_Common">
     <returns>
         A Task which will complete with the corresponding delivery report

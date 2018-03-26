@@ -174,11 +174,6 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll"]/*' />
-        [Obsolete("Use an overload of Poll with a finite timeout.", false)]
-        public void Poll()
-            => Poll(-1);
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsAssigned"]/*' />
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
         {
