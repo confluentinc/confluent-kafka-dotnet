@@ -51,21 +51,10 @@ namespace Confluent.Kafka
         /// <param name="valueSerializer">
         ///     An ISerializer implementation instance that will be used to serialize values.
         /// </param>
-        /// <param name="manualPoll">
-        ///     If true, does not start a dedicated polling thread to trigger events or receive delivery reports -
-        ///     you must call the Poll method periodically instead. Typically you should set this parameter to false.
-        /// </param>
-        /// <param name="disableDeliveryReports">
-        ///     If true, disables delivery report notification. Note: if set to true and you use a ProduceAsync variant that returns
-        ///     a Task, the Tasks will never complete. Typically you should set this parameter to false. Set it to true for "fire and
-        ///     forget" semantics and a small boost in performance.
-        /// </param>
-        [Obsolete("Use " + Producer.EnableBackgroundPollPropertyName + " and " + Producer.EnableDeliveryReportsPropertyName + " configuration properties instead of manualPoll and disableDeliveryReports constructor parameters.")]
-        private Producer(
+        public Producer(
             IEnumerable<KeyValuePair<string, object>> config,
             ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer,
-            bool manualPoll, bool disableDeliveryReports)
+            ISerializer<TValue> valueSerializer)
         {
             var configWithoutKeySerializerProperties = keySerializer?.Configure(config, true) ?? config;
             var configWithoutValueSerializerProperties = valueSerializer?.Configure(config, false) ?? config;
@@ -75,34 +64,10 @@ namespace Confluent.Kafka
                 configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
             );
 
-            producer = new Producer(
-                configWithoutSerializerProperties,
-                manualPoll,
-                disableDeliveryReports
-            );
+            producer = new Producer(configWithoutSerializerProperties);
 
             serializingProducer = producer.GetSerializingProducer(keySerializer, valueSerializer);
         }
-
-        /// <summary>
-        ///     Initializes a new Producer instance.
-        /// </summary>
-        /// <param name="config">
-        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
-        /// </param>
-        /// <param name="keySerializer">
-        ///     An ISerializer implementation instance that will be used to serialize keys.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     An ISerializer implementation instance that will be used to serialize values.
-        /// </param>
-        public Producer(
-            IEnumerable<KeyValuePair<string, object>> config,
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer
-#pragma warning disable CS0618
-        ) : this(config, keySerializer, valueSerializer, false, false) {}
-#pragma warning restore CS0618
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="KeySerializer"]/*' />
         public ISerializer<TKey> KeySerializer
@@ -150,49 +115,6 @@ namespace Confluent.Kafka
             IEnumerable<Header> headers
         )
             => serializingProducer.Produce(deliveryHandler, topic, partition, key, val, timestamp, headers);
-
-#region obsolete produce methods
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("The Producer API has been revised and this overload of ProduceAsync has been depreciated. Please use another variant of ProduceAsync.")]
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, int partition)
-            => serializingProducer.ProduceAsync(topic, key, val, partition);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull)
-            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. ")]
-        public void ProduceAsync(string topic, TKey key, TValue val, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete(
-            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
-            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, blockIfQueueFull, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete("Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. ")]
-        public void ProduceAsync(string topic, TKey key, TValue val, int partition, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, partition, deliveryHandler);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Obsolete"]/*' />
-        [Obsolete(
-            "Variants of ProduceAsync that include a IDeliveryHandler parameter are depreciated - use a variant of Produce instead. " +
-            "Variants of ProduceAsync that include a blockIfQueueFull parameter are depreciated - use the dotnet.producer.block.if.queue.full configuration property instead.")]
-        public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
-            => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull, deliveryHandler);
-
-#endregion
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog
