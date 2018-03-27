@@ -61,14 +61,14 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(logCount > 0);
 
             // serializing producer.
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             logCount = 0;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
-                dr = producer.ProduceAsync(singlePartitionTopic, null, "test value").Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
                 
-                sProducer.ProduceAsync(singlePartitionTopic, null, "test value").Wait();
+                sProducer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);

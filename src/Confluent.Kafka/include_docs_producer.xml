@@ -181,52 +181,30 @@
     </remarks>
 </Member>
 
-<Member name="ProduceAsync_string_TKey_TValue">
+<Member name="ProduceAsync_string_Message">
     <summary>
         Asynchronously send a single message to a Kafka topic.
         The partition the message is sent to is determined using
         the partitioner defined using the 'partitioner' 
-        configuration property. The message timestamp is set to 
-        the time of this function call. 
+        configuration property.
     </summary>
     <param name="topic">
         The topic to produce the message to.
     </param>
-    <param name="key">
-        the message key (possibly null).
-    </param>
-    <param name="val">
-        the message value (possibly null).
+    <param name="message">
+        The message to produce.
     </param>
 </Member>
 
-<Member name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable">
+<Member name="ProduceAsync_TopicPartition_Message">
     <summary>
         Asynchronously send a single message to a Kafka topic.
     </summary>
-    <param name="topic">
-        The topic to produce the message to.
+    <param name="topicPartition">
+        The topic/partition to produce the message to.
     </param>
-    <param name="partition">
-        The partition to produce the message to. If Partition.Any,
-        a partitioner specified via the 'partitioner' configuration property
-        will be used to determine the partition the message is sent to.
-    </param>
-    <param name="key">
-        The message key (possibly null).
-    </param>
-    <param name="val">
-        The message value (possibly null).
-    </param>
-    <param name="timestamp">
-        The message timestamp. The timestamp type must be set to CreateTime. 
-        Specify Timestamp.Default to set the message timestamp to the time
-        of this function call.
-    </param>
-    <param name="headers">
-        The collection of message headers (or null). Specifying null or an 
-        empty list are equivalent. The order of headers is maintained, and
-        duplicate header keys are allowed.
+    <param name="message">
+        The message to produce.
     </param>
 </Member>
 

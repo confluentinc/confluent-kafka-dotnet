@@ -41,15 +41,14 @@ namespace Confluent.Kafka.Benchmark
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    Message msg;
-                    consumer.Consume(out msg, TimeSpan.FromSeconds(10));
+                    consumer.Consume(out ConsumerRecord record, TimeSpan.FromSeconds(10));
 
                     long startTime = DateTime.Now.Ticks;
 
                     if (usePoll)
                     {
                         int cnt = 0;
-                        consumer.OnMessage += (_, m) => { cnt += 1; };
+                        consumer.OnRecord += (_, r) => { cnt += 1; };
 
                         while (cnt < nMessages-1)
                         {
@@ -62,7 +61,7 @@ namespace Confluent.Kafka.Benchmark
 
                         while (cnt < nMessages-1)
                         {
-                            if (consumer.Consume(out msg, TimeSpan.FromSeconds(1)))
+                            if (consumer.Consume(out record, TimeSpan.FromSeconds(1)))
                             {
                                 cnt += 1;
                             }

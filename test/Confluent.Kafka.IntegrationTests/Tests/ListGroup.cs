@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 bool done = false;
 
-                consumer.OnMessage += (_, msg)
+                consumer.OnRecord += (_, record)
                     => done = true;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>

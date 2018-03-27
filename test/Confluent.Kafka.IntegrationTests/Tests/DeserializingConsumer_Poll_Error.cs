@@ -64,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
                 int errCnt = 0;
                 bool done = false;
 
-                consumer.OnMessage += (_, msg) =>
+                consumer.OnRecord += (_, msg) =>
                 {
                     msgCnt += 1;
                 };
@@ -107,16 +107,16 @@ namespace Confluent.Kafka.IntegrationTests
                 int errCnt = 0;
                 bool done = false;
 
-                consumer.OnMessage += (_, msg) =>
+                consumer.OnRecord += (_, record) =>
                 {
                     msgCnt += 1;
                 };
                 
-                consumer.OnConsumeError += (_, msg) =>
+                consumer.OnConsumeError += (_, record) =>
                 {
                     errCnt += 1;
-                    Assert.Equal(ErrorCode.Local_ValueDeserialization, msg.Error.Code);
-                    Assert.Equal(firstProduced.Offset.Value + 1, msg.Offset.Value);
+                    Assert.Equal(ErrorCode.Local_ValueDeserialization, record.Error.Code);
+                    Assert.Equal(firstProduced.Offset.Value + 1, record.Offset.Value);
                 };
 
                 consumer.OnPartitionEOF += (_, partition)

@@ -37,13 +37,13 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="ValueDeserializer"]/*' />
         IDeserializer<TValue> ValueDeserializer { get; }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_int"]/*' />
-        bool Consume(out Message<TKey, TValue> message, int millisecondsTimeout);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
+        bool Consume(out ConsumerRecord<TKey, TValue> record, int millisecondsTimeout);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_Message_TimeSpan"]/*' />
-        bool Consume(out Message<TKey, TValue> message, TimeSpan timeout);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
+        bool Consume(out ConsumerRecord<TKey, TValue> record, TimeSpan timeout);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
         void Poll(int millisecondsTimeout);
@@ -67,7 +67,7 @@ namespace Confluent.Kafka
         event EventHandler<string> OnStatistics;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
-        event EventHandler<Message> OnConsumeError;
+        event EventHandler<ConsumerRecord> OnConsumeError;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
         event EventHandler<Error> OnError;
@@ -76,7 +76,7 @@ namespace Confluent.Kafka
         event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
-        event EventHandler<Message<TKey, TValue>> OnMessage;
+        event EventHandler<ConsumerRecord<TKey, TValue>> OnRecord;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assignment"]/*' />
         List<TopicPartition> Assignment { get; }
@@ -102,8 +102,8 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Unassign"]/*' />
         void Unassign();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_Message"]/*' />
-        TopicPartitionOffsetError StoreOffset(Message<TKey, TValue> message);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_ConsumerRecord"]/*' />
+        TopicPartitionOffsetError StoreOffset(ConsumerRecord<TKey, TValue> record);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
         List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
@@ -111,8 +111,8 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
         CommittedOffsets Commit();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_Message"]/*' />
-        CommittedOffsets Commit(Message<TKey, TValue> message);
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
+        CommittedOffsets Commit(ConsumerRecord<TKey, TValue> record);
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
         CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets);

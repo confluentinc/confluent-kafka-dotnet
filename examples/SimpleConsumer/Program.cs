@@ -52,10 +52,9 @@ namespace Confluent.Kafka.Examples.SimpleConsumer
                 
                 while (true)
                 {
-                    Message<Ignore, string> msg;
-                    if (consumer.Consume(out msg, TimeSpan.FromSeconds(1)))
+                    if (consumer.Consume(out ConsumerRecord<Ignore, string> record, TimeSpan.FromSeconds(1)))
                     {
-                        Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
+                        Console.WriteLine($"Topic: {record.Topic} Partition: {record.Partition} Offset: {record.Offset} {record.Message}");
                     }
                 }
             }

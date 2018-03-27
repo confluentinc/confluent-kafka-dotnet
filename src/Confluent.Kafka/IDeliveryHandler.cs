@@ -29,7 +29,7 @@ namespace Confluent.Kafka
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
     /// </remarks>
-    public interface IDeliveryHandler
+    internal interface IDeliveryHandler
     {
         /// <summary>
         ///     Gets whether or not to marshal key and value data 
@@ -51,10 +51,10 @@ namespace Confluent.Kafka
         ///     This method is called when the delivery report
         ///     is available
         /// </summary>
-        /// <param name="message">
+        /// <param name="deliveryReport">
         ///     The delivery report.
         /// </param>
-        void HandleDeliveryReport(Message message);
+        void HandleDeliveryReport(DeliveryReport deliveryReport);
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ namespace Confluent.Kafka
     ///     Methods of this interface will be executed on the poll thread and will
     ///     block other operations - consider this when implementing.
     /// </remarks>
-    public interface IDeliveryHandler<TKey, TValue>
+    internal interface IDeliveryHandler<TKey, TValue>
     {
         /// <summary>
         ///     Gets whether or not to marshal key and value data 
@@ -87,10 +87,10 @@ namespace Confluent.Kafka
         ///     This method is called when the delivery report
         ///     is available
         /// </summary>
-        /// <param name="message">
+        /// <param name="deliveryReport">
         ///     The delivery report.
         /// </param>
-        void HandleDeliveryReport(Message<TKey, TValue> message);
+        void HandleDeliveryReport(DeliveryReport<TKey, TValue> deliveryReport);
     }
 
 }

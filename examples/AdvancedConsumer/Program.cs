@@ -57,8 +57,8 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
             {
                 // Note: All event handlers are called on the main thread.
 
-                consumer.OnMessage += (_, msg)
-                    => Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
+                consumer.OnRecord += (_, record)
+                    => Console.WriteLine($"Topic: {record.Topic} Partition: {record.Partition} Offset: {record.Offset} {record.Message}");
 
                 consumer.OnPartitionEOF += (_, end)
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
@@ -68,8 +68,8 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
                     => Console.WriteLine($"Error: {error}");
 
                 // Raised on deserialization errors or when a consumed message has an error != NoError.
-                consumer.OnConsumeError += (_, msg)
-                    => Console.WriteLine($"Error consuming from topic/partition/offset {msg.Topic}/{msg.Partition}/{msg.Offset}: {msg.Error}");
+                consumer.OnConsumeError += (_, record)
+                    => Console.WriteLine($"Error consuming from topic/partition/offset {record.Topic}/{record.Partition}/{record.Offset}: {record.Error}");
 
                 consumer.OnOffsetsCommitted += (_, commit) =>
                 {
@@ -164,18 +164,18 @@ namespace Confluent.Kafka.Examples.AdvancedConsumer
 
                 while (!cancelled)
                 {
-                    Message<Ignore, string> msg;
-                    if (!consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
+                    ConsumerRecord<Ignore, string> record;
+                    if (!consumer.Consume(out record, TimeSpan.FromMilliseconds(100)))
                     {
                         continue;
                     }
 
-                    Console.WriteLine($"Topic: {msg.Topic} Partition: {msg.Partition} Offset: {msg.Offset} {msg.Value}");
+                    Console.WriteLine($"Topic: {record.Topic} Partition: {record.Partition} Offset: {record.Offset} {record.Message}");
 
-                    if (msg.Offset % 5 == 0)
+                    if (record.Offset % 5 == 0)
                     {
                         Console.WriteLine($"Committing offset");
-                        var committedOffsets = consumer.CommitAsync(msg).Result;
+                        var committedOffsets = consumer.Commit(record);
                         Console.WriteLine($"Committed offset: {committedOffsets}");
                     }
                 }

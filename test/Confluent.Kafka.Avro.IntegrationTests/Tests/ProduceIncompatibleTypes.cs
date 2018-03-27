@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var topic = Guid.NewGuid().ToString();
             using (var producer = new Producer<string, string>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<string>()))
             {
-                producer.ProduceAsync(topic, "hello", "world");
+                producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 {
                     try
                     {
-                        producer.ProduceAsync(topic, 42, "world").Wait();
+                        producer.ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" }).Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -75,7 +75,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 {
                     try
                     {
-                        producer.ProduceAsync(topic, "world", 42).Wait();
+                        producer.ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 }).Wait();
                     }
                     catch (AggregateException e)
                     {
