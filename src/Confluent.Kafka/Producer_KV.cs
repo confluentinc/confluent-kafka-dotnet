@@ -81,40 +81,25 @@ namespace Confluent.Kafka
         public string Name
             => producer.Name;
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_topic_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => serializingProducer.ProduceAsync(topic, key, val);
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message)
+            => serializingProducer.ProduceAsync(topic, message);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<Message<TKey, TValue>> ProduceAsync(
-            string topic, 
-            Partition partition, 
-            TKey key,
-            TValue val, 
-            Timestamp timestamp, 
-            IEnumerable<Header> headers
-        )
-            => serializingProducer.ProduceAsync(topic, partition, key, val, timestamp, headers);
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message)
+            => serializingProducer.ProduceAsync(topicPartition, message);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_TKey_TValue"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
-        public void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, TKey key, TValue val)
-            => serializingProducer.Produce(deliveryHandler, topic, key, val);
+        public void Produce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler)
+            => serializingProducer.Produce(topic, message, deliveryHandler);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_TKey_TValue_Timestamp_IEnumerable"]/*' />        
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
-        public void Produce(
-            Action<Message<TKey, TValue>> deliveryHandler,
-            string topic,
-            Partition partition,
-            TKey key,
-            TValue val,
-            Timestamp timestamp,
-            IEnumerable<Header> headers
-        )
-            => serializingProducer.Produce(deliveryHandler, topic, partition, key, val, timestamp, headers);
+        public void Produce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler)
+            => serializingProducer.Produce(topicPartition, message, deliveryHandler);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog

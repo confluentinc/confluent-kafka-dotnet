@@ -66,7 +66,7 @@ namespace Confluent.Kafka
             }
         }
 
-        private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<Message<TKey, TValue>>, IDeliveryHandler
+        private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<DeliveryReport<TKey, TValue>>, IDeliveryHandler
         {
             public TypedTaskDeliveryHandlerShim(TKey key, TValue val)
 #if !NET45
@@ -85,18 +85,13 @@ namespace Confluent.Kafka
 
             public bool MarshalHeaders { get { return true; } }
 
-            public void HandleDeliveryReport(Message message)
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
             {
-                var mi = new Message<TKey, TValue>(
-                    message.Topic,
-                    message.Partition,
-                    message.Offset,
-                    Key,
-                    Value,
-                    message.Timestamp,
-                    message.Headers,
-                    message.Error
-                );
+                var mi = new DeliveryReport<TKey, TValue>
+                {
+                    TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
+                    Message = new Message<TKey, TValue>{ Key = Key, Value = Value, Timestamp = deliveryReport.Message.Timestamp, Headers = deliveryReport.Message.Headers }
+                };
 
 #if NET45
                 System.Threading.Tasks.Task.Run(() => SetResult(mi));
@@ -106,7 +101,7 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<Message<TKey, TValue>> ProduceImpl(
+        private Task<DeliveryReport<TKey, TValue>> ProduceImpl(
             string topic, Partition partition, 
             TKey key, TValue val, 
             Timestamp timestamp, 
@@ -147,18 +142,15 @@ namespace Confluent.Kafka
 
             public IDeliveryHandler<TKey, TValue> Handler;
 
-            public void HandleDeliveryReport(Message message)
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
             {
-                Handler.HandleDeliveryReport(new Message<TKey, TValue>(
-                    message.Topic,
-                    message.Partition,
-                    message.Offset,
-                    Key,
-                    Value,
-                    message.Timestamp,
-                    message.Headers,
-                    message.Error
-                ));
+                Handler.HandleDeliveryReport(
+                    new DeliveryReport<TKey, TValue>
+                    {
+                        TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
+                        Message = new Message<TKey, TValue> { Key = Key, Value = Value, Timestamp = deliveryReport.Message.Timestamp, Headers = deliveryReport.Message.Headers }
+                    }
+                );
             }
         }
 
@@ -185,7 +177,7 @@ namespace Confluent.Kafka
 
         private class TypedDeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public TypedDeliveryHandlerShim_Action(TKey key, TValue val, bool marshalHeaders, Action<Message<TKey, TValue>> handler)
+            public TypedDeliveryHandlerShim_Action(TKey key, TValue val, bool marshalHeaders, Action<DeliveryReport<TKey, TValue>> handler)
             {
                 Key = key;
                 Value = val;
@@ -201,20 +193,17 @@ namespace Confluent.Kafka
 
             public bool MarshalHeaders { get; private set; }
 
-            public Action<Message<TKey, TValue>> Handler;
+            public Action<DeliveryReport<TKey, TValue>> Handler;
 
-            public void HandleDeliveryReport(Message message)
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
             {
-                Handler(new Message<TKey, TValue>(
-                    message.Topic,
-                    message.Partition,
-                    message.Offset,
-                    Key,
-                    Value,
-                    message.Timestamp,
-                    message.Headers,
-                    message.Error
-                ));
+                Handler(
+                    new DeliveryReport<TKey, TValue>
+                    {
+                        TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
+                        Message = new Message<TKey, TValue> { Key = Key, Value = Value, Timestamp = deliveryReport.Message.Timestamp, Headers = deliveryReport.Message.Headers }
+                    }
+                );
             }
         }
 
@@ -224,7 +213,7 @@ namespace Confluent.Kafka
             Timestamp timestamp, 
             IEnumerable<Header> headers, 
             bool blockIfQueueFull, 
-            Action<Message<TKey, TValue>> deliveryHandler)
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler)
         {
             var handler = new TypedDeliveryHandlerShim_Action(key, val, producer.enableDeliveryReportHeaderMarshaling, deliveryHandler);
             
@@ -239,32 +228,32 @@ namespace Confluent.Kafka
                 handler);
         }
 
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, TKey key, TValue val)
-            => ProduceImpl(
-                topic, Partition.Any, 
-                key, val, 
-                Timestamp.Default, null, 
-                producer.blockIfQueueFullPropertyValue);
-
-        public Task<Message<TKey, TValue>> ProduceAsync(string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers)
-            => ProduceImpl(
-                topic, partition, 
-                key, val, 
-                timestamp, headers, 
-                producer.blockIfQueueFullPropertyValue);
-
-        public void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, TKey key, TValue val)
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message)
             => ProduceImpl(
                 topic, Partition.Any,
-                 key, val, 
-                 Timestamp.Default, null, 
+                message.Key, message.Value,
+                message.Timestamp, message.Headers,
+                producer.blockIfQueueFullPropertyValue);
+
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message)
+            => ProduceImpl(
+                topicPartition.Topic, topicPartition.Partition,
+                message.Key, message.Value,
+                message.Timestamp, message.Headers,
+                producer.blockIfQueueFullPropertyValue);
+
+        public void Produce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler)
+            => ProduceImpl(
+                topicPartition.Topic, topicPartition.Partition,
+                 message.Key, message.Value, 
+                 message.Timestamp, message.Headers,
                  producer.blockIfQueueFullPropertyValue, deliveryHandler);
 
-        public void Produce(Action<Message<TKey, TValue>> deliveryHandler, string topic, Partition partition, TKey key, TValue val, Timestamp timestamp, IEnumerable<Header> headers)
+        public void Produce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler)
             => ProduceImpl(
-                topic, partition, 
-                key, val, 
-                timestamp, headers, 
+                topic, Partition.Any, 
+                message.Key, message.Value, 
+                message.Timestamp, message.Headers, 
                 producer.blockIfQueueFullPropertyValue, deliveryHandler);
     }
 }

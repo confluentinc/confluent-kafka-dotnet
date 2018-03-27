@@ -168,7 +168,7 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(Message<Null, string> msg)
+        public void HandleDelivery(DeliveryReport<Null, string> record)
         {
             var d = new Dictionary<string, object>
                     {
@@ -203,7 +203,11 @@ namespace Confluent.Kafka.VerifiableClient
         {
             try
             {
-                Handle.Produce((Message<Null, string> msg) => HandleDelivery(msg), topic, null, value);
+                Handle.Produce(
+                    topic, 
+                    new Message<Null, string> { Value = value }, 
+                    (DeliveryReport<Null, string> record) => HandleDelivery(record)
+                );
             }
             catch (KafkaException e)
             {

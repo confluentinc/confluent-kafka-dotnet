@@ -63,16 +63,16 @@ namespace Confluent.Kafka.IntegrationTests
             }
         }
 
-        private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryReport<Null, string> dr, string testString)
+        private static void ConsumeMessage(Consumer consumer, DeliveryReport<Null, string> dr, string testString)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
-            Message msg;
-            Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-            Assert.NotNull(msg);
-            Assert.Equal(testString, msg.Value == null ? null : Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length));
-            Assert.Null(msg.Key);
-            Assert.Equal(msg.Timestamp.Type, dr.Timestamp.Type);
-            Assert.Equal(msg.Timestamp.UnixTimestampMs, dr.Timestamp.UnixTimestampMs);
+            ConsumerRecord r;
+            Assert.True(consumer.Consume(out r, TimeSpan.FromSeconds(10)));
+            Assert.NotNull(r);
+            Assert.Equal(testString, r.Message.Value == null ? null : Encoding.UTF8.GetString(r.Message.Value, 0, r.Message.Value.Length));
+            Assert.Null(r.Message.Key);
+            Assert.Equal(r.Message.Timestamp.Type, dr.Message.Timestamp.Type);
+            Assert.Equal(r.Message.Timestamp.UnixTimestampMs, dr.Message.Timestamp.UnixTimestampMs);
         }
 
         private static DeliveryReport<Null, string> ProduceMessage(string topic, Producer<Null, string> producer, string testString)

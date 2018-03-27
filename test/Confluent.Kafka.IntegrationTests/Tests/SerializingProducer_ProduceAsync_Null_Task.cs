@@ -42,8 +42,9 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<Task<DeliveryReport<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, 0, null, null, Timestamp.Default, null));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
+                drs.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));
+                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<Null, Null> {}));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

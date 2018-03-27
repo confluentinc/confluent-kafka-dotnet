@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Benchmark
                 { "dotnet.producer.enable.deivery.report.data.marshaling", false }
             };
 
-            DeliveryReport<byte[], byte[]> firstDeliveryReport = null;
+            DeliveryReport firstDeliveryReport = null;
 
             Headers headers = null;
             if (nHeaders > 0)
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.Benchmark
                     {
                         var autoEvent = new AutoResetEvent(false);
                         var msgCount = nMessages;
-                        Action<Message> deliveryHandler = (Message msg) => 
+                        Action<DeliveryReport> deliveryHandler = (DeliveryReport deliveryReport) => 
                         {
                             if (--msgCount == 0)
                             {

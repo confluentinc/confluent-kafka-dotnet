@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             var key = new byte[] { 1, 2, 3, 4 };
             var val = new byte[] { 5, 6, 7, 8 };
 
-            var drs = new List<Task<Message>>();
+            var drs = new List<Task<DeliveryReport>>();
             using (var producer = new Producer(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(partitionedTopic, 1, key, 0, key.Length, val, 0, val.Length, Timestamp.Default, null));
@@ -58,14 +58,14 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
-                Assert.Equal(key, dr.Key);
-                Assert.Equal(val, dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal(key, dr.Message.Key);
+                Assert.Equal(val, dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal(new byte[] { 2, 3, 4 }, drs[3].Result.Key);
-            Assert.Equal(new byte[] { 7, 8 }, drs[3].Result.Value);
+            Assert.Equal(new byte[] { 2, 3, 4 }, drs[3].Result.Message.Key);
+            Assert.Equal(new byte[] { 7, 8 }, drs[3].Result.Message.Value);
 
             Assert.Equal((Partition)1, drs[0].Result.Partition);
             Assert.Equal((Partition)1, drs[2].Result.Partition);

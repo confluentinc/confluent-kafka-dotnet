@@ -123,17 +123,17 @@
     </remarks>
 </Member>
 
-<Member name="Commit_Message">
+<Member name="Commit_ConsumerRecord">
     <summary>
         Commits an offset based on the topic/partition/offset of a message.
-        The next message to be read will be that following <paramref name="message" />.
+        The next message to be read will be that following <paramref name="record" />.
     </summary>
-    <param name="message">
-        The message used to determine the committed offset.
+    <param name="record">
+        The ConsnumerRecord instance used to determine the committed offset.
     </param>
     <remarks>
         A consumer which has position N has consumed records with offsets 0 through N-1 and will next receive the record with offset N.
-        Hence, this method commits an offset of <paramref name="message" />.Offset + 1.
+        Hence, this method commits an offset of <paramref name="record" />.Offset + 1.
     </remarks>
 </Member>
 
@@ -143,10 +143,10 @@
     </summary>
 </Member>
 
-<Member name="StoreOffset_Message">
+<Member name="StoreOffset_ConsumerRecord">
     <summary>
         Store offsets for a single partition based on the topic/partition/offset
-        of a message.
+        of a consumer record.
          
         The offset will be committed (written) to the offset store according
         to `auto.commit.interval.ms` or manual offset-less commit().
@@ -154,8 +154,8 @@
     <remarks>
         `enable.auto.offset.store` must be set to "false" when using this API.
     </remarks>
-    <param name="message">
-        A message used to determine the offset to store and topic/partition.
+    <param name="record">
+        A consumer record used to determine the offset to store and topic/partition.
     </param>
     <returns>
         Current stored offset or a partition specific error.
@@ -345,14 +345,14 @@
     </remarks>
 </Member>
 
-<Member name="Consume_Message">
+<Member name="Consume_ConsumerRecord">
     <summary>
         Poll for new messages / consumer events. Blocks until a new 
         message or event is ready to be handled or the timeout period
         has elapsed.
     </summary>
-    <param name="message">
-        A consumed message, or null if no messages are 
+    <param name="record">
+        A consumed record, or null if no messages are 
         available for consumption.
     </param>
     <returns>
@@ -366,7 +366,7 @@
     </remarks>
 </Member>
 
-<Member name="Consume_Message_int">
+<Member name="Consume_ConsumerRecord_int">
     <param name="millisecondsTimeout">
         The maximum time to block (in milliseconds), or -1 to 
         block indefinitely. You should typically use a
@@ -375,7 +375,7 @@
     </param>
 </Member>
 
-<Member name="Consume_Message_TimeSpan">
+<Member name="Consume_ConsumerRecord_TimeSpan">
     <param name="timeout">
         The maximum time to block. You should typically use a
         relatively short timout period because this operation

@@ -73,6 +73,20 @@ namespace Confluent.Kafka.IntegrationTests
             }
             Assert.True(logCount > 0);
 
+            // wrapped byte array producer.
+            logCount = 0;
+            using (var producer = new Producer(producerConfig))
+            {
+                producer.OnLog += (_, LogMessage)
+                  => logCount += 1;
+
+                var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
+                
+                sProducer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Wait();
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+            Assert.True(logCount > 0);
+
             // byte array consumer.
             logCount = 0;
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
