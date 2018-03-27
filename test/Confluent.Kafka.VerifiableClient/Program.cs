@@ -168,26 +168,26 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(Message<Null, string> msg)
+        public void HandleDelivery(DeliveryReport<Null, string> record)
         {
             var d = new Dictionary<string, object>
                     {
-                        { "topic", msg.Topic },
-                        { "partition", msg.TopicPartition.Partition.ToString() },
-                        { "key", $"{msg.Key}" }, // always Null
-                        { "value", $"{msg.Value}" }
+                        { "topic", record.Topic },
+                        { "partition", record.TopicPartition.Partition.ToString() },
+                        { "key", $"{record.Message.Key}" }, // always Null
+                        { "value", $"{record.Message.Value}" }
                     };
 
-            if (msg.Error)
+            if (record.Error)
             {
                 this.ErrCnt++;
-                d["message"] = msg.Error.ToString();
+                d["message"] = record.Error.ToString();
                 this.Send("producer_send_error", d);
             }
             else
             {
                 this.DeliveryCnt++;
-                d["offset"] = msg.Offset.ToString();
+                d["offset"] = record.Offset.ToString();
                 d["_DeliveryCnt"] = DeliveryCnt.ToString();
                 lock (ProduceLock)
                     d["_ProduceCnt"] = MsgCnt.ToString();
@@ -203,7 +203,11 @@ namespace Confluent.Kafka.VerifiableClient
         {
             try
             {
-                Handle.Produce((Message<Null, string> msg) => HandleDelivery(msg), topic, null, value);
+                Handle.Produce(
+                    topic, 
+                    new Message<Null, string> { Value = value }, 
+                    (DeliveryReport<Null, string> record) => HandleDelivery(record)
+                );
             }
             catch (KafkaException e)
             {
@@ -437,45 +441,45 @@ namespace Confluent.Kafka.VerifiableClient
 
             consumedMsgsAtLastCommit = consumedMsgs;
 
-            SendOffsetsCommitted(Handle.CommitAsync().Result);
+            SendOffsetsCommitted(Handle.Commit());
         }
 
 
         /// <summary>
         /// Handle consumed message (or consumer error)
         /// </summary>
-        /// <param name="m"></param>
-        private void HandleMessage(Message<Null, string> m)
+        /// <param name="record"></param>
+        private void HandleMessage(ConsumerRecord<Null, string> record)
         {
             AssignedPartition ap;
 
             if (currentAssignment == null ||
-                !currentAssignment.TryGetValue(m.TopicPartition, out ap))
+                !currentAssignment.TryGetValue(record.TopicPartition, out ap))
             {
-                Dbg($"Received Message on unassigned partition {m.TopicPartition}");
+                Dbg($"Received Message on unassigned partition {record.TopicPartition}");
                 return;
             }
 
-            if (m.Error.Code != ErrorCode.NoError)
+            if (record.Error.Code != ErrorCode.NoError)
             {
-                Dbg($"Message error {m.Error} at {m.TopicPartitionOffset}");
+                Dbg($"Message error {record.Error} at {record.TopicPartitionOffset}");
                 return;
             }
 
             if (ap.LastOffset != -1 &&
-                ap.LastOffset + 1 != m.Offset)
-                Dbg($"Message at {m.TopicPartitionOffset}, expected offset {ap.LastOffset + 1}");
+                ap.LastOffset + 1 != record.Offset)
+                Dbg($"Message at {record.TopicPartitionOffset}, expected offset {ap.LastOffset + 1}");
 
 
-            ap.LastOffset = m.Offset;
+            ap.LastOffset = record.Offset;
             consumedMsgs++;
             ap.ConsumedMsgs++;
 
             if (ap.MinOffset == -1)
-                ap.MinOffset = m.Offset;
+                ap.MinOffset = record.Offset;
 
-            if (ap.MaxOffset < m.Offset)
-                ap.MaxOffset = m.Offset;
+            if (ap.MaxOffset < record.Offset)
+                ap.MaxOffset = record.Offset;
 
 
             SendRecordsConsumed(false);
@@ -553,8 +557,8 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Send("startup_complete", new Dictionary<string, object>());
 
-            Handle.OnMessage += (_, msg)
-                => HandleMessage(msg);
+            Handle.OnRecord += (_, record)
+                => HandleMessage(record);
 
             Handle.OnError += (_, error)
                 => Dbg($"Error: {error}");

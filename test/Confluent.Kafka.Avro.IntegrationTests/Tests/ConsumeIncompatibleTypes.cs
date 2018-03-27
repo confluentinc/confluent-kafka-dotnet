@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     favorite_number = 107,
                     favorite_color = "orange"
                 };
-                producer.ProduceAsync(topic, user.name, user);
+                producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 };
 
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
-                consumer.Consume(out Message<User, User> message, TimeSpan.FromSeconds(10));
+                consumer.Consume(out ConsumerRecord<User, User> record, TimeSpan.FromSeconds(10));
 
                 Assert.True(hadError);
             }
@@ -91,7 +91,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 };
 
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
-                consumer.Consume(out Message<string, string> message, TimeSpan.FromSeconds(10));
+                consumer.Consume(out ConsumerRecord<string, string> record, TimeSpan.FromSeconds(10));
 
                 Assert.True(hadError);
             }

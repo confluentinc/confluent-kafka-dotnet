@@ -44,12 +44,12 @@ namespace Confluent.Kafka.IntegrationTests
             var testString = "hello world";
             var testString2 = "hello world 2";
 
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.False(dr.Error.HasError);
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, null, testString2).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Result;
                 Assert.False(dr2.Error.HasError);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
@@ -58,14 +58,14 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // Explicitly specify partition offset.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });
-                Message<Null, string> msg;
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-                Assert.Equal(msg.Value, testString);
+                ConsumerRecord<Null, string> record;
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                Assert.Equal(record.Message.Value, testString);
 
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-                Assert.Equal(msg.Value, testString2);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                Assert.Equal(record.Message.Value, testString2);
             }
         }
 

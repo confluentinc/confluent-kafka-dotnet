@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer(producerConfig))
             {
                 producer.Produce(
-                    (Message msg) => count += 1,
+                    (DeliveryReport dr) => count += 1,
                     singlePartitionTopic, 0,
                     TestKey, 0, TestKey.Length,
                     TestValue, 0, TestValue.Length,

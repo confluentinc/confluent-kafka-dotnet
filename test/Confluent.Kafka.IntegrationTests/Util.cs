@@ -46,12 +46,12 @@ namespace Confluent.Kafka.IntegrationTests
             }
             var msg = sb.ToString();
 
-            Message<Null, string> firstDeliveryReport = null;
+            DeliveryReport<Null, string> firstDeliveryReport = null;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 for (int i=0; i<number; ++i)
                 {
-                    var dr = producer.ProduceAsync(topic, null, msg).Result;
+                    var dr = producer.ProduceAsync(topic, new Message<Null, string> { Value = msg }).Result;
                     Assert.NotNull(dr);
                     if (i == 0)
                     {

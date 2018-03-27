@@ -35,18 +35,18 @@ namespace Confluent.Kafka.Examples.SimpleProducer
             }
 
             string brokerList = args[0];
-            string topicName = args[1];
+            string topic = args[1];
 
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
             using (var producer = new Producer<Null, string>(config, null, new StringSerializer(Encoding.UTF8)))
             {
-                Console.WriteLine($"{producer.Name} producing on {topicName}. q to exit.");
+                Console.WriteLine($"{producer.Name} producing on {topic}. q to exit.");
 
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    var deliveryReport = producer.ProduceAsync(topicName, null, text);
+                    var deliveryReport = producer.ProduceAsync(topic, new Message<Null, string> { Value = text });
                     deliveryReport.ContinueWith(task =>
                     {
                         Console.WriteLine($"Partition: {task.Result.Partition}, Offset: {task.Result.Offset}");

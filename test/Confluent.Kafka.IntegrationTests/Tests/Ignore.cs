@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            Message dr;
+            DeliveryReport dr;
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.
@@ -58,34 +58,34 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                Message<Ignore, Ignore> msg;
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(msg);
-                Assert.Null(msg.Key);
-                Assert.Null(msg.Value);
+                ConsumerRecord<Ignore, Ignore> record;
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(record);
+                Assert.Null(record.Message.Key);
+                Assert.Null(record.Message.Value);
 
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(msg);
-                Assert.Null(msg.Key);
-                Assert.Null(msg.Value);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(record);
+                Assert.Null(record.Message.Key);
+                Assert.Null(record.Message.Value);
 
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(msg);
-                Assert.Null(msg.Key);
-                Assert.Null(msg.Value);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(record);
+                Assert.Null(record.Message.Key);
+                Assert.Null(record.Message.Value);
             }
 
             using (var consumer = new Consumer<Ignore, byte[]>(consumerConfig, null, new ByteArrayDeserializer()))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
 
-                Message<Ignore, byte[]> msg;
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(msg);
-                Assert.Null(msg.Key);
-                Assert.NotNull(msg.Value);
-                Assert.Equal(42, msg.Value[0]);
-                Assert.Equal(240, msg.Value[1]);
+                ConsumerRecord<Ignore, byte[]> record;
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(record);
+                Assert.Null(record.Message.Key);
+                Assert.NotNull(record.Message.Value);
+                Assert.Equal(42, record.Message.Value[0]);
+                Assert.Equal(240, record.Message.Value[1]);
             }
         }
 

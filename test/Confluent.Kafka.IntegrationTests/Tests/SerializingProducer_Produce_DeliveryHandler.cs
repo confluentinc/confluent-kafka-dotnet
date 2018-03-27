@@ -40,23 +40,26 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             int count = 0;
-            Action<Message<string, string>> dh = (Message<string, string> dr) =>
+            Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Equal($"test key {count}", dr.Key);
-                Assert.Equal($"test val {count}", dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal($"test key {count}", dr.Message.Key);
+                Assert.Equal($"test val {count}", dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                 count += 1;
             };
 
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                producer.Produce(dh, singlePartitionTopic, 0, "test key 0", "test val 0", Timestamp.Default, null);
-                producer.Produce(dh, singlePartitionTopic, "test key 1", "test val 1");
+                producer.Produce(
+                    new TopicPartition(singlePartitionTopic, 0), 
+                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
+
+                producer.Produce(singlePartitionTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

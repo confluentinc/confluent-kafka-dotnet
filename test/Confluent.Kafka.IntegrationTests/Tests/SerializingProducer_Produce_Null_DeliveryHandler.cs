@@ -39,23 +39,23 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             int count = 0;
-            Action<Message<Null, Null>> dh = (Message<Null, Null> dr) => 
+            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Key);
-                Assert.Null(dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                 count += 1;  
             };
 
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.Produce(dh, singlePartitionTopic, 0, null, null, Timestamp.Default, null);
-                producer.Produce(dh, singlePartitionTopic, null, null);
+                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
+                producer.Produce(singlePartitionTopic, new Message<Null, Null> {}, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

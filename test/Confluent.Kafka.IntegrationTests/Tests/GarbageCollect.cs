@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                producer.ProduceAsync(singlePartitionTopic, null, "test string").Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" }).Wait();
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))

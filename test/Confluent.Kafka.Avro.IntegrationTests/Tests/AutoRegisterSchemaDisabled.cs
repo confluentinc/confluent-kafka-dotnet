@@ -59,7 +59,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 {
                     try
                     {
-                        producer.ProduceAsync(topic, "test", 112).Wait();
+                        producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             using (var producer = new Producer<string, int>(producerConfig2, new AvroSerializer<string>(), new AvroSerializer<int>()))
             {
-                producer.ProduceAsync(topic, "test", 112).Wait();
+                producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
 
             var producerConfig3 = new Dictionary<string, object>
@@ -89,7 +89,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             // config with avro.serializer.auto.register.schemas == false should work now.
             using (var producer = new Producer<string, int>(producerConfig3, new AvroSerializer<string>(), new AvroSerializer<int>()))
             {
-                producer.ProduceAsync(topic, "test", 112).Wait();
+                producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
         }
     }

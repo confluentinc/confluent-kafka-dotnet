@@ -30,6 +30,9 @@ namespace Confluent.Kafka.Serialization
         /// <param name="message">
         ///     The message instance for which to deserialize the key and value.
         /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the message.
+        /// </param>
         /// <param name="keyDeserializer">
         ///     The deserializer to use to deserialize the key.
         /// </param>
@@ -39,14 +42,14 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     A typed message instance corresponding to <paramref name="message" />.
         /// </returns>
-        public static Message<TKey, TValue> Deserialize<TKey, TValue>(this Message message, IDeserializer<TKey> keyDeserializer, IDeserializer<TValue> valueDeserializer)
+        public static Message<TKey, TValue> Deserialize<TKey, TValue>(this Message message, string topic, IDeserializer<TKey> keyDeserializer, IDeserializer<TValue> valueDeserializer)
         {
             TKey key;
             TValue val;
 
             try
             {
-                key = keyDeserializer.Deserialize(message.Topic, message.Key);
+                key = keyDeserializer.Deserialize(topic, message.Key);
             }
             catch (Exception ex)
             {
@@ -55,23 +58,14 @@ namespace Confluent.Kafka.Serialization
 
             try
             {
-                val = valueDeserializer.Deserialize(message.Topic, message.Value);
+                val = valueDeserializer.Deserialize(topic, message.Value);
             }
             catch (Exception ex)
             {
                 throw new KafkaException(new Error(ErrorCode.Local_ValueDeserialization, ex.ToString()), ex);
             }
 
-            return new Message<TKey, TValue> (
-                message.Topic,
-                message.Partition,
-                message.Offset,
-                key,
-                val,
-                message.Timestamp,
-                message.Headers,
-                message.Error
-            );
+            return new Message<TKey, TValue> { Key = key, Value = val, Timestamp = message.Timestamp, Headers = message.Headers };
         }
     }
 }

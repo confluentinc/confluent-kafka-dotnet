@@ -104,7 +104,8 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
                         val = text.Substring(index + 1);
                     }
 
-                    var deliveryReport = producer.ProduceAsync(topicName, key, val);
+                    var deliveryReport = producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val });
+
                     var result = deliveryReport.Result; // synchronously waits for message to be produced.
                     Console.WriteLine($"Partition: {result.Partition}, Offset: {result.Offset}");
                 }

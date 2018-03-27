@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Getting the offset for the first produced message timestamp
                 var result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
+                        new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Message.Timestamp) },
                         timeout)
                     .ToList();
 
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Getting the offset for the last produced message timestamp
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Timestamp) },
+                        new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Message.Timestamp) },
                         timeout)
                     .ToList();
 
@@ -97,19 +97,27 @@ namespace Confluent.Kafka.IntegrationTests
             }
         }
 
-        private static Message<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static DeliveryReport<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
             var producerConfig = new Dictionary<string, object>
             {
                 {"bootstrap.servers", bootstrapServers}
             };
 
-            var messages = new Message<string, string>[count];
+            var messages = new DeliveryReport<string, string>[count];
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
                 for (var index = 0; index < count; index++)
                 {
-                    var message = producer.ProduceAsync(topic, partition, $"test key {index}", $"test val {index}", Timestamp.Default, null).Result;
+                    var message = producer.ProduceAsync(
+                        new TopicPartition(topic, partition),
+                        new Message<string, string> 
+                        { 
+                            Key = $"test key {index}", Value = $"test val {index}", 
+                            Timestamp = Timestamp.Default, 
+                            Headers = null
+                        }
+                    ).Result;
                     messages[index] = message;
                     Task.Delay(200).Wait();
                 }
