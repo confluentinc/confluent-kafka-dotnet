@@ -41,10 +41,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
 
                 var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0));
@@ -69,8 +69,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
-                Message msg;
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                ConsumerRecord record;
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
 
                 var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
                 Assert.Equal(getOffsets.Low, Offset.Invalid);

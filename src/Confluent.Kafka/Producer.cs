@@ -229,22 +229,20 @@ namespace Confluent.Kafka
             long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType);
 
             deliveryHandler.HandleDeliveryReport(
-                new Message (
+                new DeliveryReport 
+                {
                     // TODO: tracking handle -> topicName in addition to topicName -> handle could
                     //       avoid this marshalling / memory allocation cost.
-                    Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)),
-                    msg.partition,
-                    msg.offset,
-                    key,
-                    val,
-                    new Timestamp(timestamp, (TimestampType)timestampType),
-                    headers,
-                    msg.err
-                )
+                    Topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)), 
+                    Partition = msg.partition, 
+                    Offset = msg.offset, 
+                    Error = msg.err,
+                    Message = new Message { Key = key, Value = val, Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
+                }
             );
         }
 
-        private sealed class TaskDeliveryHandler : TaskCompletionSource<Message>, IDeliveryHandler
+        private sealed class TaskDeliveryHandler : TaskCompletionSource<DeliveryReport>, IDeliveryHandler
         {
 #if !NET45
             public TaskDeliveryHandler(bool marshalData, bool marshalHeaders) : base(TaskCreationOptions.RunContinuationsAsynchronously)
@@ -263,12 +261,12 @@ namespace Confluent.Kafka
 
             public bool MarshalHeaders { get; private set; }
 
-            public void HandleDeliveryReport(Message message)
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
             {
 #if NET45
-                System.Threading.Tasks.Task.Run(() => SetResult(message));
+                System.Threading.Tasks.Task.Run(() => SetResult(deliveryReport));
 #else
-                SetResult(message);
+                SetResult(deliveryReport);
 #endif
             }
         }
@@ -331,7 +329,7 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<Message> ProduceImpl(
+        private Task<DeliveryReport> ProduceImpl(
             string topic,
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
@@ -347,7 +345,7 @@ namespace Confluent.Kafka
 
         private class DeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public DeliveryHandlerShim_Action(bool marshalData, bool marshalHeaders, Action<Message> handler)
+            public DeliveryHandlerShim_Action(bool marshalData, bool marshalHeaders, Action<DeliveryReport> handler)
             {
                 Handler = handler;
                 MarshalData = marshalData;
@@ -358,11 +356,11 @@ namespace Confluent.Kafka
 
             public bool MarshalHeaders { get; private set; }
 
-            public Action<Message> Handler;
+            public Action<DeliveryReport> Handler;
 
-            public void HandleDeliveryReport(Message message)
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
             {
-                Handler(message);
+                Handler(deliveryReport);
             }
         }
 
@@ -374,7 +372,7 @@ namespace Confluent.Kafka
             Partition partition, 
             IEnumerable<Header> headers,
             bool blockIfQueueFull,
-            Action<Message> deliveryHandler
+            Action<DeliveryReport> deliveryHandler
         )
             => ProduceImpl(
                 topic, 
@@ -526,7 +524,7 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<Message> ProduceAsync(
+        public Task<DeliveryReport> ProduceAsync(
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
@@ -538,7 +536,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void Produce(
-            Action<Message> deliveryHandler,
+            Action<DeliveryReport> deliveryHandler,
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 

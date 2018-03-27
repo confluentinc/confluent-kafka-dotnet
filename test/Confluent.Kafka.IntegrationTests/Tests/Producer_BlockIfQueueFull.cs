@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                 for (int i=0; i<2; ++i)
                 {
                     producer.Produce(
-                        (Message msg) => {},
+                        (DeliveryReport msg) => {},
                         singlePartitionTopic, 0,
                         TestKey, 0, TestKey.Length,
                         TestValue, 0, TestValue.Length,
@@ -59,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 Assert.Throws<KafkaException>(() => 
                     producer.Produce(
-                        (Message msg) => {},
+                        (DeliveryReport msg) => {},
                         singlePartitionTopic, 0,
                         TestKey, 0, TestKey.Length,
                         TestValue, 0, TestValue.Length,
@@ -95,10 +95,16 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (int i=0; i<2; ++i)
                 {
-                    producer.Produce((Message<string, string> msg) => {}, singlePartitionTopic, "hello", "world");
+                    producer.Produce(
+                        singlePartitionTopic, 
+                        new Message<string, string> { Key = "hello", Value ="world" },
+                        (DeliveryReport<string, string> msg) => {});
                 }
                 Assert.Throws<KafkaException>(() => 
-                    producer.Produce((Message<string, string> msg) => {}, singlePartitionTopic, "hello", "world")
+                    producer.Produce( 
+                        singlePartitionTopic, 
+                        new Message<string, string> { Key = "hello", Value ="world" },
+                    (DeliveryReport<string, string> msg) => {})
                 );
             }
 
@@ -107,10 +113,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (int i=0; i<2; ++i)
                 {
-                    producer.ProduceAsync(singlePartitionTopic, "hello", "world");
+                    producer.ProduceAsync(singlePartitionTopic, new Message<string, string> { Key = "hello", Value = "world" });
                 }
                 Assert.Throws<KafkaException>(() => 
-                    producer.ProduceAsync(singlePartitionTopic, "hello", "world").Wait()
+                    producer.ProduceAsync(singlePartitionTopic, new Message<string, string> { Key = "hello", Value = "world" }).Wait()
                 );
             }
 

@@ -45,7 +45,7 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<Message> ProduceAsync(
+        Task<DeliveryReport> ProduceAsync(
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength, 
             byte[] val, int valOffset, int valLength, 
@@ -54,7 +54,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         void Produce(
-            Action<Message> deliveryHandler,
+            Action<DeliveryReport> deliveryHandler,
             string topic, Partition partition, 
             byte[] key, int keyOffset, int keyLength,
             byte[] val, int valOffset, int valLength,

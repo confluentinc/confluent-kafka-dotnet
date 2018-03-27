@@ -49,113 +49,113 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var stringTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<string, string>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<string>()))
             {
-                producer.ProduceAsync(stringTopic, "hello", "world");
+                producer.ProduceAsync(stringTopic, new Message<string, string> { Key = "hello", Value = "world" });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             var bytesTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new AvroSerializer<byte[]>(), new AvroSerializer<byte[]>()))
             {
-                producer.ProduceAsync(bytesTopic, new byte[] { 1, 4, 11 }, new byte[] { });
+                producer.ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             var intTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<int, int>(producerConfig, new AvroSerializer<int>(), new AvroSerializer<int>()))
             {
-                producer.ProduceAsync(intTopic, 42, 43);
+                producer.ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             var longTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<long, long>(producerConfig, new AvroSerializer<long>(), new AvroSerializer<long>()))
             {
-                producer.ProduceAsync(longTopic, -32, -33);
+                producer.ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             var boolTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<bool, bool>(producerConfig, new AvroSerializer<bool>(), new AvroSerializer<bool>()))
             {
-                producer.ProduceAsync(boolTopic, true, false);
+                producer.ProduceAsync(boolTopic, new Message<bool, bool> { Key = true, Value = false });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             var floatTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<float, float>(producerConfig, new AvroSerializer<float>(), new AvroSerializer<float>()))
             {
-                producer.ProduceAsync(floatTopic, 44.0f, 45.0f);
+                producer.ProduceAsync(floatTopic, new Message<float, float> { Key = 44.0f, Value = 45.0f });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             var doubleTopic = Guid.NewGuid().ToString();
             using (var producer = new Producer<double, double>(producerConfig, new AvroSerializer<double>(), new AvroSerializer<double>()))
             {
-                producer.ProduceAsync(doubleTopic, 46.0, 47.0);
+                producer.ProduceAsync(doubleTopic, new Message<double, double> { Key = 46.0, Value = 47.0 });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(stringTopic, 0, 0) });
-                consumer.Consume(out Message<string, string> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal("hello", message.Key);
-                Assert.Equal("world", message.Value);
+                consumer.Consume(out ConsumerRecord<string, string> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Equal("hello", record.Message.Key);
+                Assert.Equal("world", record.Message.Value);
             }
 
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new AvroDeserializer<byte[]>(), new AvroDeserializer<byte[]>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(bytesTopic, 0, 0) });
-                consumer.Consume(out Message<byte[], byte[]> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal(new byte[] { 1, 4, 11 }, message.Key);
-                Assert.Equal(new byte[] { }, message.Value);
+                consumer.Consume(out ConsumerRecord<byte[], byte[]> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Equal(new byte[] { 1, 4, 11 }, record.Message.Key);
+                Assert.Equal(new byte[] { }, record.Message.Value);
             }
 
             using (var consumer = new Consumer<int, int>(consumerConfig, new AvroDeserializer<int>(), new AvroDeserializer<int>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(intTopic, 0, 0) });
-                consumer.Consume(out Message<int, int> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal(42, message.Key);
-                Assert.Equal(43, message.Value);
+                consumer.Consume(out ConsumerRecord<int, int> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Equal(42, record.Message.Key);
+                Assert.Equal(43, record.Message.Value);
             }
 
             using (var consumer = new Consumer<long, long>(consumerConfig, new AvroDeserializer<long>(), new AvroDeserializer<long>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(longTopic, 0, 0) });
-                consumer.Consume(out Message<long, long> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal(-32, message.Key);
-                Assert.Equal(-33, message.Value);
+                consumer.Consume(out ConsumerRecord<long, long> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Equal(-32, record.Message.Key);
+                Assert.Equal(-33, record.Message.Value);
             }
 
             using (var consumer = new Consumer<bool, bool>(consumerConfig, new AvroDeserializer<bool>(), new AvroDeserializer<bool>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(boolTopic, 0, 0) });
-                consumer.Consume(out Message<bool, bool> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.True(message.Key);
-                Assert.False(message.Value);
+                consumer.Consume(out ConsumerRecord<bool, bool> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.True(record.Message.Key);
+                Assert.False(record.Message.Value);
             }
 
             using (var consumer = new Consumer<float, float>(consumerConfig, new AvroDeserializer<float>(), new AvroDeserializer<float>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(floatTopic, 0, 0) });
-                consumer.Consume(out Message<float, float> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal(44.0f, message.Key);
-                Assert.Equal(45.0f, message.Value);
+                consumer.Consume(out ConsumerRecord<float, float> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Equal(44.0f, record.Message.Key);
+                Assert.Equal(45.0f, record.Message.Value);
             }
 
             using (var consumer = new Consumer<double, double>(consumerConfig, new AvroDeserializer<double>(), new AvroDeserializer<double>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(doubleTopic, 0, 0) });
-                consumer.Consume(out Message<double, double> message, TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, message.Error.Code);
-                Assert.Equal(46.0, message.Key);
-                Assert.Equal(47.0, message.Value);
+                consumer.Consume(out ConsumerRecord<double, double> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Equal(46.0, record.Message.Key);
+                Assert.Equal(47.0, record.Message.Value);
             }
         }
     }

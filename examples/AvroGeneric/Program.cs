@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
 
             string bootstrapServers = args[0];
             string schemaRegistryUrl = args[1];
-            string topicName = args[2];
+            string topic = args[2];
 
             var producerConfig = new Dictionary<string, object>
             {
@@ -79,16 +79,16 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var consumer = new Consumer<string, GenericRecord>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<GenericRecord>()))
             using (var producer = new Producer<string, GenericRecord>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<GenericRecord>()))
             {
-                consumer.OnMessage += (o, e)
-                    => Console.WriteLine($"Key: {e.Key}\nValue: {e.Value}");
+                consumer.OnRecord += (o, record)
+                    => Console.WriteLine($"Key: {record.Message.Key}\nValue: {record.Message.Value}");
 
-                consumer.OnError += (_, e)
-                    => Console.WriteLine("Error: " + e.Reason);
+                consumer.OnError += (_, error)
+                    => Console.WriteLine("Error: " + error.Reason);
 
-                consumer.OnConsumeError += (_, e)
-                    => Console.WriteLine("Consume error: " + e.Error.Reason);
+                consumer.OnConsumeError += (_, record)
+                    => Console.WriteLine("Consume error: " + record.Error.Reason);
 
-                consumer.Subscribe(topicName);
+                consumer.Subscribe(topic);
 
                 CancellationTokenSource cts = new CancellationTokenSource();
                 var consumeTask = Task.Factory.StartNew(() =>
@@ -99,7 +99,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     }
                 });
                 
-                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
+                Console.WriteLine($"{producer.Name} producing on {topic}. Enter user names, q to exit.");
 
                 int i = 0;
                 string text;
@@ -111,7 +111,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     record.Add("favorite_color", "blue");
 
                     producer
-                        .ProduceAsync(topicName, text, record)
+                        .ProduceAsync(topic, new Message<string, GenericRecord> { Key = text, Value = record })
                         .ContinueWith(task => Console.WriteLine($"Wrote to: {task.Result.TopicPartitionOffset}"));
                 }
                 

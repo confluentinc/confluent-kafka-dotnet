@@ -59,7 +59,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         favorite_number = i,
                         favorite_color = "blue"
                     };
-                    producer.ProduceAsync(topic, user.name, user);
+                    producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
@@ -68,24 +68,24 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 bool done = false;
                 int i = 0;
-                consumer.OnMessage += (o, e) =>
+                consumer.OnRecord += (o, record) =>
                 {
-                    Assert.Equal(i.ToString(), e.Key);
-                    Assert.Equal(i.ToString(), e.Value.name);
-                    Assert.Equal(i, e.Value.favorite_number);
-                    Assert.Equal("blue", e.Value.favorite_color);
+                    Assert.Equal(i.ToString(), record.Message.Key);
+                    Assert.Equal(i.ToString(), record.Message.Value.name);
+                    Assert.Equal(i, record.Message.Value.favorite_number);
+                    Assert.Equal("blue", record.Message.Value.favorite_color);
 
                     i++;
                 };
 
-                consumer.OnError += (o, e) =>
+                consumer.OnError += (o, error) =>
                 {
-                    Assert.True(false, e.Reason);
+                    Assert.True(false, error.Reason);
                 };
 
-                consumer.OnConsumeError += (o, e) =>
+                consumer.OnConsumeError += (o, record) =>
                 {
-                    Assert.True(false, e.Error.Reason);
+                    Assert.True(false, record.Error.Reason);
                 };
 
                 consumer.OnPartitionEOF += (o, e)

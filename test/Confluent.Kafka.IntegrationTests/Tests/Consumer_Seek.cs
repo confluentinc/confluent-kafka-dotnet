@@ -54,20 +54,20 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.False(true);
 
                 const string checkValue = "check value";
-                var dr = producer.ProduceAsync(singlePartitionTopic, null, checkValue).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, null, "second value").Result;
-                var dr3 = producer.ProduceAsync(singlePartitionTopic, null, "third value").Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = checkValue }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "second value" }).Result;
+                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "third value" }).Result;
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                Message<Null, string> message;
-                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
-                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
-                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
+                ConsumerRecord<Null, string> record;
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
                 consumer.Seek(dr.TopicPartitionOffset);
 
-                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
-                Assert.Equal(checkValue, message.Value);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                Assert.Equal(checkValue, record.Message.Value);
             }
         }
 

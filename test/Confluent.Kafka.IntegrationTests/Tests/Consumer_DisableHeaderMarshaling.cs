@@ -45,15 +45,16 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
 
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(
-                    singlePartitionTopic, 
-                    Partition.Any, 
-                    null, "my-value", 
-                    Timestamp.Default, 
-                    new Headers() { new Header("my-header", new byte[] { 42 }) }
+                    singlePartitionTopic,
+                    new Message<Null, string>
+                    {
+                        Value = "my-value", 
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
+                    }
                 ).Result;
             }
 
@@ -67,8 +68,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                Assert.True(consumer.Consume(out Message<Null, string> message, TimeSpan.FromSeconds(30)));
-                Assert.Null(message.Headers);
+                Assert.True(consumer.Consume(out ConsumerRecord<Null, string> record, TimeSpan.FromSeconds(30)));
+                Assert.Null(record.Message.Headers);
             }
         }
 

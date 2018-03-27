@@ -466,14 +466,14 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out Message message, bool enableHeaderMarshaling, IntPtr millisecondsTimeout)
+        internal bool ConsumerPoll(out ConsumerRecord record, bool enableHeaderMarshaling, IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
             // TODO: There is a newer librdkafka interface for this now. Use that.
             IntPtr msgPtr = LibRdKafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
-                message = null;
+                record = null;
                 return false;
             }
 
@@ -524,16 +524,14 @@ namespace Confluent.Kafka.Impl
 
             LibRdKafka.message_destroy(msgPtr);
 
-            message = new Message(
-                topic,
-                msg.partition,
-                msg.offset,
-                key,
-                val,
-                new Timestamp(timestamp, (TimestampType)timestampType),
-                headers,
-                msg.err
-            );
+            record = new ConsumerRecord
+            {
+                Topic = topic,
+                Partition = msg.partition,
+                Offset = msg.offset,
+                Error = msg.err,
+                Message = new Message { Key = key, Value = val, Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
+            };
 
             return true;
         }

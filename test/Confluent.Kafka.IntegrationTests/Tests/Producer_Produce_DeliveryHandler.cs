@@ -41,24 +41,24 @@ namespace Confluent.Kafka.IntegrationTests
             byte[] testValue = new byte[] { 5, 6, 7, 8 };
 
             int count = 0;
-            Action<Message> dh = (Message dr) => 
+            Action<DeliveryReport> dh = (DeliveryReport dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
 
                 if (count < 5)
                 {
-                    Assert.Equal(testKey, dr.Key);
-                    Assert.Equal(testValue, dr.Value);
+                    Assert.Equal(testKey, dr.Message.Key);
+                    Assert.Equal(testValue, dr.Message.Value);
                 }
                 else
                 {
-                    Assert.Equal(new byte[] { 2, 3 }, dr.Key);
-                    Assert.Equal(new byte[] { 7 }, dr.Value);
+                    Assert.Equal(new byte[] { 2, 3 }, dr.Message.Key);
+                    Assert.Equal(new byte[] { 7 }, dr.Message.Value);
                 }
 
                 count += 1;

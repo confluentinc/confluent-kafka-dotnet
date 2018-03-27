@@ -66,11 +66,11 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 while (!done)
                 {
-                    Message<Null, string> msg;
-                    if (consumer.Consume(out msg, TimeSpan.FromMilliseconds(100)))
+                    ConsumerRecord<Null, string> record;
+                    if (consumer.Consume(out record, TimeSpan.FromMilliseconds(100)))
                     {
-                        Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
-                        Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                        Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
+                        Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                         msgCnt += 1;
                     }
                 }

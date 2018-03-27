@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
                      new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
                      null, new StringSerializer(Encoding.UTF8)))
                 {
-                    var dr = await producer.ProduceAsync(singlePartitionTopic, null, "test string");
+                    var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
                     Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                     producer.Flush(TimeSpan.FromSeconds(10));
                 }

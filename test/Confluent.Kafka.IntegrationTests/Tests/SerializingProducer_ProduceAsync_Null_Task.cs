@@ -39,11 +39,12 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            var drs = new List<Task<Message<Null, Null>>>();
+            var drs = new List<Task<DeliveryReport<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, 0, null, null, Timestamp.Default, null));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
+                drs.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));
+                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<Null, Null> {}));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -54,10 +55,10 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Key);
-                Assert.Null(dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
 
             }
 
