@@ -51,9 +51,10 @@ To add a reference to a dotnet core project, execute the following at the comman
 dotnet add package -v 0.11.4-RC2 Confluent.Kafka
 ```
 
-Pre-release nuget packages are available from the following nuget package source (Note: this is not a web url - you should specify it in the nuget package manger):
-[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages matches the appveyor build number. You can see which commit a 
-particular build number corresponds to by looking at the 
+Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web url - you 
+should specify it in the nuget package manger):
+[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
+matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
 
 
