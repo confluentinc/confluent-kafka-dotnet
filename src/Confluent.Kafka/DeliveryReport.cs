@@ -22,61 +22,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a produce request.
     /// </summary>
-    public class DeliveryReport
+    public class DeliveryReport : MessageAndMeta
     {
-        /// <summary>
-        ///     The topic the message was produced to.
-        /// </summary>
-        public string Topic { get; set; }
-
-        /// <summary>
-        ///     The partition the message was produced to.
-        /// </summary>
-        public Partition Partition { get; set; }
-
-        /// <summary>
-        ///     The offset the message was produced to.
-        /// </summary>
-        public Offset Offset { get; set; }
-
-        /// <summary>
-        ///     An error (or NoError) associated with the produce request.
-        /// </summary>
-        public Error Error { get; set; }
-
-        /// <summary>
-        ///     The message that was produced.
-        /// </summary>
-        public Message Message { get; set; }
-
-        /// <summary>
-        ///     The TopicPartition the message was produced to.
-        /// </summary>
-        public TopicPartition TopicPartition
-            => new TopicPartition(Topic, Partition);
-
-        /// <summary>
-        ///     The TopicPartitionOffset associated with the produced message.
-        /// </summary>
-        public TopicPartitionOffset TopicPartitionOffset
-            => new TopicPartitionOffset(Topic, Partition, Offset);
-
-        /// <summary>
-        ///     The TopicPartitionOffsetError assoicated with the produced message.
-        /// </summary>
-        public TopicPartitionOffsetError TopicPartitionOffsetError
-        {
-            get
-            {
-                return new TopicPartitionOffsetError(Topic, Partition, Offset, Error);
-            }
-            set
-            {
-                Topic = value.Topic;
-                Partition = value.Partition;
-                Offset = value.Offset;
-                Error = value.Error;
-            }
-        }
     }
 }
