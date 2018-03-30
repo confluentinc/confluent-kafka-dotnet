@@ -85,7 +85,7 @@ namespace Confluent.Kafka.Impl
                 {
                     // TODO: In practice, the following is always returning IntPtr.Zero. Why?
                     IntPtr error = dlerror();
-                    if (error == IntPtr.Zero) 
+                    if (error == IntPtr.Zero)
                     {
                         return "";
                     }
@@ -231,8 +231,8 @@ namespace Confluent.Kafka.Impl
                     var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
                     var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
                     var dllDirectory = Path.Combine(
-                        baseDirectory, 
-                        is64 
+                        baseDirectory,
+                        is64
                             ? Path.Combine("librdkafka", "x64")
                             : Path.Combine("librdkafka", "x86"));
                     path = Path.Combine(dllDirectory, "librdkafka.dll");
@@ -240,10 +240,18 @@ namespace Confluent.Kafka.Impl
                     if (!File.Exists(path))
                     {
                         dllDirectory = Path.Combine(
-                            baseDirectory, 
-                            is64 
+                            baseDirectory,
+                            is64
                                 ? @"runtimes\win7-x64\native"
                                 : @"runtimes\win7-x86\native");
+                        path = Path.Combine(dllDirectory, "librdkafka.dll");
+                    }
+
+                    if (!File.Exists(path))
+                    {
+                        dllDirectory = Path.Combine(
+                            baseDirectory,
+                            is64 ? "x64" : "x86");
                         path = Path.Combine(dllDirectory, "librdkafka.dll");
                     }
                 }
@@ -303,10 +311,10 @@ namespace Confluent.Kafka.Impl
                         {
                             throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
                         }
-                    
+
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                     }
-                    else 
+                    else
                     {
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
