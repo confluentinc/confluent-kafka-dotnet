@@ -55,12 +55,12 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer1 = new Consumer(consumerConfig))
-            using (var consumer2 = new Consumer(consumerConfig))
+            using (var consumer1 = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            using (var consumer2 = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                ConsumerRecord record;
+                ConsumerRecord<byte[], byte[]> record;
                 var haveMsg1 = consumer1.Consume(out record, TimeSpan.FromSeconds(10));
                 Assert.NotNull(record);
                 var haveMsg2 = consumer2.Consume(out record, TimeSpan.FromSeconds(10));

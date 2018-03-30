@@ -44,52 +44,6 @@ namespace Confluent.Kafka.IntegrationTests
                 { "queue.buffering.max.messages", 2 }
             };
 
-            // non-serializing Produce
-            using (var producer = new Producer(producerConfig))
-            {
-                for (int i=0; i<2; ++i)
-                {
-                    producer.Produce(
-                        (DeliveryReport msg) => {},
-                        singlePartitionTopic, 0,
-                        TestKey, 0, TestKey.Length,
-                        TestValue, 0, TestValue.Length,
-                        Timestamp.Default, null
-                    );
-                }
-                Assert.Throws<KafkaException>(() => 
-                    producer.Produce(
-                        (DeliveryReport msg) => {},
-                        singlePartitionTopic, 0,
-                        TestKey, 0, TestKey.Length,
-                        TestValue, 0, TestValue.Length,
-                        Timestamp.Default, null
-                    )
-                );
-            }
-
-            // non-serializing ProduceAsync
-            using (var producer = new Producer(producerConfig))
-            {
-                for (int i=0; i<2; ++i)
-                {
-                    producer.ProduceAsync(
-                        singlePartitionTopic, 0,
-                        TestKey, 0, TestKey.Length,
-                        TestValue, 0, TestValue.Length,
-                        Timestamp.Default, null
-                    );
-                }
-                Assert.Throws<KafkaException>(() => 
-                    producer.ProduceAsync(
-                        singlePartitionTopic, 0,
-                        TestKey, 0, TestKey.Length,
-                        TestValue, 0, TestValue.Length,
-                        Timestamp.Default, null
-                    ).Wait()
-                );
-            }
-
             // serializing Produce
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {

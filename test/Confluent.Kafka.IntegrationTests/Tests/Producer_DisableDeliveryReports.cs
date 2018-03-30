@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -47,14 +48,12 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             int count = 0;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 producer.Produce(
-                    (DeliveryReport dr) => count += 1,
-                    singlePartitionTopic, 0,
-                    TestKey, 0, TestKey.Length,
-                    TestValue, 0, TestValue.Length,
-                    Timestamp.Default, null
+                    singlePartitionTopic,
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
+                    (DeliveryReport<byte[], byte[]> dr) => count += 1
                 );
 
                 producer.Flush(TimeSpan.FromSeconds(10));
