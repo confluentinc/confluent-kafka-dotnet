@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
 using System.Collections.Generic;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Benchmark
@@ -45,7 +46,7 @@ namespace Confluent.Kafka.Benchmark
                 { "dotnet.producer.enable.deivery.report.data.marshaling", false }
             };
 
-            DeliveryReport firstDeliveryReport = null;
+            DeliveryReport<byte[], byte[]> firstDeliveryReport = null;
 
             Headers headers = null;
             if (nHeaders > 0)
@@ -57,7 +58,7 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
 
-            using (var producer = new Producer(config))
+            using (var producer = new Producer<byte[], byte[]>(config, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 for (var j=0; j<nTests; ++j)
                 {
@@ -67,7 +68,7 @@ namespace Confluent.Kafka.Benchmark
                     var val = new byte[100].Select(a => ++cnt).ToArray();
 
                     // this avoids including connection setup, topic creation time, etc.. in result.
-                    firstDeliveryReport = producer.ProduceAsync(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers).Result;
+                    firstDeliveryReport = producer.ProduceAsync(topic, new Message<byte[], byte[]> { Value = val, Headers = headers }).Result;
 
                     var startTime = DateTime.Now.Ticks;
 
@@ -75,7 +76,7 @@ namespace Confluent.Kafka.Benchmark
                     {
                         var autoEvent = new AutoResetEvent(false);
                         var msgCount = nMessages;
-                        Action<DeliveryReport> deliveryHandler = (DeliveryReport deliveryReport) => 
+                        Action<DeliveryReport<byte[], byte[]>> deliveryHandler = (DeliveryReport<byte[], byte[]> deliveryReport) => 
                         {
                             if (--msgCount == 0)
                             {
@@ -85,7 +86,7 @@ namespace Confluent.Kafka.Benchmark
 
                         for (int i = 0; i < nMessages; i++)
                         {
-                            producer.Produce(deliveryHandler, topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers);
+                            producer.Produce(topic, new Message<byte[], byte[]> { Value = val, Headers = headers }, deliveryHandler);
                         }
 
                         autoEvent.WaitOne();
@@ -95,7 +96,7 @@ namespace Confluent.Kafka.Benchmark
                         var tasks = new Task[nMessages];
                         for (int i = 0; i < nMessages; i++)
                         {
-                            tasks[i] = producer.ProduceAsync(topic, Partition.Any, null, 0, 0, val, 0, val.Length, Timestamp.Default, headers);
+                            tasks[i] = producer.ProduceAsync(topic, new Message<byte[], byte[]> { Value = val, Headers = headers });
                         }
                         Task.WaitAll(tasks);
                     }
