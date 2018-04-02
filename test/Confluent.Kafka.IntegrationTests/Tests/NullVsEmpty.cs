@@ -44,14 +44,14 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            DeliveryReport dr;
-            using (var producer = new Producer(producerConfig))
+            DeliveryReport<byte[], byte[]> dr;
+            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(singlePartitionTopic, 0, (byte[])null, 0, 0, null, 0, 0, Timestamp.Default, null).Result;
-                producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, new byte[0], 0, 0, Timestamp.Default, null).Wait();
-                producer.ProduceAsync(singlePartitionTopic, 0, new byte[0], 0, 0, null, 0, 0, Timestamp.Default, null).Wait();
-                producer.ProduceAsync(singlePartitionTopic, 0, new byte[0], 0, 0, new byte[0], 0, 0, Timestamp.Default, null).Wait();
+                dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = new byte[0] {} }).Wait();
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = null }).Wait();
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = new byte[0] {} }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -59,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                ConsumerRecord record;
+                ConsumerRecord<byte[], byte[]> record;
                 Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(record);
                 Assert.Null(record.Message.Key);

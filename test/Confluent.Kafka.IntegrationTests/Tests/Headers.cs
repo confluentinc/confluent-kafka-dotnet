@@ -92,7 +92,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("test-header-a", dr_duplicate.Message.Headers[2].Key);
                 Assert.Equal(new byte[] { 113 }, dr_duplicate.Message.Headers[2].Value);
 
-                // Test headers work as expected with all serializing ProduceAsync variants. 
+                // Test headers work as expected with all serializing ProduceAsync variants.
 
                 dr_ol1 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "the value" }).Result;
                 Assert.Empty(dr_ol1.Message.Headers);
@@ -120,32 +120,32 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, drs[1].Message.Headers.Count);
             }
 
-            List<DeliveryReport> drs_2 = new List<DeliveryReport>();
-            DeliveryReport dr_ol4, dr_ol5, dr_ol6, dr_ol7;
-            using (var producer = new Producer(producerConfig))
+            List<DeliveryReport<byte[], byte[]>> drs_2 = new List<DeliveryReport<byte[], byte[]>>();
+            DeliveryReport<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
+            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 var headers = new Headers();
                 headers.Add("hkey", new byte[] { 44 });
 
                 // Test headers work as expected with all non-serializing ProduceAsync variants. 
 
-                dr_ol4 = producer.ProduceAsync(singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
-                Assert.Single(dr_ol4.Message.Headers);
-                dr_ol5 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null).Result;
+                dr_ol4 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }).Result;
+                Assert.Empty(dr_ol4.Message.Headers);
+                dr_ol5 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }).Result;
                 Assert.Empty(dr_ol5.Message.Headers);
-                dr_ol6 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
+                dr_ol6 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }).Result;
                 Assert.Single(dr_ol6.Message.Headers);
-                dr_ol7 = producer.ProduceAsync(singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers).Result;
+                dr_ol7 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }).Result;
                 Assert.Single(dr_ol7.Message.Headers);
 
                 // Test headers work as expected with all non-serializing Produce variants.
 
-                Action<DeliveryReport> dh = (DeliveryReport dr) => drs_2.Add(dr);
+                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
 
-                producer.Produce(dh, singlePartitionTopic, 0, null, 0, 0, null, 0, 0, Timestamp.Default, headers);
-                producer.Produce(dh, singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, null);
-                producer.Produce(dh, singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers);
-                producer.Produce(dh, singlePartitionTopic, Partition.Any, null, 0, 0, null, 0, 0, Timestamp.Default, headers);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
 
                 producer.Flush(TimeSpan.FromSeconds(10));
 
@@ -155,27 +155,27 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(drs_2[3].Message.Headers);
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_single.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record, TimeSpan.FromSeconds(10)));
                 Assert.Single(record.Message.Headers);
                 Assert.Equal("test-header", record.Message.Headers[0].Key);
                 Assert.Equal(new byte[] { 142 }, record.Message.Headers[0].Value);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_empty.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record2, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record2, TimeSpan.FromSeconds(10)));
                 // following Java, alway instantiate a new Headers instance, even in the empty case.
                 Assert.NotNull(record2.Message.Headers);
                 Assert.Empty(record2.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_null.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record3, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record3, TimeSpan.FromSeconds(10)));
                 Assert.NotNull(record3.Message.Headers);
                 Assert.Empty(record3.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_multiple.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record4, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record4, TimeSpan.FromSeconds(10)));
                 Assert.Equal(2, record4.Message.Headers.Count);
                 Assert.Equal("test-header-a", record4.Message.Headers[0].Key);
                 Assert.Equal("test-header-b", record4.Message.Headers[1].Key);
@@ -183,7 +183,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(new byte[] { 112 }, record4.Message.Headers[1].Value);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_duplicate.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record5, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record5, TimeSpan.FromSeconds(10)));
                 Assert.Equal(5, record5.Message.Headers.Count);
                 Assert.Equal("test-header-a", record5.Message.Headers[0].Key);
                 Assert.Equal("test-header-b", record5.Message.Headers[1].Key);
@@ -203,54 +203,54 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // async, serializing
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_ol1.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record6, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record6, TimeSpan.FromSeconds(10)));
                 Assert.Empty(record6.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_ol3.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record8, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record8, TimeSpan.FromSeconds(10)));
                 Assert.Single(record8.Message.Headers);
 
                 // delivery-handler, serializing.
                 consumer.Assign(new List<TopicPartitionOffset>() {drs[0].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record9, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record9, TimeSpan.FromSeconds(10)));
                 Assert.Empty(record9.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record11, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record11, TimeSpan.FromSeconds(10)));
                 Assert.Equal(2, record11.Message.Headers.Count);
 
                 // async, non-serializing
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_ol4.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record12, TimeSpan.FromSeconds(10)));
-                Assert.Single(record12.Message.Headers);
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record12, TimeSpan.FromSeconds(10)));
+                Assert.Empty(record12.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_ol5.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record13, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record13, TimeSpan.FromSeconds(10)));
                 Assert.Empty(record13.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_ol6.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record14, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record14, TimeSpan.FromSeconds(10)));
                 Assert.Single(record14.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_ol7.TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record15, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record15, TimeSpan.FromSeconds(10)));
                 Assert.Single(record15.Message.Headers);
 
                 // delivery handler, non-serializing
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_2[0].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record16, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record16, TimeSpan.FromSeconds(10)));
                 Assert.Single(record16.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_2[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record17, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record17, TimeSpan.FromSeconds(10)));
                 Assert.Empty(record17.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_2[2].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record18, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record18, TimeSpan.FromSeconds(10)));
                 Assert.Single(record18.Message.Headers);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_2[3].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out ConsumerRecord record19, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<byte[], byte[]> record19, TimeSpan.FromSeconds(10)));
                 Assert.Single(record19.Message.Headers);
             }
 

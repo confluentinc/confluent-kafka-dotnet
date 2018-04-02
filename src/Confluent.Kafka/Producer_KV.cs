@@ -36,8 +36,9 @@ namespace Confluent.Kafka
     /// </summary>
     public class Producer<TKey, TValue> : IProducer<TKey, TValue>
     {
-        private readonly Producer producer;
-        private readonly ISerializingProducer<TKey, TValue> serializingProducer;
+        private readonly Producer ownedClient;
+        private readonly Handle handle;
+        private readonly SerializingProducer<TKey, TValue> serializingProducer;
 
         /// <summary>
         ///     Creates a new Producer instance.
@@ -64,9 +65,36 @@ namespace Confluent.Kafka
                 configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
             );
 
-            producer = new Producer(configWithoutSerializerProperties);
+            this.ownedClient = new Producer(configWithoutSerializerProperties);
+            this.handle = ownedClient.Handle;
+            this.serializingProducer = new SerializingProducer<TKey, TValue>(ownedClient, keySerializer, valueSerializer);
+        }
 
-            serializingProducer = producer.GetSerializingProducer(keySerializer, valueSerializer);
+        /// <summary>
+        ///     Creates a new Producer instance
+        /// </summary>
+        /// <param name="handle">
+        ///     A librdkafka handle to use for Kafka cluster communications.
+        /// </param>
+        /// <param name="keySerializer">
+        ///     An ISerializer implementation instance that will be used to serialize keys.
+        /// </param>
+        /// <param name="valueSerializer">
+        ///     An ISerializer implementation instance that will be used to serialize values.
+        /// </param>
+        public Producer(
+            Handle handle,
+            ISerializer<TKey> keySerializer,
+            ISerializer<TValue> valueSerializer)
+        {
+            if (!(handle.Owner is Producer))
+            {
+                throw new ArgumentException("Handle must be owned by another Producer instance");
+            }
+
+            this.ownedClient = null;
+            this.handle = handle;
+            this.serializingProducer = new SerializingProducer<TKey, TValue>((Producer)handle.Owner, keySerializer, valueSerializer);
         }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="KeySerializer"]/*' />
@@ -79,7 +107,7 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
         public string Name
-            => producer.Name;
+            => this.handle.Owner.Name;
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
@@ -104,31 +132,39 @@ namespace Confluent.Kafka
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog
         {
-            add { producer.OnLog += value; }
-            remove { producer.OnLog -= value; }
+            add { this.handle.Owner.OnLog += value; }
+            remove { this.handle.Owner.OnLog -= value; }
         }
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics
         {
-            add { producer.OnStatistics += value; }
-            remove { producer.OnStatistics -= value; }
+            add { this.handle.Owner.OnStatistics += value; }
+            remove { this.handle.Owner.OnStatistics -= value; }
         }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError
         {
-            add { producer.OnError += value; }
-            remove { producer.OnError -= value; }
+            add { this.handle.Owner.OnError += value; }
+            remove { this.handle.Owner.OnError -= value; }
         }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
         public int Flush(int millisecondsTimeout)
-            => producer.Flush(millisecondsTimeout);
+            => ((Producer)this.handle.Owner).Flush(millisecondsTimeout);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
         public int Flush(TimeSpan timeout)
-            => producer.Flush(timeout.TotalMillisecondsAsInt());
+            => ((Producer)this.handle.Owner).Flush(timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
+        public int Poll(int millisecondsTimeout)
+            => ((Producer)this.handle.Owner).Poll(millisecondsTimeout);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
+        public int Poll(TimeSpan timeout)
+            => ((Producer)this.handle.Owner).Poll(timeout.TotalMillisecondsAsInt());
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
@@ -143,40 +179,20 @@ namespace Confluent.Kafka
                 ValueSerializer.Dispose();
             }
 
-            producer.Dispose();
+            if (ownedClient == this.handle.Owner) 
+            {
+                ownedClient.Dispose();
+            }
         }
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
-        public List<GroupInfo> ListGroups(TimeSpan timeout)
-            => producer.ListGroups(timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
-        public GroupInfo ListGroup(string group, TimeSpan timeout)
-            => producer.ListGroup(group, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
-        public GroupInfo ListGroup(string group)
-            => producer.ListGroup(group);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
-            => producer.QueryWatermarkOffsets(topicPartition, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
-            => producer.QueryWatermarkOffsets(topicPartition);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string_TimeOut"]/*' />
-        public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
-            => producer.GetMetadata(allTopics, topic, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string"]/*' />
-        public Metadata GetMetadata(bool allTopics, string topic)
-            => producer.GetMetadata(allTopics, topic);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
         public int AddBrokers(string brokers)
-            => producer.AddBrokers(brokers);
+            => this.handle.Owner.AddBrokers(brokers);
 
+        /// <summary>
+        ///     An opaque reference to the underlying librdkafka client instance.
+        /// </summary>
+        public Handle Handle 
+            => handle;
     }
 }
