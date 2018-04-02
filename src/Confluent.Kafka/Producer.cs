@@ -25,7 +25,6 @@ using System.Runtime.InteropServices;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-using System.Collections.Concurrent;
 
 
 namespace Confluent.Kafka
@@ -33,7 +32,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements a high-level Apache Kafka producer (without serialization).
     /// </summary>
-    public class Producer : IProducer
+    internal class Producer : IProducer
     {
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
@@ -100,9 +99,6 @@ namespace Confluent.Kafka
         internal bool enableDeliveryReportHeaderMarshaling = true;
         internal bool enableDeliveryReportDataMarshaling = true;
 
-        private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
-            = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
-
         private SafeKafkaHandle kafkaHandle;
 
         private Task callbackTask;
@@ -150,18 +146,6 @@ namespace Confluent.Kafka
 
             OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
-
-        private readonly Func<string, SafeTopicHandle> topicHandlerFactory;
-
-        /// <remarks>
-        ///     getKafkaTopicHandle() is now only required by GetMetadata() which still requires that 
-        ///     topic is specified via a handle rather than a string name (note that getKafkaTopicHandle() 
-        ///     was also formerly required by the ProduceAsync methods). Eventually we would like to 
-        ///     depreciate this method as well as the SafeTopicHandle class.
-        /// </remarks>
-
-        private SafeTopicHandle getKafkaTopicHandle(string topic) 
-            => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
 
@@ -483,16 +467,6 @@ namespace Confluent.Kafka
                 callbackCts = new CancellationTokenSource();
                 callbackTask = StartPollTask(callbackCts.Token);
             }
-
-            // note: ConcurrentDictionary.GetorAdd() method is not atomic
-            this.topicHandlerFactory = (string topicName) =>
-            {
-                // Note: there is a possible (benign) race condition here - topicHandle could have already
-                // been created for the topic (and possibly added to topicHandles). If the topicHandle has
-                // already been created, rdkafka will return it and not create another. the call to rdkafka
-                // is threadsafe.
-                return kafkaHandle.Topic(topicName, IntPtr.Zero);
-            };
         }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
@@ -517,10 +491,6 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog;
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="GetSerializingProducer"]/*' />
-        public ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
-            => new SerializingProducer<TKey, TValue>(this, keySerializer, valueSerializer);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
@@ -559,11 +529,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
         {
-            foreach (var kv in topicHandles)
-            {
-                kv.Value.Dispose();
-            }
-
             // TODO: If this method is called in a finalizer, can callbackTask potentially be null?
             if (!this.manualPoll)
             {
@@ -589,43 +554,14 @@ namespace Confluent.Kafka
             kafkaHandle.Dispose();
         }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
-        public List<GroupInfo> ListGroups(TimeSpan timeout)
-            => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
-        public GroupInfo ListGroup(string group, TimeSpan timeout)
-            => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
-        public GroupInfo ListGroup(string group)
-            => kafkaHandle.ListGroup(group, -1);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
-
-        private Metadata GetMetadata(bool allTopics, string topic, int millisecondsTimeout)
-            => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), millisecondsTimeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string_TimeSpan"]/*' />
-        public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
-            => GetMetadata(allTopics, topic, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string"]/*' />
-        public Metadata GetMetadata(bool allTopics, string topic)
-            => GetMetadata(allTopics, topic, -1);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata"]/*' />
-        public Metadata GetMetadata()
-            => GetMetadata(true, null, -1);
-
         /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />  
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
+
+        /// <summary>
+        ///     An opaque reference to the underlying librdkafka client instance.
+        /// </summary>
+        public Handle Handle 
+            => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
     }
 }

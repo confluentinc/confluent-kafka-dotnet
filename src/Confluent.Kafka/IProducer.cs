@@ -32,16 +32,13 @@ namespace Confluent.Kafka
     ///     Defines a high-level Apache Kafka producer client (without 
     ///     serialization capability).
     /// </summary>
-    public interface IProducer : IDisposable
+    internal interface IProducer : IClient
     {
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
         int Poll(int millisecondsTimeout);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         int Poll(TimeSpan timeout);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="GetSerializingProducer"]/*' />
-        ISerializingProducer<TKey, TValue> GetSerializingProducer<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
@@ -60,49 +57,10 @@ namespace Confluent.Kafka
             byte[] val, int valOffset, int valLength,
             Timestamp timestamp, IEnumerable<Header> headers);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
-        string Name { get; }
-
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
         int Flush(int millisecondsTimeout);
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
         int Flush(TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
-        List<GroupInfo> ListGroups(TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />   
-        GroupInfo ListGroup(string group, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />   
-        GroupInfo ListGroup(string group);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />   
-        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />  
-        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string_TimeSpan"]/*' />  
-        Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_string"]/*' />  
-        Metadata GetMetadata(bool allTopics, string topic);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata"]/*' />  
-        Metadata GetMetadata();
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />  
-        int AddBrokers(string brokers);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
-        event EventHandler<Error> OnError;
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
-        event EventHandler<string> OnStatistics;
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        event EventHandler<LogMessage> OnLog;
     }
 }

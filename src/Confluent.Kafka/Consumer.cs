@@ -29,13 +29,8 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer (without deserialization).
-    /// 
-    ///     [API-SUBJECT-TO-CHANGE] We are considering making this class private in a 
-    ///     future version so as to limit API surface area. Prefer to use the deserializing
-    ///     consumer <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> where possible
-    ///     (use the byte[] deserializer).
     /// </summary>
-    public class Consumer : IConsumer
+    internal class Consumer : IConsumer
     {
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
@@ -363,9 +358,18 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
         {
+            // note: consumers always own their handles.
             kafkaHandle.ConsumerClose();
             kafkaHandle.Dispose();
         }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
+        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+            => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        public int AddBrokers(string brokers)
+            => kafkaHandle.AddBrokers(brokers);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
@@ -375,44 +379,10 @@ namespace Confluent.Kafka
         public string MemberId
             => kafkaHandle.MemberId;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
-        public List<GroupInfo> ListGroups(TimeSpan timeout)
-            => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
-        public GroupInfo ListGroup(string group, TimeSpan timeout)
-            => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
-        public GroupInfo ListGroup(string group)
-            => kafkaHandle.ListGroup(group, -1);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
-            => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
-        public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
-            => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool"]/*' />
-        public Metadata GetMetadata(bool allTopics)
-            => kafkaHandle.GetMetadata(allTopics, null, -1);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
-        public int AddBrokers(string brokers)
-            => kafkaHandle.AddBrokers(brokers);
+        /// <summary>
+        ///     An opaque reference to the underlying librdkafka client instance.
+        /// </summary>
+        public Handle Handle 
+            => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
     }
 }

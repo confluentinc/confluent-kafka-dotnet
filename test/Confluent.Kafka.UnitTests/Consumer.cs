@@ -31,7 +31,7 @@ namespace Confluent.Kafka.UnitTests
             // Throw exception if 'group.id' is not set in config and ensure that exception
             // mentions 'group.id'.
             var config = new Dictionary<string, object>();
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
             Assert.Contains("group.id", e.Message);
             e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
             Assert.Contains("group.id", e.Message);

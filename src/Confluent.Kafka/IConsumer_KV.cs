@@ -29,8 +29,11 @@ namespace Confluent.Kafka
     ///     Defines a high-level Apache Kafka consumer (with key and 
     ///     value deserialization).
     /// </summary>
-    public interface IConsumer<TKey, TValue> : IDisposable
+    public interface IConsumer<TKey, TValue> : IClient
     {
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="MemberId"]/*' />
+        string MemberId { get; }
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="KeyDeserializer"]/*' />
         IDeserializer<TKey> KeyDeserializer { get; }
 
@@ -60,17 +63,8 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnOffsetsCommitted"]/*' />
         event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        event EventHandler<LogMessage> OnLog;
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
-        event EventHandler<string> OnStatistics;
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
         event EventHandler<ConsumerRecord> OnConsumeError;
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
-        event EventHandler<Error> OnError;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
         event EventHandler<TopicPartitionOffset> OnPartitionEOF;
@@ -132,40 +126,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Position_IEnumerable"]/*' />
         List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Name"]/*' />
-        string Name { get; }
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="MemberId"]/*' />
-        string MemberId { get; }
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
-        List<GroupInfo> ListGroups(TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
-        GroupInfo ListGroup(string group, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
-        GroupInfo ListGroup(string group);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
-        WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
-        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
-        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition);
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
         IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
-        Metadata GetMetadata(bool allTopics, TimeSpan timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool"]/*' />
-        Metadata GetMetadata(bool allTopics);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
-        int AddBrokers(string brokers);
     }
 }

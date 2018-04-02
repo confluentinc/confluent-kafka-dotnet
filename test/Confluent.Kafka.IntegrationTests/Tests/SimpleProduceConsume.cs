@@ -56,17 +56,17 @@ namespace Confluent.Kafka.IntegrationTests
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
             }
         }
 
-        private static void ConsumeMessage(Consumer consumer, DeliveryReport<Null, string> dr, string testString)
+        private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryReport<Null, string> dr, string testString)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
-            ConsumerRecord r;
+            ConsumerRecord<byte[], byte[]> r;
             Assert.True(consumer.Consume(out r, TimeSpan.FromSeconds(10)));
             Assert.NotNull(r);
             Assert.Equal(testString, r.Message.Value == null ? null : Encoding.UTF8.GetString(r.Message.Value, 0, r.Message.Value.Length));

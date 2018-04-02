@@ -47,6 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var adminClient = new AdminClient(consumer.Handle))
             {
                 bool done = false;
 
@@ -67,14 +68,14 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                var g = consumer.ListGroup(groupId);
+                var g = adminClient.ListGroup(groupId);
                 Assert.NotNull(g);
                 Assert.Equal(ErrorCode.NoError, g.Error.Code);
                 Assert.Equal(groupId, g.Group);
                 Assert.Equal("consumer", g.ProtocolType);
                 Assert.Single(g.Members);
 
-                g = consumer.ListGroup("non-existent-cg");
+                g = adminClient.ListGroup("non-existent-cg");
                 Assert.Null(g);
             }
         }
