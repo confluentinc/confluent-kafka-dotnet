@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Benchmark
@@ -32,7 +33,7 @@ namespace Confluent.Kafka.Benchmark
                 { "dotnet.consumer.enable.header.marshaling", nHeaders != 0 }
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 for (var j=0; j<nTests; ++j)
                 {
@@ -41,7 +42,7 @@ namespace Confluent.Kafka.Benchmark
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    consumer.Consume(out ConsumerRecord record, TimeSpan.FromSeconds(10));
+                    consumer.Consume(out ConsumerRecord<byte[], byte[]> record, TimeSpan.FromSeconds(10));
 
                     long startTime = DateTime.Now.Ticks;
 

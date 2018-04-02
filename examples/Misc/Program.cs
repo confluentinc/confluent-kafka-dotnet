@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Examples.Misc
         {
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
-            using (var producer = new Producer(config))
+            using (var producer = new AdminClient(config))
             {
                 var groups = producer.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
@@ -54,9 +54,9 @@ namespace Confluent.Kafka.Examples.Misc
         static void PrintMetadata(string brokerList)
         {
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
-            using (var producer = new Producer(config))
+            using (var producer = new AdminClient(config))
             {
-                var meta = producer.GetMetadata(true, null);
+                var meta = producer.GetMetadata(true, null, TimeSpan.FromSeconds(10));
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
                 meta.Brokers.ForEach(broker =>
                     Console.WriteLine($"Broker: {broker.BrokerId} {broker.Host}:{broker.Port}"));
