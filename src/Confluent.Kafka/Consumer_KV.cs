@@ -300,6 +300,8 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
         {
+            // note: consumers always own their own handles.
+            
             if (KeyDeserializer != null)
             {
                 KeyDeserializer.Dispose();
@@ -333,6 +335,14 @@ namespace Confluent.Kafka
         public List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
             => consumer.Position(partitions);
 
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
+        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
+            => consumer.OffsetsForTimes(timestampsToSearch, timeout);
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        public int AddBrokers(string brokers)
+            => consumer.AddBrokers(brokers);
+
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
             => consumer.Name;
@@ -341,44 +351,10 @@ namespace Confluent.Kafka
         public string MemberId
             => consumer.MemberId;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
-        public List<GroupInfo> ListGroups(TimeSpan timeout)
-            => consumer.ListGroups(timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
-        public GroupInfo ListGroup(string group, TimeSpan timeout)
-            => consumer.ListGroup(group, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
-        public GroupInfo ListGroup(string group)
-            => consumer.ListGroup(group);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-            => consumer.GetWatermarkOffsets(topicPartition);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
-            => consumer.QueryWatermarkOffsets(topicPartition, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
-            => consumer.QueryWatermarkOffsets(topicPartition);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
-            => consumer.OffsetsForTimes(timestampsToSearch, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
-        public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
-            => consumer.GetMetadata(allTopics, timeout);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool"]/*' />
-        public Metadata GetMetadata(bool allTopics)
-            => consumer.GetMetadata(allTopics);
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
-        public int AddBrokers(string brokers)
-            => consumer.AddBrokers(brokers);
+        /// <summary>
+        ///     An opaque reference to the underlying librdkafka client instance.
+        /// </summary>
+        public Handle Handle
+            => consumer.Handle;
     }
 }

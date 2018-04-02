@@ -30,7 +30,7 @@ using System.Collections.Concurrent;
 
 namespace Confluent.Kafka
 {
-    internal class SerializingProducer<TKey, TValue> : ISerializingProducer<TKey, TValue>
+    internal class SerializingProducer<TKey, TValue>
     {
         protected readonly Producer producer;
 

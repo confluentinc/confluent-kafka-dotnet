@@ -53,9 +53,9 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "latest" } };
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
-                ConsumerRecord record;
+                ConsumerRecord<byte[], byte[]> record;
 
                 // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
@@ -75,9 +75,9 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "earliest" } };
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
-                ConsumerRecord record;
+                ConsumerRecord<byte[], byte[]> record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
                 Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
                 // Note: dr.Offset+2 is an invalid (c.f. dr.Offset+1 which is valid), so auto.offset.reset will come
