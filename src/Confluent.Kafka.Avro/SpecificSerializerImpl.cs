@@ -93,6 +93,10 @@ namespace Confluent.Kafka.Serialization
                 // with the Java avro serializer.
                 writerSchema = Avro.Schema.Parse("bytes");
             }
+            else if (writerType.Equals(typeof(Null)))
+            {
+                writerSchema = Avro.Schema.Parse("null");
+            }
             else
             {
                 throw new ArgumentException(
