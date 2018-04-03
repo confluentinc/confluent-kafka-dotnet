@@ -128,6 +128,18 @@ namespace Confluent.Kafka.Avro.UnitTests
         }
 
         [Fact]
+        public void NullSerDe()
+        {
+            var avroSerializer = new AvroSerializer<Null>(schemaRegistryClient);
+            avroSerializer.Configure(new Dictionary<string, object>(), false);
+            var avroDeserializer = new AvroDeserializer<Null>(schemaRegistryClient);
+            avroDeserializer.Configure(new Dictionary<string, object>(), false);
+            byte[] bytes;
+            bytes = avroSerializer.Serialize(testTopic, null);
+            Assert.Null(avroDeserializer.Deserialize(testTopic, bytes));
+        }
+
+        [Fact]
         public void ISpecificRecord()
         {
             var user = new User

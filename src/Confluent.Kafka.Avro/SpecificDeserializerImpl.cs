@@ -81,6 +81,10 @@ namespace Confluent.Kafka.Serialization
             {
                 ReaderSchema = Avro.Schema.Parse("bytes");
             }
+            else if (typeof(T).Equals(typeof(Null)))
+            {
+                ReaderSchema = Avro.Schema.Parse("null");
+            }
             else
             {
                 throw new ArgumentException(
