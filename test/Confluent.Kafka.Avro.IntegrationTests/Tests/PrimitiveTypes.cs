@@ -95,6 +95,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
+            var nullTopic = Guid.NewGuid().ToString();
+            using (var producer = new Producer<Null,Null>(producerConfig, new AvroSerializer<Null>(), new AvroSerializer<Null>()))
+            {
+                producer.ProduceAsync(nullTopic, new Message<Null,Null>());
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
             using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(stringTopic, 0, 0) });
@@ -156,6 +163,15 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal(ErrorCode.NoError, record.Error.Code);
                 Assert.Equal(46.0, record.Message.Key);
                 Assert.Equal(47.0, record.Message.Value);
+            }
+
+            using (var consumer = new Consumer<Null, Null>(consumerConfig, new AvroDeserializer<Null>(), new AvroDeserializer<Null>()))
+            {
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(nullTopic, 0, 0) });
+                consumer.Consume(out ConsumerRecord<Null, Null> record, TimeSpan.FromSeconds(10));
+                Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                Assert.Null(record.Key);
+                Assert.Null(record.Value);
             }
         }
     }
