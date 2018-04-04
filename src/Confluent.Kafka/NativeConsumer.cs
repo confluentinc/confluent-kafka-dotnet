@@ -17,13 +17,11 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Buffers;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka

@@ -24,7 +24,6 @@ namespace Confluent.Kafka
             System.Runtime.InteropServices.Marshal.Copy(msgBuf, strBuffer, 0, len);
             return _encoding.GetString(strBuffer);
 #else
-// Avoid unnecessary data copying on NET45+
             return _encoding.GetString((byte*) msgBuf.ToPointer(), len);
 #endif
         }

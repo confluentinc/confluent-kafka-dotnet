@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Confluent.Kafka
 {
-    public class LongNativeDeserializer : INativeDeserializer<long>
+    public class UnsafeLongNativeDeserializer : INativeDeserializer<long>
     {
         public unsafe long Deserialize(IntPtr msgBuf, uint msgLen, IntPtr msgTopic)
         {
