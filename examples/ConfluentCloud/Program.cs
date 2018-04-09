@@ -44,7 +44,6 @@ namespace ConfluentCloudExample
             var pConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", "<ccloud bootstrap servers>" },
-                { "api.version.request", "true" },
                 { "broker.version.fallback", "0.10.0.0" },
                 { "api.version.fallback.ms", 0 },
                 { "sasl.mechanisms", "PLAIN" },
@@ -55,7 +54,8 @@ namespace ConfluentCloudExample
                 // from somewhere else, for example use the cacert.pem file distributed with curl:
                 // https://curl.haxx.se/ca/cacert.pem and reference that file in the `ssl.ca.location`
                 // property:
-                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" },
+                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" }, // suitable configuration for linux, osx.
+                // { "ssl.ca.location", "c:\\path\\to\\cacert.pem" },     // windows
                 { "sasl.username", "<ccloud key>" },
                 { "sasl.password", "<ccloud secret>" }
             };
@@ -82,12 +82,12 @@ namespace ConfluentCloudExample
             var cConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", "<confluent cloud bootstrap servers>" },
-                { "api.version.request", "true" },
                 { "broker.version.fallback", "0.10.0.0" },
                 { "api.version.fallback.ms", 0 },
                 { "sasl.mechanisms", "PLAIN" },
                 { "security.protocol", "SASL_SSL" },
-                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" },
+                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" }, // suitable configuration for linux, osx.
+                // { "ssl.ca.location", "c:\\path\\to\\cacert.pem" },     // windows
                 { "sasl.username", "<confluent cloud key>" },
                 { "sasl.password", "<confluent cloud secret>" },
                 { "group.id", Guid.NewGuid().ToString() },
