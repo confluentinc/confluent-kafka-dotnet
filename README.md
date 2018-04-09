@@ -151,6 +151,11 @@ or with specific classes generated using the `avrogen` tool
 dotnet /path/to/avrogen.dll -s your_schema.asvc .
 ```
 
+### Confluent Cloud
+
+The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
+
+
 ## Build
 
 To build the library or any test or example project, run the following from within the relevant project directory:
