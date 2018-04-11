@@ -1,0 +1,7 @@
+{
+  "namespace": "MessageTypes",
+  "type": "enum", 
+  "doc": "Enumerates the set of allowable log levels.",
+  "name": "LogLevel", 
+  "symbols": ["None", "Verbose", "Info", "Warning", "Error"]
+}
