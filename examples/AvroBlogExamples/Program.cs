@@ -27,7 +27,7 @@ using Confluent.Kafka.Serialization;
 namespace AvroBlogExample
 {
     /// <summary>
-    ///     Complete source for the examples programs discussed in the blog post:
+    ///     Complete source for the examples programs presented in the blog post:
     ///     [insert blog URL here]
     /// </summary>
     class Program
