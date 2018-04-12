@@ -59,7 +59,6 @@ namespace Confluent.Kafka.Examples.Consumer
                 consumer.OnPartitionEOF += (_, end)
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
-                // Raised on critical errors, e.g. connection failures or all brokers down.
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
@@ -89,7 +88,10 @@ namespace Confluent.Kafka.Examples.Consumer
                 {
                     Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
                     // If you don't add a handler to the OnPartitionsRevoked event,
-                    // the below .Unassign call happens automatically.
+                    // the below .Unassign call happens automatically. If you do, 
+                    // you must call .Unassign explicitly in order for the consumer
+                    // to stop consuming messages from it's previously assigned 
+                    // partitions.
                     consumer.Unassign();
                 };
 
@@ -140,7 +142,6 @@ namespace Confluent.Kafka.Examples.Consumer
                 consumer.OnPartitionEOF += (_, end)
                     => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");
 
-                // Raised on critical errors, e.g. connection failures or all brokers down.
                 consumer.OnError += (_, error)
                     => Console.WriteLine($"Error: {error}");
 
@@ -164,7 +165,10 @@ namespace Confluent.Kafka.Examples.Consumer
                 {
                     Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
                     // If you don't add a handler to the OnPartitionsRevoked event,
-                    // the below .Unassign call happens automatically.
+                    // the below .Unassign call happens automatically. If you do, 
+                    // you must call .Unassign explicitly in order for the consumer
+                    // to stop consuming messages from it's previously assigned 
+                    // partitions.
                     consumer.Unassign();
                 };
 
@@ -221,7 +225,7 @@ namespace Confluent.Kafka.Examples.Consumer
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, 0)).ToList());
+                consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
 
                 // Raised on critical errors, e.g. connection failures or all brokers down.
                 consumer.OnError += (_, error)

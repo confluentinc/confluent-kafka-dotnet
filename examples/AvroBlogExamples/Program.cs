@@ -56,7 +56,9 @@ namespace AvroBlogExample
                 record.Add("Message", "a test log message");
                 record.Add("Severity", new GenericEnum(logLevelSchema, "Error"));
                 producer.ProduceAsync("log-messages", null, record)
-                    .ContinueWith(dr => Console.WriteLine($"produced to: {dr.Result.TopicPartitionOffset}"));
+                    .ContinueWith(dr => Console.WriteLine(dr.Result.Error 
+                        ? $"error producing message: {dr.Result.Error.Reason}"
+                        : $"produced to: {dr.Result.TopicPartitionOffset}"));
 
                 producer.Flush(TimeSpan.FromSeconds(30));
             }

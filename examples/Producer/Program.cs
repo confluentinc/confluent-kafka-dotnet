@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Examples.Producer
                 Console.WriteLine("\n-----------------------------------------------------------------------");
                 Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");
                 Console.WriteLine("-----------------------------------------------------------------------");
-                Console.WriteLine("To create a kafka message with UTF-8 encoded key and values:");
+                Console.WriteLine("To create a kafka message with UTF-8 encoded key and value:");
                 Console.WriteLine("> key value<Enter>");
                 Console.WriteLine("To create a kafka message with a null key and UTF-8 encoded value:");
                 Console.WriteLine("> value<enter>");
@@ -90,7 +90,7 @@ namespace Confluent.Kafka.Examples.Producer
                         val = text.Substring(index + 1);
                     }
 
-                    // calling .Result on the asynchronous produce request below causes it to
+                    // Calling .Result on the asynchronous produce request below causes it to
                     // block until it completes. Generally, you should avoid producing
                     // synchronously because this has a huge impact on throughput. For this
                     // interactive console example though, it's what we want.
