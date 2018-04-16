@@ -52,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "latest" } };
+            consumerConfig["auto.offset.reset"] = "latest";
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 ConsumerRecord<byte[], byte[]> record;
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Poll(TimeSpan.FromSeconds(10));
             }
 
-            consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "earliest" } };
+            consumerConfig["auto.offset.reset"] = "earliest";
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 ConsumerRecord<byte[], byte[]> record;

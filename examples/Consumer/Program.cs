@@ -30,6 +30,17 @@ namespace Confluent.Kafka.Examples.Consumer
 {
     public class Program
     {
+        private static Dictionary<string, object> constructConfig(string brokerList, bool enableAutoCommit) =>
+            new Dictionary<string, object>
+            {
+                { "group.id", "advanced-csharp-consumer" },
+                { "enable.auto.commit", enableAutoCommit },
+                { "auto.commit.interval.ms", 5000 },
+                { "statistics.interval.ms", 60000 },
+                { "bootstrap.servers", brokerList },
+                { "auto.offset.reset", "smallest" }
+            };
+
         /// <summary>
         //      In this example:
         ///         - offsets are auto commited.

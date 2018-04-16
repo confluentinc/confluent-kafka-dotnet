@@ -22,7 +22,5 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents a message consumed from kafka cluster.
     /// </summary>
-    public class ConsumerRecord : MessageAndMeta
-    {
-    }
+    public class ConsumerRecord : MessageAndMetadata {}
 }

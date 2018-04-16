@@ -866,11 +866,11 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
-        /// Creates and returns a C rd_kafka_topic_partition_list_t * populated by offsets.
+        ///     Creates and returns a C rd_kafka_topic_partition_list_t * populated by offsets.
         /// </summary>
         /// <returns>
-        /// If offsets is null a null IntPtr will be returned, else a IntPtr
-        /// which must destroyed with LibRdKafka.topic_partition_list_destroy()
+        ///     If offsets is null a null IntPtr will be returned, else a IntPtr
+        ///     which must destroyed with LibRdKafka.topic_partition_list_destroy()
         /// </returns>
         internal static IntPtr GetCTopicPartitionList(IEnumerable<TopicPartitionOffset> offsets)
         {
@@ -953,5 +953,87 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(err);
             }
         }
+
+
+        internal IntPtr CreateQueue()
+        {
+            return LibRdKafka.queue_new(handle);
+        }
+
+        internal void DestroyQueue(IntPtr queue)
+        {
+            LibRdKafka.queue_destroy(queue);
+        }
+
+        internal IntPtr QueuePoll(IntPtr queue, int millisecondsTimeout)
+        {
+            return LibRdKafka.queue_poll(queue, millisecondsTimeout);
+        }
+
+        //
+        // Admin Client
+        //
+
+        internal void CreateTopics(
+            AdminClient.NewTopicSpecification newTopicSpecification,
+            AdminClient.CreateTopicsOptions options,
+            IntPtr resultQueue,
+            IntPtr completionSourcePtr)
+        {
+            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
+
+            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle);
+            
+            var errorCode = LibRdKafka.AdminOptions_set_validate_only(optionsPtr, (IntPtr)(options.ValidateOnly ? 1 : 0), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+            }
+
+            if (options.Timeout != null)
+            {
+                errorCode = LibRdKafka.AdminOptions_set_request_timeout(optionsPtr, (IntPtr)(int)(options.Timeout.Value.TotalMilliseconds), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+                if (errorCode != ErrorCode.NoError)
+                {
+                    throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                }
+            }
+
+            if (newTopicSpecification.ReplicationFactor == -1 && newTopicSpecification.NumPartitions == -1 && newTopicSpecification.ReplicasAssignments == null ||
+                newTopicSpecification.ReplicationFactor == -1 && newTopicSpecification.NumPartitions != -1 ||
+                newTopicSpecification.ReplicationFactor != -1 && newTopicSpecification.NumPartitions == -1 ||
+                newTopicSpecification.ReplicationFactor != -1 && newTopicSpecification.ReplicasAssignments != null)
+            {
+                throw new ArgumentException("Either ReplicationFactor and NumPartitions OR ReplicasAssignments must be specified.");
+            }
+
+            IntPtr newTopicPtr = LibRdKafka.NewTopic_new(
+                newTopicSpecification.Name, 
+                (IntPtr)newTopicSpecification.NumPartitions, 
+                (IntPtr)newTopicSpecification.ReplicationFactor);
+
+            if (newTopicSpecification.ReplicasAssignments != null)
+            {
+                // TODO.
+                // LibRdKafka.NewPartitions_set_replica_assignment();
+            }
+
+            if (newTopicSpecification.Configs != null)
+            {   
+                foreach (var config in newTopicSpecification.Configs)
+                {
+                    LibRdKafka.NewTopic_add_config(newTopicPtr, config.Key, config.Value);
+                }
+            }
+
+            LibRdKafka.AdminOptions_set_opaque(optionsPtr, completionSourcePtr);
+
+            IntPtr[] topicPointers = new IntPtr[] { newTopicPtr };
+            LibRdKafka.CreateTopics(handle, topicPointers, (UIntPtr)topicPointers.Length, optionsPtr, resultQueue);
+
+            LibRdKafka.NewTopic_destroy(newTopicPtr);
+            LibRdKafka.AdminOptions_destroy(optionsPtr);
+        }
+
     }
 }

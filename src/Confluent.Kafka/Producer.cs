@@ -383,8 +383,7 @@ namespace Confluent.Kafka
             LibRdKafka.Initialize(null);
 
             var modifiedConfig = config
-                .Where(
-                    prop => prop.Key != "default.topic.config" && 
+                .Where(prop => 
                     prop.Key != BlockIfQueueFullPropertyName &&
                     prop.Key != EnableBackgroundPollPropertyName &&
                     prop.Key != EnableDeliveryReportsPropertyName &&
@@ -419,14 +418,6 @@ namespace Confluent.Kafka
             if (enableDeliveryReportDataMarshalingObj != null)
             {
                 this.enableDeliveryReportDataMarshaling = bool.Parse(enableDeliveryReportDataMarshalingObj.ToString());
-            }
-
-            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
-            // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (defaultTopicConfig != null)
-            {
-                modifiedConfig = modifiedConfig.Concat((IEnumerable<KeyValuePair<string, object>>)defaultTopicConfig);
             }
 
             // Note: changing the default value of produce.offset.report at the binding level is less than

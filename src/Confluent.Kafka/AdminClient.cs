@@ -17,6 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 
 
@@ -27,6 +30,132 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClient : IAdminClient
     {
+        private Task callbackTask;
+        private CancellationTokenSource callbackCts;
+
+        private IntPtr resultQueue = IntPtr.Zero;
+
+        private const int POLL_TIMEOUT_MS = 100;
+        private Task StartPollTask(CancellationToken ct)
+            => Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        while (true)
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            
+                            // TODO: probably also do this here.
+                            // kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+
+                            var eventPtr = kafkaHandle.QueuePoll(resultQueue, POLL_TIMEOUT_MS);
+                            if (eventPtr == IntPtr.Zero)
+                            {
+                                continue;
+                            }
+
+                            int type = LibRdKafka.event_type(eventPtr);
+                            // LibRdKafka.even
+                        }
+                    }
+                    catch (OperationCanceledException) {}
+                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+        /// <summary>
+        ///     Options for the CreateTopics method.
+        /// </summary>
+        public class CreateTopicsOptions
+        {
+            /// <summary>
+            ///     If true, the request should be validated only without creating the topic.
+            /// 
+            ///     Default: false
+            /// </summary>
+            public bool ValidateOnly { get; set; } = false;
+
+            /// <summary>
+            ///     The request timeout in milliseconds for this operation or null if the
+            ///     default request timeout for the AdminClient should be used.
+            /// 
+            ///     Default: null
+            /// </summary>
+            public TimeSpan? Timeout { get; set; }
+        }
+
+        /// <summary>
+        ///     Specification of a new topic to be created via the CreateTopics method.
+        /// </summary>
+        public class NewTopicSpecification
+        {
+            /// <summary>
+            ///     The configuration to use on the new topic.
+            /// </summary>
+            public Dictionary<string, string> Configs { get; set; }
+
+            /// <summary>
+            ///     The name of the topic to be created (required)
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            ///     The numer of partitions for the new topic or -1 if a replica assignment
+            ///     is specified.
+            /// </summary>
+            public int NumPartitions { get; set; } = -1;
+
+            /// <summary>
+            ///     A map from partition id to replica ids (i.e.static broker ids) or null
+            ///     if the number of partitions and replication factor are specified
+            ///     instead.
+            /// </summary>
+            public Dictionary<int, List<int>> ReplicasAssignments { get; set; } = null;
+
+            /// <summary>
+            ///     The replication factor for the new topic or -1 if a replica assignment
+            ///     is specified instead.
+            /// </summary>
+            public short ReplicationFactor { get; set; } = -1;
+        }
+
+        internal class AdminClientResult : TaskCompletionSource<object>
+        {
+        }
+
+        /// <summary>
+        ///     Create a new topic
+        /// </summary>
+        /// <param name="topic">
+        ///     Specification of the new topic to create.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when creating the new topic.
+        /// </param>
+        public Task<object> CreateTopic(NewTopicSpecification topic, CreateTopicsOptions options = null)
+        {
+            AdminClientResult completionSource = new AdminClientResult();
+            
+            var gch = GCHandle.Alloc(completionSource);
+            var completionSourcePtr = GCHandle.ToIntPtr(gch);
+
+            Handle.LibrdkafkaHandle.CreateTopics(topic, options, resultQueue, completionSourcePtr);
+
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Create a batch of new topics.
+        /// </summary>
+        /// <param name="topics">
+        ///     A collection os specifications of the new topics to create.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when creating the new topics.
+        /// </param>
+        public void CreateTopics(IEnumerable<NewTopicSpecification> topics, CreateTopicsOptions options = null)
+        {
+            throw new NotImplementedException();
+        }
+
         private IClient ownedClient;
         private Handle handle;
 
@@ -84,6 +213,11 @@ namespace Confluent.Kafka
                 // is threadsafe.
                 return kafkaHandle.Topic(topicName, IntPtr.Zero);
             };
+
+            resultQueue = kafkaHandle.CreateQueue();
+
+            callbackCts = new CancellationTokenSource();
+            callbackTask = StartPollTask(callbackCts.Token);
         }
 
 #region Groups
@@ -155,6 +289,25 @@ namespace Confluent.Kafka
         /// </summary>
         public void Dispose()
         {
+            callbackCts.Cancel();
+            try
+            {
+                callbackTask.Wait();
+            }
+            catch (AggregateException e)
+            {
+                if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                {
+                    throw e.InnerException;
+                }
+            }
+            finally
+            {
+                callbackCts.Dispose();
+            }
+
+            kafkaHandle.DestroyQueue(resultQueue);
+
             foreach (var kv in topicHandles)
             {
                 kv.Value.Dispose();

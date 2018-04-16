@@ -137,9 +137,7 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = config
-                .Where(
-                    prop => prop.Key != "default.topic.config" && 
-                    prop.Key != EnableHeaderMarshalingPropertyName);
+                .Where(prop => prop.Key != EnableHeaderMarshalingPropertyName);
 
             var enableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableHeaderMarshalingPropertyName).Value;
             if (enableHeaderMarshalingObj != null)
@@ -154,19 +152,6 @@ namespace Confluent.Kafka
                     if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
                     configHandle.Set(kvp.Key, kvp.Value.ToString());
                 });
-
-            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
-            // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (defaultTopicConfig != null)
-            {
-                defaultTopicConfig.ToList().ForEach(
-                    (kvp) => {
-                        if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter in 'default.topic.config' must not be null.");
-                        configHandle.Set(kvp.Key, kvp.Value.ToString());
-                    }
-                );
-            }
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             rebalanceDelegate = RebalanceCallback;

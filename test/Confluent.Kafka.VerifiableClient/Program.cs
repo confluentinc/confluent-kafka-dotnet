@@ -116,8 +116,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             this.Conf = new Dictionary<string, object>
             { 
-                { "log.thread.name", true },
-                { "default.topic.config", new Dictionary<string, object>() } 
+                { "log.thread.name", true }
             };
         }
     }
@@ -130,7 +129,7 @@ namespace Confluent.Kafka.VerifiableClient
         public VerifiableProducerConfig()
         {
             // Default Producer configs
-            ((Dictionary<string, object>)Conf["default.topic.config"])["acks"] = "all";
+            Conf["acks"] = "all";
         }
     }
 
@@ -273,7 +272,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             // Default Consumer configs
             Conf["session.timeout.ms"] = 6000;
-            ((Dictionary<string, object>)Conf["default.topic.config"])["auto.offset.reset"] = "smallest";
+            Conf["auto.offset.reset"] = "smallest";
         }
     }
 
@@ -741,7 +740,7 @@ Consumer options:
                     case "--acks":
                         AssertValue(mode, key, val);
                         AssertProducer(mode, key);
-                        ((Dictionary<string, object>)conf.Conf["default.topic.config"])["acks"] = val;
+                        conf.Conf["acks"] = val;
                         break;
                     case "--producer.config":
                         /* Ignored */

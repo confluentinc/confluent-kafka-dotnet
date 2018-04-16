@@ -20,9 +20,9 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates a Kafka message and contextual information about that message.
+    ///     Encapsulates the result of a produce request.
     /// </summary>
-    public class MessageAndMeta<TKey, TValue>
+    public class MessageAndMetadata
     {
         /// <summary>
         ///     The topic associated with the message.
@@ -75,14 +75,14 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The Kafka message.
+        ///     The message that was produced.
         /// </summary>
-        public Message<TKey, TValue> Message { get; set; }
+        public Message Message { get; set; }
 
         /// <summary>
         ///     The Kafka message Key.
         /// </summary>
-        public TKey Key
+        public byte[] Key
         {
             get { return Message.Key; }
             set { Message.Key = value; }
@@ -91,7 +91,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message Value.
         /// </summary>
-        public TValue Value
+        public byte[] Value
         {
             get { return Message.Value; }
             set { Message.Value = value; }
