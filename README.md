@@ -73,7 +73,7 @@ API documentation is available on the [Confluent website](https://docs.confluent
 
 ### Basic Producer Example
 
-```
+```csharp
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -100,7 +100,7 @@ public class Program
 
 ### Basic Consumer Example
 
-```
+```csharp
 using System;
 using System.Text;
 using System.Collections.Generic;
