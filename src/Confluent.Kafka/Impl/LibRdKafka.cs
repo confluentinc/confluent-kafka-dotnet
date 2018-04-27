@@ -131,7 +131,6 @@ namespace Confluent.Kafka.Impl
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Where(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").Single().CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
             _topic_partition_available = (Func<IntPtr, int, bool>)methods.Where(m => m.Name == "rd_kafka_topic_partition_available").Single().CreateDelegate(typeof(Func<IntPtr, int, bool>));
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Where(m => m.Name == "rd_kafka_new").Single().CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
-            _destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _name = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_name").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_memberid").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_new = (Func<IntPtr, string, IntPtr, SafeTopicHandle>)methods.Where(m => m.Name == "rd_kafka_topic_new").Single().CreateDelegate(typeof(Func<IntPtr, string, IntPtr, SafeTopicHandle>));
@@ -174,6 +173,9 @@ namespace Confluent.Kafka.Impl
             _event_topic_partition_list = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_event_topic_partition_list").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _event_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_event_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _queue_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_queue_poll").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+
+            _destroyMethodInfo = methods.Where(m => m.Name == "rd_kafka_destroy").Single();
+            _destroy = (Action<IntPtr>)_destroyMethodInfo.CreateDelegate(typeof(Action<IntPtr>));
 
             try
             {
@@ -332,6 +334,14 @@ namespace Confluent.Kafka.Impl
                 }
 
                 isInitialized = true;
+
+                // Protect the _destroy and _destroyMethodInfo objects from garbage collection. This is
+                // required since the Producer/Consumer finalizers may reference them, and they might
+                // have otherwise been cleaned up at that point. To keep things simple, there is no reference
+                // counting / corresponding Free() call - there is negligible overhead in keeping these
+                // references around for the lifetime of the process.
+                GCHandle.Alloc(_destroy, GCHandleType.Normal);
+                GCHandle.Alloc(_destroyMethodInfo, GCHandleType.Normal);
 
                 return isInitialized;
             }
@@ -506,6 +516,7 @@ namespace Confluent.Kafka.Impl
                 StringBuilder errstr, UIntPtr errstr_size)
             => _new(type, conf, errstr, errstr_size);
 
+        private static MethodInfo _destroyMethodInfo;
         private static Action<IntPtr> _destroy;
         internal static void destroy(IntPtr rk) => _destroy(rk);
 
