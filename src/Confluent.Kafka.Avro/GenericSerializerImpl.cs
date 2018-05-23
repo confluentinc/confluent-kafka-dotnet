@@ -31,9 +31,7 @@ namespace Confluent.Kafka.Serialization
         private int initialBufferSize;
         private bool isKey;
 
-        private Dictionary<Avro.RecordSchema, string> knownSchemas = new Dictionary<Avro.RecordSchema, string>();
-        private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
-        private Dictionary<string, int> schemaIds = new Dictionary<string, int>();
+        private Dictionary<string, KeyValuePair<string, int>> registeredSchemas = new Dictionary<string, KeyValuePair<string, int>>();
 
         private object serializeLockObj = new object();
 
@@ -74,29 +72,9 @@ namespace Confluent.Kafka.Serialization
                 // indication of misuse of the serializer. Ideally we would do 
                 // something more sophisticated than the below + not allow 
                 // the misuse to keep happening without warning.
-                if (knownSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
-                    registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas ||
-                    schemaIds.Count > schemaRegistryClient.MaxCachedSchemas)
+                if (registeredSchemas.Count > schemaRegistryClient.MaxCachedSchemas)
                 {
-                    knownSchemas.Clear();
                     registeredSchemas.Clear();
-                    schemaIds.Clear();
-                }
-
-                // Determine a schema string corresponding to the schema object.
-                // TODO: It would be more efficient to use a hash function based
-                // on the instance reference, not the implementation provided by 
-                // Schema.
-                writerSchema = data.Schema;
-                string writerSchemaString = null;
-                if (knownSchemas.ContainsKey(writerSchema))
-                {
-                    writerSchemaString = knownSchemas[writerSchema];
-                }
-                else
-                {
-                    writerSchemaString = writerSchema.ToString();
-                    knownSchemas.Add(writerSchema, writerSchemaString);
                 }
 
                 // Verify schema compatibility (& register as required) + get the 
@@ -105,29 +83,30 @@ namespace Confluent.Kafka.Serialization
                 // slow since writerSchemaString is potentially long. It would be
                 // better to use hash functions based on the writerSchemaString 
                 // object reference, not value.
+
+                writerSchema = data.Schema;
+
                 string subject = this.isKey
                     ? schemaRegistryClient.ConstructKeySubjectName(topic)
                     : schemaRegistryClient.ConstructValueSubjectName(topic);
-                var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
-                if (!registeredSchemas.Contains(subjectSchemaPair))
+  
+                if (!registeredSchemas.ContainsKey(subject))
                 {
-                    // first usage: register/get schema to check compatibility
+                    string writerSchemaString = writerSchema.ToString();
+                    int schemaIdResult;
                     if (autoRegisterSchema)
                     {
-                        schemaIds.Add(
-                            writerSchemaString,
-                            schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                        schemaIdResult = schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).Result;
                     }
                     else
                     {
-                        schemaIds.Add(
-                            writerSchemaString,
-                            schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                        schemaIdResult = schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).Result;
                     }
 
-                    registeredSchemas.Add(subjectSchemaPair);
+                    registeredSchemas.Add(subject, new KeyValuePair<string, int>(writerSchemaString, schemaIdResult));
                 }
-                schemaId = schemaIds[writerSchemaString];
+
+                schemaId = registeredSchemas[subject].Value;
             }
 
             using (var stream = new MemoryStream(initialBufferSize))
