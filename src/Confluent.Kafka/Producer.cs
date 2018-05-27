@@ -279,7 +279,10 @@ namespace Confluent.Kafka
                 modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, object>[] { new KeyValuePair<string, object>("produce.offset.report", "true") });
             }
 
-            modifiedConfig.ToList().ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+            modifiedConfig.ToList().ForEach((kvp) => {
+                if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
+                configHandle.Set(kvp.Key, kvp.Value.ToString());
+            });
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
