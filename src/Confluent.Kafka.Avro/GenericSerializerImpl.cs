@@ -111,18 +111,20 @@ namespace Confluent.Kafka.Serialization
                 var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                 if (!registeredSchemas.Contains(subjectSchemaPair))
                 {
+                    int newSchemaId;
                     // first usage: register/get schema to check compatibility
                     if (autoRegisterSchema)
                     {
-                        schemaIds.Add(
-                            writerSchemaString,
-                            schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                        newSchemaId = schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
                     }
                     else
                     {
-                        schemaIds.Add(
-                            writerSchemaString,
-                            schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                        newSchemaId = schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
+                    }
+
+                    if (!schemaIds.ContainsKey(writerSchemaString))
+                    {
+                        schemaIds.Add(writerSchemaString, newSchemaId);
                     }
 
                     registeredSchemas.Add(subjectSchemaPair);
