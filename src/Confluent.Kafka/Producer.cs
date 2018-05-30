@@ -276,8 +276,12 @@ namespace Confluent.Kafka
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
-                var deliveryCompletionSource = deliveryHandler;
-                var gch = GCHandle.Alloc(deliveryCompletionSource);
+
+                // Note: There is a level of indirection between the GCHandle and
+                // physical memory address. GCHangle.ToIntPtr doesn't get the
+                // physical address, it gets an id that refers to the object via
+                // a handle-table.
+                var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
                 var err = kafkaHandle.Produce(
@@ -287,7 +291,7 @@ namespace Confluent.Kafka
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
-                    ptr, 
+                    ptr,
                     blockIfQueueFull);
                 if (err != ErrorCode.NoError)
                 {
@@ -306,6 +310,7 @@ namespace Confluent.Kafka
                     headers,
                     IntPtr.Zero, 
                     blockIfQueueFull);
+
                 if (err != ErrorCode.NoError)
                 {
                     throw new KafkaException(err);

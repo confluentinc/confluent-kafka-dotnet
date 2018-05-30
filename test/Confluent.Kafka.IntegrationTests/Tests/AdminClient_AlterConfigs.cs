@@ -31,28 +31,19 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test functionality of AdminClient.CreateTopics.
+        ///     Test functionality of AdminClient.DescribeConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async static void AdminClient_CreateTopics(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public async static void AdminClient_AlterConfigs(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            var configResource = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
+            var toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>();
+
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                var newTopics = new List<NewTopic> { new NewTopic { Name = Guid.NewGuid().ToString(), NumPartitions = 24, ReplicationFactor = 1 } };
-
-                List<CreateTopicResult> result;
-                try
-                {
-                    result = await adminClient.CreateTopicsAsync(newTopics);
-                }
-                catch (CreateTopicsException ex)
-                {
-                    foreach (var r in ex.Results.Where(r => r.Error.HasError))
-                    {
-                        Console.WriteLine($"Could not create topic {r.Topic}: {r.Error}");
-                    }
-                }
+                adminClient.AlterConfigsAsync(toUpdate);
             }
         }
     }
 }
+

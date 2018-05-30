@@ -34,22 +34,22 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.CreateTopics.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async static void AdminClient_CreateTopics(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public async static void AdminClient_DeleteTopics(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
                 var newTopics = new List<NewTopic> { new NewTopic { Name = Guid.NewGuid().ToString(), NumPartitions = 24, ReplicationFactor = 1 } };
 
-                List<CreateTopicResult> result;
+                List<DeleteTopicResult> result;
                 try
                 {
-                    result = await adminClient.CreateTopicsAsync(newTopics);
+                    result = await adminClient.DeleteTopicsAsync(new List<string> { "my-topic" });
                 }
                 catch (CreateTopicsException ex)
                 {
                     foreach (var r in ex.Results.Where(r => r.Error.HasError))
                     {
-                        Console.WriteLine($"Could not create topic {r.Topic}: {r.Error}");
+                        Console.WriteLine($"Could not delete topic {r.Topic}: {r.Error}");
                     }
                 }
             }

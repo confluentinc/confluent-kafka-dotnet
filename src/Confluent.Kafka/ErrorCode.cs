@@ -253,6 +253,11 @@ namespace Confluent.Kafka
         /// </summary>
         Local_Underflow = -155,
 
+        /// <summary>
+        ///     Invalid type
+        /// </summary>
+        Local_InvalidType = -154,
+
 
         /// <summary>
         ///     Unknown broker error
