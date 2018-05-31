@@ -126,6 +126,12 @@ namespace Confluent.Kafka.Serialization
                     {
                         schemaIds.Add(writerSchemaString, newSchemaId);
                     }
+                    else if (schemaIds[writerSchemaString] != newSchemaId)
+                    {
+                        schemaIds.Clear();
+                        registeredSchemas.Clear();
+                        throw new KafkaException(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization);
+                    }
 
                     registeredSchemas.Add(subjectSchemaPair);
                 }
