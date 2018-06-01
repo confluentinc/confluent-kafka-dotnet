@@ -144,11 +144,16 @@ public class Program
 ### AvroGen tool
 
 The Avro serializer and deserializer provided by `Confluent.Kafka.Avro` can be used with the `GenericRecord` class
-or with specific classes generated using the `avrogen` tool 
-(available [here](https://github.com/confluentinc/avro/releases/download/v1.7.7.4/avrogen.zip)). Usage:
+or with specific classes generated using the `avrogen` tool, available via Nuget (.NET Core 2.1 required):
 
 ```
-dotnet /path/to/avrogen.dll -s your_schema.asvc .
+dotnet tool install -g Confluent.Apache.Avro.AvroGen
+```
+
+Usage:
+
+```
+avrogen -s your_schema.asvc .
 ```
 
 ### Confluent Cloud
