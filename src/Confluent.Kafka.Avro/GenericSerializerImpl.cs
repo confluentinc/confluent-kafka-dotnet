@@ -130,7 +130,7 @@ namespace Confluent.Kafka.Serialization
                     {
                         schemaIds.Clear();
                         registeredSchemas.Clear();
-                        throw new KafkaException(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization);
+                        throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
                     }
 
                     registeredSchemas.Add(subjectSchemaPair);
