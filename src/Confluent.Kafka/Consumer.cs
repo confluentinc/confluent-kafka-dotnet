@@ -151,7 +151,7 @@ namespace Confluent.Kafka
             modifiedConfig
                 .ToList()
                 .ForEach((kvp) => {
-                    if(kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
+                    if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
                     configHandle.Set(kvp.Key, kvp.Value.ToString());
                 });
 
@@ -162,7 +162,7 @@ namespace Confluent.Kafka
             {
                 defaultTopicConfig.ToList().ForEach(
                     (kvp) => {
-                        if(kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter in 'default.topic.config' must not be null.");
+                        if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter in 'default.topic.config' must not be null.");
                         configHandle.Set(kvp.Key, kvp.Value.ToString());
                     }
                 );

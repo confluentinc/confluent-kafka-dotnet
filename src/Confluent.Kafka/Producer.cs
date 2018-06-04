@@ -440,7 +440,7 @@ namespace Confluent.Kafka
             var configHandle = SafeConfigHandle.Create();
 
             modifiedConfig.ToList().ForEach((kvp) => {
-                if(kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
+                if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
                 configHandle.Set(kvp.Key, kvp.Value.ToString());
             });
 
