@@ -25,34 +25,52 @@ namespace Confluent.Kafka.UnitTests
 {
     public class ConsumerTests
     {
-        /// <summary>
-        ///     Test that the Consumer constructor throws an exception if
-        ///     the group.id configuration parameter is not set and that
-        ///     the message of the exception mentions group.id (i.e. is
-        ///     not some unrelated exception).
-        /// </summary>
         [Fact]
         public void Constuctor()
         {
+            // Throw exception if 'group.id' is not set in config and ensure that exception
+            // mentions 'group.id'.
             var config = new Dictionary<string, object>();
             var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
             Assert.True(e.Message.Contains("group.id"));
             e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
             Assert.True(e.Message.Contains("group.id"));
 
+            // Throw exception if a config value is null and ensure that exception mentions the
+            // respective config key.
+            var configWithNullValue = CreateValidConfiguration();
+            configWithNullValue["sasl.password"] = null;
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
+            Assert.Contains("sasl.password", e.Message);
+
+            // Throw exception if a config value within default.topic.config is null and
+            // ensure that exception mentions the respective config key.
+            var configWithDefaultTopicNullValue = CreateValidConfiguration();
+            configWithDefaultTopicNullValue["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", null } };
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithDefaultTopicNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
+            Assert.Contains("default.topic.config", e.Message);
+            Assert.Contains("auto.offset.reset", e.Message);
+
+            // Throw exception when serializer and deserializer are equal and ensure that exception
+            // message indicates the issue.
             e = Assert.Throws<ArgumentException>(() => 
             {
-                var validConfig = new Dictionary<string, object>
-                {
-                    { "bootstrap.servers", "localhost:9092" },
-                    { "group.id", "my-group" }
-                };
+                var validConfig = CreateValidConfiguration();
                 var deserializer = new StringDeserializer(Encoding.UTF8);
                 var c = new Consumer<string, string>(validConfig, deserializer, deserializer); 
             });
             Assert.True(e.Message.Contains("must not be the same object"));
 
             // positve case covered by integration tests. here, avoiding creating a rd_kafka_t instance.
+        }
+
+        private static Dictionary<string, object> CreateValidConfiguration()
+        {
+            return new Dictionary<string, object>
+            {
+                { "bootstrap.servers", "localhost:9092" },
+                { "group.id", "my-group" }
+            };
         }
     }
 }

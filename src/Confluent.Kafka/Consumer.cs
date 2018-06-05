@@ -819,7 +819,10 @@ namespace Confluent.Kafka
             config
                 .Where(prop => prop.Key != "default.topic.config")
                 .ToList()
-                .ForEach((kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); });
+                .ForEach((kvp) => {
+                    if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
+                    configHandle.Set(kvp.Key, kvp.Value.ToString());
+                });
 
             // Note: Setting default topic configuration properties via default.topic.config is depreciated 
             // and this functionality will be removed in a future version of the library.
@@ -827,7 +830,10 @@ namespace Confluent.Kafka
             if (defaultTopicConfig != null)
             {
                 defaultTopicConfig.ToList().ForEach(
-                    (kvp) => { configHandle.Set(kvp.Key, kvp.Value.ToString()); }
+                    (kvp) => {
+                        if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter in 'default.topic.config' must not be null.");
+                        configHandle.Set(kvp.Key, kvp.Value.ToString());
+                    }
                 );
             }
 
