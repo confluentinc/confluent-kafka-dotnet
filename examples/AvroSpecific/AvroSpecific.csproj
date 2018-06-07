@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj" />
+    <PackageReference Include="Confluent.Kafka.Avro" Version="0.11.4" />
   </ItemGroup>
 
 </Project>

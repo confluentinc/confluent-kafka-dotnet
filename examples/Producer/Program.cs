@@ -20,10 +20,11 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Confluent.Kafka.Serialization;
 
 
-namespace Confluent.Kafka.Examples.AdvancedProducer
+namespace Confluent.Kafka.Examples.Producer
 {
     public class Program
     {
@@ -38,21 +39,6 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
             string brokerList = args[0];
             string topicName = args[1];
 
-            /*
-            // TODO(mhowlett): allow partitioner to be set.
-            var topicConfig = new TopicConfig
-            {
-                CustomPartitioner = (top, key, cnt) =>
-                {
-                    var kt = (key != null) ? Encoding.UTF8.GetString(key, 0, key.Length) : "(null)";
-                    int partition = (key?.Length ?? 0) % cnt;
-                    bool available = top.PartitionAvailable(partition);
-                    Console.WriteLine($"Partitioner topic: {top.Name} key: {kt} partition count: {cnt} -> {partition} {available}");
-                    return partition;
-                }
-            };
-            */
-
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
 
             using (var producer = new Producer<string, string>(config, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
@@ -60,9 +46,9 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
                 Console.WriteLine("\n-----------------------------------------------------------------------");
                 Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");
                 Console.WriteLine("-----------------------------------------------------------------------");
-                Console.WriteLine("To create a kafka message with UTF-8 encoded key/value message:");
+                Console.WriteLine("To create a kafka message with UTF-8 encoded key and value:");
                 Console.WriteLine("> key value<Enter>");
-                Console.WriteLine("To create a kafka message with empty key and UTF-8 encoded value:");
+                Console.WriteLine("To create a kafka message with a null key and UTF-8 encoded value:");
                 Console.WriteLine("> value<enter>");
                 Console.WriteLine("Ctrl-C to quit.\n");
 
@@ -93,8 +79,8 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
                         break;
                     }
 
-                    var key = "";
-                    var val = text;
+                    string key = null;
+                    string val = text;
 
                     // split line if both key and value specified.
                     int index = text.IndexOf(" ");
@@ -104,10 +90,22 @@ namespace Confluent.Kafka.Examples.AdvancedProducer
                         val = text.Substring(index + 1);
                     }
 
-                    var deliveryReport = producer.ProduceAsync(topicName, key, val);
-                    var result = deliveryReport.Result; // synchronously waits for message to be produced.
-                    Console.WriteLine($"Partition: {result.Partition}, Offset: {result.Offset}");
+                    // Calling .Result on the asynchronous produce request below causes it to
+                    // block until it completes. Generally, you should avoid producing
+                    // synchronously because this has a huge impact on throughput. For this
+                    // interactive console example though, it's what we want.
+                    var deliveryReport = producer.ProduceAsync(topicName, key, val).Result;
+                    Console.WriteLine(
+                        deliveryReport.Error.Code == ErrorCode.NoError
+                            ? $"delivered to: {deliveryReport.TopicPartitionOffset}"
+                            : $"failed to deliver message: {deliveryReport.Error.Reason}"
+                    );
                 }
+
+                // Since we are producing synchronously, at this point there will be no messages
+                // in flight and no delivery reports waiting to be acknowledged, so there is no
+                // need to call producer.Flush before disposing the producer, as you typically 
+                // would.
             }
         }
     }
