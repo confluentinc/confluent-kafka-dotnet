@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 catch (CreateTopicsException ex)
                 {
-                    foreach (var r in ex.Results.Where(r => r.Error.HasError))
+                    foreach (var r in ex.Results.Where(r => r.Error.IsError))
                     {
                         Console.WriteLine($"Could not create topic {r.Topic}: {r.Error}");
                     }

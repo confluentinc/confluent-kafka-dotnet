@@ -78,7 +78,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     true if Code != ErrorCode.NoError.
         /// </summary>
-        public bool HasError
+        public bool IsError
             => Code != ErrorCode.NoError;
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace Confluent.Kafka
         ///     The Error value to convert.
         /// </param>
         public static implicit operator bool(Error e)
-            => e.HasError;
+            => e.IsError;
 
         /// <summary>
         ///     Converts the specified Error value to the value of it's Code property.

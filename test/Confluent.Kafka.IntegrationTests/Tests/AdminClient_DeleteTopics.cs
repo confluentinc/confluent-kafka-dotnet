@@ -40,14 +40,13 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var newTopics = new List<NewTopic> { new NewTopic { Name = Guid.NewGuid().ToString(), NumPartitions = 24, ReplicationFactor = 1 } };
 
-                List<DeleteTopicResult> result;
                 try
                 {
-                    result = await adminClient.DeleteTopicsAsync(new List<string> { "my-topic" });
+                    var result = await adminClient.DeleteTopicsAsync(new List<string> { "my-topic" });
                 }
                 catch (CreateTopicsException ex)
                 {
-                    foreach (var r in ex.Results.Where(r => r.Error.HasError))
+                    foreach (var r in ex.Results.Where(r => r.Error.IsError))
                     {
                         Console.WriteLine($"Could not delete topic {r.Topic}: {r.Error}");
                     }

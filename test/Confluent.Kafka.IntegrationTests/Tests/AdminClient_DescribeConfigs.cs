@@ -78,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
                 catch (DescribeConfigsException ex)
                 {
-                    var inError = ex.Results.Where(r => r.Error.HasError);
+                    var inError = ex.Results.Where(r => r.Error.IsError);
                 }
 
     /*
