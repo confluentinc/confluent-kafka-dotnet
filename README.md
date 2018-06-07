@@ -151,6 +151,10 @@ Usage:
 avrogen -s your_schema.asvc .
 ```
 
+### Confluent Cloud
+
+The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
+
 
 ## Build
 
