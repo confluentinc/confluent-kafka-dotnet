@@ -39,8 +39,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var topic = Guid.NewGuid().ToString();
             var topic2 = Guid.NewGuid().ToString();
 
-            Message<Null, GenericRecord> dr;
-            Message<Null, GenericRecord> dr2;
+            DeliveryReport<Null, GenericRecord> dr;
+            DeliveryReport<Null, GenericRecord> dr2;
 
             using (var p = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
             {
@@ -48,8 +48,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, null, record).Result;
-                dr2 = p.ProduceAsync(topic2, null, record).Result;
+                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr2 = p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
             }
 
             Assert.Null(dr.Key);

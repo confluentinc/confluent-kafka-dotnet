@@ -34,26 +34,39 @@ namespace Confluent.Kafka.Examples.MultiProducer
     {
         public static void Main(string[] args)
         {
+            // TODO: this is now done via shared handles, not SerializingProducer.
+            
+            /*
             var config = new Dictionary<string, object> { { "bootstrap.servers", args[0] } };
 
-            using (var producer1 = new Producer<string, string>(config, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
-            using (var producer2 = new Producer<Null, int>(producer1.Handle, null, new IntSerializer()))
+            using (var producer = new Producer(config))
             {
+                // sProducer1 is a lightweight wrapper around a Producer instance that adds
+                // (string, string) serialization. Note that sProducer1 does not need to be
+                // (and cannot be) disposed.
+                var sProducer1 = producer.GetSerializingProducer<string, string>(new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8));
+
+                // sProducer2 is another lightweight wrapper around kafkaProducer that adds
+                // (null, int) serialization. When you do not wish to write any data to a key
+                // or value, the Null type should be used.
+                var sProducer2 = producer.GetSerializingProducer<Null, int>(new NullSerializer(), new IntSerializer());
+
                 // write (string, string) data to topic "first-topic", statically type checked.
-                producer1.ProduceAsync("first-topic", new Message<string, string> { Key = "my-key-value", Value = "my-value" });
+                sProducer1.ProduceAsync("first-topic", "my-key-value", "my-value");
 
                 // write (null, int) data to topic "second-data". statically type checked, using
-                // the same underlying librdkafka handle as producer1.
-                producer2.ProduceAsync("second-topic", new Message<Null, int> { Value = 42 });
+                // the same underlying producer as the producer1.
+                sProducer2.ProduceAsync("second-topic", null, 42);
 
                 // producers are NOT tied to topics. Although it's unusual that you might want to
                 // do so, you can use different serializing producers to write to the same topic.
-                producer2.ProduceAsync("first-topic", new Message<Null, int> { Value = 107 });
+                sProducer2.ProduceAsync("first-topic", null, 107);
 
                 // ProducerAsync tasks are not waited on - there is a good chance they are still
                 // in flight.
-                producer1.Flush(TimeSpan.FromSeconds(10));
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
+            */
         }
     }
 }
