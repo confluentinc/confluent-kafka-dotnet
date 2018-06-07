@@ -38,7 +38,6 @@ namespace Confluent.Kafka.IntegrationTests
         {
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                var configResource = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
 
                 // try
                 // {
@@ -65,20 +64,27 @@ namespace Confluent.Kafka.IntegrationTests
                     
                 // }
 
-                var d = new Dictionary<string, string>();
-                
+                List<DescribeConfigResult> results;
                 try
                 {
-                    var results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
-
-                    foreach (var r in results)
-                    {
-                        Console.WriteLine($"configs: {r.Entries["sdf"]}");
-                    }
+                    var configResource = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
+                    results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
                 }
                 catch (DescribeConfigsException ex)
                 {
-                    var inError = ex.Results.Where(r => r.Error.IsError);
+                    results = ex.Results;
+                }
+
+                foreach (var r in results)
+                {
+                    if (r.Error.IsError)
+                    {
+                        Console.WriteLine($"had error");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"configs: {r.Entries["sdf"]}");
+                    }
                 }
 
     /*

@@ -24,6 +24,8 @@ namespace Confluent.Kafka.Admin
     /// </summary>
     public class NewPartitions
     {
+        public string Topic { get; set; }
+        
         /// <summary>
         ///     The replica assignments for the new partitions, or null if the assignment
         ///     will be done by the controller.

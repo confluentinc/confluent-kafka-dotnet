@@ -20,12 +20,13 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
-    public class DeleteTopicsException : KafkaException
+    public class DeleteTopicsException : Exception
     {
-        public DeleteTopicsException(Error error)
-            : base(error)
-        {}
+        public DeleteTopicsException(List<DeleteTopicResult> results)
+        {
+            Results = results;
+        }
         
-        public List<DeleteTopicResult> Results { get; set; }
+        public List<DeleteTopicResult> Results { get; }
     }
 }

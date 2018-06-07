@@ -25,13 +25,6 @@ namespace Confluent.Kafka.Admin
     public class DeleteTopicsOptions
     {
         /// <summary>
-        ///     If true, the request should be validated only without creating the topic.
-        /// 
-        ///     Default: false
-        /// </summary>
-        public bool ValidateOnly { get; set; } = false;
-
-        /// <summary>
         ///     The request timeout in milliseconds for this operation or null if the
         ///     default request timeout for the AdminClient should be used.
         /// 

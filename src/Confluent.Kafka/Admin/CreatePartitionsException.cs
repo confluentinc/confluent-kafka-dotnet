@@ -20,12 +20,13 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
-    public class CreatePartitionsException : KafkaException
+    public class CreatePartitionsException : Exception
     {
-        public CreatePartitionsException(Error error)
-            : base(error)
-        {}
+        public CreatePartitionsException(List<CreatePartitionResult> results)
+        {
+            Results = results;
+        }
         
-        public List<CreatePartitionResult> Results { get; set; }
+        public List<CreatePartitionResult> Results { get; }
     }
 }

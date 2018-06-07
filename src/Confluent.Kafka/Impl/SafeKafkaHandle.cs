@@ -1009,7 +1009,7 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
-            options = options == null ? new AlterConfigsOptions {} : options;
+            options = options == null ? new AlterConfigsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.AlterConfigs);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
@@ -1051,7 +1051,7 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
-            options = options == null ? new DescribeConfigsOptions {} : options;
+            options = options == null ? new DescribeConfigsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.DescribeConfigs);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
@@ -1075,14 +1075,14 @@ namespace Confluent.Kafka.Impl
         }
 
         internal void CreatePartitions(
-            IDictionary<string, NewPartitions> newPartitions,
+            IEnumerable<NewPartitions> newPartitions,
             CreatePartitionsOptions options,
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
             var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
 
-            options = options == null ? new CreatePartitionsOptions {} : options;
+            options = options == null ? new CreatePartitionsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.CreatePartitions);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
@@ -1092,22 +1092,23 @@ namespace Confluent.Kafka.Impl
             int newPartitionsIdx = 0;
             foreach (var newPartitionsForTopic in newPartitions)
             {
-                var topic = newPartitionsForTopic.Key;
-                var partitionsSpec = newPartitionsForTopic.Value;
+                var topic = newPartitionsForTopic.Topic;
+                var increaseTo = newPartitionsForTopic.IncreaseTo;
+                var assignments = newPartitionsForTopic.Assignments;
 
-                IntPtr ptr = LibRdKafka.NewPartitions_new(topic, (UIntPtr)partitionsSpec.IncreaseTo, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+                IntPtr ptr = LibRdKafka.NewPartitions_new(topic, (UIntPtr)increaseTo, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                 if (ptr == IntPtr.Zero)
                 {
                     throw new KafkaException(new Error(ErrorCode.Unknown, errorStringBuilder.ToString()));
                 }
 
-                if (partitionsSpec.Assignments != null)
+                if (assignments != null)
                 {
                     int assignmentsCount = 0;
-                    foreach (var assignment in partitionsSpec.Assignments)
+                    foreach (var assignment in assignments)
                     {
                         errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
-                        var brokerIds = partitionsSpec.Assignments[assignmentsCount].ToArray();
+                        var brokerIds = assignments[assignmentsCount].ToArray();
                         var errorCode = LibRdKafka.NewPartitions_set_replica_assignment(
                             ptr,
                             assignmentsCount,
@@ -1141,9 +1142,8 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
-            options = options == null ? new DeleteTopicsOptions {} : options;
+            options = options == null ? new DeleteTopicsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.DeleteTopics);
-            setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
@@ -1156,7 +1156,7 @@ namespace Confluent.Kafka.Impl
                 idx += 1;
             }
 
-            // LibRdKafka.DeleteTopics(handle, deleteTopicsPtrs, (UIntPtr)deleteTopicsPtrs.Length, optionsPtr, resultQueuePtr);
+            LibRdKafka.DeleteTopics(handle, deleteTopicsPtrs, (UIntPtr)deleteTopicsPtrs.Length, optionsPtr, resultQueuePtr);
 
             foreach (var deleteTopicPtr in deleteTopicsPtrs)
             {
@@ -1174,7 +1174,7 @@ namespace Confluent.Kafka.Impl
         {
             var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
 
-            options = options == null ? new CreateTopicsOptions {} : options;
+            options = options == null ? new CreateTopicsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.CreateTopics);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);

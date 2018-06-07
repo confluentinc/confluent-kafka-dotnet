@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
@@ -34,24 +35,59 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.CreateTopics.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async static void AdminClient_DeleteTopics(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void AdminClient_DeleteTopics(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            var topicName1 = Guid.NewGuid().ToString();
+            var topicName2 = Guid.NewGuid().ToString();
+            var topicName3 = Guid.NewGuid().ToString();
+            
+            // test single delete topic.
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                var newTopics = new List<NewTopic> { new NewTopic { Name = Guid.NewGuid().ToString(), NumPartitions = 24, ReplicationFactor = 1 } };
+                var cResult = adminClient.CreateTopicsAsync(
+                    new List<NewTopic> { new NewTopic { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                
+                Assert.Single(cResult);
+                Assert.False(cResult.First().Error.IsError);
 
+                Thread.Sleep(TimeSpan.FromSeconds(2)); // git the topic some time to be created.
+                var dResult = adminClient.DeleteTopicsAsync(new List<string> { topicName1 }).Result;
+
+                Assert.Single(dResult);
+                Assert.False(dResult.First().Error.IsError);
+                Assert.Equal(topicName1, dResult.First().Topic);
+            }
+
+            // test 
+            //  - delete two topics, one that doesn't exist.
+            //  - check that explicitly giving options doesn't obviouslyn ot work.
+            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            {
+                var cResult = adminClient.CreateTopicsAsync(
+                    new List<NewTopic> { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                
+                Assert.Single(cResult);
+                Assert.False(cResult.First().Error.IsError);
+
+                Thread.Sleep(TimeSpan.FromSeconds(2));
                 try
                 {
-                    var result = await adminClient.DeleteTopicsAsync(new List<string> { "my-topic" });
+                    var dResult = adminClient.DeleteTopicsAsync(
+                        new List<string> { topicName2, topicName3 },
+                        new DeleteTopicsOptions { Timeout = TimeSpan.FromSeconds(30) }
+                    ).Result;
                 }
-                catch (CreateTopicsException ex)
+                catch (AggregateException ex)
                 {
-                    foreach (var r in ex.Results.Where(r => r.Error.IsError))
-                    {
-                        Console.WriteLine($"Could not delete topic {r.Topic}: {r.Error}");
-                    }
+                    var dte = (DeleteTopicsException) ex.InnerException;
+                    Assert.Equal(2, dte.Results.Count);
+                    Assert.Single(dte.Results.Where(r => r.Error.IsError));
+                    Assert.Single(dte.Results.Where(r => !r.Error.IsError));
+                    Assert.Equal(topicName2, dte.Results.Where(r => !r.Error.IsError).First().Topic);
+                    Assert.Equal(topicName3, dte.Results.Where(r => r.Error.IsError).First().Topic);
                 }
             }
+
         }
     }
 }

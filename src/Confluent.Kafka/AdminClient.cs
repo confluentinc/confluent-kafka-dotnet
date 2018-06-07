@@ -38,18 +38,18 @@ namespace Confluent.Kafka
 
         private IntPtr resultQueue = IntPtr.Zero;
 
-        private Dictionary<string, Error> extractTopicResults(IntPtr topicResultsPtr, int topicResultsCount)
+        private List<CreateTopicResult> extractTopicResults(IntPtr topicResultsPtr, int topicResultsCount)
         {
             IntPtr[] topicResultsPtrArr = new IntPtr[topicResultsCount];
             Marshal.Copy(topicResultsPtr, topicResultsPtrArr, 0, topicResultsCount);
 
-            var topicResults = topicResultsPtrArr.Select(topicResultPtr => new { 
-                Name = PtrToStringUTF8(LibRdKafka.topic_result_name(topicResultPtr)),
-                ErrorCode = LibRdKafka.topic_result_error(topicResultPtr),
-                ErrorReason = PtrToStringUTF8(LibRdKafka.topic_result_error_string(topicResultPtr))
-            });
-            
-            return topicResults.ToDictionary(x => x.Name, x => new Error(x.ErrorCode, x.ErrorReason));
+            return topicResultsPtrArr.Select(topicResultPtr => new CreateTopicResult 
+                {
+                    Topic = PtrToStringUTF8(LibRdKafka.topic_result_name(topicResultPtr)),
+                    Error = new Error(
+                        LibRdKafka.topic_result_error(topicResultPtr), 
+                        PtrToStringUTF8(LibRdKafka.topic_result_error_string(topicResultPtr)))
+                }).ToList();
         }
 
         private ConfigEntry extractConfigEntry(IntPtr configEntryPtr)
@@ -150,12 +150,21 @@ namespace Confluent.Kafka
                                     {
                                         if (errorCode != ErrorCode.NoError)
                                         {
-                                            ((TaskCompletionSource<Dictionary<string, Error>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                            ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
                                             return;
                                         }
-                                        ((TaskCompletionSource<Dictionary<string, Error>>)adminClientResult).SetResult(
-                                            extractTopicResults(
-                                                LibRdKafka.CreateTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr));
+                                        
+                                        var result = extractTopicResults(
+                                            LibRdKafka.CreateTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr);
+
+                                        if (result.Any(r => r.Error.IsError))
+                                        {
+                                            ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new CreateTopicsException(result));
+                                        }
+                                        else
+                                        {
+                                            ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetResult(result);
+                                        }
                                     }
                                     break;
 
@@ -163,12 +172,22 @@ namespace Confluent.Kafka
                                     {
                                         if (errorCode != ErrorCode.NoError)
                                         {
-                                            ((TaskCompletionSource<Dictionary<string, Error>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                            ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
                                             return;
                                         }
-                                        ((TaskCompletionSource<Dictionary<string, Error>>)adminClientResult).SetResult(
-                                            extractTopicResults(
-                                                LibRdKafka.DeleteTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr));
+
+                                        var result = extractTopicResults(
+                                            LibRdKafka.DeleteTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
+                                                .Select(r => new DeleteTopicResult { Topic = r.Topic, Error = r.Error }).ToList();
+
+                                        if (result.Any(r => r.Error.IsError))
+                                        {
+                                            ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new DeleteTopicsException(result));
+                                        }
+                                        else
+                                        {
+                                            ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetResult(result);
+                                        }
                                     }
                                     break;
 
@@ -176,12 +195,22 @@ namespace Confluent.Kafka
                                     {
                                         if (errorCode != ErrorCode.NoError)
                                         {
-                                            ((TaskCompletionSource<Dictionary<string, Error>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                            ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
                                             return;
                                         }
-                                        ((TaskCompletionSource<Dictionary<string, Error>>)adminClientResult).SetResult(
-                                            extractTopicResults(
-                                                LibRdKafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr));
+
+                                        var result = extractTopicResults(
+                                                LibRdKafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
+                                                    .Select(r => new CreatePartitionResult { Topic = r.Topic, Error = r.Error }).ToList();
+
+                                        if (result.Any(r => r.Error.IsError))
+                                        {
+                                            ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
+                                        }
+                                        else
+                                        {
+                                            ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetResult(result);
+                                        }
                                     }
                                     break;
 
@@ -356,10 +385,10 @@ namespace Confluent.Kafka
         ///     The options to use when creating the partitions.
         /// </param>
         /// <returns></returns>
-        public Task<List<CreatePartitionResult>> CreatePartitionsAsync(IDictionary<string, NewPartitions> newPartitions, CreatePartitionsOptions options = null)
+        public Task<List<CreatePartitionResult>> CreatePartitionsAsync(IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
-            // List<Task<CreatePartitionResult>> CreatePartitionsAsync(IDictionary<string, NewPartitions> newPartitions, CreatePartitionsOptions options = null)
+            // List<Task<CreatePartitionResult>> CreatePartitionsConcurrent(IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
 
             var completionSource = new TaskCompletionSource<List<CreatePartitionResult>>();
             var gch = GCHandle.Alloc(completionSource);

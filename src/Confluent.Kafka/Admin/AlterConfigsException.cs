@@ -20,12 +20,13 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
-    public class AlterConfigsException : KafkaException
+    public class AlterConfigsException : Exception
     {
-        public AlterConfigsException(Error error)
-            : base(error)
-        {}
+        public AlterConfigsException(List<AlterConfigResult> results)
+        {
+            Results = results;
+        }
         
-        public List<AlterConfigResult> Results { get; set; }
+        public List<AlterConfigResult> Results { get; }
     }
 }
