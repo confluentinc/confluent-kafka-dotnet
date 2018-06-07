@@ -1010,7 +1010,7 @@ namespace Confluent.Kafka.Impl
             IntPtr completionSourcePtr)
         {
             options = options == null ? new AlterConfigsOptions {} : options;
-            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle);
+            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.AlterConfigs);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
@@ -1025,7 +1025,8 @@ namespace Confluent.Kafka.Impl
                 var resourcePtr = LibRdKafka.ConfigResource_new(resource.ResourceType, resource.Name);
                 foreach (var rc in resourceConfig)
                 {
-                    var errorCode = LibRdKafka.ConfigResource_add_config(resourcePtr, rc.Name, rc.Value);
+                    // TODO: or add_config?
+                    var errorCode = LibRdKafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
                     if (errorCode != ErrorCode.NoError)
                     {
                         throw new KafkaException(errorCode);
@@ -1051,7 +1052,7 @@ namespace Confluent.Kafka.Impl
             IntPtr completionSourcePtr)
         {
             options = options == null ? new DescribeConfigsOptions {} : options;
-            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle);
+            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.DescribeConfigs);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
@@ -1079,8 +1080,10 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
+
             options = options == null ? new CreatePartitionsOptions {} : options;
-            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle);
+            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.CreatePartitions);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
@@ -1092,14 +1095,18 @@ namespace Confluent.Kafka.Impl
                 var topic = newPartitionsForTopic.Key;
                 var partitionsSpec = newPartitionsForTopic.Value;
 
-                IntPtr ptr = LibRdKafka.NewPartitions_new(topic, (UIntPtr)partitionsSpec.IncreaseTo);
+                IntPtr ptr = LibRdKafka.NewPartitions_new(topic, (UIntPtr)partitionsSpec.IncreaseTo, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+                if (ptr == IntPtr.Zero)
+                {
+                    throw new KafkaException(new Error(ErrorCode.Unknown, errorStringBuilder.ToString()));
+                }
 
                 if (partitionsSpec.Assignments != null)
                 {
                     int assignmentsCount = 0;
                     foreach (var assignment in partitionsSpec.Assignments)
                     {
-                        var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
+                        errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
                         var brokerIds = partitionsSpec.Assignments[assignmentsCount].ToArray();
                         var errorCode = LibRdKafka.NewPartitions_set_replica_assignment(
                             ptr,
@@ -1135,7 +1142,7 @@ namespace Confluent.Kafka.Impl
             IntPtr completionSourcePtr)
         {
             options = options == null ? new DeleteTopicsOptions {} : options;
-            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle);
+            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.DeleteTopics);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
@@ -1165,8 +1172,10 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
+
             options = options == null ? new CreateTopicsOptions {} : options;
-            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle);
+            IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.CreateTopics);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
             setOption_Timeout(optionsPtr, options.Timeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
@@ -1183,13 +1192,18 @@ namespace Confluent.Kafka.Impl
                 IntPtr newTopicPtr = LibRdKafka.NewTopic_new(
                     newTopic.Name, 
                     (IntPtr)newTopic.NumPartitions, 
-                    (IntPtr)newTopic.ReplicationFactor);
+                    (IntPtr)newTopic.ReplicationFactor,
+                    errorStringBuilder, 
+                    (UIntPtr)errorStringBuilder.Capacity);
+                if (newTopicPtr == IntPtr.Zero)
+                {
+                    throw new KafkaException(new Error(ErrorCode.Unknown, errorStringBuilder.ToString()));
+                }
 
                 if (newTopic.ReplicasAssignments != null)
                 {
                     foreach (var replicAssignment in newTopic.ReplicasAssignments)
                     {
-                        var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
                         var partition = replicAssignment.Key;
                         var brokerIds = replicAssignment.Value.ToArray();
                         var errorCode = LibRdKafka.NewTopic_set_replica_assignment(
@@ -1207,7 +1221,7 @@ namespace Confluent.Kafka.Impl
                 {   
                     foreach (var config in newTopic.Configs)
                     {
-                        LibRdKafka.NewTopic_add_config(newTopicPtr, config.Key, config.Value);
+                        LibRdKafka.NewTopic_set_config(newTopicPtr, config.Key, config.Value);
                     }
                 }
 

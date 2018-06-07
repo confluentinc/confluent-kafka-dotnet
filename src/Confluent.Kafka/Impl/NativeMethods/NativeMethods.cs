@@ -375,7 +375,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         //
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_AdminOptions_new(IntPtr rk);
+        internal static extern IntPtr rd_kafka_AdminOptions_new(IntPtr rk, LibRdKafka.AdminOp op);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_AdminOptions_destroy(IntPtr options);
@@ -425,7 +425,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_NewTopic_new(
                         [MarshalAs(UnmanagedType.LPStr)] string topic,
                         IntPtr num_partitions,
-                        IntPtr replication_factor);
+                        IntPtr replication_factor,
+                        StringBuilder errstr,
+                        UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_NewTopic_destroy(
@@ -441,7 +443,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_NewTopic_add_config(
+        internal static extern ErrorCode rd_kafka_NewTopic_set_config(
                         IntPtr new_topic,
                         [MarshalAs(UnmanagedType.LPStr)] string name,
                         [MarshalAs(UnmanagedType.LPStr)] string value);
@@ -489,7 +491,8 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewPartitions_new(
                 [MarshalAs(UnmanagedType.LPStr)] string topic, 
-                UIntPtr new_total_cnt);
+                UIntPtr new_total_cnt,
+                StringBuilder errstr, UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_NewPartitions_destroy(
@@ -576,6 +579,17 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
                 [MarshalAs(UnmanagedType.LPStr)] string name, 
                 [MarshalAs(UnmanagedType.LPStr)] string value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_ConfigResource_set_config(
+                /* rd_kafka_ConfigResource_t * */ IntPtr config,
+                [MarshalAs(UnmanagedType.LPStr)] string name, 
+                [MarshalAs(UnmanagedType.LPStr)] string value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_ConfigResource_delete_config(
+                /* rd_kafka_ConfigResource_t * */ IntPtr config,
+                [MarshalAs(UnmanagedType.LPStr)] string name);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigEntry_t ** */ IntPtr rd_kafka_ConfigResource_configs(

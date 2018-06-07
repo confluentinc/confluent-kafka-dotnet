@@ -35,6 +35,16 @@ namespace Confluent.Kafka.Impl
 {
     internal static class LibRdKafka
     {
+        internal enum AdminOp
+        {
+            Any = 0,
+            CreateTopics = 1,
+            DeleteTopics = 2,
+            CreatePartitions=  3,
+            AlterConfigs = 4,
+            DescribeConfigs = 5
+        }
+
         public enum EventType : int
         {
             None = 0x0,
@@ -198,7 +208,7 @@ namespace Confluent.Kafka.Impl
             _event_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_event_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _queue_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_queue_poll").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             
-            _AdminOptions_new = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_new").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _AdminOptions_new = (Func<IntPtr, AdminOp, IntPtr>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_new").Single().CreateDelegate(typeof(Func<IntPtr, AdminOp, IntPtr>));
             _AdminOptions_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _AdminOptions_set_request_timeout = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_set_request_timeout").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_operation_timeout = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_set_operation_timeout").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
@@ -207,11 +217,11 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_broker = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_set_broker").Single().CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_opaque = (Action<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_AdminOptions_set_opaque").Single().CreateDelegate(typeof(Action<IntPtr, IntPtr>));
 
-            _NewTopic_new = (Func<string, IntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_NewTopic_new").Single().CreateDelegate(typeof(Func<string, IntPtr, IntPtr, IntPtr>));
+            _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_NewTopic_new").Single().CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewTopic_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_NewTopic_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
 
             _NewTopic_set_replica_assignment = (Func<IntPtr, int, int[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_NewTopic_set_replica_assignment").Single().CreateDelegate(typeof(Func<IntPtr, int, int[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>));
-            _NewTopic_add_config = (Func<IntPtr, string, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_NewTopic_add_config").Single().CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
+            _NewTopic_set_config = (Func<IntPtr, string, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_NewTopic_set_config").Single().CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
 
             _CreateTopics = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_CreateTopics").Single().CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _CreateTopics_result_topics = (_CreateTopics_result_topics_delegate)methods.Where(m => m.Name == "rd_kafka_CreateTopics_result_topics").Single().CreateDelegate(typeof(_CreateTopics_result_topics_delegate));
@@ -222,7 +232,7 @@ namespace Confluent.Kafka.Impl
             _DeleteTopics = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_DeleteTopics").Single().CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DeleteTopics_result_topics = (_DeleteTopics_result_topics_delegate)methods.Where(m => m.Name == "rd_kafka_DeleteTopics_result_topics").Single().CreateDelegate(typeof(_DeleteTopics_result_topics_delegate));
 
-            _NewPartitions_new = (Func<string, UIntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_NewPartitions_new").Single().CreateDelegate(typeof(Func<string, UIntPtr, IntPtr>));
+            _NewPartitions_new = (Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_NewPartitions_new").Single().CreateDelegate(typeof(Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewPartitions_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_NewPartitions_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _NewPartitions_set_replica_assignment = (Func<IntPtr, int, int[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_NewPartitions_set_replica_assignment").Single().CreateDelegate(typeof(Func<IntPtr, int, int[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>));
 
@@ -244,6 +254,8 @@ namespace Confluent.Kafka.Impl
             _ConfigResource_new = (Func<ConfigType, string, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_new").Single().CreateDelegate(typeof(Func<ConfigType, string, IntPtr>));
             _ConfigResource_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _ConfigResource_add_config = (Func<IntPtr, string, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_add_config").Single().CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
+            _ConfigResource_set_config = (Func<IntPtr, string, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_set_config").Single().CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
+            _ConfigResource_delete_config = (Func<IntPtr, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_delete_config").Single().CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
             _ConfigResource_configs = (_ConfigResource_configs_delegate)methods.Where(m => m.Name == "rd_kafka_ConfigResource_configs").Single().CreateDelegate(typeof(_ConfigResource_configs_delegate));
 
             _ConfigResource_type = (Func<IntPtr, ConfigType>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_type").Single().CreateDelegate(typeof(Func<IntPtr, ConfigType>));
@@ -846,8 +858,8 @@ namespace Confluent.Kafka.Impl
         // Admin API
         //
 
-        private static Func<IntPtr, IntPtr> _AdminOptions_new;
-        internal static IntPtr AdminOptions_new(IntPtr rk) => _AdminOptions_new(rk);
+        private static Func<IntPtr, AdminOp, IntPtr> _AdminOptions_new;
+        internal static IntPtr AdminOptions_new(IntPtr rk, AdminOp op) => _AdminOptions_new(rk, op);
 
         private static Action<IntPtr> _AdminOptions_destroy;
         internal static void AdminOptions_destroy(IntPtr options) => _AdminOptions_destroy(options);
@@ -893,11 +905,13 @@ namespace Confluent.Kafka.Impl
             IntPtr opaque) => _AdminOptions_set_opaque(options, opaque);
 
 
-        private static Func<string, IntPtr, IntPtr, IntPtr> _NewTopic_new;
+        private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
                         string topic,
                         IntPtr num_partitions,
-                        IntPtr replication_factor) => _NewTopic_new(topic, num_partitions, replication_factor);
+                        IntPtr replication_factor,
+                        StringBuilder errstr,
+                        UIntPtr errstr_size) => _NewTopic_new(topic, num_partitions, replication_factor, errstr, errstr_size);
 
         private static Action<IntPtr> _NewTopic_destroy;
         internal static void NewTopic_destroy(IntPtr new_topic) => _NewTopic_destroy(new_topic);
@@ -911,11 +925,11 @@ namespace Confluent.Kafka.Impl
             StringBuilder errstr,
             UIntPtr errstr_size) => _NewTopic_set_replica_assignment(new_topic, partition, broker_ids, broker_id_cnt, errstr, errstr_size);
 
-        private static Func<IntPtr, string, string, ErrorCode> _NewTopic_add_config;
-        internal static ErrorCode NewTopic_add_config(
+        private static Func<IntPtr, string, string, ErrorCode> _NewTopic_set_config;
+        internal static ErrorCode NewTopic_set_config(
                         IntPtr new_topic,
                         string name,
-                        string value) => _NewTopic_add_config(new_topic, name, value);
+                        string value) => _NewTopic_set_config(new_topic, name, value);
 
 
         private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _CreateTopics;
@@ -960,10 +974,12 @@ namespace Confluent.Kafka.Impl
         ) => _DeleteTopics_result_topics(result, out cntp);
 
 
-        private static Func<string, UIntPtr, IntPtr> _NewPartitions_new;
+        private static Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr> _NewPartitions_new;
         internal static IntPtr NewPartitions_new(
                 string topic, 
-                UIntPtr new_total_cnt) => _NewPartitions_new(topic, new_total_cnt);
+                UIntPtr new_total_cnt,
+                StringBuilder errstr, UIntPtr errstr_size
+                ) => _NewPartitions_new(topic, new_total_cnt, errstr, errstr_size);
 
         private static Action<IntPtr> _NewPartitions_destroy;
         internal static void NewPartitions_destroy(
@@ -1052,6 +1068,17 @@ namespace Confluent.Kafka.Impl
                 IntPtr config,
                 string name, 
                 string value) => _ConfigResource_add_config(config, name, value);
+
+        private static Func<IntPtr, string, string, ErrorCode> _ConfigResource_set_config;
+        internal static ErrorCode ConfigResource_set_config(
+                IntPtr config,
+                string name, 
+                string value) => _ConfigResource_set_config(config, name, value);
+
+        private static Func<IntPtr, string, ErrorCode> _ConfigResource_delete_config;
+        internal static ErrorCode ConfigResource_delete_config(
+                IntPtr config,
+                string name) => _ConfigResource_delete_config(config, name);
 
         private delegate IntPtr _ConfigResource_configs_delegate(IntPtr config, out UIntPtr cntp);
         private static _ConfigResource_configs_delegate _ConfigResource_configs;
