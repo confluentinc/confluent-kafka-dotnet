@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <AssemblyName>Producer</AssemblyName>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="0.11.4" />
+    <PackageReference Include="Confluent.Kafka" Version="1.0-experimental-3" />
   </ItemGroup>
   
 </Project>
