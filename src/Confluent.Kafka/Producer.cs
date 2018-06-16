@@ -140,11 +140,11 @@ namespace Confluent.Kafka
             if (OnLog == null)
             {
                 // Log to stderr by default if no logger is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
+                Loggers.ConsoleLogger(this, new LogMessage(name, LogLevel.Error, fac, buf));
                 return;
             }
 
-            OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
+            OnLog.Invoke(this, new LogMessage(name, LogLevel.Error, fac, buf));
         }
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
