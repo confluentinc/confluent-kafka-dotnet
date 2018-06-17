@@ -24,7 +24,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates a Kafka timestamp and its type.
     /// </summary>
-    public struct Timestamp
+    public struct Timestamp : IEquatable<Timestamp>
     {
         private const long RD_KAFKA_NO_TIMESTAMP = 0;
 
@@ -134,14 +134,25 @@ namespace Confluent.Kafka
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is Timestamp))
+            if (obj is Timestamp ts)
             {
-                return false;
+                return Equals(ts);
             }
 
-            var ts = (Timestamp)obj;
-            return ts.Type == Type && ts.UnixTimestampMs == UnixTimestampMs;
+            return false;
         }
+
+        /// <summary>
+        ///     Determines whether two Timestamps have the same value.
+        /// </summary>
+        /// <param name="other">
+        ///     The timestamp to test.
+        /// </param>
+        /// <returns>
+        ///     true if other has the same value. false otherwise.
+        /// </returns>
+        public bool Equals(Timestamp other)
+            => other.Type == Type && other.UnixTimestampMs == UnixTimestampMs;
 
         /// <summary>
         ///     Returns the hashcode for this Timestamp.
