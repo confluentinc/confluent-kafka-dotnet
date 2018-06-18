@@ -67,11 +67,11 @@ namespace Confluent.Kafka
             if (OnLog == null)
             {
                 // A stderr logger is used by default if none is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, SysLogLevel.Error, fac, buf));
+                Loggers.ConsoleLogger(this, new LogMessage(name, SyslogLevel.Error, fac, buf));
                 return;
             }
 
-            OnLog?.Invoke(this, new LogMessage(name, SysLogLevel.Error, fac, buf));
+            OnLog?.Invoke(this, new LogMessage(name, SyslogLevel.Error, fac, buf));
         }
 
         private LibRdKafka.RebalanceDelegate rebalanceDelegate;

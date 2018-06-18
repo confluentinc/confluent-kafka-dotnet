@@ -3,7 +3,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///  Represents enumeration with levels comming from syslog(3)
     /// </summary>
-    public enum SysLogLevel
+    public enum SyslogLevel
     {
         /// <summary>
         ///  debug-level message
