@@ -231,9 +231,18 @@ namespace Confluent.Kafka
             Int32? partition, bool blockIfQueueFull
         )
         {
-            var deliveryCompletionSource = new TaskDeliveryHandler();
-            Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
-            return deliveryCompletionSource.Task;
+            if (!this.disableDeliveryReports)
+            {
+                var deliveryCompletionSource = new TaskDeliveryHandler();
+                Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, deliveryCompletionSource);
+                return deliveryCompletionSource.Task;
+            }
+            else
+            {
+                Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition != null ? partition.Value : RD_KAFKA_PARTITION_UA, blockIfQueueFull, null);
+                var message = new Message(topic, -1, -1, key, val, new Timestamp(DateTime.UtcNow, TimestampType.NotAvailable), new Error(ErrorCode.NoError));
+                return Task.FromResult(message);
+            }
         }
 
         /// <summary>
