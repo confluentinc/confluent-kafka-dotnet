@@ -133,18 +133,18 @@ namespace Confluent.Kafka
         }
 
         private LibRdKafka.LogDelegate logDelegate;
-        private void LogCallback(IntPtr rk, int level, string fac, string buf)
+        private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
 
             if (OnLog == null)
             {
                 // Log to stderr by default if no logger is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, SyslogLevel.Error, fac, buf));
+                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
                 return;
             }
 
-            OnLog.Invoke(this, new LogMessage(name, SyslogLevel.Error, fac, buf));
+            OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
