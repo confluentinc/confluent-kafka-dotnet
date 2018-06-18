@@ -3,39 +3,39 @@ namespace Confluent.Kafka
     /// <summary>
     ///  Represents enumeration with levels comming from syslog(3)
     /// </summary>
-    public enum LogLevel
+    public enum SysLogLevel
     {
         /// <summary>
         ///  debug-level message
         /// </summary>
-        Debug,
+        Debug = 7,
         /// <summary>
         ///  informational message
         /// </summary>
-        Info,
+        Info = 6,
         /// <summary>
         ///  normal, but significant condition
         /// </summary>
-        Notice,
+        Notice = 5,
         /// <summary>
         ///  warning condition
         /// </summary>
-        Warning,
+        Warning = 4,
         /// <summary>
         ///  error condition
         /// </summary>
-        Error,
+        Error = 3,
         /// <summary>
         ///  critical condition
         /// </summary>
-        Critical,
+        Critical = 2,
         /// <summary>
         ///  action must be take immediately
         /// </summary>
-        Alert,
+        Alert = 1,
         /// <summary>
         ///  system is unstable
         /// </summary>
-        Emergency,
+        Emergency = 0,
     }
 }
