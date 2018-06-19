@@ -537,7 +537,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 /* rd_kafka_ConfigEntry_t * */ IntPtr entry);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_ConfigEntry_source(
+        internal static extern ConfigSource rd_kafka_ConfigEntry_source(
                 /* rd_kafka_ConfigEntry_t * */ IntPtr entry);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

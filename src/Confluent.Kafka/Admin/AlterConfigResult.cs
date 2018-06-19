@@ -27,8 +27,6 @@ namespace Confluent.Kafka.Admin
     {
         public ConfigResource ConfigResource;
 
-        public List<ConfigEntry> Entries { get; set; }
-
         public Error Error { get; set; }
     }
 }

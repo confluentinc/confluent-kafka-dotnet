@@ -19,19 +19,12 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
-    /// <summary>
-    ///     A configuration object containing the configuration entries for a resource.
-    /// </summary>
-    public class ConfigResult
+    public class ConfigSynonym
     {
-        /// <summary>
-        ///     The configuration entries for a resource.
-        /// </summary>
-        public List<ConfigEntry> Entries { get; set; }
+        public string Name { get; set; }
 
-        /// <summary>
-        ///     
-        /// </summary>
-        public Error Error { get; set; }
+        public string Value { get; set; }
+
+        public ConfigSource Source { get; set; }
     }
 }

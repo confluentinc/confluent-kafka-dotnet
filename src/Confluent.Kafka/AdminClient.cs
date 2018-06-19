@@ -52,9 +52,9 @@ namespace Confluent.Kafka
                 }).ToList();
         }
 
-        private ConfigEntry extractConfigEntry(IntPtr configEntryPtr)
+        private ConfigEntryResult extractConfigEntry(IntPtr configEntryPtr)
         {
-            Dictionary<string, ConfigEntry> synonyms = null;
+            List<ConfigSynonym> synonyms = null;
             var synonymsPtr = LibRdKafka.ConfigEntry_synonyms(configEntryPtr, out UIntPtr synonymsCount);
             if (synonymsPtr != IntPtr.Zero)
             {
@@ -62,10 +62,11 @@ namespace Confluent.Kafka
                 Marshal.Copy(synonymsPtr, synonymsPtrArr, 0, (int)synonymsCount);
                 synonyms = synonymsPtrArr
                     .Select(synonymPtr => extractConfigEntry(synonymPtr))
-                    .ToDictionary(x => x.Name, x => x);
+                    .Select(e => new ConfigSynonym { Name = e.Name, Value = e.Value, Source = e.Source } )
+                    .ToList();
             }
 
-            return new ConfigEntry
+            return new ConfigEntryResult
             {
                 Name = PtrToStringUTF8(LibRdKafka.ConfigEntry_name(configEntryPtr)),
                 Value = PtrToStringUTF8(LibRdKafka.ConfigEntry_value(configEntryPtr)),
@@ -73,14 +74,14 @@ namespace Confluent.Kafka
                 IsSensitive = (int)LibRdKafka.ConfigEntry_is_sensitive(configEntryPtr) == 1,
                 IsReadOnly = (int)LibRdKafka.ConfigEntry_is_read_only(configEntryPtr) == 1,
                 IsSynonym = (int)LibRdKafka.ConfigEntry_is_synonym(configEntryPtr) == 1,
-                // Source = (ConfigSource)(IntPtr)LibRdKafka.ConfigEntry_source(configEntryPtr), doesn't work!
+                Source = LibRdKafka.ConfigEntry_source(configEntryPtr),
                 Synonyms = synonyms
             };
         }
 
-        private Dictionary<ConfigResource, ConfigResult> extractResultConfigs(IntPtr configResourcesPtr, int configResourceCount)
+        private List<DescribeConfigResult> extractResultConfigs(IntPtr configResourcesPtr, int configResourceCount)
         {
-            var result = new Dictionary<ConfigResource, ConfigResult>();
+            var result = new List<DescribeConfigResult>();
 
             IntPtr[] configResourcesPtrArr = new IntPtr[configResourceCount];
             Marshal.Copy(configResourcesPtr, configResourcesPtrArr, 0, configResourceCount);
@@ -93,14 +94,19 @@ namespace Confluent.Kafka
 
                 var configEntriesPtr = LibRdKafka.ConfigResource_configs(configResourcePtr, out UIntPtr configEntryCount);
                 IntPtr[] configEntriesPtrArr = new IntPtr[(int)configEntryCount];
-                Marshal.Copy(configEntriesPtr, configEntriesPtrArr, 0, (int)configEntryCount);
+                if ((int)configEntryCount > 0)
+                {
+                    Marshal.Copy(configEntriesPtr, configEntriesPtrArr, 0, (int)configEntryCount);
+                }
                 var configEntries = configEntriesPtrArr
                     .Select(configEntryPtr => extractConfigEntry(configEntryPtr))
-                    .ToList();
+                    .ToDictionary(e => e.Name);
 
-                result.Add(
-                    new ConfigResource { Name = resourceName, ResourceType = resourceConfigType },
-                    new ConfigResult { Entries = configEntries, Error = new Error(errorCode, errorReason) });
+                result.Add(new DescribeConfigResult { 
+                    ConfigResource = new ConfigResource { Name = resourceName, ResourceType = resourceConfigType },
+                    Entries = configEntries,
+                    Error = new Error(errorCode, errorReason)
+                });
             }
 
             return result;
@@ -116,133 +122,164 @@ namespace Confluent.Kafka
                         {
                             ct.ThrowIfCancellationRequested();
 
-                            var eventPtr = kafkaHandle.QueuePoll(resultQueue, POLL_TIMEOUT_MS);
-                            if (eventPtr == IntPtr.Zero)
+                            try
                             {
-                                continue;
-                            }
+                                var eventPtr = kafkaHandle.QueuePoll(resultQueue, POLL_TIMEOUT_MS);
+                                if (eventPtr == IntPtr.Zero)
+                                {
+                                    continue;
+                                }
 
-                            var type = LibRdKafka.event_type(eventPtr);
+                                var type = LibRdKafka.event_type(eventPtr);
 
-                            var ptr = (IntPtr)LibRdKafka.event_opaque(eventPtr);
-                            var gch = GCHandle.FromIntPtr(ptr);
-                            var adminClientResult = gch.Target;
-                            gch.Free();
+                                var ptr = (IntPtr)LibRdKafka.event_opaque(eventPtr);
+                                var gch = GCHandle.FromIntPtr(ptr);
+                                var adminClientResult = gch.Target;
+                                gch.Free();
 
-                            if (!adminClientResultTypes.TryGetValue(type, out Type expectedType))
-                            {
-                                // Should never happen.
-                                throw new InvalidOperationException($"Unknown result type: {type}");
-                            }
-
-                            if (adminClientResult.GetType() != expectedType)
-                            {
-                                // Should never happen.
-                                throw new InvalidOperationException($"Completion source type mismatch. Exected {expectedType.Name}, got {type}");
-                            }
-
-                            var errorCode = LibRdKafka.event_error(eventPtr);
-                            var errorStr = LibRdKafka.event_error_string(eventPtr);
-
-                            switch (type)
-                            {
-                                case LibRdKafka.EventType.CreateTopics_Result:
-                                    {
-                                        if (errorCode != ErrorCode.NoError)
-                                        {
-                                            ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
-                                            return;
-                                        }
-                                        
-                                        var result = extractTopicResults(
-                                            LibRdKafka.CreateTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr);
-
-                                        if (result.Any(r => r.Error.IsError))
-                                        {
-                                            ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new CreateTopicsException(result));
-                                        }
-                                        else
-                                        {
-                                            ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetResult(result);
-                                        }
-                                    }
-                                    break;
-
-                                case LibRdKafka.EventType.DeleteTopics_Result:
-                                    {
-                                        if (errorCode != ErrorCode.NoError)
-                                        {
-                                            ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
-                                            return;
-                                        }
-
-                                        var result = extractTopicResults(
-                                            LibRdKafka.DeleteTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
-                                                .Select(r => new DeleteTopicResult { Topic = r.Topic, Error = r.Error }).ToList();
-
-                                        if (result.Any(r => r.Error.IsError))
-                                        {
-                                            ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new DeleteTopicsException(result));
-                                        }
-                                        else
-                                        {
-                                            ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetResult(result);
-                                        }
-                                    }
-                                    break;
-
-                                case LibRdKafka.EventType.CreatePartitions_Result:
-                                    {
-                                        if (errorCode != ErrorCode.NoError)
-                                        {
-                                            ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
-                                            return;
-                                        }
-
-                                        var result = extractTopicResults(
-                                                LibRdKafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
-                                                    .Select(r => new CreatePartitionResult { Topic = r.Topic, Error = r.Error }).ToList();
-
-                                        if (result.Any(r => r.Error.IsError))
-                                        {
-                                            ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
-                                        }
-                                        else
-                                        {
-                                            ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetResult(result);
-                                        }
-                                    }
-                                    break;
-
-                                case LibRdKafka.EventType.DescribeConfigs_Result:
-                                    {
-                                        if (errorCode != ErrorCode.NoError)
-                                        {
-                                            ((TaskCompletionSource<Dictionary<ConfigResource, ConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
-                                            return;
-                                        }
-                                        ((TaskCompletionSource<Dictionary<ConfigResource, ConfigResult>>)adminClientResult).SetResult(
-                                            extractResultConfigs(
-                                                LibRdKafka.DescribeConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp));
-                                    }
-                                    break;
-
-                                case LibRdKafka.EventType.AlterConfigs_Result:
-                                    {
-                                        if (errorCode != ErrorCode.NoError)
-                                        {
-                                            ((TaskCompletionSource<Dictionary<ConfigResource, ConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
-                                            return;
-                                        }
-                                        ((TaskCompletionSource<Dictionary<ConfigResource, ConfigResult>>)adminClientResult).SetResult(
-                                            extractResultConfigs(
-                                                LibRdKafka.AlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp));
-                                    }
-                                    break;
-
-                                default:
+                                if (!adminClientResultTypes.TryGetValue(type, out Type expectedType))
+                                {
                                     // Should never happen.
                                     throw new InvalidOperationException($"Unknown result type: {type}");
+                                }
+
+                                if (adminClientResult.GetType() != expectedType)
+                                {
+                                    // Should never happen.
+                                    throw new InvalidOperationException($"Completion source type mismatch. Exected {expectedType.Name}, got {type}");
+                                }
+
+                                var errorCode = LibRdKafka.event_error(eventPtr);
+                                var errorStr = LibRdKafka.event_error_string(eventPtr);
+
+                                switch (type)
+                                {
+                                    case LibRdKafka.EventType.CreateTopics_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                return;
+                                            }
+
+                                            var result = extractTopicResults(
+                                                LibRdKafka.CreateTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr);
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new CreateTopicsException(result));
+                                            }
+                                            else
+                                            {
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetResult(result);
+                                            }
+                                        }
+                                        break;
+
+                                    case LibRdKafka.EventType.DeleteTopics_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                return;
+                                            }
+
+                                            var result = extractTopicResults(
+                                                LibRdKafka.DeleteTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
+                                                    .Select(r => new DeleteTopicResult { Topic = r.Topic, Error = r.Error }).ToList();
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new DeleteTopicsException(result));
+                                            }
+                                            else
+                                            {
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetResult(result);
+                                            }
+                                        }
+                                        break;
+
+                                    case LibRdKafka.EventType.CreatePartitions_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                return;
+                                            }
+
+                                            var result = extractTopicResults(
+                                                    LibRdKafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
+                                                        .Select(r => new CreatePartitionResult { Topic = r.Topic, Error = r.Error }).ToList();
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
+                                            }
+                                            else
+                                            {
+                                                ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetResult(result);
+                                            }
+                                        }
+                                        break;
+
+                                    case LibRdKafka.EventType.DescribeConfigs_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                return;
+                                            }
+
+                                            var result = extractResultConfigs(
+                                                LibRdKafka.DescribeConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp);
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetException(new DescribeConfigsException(result));
+                                            }
+                                            else
+                                            {
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetResult(result);
+                                            }
+                                        }
+                                        break;
+
+                                    case LibRdKafka.EventType.AlterConfigs_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                return;
+                                            }
+
+                                            var result = extractResultConfigs(
+                                                LibRdKafka.AlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp)
+                                                    .Select(r => new AlterConfigResult { ConfigResource = r.ConfigResource, Error = r.Error }).ToList();
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).SetException(new AlterConfigsException(result));
+                                            }
+                                            else
+                                            {
+                                                ((TaskCompletionSource<List<AlterConfigResult>>) adminClientResult).SetResult(result);
+                                            }
+                                        }
+                                        break;
+
+                                    default:
+                                        // Should never happen.
+                                        throw new InvalidOperationException($"Unknown result type: {type}");
+                                }
+                            }
+                            catch
+                            {
+                                // TODO: If this occurs, it means there's an application logic error
+                                //       (i.e. program execution should never get here). Rather than
+                                //       ignore the situation, we panic, destroy the librdkafka handle, 
+                                //       and exit the polling loop. Further usage of AdminClient will
+                                //       result in exceptions.
+                                this.DisposeResources();
                             }
                         }
                     }
@@ -306,7 +343,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The Config associated with the specified 
         /// </returns>
-        public Task<List<AlterConfigResult>> AlterConfigsAsync(Dictionary<ConfigResource, IEnumerable<ConfigEntry>> configs, AlterConfigsOptions options = null)
+        public Task<List<AlterConfigResult>> AlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, AlterConfigsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
             // List<Task<AlterConfigResult>> AlterConfigsConcurrent(Dictionary<ConfigResource, Config> configs, AlterConfigsOptions options = null)
@@ -551,6 +588,11 @@ namespace Confluent.Kafka
                 callbackCts.Dispose();
             }
 
+            DisposeResources();
+        }
+
+        private void DisposeResources()
+        {
             kafkaHandle.DestroyQueue(resultQueue);
 
             foreach (var kv in topicHandles)

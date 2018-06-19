@@ -24,8 +24,28 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     A configuration object containing the configuration entries for a resource.
     /// </summary>
-    public class ConfigEntry
+    public class ConfigEntryResult
     {
+        /// <summary>
+        ///     Whether or not the config value is the default or if it's been explicitly set.
+        /// </summary>
+        public bool IsDefault { get; set; }
+
+        /// <summary>
+        ///     Whether or not the config is read-only and cannot be updated.
+        /// </summary>
+        public bool IsReadOnly { get; set; }
+
+        /// <summary>
+        ///     Whether or not the config value is sensitive.
+        /// </summary>
+        public bool IsSensitive { get; set; }
+
+        /// <summary>
+        ///     Whether or not the config value is a synonym.
+        /// </summary>
+        public bool IsSynonym { get; set; }
+
         /// <summary>
         ///     The config name.
         /// </summary>
@@ -35,5 +55,9 @@ namespace Confluent.Kafka.Admin
         ///     The config value.
         /// </summary>
         public string Value { get; set; }
+
+        public ConfigSource Source { get; set; }
+
+        public List<ConfigSynonym> Synonyms { get; set; }
     }
 }

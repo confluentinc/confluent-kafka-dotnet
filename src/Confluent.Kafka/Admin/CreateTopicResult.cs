@@ -23,9 +23,19 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     The result of a create topic request.
+    /// </summary>
     public class CreateTopicResult
     {
+        /// <summary>
+        ///     The topic name.
+        /// </summary>
         public string Topic { get; set; }
+
+        /// <summary>
+        ///     The result of the request (either Success or the error encountered).
+        /// </summary>
         public Error Error { get; set; }
     }
 }

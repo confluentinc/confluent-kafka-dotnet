@@ -23,7 +23,7 @@ namespace Confluent.Kafka.Admin
     {
         public ConfigResource ConfigResource;
 
-        public Dictionary<string, ConfigEntry> Entries { get; set; }
+        public Dictionary<string, ConfigEntryResult> Entries { get; set; }
 
         public Error Error { get; set; }
     }

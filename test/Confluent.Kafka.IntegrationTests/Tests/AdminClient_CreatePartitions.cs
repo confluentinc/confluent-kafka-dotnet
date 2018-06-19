@@ -40,6 +40,9 @@ namespace Confluent.Kafka.IntegrationTests
             var topicName1 = Guid.NewGuid().ToString();
             var topicName2 = Guid.NewGuid().ToString();
             var topicName3 = Guid.NewGuid().ToString();
+            var topicName4 = Guid.NewGuid().ToString();
+            var topicName5 = Guid.NewGuid().ToString();
+            var topicName6 = Guid.NewGuid().ToString();
 
             // test creating a new partition works.
             using (var producer = new Producer<Null, Null>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, null))
@@ -77,9 +80,13 @@ namespace Confluent.Kafka.IntegrationTests
                 adminClient.CreateTopicsAsync(new NewTopic[] { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 var cpResult = adminClient.CreatePartitionsAsync(new List<NewPartitions> { new NewPartitions { Topic = topicName2, IncreaseTo = 10 } }, new CreatePartitionsOptions { ValidateOnly = true }).Result;
 
+                // forces a metadata request.
+                var dr1 = producer.ProduceAsync(new TopicPartition(topicName2, 0), new Message<Null, Null> {}).Result;
+                Assert.False(dr1.Error.IsError);
                 try
                 {
-                    var r = producer.ProduceAsync(new TopicPartition(topicName2, 1), new Message<Null, Null> {}).Result;
+                    // since we have metadata, this throws immediately (i.e. not wrapped in AggregateException)
+                    var dr2 = producer.ProduceAsync(new TopicPartition(topicName2, 1), new Message<Null, Null> {}).Result;
                     Assert.True(false, "expecting exception");
                 }
                 catch (KafkaException ex)
@@ -88,11 +95,11 @@ namespace Confluent.Kafka.IntegrationTests
                 }
             }
 
-            // check valid Assignments works.
+            // check valid Assignments property value works.
             using (var producer = new Producer<Null, Null>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, null))
             using (var adminClient = new AdminClient(producer.Handle))
             {
-                adminClient.CreateTopicsAsync(new NewTopic[] { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                adminClient.CreateTopicsAsync(new NewTopic[] { new NewTopic { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 var cpResult = adminClient.CreatePartitionsAsync(
                     new List<NewPartitions> 
                     {
@@ -105,12 +112,52 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.False(cpResult.First().Error.IsError);
             }
 
-            // check invalid Assignments
+            // check invalid Assignments property value works.
             using (var producer = new Producer<Null, Null>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, null))
             using (var adminClient = new AdminClient(producer.Handle))
             {
+                adminClient.CreateTopicsAsync(new NewTopic[] { new NewTopic { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
 
+                try
+                {
+                    var cpResult = adminClient.CreatePartitionsAsync(
+                        new List<NewPartitions> 
+                        {
+                            new NewPartitions { Topic = topicName2, IncreaseTo = 2, Assignments = new List<List<int>> { new List<int> { 42 } } } 
+                        }, 
+                        new CreatePartitionsOptions { ValidateOnly = true }
+                    ).Result;
+                    Assert.True(false, "Expecting exception");
+                }
+                catch (AggregateException ex)
+                {
+                    Assert.True(ex.InnerException.GetType() == typeof(CreatePartitionsException));
+                    var cpe = (CreatePartitionsException)ex.InnerException;
+                    Assert.Single(cpe.Results);
+                    Assert.True(cpe.Results.First().Error.IsError);
+                }
             }
+
+            // more than one.
+            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            {
+                adminClient.CreateTopicsAsync(new NewTopic[] 
+                    { 
+                        new NewTopic { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 },
+                        new NewTopic { Name = topicName6, NumPartitions = 1, ReplicationFactor = 1 }
+                    }
+                ).Wait();
+
+                // just a simple check there wasn't an exception.
+                adminClient.CreatePartitionsAsync(
+                    new List<NewPartitions> 
+                    {
+                        new NewPartitions { Topic = topicName5, IncreaseTo = 2 },
+                        new NewPartitions { Topic = topicName6, IncreaseTo = 3 }
+                    }
+                ).Wait();
+            }
+
         }
     }
 }

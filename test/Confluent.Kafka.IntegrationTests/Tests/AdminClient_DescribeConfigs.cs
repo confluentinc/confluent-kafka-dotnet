@@ -34,148 +34,67 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test functionality of AdminClient.DescribeConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async static void AdminClient_DescribeConfigs(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void AdminClient_DescribeConfigs(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
+                // broker configs
+                // ---
+                var configResource = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
+                var results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
 
-                // try
-                // {
-                //     var result = adminClient.DescribeConfigsConcurrent(new List<ConfigResource> { configResource });
-                //     foreach (var r in result)
-                //     {
-                //         // variation 1: the await could be omitted to allow tasks to complete out-of-order on different threads.
-                //         // variation 2: the .ContinueWith call could be appended with .Wait() for
-                //         await r.ContinueWith(completedTask => 
-                //         {
-                //             if (completedTask.IsFaulted)
-                //             {
-                //                 Console.WriteLine($"problem: {completedTask.Exception.ToString()}");
-                //             }
-                //             else 
-                //             {
-                //                 Console.WriteLine($"do the thing: {completedTask.Result}");
-                //             }
-                //         });
-                //     }
-                // }
-                // catch (Exception ex)
-                // {
-                    
-                // }
+                Assert.Single(results);
+                Assert.False(results[0].Error.IsError);
+                Assert.True(results[0].Entries.Count > 50);
+                // note: unlike other parts of the api, Entries is kept as a dictionary since it's convenient for
+                // the most typical use case.
+                Assert.Single(results[0].Entries.Where(e => e.Key == "advertised.listeners"));
+                Assert.Single(results[0].Entries.Where(e => e.Key == "num.network.threads"));
 
-                List<DescribeConfigResult> results;
+                // topic configs, more than one.
+                // ---
+                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { 
+                    new ConfigResource { Name = singlePartitionTopic, ResourceType = ConfigType.Topic },
+                    new ConfigResource { Name = partitionedTopic, ResourceType = ConfigType.Topic }
+                }).Result;
+
+                Assert.Equal(2, results.Count);
+                Assert.False(results[0].Error.IsError);
+                Assert.False(results[0].Error.IsError);
+                Assert.True(results[0].Entries.Count > 20);
+                Assert.True(results[1].Entries.Count > 20);
+                Assert.Single(results[0].Entries.Where(e => e.Key == "compression.type"));
+                Assert.Single(results[0].Entries.Where(e => e.Key == "flush.ms"));
+
+                // options are specified.
+                // ---
+                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }, new DescribeConfigsOptions { Timeout = TimeSpan.FromSeconds(10) }).Result;
+                Assert.Single(results);
+                Assert.True(results[0].Entries.Count > 20);
+
+                // invalid config resource
+                // --- 
                 try
                 {
-                    var configResource = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
-                    results = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource });
+                    // TODO: this actually segfaults.
+                    results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource() }).Result;
+                    Assert.True(false);
                 }
-                catch (DescribeConfigsException ex)
+                catch (KafkaException e)
                 {
-                    results = ex.Results;
+                    // expected.
                 }
 
-                foreach (var r in results)
-                {
-                    if (r.Error.IsError)
-                    {
-                        Console.WriteLine($"had error");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"configs: {r.Entries["sdf"]}");
-                    }
-                }
-
-    /*
-                Assert.Single(result);
-                Assert.Equal(ErrorCode.NoError, result[configResource].Error.Code);
-                Assert.True(result[configResource].Entries.Count > 50);
-                Assert.Single(result[configResource].Entries.Where(e => e.Name == "advertised.listeners"));
-                Assert.Single(result[configResource].Entries.Where(e => e.Name == "num.network.threads"));
-    */
+                // invalid topic.
+                // ---
+                //
+                // TODO: this creates the topic, then describes what it just created. what we want? does java explicitly not do this?
+                // 
+                // results = adminClient.DescribeConfigsAsync(new List<ConfigResource> {
+                //     new ConfigResource { Name = "my-nonsense-topic", ResourceType = ConfigType.Topic }
+                // }).Result;
             }
         }
-
-/*
-        /// <summary>
-        ///     Test functionality of AdminClient.DescribeConfigs.
-        /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AdminClient_DescribeConfigs_II(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
-        {
-            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
-            {
-                var cr = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
-                var tcr1 = new ConfigResource { Name = "topic-doesnt-exist", ResourceType = ConfigType.Topic };
-                var tcr2 = new ConfigResource { Name = singlePartitionTopic, ResourceType = ConfigType.Topic };
-
-                var result = adminClient.DescribeConfigsAsync(new List<ConfigResource> { cr, tcr1, tcr2 }).Result;
-
-
-                var result2 = await adminClient.DescribeConfigsAsync(new List<ConfigResource> { cr });
-                
-                Assert.Equal(3, result.Count);
-            }
-        }
-
-
-        class AdminClient1 
-        {
-            public async Task<Dictionary<ConfigResource, ConfigResult>> DescribeConfigsAsync(List<ConfigResource> crs)
-                => await Task.FromResult(new Dictionary<ConfigResource, ConfigResult>());
-        }
-
-        class AdminClient2
-        {
-            public Dictionary<ConfigResource, Task<Config>> DescribeConfigsAsync(List<ConfigResource> crs)
-                => new Dictionary<ConfigResource, Task<Config>>();
-        }
-
-        class AdminClient3
-        {
-            public async Task<Dictionary<ConfigResource, Task<Config>>> DescribeConfigsAsync(List<ConfigResource> crs)
-                => await Task.FromResult(new Dictionary<ConfigResource, Task<Config>>());
-        }
-
-        class ConfigResult2
-        {
-            public ConfigResource ConfigResource { get; set; }
-            public Er
-        }
-
-        class AdminClient4
-        {
-            public async Task<List<ConfigResult2>> DescribeConfigsAsync(List<ConfigResource> crs)
-                => await Task.FromResult(new List<ConfigResult2>());
-        }
-
-        public static async void Test1()
-        {
-            var ac1 = new AdminClient1();
-            var ac2 = new AdminClient2();
-            var ac3 = new AdminClient3();
-            var ac4 = new AdminClient4();
-
-            // will throw on request level errors. 
-            var result1 = await ac1.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource { Name = "0", ResourceType = ConfigType.Broker } });
-            result1.ToList().ForEach(r => Console.WriteLine(r.Key + " " + r.Value));
-            
-            // This option is easily discounted, because you can't await it (awaitable methods must return a Task).
-            var result2 = ac2.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource { Name = "0", ResourceType = ConfigType.Broker } });
-
-            var result3 = await ac3.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource { Name = "0", ResourceType = ConfigType.Broker } });            
-
-            var result4 = await ac4.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource { Name = "0", ResourceType = ConfigType.Broker } });
-
-            result4.ForEach(r => Console.WriteLine(r.ConfigResource));
-
-            foreach (var r in result1)
-            {
-
-            }
-        }
-*/
 
     }
 }

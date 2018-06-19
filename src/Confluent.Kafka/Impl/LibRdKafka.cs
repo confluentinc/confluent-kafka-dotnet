@@ -242,7 +242,7 @@ namespace Confluent.Kafka.Impl
             _ConfigSource_name = (Func<ConfigSource, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigSource_name").Single().CreateDelegate(typeof(Func<ConfigSource, IntPtr>));
             _ConfigEntry_name = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_name").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigEntry_value = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_value").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _ConfigEntry_source = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_source").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _ConfigEntry_source = (Func<IntPtr, ConfigSource>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_source").Single().CreateDelegate(typeof(Func<IntPtr, ConfigSource>));
             _ConfigEntry_is_read_only = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_is_read_only").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigEntry_is_default = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_is_default").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigEntry_is_sensitive = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_is_sensitive").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1024,9 +1024,9 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr ConfigEntry_value (
                 IntPtr entry) => _ConfigEntry_value(entry);
 
-        private static Func<IntPtr, IntPtr> _ConfigEntry_source;
-        internal static IntPtr ConfigEntry_source(
-                IntPtr entry) => ConfigEntry_source(entry);
+        private static Func<IntPtr, ConfigSource> _ConfigEntry_source;
+        internal static ConfigSource ConfigEntry_source(
+                IntPtr entry) => _ConfigEntry_source(entry);
 
         private static Func<IntPtr, IntPtr> _ConfigEntry_is_read_only;
         internal static IntPtr ConfigEntry_is_read_only(

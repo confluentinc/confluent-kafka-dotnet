@@ -94,15 +94,6 @@ namespace Confluent.Kafka
             => (int)Code > 0;
 
         /// <summary>
-        ///     Converts the specified Error value to a boolean value (false if e.Code == ErrorCode.NoError, true otherwise).
-        /// </summary>
-        /// <param name="e">
-        ///     The Error value to convert.
-        /// </param>
-        public static implicit operator bool(Error e)
-            => e.IsError;
-
-        /// <summary>
         ///     Converts the specified Error value to the value of it's Code property.
         /// </summary>
         /// <param name="e">

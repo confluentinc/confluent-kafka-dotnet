@@ -1004,11 +1004,13 @@ namespace Confluent.Kafka.Impl
 
 
         internal void AlterConfigs(
-            IDictionary<ConfigResource, IEnumerable<ConfigEntry>> configs,
+            IDictionary<ConfigResource, List<ConfigEntry>> configs,
             AlterConfigsOptions options,
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            ThrowIfHandleClosed();
+
             options = options == null ? new AlterConfigsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.AlterConfigs);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
@@ -1025,14 +1027,13 @@ namespace Confluent.Kafka.Impl
                 var resourcePtr = LibRdKafka.ConfigResource_new(resource.ResourceType, resource.Name);
                 foreach (var rc in resourceConfig)
                 {
-                    // TODO: or add_config?
                     var errorCode = LibRdKafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
                     if (errorCode != ErrorCode.NoError)
                     {
                         throw new KafkaException(errorCode);
                     }
                 }
-                configPtrs[configPtrsIdx] = resourcePtr;
+                configPtrs[configPtrsIdx++] = resourcePtr;
             }
 
             LibRdKafka.AlterConfigs(handle, configPtrs, (UIntPtr)configPtrs.Length, optionsPtr, resultQueuePtr);
@@ -1051,6 +1052,8 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            ThrowIfHandleClosed();
+
             options = options == null ? new DescribeConfigsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.DescribeConfigs);
             setOption_Timeout(optionsPtr, options.Timeout);
@@ -1080,6 +1083,8 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            ThrowIfHandleClosed();
+
             var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
 
             options = options == null ? new CreatePartitionsOptions() : options;
@@ -1142,6 +1147,8 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            ThrowIfHandleClosed();
+
             options = options == null ? new DeleteTopicsOptions() : options;
             IntPtr optionsPtr = LibRdKafka.AdminOptions_new(handle, LibRdKafka.AdminOp.DeleteTopics);
             setOption_Timeout(optionsPtr, options.Timeout);
@@ -1172,6 +1179,8 @@ namespace Confluent.Kafka.Impl
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
         {
+            ThrowIfHandleClosed();
+
             var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
 
             options = options == null ? new CreateTopicsOptions() : options;

@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(1)));
 
-                Assert.False(producer.ProduceAsync(topic, new Message<Null, string> { Value = "test store offset value" }).Result.Error);
+                Assert.False(producer.ProduceAsync(topic, new Message<Null, string> { Value = "test store offset value" }).Result.Error.IsError);
                 Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
                 var result = consumer.StoreOffset(record);
 
