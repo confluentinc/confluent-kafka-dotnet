@@ -45,17 +45,17 @@ namespace Confluent.Kafka
 
             return topicResultsPtrArr.Select(topicResultPtr => new CreateTopicResult 
                 {
-                    Topic = PtrToStringUTF8(LibRdKafka.topic_result_name(topicResultPtr)),
+                    Topic = PtrToStringUTF8(Librdkafka.topic_result_name(topicResultPtr)),
                     Error = new Error(
-                        LibRdKafka.topic_result_error(topicResultPtr), 
-                        PtrToStringUTF8(LibRdKafka.topic_result_error_string(topicResultPtr)))
+                        Librdkafka.topic_result_error(topicResultPtr), 
+                        PtrToStringUTF8(Librdkafka.topic_result_error_string(topicResultPtr)))
                 }).ToList();
         }
 
         private ConfigEntryResult extractConfigEntry(IntPtr configEntryPtr)
         {
             var synonyms = new List<ConfigSynonym>();
-            var synonymsPtr = LibRdKafka.ConfigEntry_synonyms(configEntryPtr, out UIntPtr synonymsCount);
+            var synonymsPtr = Librdkafka.ConfigEntry_synonyms(configEntryPtr, out UIntPtr synonymsCount);
             if (synonymsPtr != IntPtr.Zero)
             {
                 IntPtr[] synonymsPtrArr = new IntPtr[(int)synonymsCount];
@@ -68,12 +68,12 @@ namespace Confluent.Kafka
 
             return new ConfigEntryResult
             {
-                Name = PtrToStringUTF8(LibRdKafka.ConfigEntry_name(configEntryPtr)),
-                Value = PtrToStringUTF8(LibRdKafka.ConfigEntry_value(configEntryPtr)),
-                IsDefault = (int)LibRdKafka.ConfigEntry_is_default(configEntryPtr) == 1,
-                IsSensitive = (int)LibRdKafka.ConfigEntry_is_sensitive(configEntryPtr) == 1,
-                IsReadOnly = (int)LibRdKafka.ConfigEntry_is_read_only(configEntryPtr) == 1,
-                Source = LibRdKafka.ConfigEntry_source(configEntryPtr),
+                Name = PtrToStringUTF8(Librdkafka.ConfigEntry_name(configEntryPtr)),
+                Value = PtrToStringUTF8(Librdkafka.ConfigEntry_value(configEntryPtr)),
+                IsDefault = (int)Librdkafka.ConfigEntry_is_default(configEntryPtr) == 1,
+                IsSensitive = (int)Librdkafka.ConfigEntry_is_sensitive(configEntryPtr) == 1,
+                IsReadOnly = (int)Librdkafka.ConfigEntry_is_read_only(configEntryPtr) == 1,
+                Source = Librdkafka.ConfigEntry_source(configEntryPtr),
                 Synonyms = synonyms
             };
         }
@@ -86,12 +86,12 @@ namespace Confluent.Kafka
             Marshal.Copy(configResourcesPtr, configResourcesPtrArr, 0, configResourceCount);
             foreach (var configResourcePtr in configResourcesPtrArr)
             {
-                var resourceName = PtrToStringUTF8(LibRdKafka.ConfigResource_name(configResourcePtr));
-                var errorCode = LibRdKafka.ConfigResource_error(configResourcePtr);
-                var errorReason = PtrToStringUTF8(LibRdKafka.ConfigResource_error_string(configResourcePtr));
-                var resourceConfigType = LibRdKafka.ConfigResource_type(configResourcePtr);
+                var resourceName = PtrToStringUTF8(Librdkafka.ConfigResource_name(configResourcePtr));
+                var errorCode = Librdkafka.ConfigResource_error(configResourcePtr);
+                var errorReason = PtrToStringUTF8(Librdkafka.ConfigResource_error_string(configResourcePtr));
+                var resourceConfigType = Librdkafka.ConfigResource_type(configResourcePtr);
 
-                var configEntriesPtr = LibRdKafka.ConfigResource_configs(configResourcePtr, out UIntPtr configEntryCount);
+                var configEntriesPtr = Librdkafka.ConfigResource_configs(configResourcePtr, out UIntPtr configEntryCount);
                 IntPtr[] configEntriesPtrArr = new IntPtr[(int)configEntryCount];
                 if ((int)configEntryCount > 0)
                 {
@@ -129,9 +129,9 @@ namespace Confluent.Kafka
                                     continue;
                                 }
 
-                                var type = LibRdKafka.event_type(eventPtr);
+                                var type = Librdkafka.event_type(eventPtr);
 
-                                var ptr = (IntPtr)LibRdKafka.event_opaque(eventPtr);
+                                var ptr = (IntPtr)Librdkafka.event_opaque(eventPtr);
                                 var gch = GCHandle.FromIntPtr(ptr);
                                 var adminClientResult = gch.Target;
                                 gch.Free();
@@ -148,12 +148,12 @@ namespace Confluent.Kafka
                                     throw new InvalidOperationException($"Completion source type mismatch. Exected {expectedType.Name}, got {type}");
                                 }
 
-                                var errorCode = LibRdKafka.event_error(eventPtr);
-                                var errorStr = LibRdKafka.event_error_string(eventPtr);
+                                var errorCode = Librdkafka.event_error(eventPtr);
+                                var errorStr = Librdkafka.event_error_string(eventPtr);
 
                                 switch (type)
                                 {
-                                    case LibRdKafka.EventType.CreateTopics_Result:
+                                    case Librdkafka.EventType.CreateTopics_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
@@ -162,7 +162,7 @@ namespace Confluent.Kafka
                                             }
 
                                             var result = extractTopicResults(
-                                                LibRdKafka.CreateTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr);
+                                                Librdkafka.CreateTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr);
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
@@ -175,7 +175,7 @@ namespace Confluent.Kafka
                                         }
                                         break;
 
-                                    case LibRdKafka.EventType.DeleteTopics_Result:
+                                    case Librdkafka.EventType.DeleteTopics_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
@@ -184,7 +184,7 @@ namespace Confluent.Kafka
                                             }
 
                                             var result = extractTopicResults(
-                                                LibRdKafka.DeleteTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
+                                                Librdkafka.DeleteTopics_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
                                                     .Select(r => new DeleteTopicResult { Topic = r.Topic, Error = r.Error }).ToList();
 
                                             if (result.Any(r => r.Error.IsError))
@@ -198,7 +198,7 @@ namespace Confluent.Kafka
                                         }
                                         break;
 
-                                    case LibRdKafka.EventType.CreatePartitions_Result:
+                                    case Librdkafka.EventType.CreatePartitions_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
@@ -207,7 +207,7 @@ namespace Confluent.Kafka
                                             }
 
                                             var result = extractTopicResults(
-                                                    LibRdKafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
+                                                    Librdkafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
                                                         .Select(r => new CreatePartitionsResult { Topic = r.Topic, Error = r.Error }).ToList();
 
                                             if (result.Any(r => r.Error.IsError))
@@ -221,7 +221,7 @@ namespace Confluent.Kafka
                                         }
                                         break;
 
-                                    case LibRdKafka.EventType.DescribeConfigs_Result:
+                                    case Librdkafka.EventType.DescribeConfigs_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
@@ -230,7 +230,7 @@ namespace Confluent.Kafka
                                             }
 
                                             var result = extractResultConfigs(
-                                                LibRdKafka.DescribeConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp);
+                                                Librdkafka.DescribeConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp);
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
@@ -243,7 +243,7 @@ namespace Confluent.Kafka
                                         }
                                         break;
 
-                                    case LibRdKafka.EventType.AlterConfigs_Result:
+                                    case Librdkafka.EventType.AlterConfigs_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
@@ -252,7 +252,7 @@ namespace Confluent.Kafka
                                             }
 
                                             var result = extractResultConfigs(
-                                                LibRdKafka.AlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp)
+                                                Librdkafka.AlterConfigs_result_resources(eventPtr, out UIntPtr cntp), (int)cntp)
                                                     .Select(r => new AlterConfigResult { ConfigResource = r.ConfigResource, Error = r.Error }).ToList();
 
                                             if (result.Any(r => r.Error.IsError))
@@ -286,13 +286,13 @@ namespace Confluent.Kafka
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
-        internal static Dictionary<LibRdKafka.EventType, Type> adminClientResultTypes = new Dictionary<LibRdKafka.EventType, Type>
+        internal static Dictionary<Librdkafka.EventType, Type> adminClientResultTypes = new Dictionary<Librdkafka.EventType, Type>
         {
-            { LibRdKafka.EventType.CreateTopics_Result, typeof(TaskCompletionSource<List<CreateTopicResult>>) },
-            { LibRdKafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicResult>>) },
-            { LibRdKafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigResult>>) },
-            { LibRdKafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigResult>>) },
-            { LibRdKafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsResult>>) }
+            { Librdkafka.EventType.CreateTopics_Result, typeof(TaskCompletionSource<List<CreateTopicResult>>) },
+            { Librdkafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicResult>>) },
+            { Librdkafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigResult>>) },
+            { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigResult>>) },
+            { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsResult>>) }
         };
 
         /// <summary>

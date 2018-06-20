@@ -46,23 +46,23 @@ namespace Confluent.Kafka
 
         private SafeKafkaHandle kafkaHandle;
 
-        private LibRdKafka.ErrorDelegate errorDelegate;
+        private Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private LibRdKafka.StatsDelegate statsDelegate;
+        private Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private LibRdKafka.LogDelegate logDelegate;
+        private Librdkafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
         {
-            var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
+            var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
             if (OnLog == null)
             {
@@ -74,7 +74,7 @@ namespace Confluent.Kafka
             OnLog?.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
-        private LibRdKafka.RebalanceDelegate rebalanceDelegate;
+        private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
@@ -108,7 +108,7 @@ namespace Confluent.Kafka
             }
         }
 
-        private LibRdKafka.CommitDelegate commitDelegate;
+        private Librdkafka.CommitDelegate commitDelegate;
         private void CommitCallback(
             IntPtr rk,
             ErrorCode err,
@@ -129,7 +129,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public Consumer(IEnumerable<KeyValuePair<string, object>> config)
         {
-            LibRdKafka.Initialize(null);
+            Librdkafka.Initialize(null);
 
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
@@ -175,12 +175,12 @@ namespace Confluent.Kafka
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            LibRdKafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
-            LibRdKafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
+            Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
+            Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
 
-            LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
-            LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
-            LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
+            Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
+            Librdkafka.conf_set_log_cb(configPtr, logDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.

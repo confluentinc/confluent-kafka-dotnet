@@ -130,25 +130,25 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_conf_set_dr_msg_cb(
                 IntPtr conf,
-                LibRdKafka.DeliveryReportDelegate dr_msg_cb);
+                Librdkafka.DeliveryReportDelegate dr_msg_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_conf_set_rebalance_cb(
-                IntPtr conf, LibRdKafka.RebalanceDelegate rebalance_cb);
+                IntPtr conf, Librdkafka.RebalanceDelegate rebalance_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_conf_set_offset_commit_cb(
-                IntPtr conf, LibRdKafka.CommitDelegate commit_cb);
+                IntPtr conf, Librdkafka.CommitDelegate commit_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_conf_set_error_cb(
-                IntPtr conf, LibRdKafka.ErrorDelegate error_cb);
+                IntPtr conf, Librdkafka.ErrorDelegate error_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, LibRdKafka.LogDelegate log_cb);
+        internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, Librdkafka.LogDelegate log_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void rd_kafka_conf_set_stats_cb(IntPtr conf, LibRdKafka.StatsDelegate stats_cb);
+        internal static extern void rd_kafka_conf_set_stats_cb(IntPtr conf, Librdkafka.StatsDelegate stats_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_conf_set_default_topic_conf(
@@ -197,7 +197,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_topic_conf_set_partitioner_cb(
-                IntPtr topic_conf, LibRdKafka.PartitionerDelegate partitioner_cb);
+                IntPtr topic_conf, Librdkafka.PartitionerDelegate partitioner_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool rd_kafka_topic_partition_available(
@@ -296,7 +296,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr rk,
                 /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets,
                 /* rd_kafka_queue_t * */ IntPtr rkqu,
-                /* offset_commit_cb * */ LibRdKafka.CommitDelegate cb,
+                /* offset_commit_cb * */ Librdkafka.CommitDelegate cb,
                 /* void * */ IntPtr opaque);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -326,15 +326,15 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_producev(
             IntPtr rk,
-            LibRdKafka.ProduceVarTag topicType, [MarshalAs(UnmanagedType.LPStr)] string topic,
-            LibRdKafka.ProduceVarTag partitionType, int partition,
-            LibRdKafka.ProduceVarTag vaType, IntPtr val, UIntPtr len,
-            LibRdKafka.ProduceVarTag keyType, IntPtr key, UIntPtr keylen,
-            LibRdKafka.ProduceVarTag msgflagsType, IntPtr msgflags,
-            LibRdKafka.ProduceVarTag msg_opaqueType, IntPtr msg_opaque,
-            LibRdKafka.ProduceVarTag timestampType, long timestamp,
-            LibRdKafka.ProduceVarTag headersType, IntPtr headers,
-            LibRdKafka.ProduceVarTag endType);
+            Librdkafka.ProduceVarTag topicType, [MarshalAs(UnmanagedType.LPStr)] string topic,
+            Librdkafka.ProduceVarTag partitionType, int partition,
+            Librdkafka.ProduceVarTag vaType, IntPtr val, UIntPtr len,
+            Librdkafka.ProduceVarTag keyType, IntPtr key, UIntPtr keylen,
+            Librdkafka.ProduceVarTag msgflagsType, IntPtr msgflags,
+            Librdkafka.ProduceVarTag msg_opaqueType, IntPtr msg_opaque,
+            Librdkafka.ProduceVarTag timestampType, long timestamp,
+            Librdkafka.ProduceVarTag headersType, IntPtr headers,
+            Librdkafka.ProduceVarTag endType);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_flush(
@@ -375,7 +375,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         //
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_AdminOptions_new(IntPtr rk, LibRdKafka.AdminOp op);
+        internal static extern IntPtr rd_kafka_AdminOptions_new(IntPtr rk, Librdkafka.AdminOp op);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_AdminOptions_destroy(IntPtr options);

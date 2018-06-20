@@ -33,7 +33,7 @@ using System.ComponentModel;
 
 namespace Confluent.Kafka.Impl
 {
-    internal static class LibRdKafka
+    internal static class Librdkafka
     {
         internal enum AdminOp
         {
