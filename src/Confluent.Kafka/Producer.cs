@@ -276,8 +276,12 @@ namespace Confluent.Kafka
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
-                var deliveryCompletionSource = deliveryHandler;
-                var gch = GCHandle.Alloc(deliveryCompletionSource);
+
+                // Note: There is a level of indirection between the GCHandle and
+                // physical memory address. GCHangle.ToIntPtr doesn't get the
+                // physical address, it gets an id that refers to the object via
+                // a handle-table.
+                var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
                 var err = kafkaHandle.Produce(
@@ -287,7 +291,7 @@ namespace Confluent.Kafka
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
-                    ptr, 
+                    ptr,
                     blockIfQueueFull);
                 if (err != ErrorCode.NoError)
                 {
@@ -306,6 +310,7 @@ namespace Confluent.Kafka
                     headers,
                     IntPtr.Zero, 
                     blockIfQueueFull);
+
                 if (err != ErrorCode.NoError)
                 {
                     throw new KafkaException(err);
@@ -383,8 +388,7 @@ namespace Confluent.Kafka
             LibRdKafka.Initialize(null);
 
             var modifiedConfig = config
-                .Where(
-                    prop => prop.Key != "default.topic.config" && 
+                .Where(prop => 
                     prop.Key != BlockIfQueueFullPropertyName &&
                     prop.Key != EnableBackgroundPollPropertyName &&
                     prop.Key != EnableDeliveryReportsPropertyName &&
@@ -419,14 +423,6 @@ namespace Confluent.Kafka
             if (enableDeliveryReportDataMarshalingObj != null)
             {
                 this.enableDeliveryReportDataMarshaling = bool.Parse(enableDeliveryReportDataMarshalingObj.ToString());
-            }
-
-            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
-            // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (defaultTopicConfig != null)
-            {
-                modifiedConfig = modifiedConfig.Concat((IEnumerable<KeyValuePair<string, object>>)defaultTopicConfig);
             }
 
             // Note: changing the default value of produce.offset.report at the binding level is less than

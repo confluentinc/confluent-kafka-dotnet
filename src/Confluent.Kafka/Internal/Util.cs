@@ -31,6 +31,11 @@ namespace Confluent.Kafka.Internal
             /// </summary>
             public unsafe static string PtrToStringUTF8(IntPtr strPtr)
             {
+                if (strPtr == IntPtr.Zero)
+                {
+                    return null;
+                }
+                
                 // TODO: Is there a built in / vectorized / better way to implement this?              
                 byte* pTraverse = (byte*)strPtr;
                 while (*pTraverse != 0) { pTraverse += 1; }

@@ -20,15 +20,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.VerifiableC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro", "src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj", "{FAF96869-D279-4ECA-9C7F-6AEFFF688031}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry", "src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj", "{661BE4AE-56B3-4ED9-A7E0-29D91B1C09DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfluentCloud", "examples\ConfluentCloud\ConfluentCloud.csproj", "{89068F1D-8C12-4538-83E1-51E4BBD2F2C7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.UnitTests", "test\Confluent.Kafka.Avro.UnitTests\Confluent.Kafka.Avro.UnitTests.csproj", "{E1AE307A-05F1-4CE5-80AC-EA8E8FF8E9F9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consumer", "examples\Consumer\Consumer.csproj", "{6221D0F6-58DF-4261-825B-3B77247EDC9F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Avro.IntegrationTests", "test\Confluent.Kafka.Avro.IntegrationTests\Confluent.Kafka.Avro.IntegrationTests.csproj", "{7067703F-78EA-40CE-B2F7-32CA90FF50C3}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp", "examples\FSharp\FSharp.fsproj", "{3BCDFE7D-CCA0-4A67-843F-E9EABCA27D76}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.UnitTests", "test\Confluent.SchemaRegistry.UnitTests\Confluent.SchemaRegistry.UnitTests.csproj", "{29DA188E-CB20-4A9C-AC4E-50B442B9AC7D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.IntegrationTests", "test\Confluent.SchemaRegistry.IntegrationTests\Confluent.SchemaRegistry.IntegrationTests.csproj", "{2F5F0775-3708-40B7-A71F-442E83F6BB3D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Producer", "examples\Producer\Producer.csproj", "{B30E16C5-230C-4599-92F3-E1991B9605EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSpecific", "examples\AvroSpecific\AvroSpecific.csproj", "{835084F3-A0CA-448D-B5C2-793263865159}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroBlogExamples", "examples\AvroBlogExamples\AvroBlogExamples.csproj", "{7C5C4FB3-7452-44F6-8D4B-9CC77AA9A971}"
 EndProject

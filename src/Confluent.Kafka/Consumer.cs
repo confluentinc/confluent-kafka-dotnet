@@ -137,9 +137,7 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = config
-                .Where(
-                    prop => prop.Key != "default.topic.config" && 
-                    prop.Key != EnableHeaderMarshalingPropertyName);
+                .Where(prop => prop.Key != EnableHeaderMarshalingPropertyName);
 
             var enableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableHeaderMarshalingPropertyName).Value;
             if (enableHeaderMarshalingObj != null)

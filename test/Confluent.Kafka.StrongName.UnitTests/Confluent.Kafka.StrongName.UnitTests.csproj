@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>Confluent.Kafka.StrongName.UnitTests</AssemblyName>
-    <TargetFrameworks>net452;netcoreapp1.1;netcoreapp2.0;</TargetFrameworks>
+    <TargetFrameworks>net452;netcoreapp1.1;netcoreapp2.1;</TargetFrameworks>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.Kafka.StrongName.UnitTests.snk</AssemblyOriginatorKeyFile>
@@ -17,7 +17,7 @@
       <HintPath>../../src/Confluent.Kafka/bin-sn/$(Configuration)/netstandard1.3/Confluent.Kafka.StrongName.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
     <Reference Include="Confluent.Kafka.StrongName">
       <HintPath>../../src/Confluent.Kafka/bin-sn/$(Configuration)/netstandard1.3/Confluent.Kafka.StrongName.dll</HintPath>
     </Reference>
@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="librdkafka.redist" Version="0.11.4" />
+    <PackageReference Include="librdkafka.redist" Version="0.11.5-PRE5" />
   </ItemGroup>
 
   <ItemGroup>

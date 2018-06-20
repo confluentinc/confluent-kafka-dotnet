@@ -23,7 +23,9 @@ using System.Threading.Tasks;
 
 namespace Confluent.Kafka.VerifiableClient
 {
-    // JSON serializer that generates lower-case keys.
+    /// <summary>
+    ///     JSON serializer that generates lower-case keys.
+    /// </summary>
     public class LowercaseJsonSerializer
     {
         private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
@@ -37,19 +39,23 @@ namespace Confluent.Kafka.VerifiableClient
         public class LowercaseContractResolver : DefaultContractResolver
         {
             protected override string ResolvePropertyName(string propertyName)
-            {
-                if (propertyName.Equals("minOffset") || propertyName.Equals("maxOffset"))
-                    return propertyName;
-                else
-                    return propertyName.ToLower();
-            }
+                => propertyName.Equals("minOffset") || propertyName.Equals("maxOffset") 
+                    ? propertyName 
+                    : propertyName.ToLower();
         }
     }
 
     public class VerifiableClient : IDisposable
     {
-        public bool Running; // Continue to run, set to false to terminate
-        public ManualResetEvent TerminateEvent; // Termination wake-up event
+        /// <summary>
+        ///     Continue to run, set to false to terminate
+        /// </summary>
+        public bool Running;
+
+        /// <summary>
+        ///     Termination wake-up event
+        /// </summary>
+        public ManualResetEvent TerminateEvent;
 
         public VerifiableClient()
         {
@@ -81,7 +87,9 @@ namespace Confluent.Kafka.VerifiableClient
         public void Stop(string reason)
         {
             if (!Running)
+            {
                 return;
+            }
             Dbg("Stopping: " + reason);
             Running = false;
             TerminateEvent.Set();
@@ -116,8 +124,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             this.Conf = new Dictionary<string, object>
             { 
-                { "log.thread.name", true },
-                { "default.topic.config", new Dictionary<string, object>() } 
+                { "log.thread.name", true }
             };
         }
     }
@@ -130,7 +137,7 @@ namespace Confluent.Kafka.VerifiableClient
         public VerifiableProducerConfig()
         {
             // Default Producer configs
-            ((Dictionary<string, object>)Conf["default.topic.config"])["acks"] = "all";
+            Conf["acks"] = "all";
         }
     }
 
@@ -154,11 +161,6 @@ namespace Confluent.Kafka.VerifiableClient
             Dbg("Created producer " + Handle.Name);
         }
 
-        ~VerifiableProducer()
-        {
-            Dbg("Destruction of producer");
-        }
-
         public override void Dispose()
         {
             Dbg("Disposing of producer");
@@ -171,31 +173,35 @@ namespace Confluent.Kafka.VerifiableClient
         public void HandleDelivery(DeliveryReport<Null, string> record)
         {
             var d = new Dictionary<string, object>
-                    {
-                        { "topic", record.Topic },
-                        { "partition", record.TopicPartition.Partition.ToString() },
-                        { "key", $"{record.Message.Key}" }, // always Null
-                        { "value", $"{record.Message.Value}" }
-                    };
-
-            if (record.Error)
             {
-                this.ErrCnt++;
+                { "topic", record.Topic },
+                { "partition", record.TopicPartition.Partition.ToString() },
+                { "key", $"{record.Message.Key}" }, // always Null
+                { "value", $"{record.Message.Value}" }
+            };
+
+            if (record.Error.IsError)
+            {
+                this.ErrCnt += 1;
                 d["message"] = record.Error.ToString();
                 this.Send("producer_send_error", d);
             }
             else
             {
-                this.DeliveryCnt++;
+                this.DeliveryCnt += 1;
                 d["offset"] = record.Offset.ToString();
                 d["_DeliveryCnt"] = DeliveryCnt.ToString();
                 lock (ProduceLock)
+                {
                     d["_ProduceCnt"] = MsgCnt.ToString();
+                }
                 this.Send("producer_send_success", d);
             }
 
             if (ErrCnt + DeliveryCnt >= Config.MaxMsgs)
+            {
                 Stop($"All messages accounted for: {DeliveryCnt} delivered + {ErrCnt} failed >= {Config.MaxMsgs}");
+            }
         }
 
 
@@ -222,9 +228,13 @@ namespace Confluent.Kafka.VerifiableClient
                 double elapsed = (DateTime.Now - LastProduce).TotalMilliseconds / 1000.0;
                 double msgsToSend = Config.MsgRate * elapsed;
                 if (msgsToSend < 1)
+                {
                     return;
+                }
                 for (var i = 0; i < (int)msgsToSend && MsgCnt < Config.MaxMsgs; i++, MsgCnt++)
+                {
                     Produce(Config.Topic, $"{Config.ValuePrefix}{MsgCnt}");
+                }
                 if (MsgCnt >= Config.MaxMsgs)
                 {
                     Dbg($"All {MsgCnt} messages produced, waiting for {MsgCnt - DeliveryCnt} deliveries...");
@@ -262,7 +272,6 @@ namespace Confluent.Kafka.VerifiableClient
 
             Send("shutdown_complete", new Dictionary<string, object>());
         }
-
     }
 
     public class VerifiableConsumerConfig : VerifiableClientConfig
@@ -273,7 +282,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             // Default Consumer configs
             Conf["session.timeout.ms"] = 6000;
-            ((Dictionary<string, object>)Conf["default.topic.config"])["auto.offset.reset"] = "smallest";
+            Conf["auto.offset.reset"] = "smallest";
         }
     }
 
@@ -345,7 +354,9 @@ namespace Confluent.Kafka.VerifiableClient
             if (currentAssignment == null ||
                 (!immediate &&
                 consumedMsgsLastReported + 1000 > consumedMsgs))
+            {
                 return;
+            }
 
             // assigned partitions list
             var alist = new List<Dictionary<string, object>>();
@@ -353,7 +364,9 @@ namespace Confluent.Kafka.VerifiableClient
             {
                 var ap = item.Value;
                 if (ap.MinOffset == -1)
+                {
                     continue; // Skip partitions with no new messages since last run
+                }
                 alist.Add(new Dictionary<string, object>
                 {
                     { "topic", item.Key.Topic },
@@ -366,7 +379,9 @@ namespace Confluent.Kafka.VerifiableClient
             }
 
             if (alist.Count == 0)
+            {
                 return;
+            }
 
             var d = new Dictionary<string, object>
             {
@@ -388,30 +403,40 @@ namespace Confluent.Kafka.VerifiableClient
             Dbg($"OffsetCommit {offsets.Error}: {string.Join(", ", offsets.Offsets)}");
             if (offsets.Error.Code == ErrorCode.Local_NoOffset ||
                 offsets.Offsets.Count == 0)
+            {
                 return; // no offsets to commit, ignore
+            }
 
             var olist = new List<Dictionary<string, object>>();
             foreach (var o in offsets.Offsets)
             {
-                var pd = new Dictionary<string, object>{
+                var pd = new Dictionary<string, object>
+                {
                     { "topic", o.TopicPartition.Topic },
                     { "partition", o.TopicPartition.Partition },
                     { "offset", o.Offset.Value }
                 };
-                if (o.Error)
+                if (o.Error.IsError)
+                {
                     pd["error"] = o.Error.ToString();
+                }
                 olist.Add(pd);
             }
             if (olist.Count == 0)
+            {
                 return;
+            }
 
-            var d = new Dictionary<string, object>{
-                    { "success", (bool)!offsets.Error },
-                    { "offsets", olist }
+            var d = new Dictionary<string, object>
+            {
+                { "success", (bool)!offsets.Error.IsError },
+                { "offsets", olist }
             };
 
-            if (offsets.Error)
+            if (offsets.Error.IsError)
+            {
                 d["error"] = offsets.Error.ToString();
+            }
 
             Send("offsets_committed", d);
         }
@@ -425,7 +450,9 @@ namespace Confluent.Kafka.VerifiableClient
             if (!immediate &&
                 (Config.AutoCommit ||
                 consumedMsgsAtLastCommit + commitEvery > consumedMsgs))
+            {
                 return;
+            }
 
             if (consumedMsgsAtLastCommit == consumedMsgs)
             {
@@ -435,7 +462,9 @@ namespace Confluent.Kafka.VerifiableClient
             // Offset commits must reference higher offsets than those
             // reported to be consumed.
             if (consumedMsgsLastReported < consumedMsgs)
+            {
                 SendRecordsConsumed(true);
+            }
 
             Dbg($"Committing {consumedMsgs - consumedMsgsAtLastCommit} messages");
 
@@ -476,18 +505,23 @@ namespace Confluent.Kafka.VerifiableClient
             ap.ConsumedMsgs++;
 
             if (ap.MinOffset == -1)
+            {
                 ap.MinOffset = record.Offset;
+            }
 
             if (ap.MaxOffset < record.Offset)
+            {
                 ap.MaxOffset = record.Offset;
-
+            }
 
             SendRecordsConsumed(false);
 
             Commit(false);
 
             if (Config.MaxMsgs > 0 && consumedMsgs >= Config.MaxMsgs)
+            {
                 Stop($"Consumed all {consumedMsgs}/{Config.MaxMsgs} messages");
+            }
         }
 
 
@@ -521,12 +555,16 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Dbg($"New assignment: {string.Join(", ", partitions)}");
             if (currentAssignment != null)
+            {
                 Fatal($"Received new assignment {partitions} with already existing assignment in place: {currentAssignment}");
+            }
 
             currentAssignment = new Dictionary<TopicPartition, AssignedPartition>();
 
             foreach (var p in partitions)
+            {
                 currentAssignment[p] = new AssignedPartition();
+            }
 
             Handle.Assign(partitions);
 
@@ -540,10 +578,12 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Dbg($"Revoked assignment: {string.Join(", ", partitions)}");
             if (currentAssignment == null)
+            {
                 Fatal($"Received revoke of {partitions} with no current assignment");
+            }
 
-            SendRecordsConsumed(true/*immediate*/);
-            Commit(true/*immediate*/);
+            SendRecordsConsumed(immediate: true);
+            Commit(immediate: true);
 
             currentAssignment = null;
 
@@ -607,7 +647,9 @@ namespace Confluent.Kafka.VerifiableClient
         static private void Usage(int exitCode, string reason)
         {
             if (reason.Length > 0)
+            {
                 Console.Error.WriteLine($"Error: {reason}");
+            }
 
             Console.Error.WriteLine(@".NET VerifiableClient for kafkatest
 Usage: .. --consumer|--producer --option1 val1 --option2 val2 ..
@@ -653,13 +695,17 @@ Consumer options:
         static private void AssertProducer(string mode, string key)
         {
             if (!mode.Equals("--producer"))
+            {
                 Usage(1, $"{key} is a producer property");
+            }
         }
 
         static private void AssertConsumer(string mode, string key)
         {
             if (!mode.Equals("--consumer"))
+            {
                 Usage(1, $"{key} is a consumer property");
+            }
         }
 
         static private void AssertValue(string mode, string key, string val)
@@ -676,14 +722,22 @@ Consumer options:
             string mode = "";
 
             if (args.Length < 1)
+            {
                 Usage(1, "--consumer or --producer must be specified");
+            }
             mode = args[0];
             if (mode.Equals("--producer"))
+            {
                 conf = new VerifiableProducerConfig();
+            }
             else if (mode.Equals("--consumer"))
+            {
                 conf = new VerifiableConsumerConfig();
+            }
             else
+            {
                 Usage(1, "--consumer or --producer must be the first argument");
+            }
 
             for (var i = 1; i < args.Length; i += 2)
             {
@@ -721,13 +775,15 @@ Consumer options:
                         {
                             var kva = kv.Split('=');
                             if (kva.Length != 2)
+                            {
                                 Usage(1, $"Invalid property: {kv}");
+                            }
 
                             conf.Conf[kva[0]] = kva[1];
                         }
                         break;
 
-                    /* Producer options */
+                    // Producer options
                     case "--throughput":
                         AssertValue(mode, key, val);
                         AssertProducer(mode, key);
@@ -741,13 +797,13 @@ Consumer options:
                     case "--acks":
                         AssertValue(mode, key, val);
                         AssertProducer(mode, key);
-                        ((Dictionary<string, object>)conf.Conf["default.topic.config"])["acks"] = val;
+                        conf.Conf["acks"] = val;
                         break;
                     case "--producer.config":
-                        /* Ignored */
+                        // Ignored
                         break;
 
-                    /* Consumer options */
+                    // Consumer options
                     case "--group-id":
                         AssertValue(mode, key, val);
                         AssertConsumer(mode, key);
@@ -760,7 +816,7 @@ Consumer options:
                         break;
                     case "--enable-autocommit":
                         AssertConsumer(mode, key);
-                        i--; // dont consume value part
+                        i -= 1; // dont consume value part
                         ((VerifiableConsumerConfig)conf).AutoCommit = true;
                         break;
                     case "--assignment-strategy":
@@ -769,7 +825,7 @@ Consumer options:
                         conf.Conf["partition.assignment.strategy"] = JavaAssignmentStrategyParse(val);
                         break;
                     case "--consumer.config":
-                        /* Ignored */
+                        // Ignored
                         break;
 
                     default:
@@ -779,13 +835,19 @@ Consumer options:
             }
 
             if (conf.Topic.Length == 0)
+            {
                 Usage(1, "Missing --topic ..");
+            }
 
             Console.Error.WriteLine($"Running {mode} using librdkafka {Confluent.Kafka.Library.VersionString} ({Confluent.Kafka.Library.Version:x})");
             if (mode.Equals("--producer"))
+            {
                 return new VerifiableProducer(((VerifiableProducerConfig)conf));
+            }
             else
+            {
                 return new VerifiableConsumer(((VerifiableConsumerConfig)conf));
+            }
         }
 
         public static void Main(string[] args)

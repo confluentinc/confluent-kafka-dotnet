@@ -43,14 +43,6 @@ namespace Confluent.Kafka.UnitTests
             e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
             Assert.Contains("sasl.password", e.Message);
 
-            // Throw exception if a config value within default.topic.config is null and
-            // ensure that exception mentions the respective config key.
-            var configWithDefaultTopicNullValue = CreateValidConfiguration();
-            configWithDefaultTopicNullValue["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", null } };
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithDefaultTopicNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
-            Assert.Contains("default.topic.config", e.Message);
-            Assert.Contains("auto.offset.reset", e.Message);
-
             // Throw exception when serializer and deserializer are equal and ensure that exception
             // message indicates the issue.
             e = Assert.Throws<ArgumentException>(() => 
