@@ -23,7 +23,7 @@ namespace Confluent.Kafka.Admin
 {
     public class CreatePartitionsException : Exception
     {
-        public CreatePartitionsException(List<CreatePartitionResult> results)
+        public CreatePartitionsException(List<CreatePartitionsResult> results)
             : base(
                 "An error occurred creating partitions for topics: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
@@ -32,6 +32,6 @@ namespace Confluent.Kafka.Admin
             Results = results;
         }
         
-        public List<CreatePartitionResult> Results { get; }
+        public List<CreatePartitionsResult> Results { get; }
     }
 }
