@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
                     results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource() }).Result;
                     Assert.True(false);
                 }
-                catch (KafkaException e)
+                catch (KafkaException)
                 {
                     // expected.
                 }

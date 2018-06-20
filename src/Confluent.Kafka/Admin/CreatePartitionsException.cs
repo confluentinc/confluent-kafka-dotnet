@@ -21,8 +21,19 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     Represents an error that occured during a create partitions request.
+    /// </summary>
     public class CreatePartitionsException : Exception
     {
+        /// <summary>
+        ///     Initialize a new instance of CreatePartitionsException.
+        /// </summary>
+        /// <param name="results">
+        ///     The result corresponding to all topics in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </param>
         public CreatePartitionsException(List<CreatePartitionsResult> results)
             : base(
                 "An error occurred creating partitions for topics: [" +
@@ -32,6 +43,11 @@ namespace Confluent.Kafka.Admin
             Results = results;
         }
         
+        /// <summary>
+        ///     The result corresponding to all topics in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </summary>
         public List<CreatePartitionsResult> Results { get; }
     }
 }
