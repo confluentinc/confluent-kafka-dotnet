@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(e.InnerException.GetType() == typeof(AlterConfigsException));
                     var ace = (AlterConfigsException)e.InnerException;
                     Assert.Single(ace.Results);
-                    Assert.True(ace.Results[0].Error.Reason.Contains("Unknown"));
+                    Assert.Contains("Unknown", ace.Results[0].Error.Reason);
                 }
 
                 // 3. test that in the failed alter configs call for the specified config resource, the 

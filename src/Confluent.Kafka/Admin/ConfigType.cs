@@ -18,7 +18,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Enumerates the set of configuration resouce types.
+    ///     Enumerates the set of configuration resource types.
     /// </summary>
     public enum ConfigType : int
     {

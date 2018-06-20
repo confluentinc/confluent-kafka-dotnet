@@ -35,8 +35,8 @@ namespace Confluent.Kafka.Admin
         public string Name { get; set; }
 
         /// <summary>
-        ///     The numer of partitions for the new topic or -1 if a replica assignment
-        ///     is specified.
+        ///     The numer of partitions for the new topic or -1 (the default) if a 
+        ///     replica assignment is specified.
         /// </summary>
         public int NumPartitions { get; set; } = -1;
 
@@ -48,8 +48,8 @@ namespace Confluent.Kafka.Admin
         public Dictionary<int, List<int>> ReplicasAssignments { get; set; } = null;
 
         /// <summary>
-        ///     The replication factor for the new topic or -1 if a replica assignment
-        ///     is specified instead.
+        ///     The replication factor for the new topic or -1 (the default) if a 
+        ///     replica assignment is specified instead.
         /// </summary>
         public short ReplicationFactor { get; set; } = -1;
     }

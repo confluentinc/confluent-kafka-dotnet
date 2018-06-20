@@ -74,17 +74,35 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(results);
                 Assert.True(results[0].Entries.Count > 20);
 
-                // invalid config resource
+                // empty config resource
                 // --- 
                 try
                 {
-                    // TODO: this actually segfaults.
                     results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { new ConfigResource() }).Result;
                     Assert.True(false);
                 }
-                catch (KafkaException)
+                catch (ArgumentException)
                 {
                     // expected.
+                }
+
+                // invalid config resource
+                // ---
+                try
+                {
+                    results = adminClient.DescribeConfigsAsync(
+                        new List<ConfigResource> 
+                        {
+                            new ConfigResource { Name="invalid.name.for.resource", ResourceType = ConfigType.Broker }
+                        }
+                    ).Result;
+                    Assert.True(false);
+                }
+                catch (AggregateException ex)
+                {
+                    Assert.True(ex.InnerException.GetType() == typeof(KafkaException));
+                    var ace = (KafkaException)ex.InnerException;
+                    Assert.Contains("Expected an int32", ace.Message);
                 }
 
                 // invalid topic.

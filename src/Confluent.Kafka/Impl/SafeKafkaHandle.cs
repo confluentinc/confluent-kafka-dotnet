@@ -1024,9 +1024,17 @@ namespace Confluent.Kafka.Impl
                 var resource = config.Key;
                 var resourceConfig = config.Value;
 
+                if (string.IsNullOrEmpty(resource.Name))
+                {
+                    throw new ArgumentException("Resource must be specified.");
+                }
                 var resourcePtr = Librdkafka.ConfigResource_new(resource.ResourceType, resource.Name);
                 foreach (var rc in resourceConfig)
                 {
+                    if (string.IsNullOrEmpty(rc.Name))
+                    {
+                        throw new ArgumentException($"config name must be specified for {resource}");
+                    }
                     var errorCode = Librdkafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
                     if (errorCode != ErrorCode.NoError)
                     {
@@ -1063,6 +1071,10 @@ namespace Confluent.Kafka.Impl
             int configPtrsIdx = 0;
             foreach (var resource in resources)
             {
+                if (string.IsNullOrEmpty(resource.Name))
+                {
+                    throw new ArgumentException("Resource must be specified.");
+                }
                 var resourcePtr = Librdkafka.ConfigResource_new(resource.ResourceType, resource.Name);
                 configPtrs[configPtrsIdx++] = resourcePtr;
             }
