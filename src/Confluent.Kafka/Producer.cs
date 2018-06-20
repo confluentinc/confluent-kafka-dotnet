@@ -17,15 +17,15 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-using System.Collections.Concurrent;
 
 namespace Confluent.Kafka
 {
@@ -34,8 +34,8 @@ namespace Confluent.Kafka
     /// </summary>
     public class Producer : IDisposable
     {
-        private bool manualPoll;
-        private bool disableDeliveryReports;
+        private readonly bool manualPoll;
+        private readonly bool disableDeliveryReports;
 
         internal const int RD_KAFKA_PARTITION_UA = -1;
         internal const long RD_KAFKA_NO_TIMESTAMP = 0;
@@ -63,20 +63,20 @@ namespace Confluent.Kafka
                     catch (OperationCanceledException) {}
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        private LibRdKafka.ErrorDelegate errorDelegate;
+        private readonly LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private LibRdKafka.StatsDelegate statsDelegate;
+        private readonly LibRdKafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private LibRdKafka.LogDelegate logDelegate;
+        private readonly LibRdKafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
@@ -94,13 +94,13 @@ namespace Confluent.Kafka
         private readonly Func<string, SafeTopicHandle> topicHandlerFactory;
 
         /// <remarks>
-        ///     getKafkaTopicHandle() is now only required by GetMetadata() which still requires that 
+        ///     GetKafkaTopicHandle() is now only required by GetMetadata() which still requires that 
         ///     topic is specified via a handle rather than a string name (note that getKafkaTopicHandle() 
         ///     was also formerly required by the ProduceAsync methods). Eventually we would like to 
         ///     depreciate this method as well as the SafeTopicHandle class.
         /// </remarks>
 
-        private SafeTopicHandle getKafkaTopicHandle(string topic) 
+        private SafeTopicHandle GetKafkaTopicHandle(string topic) 
             => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
         private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
@@ -134,17 +134,16 @@ namespace Confluent.Kafka
                 if (msg.key != IntPtr.Zero)
                 {
                     key = new byte[(int)msg.key_len];
-                    System.Runtime.InteropServices.Marshal.Copy(msg.key, key, 0, (int)msg.key_len);
+                    Marshal.Copy(msg.key, key, 0, (int)msg.key_len);
                 }
                 if (msg.val != IntPtr.Zero)
                 {
                     val = new byte[(int)msg.len];
-                    System.Runtime.InteropServices.Marshal.Copy(msg.val, val, 0, (int)msg.len);
+                    Marshal.Copy(msg.val, val, 0, (int)msg.len);
                 }
             }
 
-            IntPtr timestampType;
-            long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType);
+            long timestamp = LibRdKafka.message_timestamp(rkmessage, out IntPtr timestampType);
 
             deliveryHandler.HandleDeliveryReport(
                 new Message (
@@ -541,7 +540,6 @@ namespace Confluent.Kafka
         public Task<Message> ProduceAsync(string topic, byte[] key, int keyOffset, int keyLength, byte[] val, int valOffset, int valLength, bool blockIfQueueFull)
             => Produce(topic, val, valOffset, valLength, key, keyOffset, keyLength, null, RD_KAFKA_PARTITION_UA, blockIfQueueFull);
 
-
         /// <summary>
         ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
         ///     Refer to <see cref="ProduceAsync(string, byte[], int, int, byte[], int, int, int, bool, IDeliveryHandler)" /> 
@@ -549,7 +547,6 @@ namespace Confluent.Kafka
         /// </summary>
         public void ProduceAsync(string topic, byte[] key, byte[] val, IDeliveryHandler deliveryHandler)
             => Produce(topic, val, 0, val?.Length ?? 0, key, 0, key?.Length ?? 0, null, RD_KAFKA_PARTITION_UA, true, deliveryHandler);
-
 
         /// <summary>
         ///     Asynchronously send a single message to the broker (order of delivery reports strictly guarenteed).
@@ -721,7 +718,6 @@ namespace Confluent.Kafka
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-
         /// <summary>
         ///     Get information pertaining to a particular group in the
         ///     Kafka cluster (blocking).
@@ -757,7 +753,6 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => kafkaHandle.ListGroup(group, -1);
 
-
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition (blocking).
@@ -792,7 +787,7 @@ namespace Confluent.Kafka
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
 
         private Metadata GetMetadata(bool allTopics, string topic, int millisecondsTimeout)
-            => kafkaHandle.GetMetadata(allTopics, topic == null ? null : getKafkaTopicHandle(topic), millisecondsTimeout);
+            => kafkaHandle.GetMetadata(allTopics, topic == null ? null : GetKafkaTopicHandle(topic), millisecondsTimeout);
 
         /// <summary>
         ///     Query the cluster for metadata (blocking).
@@ -1220,7 +1215,6 @@ namespace Confluent.Kafka
         public void ProduceAsync(string topic, TKey key, TValue val, bool blockIfQueueFull, IDeliveryHandler<TKey, TValue> deliveryHandler)
             => serializingProducer.ProduceAsync(topic, key, val, blockIfQueueFull, deliveryHandler);
 
-
         /// <summary>
         ///     Raised when there is information that should be logged.
         /// </summary>
@@ -1273,7 +1267,6 @@ namespace Confluent.Kafka
             add { producer.OnError += value; }
             remove { producer.OnError -= value; }
         }
-
 
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
@@ -1331,7 +1324,6 @@ namespace Confluent.Kafka
         public int Flush(TimeSpan timeout)
             => producer.Flush(timeout.TotalMillisecondsAsInt());
 
-
         /// <summary>
         ///     Releases all resources used by this Producer.
         /// </summary>
@@ -1354,7 +1346,6 @@ namespace Confluent.Kafka
             producer.Dispose();
         }
 
-
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster (blocking)
         ///
@@ -1365,7 +1356,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => producer.ListGroups(timeout);
-
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -1402,7 +1392,6 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => producer.ListGroup(group);
 
-
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition (blocking).
@@ -1435,7 +1424,6 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => producer.QueryWatermarkOffsets(topicPartition);
-
 
         /// <summary>
         ///     Refer to Producer.GetMetadata(bool, string, TimeSpan) for more information.

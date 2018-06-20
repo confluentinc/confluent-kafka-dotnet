@@ -17,13 +17,12 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-
 
 namespace Confluent.Kafka
 {
@@ -142,8 +141,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public bool Consume(out Message<TKey, TValue> message, int millisecondsTimeout)
         {
-            Message msg;
-            if (!consumer.Consume(out msg, millisecondsTimeout))
+            if (!consumer.Consume(out Message msg, millisecondsTimeout))
             {
                 message = null;
                 return false;
@@ -194,8 +192,7 @@ namespace Confluent.Kafka
         /// </param>
         public void Poll(int millisecondsTimeout)
         {
-            Message<TKey, TValue> msg;
-            if (Consume(out msg, millisecondsTimeout))
+            if (Consume(out Message<TKey, TValue> msg, millisecondsTimeout))
             {
                 OnMessage?.Invoke(this, msg);
             }
@@ -215,8 +212,7 @@ namespace Confluent.Kafka
         /// </param>
         public void Poll(TimeSpan timeout)
         {
-            Message<TKey, TValue> msg;
-            if (Consume(out msg, timeout))
+            if (Consume(out Message<TKey, TValue> msg, timeout))
             {
                 OnMessage?.Invoke(this, msg);
             }
@@ -233,7 +229,6 @@ namespace Confluent.Kafka
         [Obsolete("Use an overload of Poll with a finite timeout.", false)]
         public void Poll()
             => Poll(-1);
-
 
         /// <summary>
         ///     Raised on new partition assignment.
@@ -562,7 +557,6 @@ namespace Confluent.Kafka
         public string MemberId
             => consumer.MemberId;
 
-
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster (blocking).
         ///
@@ -573,7 +567,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => consumer.ListGroups(timeout);
-
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -610,7 +603,6 @@ namespace Confluent.Kafka
         public GroupInfo ListGroup(string group)
             => consumer.ListGroup(group);
 
-
         /// <summary>
         ///     Get last known low (oldest/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
@@ -633,7 +625,6 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => consumer.GetWatermarkOffsets(topicPartition);
-
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
@@ -725,20 +716,20 @@ namespace Confluent.Kafka
     {
         private SafeKafkaHandle kafkaHandle;
 
-        private LibRdKafka.ErrorDelegate errorDelegate;
+        private readonly LibRdKafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private LibRdKafka.StatsDelegate statsDelegate;
+        private readonly LibRdKafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private LibRdKafka.LogDelegate logDelegate;
+        private readonly LibRdKafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, int level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
@@ -753,7 +744,7 @@ namespace Confluent.Kafka
             OnLog?.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
-        private LibRdKafka.RebalanceDelegate rebalanceDelegate;
+        private readonly LibRdKafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
@@ -787,7 +778,7 @@ namespace Confluent.Kafka
             }
         }
 
-        private LibRdKafka.CommitDelegate commitDelegate;
+        private readonly LibRdKafka.CommitDelegate commitDelegate;
         private void CommitCallback(
             IntPtr rk,
             ErrorCode err,
@@ -954,7 +945,6 @@ namespace Confluent.Kafka
         /// </remarks>
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
-
         /// <summary>
         ///     Gets the current partition assignment as set by Assign.
         /// </summary>
@@ -1111,7 +1101,6 @@ namespace Confluent.Kafka
         public bool Consume(out Message message, TimeSpan timeout)
             => Consume(out message, timeout.TotalMillisecondsAsInt());
 
-
         /// <summary>
         ///     Poll for new consumer events, including new messages
         ///     ready to be consumed (which will trigger the OnMessage
@@ -1124,8 +1113,7 @@ namespace Confluent.Kafka
         /// </param>
         public void Poll(TimeSpan timeout)
         {
-            Message msg;
-            if (Consume(out msg, timeout))
+            if (Consume(out Message msg, timeout))
             {
                 OnMessage?.Invoke(this, msg);
             }
@@ -1146,8 +1134,7 @@ namespace Confluent.Kafka
         /// </param>
         public void Poll(int millisecondsTimeout)
         {
-            Message msg;
-            if (Consume(out msg, millisecondsTimeout))
+            if (Consume(out Message msg, millisecondsTimeout))
             {
                 OnMessage?.Invoke(this, msg);
             }
@@ -1165,11 +1152,9 @@ namespace Confluent.Kafka
         public void Poll()
             => Poll(-1);
 
-
         /// <include file='include_docs.xml' path='API/Member[@name="Store_Offsets"]/*' />
         public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.StoreOffsets(offsets);
-
 
         /// <summary>
         ///     Commit offsets for the current assignment.
@@ -1276,7 +1261,6 @@ namespace Confluent.Kafka
         public string MemberId
             => kafkaHandle.MemberId;
 
-
         /// <summary>
         ///     Get information pertaining to all groups in the Kafka cluster (blocking).
         ///
@@ -1287,7 +1271,6 @@ namespace Confluent.Kafka
         /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
-
 
         /// <summary>
         ///     Get information pertaining to a particular group in the
@@ -1382,7 +1365,6 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
-
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.GetMetadata(bool,string,int)" /> for more information.
