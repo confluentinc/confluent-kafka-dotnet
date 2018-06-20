@@ -76,10 +76,8 @@ namespace Confluent.Kafka.Examples.Misc
 
         public static void Main(string[] args)
         {
-            Console.WriteLine($"Hello RdKafka!");
-            Console.WriteLine($"{Library.Version:X}");
-            Console.WriteLine($"{Library.VersionString}");
-            Console.WriteLine($"{string.Join(", ", Library.DebugContexts)}");
+            Console.WriteLine($"Librdkafka Version: {Library.VersionString} ({Library.Version:X})");
+            Console.WriteLine($"Debug Contexts: {string.Join(", ", Library.DebugContexts)}");
 
             if (args.Contains("--list-groups"))
             {
