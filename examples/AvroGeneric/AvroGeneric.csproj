@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka.Avro" Version="0.11.4" />
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka.Avro" Version="1.0-experimental-4" /> -->
+    <ProjectReference Include="../../src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj" />
   </ItemGroup>
 
 </Project>
