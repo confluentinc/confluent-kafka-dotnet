@@ -18,7 +18,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     ConfigSource
+    ///     Enumerates the different config sources.
     /// </summary>
     public enum ConfigSource : int
     {

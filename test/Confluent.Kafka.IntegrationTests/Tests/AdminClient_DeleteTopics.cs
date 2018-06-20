@@ -58,9 +58,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(topicName1, dResult.First().Topic);
             }
 
-            // test 
+            // test
             //  - delete two topics, one that doesn't exist.
-            //  - check that explicitly giving options doesn't obviouslyn ot work.
+            //  - check that explicitly giving options doesn't obviously not work.
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
                 var cResult = adminClient.CreateTopicsAsync(

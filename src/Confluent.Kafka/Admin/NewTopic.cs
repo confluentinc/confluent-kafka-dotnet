@@ -25,12 +25,12 @@ namespace Confluent.Kafka.Admin
     public class NewTopic
     {
         /// <summary>
-        ///     The configuration to use on the new topic.
+        ///     The configuration to use to create the new topic.
         /// </summary>
         public Dictionary<string, string> Configs { get; set; }
 
         /// <summary>
-        ///     The name of the topic to be created (required)
+        ///     The name of the topic to be created (required).
         /// </summary>
         public string Name { get; set; }
 

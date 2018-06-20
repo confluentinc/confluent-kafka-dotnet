@@ -54,7 +54,7 @@ namespace Confluent.Kafka
 
         private ConfigEntryResult extractConfigEntry(IntPtr configEntryPtr)
         {
-            List<ConfigSynonym> synonyms = null;
+            var synonyms = new List<ConfigSynonym>();
             var synonymsPtr = LibRdKafka.ConfigEntry_synonyms(configEntryPtr, out UIntPtr synonymsCount);
             if (synonymsPtr != IntPtr.Zero)
             {
@@ -73,7 +73,6 @@ namespace Confluent.Kafka
                 IsDefault = (int)LibRdKafka.ConfigEntry_is_default(configEntryPtr) == 1,
                 IsSensitive = (int)LibRdKafka.ConfigEntry_is_sensitive(configEntryPtr) == 1,
                 IsReadOnly = (int)LibRdKafka.ConfigEntry_is_read_only(configEntryPtr) == 1,
-                IsSynonym = (int)LibRdKafka.ConfigEntry_is_synonym(configEntryPtr) == 1,
                 Source = LibRdKafka.ConfigEntry_source(configEntryPtr),
                 Synonyms = synonyms
             };
@@ -203,21 +202,21 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
                                             var result = extractTopicResults(
                                                     LibRdKafka.CreatePartitions_result_topics(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr)
-                                                        .Select(r => new CreatePartitionResult { Topic = r.Topic, Error = r.Error }).ToList();
+                                                        .Select(r => new CreatePartitionsResult { Topic = r.Topic, Error = r.Error }).ToList();
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetResult(result);
                                             }
                                         }
                                         break;
@@ -277,8 +276,8 @@ namespace Confluent.Kafka
                                 // TODO: If this occurs, it means there's an application logic error
                                 //       (i.e. program execution should never get here). Rather than
                                 //       ignore the situation, we panic, destroy the librdkafka handle, 
-                                //       and exit the polling loop. Further usage of AdminClient will
-                                //       result in exceptions.
+                                //       and exit the polling loop. Further usage of the AdminClient will
+                                //       result in exceptions. People will be sure to notice and tell us.
                                 this.DisposeResources();
                             }
                         }
@@ -293,26 +292,27 @@ namespace Confluent.Kafka
             { LibRdKafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicResult>>) },
             { LibRdKafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigResult>>) },
             { LibRdKafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigResult>>) },
-            { LibRdKafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionResult>>) }
+            { LibRdKafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsResult>>) }
         };
 
         /// <summary>
         ///     Get the configuration for the specified resources. The returned 
-        ///     configuration includes default values and the isDefault() method
+        ///     configuration includes default values and the IsDefault property
         ///     can be used to distinguish them from user supplied values. The 
-        ///     value of config entries where isSensitive() is true is always null 
+        ///     value of config entries where IsSensitive is true is always null 
         ///     so that sensitive information is not disclosed. Config entries where
-        ///     isReadOnly() is true cannot be updated. This operation is supported 
+        ///     IsReadOnly is true cannot be updated. This operation is supported 
         ///     by brokers with version 0.11.0.0 or higher.
         /// </summary>
         /// <param name="resources">
-        ///     the resources (topic and broker resource types are currently supported)
+        ///     The resources (topic and broker resource types are currently 
+        ///     supported)
         /// </param>
         /// <param name="options">
-        ///     the options to use when describing configs.
+        ///     The options to use when describing configs.
         /// </param>
         /// <returns>
-        ///     The D
+        ///     Configs for the specified resources.
         /// </returns>
         public Task<List<DescribeConfigResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null)
         {
@@ -328,10 +328,10 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Update the configuration for the specified resources with the default options. 
-        ///     Updates are not transactional so they may succeed for some resources while fail 
-        ///     for others. The configs for a particular resource are updated atomically. This 
-        ///     operation is supported by brokers with version 0.11.0.0 or higher.
+        ///     Update the configuration for the specified resources. Updates are not transactional
+        ///     so they may succeed for some resources while fail for others. The configs for a 
+        ///     particular resource are updated atomically. This operation is supported by brokers 
+        ///     with version 0.11.0.0 or higher.
         /// </summary>
         /// <param name="configs">
         ///     The resources with their configs (topic is the only resource type with configs
@@ -341,7 +341,7 @@ namespace Confluent.Kafka
         ///     The options to use when altering configs.
         /// </param>
         /// <returns>
-        ///     The Config associated with the specified 
+        ///     The results of the alter configs requests.
         /// </returns>
         public Task<List<AlterConfigResult>> AlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, AlterConfigsOptions options = null)
         {
@@ -367,8 +367,11 @@ namespace Confluent.Kafka
         ///     A collection of specifications of the new topics to create.
         /// </param>
         /// <param name="options">
-        ///     The options to use when creating the new topics.
+        ///     The options to use when creating the topics.
         /// </param>
+        /// <returns>
+        ///     The results of the create topic requests.
+        /// </returns>
         public Task<List<CreateTopicResult>> CreateTopicsAsync(IEnumerable<NewTopic> topics, CreateTopicsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
@@ -385,10 +388,9 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Delete a batch of topics. This operation is not transactional so it may succeed for some topics while fail
         ///     for others. It may take several seconds after the DeleteTopicsResult returns success for all the brokers to
-        ///     become aware that the topics are gone. During this time, AdminClient#listTopics and AdminClient#describeTopics
-        ///     may continue to return information about the deleted topics. If delete.topic.enable is false on the brokers,
-        ///     deleteTopics will mark the topics for deletion, but not actually delete them. The futures will return 
-        ///     successfully in this case.
+        ///     become aware that the topics are gone. During this time, topics may continue to be visible via admin 
+        ///     operations. If delete.topic.enable is false on the brokers, DeleteTopicsAsync will mark the topics for
+        ///     deletion, but not actually delete them. The futures will return successfully in this case.
         /// </summary>
         /// <param name="topics">
         ///     The topic names to delete.
@@ -397,7 +399,7 @@ namespace Confluent.Kafka
         ///     The options to use when deleting topics.
         /// </param>
         /// <returns>
-        ///     
+        ///     The results of the delete topic requests.
         /// </returns>
         public Task<List<DeleteTopicResult>> DeleteTopicsAsync(IEnumerable<string> topics, DeleteTopicsOptions options = null)
         {
@@ -413,21 +415,25 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Increase the number of partitions of the topics specified as the keys of newPartitions according to the corresponding values.
+        ///     Increase the number of partitions for one or more topics as per
+        ///     the supplied NewPartitions specifications.
         /// </summary>
         /// <param name="newPartitions">
-        ///     A collection of specifications of the new partitions to create for each topic.
+        ///     A collection of NewPartitions specifications.
         /// </param>
         /// <param name="options">
         ///     The options to use when creating the partitions.
         /// </param>
-        /// <returns></returns>
-        public Task<List<CreatePartitionResult>> CreatePartitionsAsync(IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
+        /// <returns>
+        ///     The results of the NewPartitions requests.
+        /// </returns>
+        public Task<List<CreatePartitionsResult>> CreatePartitionsAsync(
+            IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
             // List<Task<CreatePartitionResult>> CreatePartitionsConcurrent(IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
 
-            var completionSource = new TaskCompletionSource<List<CreatePartitionResult>>();
+            var completionSource = new TaskCompletionSource<List<CreatePartitionsResult>>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.CreatePartitions(
                 newPartitions, options, resultQueue,
@@ -451,7 +457,8 @@ namespace Confluent.Kafka
         ///     Initialize a new AdminClient instance.
         /// </summary>
         /// <param name="config">
-        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
+        ///     librdkafka configuration parameters (refer to 
+        ///     https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
         /// </param>
         public AdminClient(IEnumerable<KeyValuePair<string, object>> config)
         {

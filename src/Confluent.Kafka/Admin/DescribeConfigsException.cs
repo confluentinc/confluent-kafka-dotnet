@@ -15,18 +15,39 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     Represents an error that occured during a describe configs request.
+    /// </summary>
     public class DescribeConfigsException : Exception
     {
+        /// <summary>
+        ///     Initializes a new instance of DescribeConfigsException.
+        /// </summary>
+        /// <param name="results">
+        ///     The result corresponding to all ConfigResource in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </param>
         public DescribeConfigsException(List<DescribeConfigResult> results)
+            : base(
+                "An error occurred describing the following resources: [" +
+                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.ConfigResource)) +
+                "]. Inspect the Results property of this exception for further information.")
         {
             Results = results;
         }
 
+        /// <summary>
+        ///     The result corresponding to all ConfigResources in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </summary>
         public List<DescribeConfigResult> Results { get; }
     }
 }

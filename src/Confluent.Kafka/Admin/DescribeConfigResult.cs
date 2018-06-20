@@ -19,12 +19,24 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     The result of a request to describe the configs of a specific resource.
+    /// </summary>
     public class DescribeConfigResult
     {
+        /// <summary>
+        ///     The resource associated with the describe configs request.
+        /// </summary>
         public ConfigResource ConfigResource;
 
+        /// <summary>
+        ///     Configuration entries for the specified resource.
+        /// </summary>
         public Dictionary<string, ConfigEntryResult> Entries { get; set; }
 
+        /// <summary>
+        ///     The error (or success) of the describe config request.
+        /// </summary>
         public Error Error { get; set; }
     }
 }

@@ -20,10 +20,13 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Passed to the CreatePartitions method.
+    ///     Specification for new partitions to be added to a topic.
     /// </summary>
     public class NewPartitions
     {
+        /// <summary>
+        ///     The topic that the new partitions specification corresponds to.
+        /// </summary>
         public string Topic { get; set; }
         
         /// <summary>
@@ -33,7 +36,7 @@ namespace Confluent.Kafka.Admin
         public List<List<int>> Assignments { get; set; } = null;
 
         /// <summary>
-        ///     Increase the partition count for a topic to the given totalCount
+        ///     The partition count for the specified topic is increased to this value.
         /// </summary>
         public int IncreaseTo { get; set; }
     }

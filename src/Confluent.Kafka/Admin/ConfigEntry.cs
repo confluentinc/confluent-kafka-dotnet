@@ -22,7 +22,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     A configuration object containing the configuration entries for a resource.
+    ///     Encapsulates a config property name / value pair.
     /// </summary>
     public class ConfigEntry
     {

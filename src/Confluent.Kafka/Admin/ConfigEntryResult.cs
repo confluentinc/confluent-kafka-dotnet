@@ -22,29 +22,27 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     A configuration object containing the configuration entries for a resource.
+    ///     A config property entry, as reported by the Kafka admin api.
     /// </summary>
     public class ConfigEntryResult
     {
         /// <summary>
-        ///     Whether or not the config value is the default or if it's been explicitly set.
+        ///     Whether or not the config value is the default or was 
+        ///     explicitly set.
         /// </summary>
         public bool IsDefault { get; set; }
 
         /// <summary>
-        ///     Whether or not the config is read-only and cannot be updated.
+        ///     Whether or not the config is read-only (cannot be updated).
         /// </summary>
         public bool IsReadOnly { get; set; }
 
         /// <summary>
-        ///     Whether or not the config value is sensitive.
+        ///     Whether or not the config value is sensitive. The value
+        ///     for sensitive configuration values is always returned
+        ///     as null.
         /// </summary>
         public bool IsSensitive { get; set; }
-
-        /// <summary>
-        ///     Whether or not the config value is a synonym.
-        /// </summary>
-        public bool IsSynonym { get; set; }
 
         /// <summary>
         ///     The config name.
@@ -56,8 +54,17 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public string Value { get; set; }
 
+        /// <summary>
+        ///     The config source. Refer to 
+        ///     <see cref="Confluent.Kafka.Admin.ConfigSource" /> for 
+        ///     more information.
+        /// </summary>
         public ConfigSource Source { get; set; }
 
+        /// <summary>
+        ///     All config values that may be used as the value of this 
+        ///     config along with their source, in the order of precedence.
+        /// </summary>
         public List<ConfigSynonym> Synonyms { get; set; }
     }
 }

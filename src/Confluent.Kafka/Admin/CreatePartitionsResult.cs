@@ -23,9 +23,19 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
-    public class CreatePartitionResult
+    /// <summary>
+    ///     The result of a create partitions request for a specific topic.
+    /// </summary>
+    public class CreatePartitionsResult
     {
+        /// <summary>
+        ///     The topic.
+        /// </summary>
         public string Topic { get; set; }
+
+        /// <summary>
+        ///     The error (or success) of the create partitions request.
+        /// </summary>
         public Error Error { get; set; }
     }
 }

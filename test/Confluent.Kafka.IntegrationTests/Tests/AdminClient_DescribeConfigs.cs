@@ -51,6 +51,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(results[0].Entries.Where(e => e.Key == "advertised.listeners"));
                 Assert.Single(results[0].Entries.Where(e => e.Key == "num.network.threads"));
 
+                var a = results.Select(aa => aa.Entries.Where(b => b.Value.Synonyms.Count > 0).ToList()).ToList();
+
                 // topic configs, more than one.
                 // ---
                 results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { 

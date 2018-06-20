@@ -19,12 +19,26 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     Describes a synonym of a config entry.
+    /// </summary>
     public class ConfigSynonym
     {
+        /// <summary>
+        ///     The config name.
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        ///     The config value.
+        /// </summary>
         public string Value { get; set; }
 
+        /// <summary>
+        ///     The config source. Refer to 
+        ///     <see cref="Confluent.Kafka.Admin.ConfigSource" /> for 
+        ///     more information.
+        /// </summary>
         public ConfigSource Source { get; set; }
     }
 }

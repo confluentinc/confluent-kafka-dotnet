@@ -101,5 +101,13 @@ namespace Confluent.Kafka.Admin
         public static bool operator !=(ConfigResource a, ConfigResource b)
             => !(a == b);
 
+        /// <summary>
+        ///     Returns a string representation of the ConfigResource object.
+        /// </summary>
+        /// <returns>
+        ///     A string representation of the ConfigResource object.
+        /// </returns>
+        public override string ToString()
+            => $"{Name} ({ResourceType})";
     }
 }

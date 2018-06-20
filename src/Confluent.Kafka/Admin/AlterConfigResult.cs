@@ -23,10 +23,19 @@ using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     The result of an alter config request for a specific resource.
+    /// </summary>
     public class AlterConfigResult
     {
+        /// <summary>
+        ///     The resource the result corresponds to.
+        /// </summary>
         public ConfigResource ConfigResource;
 
+        /// <summary>
+        ///     The error (or success) of the alter config request.
+        /// </summary>
         public Error Error { get; set; }
     }
 }

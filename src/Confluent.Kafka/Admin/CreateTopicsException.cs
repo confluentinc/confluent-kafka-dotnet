@@ -15,18 +15,39 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 
 namespace Confluent.Kafka.Admin
 {
+    /// <summary>
+    ///     Represents an error that occured during a create topics request.
+    /// </summary>
     public class CreateTopicsException : Exception
     {
+        /// <summary>
+        ///     Initialize a new instance of CreateTopicsException.
+        /// </summary>
+        /// <param name="results">
+        ///     The result corresponding to all topics in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </param>
         public CreateTopicsException(List<CreateTopicResult> results)
+            : base(
+                "An error occurred creating topics: [" +
+                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
+                "]. Inspect the Results property of this exception for further information.")
         {
             this.Results = results;
         }
-        
+
+        /// <summary>
+        ///     The result corresponding to all topics in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </summary>
         public List<CreateTopicResult> Results { get; }
     }
 }

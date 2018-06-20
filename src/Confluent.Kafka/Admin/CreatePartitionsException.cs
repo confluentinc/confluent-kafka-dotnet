@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 
@@ -23,6 +24,10 @@ namespace Confluent.Kafka.Admin
     public class CreatePartitionsException : Exception
     {
         public CreatePartitionsException(List<CreatePartitionResult> results)
+            : base(
+                "An error occurred creating partitions for topics: [" +
+                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
+                "]. Inspect the Results property of this exception for further information.")
         {
             Results = results;
         }

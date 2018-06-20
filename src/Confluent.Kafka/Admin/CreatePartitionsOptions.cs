@@ -20,7 +20,7 @@ using System;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the CreateTopics method.
+    ///     Options for the CreatePartitions method.
     /// </summary>
     public class CreatePartitionsOptions
     {
