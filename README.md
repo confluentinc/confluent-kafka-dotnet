@@ -55,6 +55,7 @@ Nuget packages corresponding to commits to release branches are available from t
 should specify it in the nuget package manger):
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
 matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
+
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
 
 
