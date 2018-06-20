@@ -59,8 +59,8 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, firstMessage.Offset);
+                Assert.Equal(1, result.Count);
+                Assert.Equal(firstMessage.Offset, result[0].Offset);
                 Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the last produced message timestamp
@@ -69,8 +69,8 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, lastMessage.Offset);
+                Assert.Equal(1, result.Count);
+                Assert.Equal(lastMessage.Offset, result[0].Offset);
                 Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the timestamp that very far in the past
@@ -80,8 +80,8 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, 0);
+                Assert.Equal(1, result.Count);
+                Assert.Equal(0, result[0].Offset);
                 Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the timestamp that very far in the future
@@ -90,8 +90,8 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, 0);
+                Assert.Equal(1, result.Count);
+                Assert.Equal(0, result[0].Offset);
                 Assert.False(result[0].Error.HasError);
             }
         }

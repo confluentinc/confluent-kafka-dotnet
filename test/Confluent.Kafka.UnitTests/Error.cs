@@ -22,16 +22,16 @@ namespace Confluent.Kafka.UnitTests
     public class ErrorTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             var e = new Error(ErrorCode.Local_BadCompression);
-            Assert.Equal(e.Code, ErrorCode.Local_BadCompression);
+            Assert.Equal(ErrorCode.Local_BadCompression, e.Code);
             Assert.NotNull(e.Reason);
-            Assert.Equal(e.Reason, "Local: Invalid compressed data");
+            Assert.Equal("Local: Invalid compressed data", e.Reason);
 
             var e2 = new Error(ErrorCode.Local_BadMsg, "Dummy message");
-            Assert.Equal(e2.Code, ErrorCode.Local_BadMsg);
-            Assert.Equal(e2.Reason, "Dummy message");
+            Assert.Equal(ErrorCode.Local_BadMsg, e2.Code);
+            Assert.Equal("Dummy message", e2.Reason);
         }
 
         [Fact]
@@ -107,7 +107,6 @@ namespace Confluent.Kafka.UnitTests
             var e1 = new Error(ErrorCode.NotCoordinatorForGroup);
             var ec1 = ErrorCode.NotCoordinatorForGroup;
 
-            Assert.Equal((ErrorCode)e1, ec1);
             Assert.Equal(ec1, (ErrorCode)e1);
         }
     }

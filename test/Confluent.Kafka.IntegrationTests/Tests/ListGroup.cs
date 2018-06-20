@@ -53,8 +53,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(partitions.Count, 1);
-                    Assert.Equal(partitions[0], firstProduced.TopicPartition);
+                    Assert.Equal(1, partitions.Count);
+                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
 

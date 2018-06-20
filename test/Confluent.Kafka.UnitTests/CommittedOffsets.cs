@@ -23,13 +23,13 @@ namespace Confluent.Kafka.UnitTests
     public class CommittedOffetsTest
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             var tpos = new List<TopicPartitionOffsetError>();
             var err = new Error(ErrorCode.UnknownTopicOrPart);
             var co = new CommittedOffsets(tpos, err);
-            Assert.Same(co.Offsets, tpos);
-            Assert.Equal(co.Error, err);
+            Assert.Same(tpos, co.Offsets);
+            Assert.Equal(err, co.Error);
         }
     }
 }

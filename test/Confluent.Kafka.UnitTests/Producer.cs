@@ -26,7 +26,7 @@ namespace Confluent.Kafka.UnitTests
     public class ProducerTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.

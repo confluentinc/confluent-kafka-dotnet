@@ -94,8 +94,8 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                Assert.Equal(msgCnt, 1);
-                Assert.Equal(errCnt, 1);
+                Assert.Equal(1, msgCnt);
+                Assert.Equal(1, errCnt);
             }
 
             // test value deserialization error behavior
@@ -137,8 +137,8 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                Assert.Equal(msgCnt, 1);
-                Assert.Equal(errCnt, 1);
+                Assert.Equal(1, msgCnt);
+                Assert.Equal(1, errCnt);
             }
 
         }

@@ -46,17 +46,17 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 var dr = producer.ProduceAsync(singlePartitionTopic, null, "test string").Result;
-                Assert.NotEqual((long)dr.Offset, (long)Offset.Invalid); // TODO: remove long cast. this is fixed in PR #29
+                Assert.NotEqual((long)Offset.Invalid, (long)dr.Offset); // TODO: remove long cast. this is fixed in PR #29
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Subscribe(singlePartitionTopic);
-                Assert.Equal(consumer.Assignment.Count, 0);
+                Assert.Equal(0, consumer.Assignment.Count);
                 consumer.Poll(TimeSpan.FromSeconds(10));
-                Assert.Equal(consumer.Assignment.Count, 1);
-                Assert.Equal(consumer.Assignment[0].Topic, singlePartitionTopic);
+                Assert.Equal(1, consumer.Assignment.Count);
+                Assert.Equal(singlePartitionTopic, consumer.Assignment[0].Topic);
             }
         }
     }
