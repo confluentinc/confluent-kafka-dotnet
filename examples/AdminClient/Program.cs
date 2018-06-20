@@ -19,9 +19,10 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Confluent.Kafka;
 
 
-namespace Confluent.Kafka.Examples.Misc
+namespace Confluent.Kafka.Examples
 {
     public class Program
     {

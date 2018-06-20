@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Authors>Confluent Inc.</Authors>
     <Description>A .NET Client for Confluent Schema Registry</Description>
     <Copyright>Copyright 2017-2018 Confluent Inc.</Copyright>
@@ -12,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry</PackageId>
     <Title>Confluent.SchemaRegistry</Title>
     <AssemblyName>Confluent.SchemaRegistry</AssemblyName>
-    <VersionPrefix>1.0-experimental-4</VersionPrefix>
+    <VersionPrefix>1.0-experimental-3</VersionPrefix>
     <TargetFrameworks>net452;netstandard1.4;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

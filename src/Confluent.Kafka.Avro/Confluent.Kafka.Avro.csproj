@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Authors>Confluent Inc.</Authors>
     <Description>Provides an Avro Serializer and Deserializer compatible with Confluent.Kafka which integrate with Confluent Schema Registry</Description>
     <Copyright>Copyright 2017-2018 Confluent Inc.</Copyright>
@@ -12,7 +13,7 @@
     <PackageId>Confluent.Kafka.Avro</PackageId>
     <Title>Confluent.Kafka.Avro</Title>
     <AssemblyName>Confluent.Kafka.Avro</AssemblyName>
-    <VersionPrefix>1.0-experimental-4</VersionPrefix>
+    <VersionPrefix>1.0-experimental-3</VersionPrefix>
     <TargetFrameworks>netstandard2.0;net452;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

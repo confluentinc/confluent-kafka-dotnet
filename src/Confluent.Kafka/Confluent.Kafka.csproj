@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Authors>Confluent Inc.;Andreas Heider</Authors>
     <Description>Confluent's .NET Client for Apache Kafka</Description>
     <Copyright>Copyright 2016-2017 Confluent Inc., Andreas Heider</Copyright>
@@ -11,7 +12,7 @@
     <PackageId>Confluent.Kafka</PackageId>
     <Title>Confluent.Kafka</Title>
     <AssemblyName>Confluent.Kafka</AssemblyName>
-    <VersionPrefix>1.0-experimental-4</VersionPrefix>
+    <VersionPrefix>1.0-experimental-3</VersionPrefix>
     <TargetFrameworks>net45;net46;netstandard1.3;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
