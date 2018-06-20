@@ -23,14 +23,14 @@ namespace Confluent.Kafka.UnitTests
     public class TopicPartitionOffsetErrorTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.Local_BadMsg);
 
-            Assert.Equal(tpoe.Topic, "mytopic");
-            Assert.Equal(tpoe.Partition, 42);
-            Assert.Equal(tpoe.Offset, 107);
-            Assert.Equal(tpoe.Error, new Error(ErrorCode.Local_BadMsg));
+            Assert.Equal("mytopic", tpoe.Topic);
+            Assert.Equal(42, tpoe.Partition);
+            Assert.Equal(107, tpoe.Offset);
+            Assert.Equal(new Error(ErrorCode.Local_BadMsg), tpoe.Error);
         }
 
         [Fact]
@@ -85,11 +85,11 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.Local_BadMsg);
 
-            Assert.True(tpoe.ToString().Contains(tpoe.Topic));
-            Assert.True(tpoe.ToString().Contains(tpoe.Partition.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Offset.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Error.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Error.Reason));
+            Assert.Contains(tpoe.Topic, tpoe.ToString());
+            Assert.Contains(tpoe.Partition.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Offset.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Error.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Error.Reason, tpoe.ToString());
         }
 
         [Fact]
@@ -97,8 +97,8 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.NoError);
 
-            Assert.Equal(tpoe.TopicPartition, new TopicPartition("mytopic", 42));
-            Assert.Equal(tpoe.TopicPartitionOffset, new TopicPartitionOffset("mytopic", 42, 107));
+            Assert.Equal(new TopicPartition("mytopic", 42), tpoe.TopicPartition);
+            Assert.Equal(new TopicPartitionOffset("mytopic", 42, 107), tpoe.TopicPartitionOffset);
         }
 
         [Fact]

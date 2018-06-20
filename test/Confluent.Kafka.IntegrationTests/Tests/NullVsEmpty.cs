@@ -65,15 +65,15 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(msg);
                 Assert.Null(msg.Key);
-                Assert.Equal(msg.Value, new byte[0]);
+                Assert.Equal(new byte[0], msg.Value);
 
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.Equal(msg.Key, new byte[0]);
+                Assert.Equal(new byte[0], msg.Key);
                 Assert.Null(msg.Value);
 
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.Equal(msg.Key, new byte[0]);
-                Assert.Equal(msg.Value, new byte[0]);
+                Assert.Equal(new byte[0], msg.Key);
+                Assert.Equal(new byte[0], msg.Value);
             }
         }
 

@@ -22,13 +22,13 @@ namespace Confluent.Kafka.Tests
     public class TopicPartitionTimestampTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.Equal(tpt.Topic, "mytopic");
-            Assert.Equal(tpt.Partition, 42);
-            Assert.Equal(tpt.Timestamp, timestamp);
+            Assert.Equal("mytopic", tpt.Topic);
+            Assert.Equal(42, tpt.Partition);
+            Assert.Equal(timestamp, tpt.Timestamp);
         }
 
         [Fact]
@@ -63,9 +63,9 @@ namespace Confluent.Kafka.Tests
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.True(tpt.ToString().Contains(tpt.Topic));
-            Assert.True(tpt.ToString().Contains(tpt.Partition.ToString()));
-            Assert.True(tpt.ToString().Contains(tpt.Timestamp.ToString()));
+            Assert.Contains(tpt.Topic, tpt.ToString());
+            Assert.Contains(tpt.Partition.ToString(), tpt.ToString());
+            Assert.Contains(tpt.Timestamp.ToString(), tpt.ToString());
         }
 
         [Fact]
@@ -73,10 +73,10 @@ namespace Confluent.Kafka.Tests
         {
             var timestamp = new Timestamp(123456789, TimestampType.CreateTime);
             var tpt = new TopicPartitionTimestamp("mytopic", 42, timestamp);
-            Assert.Equal(tpt.Topic, "mytopic");
-            Assert.Equal(tpt.Partition, 42);
-            Assert.Equal(tpt.TopicPartition, new TopicPartition("mytopic", 42));
-            Assert.Equal(tpt.Timestamp, timestamp);
+            Assert.Equal("mytopic", tpt.Topic);
+            Assert.Equal(42, tpt.Partition);
+            Assert.Equal(new TopicPartition("mytopic", 42), tpt.TopicPartition);
+            Assert.Equal(timestamp, tpt.Timestamp);
         }
     }
 }

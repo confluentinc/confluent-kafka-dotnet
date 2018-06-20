@@ -46,8 +46,8 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
 
                 var queryOffsets = producer.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0));
-                Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
-                Assert.NotEqual(queryOffsets.High, Offset.Invalid);
+                Assert.NotEqual(Offset.Invalid, queryOffsets.Low);
+                Assert.NotEqual(Offset.Invalid, queryOffsets.High);
 
                 // TODO: can anything be said about the high watermark offset c.f. dr.Offset?
                 //       I have seen queryOffsets.High < dr.Offset and also queryOffsets.High = dr.Offset + 1.
@@ -71,12 +71,12 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
 
                 var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
-                Assert.Equal(getOffsets.Low, Offset.Invalid);
+                Assert.Equal(Offset.Invalid, getOffsets.Low);
                 // the offset of the next message to be read.
-                Assert.Equal((long)getOffsets.High, dr.Offset + 1);
+                Assert.Equal(dr.Offset + 1, (long)getOffsets.High);
 
                 var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition);
-                Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
+                Assert.NotEqual(Offset.Invalid, queryOffsets.Low);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
             }
         }

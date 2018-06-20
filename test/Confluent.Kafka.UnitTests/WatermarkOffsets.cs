@@ -22,11 +22,11 @@ namespace Confluent.Kafka.UnitTests
     public class WatermarkOffsetTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             var wo = new WatermarkOffsets(42, 43);
-            Assert.Equal(wo.Low, new Offset(42));
-            Assert.Equal(wo.High, new Offset(43));
+            Assert.Equal(new Offset(42), wo.Low);
+            Assert.Equal(new Offset(43), wo.High);
         }
 
         [Fact]
@@ -34,8 +34,8 @@ namespace Confluent.Kafka.UnitTests
         {
             var wo = new WatermarkOffsets(42, 43);
             var str = wo.ToString();
-            Assert.True(str.Contains("42"));
-            Assert.True(str.Contains("43"));
+            Assert.Contains("42", str);
+            Assert.Contains("43", str);
             Assert.True(str.IndexOf("43") > str.IndexOf("42"));
         }
     }

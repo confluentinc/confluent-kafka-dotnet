@@ -75,8 +75,8 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.NotNull(msg);
             Assert.Equal(testString, msg.Value == null ? null : Encoding.UTF8.GetString(msg.Value, 0, msg.Value.Length));
             Assert.Equal(null, msg.Key);
-            Assert.Equal(msg.Timestamp.Type, dr.Timestamp.Type);
-            Assert.Equal(msg.Timestamp.UnixTimestampMs, dr.Timestamp.UnixTimestampMs);
+            Assert.Equal(dr.Timestamp.Type, msg.Timestamp.Type);
+            Assert.Equal(dr.Timestamp.UnixTimestampMs, msg.Timestamp.UnixTimestampMs);
         }
 
         private static Message<Null, string> ProduceMessage(string topic, Producer<Null, string> producer, string testString)
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.IntegrationTests
             var result = producer.ProduceAsync(topic, null, testString).Result;
             Assert.NotNull(result);
             Assert.Equal(topic, result.Topic);
-            Assert.NotEqual<long>(result.Offset, Offset.Invalid);
+            Assert.NotEqual<long>(Offset.Invalid, result.Offset);
             Assert.Equal(TimestampType.CreateTime, result.Timestamp.Type);
             Assert.True(Math.Abs((DateTime.UtcNow - result.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             producer.Flush(TimeSpan.FromSeconds(10));

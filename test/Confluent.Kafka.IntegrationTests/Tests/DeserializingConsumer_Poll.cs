@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnMessage += (_, msg) =>
                 {
-                    Assert.Equal(msg.Error.Code, ErrorCode.NoError);
+                    Assert.Equal(ErrorCode.NoError, msg.Error.Code);
                     Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
                     Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                     msgCnt += 1;
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                Assert.Equal(msgCnt, N);
+                Assert.Equal(N, msgCnt);
             }
         }
 

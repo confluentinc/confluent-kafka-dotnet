@@ -71,12 +71,12 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 var brokers = new List<JToken>(deserialized["Brokers"].Children());
-                Assert.Equal(metadata.Brokers.Count, brokers.Count);
+                Assert.Equal(brokers.Count, metadata.Brokers.Count);
                 for (int i=0; i<metadata.Brokers.Count; ++i)
                 {
-                    Assert.Equal(metadata.Brokers[i].BrokerId, brokers[i].Value<int>("BrokerId"));
-                    Assert.Equal(metadata.Brokers[i].Host, brokers[i].Value<string>("Host"));
-                    Assert.Equal(metadata.Brokers[i].Port, brokers[i].Value<int>("Port"));
+                    Assert.Equal(brokers[i].Value<int>("BrokerId"), metadata.Brokers[i].BrokerId);
+                    Assert.Equal(brokers[i].Value<string>("Host"), metadata.Brokers[i].Host);
+                    Assert.Equal(brokers[i].Value<int>("Port"), metadata.Brokers[i].Port);
                 }
             }
         }

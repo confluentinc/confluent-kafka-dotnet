@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 }
 
-                Assert.Equal(msgCnt, N);
+                Assert.Equal(N, msgCnt);
             }
         }
 
