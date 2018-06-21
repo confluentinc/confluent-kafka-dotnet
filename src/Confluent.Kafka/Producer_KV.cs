@@ -18,14 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Runtime.InteropServices;
-using Confluent.Kafka.Impl;
-using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-using System.Collections.Concurrent;
 
 
 namespace Confluent.Kafka
@@ -39,6 +34,11 @@ namespace Confluent.Kafka
         private readonly Producer ownedClient;
         private readonly Handle handle;
         private readonly SerializingProducer<TKey, TValue> serializingProducer;
+
+        /// <summary>
+        ///  Gets a value indicating whether the producer has been disposed of.
+        /// </summary>
+        public bool IsDisposed { get; private set; }
 
         /// <summary>
         ///     Creates a new Producer instance.
@@ -132,22 +132,22 @@ namespace Confluent.Kafka
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog
         {
-            add { this.handle.Owner.OnLog += value; }
-            remove { this.handle.Owner.OnLog -= value; }
+            add => this.handle.Owner.OnLog += value;
+            remove => this.handle.Owner.OnLog -= value;
         }
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics
         {
-            add { this.handle.Owner.OnStatistics += value; }
-            remove { this.handle.Owner.OnStatistics -= value; }
+            add => this.handle.Owner.OnStatistics += value;
+            remove => this.handle.Owner.OnStatistics -= value;
         }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError
         {
-            add { this.handle.Owner.OnError += value; }
-            remove { this.handle.Owner.OnError -= value; }
+            add => this.handle.Owner.OnError += value;
+            remove => this.handle.Owner.OnError -= value;
         }
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
@@ -169,19 +169,13 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
         {
-            if (KeySerializer != null)
-            {
-                KeySerializer.Dispose();
-            }
-
-            if (ValueSerializer != null)
-            {
-                ValueSerializer.Dispose();
-            }
+            KeySerializer?.Dispose();
+            ValueSerializer?.Dispose();
 
             if (ownedClient == this.handle.Owner) 
             {
                 ownedClient.Dispose();
+                IsDisposed = true;
             }
         }
 
