@@ -693,7 +693,7 @@ namespace Confluent.Kafka.Impl
             => CommitSync(null);
 
         internal CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
-            => commitSync(offsets);
+            => CommitSync(offsets);
 
         internal Task<CommittedOffsets> CommitAsync()
             => Task.Run(() => CommitSync(null));
