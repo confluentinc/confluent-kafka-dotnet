@@ -34,6 +34,9 @@ namespace Confluent.Kafka.Examples.MultiProducer
     {
         public static void Main(string[] args)
         {
+            // TODO: this is now done via shared handles, not SerializingProducer.
+            
+            /*
             var config = new Dictionary<string, object> { { "bootstrap.servers", args[0] } };
 
             using (var producer = new Producer(config))
@@ -63,6 +66,7 @@ namespace Confluent.Kafka.Examples.MultiProducer
                 // in flight.
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
+            */
         }
     }
 }

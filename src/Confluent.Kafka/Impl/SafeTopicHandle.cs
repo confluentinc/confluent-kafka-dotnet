@@ -43,19 +43,19 @@ namespace Confluent.Kafka.Impl
 
         protected override bool ReleaseHandle()
         {
-            LibRdKafka.topic_destroy(handle);
+            Librdkafka.topic_destroy(handle);
             // See SafeKafkaHandle.Topic
             kafkaHandle.DangerousRelease();
             return true;
         }
 
         internal string GetName()
-            => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
+            => Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(handle));
 
         internal bool PartitionAvailable(int partition)
         {
             ThrowIfHandleClosed();
-            return LibRdKafka.topic_partition_available(handle, partition);
+            return Librdkafka.topic_partition_available(handle, partition);
         }
     }
 }

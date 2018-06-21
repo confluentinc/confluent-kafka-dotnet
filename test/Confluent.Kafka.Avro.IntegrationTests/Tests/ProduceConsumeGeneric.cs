@@ -55,14 +55,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             var topic = Guid.NewGuid().ToString();
 
-            Message<Null, GenericRecord> dr;
+            DeliveryReport<Null, GenericRecord> dr;
             using (var p = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, null, record).Result;
+                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Value = record }).Result;
             }
 
             // produce a specific record (to later consume back as a generic record).
@@ -74,14 +74,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     favorite_number = 47,
                     favorite_color = "orange"
                 };
-                p.ProduceAsync(topic, null, user).Wait();
+                p.ProduceAsync(topic, new Message<Null, User> { Value = user }).Wait();
             }
 
-            Assert.Null(dr.Key);
-            Assert.NotNull(dr.Value);
-            dr.Value.TryGetValue("name", out object name);
-            dr.Value.TryGetValue("favorite_number", out object number);
-            dr.Value.TryGetValue("favorite_color", out object color);
+            Assert.Null(dr.Message.Key);
+            Assert.NotNull(dr.Message.Value);
+            dr.Message.Value.TryGetValue("name", out object name);
+            dr.Message.Value.TryGetValue("favorite_number", out object number);
+            dr.Message.Value.TryGetValue("favorite_color", out object color);
 
             Assert.IsType<string>(name);
             Assert.IsType<int>(number);
@@ -101,10 +101,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 // consume generic record produced as a generic record.
                 c.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                c.Consume(out Message<Null, GenericRecord> msg, 20000);
-                msg.Value.TryGetValue("name", out object msgName);
-                msg.Value.TryGetValue("favorite_number", out object msgNumber);
-                msg.Value.TryGetValue("favorite_color", out object msgColor);
+                c.Consume(out ConsumerRecord<Null, GenericRecord> record, 20000);
+                record.Message.Value.TryGetValue("name", out object msgName);
+                record.Message.Value.TryGetValue("favorite_number", out object msgNumber);
+                record.Message.Value.TryGetValue("favorite_color", out object msgColor);
 
                 Assert.IsType<string>(msgName);
                 Assert.IsType<int>(msgNumber);
@@ -114,10 +114,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Null(msgColor);
 
                 // consume generic record produced as a specific record.
-                c.Consume(out msg, 20000);
-                msg.Value.TryGetValue("name", out msgName);
-                msg.Value.TryGetValue("favorite_number", out msgNumber);
-                msg.Value.TryGetValue("favorite_color", out msgColor);
+                c.Consume(out record, 20000);
+                record.Message.Value.TryGetValue("name", out msgName);
+                record.Message.Value.TryGetValue("favorite_number", out msgNumber);
+                record.Message.Value.TryGetValue("favorite_color", out msgColor);
 
                 Assert.IsType<string>(msgName);
                 Assert.IsType<int>(msgNumber);
@@ -131,10 +131,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var c = new Consumer<Null, User>(cconfig, null, new AvroDeserializer<User>()))
             {
                 c.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                c.Consume(out Message<Null, User> msg, 20000);
-                Assert.Equal("my name 2", msg.Value.name);
-                Assert.Equal(44, msg.Value.favorite_number);
-                Assert.Null(msg.Value.favorite_color);
+                c.Consume(out ConsumerRecord<Null, User> record, 20000);
+                Assert.Equal("my name 2", record.Message.Value.name);
+                Assert.Equal(44, record.Message.Value.favorite_number);
+                Assert.Null(record.Message.Value.favorite_color);
             }
         }
 

@@ -25,10 +25,10 @@ namespace Confluent.Kafka.UnitTests
         public void Constuctor()
         {
             var lm = new LogMessage("myname", 42, "myfacility", "mymessage");
-            Assert.Equal(lm.Name, "myname");
-            Assert.Equal(lm.Level, 42);
-            Assert.Equal(lm.Facility, "myfacility");
-            Assert.Equal(lm.Message, "mymessage");
+            Assert.Equal("myname", lm.Name);
+            Assert.Equal(42, lm.Level);
+            Assert.Equal("myfacility", lm.Facility);
+            Assert.Equal("mymessage", lm.Message);
         }
     }
 }

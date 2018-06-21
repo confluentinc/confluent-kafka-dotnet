@@ -42,24 +42,19 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 0.11.4
+Install-Package Confluent.Kafka -Version 1.0-experimental-4
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 0.11.4 Confluent.Kafka
+dotnet add package -v 1.0-experimental-4 Confluent.Kafka
 ```
 
-### Development Branch
-
-We have started working towards a 1.0 release of the library which will occur after we add idempotence and transaction features. In order to best accomodate these and other changes,
-we will be making breaking changes to the API in that release. You can track our progress on the `1.0-experimental` branch (as well as corresponding packages on 
-[nuget.org](https://www.nuget.org/packages/Confluent.Kafka/)). We have already added support for message headers and custom timestamps amongst other things. Note that all work on 
-this branch is subject to change and should not be considered production ready. All feedback is very welcome! 
-
-Also, nuget packages corresponding to all release branch commits are available from the following nuget package source (Note: this is not a web url - you should specify it in the nuget package manger):
-[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
+Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web url - you 
+should specify it in the nuget package manger):
+[https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
+matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
 
 

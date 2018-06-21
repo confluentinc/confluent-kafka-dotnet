@@ -14,9 +14,12 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -41,39 +44,39 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            Message dr;
-            using (var producer = new Producer(producerConfig))
+            DeliveryReport<byte[], byte[]> dr;
+            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(singlePartitionTopic, (byte[])null, null).Result;
-                producer.ProduceAsync(singlePartitionTopic, null, new byte[0]).Wait();
-                producer.ProduceAsync(singlePartitionTopic, new byte[0], null).Wait();
-                producer.ProduceAsync(singlePartitionTopic, new byte[0], new byte[0]).Wait();
+                dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = new byte[0] {} }).Wait();
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = null }).Wait();
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = new byte[0] {} }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                Message msg;
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(msg);
-                Assert.Null(msg.Key);
-                Assert.Null(msg.Value);
+                ConsumerRecord<byte[], byte[]> record;
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(record);
+                Assert.Null(record.Message.Key);
+                Assert.Null(record.Message.Value);
 
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(msg);
-                Assert.Null(msg.Key);
-                Assert.Equal(msg.Value, new byte[0]);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.NotNull(record);
+                Assert.Null(record.Message.Key);
+                Assert.Equal(record.Message.Value, new byte[0]);
 
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.Equal(msg.Key, new byte[0]);
-                Assert.Null(msg.Value);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.Equal(record.Message.Key, new byte[0]);
+                Assert.Null(record.Message.Value);
 
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromMinutes(1)));
-                Assert.Equal(msg.Key, new byte[0]);
-                Assert.Equal(msg.Value, new byte[0]);
+                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
+                Assert.Equal(record.Message.Key, new byte[0]);
+                Assert.Equal(record.Message.Value, new byte[0]);
             }
         }
 

@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Linq;
 using System.Text;
@@ -39,8 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 },
-                { "api.version.request", true }
+                { "session.timeout.ms", 6000 }
             };
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
@@ -48,11 +49,11 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 bool done = false;
 
-                consumer.OnMessage += (_, msg) =>
+                consumer.OnRecord += (_, record) =>
                 {
-                    Assert.Equal(msg.Error.Code, ErrorCode.NoError);
-                    Assert.Equal(TimestampType.CreateTime, msg.Timestamp.Type);
-                    Assert.True(Math.Abs((DateTime.UtcNow - msg.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                    Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                    Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
+                    Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                     msgCnt += 1;
                 };
 
@@ -61,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
-                    Assert.Equal(1, partitions.Count);
+                    Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
@@ -76,7 +77,7 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Poll(TimeSpan.FromMilliseconds(100));
                 }
 
-                Assert.Equal(msgCnt, N);
+                Assert.Equal(N, msgCnt);
             }
         }
 

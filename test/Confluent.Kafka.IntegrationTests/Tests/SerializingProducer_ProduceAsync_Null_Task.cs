@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -34,36 +36,33 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object> 
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+                { "bootstrap.servers", bootstrapServers }
             };
 
-            var drs = new List<Task<Message<Null, Null>>>();
+            var drs = new List<Task<DeliveryReport<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, 0, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, 0));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, null, null));
+                drs.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));
+                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<Null, Null> {}));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            for (int i=0; i<4; ++i)
+            for (int i=0; i<2; ++i)
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Key);
-                Assert.Null(dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
 
             }
 
-            Assert.Equal(0, drs[0].Result.Partition);
-            Assert.Equal(0, drs[1].Result.Partition);
+            Assert.Equal((Partition)0, drs[0].Result.Partition);
         }
 
     }

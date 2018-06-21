@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -45,24 +47,24 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.NotNull(dr);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer1 = new Consumer(consumerConfig))
-            using (var consumer2 = new Consumer(consumerConfig))
+            using (var consumer1 = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            using (var consumer2 = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                Message msg;
-                var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
-                Assert.NotNull(msg);
-                var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
-                Assert.NotNull(msg);
+                ConsumerRecord<byte[], byte[]> record;
+                var haveMsg1 = consumer1.Consume(out record, TimeSpan.FromSeconds(10));
+                Assert.NotNull(record);
+                var haveMsg2 = consumer2.Consume(out record, TimeSpan.FromSeconds(10));
+                Assert.NotNull(record);
 
                 // NOTE: two consumers from the same group should never be assigned to the same
                 // topic / partition. This 'test' is here because I was curious to see what happened

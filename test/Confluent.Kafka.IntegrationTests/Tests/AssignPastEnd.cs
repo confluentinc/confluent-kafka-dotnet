@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -42,28 +44,28 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.True(dr.Offset >= 0);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "latest" } };
-            using (var consumer = new Consumer(consumerConfig))
+            consumerConfig["auto.offset.reset"] = "latest";
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
-                Message msg;
+                ConsumerRecord<byte[], byte[]> record;
 
                 // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
-                Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
 
                 // Poll API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                consumer.OnMessage += (_, message) =>
+                consumer.OnRecord += (_, message) =>
                 {
                     Assert.True(false);
                 };
@@ -72,17 +74,17 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Poll(TimeSpan.FromSeconds(10));
             }
 
-            consumerConfig["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", "earliest" } };
-            using (var consumer = new Consumer(consumerConfig))
+            consumerConfig["auto.offset.reset"] = "earliest";
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
-                Message msg;
+                ConsumerRecord<byte[], byte[]> record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                Assert.False(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
                 // Note: dr.Offset+2 is an invalid (c.f. dr.Offset+1 which is valid), so auto.offset.reset will come
                 // into play here to determine which offset to start from (earliest). Due to the the produce call above,
                 // there is guarenteed to be a message on the topic, so consumer.Consume will return true.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
             }
         }
 

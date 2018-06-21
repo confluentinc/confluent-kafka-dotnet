@@ -16,6 +16,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
+
 namespace Confluent.Kafka
 {
     /// <summary>
@@ -26,7 +29,7 @@ namespace Confluent.Kafka
     ///     its purpose is to add some syntactical sugar 
     ///     related to special values.
     /// </remarks>
-    public struct Offset
+    public struct Offset : IEquatable<Offset>
     {
         private const long RD_KAFKA_OFFSET_BEGINNING = -2;
         private const long RD_KAFKA_OFFSET_END = -1;
@@ -99,13 +102,25 @@ namespace Confluent.Kafka
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is Offset))
+            if (obj is Offset o)
             {
-                return false;
+                return Equals(o);
             }
 
-            return ((Offset)obj).Value == this.Value;
+            return false;
         }
+
+        /// <summary>
+        ///     Tests whether this Offset value is equal to the specified Offset.
+        /// </summary>
+        /// <param name="other">
+        ///     The offset to test.
+        /// </param>
+        /// <returns>
+        ///     true if other has the same value. false otherwise.
+        /// </returns>
+        public bool Equals(Offset other)
+            => other.Value == Value;
 
         /// <summary>
         ///     Tests whether Offset value a is equal to Offset value b.
@@ -198,6 +213,36 @@ namespace Confluent.Kafka
             => a.Value <= b.Value;
 
         /// <summary>
+        ///     Add an integer value to an Offset value.
+        /// </summary>
+        /// <param name="a">
+        ///     The Offset value to add the integer value to.
+        /// </param>
+        /// <param name="b">
+        ///     The integer value to add to the Offset value.
+        /// </param>
+        /// <returns>
+        ///     The Offset value incremented by the integer value b.
+        /// </returns>
+        public static Offset operator +(Offset a, int b)
+            => new Offset(a.Value + b);
+
+        /// <summary>
+        ///     Add a long value to an Offset value.
+        /// </summary>
+        /// <param name="a">
+        ///     The Offset value to add the long value to.
+        /// </param>
+        /// <param name="b">
+        ///     The long value to add to the Offset value.
+        /// </param>
+        /// <returns>
+        ///     The Offset value incremented by the long value b.
+        /// </returns>
+        public static Offset operator +(Offset a, long b)
+            => new Offset(a.Value + b);
+
+        /// <summary>
         ///     Returns a hash code for this Offset.
         /// </summary>
         /// <returns>
@@ -210,7 +255,7 @@ namespace Confluent.Kafka
         ///     Converts the specified long value to an Offset value.
         /// </summary>
         /// <param name="v">
-        ///     THe long value to convert.
+        ///     The long value to convert.
         /// </param>
         public static implicit operator Offset(long v)
             => new Offset(v);

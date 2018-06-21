@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -48,46 +50,32 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte array producer.
             int logCount = 0;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
-                producer.ProduceAsync(singlePartitionTopic, null, (byte[])null).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> {}).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
             // serializing producer.
-            Message<Null, string> dr;
+            DeliveryReport<Null, string> dr;
             logCount = 0;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 producer.OnLog += (_, LogMessage)
                   => logCount += 1;
 
-                dr = producer.ProduceAsync(singlePartitionTopic, null, "test value").Result;
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
-            Assert.True(logCount > 0);
-
-            // wrapped byte array producer.
-            logCount = 0;
-            using (var producer = new Producer(producerConfig))
-            {
-                producer.OnLog += (_, LogMessage)
-                  => logCount += 1;
-
-                var sProducer = producer.GetSerializingProducer<Null, string>(null, new StringSerializer(Encoding.UTF8));
-                
-                sProducer.ProduceAsync(singlePartitionTopic, null, "test value").Wait();
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
             // byte array consumer.
             logCount = 0;
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 consumer.OnLog += (_, LogMessage)
                   => logCount += 1;

@@ -16,22 +16,24 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkConsumer
     {
-        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, bool usePoll)
+        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders, bool usePoll)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", "benchmark-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                { "session.timeout.ms", 6000 },
+                { "dotnet.consumer.enable.header.marshaling", nHeaders != 0 }
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 for (var j=0; j<nTests; ++j)
                 {
@@ -40,15 +42,14 @@ namespace Confluent.Kafka.Benchmark
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    Message msg;
-                    consumer.Consume(out msg, TimeSpan.FromSeconds(10));
+                    consumer.Consume(out ConsumerRecord<byte[], byte[]> record, TimeSpan.FromSeconds(10));
 
                     long startTime = DateTime.Now.Ticks;
 
                     if (usePoll)
                     {
                         int cnt = 0;
-                        consumer.OnMessage += (_, m) => { cnt += 1; };
+                        consumer.OnRecord += (_, r) => { cnt += 1; };
 
                         while (cnt < nMessages-1)
                         {
@@ -61,7 +62,7 @@ namespace Confluent.Kafka.Benchmark
 
                         while (cnt < nMessages-1)
                         {
-                            if (consumer.Consume(out msg, TimeSpan.FromSeconds(1)))
+                            if (consumer.Consume(out record, TimeSpan.FromSeconds(1)))
                             {
                                 cnt += 1;
                             }
@@ -76,10 +77,10 @@ namespace Confluent.Kafka.Benchmark
             }
         }
 
-        public static void Poll(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, true);
+        public static void Poll(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
+            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, true);
 
-        public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, false);
+        public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
+            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, false);
     }
 }

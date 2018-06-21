@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -22,6 +24,7 @@ using Confluent.Kafka.Serialization;
 using Xunit;
 
 
+/*
 namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
@@ -42,16 +45,14 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new Dictionary<string, object>
             {
-                { "bootstrap.servers", "unknown" },
-                { "api.version.request", true }
+                { "bootstrap.servers", "unknown" }
             };
 
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", "unknown" },
-                { "session.timeout.ms", 6000 },
-                { "api.version.request", true }
+                { "session.timeout.ms", 6000 }
             };
 
             using (var typedProducer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
@@ -61,14 +62,14 @@ namespace Confluent.Kafka.IntegrationTests
                     typedProducer.AddBrokers);
             }
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
                 TestMetadata(
                     () => producer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
                     producer.AddBrokers);
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
                 TestMetadata(
                     () => consumer.GetMetadata(false, TimeSpan.FromSeconds(3)),
@@ -109,3 +110,4 @@ namespace Confluent.Kafka.IntegrationTests
         }
     }
 }
+*/

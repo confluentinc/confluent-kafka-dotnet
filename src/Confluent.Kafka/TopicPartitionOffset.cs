@@ -47,7 +47,7 @@ namespace Confluent.Kafka
         /// <param name="offset">
         ///     A Kafka offset value.
         /// </param>
-        public TopicPartitionOffset(string topic, int partition, Offset offset)
+        public TopicPartitionOffset(string topic, Partition partition, Offset offset)
         {
             Topic = topic;
             Partition = partition;
@@ -62,7 +62,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Kafka partition.
         /// </summary>
-        public int Partition { get; }
+        public Partition Partition { get; }
 
         /// <summary>
         ///     Gets the Kafka partition offset value.
