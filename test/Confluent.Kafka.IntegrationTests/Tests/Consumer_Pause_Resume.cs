@@ -57,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (assignedPartitions == null) 
+                while (assignedPartitions == null)
                 {
                     consumer.Poll(TimeSpan.FromSeconds(1));
                 }

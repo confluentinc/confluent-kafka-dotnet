@@ -32,11 +32,11 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             Func<Task> mthd = async () => 
             {
-                 using (var producer = new Producer<Null, string>(
+                using (var producer = new Producer<Null, string>(
                      new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
                      null, new StringSerializer(Encoding.UTF8)))
                 {
@@ -47,6 +47,18 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             mthd().Wait();
+        }
+
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public static async Task Producer_ProduceAsync_Await2(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        {
+            using (var producer = new Producer<Null, string>(
+                new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
+                null, new StringSerializer(Encoding.UTF8)))
+            {
+                var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
+                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+            }
         }
     }
 }

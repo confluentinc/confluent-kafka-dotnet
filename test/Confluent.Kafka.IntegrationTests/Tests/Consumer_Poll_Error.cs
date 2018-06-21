@@ -33,7 +33,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     and values are surfaced via the OnConsumeError event.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DeserializingConsumer_Poll_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_Poll_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 

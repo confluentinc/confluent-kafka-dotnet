@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 

@@ -17,7 +17,9 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Text;
 using System.Collections.Generic;
+using Confluent.Kafka.Serialization;
 using Xunit;
 using System.Threading.Tasks;
 
@@ -27,24 +29,24 @@ namespace Confluent.Kafka.IntegrationTests
     /// <summary>
     ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
     ///     that provides delivery reports via a Task.
-    ///     (null key/value case)
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_ProduceAsync_Null_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_ProduceAsync_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            var drs = new List<Task<DeliveryReport<Null, Null>>>();
-            using (var producer = new Producer<Null, Null>(producerConfig, null, null))
+            var drs = new List<Task<DeliveryReport<string, string>>>();
+            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
                 drs.Add(producer.ProduceAsync(
-                    new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));
-                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<Null, Null> {}));
+                    new TopicPartition(partitionedTopic, 1),
+                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }));
+                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -52,18 +54,16 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var dr = drs[i].Result;
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.True(dr.Partition == 0 || dr.Partition == 1);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Message.Key);
-                Assert.Null(dr.Message.Value);
+                Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                Assert.Equal($"test key {i}", dr.Message.Key);
+                Assert.Equal($"test val {i}", dr.Message.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-
             }
 
-            Assert.Equal((Partition)0, drs[0].Result.Partition);
+            Assert.Equal((Partition)1, drs[0].Result.Partition);
         }
-
     }
 }
