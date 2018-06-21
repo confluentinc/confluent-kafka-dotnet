@@ -287,7 +287,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public void Poll(TimeSpan timeout)
         {
-            ConsumerRecord record;
             if (Consume(out ConsumerRecord record, timeout))
             {
                 OnRecord?.Invoke(this, record);
@@ -297,7 +296,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
         public void Poll(int millisecondsTimeout)
         {
-            ConsumerRecord record;
             if (Consume(out ConsumerRecord record, millisecondsTimeout))
             {
                 OnRecord?.Invoke(this, record);
