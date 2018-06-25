@@ -32,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic DeserializingConsumer test (consume mode).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DeserializingConsumer_Consume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_Consume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             int N = 2;
             var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);

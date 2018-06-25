@@ -55,8 +55,8 @@ namespace AvroBlogExample
                 record.Add("IP", "127.0.0.1");
                 record.Add("Message", "a test log message");
                 record.Add("Severity", new GenericEnum(logLevelSchema, "Error"));
-                producer.ProduceAsync("log-messages", null, record)
-                    .ContinueWith(dr => Console.WriteLine(dr.Result.Error 
+                producer.ProduceAsync("log-messages", new Message<Null, GenericRecord> { Value = record })
+                    .ContinueWith(dr => Console.WriteLine(dr.Result.Error.IsError 
                         ? $"error producing message: {dr.Result.Error.Reason}"
                         : $"produced to: {dr.Result.TopicPartitionOffset}"));
 
@@ -74,14 +74,16 @@ namespace AvroBlogExample
 
             using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, new AvroSerializer<MessageTypes.LogMessage>()))
             {
-                producer.ProduceAsync(
-                    "log-messages", null, 
-                    new MessageTypes.LogMessage
+                producer.ProduceAsync("log-messages", 
+                    new Message<Null,MessageTypes.LogMessage> 
                     {
-                        IP = "192.168.0.1",
-                        Message = "a test message 2",
-                        Severity = MessageTypes.LogLevel.Info,
-                        Tags = new Dictionary<string, string> { { "location", "CA" } }
+                        Value = new MessageTypes.LogMessage
+                        {
+                            IP = "192.168.0.1",
+                            Message = "a test message 2",
+                            Severity = MessageTypes.LogLevel.Info,
+                            Tags = new Dictionary<string, string> { { "location", "CA" } }
+                        }
                     });
                 producer.Flush(TimeSpan.FromSeconds(30));
             }
@@ -103,8 +105,8 @@ namespace AvroBlogExample
                 consumer.OnConsumeError 
                     += (_, error) => Console.WriteLine($"an error occured: {error.Error.Reason}");
 
-                consumer.OnMessage 
-                    += (_, msg) => Console.WriteLine($"{msg.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{msg.Value.Severity}] {msg.Value.Message}");
+                consumer.OnRecord 
+                    += (_, record) => Console.WriteLine($"{record.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{record.Value.Severity}] {record.Value.Message}");
 
                 consumer.Subscribe("log-messages");
 

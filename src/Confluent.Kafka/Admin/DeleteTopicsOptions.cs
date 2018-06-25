@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2017 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,17 +14,22 @@
 //
 // Refer to LICENSE for more information.
 
-open System
-open System.Text
-open System.Collections.Generic
-open Confluent.Kafka
-open Confluent.Kafka.Serialization
+using System;
 
-[<EntryPoint>]
-let main argv =
-    let conf = new Dictionary<string, Object>()
-    conf.Add("bootstrap.servers", argv.[0])
-    use producer = new Producer<Null, string>(conf, null, new StringSerializer(Encoding.UTF8))
-    let dr = producer.ProduceAsync(argv.[1], null, argv.[2])
-    dr.Wait()
-    0
+
+namespace Confluent.Kafka.Admin
+{
+    /// <summary>
+    ///     Options for the DeleteTopics method.
+    /// </summary>
+    public class DeleteTopicsOptions
+    {
+        /// <summary>
+        ///     The request timeout in milliseconds for this operation or null if the
+        ///     default request timeout for the AdminClient should be used.
+        /// 
+        ///     Default: null
+        /// </summary>
+        public TimeSpan? Timeout { get; set; }
+    }
+}

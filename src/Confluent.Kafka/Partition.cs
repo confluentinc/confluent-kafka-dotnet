@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -27,7 +29,7 @@ namespace Confluent.Kafka
     ///     its purpose is to add some syntactical sugar 
     ///     related to special values.
     /// </remarks>
-    public struct Partition
+    public struct Partition : IEquatable<Partition>
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
 
@@ -70,13 +72,25 @@ namespace Confluent.Kafka
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is Partition))
+            if (obj is Partition p)
             {
-                return false;
+                return Equals(p);
             }
 
-            return ((Partition)obj).Value == this.Value;
+            return false;
         }
+
+        /// <summary>
+        ///     Tests whether this Partition value is equal to the specified Partition.
+        /// </summary>
+        /// <param name="other">
+        ///     The partition to test.
+        /// </param>
+        /// <returns>
+        ///     true if other has the same value. false otherwise.
+        /// </returns>
+        public bool Equals(Partition other)
+            => other.Value == Value;
 
         /// <summary>
         ///     Tests whether Partition value a is equal to Partition value b.

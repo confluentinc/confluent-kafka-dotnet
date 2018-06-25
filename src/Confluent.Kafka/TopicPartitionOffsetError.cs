@@ -184,7 +184,7 @@ namespace Confluent.Kafka
         /// </returns>
         public static explicit operator TopicPartitionOffset(TopicPartitionOffsetError tpoe)
         {
-            if (tpoe.Error.HasError)
+            if (tpoe.Error.IsError)
             {
                 throw new KafkaException(tpoe.Error);
             }

@@ -42,13 +42,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.0-experimental-3
+Install-Package Confluent.Kafka -Version 1.0-experimental-4
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.0-experimental-3 Confluent.Kafka
+dotnet add package -v 1.0-experimental-4 Confluent.Kafka
 ```
 
 Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web url - you 
@@ -139,12 +139,21 @@ public class Program
 ### AvroGen tool
 
 The Avro serializer and deserializer provided by `Confluent.Kafka.Avro` can be used with the `GenericRecord` class
-or with specific classes generated using the `avrogen` tool 
-(available [here](https://github.com/confluentinc/avro/releases/download/v1.7.7.4/avrogen.zip)). Usage:
+or with specific classes generated using the `avrogen` tool, available via Nuget (.NET Core 2.1 required):
 
 ```
-dotnet /path/to/avrogen.dll -s your_schema.asvc .
+dotnet tool install -g Confluent.Apache.Avro.AvroGen
 ```
+
+Usage:
+
+```
+avrogen -s your_schema.asvc .
+```
+
+### Confluent Cloud
+
+The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
 
 ## Build

@@ -119,23 +119,23 @@ namespace Confluent.Kafka
                     catch (OperationCanceledException) {}
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        private LibRdKafka.ErrorDelegate errorDelegate;
+        private Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private LibRdKafka.StatsDelegate statsDelegate;
+        private Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private LibRdKafka.LogDelegate logDelegate;
+        private Librdkafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
+            var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
             if (OnLog == null)
             {
@@ -147,7 +147,7 @@ namespace Confluent.Kafka
             OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
-        private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
+        private static readonly Librdkafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
 
         /// <remarks>
         ///     note: this property is set to that defined in rd_kafka_conf
@@ -175,12 +175,12 @@ namespace Confluent.Kafka
             if (deliveryHandler.MarshalHeaders) 
             {
                 headers = new Headers();
-                LibRdKafka.message_headers(rkmessage, out IntPtr hdrsPtr);
+                Librdkafka.message_headers(rkmessage, out IntPtr hdrsPtr);
                 if (hdrsPtr != IntPtr.Zero)
                 {
                     for (var i=0; ; ++i)
                     {
-                        var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                        var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                         if (err != ErrorCode.NoError)
                         {
                             break;
@@ -210,14 +210,14 @@ namespace Confluent.Kafka
             }
 
             IntPtr timestampType;
-            long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType);
+            long timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
 
             deliveryHandler.HandleDeliveryReport(
                 new DeliveryReport 
                 {
                     // TODO: tracking handle -> topicName in addition to topicName -> handle could
                     //       avoid this marshalling / memory allocation cost.
-                    Topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)), 
+                    Topic = Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(msg.rkt)), 
                     Partition = msg.partition, 
                     Offset = msg.offset, 
                     Error = msg.err,
@@ -276,8 +276,12 @@ namespace Confluent.Kafka
             if (!this.disableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
-                var deliveryCompletionSource = deliveryHandler;
-                var gch = GCHandle.Alloc(deliveryCompletionSource);
+
+                // Note: There is a level of indirection between the GCHandle and
+                // physical memory address. GCHangle.ToIntPtr doesn't get the
+                // physical address, it gets an id that refers to the object via
+                // a handle-table.
+                var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
                 var err = kafkaHandle.Produce(
@@ -287,7 +291,7 @@ namespace Confluent.Kafka
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
-                    ptr, 
+                    ptr,
                     blockIfQueueFull);
                 if (err != ErrorCode.NoError)
                 {
@@ -306,6 +310,7 @@ namespace Confluent.Kafka
                     headers,
                     IntPtr.Zero, 
                     blockIfQueueFull);
+
                 if (err != ErrorCode.NoError)
                 {
                     throw new KafkaException(err);
@@ -380,11 +385,10 @@ namespace Confluent.Kafka
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
 
-            LibRdKafka.Initialize(null);
+            Librdkafka.Initialize(null);
 
             var modifiedConfig = config
-                .Where(
-                    prop => prop.Key != "default.topic.config" && 
+                .Where(prop => 
                     prop.Key != BlockIfQueueFullPropertyName &&
                     prop.Key != EnableBackgroundPollPropertyName &&
                     prop.Key != EnableDeliveryReportsPropertyName &&
@@ -421,14 +425,6 @@ namespace Confluent.Kafka
                 this.enableDeliveryReportDataMarshaling = bool.Parse(enableDeliveryReportDataMarshalingObj.ToString());
             }
 
-            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
-            // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (defaultTopicConfig != null)
-            {
-                modifiedConfig = modifiedConfig.Concat((IEnumerable<KeyValuePair<string, object>>)defaultTopicConfig);
-            }
-
             // Note: changing the default value of produce.offset.report at the binding level is less than
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
             // .NET client. The default should probably be changed in librdkafka as well.
@@ -449,7 +445,7 @@ namespace Confluent.Kafka
 
             if (!disableDeliveryReports)
             {
-                LibRdKafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
+                Librdkafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
             }
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
@@ -459,9 +455,9 @@ namespace Confluent.Kafka
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
-            LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
-            LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
-            LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
+            Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
+            Librdkafka.conf_set_log_cb(configPtr, logDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.

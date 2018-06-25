@@ -22,7 +22,5 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a produce request.
     /// </summary>
-    public class DeliveryReport : MessageAndMeta
-    {
-    }
+    public class DeliveryReport : MessageAndMetadata {}
 }
