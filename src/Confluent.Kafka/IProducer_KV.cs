@@ -34,12 +34,6 @@ namespace Confluent.Kafka
     /// </summary>
     public interface IProducer<TKey, TValue> : IClient
     {
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="KeySerializer"]/*' />
-        ISerializer<TKey> KeySerializer { get; }
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ValueSerializer"]/*' />
-        ISerializer<TValue> ValueSerializer { get; }
-
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
         Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message);

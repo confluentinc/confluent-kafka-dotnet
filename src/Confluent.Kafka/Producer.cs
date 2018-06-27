@@ -32,7 +32,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements a high-level Apache Kafka producer (without serialization).
     /// </summary>
-    internal class Producer : IProducer
+    internal class Producer : IClient
     {
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
@@ -226,35 +226,6 @@ namespace Confluent.Kafka
             );
         }
 
-        private sealed class TaskDeliveryHandler : TaskCompletionSource<DeliveryReport>, IDeliveryHandler
-        {
-#if !NET45
-            public TaskDeliveryHandler(bool marshalData, bool marshalHeaders) : base(TaskCreationOptions.RunContinuationsAsynchronously)
-            { 
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
-            }
-#else 
-            public TaskDeliveryHandler(bool marshalData, bool marshalHeaders)
-            {
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
-            }
-#endif
-            public bool MarshalData { get; private set; }
-
-            public bool MarshalHeaders { get; private set; }
-
-            public void HandleDeliveryReport(DeliveryReport deliveryReport)
-            {
-#if NET45
-                System.Threading.Tasks.Task.Run(() => SetResult(deliveryReport));
-#else
-                SetResult(deliveryReport);
-#endif
-            }
-        }
-
         internal void ProduceImpl(
             string topic,
             byte[] val, int valOffset, int valLength,
@@ -318,60 +289,6 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<DeliveryReport> ProduceImpl(
-            string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
-            Timestamp timestamp,
-            Partition partition, 
-            IEnumerable<Header> headers,
-            bool blockIfQueueFull)
-        {
-            var deliveryCompletionSource = new TaskDeliveryHandler(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling);
-            ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, deliveryCompletionSource);
-            return deliveryCompletionSource.Task;
-        }
-
-        private class DeliveryHandlerShim_Action : IDeliveryHandler
-        {
-            public DeliveryHandlerShim_Action(bool marshalData, bool marshalHeaders, Action<DeliveryReport> handler)
-            {
-                Handler = handler;
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
-            }
-
-            public bool MarshalData { get; private set; }
-
-            public bool MarshalHeaders { get; private set; }
-
-            public Action<DeliveryReport> Handler;
-
-            public void HandleDeliveryReport(DeliveryReport deliveryReport)
-            {
-                Handler(deliveryReport);
-            }
-        }
-
-        internal void ProduceImpl(
-            string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
-            Timestamp timestamp,
-            Partition partition, 
-            IEnumerable<Header> headers,
-            bool blockIfQueueFull,
-            Action<DeliveryReport> deliveryHandler
-        )
-            => ProduceImpl(
-                topic, 
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                timestamp, 
-                partition, 
-                headers, 
-                blockIfQueueFull, 
-                new DeliveryHandlerShim_Action(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling, deliveryHandler));
 
         /// <summary>
         ///     Initializes a new Producer instance.
@@ -491,28 +408,6 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog;
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<DeliveryReport> ProduceAsync(
-            string topic, Partition partition, 
-            byte[] key, int keyOffset, int keyLength, 
-            byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, 
-            IEnumerable<Header> headers
-        )
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
-        public void Produce(
-            Action<DeliveryReport> deliveryHandler,
-            string topic, Partition partition, 
-            byte[] key, int keyOffset, int keyLength, 
-            byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, IEnumerable<Header> headers
-        )
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name

@@ -32,35 +32,18 @@ namespace Confluent.Kafka
     ///     Defines a high-level Apache Kafka producer client (without 
     ///     serialization capability).
     /// </summary>
-    internal interface IProducer : IClient
-    {
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
-        int Poll(int millisecondsTimeout);
+    // internal interface IProducer : IClient
+    // {
+    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
+    //     int Poll(int millisecondsTimeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
-        int Poll(TimeSpan timeout);
+    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
+    //     int Poll(TimeSpan timeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<DeliveryReport> ProduceAsync(
-            string topic, Partition partition, 
-            byte[] key, int keyOffset, int keyLength, 
-            byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, IEnumerable<Header> headers);
+    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
+    //     int Flush(int millisecondsTimeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
-        void Produce(
-            Action<DeliveryReport> deliveryHandler,
-            string topic, Partition partition, 
-            byte[] key, int keyOffset, int keyLength,
-            byte[] val, int valOffset, int valLength,
-            Timestamp timestamp, IEnumerable<Header> headers);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
-        int Flush(int millisecondsTimeout);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
-        int Flush(TimeSpan timeout);
-    }
+    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
+    //     int Flush(TimeSpan timeout);
+    // }
 }
