@@ -73,7 +73,7 @@ namespace Confluent.Kafka.Serialization
                             datumReaderBySchemaId.Clear();
                         }
 
-                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(false).GetAwaiter().GetResult();
+                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
                         var writerSchema = Avro.Schema.Parse(writerSchemaJson);
 
                         datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
