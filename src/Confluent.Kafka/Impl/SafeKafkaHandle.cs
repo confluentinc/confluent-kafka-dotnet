@@ -467,9 +467,14 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out ConsumerRecord record, bool enableHeaderMarshaling, IntPtr millisecondsTimeout)
+        internal bool ConsumerPoll(
+            out ConsumerRecord record,
+            bool enableTimestampMarshaling,
+            bool enableHeaderMarshaling,
+            IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
+            
             // TODO: There is a newer librdkafka interface for this now. Use that.
             IntPtr msgPtr = Librdkafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -499,7 +504,12 @@ namespace Confluent.Kafka.Impl
                 topic = Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(msg.rkt));
             }
 
-            long timestamp = Librdkafka.message_timestamp(msgPtr, out IntPtr timestampType);
+            long timestamp = 0;
+            IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+            if (enableTimestampMarshaling)
+            {
+                timestamp = Librdkafka.message_timestamp(msgPtr, out timestampType);
+            }
 
             Headers headers = null;
             if (enableHeaderMarshaling)

@@ -26,19 +26,17 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    /// <summary>
-    ///     Ensures that awaiting ProduceAsync does not deadlock.
-    /// </summary>
     public static partial class Tests
     {
+        /// <summary>
+        ///     Ensures that awaiting ProduceAsync does not deadlock.
+        /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             Func<Task> mthd = async () => 
             {
-                using (var producer = new Producer<Null, string>(
-                     new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
-                     null, new StringSerializer(Encoding.UTF8)))
+                using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
                 {
                     var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
                     Assert.Equal(ErrorCode.NoError, dr.Error.Code);
@@ -52,12 +50,23 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static async Task Producer_ProduceAsync_Await2(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            using (var producer = new Producer<Null, string>(
-                new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, 
-                null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
             {
                 var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+            }
+        }
+
+        /// <summary>
+        ///     Ensures that ProduceAsync throws when the DeliveryReport has an error (produced to non-existant partition).
+        /// </summary>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public static async Task Producer_ProduceAsync_Await3(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        {
+            using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
+            {
+                await Assert.ThrowsAsync<ProduceMessageException<Null, string>>(
+                    async () => await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 42), new Message<Null, string> { Value = "test string" }));
             }
         }
     }

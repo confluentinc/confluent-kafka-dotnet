@@ -41,10 +41,13 @@ namespace Confluent.Kafka.Benchmark
                 { "queue.buffering.max.messages", 2000000 },
                 { "message.send.max.retries", 3 },
                 { "retry.backoff.ms", 500 },
-                { "linger.ms", 100 },
-                { "dotnet.producer.enable.deivery.report.header.marshaling", false },
-                { "dotnet.producer.enable.deivery.report.data.marshaling", false }
+                { "linger.ms", 100 }
             };
+
+            config["dotnet.producer.enable.delivery.report.headers"] = false;
+            config["dotnet.producer.enable.delivery.report.keys"] = false;
+            config["dotnet.producer.enable.delivery.report.values"] = false;
+            config["dotnet.producer.enable.delivery.report.timestamps"] = false;
 
             DeliveryReport<byte[], byte[]> firstDeliveryReport = null;
 
@@ -86,7 +89,7 @@ namespace Confluent.Kafka.Benchmark
 
                         for (int i = 0; i < nMessages; i++)
                         {
-                            producer.Produce(topic, new Message<byte[], byte[]> { Value = val, Headers = headers }, deliveryHandler);
+                            producer.BeginProduce(topic, new Message<byte[], byte[]> { Value = val, Headers = headers }, deliveryHandler);
                         }
 
                         autoEvent.WaitOne();
@@ -103,8 +106,8 @@ namespace Confluent.Kafka.Benchmark
 
                     var duration = DateTime.Now.Ticks - startTime;
 
-                    Console.WriteLine($"Produced {nMessages} in {duration/10000.0:F0}ms");
-                    Console.WriteLine($"{nMessages / (duration/10000.0):F0} messages/ms");
+                    Console.WriteLine($"Produced {nMessages} messages in {duration/10000.0:F0}ms");
+                    Console.WriteLine($"{nMessages / (duration/10000.0):F0}k msg/s");
                 }
 
                 producer.Flush(TimeSpan.FromSeconds(10));

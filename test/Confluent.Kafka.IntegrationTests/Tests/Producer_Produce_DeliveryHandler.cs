@@ -55,11 +55,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
             {
-                producer.Produce(
+                producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0), 
                     new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
 
-                producer.Produce(singlePartitionTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

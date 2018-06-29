@@ -30,21 +30,21 @@ namespace Confluent.Kafka
         ///     Initialize a new instance of ProduceMessageException based on 
         ///     an existing Error value.
         /// </summary>
-        /// <param name="code"> 
-        ///     The Kafka ErrorCode.
+        /// <param name="error"> 
+        ///     The error associated with the delivery report.
         /// </param>
         /// <param name="deliveryReport">
         ///     The delivery report associated with the produce request.
         /// </param>
-        public KafkaException(Error error, Message<TKey, TValue> deliveryReport)
+        public ProduceMessageException(Error error, DeliveryReport<TKey, TValue> deliveryReport)
             : base(error)
         {
-            DeliveryReport = deliveryReport
+            DeliveryReport = deliveryReport;
         }
 
         /// <summary>
         ///     The delivery report associated with the produce request.
         /// </summary>
-        public Message<TKey, TValue> DeliveryReport { get; }
+        public DeliveryReport<TKey, TValue> DeliveryReport { get; }
     }
 }

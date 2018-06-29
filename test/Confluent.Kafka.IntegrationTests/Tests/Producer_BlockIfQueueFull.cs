@@ -49,15 +49,15 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (int i=0; i<2; ++i)
                 {
-                    producer.Produce(
+                    producer.BeginProduce(
                         singlePartitionTopic, 
-                        new Message<string, string> { Key = "hello", Value ="world" },
+                        new Message<string, string> { Key = "hello", Value = "world" },
                         (DeliveryReport<string, string> msg) => {});
                 }
                 Assert.Throws<KafkaException>(() => 
-                    producer.Produce( 
+                    producer.BeginProduce( 
                         singlePartitionTopic, 
-                        new Message<string, string> { Key = "hello", Value ="world" },
+                        new Message<string, string> { Key = "hello", Value = "world" },
                     (DeliveryReport<string, string> msg) => {})
                 );
             }

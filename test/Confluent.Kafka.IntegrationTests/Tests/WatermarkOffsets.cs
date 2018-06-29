@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
                 //       I have seen queryOffsets.High < dr.Offset and also queryOffsets.High = dr.Offset + 1.
                 //       The former only once (or was I in error?). request.required.acks has a default value
                 //       of 1, so with only one broker, I assume the former should never happen.
-                Console.WriteLine($"Query Offsets: [{queryOffsets.Low} {queryOffsets.High}]. DR Offset: {dr.Offset}");
+                // Console.WriteLine($"Query Offsets: [{queryOffsets.Low} {queryOffsets.High}]. DR Offset: {dr.Offset}");
                 Assert.True(queryOffsets.Low < queryOffsets.High);
             }
 

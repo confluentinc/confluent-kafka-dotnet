@@ -29,21 +29,31 @@ using System.Collections.Concurrent;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka producer client (without 
-    ///     serialization capability).
+    ///     Defines a high-level Apache Kafka producer client that provides key
+    ///     and value serialization.
     /// </summary>
-    // internal interface IProducer : IClient
-    // {
-    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
-    //     int Poll(int millisecondsTimeout);
+    public interface IProducer<TKey, TValue> : IClient
+    {
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message);
 
-    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
-    //     int Poll(TimeSpan timeout);
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message);
 
-    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
-    //     int Flush(int millisecondsTimeout);
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
 
-    //     /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
-    //     int Flush(TimeSpan timeout);
-    // }
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
+        int Flush(int millisecondsTimeout);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
+        int Flush(TimeSpan timeout);
+    }
 }

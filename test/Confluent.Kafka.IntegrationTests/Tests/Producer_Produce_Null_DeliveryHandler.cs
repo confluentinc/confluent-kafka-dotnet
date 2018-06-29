@@ -54,8 +54,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.Produce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
-                producer.Produce(singlePartitionTopic, new Message<Null, Null> {}, dh);
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<Null, Null> {}, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
