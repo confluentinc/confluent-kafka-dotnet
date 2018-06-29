@@ -478,7 +478,7 @@ namespace Confluent.Kafka.Impl
                 IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
-        internal delegate void LogDelegate(IntPtr rk, int level, string fac, string buf);
+        internal delegate void LogDelegate(IntPtr rk, SyslogLevel level, string fac, string buf);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
         internal delegate int StatsDelegate(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque);

@@ -522,7 +522,7 @@ namespace Confluent.Kafka
         }
 
         private Librdkafka.LogDelegate logDelegate;
-        private void LogCallback(IntPtr rk, int level, string fac, string buf)
+        private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 

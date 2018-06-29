@@ -39,9 +39,8 @@ namespace Confluent.Kafka
         /// <param name="message">
         ///     The log message.
         /// </param>
-        public LogMessage(string name, int level, string facility, string message)
+        public LogMessage(string name, SyslogLevel level, string facility, string message)
         {
-            // TODO: Define an enumeration for log level.
             Name = name;
             Level = level;
             Facility = facility;
@@ -56,7 +55,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the log level (levels correspond to syslog(3)), lower is worse.
         /// </summary>
-        public int Level { get; }
+        public SyslogLevel Level { get; }
         
         /// <summary>
         ///     Gets the facility (section of librdkafka code) that produced the message.
