@@ -85,10 +85,10 @@ namespace Confluent.Kafka.UnitTests
             var e1 = new Error(ErrorCode.NoError);
             var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
-            Assert.False(e1.HasError);
-            Assert.True(e2.HasError);
-            Assert.False(e1);
-            Assert.True(e2);
+            Assert.False(e1.IsError);
+            Assert.True(e2.IsError);
+            Assert.False(e1.IsError);
+            Assert.True(e2.IsError);
         }
 
         [Fact]
@@ -97,8 +97,8 @@ namespace Confluent.Kafka.UnitTests
             var e1 = new Error(ErrorCode.NoError);
             var e2 = new Error(ErrorCode.NotCoordinatorForGroup);
 
-            Assert.False(e1);
-            Assert.True(e2);
+            Assert.False(e1.IsError);
+            Assert.True(e2.IsError);
         }
 
         [Fact]

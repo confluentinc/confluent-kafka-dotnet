@@ -89,8 +89,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
             using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
             {
-                consumer.OnMessage += (o, e)
-                    => Console.WriteLine($"user key name: {e.Key}, user value favorite color: {e.Value.favorite_color}");
+                consumer.OnRecord += (o, record)
+                    => Console.WriteLine($"user key name: {record.Key}, user value favorite color: {record.Value.favorite_color}");
 
                 consumer.OnError += (_, e)
                     => Console.WriteLine("Error: " + e.Reason);
@@ -117,7 +117,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 {
                     User user = new User { name = text, favorite_color = "green", favorite_number = i++ };
                     producer
-                        .ProduceAsync(topicName, text, user)
+                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user})
                         .ContinueWith(task => Console.WriteLine($"Wrote to: {task.Result.TopicPartitionOffset}"));
                 }
 

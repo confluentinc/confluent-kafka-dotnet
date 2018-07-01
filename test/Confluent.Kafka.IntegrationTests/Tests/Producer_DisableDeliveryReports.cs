@@ -40,21 +40,29 @@ namespace Confluent.Kafka.IntegrationTests
             { 
                 { "bootstrap.servers", bootstrapServers },
                 { "dotnet.producer.enable.delivery.reports", false },
-                // the below are just tests that the property is recognized. the functionality is not tested.
-                { "dotnet.producer.block.if.queue.full", false }, 
+                // the below are just a few extra tests that the property is recognized (all 
+                // set to defaults). the functionality is not tested.
+                { "dotnet.producer.block.if.queue.full", true },
                 { "dotnet.producer.enable.background.poll", true },
-                { "dotnet.producer.enable.deivery.report.header.marshaling", true },
-                { "dotnet.producer.enable.deivery.report.data.marshaling", true}
+                { "dotnet.producer.enable.delivery.report.headers", true },
+                { "dotnet.producer.enable.delivery.report.timestamps", true },
+                { "dotnet.producer.enable.delivery.report.keys", true },
+                { "dotnet.producer.enable.delivery.report.values", true },
             };
 
+            // if delivery reports are disabled
+            //  1. callback functions should never called, even if specified.
+            //  2. specifying no delivery report handlers is valid.
             int count = 0;
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
-                producer.Produce(
+                producer.BeginProduce(
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
                     (DeliveryReport<byte[], byte[]> dr) => count += 1
                 );
+
+                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

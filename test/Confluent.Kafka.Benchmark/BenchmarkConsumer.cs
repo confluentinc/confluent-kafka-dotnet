@@ -30,7 +30,8 @@ namespace Confluent.Kafka.Benchmark
                 { "group.id", "benchmark-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
-                { "dotnet.consumer.enable.header.marshaling", nHeaders != 0 }
+                { "dotnet.consumer.enable.headers", nHeaders != 0 },
+                { "dotnet.consumer.enable.timestamps", false }
             };
 
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
@@ -71,8 +72,8 @@ namespace Confluent.Kafka.Benchmark
 
                     var duration = DateTime.Now.Ticks - startTime;
 
-                    Console.WriteLine($"Consumed {nMessages-1} in {duration/10000.0:F0}ms");
-                    Console.WriteLine($"{(nMessages-1) / (duration/10000.0):F0} messages/ms");
+                    Console.WriteLine($"Consumed {nMessages-1} messages in {duration/10000.0:F0}ms");
+                    Console.WriteLine($"{(nMessages-1) / (duration/10000.0):F0}k msg/s");
                 }
             }
         }

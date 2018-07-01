@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -27,7 +29,7 @@ namespace Confluent.Kafka
     ///     its purpose is to add some syntactical sugar 
     ///     related to special values.
     /// </remarks>
-    public struct Offset
+    public struct Offset : IEquatable<Offset>
     {
         private const long RD_KAFKA_OFFSET_BEGINNING = -2;
         private const long RD_KAFKA_OFFSET_END = -1;
@@ -100,13 +102,25 @@ namespace Confluent.Kafka
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is Offset))
+            if (obj is Offset o)
             {
-                return false;
+                return Equals(o);
             }
 
-            return ((Offset)obj).Value == this.Value;
+            return false;
         }
+
+        /// <summary>
+        ///     Tests whether this Offset value is equal to the specified Offset.
+        /// </summary>
+        /// <param name="other">
+        ///     The offset to test.
+        /// </param>
+        /// <returns>
+        ///     true if other has the same value. false otherwise.
+        /// </returns>
+        public bool Equals(Offset other)
+            => other.Value == Value;
 
         /// <summary>
         ///     Tests whether Offset value a is equal to Offset value b.

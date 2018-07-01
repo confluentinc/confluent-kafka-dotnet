@@ -30,9 +30,378 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     Implements a high-level Apache Kafka producer with key
+    ///     and value serialization.
+    /// </summary>
+    public class Producer<TKey, TValue> : IProducer<TKey, TValue>
+    {
+        private readonly Producer ownedClient;
+        private readonly Handle handle;
+        private Producer producer;
+        private ISerializer<TKey> keySerializer;
+        private ISerializer<TValue> valueSerializer;
+
+        private void setAndValidateSerializers(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
+        {
+            this.keySerializer = keySerializer;
+            this.valueSerializer = valueSerializer;
+
+            if (keySerializer != null && keySerializer == valueSerializer)
+            {
+                throw new ArgumentException("Key and value serializers must not be the same object.");
+            }
+
+            if (keySerializer == null)
+            {
+                if (typeof(TKey) != typeof(Null))
+                {
+                    throw new ArgumentNullException("Key serializer must be specified.");
+                }
+            }
+
+            if (valueSerializer == null)
+            {
+                if (typeof(TValue) != typeof(Null))
+                {
+                    throw new ArgumentNullException("Value serializer must be specified.");
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Creates a new Producer instance.
+        /// </summary>
+        /// <param name="config">
+        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
+        /// </param>
+        /// <param name="keySerializer">
+        ///     An ISerializer implementation instance that will be used to serialize keys.
+        /// </param>
+        /// <param name="valueSerializer">
+        ///     An ISerializer implementation instance that will be used to serialize values.
+        /// </param>
+        public Producer(
+            IEnumerable<KeyValuePair<string, object>> config,
+            ISerializer<TKey> keySerializer,
+            ISerializer<TValue> valueSerializer)
+        {
+            var configWithoutKeySerializerProperties = keySerializer?.Configure(config, true) ?? config;
+            var configWithoutValueSerializerProperties = valueSerializer?.Configure(config, false) ?? config;
+
+            var configWithoutSerializerProperties = config.Where(item => 
+                configWithoutKeySerializerProperties.Any(ci => ci.Key == item.Key) &&
+                configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
+            );
+
+            this.ownedClient = new Producer(configWithoutSerializerProperties);
+            this.handle = ownedClient.Handle;
+            this.producer = ownedClient;
+            setAndValidateSerializers(keySerializer, valueSerializer);
+        }
+
+        /// <summary>
+        ///     Creates a new Producer instance
+        /// </summary>
+        /// <param name="handle">
+        ///     A librdkafka handle to use for Kafka cluster communications.
+        /// </param>
+        /// <param name="keySerializer">
+        ///     An ISerializer implementation instance that will be used to serialize keys.
+        /// </param>
+        /// <param name="valueSerializer">
+        ///     An ISerializer implementation instance that will be used to serialize values.
+        /// </param>
+        public Producer(
+            Handle handle,
+            ISerializer<TKey> keySerializer,
+            ISerializer<TValue> valueSerializer)
+        {
+            if (!(handle.Owner is Producer))
+            {
+                throw new ArgumentException("Handle must be owned by another Producer instance");
+            }
+
+            this.ownedClient = null;
+            this.handle = handle;
+            this.producer = (Producer)handle.Owner;
+            setAndValidateSerializers(keySerializer, valueSerializer);
+        }
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
+        public string Name
+            => this.handle.Owner.Name;
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
+        public event EventHandler<LogMessage> OnLog
+        {
+            add { this.handle.Owner.OnLog += value; }
+            remove { this.handle.Owner.OnLog -= value; }
+        }
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
+        public event EventHandler<string> OnStatistics
+        {
+            add { this.handle.Owner.OnStatistics += value; }
+            remove { this.handle.Owner.OnStatistics -= value; }
+        }
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
+        public event EventHandler<Error> OnError
+        {
+            add { this.handle.Owner.OnError += value; }
+            remove { this.handle.Owner.OnError -= value; }
+        }
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
+        public int Flush(int millisecondsTimeout)
+            => ((Producer)this.handle.Owner).Flush(millisecondsTimeout);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
+        public int Flush(TimeSpan timeout)
+            => ((Producer)this.handle.Owner).Flush(timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
+        public int Poll(int millisecondsTimeout)
+            => ((Producer)this.handle.Owner).Poll(millisecondsTimeout);
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
+        public int Poll(TimeSpan timeout)
+            => ((Producer)this.handle.Owner).Poll(timeout.TotalMillisecondsAsInt());
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
+        public void Dispose()
+        {
+            if (keySerializer != null)
+            {
+                keySerializer.Dispose();
+            }
+
+            if (valueSerializer != null)
+            {
+                valueSerializer.Dispose();
+            }
+
+            if (ownedClient == this.handle.Owner) 
+            {
+                ownedClient.Dispose();
+            }
+        }
+
+        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        public int AddBrokers(string brokers)
+            => this.handle.Owner.AddBrokers(brokers);
+
+        /// <summary>
+        ///     An opaque reference to the underlying librdkafka client instance.
+        /// </summary>
+        public Handle Handle 
+            => handle;
+
+
+        private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<DeliveryReport<TKey, TValue>>, IDeliveryHandler
+        {
+            public TypedTaskDeliveryHandlerShim(string topic, TKey key, TValue val)
+#if !NET45
+                : base(TaskCreationOptions.RunContinuationsAsynchronously)
+#endif
+            {
+                Topic = topic;
+                Key = key;
+                Value = val;
+            }
+
+            public string Topic;
+
+            public TKey Key;
+
+            public TValue Value;
+
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
+            {
+                if (deliveryReport == null)
+                {
+#if NET45
+                    System.Threading.Tasks.Task.Run(() => SetResult(null));
+#else
+                    SetResult(null);
+#endif
+                    return;
+                }
+
+                var dr = new DeliveryReport<TKey, TValue>
+                {
+                    TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
+                    Message = new Message<TKey, TValue>
+                    {
+                        Key = Key,
+                        Value = Value,
+                        Timestamp = deliveryReport.Message.Timestamp,
+                        Headers = deliveryReport.Message.Headers
+                    }
+                };
+                // topic is cached in this object, not set in the deliveryReport to avoid the 
+                // cost of marshalling it.
+                dr.Topic = Topic;
+
+#if NET45
+                if (dr.Error.IsError)
+                {
+                    System.Threading.Tasks.Task.Run(() => SetException(new ProduceMessageException<TKey, TValue>(dr.Error, dr)));
+                }
+                else
+                {
+                    System.Threading.Tasks.Task.Run(() => SetResult(dr));
+                }
+#else
+                if (dr.Error.IsError)
+                {
+                    SetException(new ProduceMessageException<TKey, TValue>(dr.Error, dr));
+                }
+                else
+                {
+                    SetResult(dr);
+                }
+#endif
+            }
+        }
+
+
+        private class TypedDeliveryHandlerShim_Action : IDeliveryHandler
+        {
+            public TypedDeliveryHandlerShim_Action(string topic, TKey key, TValue val, Action<DeliveryReport<TKey, TValue>> handler)
+            {
+                Topic = topic;
+                Key = key;
+                Value = val;
+                Handler = handler;
+            }
+
+            public string Topic;
+
+            public TKey Key;
+
+            public TValue Value;
+
+            public Action<DeliveryReport<TKey, TValue>> Handler;
+
+            public void HandleDeliveryReport(DeliveryReport deliveryReport)
+            {
+                if (deliveryReport == null)
+                {
+                    return;
+                }
+
+                var dr = new DeliveryReport<TKey, TValue>
+                {
+                    TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
+                    Message = new Message<TKey, TValue> 
+                    {
+                        Key = Key,
+                        Value = Value,
+                        Timestamp = deliveryReport.Message.Timestamp,
+                        Headers = deliveryReport.Message.Headers
+                    }
+                };
+                // topic is cached in this object, not set in the deliveryReport to avoid the 
+                // cost of marshalling it.
+                dr.Topic = Topic;
+
+                Handler(dr);
+            }
+        }
+
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message)
+        {
+            var handler = new TypedTaskDeliveryHandlerShim(topic,
+                producer.enableDeliveryReportKey ? message.Key : default(TKey),
+                producer.enableDeliveryReportValue ? message.Value : default(TValue));
+
+            var keyBytes = keySerializer?.Serialize(topic, message.Key);
+            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+
+            producer.ProduceImpl(
+                topic,
+                valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                message.Timestamp, Partition.Any, message.Headers, 
+                producer.blockIfQueueFullPropertyValue, handler);
+
+            return handler.Task;
+        }
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message)
+        {
+            var handler = new TypedTaskDeliveryHandlerShim(topicPartition.Topic,
+                producer.enableDeliveryReportKey ? message.Key : default(TKey),
+                producer.enableDeliveryReportValue ? message.Value : default(TValue));
+
+            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
+            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+            
+            producer.ProduceImpl(
+                topicPartition.Topic, 
+                valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                message.Timestamp, topicPartition.Partition, message.Headers, 
+                producer.blockIfQueueFullPropertyValue, handler);
+
+            return handler.Task;
+        }
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        public void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
+        {
+            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
+            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+
+            producer.ProduceImpl(
+                topicPartition.Topic, 
+                valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                message.Timestamp, topicPartition.Partition, 
+                message.Headers, producer.blockIfQueueFullPropertyValue, 
+                new TypedDeliveryHandlerShim_Action(
+                    topicPartition.Topic,
+                    producer.enableDeliveryReportKey ? message.Key : default(TKey),
+                    producer.enableDeliveryReportValue ? message.Value : default(TValue),
+                    deliveryHandler)
+            );
+        }
+
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
+        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+        public void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
+        {
+            var keyBytes = keySerializer?.Serialize(topic, message.Key);
+            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+
+            producer.ProduceImpl(
+                topic,
+                valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                message.Timestamp, Partition.Any,
+                message.Headers, producer.blockIfQueueFullPropertyValue,
+                new TypedDeliveryHandlerShim_Action(
+                    topic,
+                    producer.enableDeliveryReportKey ? message.Key : default(TKey), 
+                    producer.enableDeliveryReportValue ? message.Value : default(TValue), 
+                    deliveryHandler)
+            );
+        }
+    }
+
+
+
+    /// <summary>
     ///     Implements a high-level Apache Kafka producer (without serialization).
     /// </summary>
-    internal class Producer : IProducer
+    internal class Producer : IClient
     {
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
@@ -82,22 +451,42 @@ namespace Confluent.Kafka
         /// 
         ///     default: true
         /// </summary>
-        public const string EnableDeliveryReportHeaderMarshalingName = "dotnet.producer.enable.deivery.report.header.marshaling";
+        public const string EnableDeliveryReportHeadersName = "dotnet.producer.enable.delivery.report.headers";
 
         /// <summary>
         ///     Name of the configuration property that specifies whether to make
-        ///     message keys and values available in delivery reports. Disabling
-        ///     this will improve maximum throughput.
+        ///     message keys available in delivery reports. Disabling this will 
+        ///     improve maximum throughput and reduce memory usage.
         /// 
         ///     default: true
         /// </summary>
-        public const string EnableDeliveryReportDataMarshalingName = "dotnet.producer.enable.deivery.report.data.marshaling";
+        public const string EnableDeliveryReportKeyName = "dotnet.producer.enable.delivery.report.keys";
+
+        /// <summary>
+        ///     Name of the configuration property that specifies whether to make 
+        ///     message values available in delivery reports. Disabling this will
+        ///     improve maximum throughput and reduce memory usage.
+        /// 
+        ///     default: true
+        /// </summary>
+        public const string EnableDeliveryReportValueName = "dotnet.producer.enable.delivery.report.values";
+
+        /// <summary>
+        ///     Name of the configuration property that specifies whether to make
+        ///     message timestamps available in delivery reports.null Disabling this
+        ///     will improve maximum throughput.
+        /// 
+        ///     default: true
+        /// </summary>
+        public const string EnableDeliveryReportTimestampName = "dotnet.producer.enable.delivery.report.timestamps";
 
         private bool manualPoll = false;
-        private bool disableDeliveryReports = false;
+        private bool enableDeliveryReports = true;
         internal bool blockIfQueueFullPropertyValue = true;
-        internal bool enableDeliveryReportHeaderMarshaling = true;
-        internal bool enableDeliveryReportDataMarshaling = true;
+        internal bool enableDeliveryReportHeaders = true;
+        internal bool enableDeliveryReportKey = true;
+        internal bool enableDeliveryReportValue = true;
+        internal bool enableDeliveryReportTimestamp = true;
 
         private SafeKafkaHandle kafkaHandle;
 
@@ -119,23 +508,23 @@ namespace Confluent.Kafka
                     catch (OperationCanceledException) {}
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        private LibRdKafka.ErrorDelegate errorDelegate;
+        private Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private LibRdKafka.StatsDelegate statsDelegate;
+        private Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private LibRdKafka.LogDelegate logDelegate;
-        private void LogCallback(IntPtr rk, int level, string fac, string buf)
+        private Librdkafka.LogDelegate logDelegate;
+        private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            var name = Util.Marshal.PtrToStringUTF8(LibRdKafka.name(rk));
+            var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
             if (OnLog == null)
             {
@@ -147,13 +536,13 @@ namespace Confluent.Kafka
             OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
-        private static readonly LibRdKafka.DeliveryReportDelegate DeliveryReportCallback = DeliveryReportCallbackImpl;
+        private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
 
         /// <remarks>
         ///     note: this property is set to that defined in rd_kafka_conf
         ///     (which is never used by confluent-kafka-dotnet).
         /// </remarks>
-        private static void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
+        private void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
@@ -172,15 +561,15 @@ namespace Confluent.Kafka
             gch.Free();
 
             Headers headers = null;
-            if (deliveryHandler.MarshalHeaders) 
+            if (this.enableDeliveryReportHeaders) 
             {
                 headers = new Headers();
-                LibRdKafka.message_headers(rkmessage, out IntPtr hdrsPtr);
+                Librdkafka.message_headers(rkmessage, out IntPtr hdrsPtr);
                 if (hdrsPtr != IntPtr.Zero)
                 {
                     for (var i=0; ; ++i)
                     {
-                        var err = LibRdKafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                        var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                         if (err != ErrorCode.NoError)
                         {
                             break;
@@ -193,66 +582,24 @@ namespace Confluent.Kafka
                 }
             }
 
-            byte[] key = null;
-            byte[] val = null;
-            if (deliveryHandler.MarshalData)
+            IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+            long timestamp = 0;
+            if (enableDeliveryReportTimestamp)
             {
-                if (msg.key != IntPtr.Zero)
-                {
-                    key = new byte[(int)msg.key_len];
-                    System.Runtime.InteropServices.Marshal.Copy(msg.key, key, 0, (int)msg.key_len);
-                }
-                if (msg.val != IntPtr.Zero)
-                {
-                    val = new byte[(int)msg.len];
-                    System.Runtime.InteropServices.Marshal.Copy(msg.val, val, 0, (int)msg.len);
-                }
+                timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
             }
-
-            IntPtr timestampType;
-            long timestamp = LibRdKafka.message_timestamp(rkmessage, out timestampType);
 
             deliveryHandler.HandleDeliveryReport(
                 new DeliveryReport 
                 {
-                    // TODO: tracking handle -> topicName in addition to topicName -> handle could
-                    //       avoid this marshalling / memory allocation cost.
-                    Topic = Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(msg.rkt)), 
+                    // Topic is not set here in order to avoid the marshalling cost.
+                    // Instead, the delivery handler is expected to cache the topic string.
                     Partition = msg.partition, 
                     Offset = msg.offset, 
                     Error = msg.err,
-                    Message = new Message { Key = key, Value = val, Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
+                    Message = new Message { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
                 }
             );
-        }
-
-        private sealed class TaskDeliveryHandler : TaskCompletionSource<DeliveryReport>, IDeliveryHandler
-        {
-#if !NET45
-            public TaskDeliveryHandler(bool marshalData, bool marshalHeaders) : base(TaskCreationOptions.RunContinuationsAsynchronously)
-            { 
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
-            }
-#else 
-            public TaskDeliveryHandler(bool marshalData, bool marshalHeaders)
-            {
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
-            }
-#endif
-            public bool MarshalData { get; private set; }
-
-            public bool MarshalHeaders { get; private set; }
-
-            public void HandleDeliveryReport(DeliveryReport deliveryReport)
-            {
-#if NET45
-                System.Threading.Tasks.Task.Run(() => SetResult(deliveryReport));
-#else
-                SetResult(deliveryReport);
-#endif
-            }
         }
 
         internal void ProduceImpl(
@@ -273,11 +620,15 @@ namespace Confluent.Kafka
                 }
             }
 
-            if (!this.disableDeliveryReports && deliveryHandler != null)
+            if (this.enableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
-                var deliveryCompletionSource = deliveryHandler;
-                var gch = GCHandle.Alloc(deliveryCompletionSource);
+
+                // Note: There is a level of indirection between the GCHandle and
+                // physical memory address. GCHangle.ToIntPtr doesn't get the
+                // physical address, it gets an id that refers to the object via
+                // a handle-table.
+                var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
                 var err = kafkaHandle.Produce(
@@ -287,7 +638,7 @@ namespace Confluent.Kafka
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
-                    ptr, 
+                    ptr,
                     blockIfQueueFull);
                 if (err != ErrorCode.NoError)
                 {
@@ -306,6 +657,12 @@ namespace Confluent.Kafka
                     headers,
                     IntPtr.Zero, 
                     blockIfQueueFull);
+
+                if (deliveryHandler != null)
+                {
+                    deliveryHandler.HandleDeliveryReport(null);
+                }
+
                 if (err != ErrorCode.NoError)
                 {
                     throw new KafkaException(err);
@@ -313,60 +670,6 @@ namespace Confluent.Kafka
             }
         }
 
-        private Task<DeliveryReport> ProduceImpl(
-            string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
-            Timestamp timestamp,
-            Partition partition, 
-            IEnumerable<Header> headers,
-            bool blockIfQueueFull)
-        {
-            var deliveryCompletionSource = new TaskDeliveryHandler(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling);
-            ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, blockIfQueueFull, deliveryCompletionSource);
-            return deliveryCompletionSource.Task;
-        }
-
-        private class DeliveryHandlerShim_Action : IDeliveryHandler
-        {
-            public DeliveryHandlerShim_Action(bool marshalData, bool marshalHeaders, Action<DeliveryReport> handler)
-            {
-                Handler = handler;
-                MarshalData = marshalData;
-                MarshalHeaders = marshalHeaders;
-            }
-
-            public bool MarshalData { get; private set; }
-
-            public bool MarshalHeaders { get; private set; }
-
-            public Action<DeliveryReport> Handler;
-
-            public void HandleDeliveryReport(DeliveryReport deliveryReport)
-            {
-                Handler(deliveryReport);
-            }
-        }
-
-        internal void ProduceImpl(
-            string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
-            Timestamp timestamp,
-            Partition partition, 
-            IEnumerable<Header> headers,
-            bool blockIfQueueFull,
-            Action<DeliveryReport> deliveryHandler
-        )
-            => ProduceImpl(
-                topic, 
-                val, valOffset, valLength, 
-                key, keyOffset, keyLength, 
-                timestamp, 
-                partition, 
-                headers, 
-                blockIfQueueFull, 
-                new DeliveryHandlerShim_Action(this.enableDeliveryReportDataMarshaling, this.enableDeliveryReportHeaderMarshaling, deliveryHandler));
 
         /// <summary>
         ///     Initializes a new Producer instance.
@@ -380,16 +683,19 @@ namespace Confluent.Kafka
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
 
-            LibRdKafka.Initialize(null);
+            this.DeliveryReportCallback = DeliveryReportCallbackImpl;
+
+            Librdkafka.Initialize(null);
 
             var modifiedConfig = config
-                .Where(
-                    prop => prop.Key != "default.topic.config" && 
+                .Where(prop => 
                     prop.Key != BlockIfQueueFullPropertyName &&
                     prop.Key != EnableBackgroundPollPropertyName &&
                     prop.Key != EnableDeliveryReportsPropertyName &&
-                    prop.Key != EnableDeliveryReportHeaderMarshalingName &&
-                    prop.Key != EnableDeliveryReportDataMarshalingName);
+                    prop.Key != EnableDeliveryReportHeadersName &&
+                    prop.Key != EnableDeliveryReportKeyName &&
+                    prop.Key != EnableDeliveryReportValueName &&
+                    prop.Key != EnableDeliveryReportTimestampName);
 
             var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
             if (enableBackgroundPollObj != null)
@@ -400,7 +706,7 @@ namespace Confluent.Kafka
             var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportsPropertyName).Value;
             if (enableDeliveryReportsObj != null)
             {
-                this.disableDeliveryReports = !bool.Parse(enableDeliveryReportsObj.ToString());
+                this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
             }
 
             var blockIfQueueFullObj = config.FirstOrDefault(prop => prop.Key == BlockIfQueueFullPropertyName).Value;
@@ -409,24 +715,28 @@ namespace Confluent.Kafka
                 this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullObj.ToString());
             }
 
-            var enableDeliveryReportHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportHeaderMarshalingName).Value;
-            if (enableDeliveryReportHeaderMarshalingObj != null)
+            var enableDeliveryReportHeadersObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportHeadersName).Value;
+            if (enableDeliveryReportHeadersObj != null)
             {
-                this.enableDeliveryReportHeaderMarshaling = bool.Parse(enableDeliveryReportHeaderMarshalingObj.ToString());
+                this.enableDeliveryReportHeaders = bool.Parse(enableDeliveryReportHeadersObj.ToString());
             }
 
-            var enableDeliveryReportDataMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportDataMarshalingName).Value;
-            if (enableDeliveryReportDataMarshalingObj != null)
+            var enableDeliveryReportKeyObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportKeyName).Value;
+            if (enableDeliveryReportKeyObj != null)
             {
-                this.enableDeliveryReportDataMarshaling = bool.Parse(enableDeliveryReportDataMarshalingObj.ToString());
+                this.enableDeliveryReportKey = bool.Parse(enableDeliveryReportKeyObj.ToString());
             }
 
-            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
-            // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (defaultTopicConfig != null)
+            var enableDeliveryReportValueObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportValueName).Value;
+            if (enableDeliveryReportValueObj != null)
             {
-                modifiedConfig = modifiedConfig.Concat((IEnumerable<KeyValuePair<string, object>>)defaultTopicConfig);
+                this.enableDeliveryReportValue = bool.Parse(enableDeliveryReportValueObj.ToString());
+            }
+
+            var enableDeliveryReportTimestampObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportTimestampName).Value;
+            if (enableDeliveryReportTimestampObj != null)
+            {
+                this.enableDeliveryReportTimestamp = bool.Parse(enableDeliveryReportTimestampObj.ToString());
             }
 
             // Note: changing the default value of produce.offset.report at the binding level is less than
@@ -447,9 +757,9 @@ namespace Confluent.Kafka
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            if (!disableDeliveryReports)
+            if (enableDeliveryReports)
             {
-                LibRdKafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
+                Librdkafka.conf_set_dr_msg_cb(configPtr, DeliveryReportCallback);
             }
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
@@ -459,9 +769,9 @@ namespace Confluent.Kafka
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
-            LibRdKafka.conf_set_error_cb(configPtr, errorDelegate);
-            LibRdKafka.conf_set_log_cb(configPtr, logDelegate);
-            LibRdKafka.conf_set_stats_cb(configPtr, statsDelegate);
+            Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
+            Librdkafka.conf_set_log_cb(configPtr, logDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
@@ -495,28 +805,6 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog;
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<DeliveryReport> ProduceAsync(
-            string topic, Partition partition, 
-            byte[] key, int keyOffset, int keyLength, 
-            byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, 
-            IEnumerable<Header> headers
-        )
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Partition_byte_int_int_byte_int_int_Timestamp_IEnumerable"]/*' />        
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
-        public void Produce(
-            Action<DeliveryReport> deliveryHandler,
-            string topic, Partition partition, 
-            byte[] key, int keyOffset, int keyLength, 
-            byte[] val, int valOffset, int valLength, 
-            Timestamp timestamp, IEnumerable<Header> headers
-        )
-            => ProduceImpl(topic, val, valOffset, valLength, key, keyOffset, keyLength, timestamp, partition, headers, this.blockIfQueueFullPropertyValue, deliveryHandler);
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name

@@ -253,6 +253,11 @@ namespace Confluent.Kafka
         /// </summary>
         Local_Underflow = -155,
 
+        /// <summary>
+        ///     Invalid type
+        /// </summary>
+        Local_InvalidType = -154,
+
 
         /// <summary>
         ///     Unknown broker error
@@ -551,8 +556,8 @@ namespace Confluent.Kafka
         /// </summary>
         public static string GetReason(this ErrorCode code)
         {
-            Impl.LibRdKafka.Initialize(null);
-            return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
+            Impl.Librdkafka.Initialize(null);
+            return Internal.Util.Marshal.PtrToStringUTF8(Impl.Librdkafka.err2str(code));
         }
     }
 }

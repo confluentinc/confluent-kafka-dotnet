@@ -68,7 +68,7 @@ namespace Confluent.Kafka.Examples.Consumer
 
                 consumer.OnOffsetsCommitted += (_, commit) 
                     => Console.WriteLine(
-                            commit.Error
+                            commit.Error.IsError
                                 ? $"Failed to commit offsets: {commit.Error}"
                                 : $"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]");
 
