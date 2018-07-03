@@ -27,19 +27,27 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer (without deserialization).
     /// </summary>
-    internal class Consumer : IConsumer
+    internal class Consumer : IClient
     {
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
-        ///     disable marshaling of headers when consuming messages. Note that 
+        ///     enable marshaling of headers when consuming messages. Note that 
         ///     disabling header marshaling will measurably improve maximum throughput 
         ///     even for the case where messages do not have any headers.
         /// 
         ///     default: true
         /// </summary>
-        public const string EnableHeaderMarshalingPropertyName = "dotnet.consumer.enable.header.marshaling";
+        public const string EnableHeadersPropertyName = "dotnet.consumer.enable.headers";
+
+        /// <summary>
+        ///     Name of the configuration property that specifies whether or not to
+        ///     enable marshaling of timestamps when consuming messages. Disabling this
+        ///     will lead to greater maximum throughput.
+        /// </summary>
+        public const string EnableTimestampPropertyName = "dotnet.consumer.enable.timestamps";
 
         private readonly bool enableHeaderMarshaling = true;
+        private readonly bool enableTimestampMarshaling = true;
 
         private readonly SafeKafkaHandle kafkaHandle;
 
@@ -57,7 +65,7 @@ namespace Confluent.Kafka
         }
 
         private readonly Librdkafka.LogDelegate logDelegate;
-        private void LogCallback(IntPtr rk, int level, string fac, string buf)
+        private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
@@ -134,12 +142,20 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = config
-                .Where(prop => prop.Key != EnableHeaderMarshalingPropertyName);
+                .Where(prop => 
+                    prop.Key != EnableHeadersPropertyName &&
+                    prop.Key != EnableTimestampPropertyName);
 
-            var enableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableHeaderMarshalingPropertyName).Value;
+            var enableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableHeadersPropertyName).Value;
             if (enableHeaderMarshalingObj != null)
             {
                 this.enableHeaderMarshaling = bool.Parse(enableHeaderMarshalingObj.ToString());
+            }
+
+            var enableTimestampMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableTimestampPropertyName).Value;
+            if (enableTimestampMarshalingObj != null)
+            {
+                this.enableTimestampMarshaling = bool.Parse(enableTimestampMarshalingObj.ToString());
             }
 
             var configHandle = SafeConfigHandle.Create();
@@ -261,7 +277,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
         public bool Consume(out ConsumerRecord record, int millisecondsTimeout)
         {
-            if (kafkaHandle.ConsumerPoll(out record, enableHeaderMarshaling, (IntPtr)millisecondsTimeout))
+            if (kafkaHandle.ConsumerPoll(out record, enableTimestampMarshaling, enableHeaderMarshaling, (IntPtr)millisecondsTimeout))
             {
                 switch (record.Error.Code)
                 {

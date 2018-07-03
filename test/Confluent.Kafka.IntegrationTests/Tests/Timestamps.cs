@@ -89,10 +89,10 @@ namespace Confluent.Kafka.IntegrationTests
                 Action<DeliveryReport<Null, string>> dh 
                     = (DeliveryReport<Null, string> dr) => drs_1.Add(dr);
 
-                producer.Produce(singlePartitionTopic, new Message<Null, string> { Value = "testvalue" }, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<Null, string> { Value = "testvalue" }, dh);
 
                 // TimestampType: CreateTime
-                producer.Produce(
+                producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> 
                     { 
@@ -101,14 +101,14 @@ namespace Confluent.Kafka.IntegrationTests
                     }, dh);
 
                 // TimestampType: CreateTime (default)
-                producer.Produce(
+                producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> { Value = "test-value" },
                     dh
                 );
 
                 // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() => producer.Produce(
+                Assert.Throws<ArgumentException>(() => producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> 
                     { 
@@ -119,7 +119,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ));
 
                 // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() => producer.Produce(
+                Assert.Throws<ArgumentException>(() => producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> 
                     { 
@@ -149,16 +149,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
 
-                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 
                 // TimestampType: CreateTime
-                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }, dh);
                 // TimestampType: CreateTime (default)
-                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
                 // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, dh));
+                Assert.Throws<ArgumentException>(() => producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, dh));
                 // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() => producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }, dh));
+                Assert.Throws<ArgumentException>(() => producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }, dh));
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

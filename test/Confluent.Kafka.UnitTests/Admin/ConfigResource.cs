@@ -25,10 +25,10 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Equality()
         {
-            ConfigResource a = new ConfigResource { Name = "a", ResourceType = ConfigType.Broker };
-            ConfigResource b = new ConfigResource { Name = "b", ResourceType = ConfigType.Broker };
-            ConfigResource a1 = new ConfigResource { Name = "a", ResourceType = ConfigType.Group };
-            ConfigResource a2 = new ConfigResource { Name = "a", ResourceType = ConfigType.Broker };
+            ConfigResource a = new ConfigResource { Name = "a", Type = ResourceType.Broker };
+            ConfigResource b = new ConfigResource { Name = "b", Type = ResourceType.Broker };
+            ConfigResource a1 = new ConfigResource { Name = "a", Type = ResourceType.Group };
+            ConfigResource a2 = new ConfigResource { Name = "a", Type = ResourceType.Broker };
 
             Assert.NotEqual(a, b);
             Assert.NotEqual(a, a1);

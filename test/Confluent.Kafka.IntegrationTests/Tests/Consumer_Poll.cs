@@ -32,7 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Basic DeserializingConsumer test (poll mode).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DeserializingConsumer_Poll(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_Poll(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             int N = 2;
             var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);

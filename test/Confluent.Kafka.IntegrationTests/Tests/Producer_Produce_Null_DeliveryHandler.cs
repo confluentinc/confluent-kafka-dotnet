@@ -17,9 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
@@ -27,12 +25,13 @@ namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
     ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via an Action callback.
+    ///     that provides delivery reports via an Action callback
+    ///     (null key/value case)
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SerializingProducer_Produce_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var producerConfig = new Dictionary<string, object> 
             { 
@@ -40,26 +39,23 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             int count = 0;
-            Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
+            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
-                Assert.Equal($"test key {count}", dr.Message.Key);
-                Assert.Equal($"test val {count}", dr.Message.Value);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                count += 1;
+                count += 1;  
             };
 
-            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, Null>(producerConfig, null, null))
             {
-                producer.Produce(
-                    new TopicPartition(singlePartitionTopic, 0), 
-                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
-
-                producer.Produce(singlePartitionTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
+                producer.BeginProduce(singlePartitionTopic, new Message<Null, Null> {}, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

@@ -19,9 +19,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Confluent.Kafka.Impl;
-using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
 
 
@@ -117,8 +114,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
         public bool Consume(out ConsumerRecord<TKey, TValue> record, int millisecondsTimeout)
         {
-            ConsumerRecord recordUntyped;
-            if (!consumer.Consume(out recordUntyped, millisecondsTimeout))
+            if (!consumer.Consume(out var recordUntyped, millisecondsTimeout))
             {
                 record = null;
                 return false;
@@ -165,8 +161,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
         public void Poll(int millisecondsTimeout)
         {
-            ConsumerRecord<TKey, TValue> record;
-            if (Consume(out record, millisecondsTimeout))
+            if (Consume(out var record, millisecondsTimeout))
             {
                 OnRecord?.Invoke(this, record);
             }
@@ -175,8 +170,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public void Poll(TimeSpan timeout)
         {
-            ConsumerRecord<TKey, TValue> record;
-            if (Consume(out record, timeout))
+            if (Consume(out var record, timeout))
             {
                 OnRecord?.Invoke(this, record);
             }
@@ -185,36 +179,36 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsAssigned"]/*' />
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned
         {
-            add { consumer.OnPartitionsAssigned += value; }
-            remove { consumer.OnPartitionsAssigned -= value; }
+            add => consumer.OnPartitionsAssigned += value;
+            remove => consumer.OnPartitionsAssigned -= value;
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsRevoked"]/*' />
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked
         {
-            add { consumer.OnPartitionsRevoked += value; }
-            remove { consumer.OnPartitionsRevoked -= value; }
+            add => consumer.OnPartitionsRevoked += value;
+            remove => consumer.OnPartitionsRevoked -= value;
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnOffsetsCommitted"]/*' />
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted
         {
-            add { consumer.OnOffsetsCommitted += value; }
-            remove { consumer.OnOffsetsCommitted -= value; }
+            add => consumer.OnOffsetsCommitted += value;
+            remove => consumer.OnOffsetsCommitted -= value;
         }
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog
         {
-            add { consumer.OnLog += value; }
-            remove { consumer.OnLog -= value; }
+            add => consumer.OnLog += value;
+            remove => consumer.OnLog -= value;
         }
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics
         {
-            add { consumer.OnStatistics += value; }
-            remove { consumer.OnStatistics -= value; }
+            add => consumer.OnStatistics += value;
+            remove => consumer.OnStatistics -= value;
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
@@ -223,15 +217,15 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError
         {
-            add { consumer.OnError += value; }
-            remove { consumer.OnError -= value; }
+            add => consumer.OnError += value;
+            remove => consumer.OnError -= value;
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF
         {
-            add { consumer.OnPartitionEOF += value; }
-            remove { consumer.OnPartitionEOF -= value; }
+            add => consumer.OnPartitionEOF += value;
+            remove => consumer.OnPartitionEOF -= value;
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
@@ -301,16 +295,9 @@ namespace Confluent.Kafka
         public void Dispose()
         {
             // note: consumers always own their own handles.
-            
-            if (KeyDeserializer != null)
-            {
-                KeyDeserializer.Dispose();
-            }
 
-            if (ValueDeserializer != null)
-            {
-                ValueDeserializer.Dispose();
-            }
+            KeyDeserializer?.Dispose();
+            ValueDeserializer?.Dispose();
 
             consumer.Dispose();
         }

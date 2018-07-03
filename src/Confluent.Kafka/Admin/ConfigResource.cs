@@ -32,7 +32,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     The resource type (required)
         /// </summary>
-        public ConfigType ResourceType { get; set; }
+        public ResourceType Type { get; set; }
 
         /// <summary>
         ///     Tests whether this ConfigResource instance is equal to the specified object.
@@ -51,7 +51,7 @@ namespace Confluent.Kafka.Admin
             }
 
             var tp = (ConfigResource)obj;
-            return tp.ResourceType == ResourceType && tp.Name == Name;
+            return tp.Type == Type && tp.Name == Name;
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Admin
         /// </returns>
         public override int GetHashCode()
             // x by prime number is quick and gives decent distribution.
-            => ResourceType.GetHashCode()*251 + Name.GetHashCode();
+            => Type.GetHashCode()*251 + Name.GetHashCode();
 
         /// <summary>
         ///     Tests whether ConfigResource instance a is equal to ConfigResource instance b.
@@ -108,6 +108,6 @@ namespace Confluent.Kafka.Admin
         ///     A string representation of the ConfigResource object.
         /// </returns>
         public override string ToString()
-            => $"{Name} ({ResourceType})";
+            => $"{Name} ({Type})";
     }
 }

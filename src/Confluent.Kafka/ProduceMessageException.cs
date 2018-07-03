@@ -22,22 +22,29 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     This interface is implemented by types that handle delivery report
-    ///     callbacks as a result of calls to Confluent.Kafka.Producer.ProduceAsync().
+    ///     Represents an error that occured whilst producing a message.
     /// </summary>
-    /// <remarks>
-    ///     Methods of this interface will be executed on the poll thread and will
-    ///     block other operations - consider this when implementing.
-    /// </remarks>
-    internal interface IDeliveryHandler
-    {        
+    public class ProduceMessageException<TKey, TValue> : KafkaException
+    {
         /// <summary>
-        ///     This method is called when the delivery report is available
+        ///     Initialize a new instance of ProduceMessageException based on 
+        ///     an existing Error value.
         /// </summary>
-        /// <param name="deliveryReport">
-        ///     The delivery report.
+        /// <param name="error"> 
+        ///     The error associated with the delivery report.
         /// </param>
-        void HandleDeliveryReport(DeliveryReport deliveryReport);
-    }
+        /// <param name="deliveryReport">
+        ///     The delivery report associated with the produce request.
+        /// </param>
+        public ProduceMessageException(Error error, DeliveryReport<TKey, TValue> deliveryReport)
+            : base(error)
+        {
+            DeliveryReport = deliveryReport;
+        }
 
+        /// <summary>
+        ///     The delivery report associated with the produce request.
+        /// </summary>
+        public DeliveryReport<TKey, TValue> DeliveryReport { get; }
+    }
 }

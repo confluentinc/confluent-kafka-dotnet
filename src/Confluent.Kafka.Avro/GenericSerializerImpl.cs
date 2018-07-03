@@ -115,11 +115,11 @@ namespace Confluent.Kafka.Serialization
                     // first usage: register/get schema to check compatibility
                     if (autoRegisterSchema)
                     {
-                        newSchemaId = schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
+                        newSchemaId = schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
                     }
                     else
                     {
-                        newSchemaId = schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
+                        newSchemaId = schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
                     }
 
                     if (!schemaIds.ContainsKey(writerSchemaString))

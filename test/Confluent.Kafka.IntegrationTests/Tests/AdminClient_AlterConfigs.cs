@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new List<NewTopic> { new NewTopic { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
 
                 // 2. do an invalid alter configs call to change it.
-                var configResource = new ConfigResource { Name = topicName, ResourceType = ConfigType.Topic };
+                var configResource = new ConfigResource { Name = topicName, Type = ResourceType.Topic };
                 var toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
                 {
                     {
@@ -101,7 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
                     { 
-                        new ConfigResource { Name = "0", ResourceType = ConfigType.Broker },
+                        new ConfigResource { Name = "0", Type = ResourceType.Broker },
                         new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="2" } }
                     }
                 };
@@ -122,7 +122,7 @@ namespace Confluent.Kafka.IntegrationTests
                 string topicName2 = Guid.NewGuid().ToString();
                 var createTopicsResult2 = adminClient.CreateTopicsAsync(
                     new List<NewTopic> { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
-                var configResource2 = new ConfigResource { Name = topicName2, ResourceType = ConfigType.Topic };
+                var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
                     { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="222" } } },

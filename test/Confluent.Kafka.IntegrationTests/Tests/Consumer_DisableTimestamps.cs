@@ -33,14 +33,14 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test of disabling marshaling of message headers.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_DisableHeaderMarshaling(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_DisableTimestamps(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.enable.header.marshaling", false }
+                { "dotnet.consumer.enable.timestamps", false }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
@@ -69,7 +69,9 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 Assert.True(consumer.Consume(out ConsumerRecord<Null, string> record, TimeSpan.FromSeconds(30)));
-                Assert.Null(record.Message.Headers);
+                Assert.NotNull(record.Message.Headers);
+                Assert.Equal(TimestampType.NotAvailable, record.Timestamp.Type);
+                Assert.Equal(0, record.Timestamp.UnixTimestampMs);
             }
         }
 

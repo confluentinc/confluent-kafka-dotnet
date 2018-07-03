@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,52 +24,54 @@ using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
 using Xunit;
 
+
 namespace Confluent.Kafka.IntegrationTests
 {
     public static partial class Tests
     {
         /// <summary>
-        ///     Simple Consumer Pause / Resume test.
+        ///     Test of disabling marshaling of message headers.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Pause_Resume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_DisableHeaders(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
+                { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "auto.offset.reset", "latest" }
+                { "dotnet.consumer.enable.headers", false }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
 
+            DeliveryReport<Null, string> dr;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            {
+                dr = producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<Null, string>
+                    {
+                        Value = "my-value", 
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
+                    }
+                ).Result;
+            }
+
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                IEnumerable<TopicPartition> assignedPartitions = null;
-                ConsumerRecord<Null, string> record;
+                consumer.OnError += (_, e) =>
+                    Assert.False(true);
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    consumer.Assign(partitions);
-                    assignedPartitions = partitions;
-                };
+                consumer.OnConsumeError += (_, e) =>
+                    Assert.False(true);
 
-                consumer.Subscribe(singlePartitionTopic);
+                consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                while (assignedPartitions == null)
-                {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
-                }
-                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(1)));
-
-                Assert.False(producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result.Error.IsError);
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
-                consumer.Pause(assignedPartitions);
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value 2" }).Wait();
-                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(2)));
-                consumer.Resume(assignedPartitions);
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                Assert.True(consumer.Consume(out ConsumerRecord<Null, string> record, TimeSpan.FromSeconds(30)));
+                Assert.Null(record.Message.Headers);
+                Assert.NotEqual(TimestampType.NotAvailable, record.Timestamp.Type);
+                Assert.NotEqual(0, record.Timestamp.UnixTimestampMs);
             }
         }
 

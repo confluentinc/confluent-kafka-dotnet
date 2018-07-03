@@ -102,7 +102,7 @@ namespace Confluent.Kafka
                     .ToDictionary(e => e.Name);
 
                 result.Add(new DescribeConfigResult { 
-                    ConfigResource = new ConfigResource { Name = resourceName, ResourceType = resourceConfigType },
+                    ConfigResource = new ConfigResource { Name = resourceName, Type = resourceConfigType },
                     Entries = configEntries,
                     Error = new Error(errorCode, errorReason)
                 });

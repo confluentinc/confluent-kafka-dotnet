@@ -466,9 +466,14 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(out ConsumerRecord record, bool enableHeaderMarshaling, IntPtr millisecondsTimeout)
+        internal bool ConsumerPoll(
+            out ConsumerRecord record,
+            bool enableTimestampMarshaling,
+            bool enableHeaderMarshaling,
+            IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
+            
             // TODO: There is a newer librdkafka interface for this now. Use that.
             IntPtr msgPtr = Librdkafka.consumer_poll(handle, millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -498,7 +503,12 @@ namespace Confluent.Kafka.Impl
                 topic = Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(msg.rkt));
             }
 
-            long timestamp = Librdkafka.message_timestamp(msgPtr, out IntPtr timestampType);
+            long timestamp = 0;
+            IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+            if (enableTimestampMarshaling)
+            {
+                timestamp = Librdkafka.message_timestamp(msgPtr, out timestampType);
+            }
 
             Headers headers = null;
             if (enableHeaderMarshaling)
@@ -1026,14 +1036,16 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new ArgumentException("Resource must be specified.");
                 }
-                var resourcePtr = Librdkafka.ConfigResource_new(resource.ResourceType, resource.Name);
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
                 foreach (var rc in resourceConfig)
                 {
                     if (string.IsNullOrEmpty(rc.Name))
                     {
                         throw new ArgumentException($"config name must be specified for {resource}");
                     }
+                    
                     var errorCode = Librdkafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
+
                     if (errorCode != ErrorCode.NoError)
                     {
                         throw new KafkaException(errorCode);
@@ -1073,7 +1085,7 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new ArgumentException("Resource must be specified.");
                 }
-                var resourcePtr = Librdkafka.ConfigResource_new(resource.ResourceType, resource.Name);
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
                 configPtrs[configPtrsIdx++] = resourcePtr;
             }
 
