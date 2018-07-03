@@ -17,15 +17,15 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-
 
 namespace Confluent.Kafka
 {
@@ -480,18 +480,18 @@ namespace Confluent.Kafka
         /// </summary>
         public const string EnableDeliveryReportTimestampName = "dotnet.producer.enable.delivery.report.timestamps";
 
-        private bool manualPoll = false;
-        private bool enableDeliveryReports = true;
-        internal bool blockIfQueueFullPropertyValue = true;
-        internal bool enableDeliveryReportHeaders = true;
-        internal bool enableDeliveryReportKey = true;
-        internal bool enableDeliveryReportValue = true;
-        internal bool enableDeliveryReportTimestamp = true;
+        private readonly bool manualPoll = false;
+        private readonly bool enableDeliveryReports = true;
+        internal readonly bool blockIfQueueFullPropertyValue = true;
+        internal readonly bool enableDeliveryReportHeaders = true;
+        internal readonly bool enableDeliveryReportKey = true;
+        internal readonly bool enableDeliveryReportValue = true;
+        internal readonly bool enableDeliveryReportTimestamp = true;
 
-        private SafeKafkaHandle kafkaHandle;
+        private readonly SafeKafkaHandle kafkaHandle;
 
-        private Task callbackTask;
-        private CancellationTokenSource callbackCts;
+        private readonly Task callbackTask;
+        private readonly CancellationTokenSource callbackCts;
 
         private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
@@ -508,20 +508,20 @@ namespace Confluent.Kafka
                     catch (OperationCanceledException) {}
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        private Librdkafka.ErrorDelegate errorDelegate;
+        private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private Librdkafka.StatsDelegate statsDelegate;
+        private readonly Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private Librdkafka.LogDelegate logDelegate;
+        private readonly Librdkafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));

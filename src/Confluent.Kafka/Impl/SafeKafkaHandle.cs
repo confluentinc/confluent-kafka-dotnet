@@ -19,11 +19,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
-using System.Threading.Tasks;
 
 namespace Confluent.Kafka.Impl
 {
@@ -328,12 +328,11 @@ namespace Confluent.Kafka.Impl
         internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
         {
             ThrowIfHandleClosed();
-            IntPtr metaPtr;
             ErrorCode err = Librdkafka.metadata(
                 handle, allTopics,
                 topic?.DangerousGetHandle() ?? IntPtr.Zero,
-                /* const struct rd_kafka_metadata ** */ out metaPtr,
-                (IntPtr) millisecondsTimeout);
+                /* const struct rd_kafka_metadata ** */ out IntPtr metaPtr,
+                (IntPtr)millisecondsTimeout);
 
             if (err == ErrorCode.NoError)
             {
@@ -650,13 +649,12 @@ namespace Confluent.Kafka.Impl
             return results;
         }
 
-
         /// <summary>
         ///  Dummy commit callback that does nothing but prohibits
         ///  triggering the global offset_commit_cb.
         ///  Used by manual commits.
         /// </summary>
-        static void dummyOffsetCommitCb (IntPtr rk, ErrorCode err, IntPtr offsets, IntPtr opaque)
+        static void DummyOffsetCommitCb(IntPtr rk, ErrorCode err, IntPtr offsets, IntPtr opaque)
         {
             return;
         }
@@ -666,7 +664,7 @@ namespace Confluent.Kafka.Impl
         /// </summary>
         /// <param name="offsets">Offsets to commit, or null for current assignment.</param>
         /// <returns>CommittedOffsets with global or per-partition errors.</returns>
-        private CommittedOffsets commitSync (IEnumerable<TopicPartitionOffset> offsets)
+        private CommittedOffsets CommitSync(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();
             // Create temporary queue so we can get the offset commit results
@@ -675,7 +673,7 @@ namespace Confluent.Kafka.Impl
             // to prevent the global offset_commit_cb to kick in.
             IntPtr cQueue = Librdkafka.queue_new(handle);
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
-            ErrorCode err = Librdkafka.commit_queue(handle, cOffsets, cQueue, dummyOffsetCommitCb, IntPtr.Zero);
+            ErrorCode err = Librdkafka.commit_queue(handle, cOffsets, cQueue, DummyOffsetCommitCb, IntPtr.Zero);
             if (cOffsets != IntPtr.Zero)
                 Librdkafka.topic_partition_list_destroy(cOffsets);
             if (err != ErrorCode.NoError)
@@ -702,16 +700,16 @@ namespace Confluent.Kafka.Impl
         }
 
         internal CommittedOffsets Commit()
-            => commitSync(null);
+            => CommitSync(null);
 
         internal CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
-            => commitSync(offsets);
+            => CommitSync(offsets);
 
         internal Task<CommittedOffsets> CommitAsync()
-            => Task.Run(() => commitSync(null));
+            => Task.Run(() => CommitSync(null));
 
         internal Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
-            => Task.Run(() => commitSync(offsets));
+            => Task.Run(() => CommitSync(offsets));
 
         internal void Seek(string topic, Partition partition, Offset offset, int millisecondsTimeout)
         {

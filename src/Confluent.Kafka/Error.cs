@@ -65,7 +65,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ErrorCode Code { get; }
 
-        private string reason;
+        private readonly string reason;
 
         /// <summary>
         ///     Gets a human readable reason string associated with this error.
@@ -153,9 +153,9 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(Error a, Error b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return b is null;
             }
 
             return a.Equals(b);

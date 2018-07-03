@@ -17,13 +17,10 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
-using Confluent.Kafka.Serialization;
-
 
 namespace Confluent.Kafka
 {
@@ -49,26 +46,25 @@ namespace Confluent.Kafka
         /// </summary>
         public const string EnableTimestampPropertyName = "dotnet.consumer.enable.timestamps";
 
-        private bool enableHeaderMarshaling = true;
-        private bool enableTimestampMarshaling = true;
+        private readonly bool enableHeaderMarshaling = true;
+        private readonly bool enableTimestampMarshaling = true;
 
+        private readonly SafeKafkaHandle kafkaHandle;
 
-        private SafeKafkaHandle kafkaHandle;
-
-        private Librdkafka.ErrorDelegate errorDelegate;
+        private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             OnError?.Invoke(this, new Error(err, reason));
         }
 
-        private Librdkafka.StatsDelegate statsDelegate;
+        private readonly Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private Librdkafka.LogDelegate logDelegate;
+        private readonly Librdkafka.LogDelegate logDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
@@ -83,7 +79,7 @@ namespace Confluent.Kafka
             OnLog?.Invoke(this, new LogMessage(name, level, fac, buf));
         }
 
-        private Librdkafka.RebalanceDelegate rebalanceDelegate;
+        private readonly Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
@@ -117,7 +113,7 @@ namespace Confluent.Kafka
             }
         }
 
-        private Librdkafka.CommitDelegate commitDelegate;
+        private readonly Librdkafka.CommitDelegate commitDelegate;
         private void CommitCallback(
             IntPtr rk,
             ErrorCode err,
@@ -307,8 +303,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public void Poll(TimeSpan timeout)
         {
-            ConsumerRecord record;
-            if (Consume(out record, timeout))
+            if (Consume(out ConsumerRecord record, timeout))
             {
                 OnRecord?.Invoke(this, record);
             }
@@ -317,8 +312,7 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
         public void Poll(int millisecondsTimeout)
         {
-            ConsumerRecord record;
-            if (Consume(out record, millisecondsTimeout))
+            if (Consume(out ConsumerRecord record, millisecondsTimeout))
             {
                 OnRecord?.Invoke(this, record);
             }
