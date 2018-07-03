@@ -39,11 +39,6 @@ namespace Confluent.Kafka
         public IDeserializer<TValue> ValueDeserializer { get; }
 
         /// <summary>
-        ///  Gets a value indicating whether the consumer has been disposed of.
-        /// </summary>
-        public bool IsDisposed { get; private set; }
-
-        /// <summary>
         ///     Creates a new Consumer instance.
         /// </summary>
         /// <param name="config">
@@ -305,8 +300,6 @@ namespace Confluent.Kafka
             ValueDeserializer?.Dispose();
 
             consumer.Dispose();
-
-            IsDisposed = true;
         }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Seek"]/*' />
