@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 // broker configs
                 // ---
-                var configResource = new ConfigResource { Name = "0", ResourceType = ConfigType.Broker };
+                var configResource = new ConfigResource { Name = "0", Type = ResourceType.Broker };
                 var results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
 
                 Assert.Single(results);
@@ -56,8 +56,8 @@ namespace Confluent.Kafka.IntegrationTests
                 // topic configs, more than one.
                 // ---
                 results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { 
-                    new ConfigResource { Name = singlePartitionTopic, ResourceType = ConfigType.Topic },
-                    new ConfigResource { Name = partitionedTopic, ResourceType = ConfigType.Topic }
+                    new ConfigResource { Name = singlePartitionTopic, Type = ResourceType.Topic },
+                    new ConfigResource { Name = partitionedTopic, Type = ResourceType.Topic }
                 }).Result;
 
                 Assert.Equal(2, results.Count);
@@ -93,7 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
                     results = adminClient.DescribeConfigsAsync(
                         new List<ConfigResource> 
                         {
-                            new ConfigResource { Name="invalid.name.for.resource", ResourceType = ConfigType.Broker }
+                            new ConfigResource { Name="invalid.name.for.resource", Type = ResourceType.Broker }
                         }
                     ).Result;
                     Assert.True(false);

@@ -625,7 +625,7 @@ namespace Confluent.Kafka
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
 
                 // Note: There is a level of indirection between the GCHandle and
-                // physical memory address. GCHangle.ToIntPtr doesn't get the
+                // physical memory address. GCHandle.ToIntPtr doesn't get the
                 // physical address, it gets an id that refers to the object via
                 // a handle-table.
                 var gch = GCHandle.Alloc(deliveryHandler);

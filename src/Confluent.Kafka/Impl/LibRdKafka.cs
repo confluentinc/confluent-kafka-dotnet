@@ -249,16 +249,16 @@ namespace Confluent.Kafka.Impl
             _ConfigEntry_is_synonym = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_is_synonym").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigEntry_synonyms = (_ConfigEntry_synonyms_delegate)methods.Where(m => m.Name == "rd_kafka_ConfigEntry_synonyms").Single().CreateDelegate(typeof(_ConfigEntry_synonyms_delegate));
 
-            _ResourceType_name = (Func<ConfigType, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ResourceType_name").Single().CreateDelegate(typeof(Func<ConfigType, IntPtr>));
+            _ResourceType_name = (Func<ResourceType, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ResourceType_name").Single().CreateDelegate(typeof(Func<ResourceType, IntPtr>));
 
-            _ConfigResource_new = (Func<ConfigType, string, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_new").Single().CreateDelegate(typeof(Func<ConfigType, string, IntPtr>));
+            _ConfigResource_new = (Func<ResourceType, string, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_new").Single().CreateDelegate(typeof(Func<ResourceType, string, IntPtr>));
             _ConfigResource_destroy = (Action<IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_destroy").Single().CreateDelegate(typeof(Action<IntPtr>));
             _ConfigResource_add_config = (Func<IntPtr, string, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_add_config").Single().CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_set_config = (Func<IntPtr, string, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_set_config").Single().CreateDelegate(typeof(Func<IntPtr, string, string, ErrorCode>));
             _ConfigResource_delete_config = (Func<IntPtr, string, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_delete_config").Single().CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
             _ConfigResource_configs = (_ConfigResource_configs_delegate)methods.Where(m => m.Name == "rd_kafka_ConfigResource_configs").Single().CreateDelegate(typeof(_ConfigResource_configs_delegate));
 
-            _ConfigResource_type = (Func<IntPtr, ConfigType>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_type").Single().CreateDelegate(typeof(Func<IntPtr, ConfigType>));
+            _ConfigResource_type = (Func<IntPtr, ResourceType>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_type").Single().CreateDelegate(typeof(Func<IntPtr, ResourceType>));
             _ConfigResource_name = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_name").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _ConfigResource_error = (Func<IntPtr, ErrorCode>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_error").Single().CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _ConfigResource_error_string = (Func<IntPtr, IntPtr>)methods.Where(m => m.Name == "rd_kafka_ConfigResource_error_string").Single().CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1050,13 +1050,13 @@ namespace Confluent.Kafka.Impl
                 IntPtr entry,
                 out UIntPtr cntp) => _ConfigEntry_synonyms(entry, out cntp);
 
-        private static Func<ConfigType, IntPtr> _ResourceType_name;
+        private static Func<ResourceType, IntPtr> _ResourceType_name;
         internal static IntPtr ResourceType_name(
-                ConfigType restype) => _ResourceType_name(restype);
+                ResourceType restype) => _ResourceType_name(restype);
 
-        private static Func<ConfigType, string, IntPtr> _ConfigResource_new;
+        private static Func<ResourceType, string, IntPtr> _ConfigResource_new;
         internal static IntPtr ConfigResource_new(
-                ConfigType restype,
+                ResourceType restype,
                 string resname) => _ConfigResource_new(restype, resname);
 
         private static Action<IntPtr> _ConfigResource_destroy;
@@ -1087,8 +1087,8 @@ namespace Confluent.Kafka.Impl
                 out UIntPtr cntp) => _ConfigResource_configs(config, out cntp);
 
 
-        private static Func<IntPtr, ConfigType> _ConfigResource_type;
-        internal static ConfigType ConfigResource_type(
+        private static Func<IntPtr, ResourceType> _ConfigResource_type;
+        internal static ResourceType ConfigResource_type(
                 IntPtr config) => _ConfigResource_type(config);
 
         private static Func<IntPtr, IntPtr> _ConfigResource_name;

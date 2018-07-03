@@ -1038,14 +1038,16 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new ArgumentException("Resource must be specified.");
                 }
-                var resourcePtr = Librdkafka.ConfigResource_new(resource.ResourceType, resource.Name);
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
                 foreach (var rc in resourceConfig)
                 {
                     if (string.IsNullOrEmpty(rc.Name))
                     {
                         throw new ArgumentException($"config name must be specified for {resource}");
                     }
+                    
                     var errorCode = Librdkafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
+
                     if (errorCode != ErrorCode.NoError)
                     {
                         throw new KafkaException(errorCode);
@@ -1085,7 +1087,7 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new ArgumentException("Resource must be specified.");
                 }
-                var resourcePtr = Librdkafka.ConfigResource_new(resource.ResourceType, resource.Name);
+                var resourcePtr = Librdkafka.ConfigResource_new(resource.Type, resource.Name);
                 configPtrs[configPtrsIdx++] = resourcePtr;
             }
 

@@ -28,7 +28,7 @@ namespace Confluent.Kafka
         ///     Instantiates a new LogMessage class instance.
         /// </summary> 
         /// <param name="name">
-        ///     The librdkakfa client instance name.
+        ///     The librdkafka client instance name.
         /// </param>
         /// <param name="level">
         ///     The log level (levels correspond to syslog(3)), lower is worse.

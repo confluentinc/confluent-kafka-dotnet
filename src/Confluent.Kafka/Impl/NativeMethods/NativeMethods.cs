@@ -563,11 +563,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_ResourceType_name(
-                ConfigType restype);
+                ResourceType restype);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_ConfigResource_t * */ IntPtr rd_kafka_ConfigResource_new(
-                ConfigType restype,
+                ResourceType restype,
                 [MarshalAs(UnmanagedType.LPStr)] string resname); // todo: string?
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -598,7 +598,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ConfigType rd_kafka_ConfigResource_type(
+        internal static extern ResourceType rd_kafka_ConfigResource_type(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
