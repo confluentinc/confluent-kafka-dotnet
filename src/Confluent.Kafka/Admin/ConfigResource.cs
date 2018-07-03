@@ -78,9 +78,9 @@ namespace Confluent.Kafka.Admin
         /// </returns>
         public static bool operator ==(ConfigResource a, ConfigResource b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return (b is null);
             }
 
             return a.Equals(b);

@@ -120,9 +120,9 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(TopicPartitionError a, TopicPartitionError b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return (b is null);
             }
 
             return a.Equals(b);
