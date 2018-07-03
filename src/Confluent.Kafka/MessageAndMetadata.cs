@@ -32,12 +32,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The partition associated with the message.
         /// </summary>
-        public Partition Partition { get; set; }
+        public Partition Partition { get; set; } = Partition.Any;
 
         /// <summary>
         ///     The partition offset associated with the message.
         /// </summary>
-        public Offset Offset { get; set; }
+        public Offset Offset { get; set; } = Offset.Invalid;
 
         /// <summary>
         ///     An error (or NoError) associated with the message.

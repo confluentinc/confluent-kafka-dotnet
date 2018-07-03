@@ -440,7 +440,7 @@ namespace Confluent.Kafka
         IllegalSaslState = 34,
 
         /// <summary>
-        ///     Unuspported version
+        ///     Unusupported version
         /// </summary>
         UnsupportedVersion = 35,
 

@@ -433,11 +433,9 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Name of the configuration property that specifies whether to enable 
-        ///     notification of delivery reports. If set to false and you use a 
-        ///     a ProduceAsync variant, the returned Tasks will never complete and
-        ///     will leak memory. Typically you should set this parameter to true. 
-        ///     Set it to false for "fire and forget" semantics and a small boost in
-        ///     performance.
+        ///     notification of delivery reports. Typically you should set this 
+        ///     parameter to true. Set it to false for "fire and forget" semantics
+        ///     and a small boost in performance.
         /// 
         ///     default: true
         /// </summary>
@@ -457,7 +455,7 @@ namespace Confluent.Kafka
         ///     Name of the configuration property that specifies whether to make
         ///     message keys available in delivery reports. Disabling this will 
         ///     improve maximum throughput and reduce memory usage.
-        /// 
+        ///
         ///     default: true
         /// </summary>
         public const string EnableDeliveryReportKeyName = "dotnet.producer.enable.delivery.report.keys";
@@ -640,6 +638,7 @@ namespace Confluent.Kafka
                     headers,
                     ptr,
                     blockIfQueueFull);
+
                 if (err != ErrorCode.NoError)
                 {
                     gch.Free();
@@ -660,7 +659,9 @@ namespace Confluent.Kafka
 
                 if (deliveryHandler != null)
                 {
-                    deliveryHandler.HandleDeliveryReport(null);
+                    deliveryHandler.HandleDeliveryReport(
+                        new DeliveryReport { Topic = topic, Error = new Error(ErrorCode.NoError) }
+                    );
                 }
 
                 if (err != ErrorCode.NoError)
@@ -696,6 +697,15 @@ namespace Confluent.Kafka
                     prop.Key != EnableDeliveryReportKeyName &&
                     prop.Key != EnableDeliveryReportValueName &&
                     prop.Key != EnableDeliveryReportTimestampName);
+
+            if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
+            {
+                // A managed object is kept alive over the duration of the produce request. If there is no
+                // delivery report generated, there will be a memory leak. We could possibly support this 
+                // property by keeping track of delivery reports in managed code, but this seems like 
+                // more trouble than it's worth.
+                throw new ArgumentException("The 'delivery.report.only.error' property is not supported by this client");
+            }
 
             var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
             if (enableBackgroundPollObj != null)
