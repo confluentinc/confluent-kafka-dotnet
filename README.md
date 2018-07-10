@@ -42,13 +42,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.0-experimental-6
+Install-Package Confluent.Kafka -Version 1.0-experimental-5
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.0-experimental-6 Confluent.Kafka
+dotnet add package -v 1.0-experimental-5 Confluent.Kafka
 ```
 
 Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web url - you 
