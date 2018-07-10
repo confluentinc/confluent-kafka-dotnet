@@ -64,34 +64,40 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(), new AvroDeserializer<User>()))
             {
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
+
                 bool hadError = false;
-                consumer.OnConsumeError += (_, m) =>
+                try
                 {
-                    if (m.Error.Code == ErrorCode.Local_KeyDeserialization)
+                    consumer.Consume(out ConsumerRecord<User, User> record, TimeSpan.FromSeconds(10));
+                }
+                catch (ConsumeException e)
+                {
+                    if (e.Error.Code == ErrorCode.Local_KeyDeserialization)
                     {
                         hadError = true;
                     }
-                };
-
-                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
-                consumer.Consume(out ConsumerRecord<User, User> record, TimeSpan.FromSeconds(10));
+                }
 
                 Assert.True(hadError);
             }
 
             using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
             {
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
+
                 bool hadError = false;
-                consumer.OnConsumeError += (_, m) =>
+                try
                 {
-                    if (m.Error.Code == ErrorCode.Local_ValueDeserialization)
+                    consumer.Consume(out ConsumerRecord<string, string> record, TimeSpan.FromSeconds(10));
+                }
+                catch (ConsumeException e)
+                {
+                    if (e.Error.Code == ErrorCode.Local_ValueDeserialization)
                     {
                         hadError = true;
                     }
-                };
-
-                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
-                consumer.Consume(out ConsumerRecord<string, string> record, TimeSpan.FromSeconds(10));
+                }
 
                 Assert.True(hadError);
             }

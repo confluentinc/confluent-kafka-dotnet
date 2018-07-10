@@ -23,6 +23,24 @@ namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkConsumer
     {
+        /// <summary>
+        ///     A deserializer that does nothing.
+        /// </summary>
+        public class BenchmarkDeserializer : IDeserializer<byte[]>
+        {
+            public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+                => config;
+
+            /// <summary>
+            ///     The data parameter references librdkafka managed memory directly.
+            ///     Since we want a high benchmark
+            /// </summary>
+            public byte[] Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
+                => null;
+
+            public void Dispose() {}
+        }
+
         public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders, bool usePoll)
         {
             var consumerConfig = new Dictionary<string, object>
@@ -31,10 +49,11 @@ namespace Confluent.Kafka.Benchmark
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
                 { "dotnet.consumer.enable.headers", nHeaders != 0 },
-                { "dotnet.consumer.enable.timestamps", false }
+                { "dotnet.consumer.enable.timestamps", false },
+                { "dotnet.consumer.enable.topic.names", false }
             };
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new BenchmarkDeserializer(), new BenchmarkDeserializer()))
             {
                 for (var j=0; j<nTests; ++j)
                 {
@@ -77,9 +96,6 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
         }
-
-        public static void Poll(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, true);
 
         public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
             => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, false);

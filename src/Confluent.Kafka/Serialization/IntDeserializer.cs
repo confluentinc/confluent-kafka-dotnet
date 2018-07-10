@@ -34,11 +34,19 @@ namespace Confluent.Kafka.Serialization
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this deserializer).
         /// </param>
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
+        /// </param>
         /// <returns>
         ///     The deserialized <see cref="System.Int32"/> value.
         /// </returns>
-        public int Deserialize(string topic, byte[] data)
+        public int Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
+            if (isNull)
+            {
+                throw new ArgumentNullException($"Arg {nameof(data)} is null");
+            }
+
             // network byte order -> big endian -> most significant byte in the smallest address.
             return
                 (((int)data[0]) << 24) |

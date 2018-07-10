@@ -37,10 +37,14 @@ namespace Confluent.Kafka.Serialization
         ///     The serialized representation of an instance
         ///     of type T to deserialize.
         /// </param>
+        /// <param name="isNull">
+        ///     True if data is null, false otherwise. If true,
+        ///     ReadOnlySpan reference is not valid.
+        /// </param>
         /// <returns>
         ///     The deserialized value.
         /// </returns>
-        T Deserialize(string topic, byte[] data);
+        T Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull);
 
         /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
         IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey);

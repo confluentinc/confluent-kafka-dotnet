@@ -50,9 +50,6 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnError += (_, e) =>
                     Assert.False(true);
 
-                consumer.OnConsumeError += (_, e) =>
-                    Assert.False(true);
-
                 const string checkValue = "check value";
                 var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = checkValue }).Result;
                 var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "second value" }).Result;

@@ -89,11 +89,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         Assert.True(false, error.Reason);
                     };
 
-                    consumer.OnConsumeError += (o, record) =>
-                    {
-                        Assert.True(false, record.Error.Reason);
-                    };
-
                     consumer.OnPartitionEOF += (o, e)
                         => done = true;
 

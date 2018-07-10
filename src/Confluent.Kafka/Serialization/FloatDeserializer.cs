@@ -34,12 +34,15 @@ namespace Confluent.Kafka.Serialization
         /// <param name="data">
         ///     A byte array containing the serialized System.Single value (big endian encoding).
         /// </param>
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
+        /// </param>
         /// <returns>
         ///     The deserialized System.Single value.
         /// </returns>
-        public float Deserialize(string topic, byte[] data)
+        public float Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
-            if (data == null)
+            if (isNull)
             {
                 throw new ArgumentNullException($"Arg {nameof(data)} is null");
             }
@@ -65,7 +68,11 @@ namespace Confluent.Kafka.Serialization
             }
             else
             {
-                return BitConverter.ToSingle(data, 0);
+#if NETCOREAPP2_1
+                return BitConverter.ToSingle(data);
+#else
+                return BitConverter.ToSingle(data.ToArray(), 0);
+#endif
             }
         }
 

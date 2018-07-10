@@ -63,9 +63,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnOffsetsCommitted"]/*' />
         event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
-        event EventHandler<ConsumerRecord> OnConsumeError;
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
         event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 

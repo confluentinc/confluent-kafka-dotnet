@@ -73,16 +73,24 @@ namespace Confluent.Kafka.Serialization
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this deserializer).
         /// </param>
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> deserialized to a string (or null if data is null).
         /// </returns>
-        public string Deserialize(string topic, byte[] data)
+        public string Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
-            if (data == null)
+            if (isNull)
             {
                 return null;
             }
+
+#if NETCOREAPP2_1
             return encoding.GetString(data);
+#else
+            return encoding.GetString(data.ToArray());
+#endif
         }
 
         /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />

@@ -91,10 +91,13 @@ namespace Confluent.Kafka.Serialization
         ///     A byte array containing the object serialized in the format produced
         ///     by <see cref="AvroSerializer{T}" />.
         /// </param>
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
+        /// </param>
         /// <returns>
         ///     The deserialized <typeparamref name="T"/> value.
         /// </returns>
-        public T Deserialize(string topic, byte[] data)
+        public T Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
             if (deserializerImpl == null)
             {
@@ -103,7 +106,7 @@ namespace Confluent.Kafka.Serialization
                     : new SpecificDeserializerImpl<T>(schemaRegistryClient);
             }
 
-            return deserializerImpl.Deserialize(topic, data);
+            return deserializerImpl.Deserialize(topic, data.ToArray());
         }
 
         /// <include file='../Confluent.Kafka/include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />

@@ -17,17 +17,21 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
+using Confluent.Kafka.Serialization;
+using System.Runtime.InteropServices;
+
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Implements a high-level Apache Kafka consumer (without deserialization).
+    ///     Implements a high-level Apache Kafka consumer (with 
+    ///     key and value deserialization).
     /// </summary>
-    internal class Consumer : IClient
+    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
@@ -42,14 +46,25 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Name of the configuration property that specifies whether or not to
         ///     enable marshaling of timestamps when consuming messages. Disabling this
-        ///     will lead to greater maximum throughput.
+        ///     will improve maximum throughput.
         /// </summary>
         public const string EnableTimestampPropertyName = "dotnet.consumer.enable.timestamps";
 
+        /// <summary>
+        ///     Name of the configuration property that specifies whether or not to
+        ///     enable marshaling of topic names when consuming messages. Disabling
+        ///     this will improve maximum throughput.
+        /// </summary>
+        public const string EnableTopicNamesPropertyName = "dotnet.consumer.enable.topic.names";
+
+
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
+        private readonly bool enableTopicNamesMarshaling = true;
 
         private readonly SafeKafkaHandle kafkaHandle;
+
+        private static readonly byte[] EmptyBytes = new byte[0];
 
         private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
@@ -83,7 +98,7 @@ namespace Confluent.Kafka
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
-            /* rd_kafka_topic_partition_list_t * */ IntPtr partitions,
+            IntPtr partitions,
             IntPtr opaque)
         {
             var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
@@ -117,7 +132,7 @@ namespace Confluent.Kafka
         private void CommitCallback(
             IntPtr rk,
             ErrorCode err,
-            /* rd_kafka_topic_partition_list_t * */ IntPtr offsets,
+            IntPtr offsets,
             IntPtr opaque)
         {
             OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
@@ -126,36 +141,110 @@ namespace Confluent.Kafka
             ));
         }
 
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="KeyDeserializer"]/*' />
+        public IDeserializer<TKey> KeyDeserializer { get; }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="ValueDeserializer"]/*' />
+        public IDeserializer<TValue> ValueDeserializer { get; }
+
         /// <summary>
-        ///     Create a new consumer with the supplied configuration.
+        ///     Creates a new Consumer instance.
         /// </summary>
-        /// <remarks>
-        ///     Refer to: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
-        /// </remarks>
-        public Consumer(IEnumerable<KeyValuePair<string, object>> config)
+        /// <param name="config">
+        ///     librdkafka configuration parameters 
+        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        /// </param>
+        /// <param name="keyDeserializer">
+        ///     An IDeserializer implementation instance for deserializing keys.
+        /// </param>
+        /// <param name="valueDeserializer">
+        ///     An IDeserializer implementation instance for deserializing values.
+        /// </param>
+        public Consumer(
+            IEnumerable<KeyValuePair<string, object>> config,
+            IDeserializer<TKey> keyDeserializer,
+            IDeserializer<TValue> valueDeserializer)
         {
             Librdkafka.Initialize(null);
 
-            if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
+            KeyDeserializer = keyDeserializer;
+            ValueDeserializer = valueDeserializer;
+
+            if (keyDeserializer != null && keyDeserializer == valueDeserializer)
+            {
+                throw new ArgumentException("Key and value deserializers must not be the same object.");
+            }
+
+            if (KeyDeserializer == null)
+            {
+                if (typeof(TKey) == typeof(Null))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
+                }
+                else if (typeof(TKey) == typeof(Ignore))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new IgnoreDeserializer();
+                }
+                else
+                {
+                    throw new ArgumentNullException("Key deserializer must be specified.");
+                }
+            }
+
+            if (ValueDeserializer == null)
+            {
+                if (typeof(TValue) == typeof(Null))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
+                }
+                else if (typeof(TValue) == typeof(Ignore))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new IgnoreDeserializer();
+                }
+                else
+                {
+                    throw new ArgumentNullException("Value deserializer must be specified.");
+                }
+            }
+
+            var configWithoutKeyDeserializerProperties = KeyDeserializer.Configure(config, true);
+            var configWithoutValueDeserializerProperties = ValueDeserializer.Configure(config, false);
+
+            var configWithoutDeserializerProperties = config.Where(item => 
+                configWithoutKeyDeserializerProperties.Any(ci => ci.Key == item.Key) &&
+                configWithoutValueDeserializerProperties.Any(ci => ci.Key == item.Key)
+            );
+
+            config = null;
+
+            if (configWithoutDeserializerProperties.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
             }
 
-            var modifiedConfig = config
+            var modifiedConfig = configWithoutDeserializerProperties
                 .Where(prop => 
                     prop.Key != EnableHeadersPropertyName &&
-                    prop.Key != EnableTimestampPropertyName);
+                    prop.Key != EnableTimestampPropertyName &&
+                    prop.Key != EnableTopicNamesPropertyName);
 
-            var enableHeaderMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableHeadersPropertyName).Value;
+            var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableHeadersPropertyName).Value;
             if (enableHeaderMarshalingObj != null)
             {
                 this.enableHeaderMarshaling = bool.Parse(enableHeaderMarshalingObj.ToString());
             }
 
-            var enableTimestampMarshalingObj = config.FirstOrDefault(prop => prop.Key == EnableTimestampPropertyName).Value;
+            var enableTimestampMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableTimestampPropertyName).Value;
             if (enableTimestampMarshalingObj != null)
             {
                 this.enableTimestampMarshaling = bool.Parse(enableTimestampMarshalingObj.ToString());
+            }
+
+            var enableTopicNamesMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableTopicNamesPropertyName).Value;
+            if (enableTopicNamesMarshalingObj != null)
+            {
+                this.enableTopicNamesMarshaling = bool.Parse(enableTopicNamesMarshalingObj.ToString());
             }
 
             var configHandle = SafeConfigHandle.Create();
@@ -165,19 +254,6 @@ namespace Confluent.Kafka
                     if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
                     configHandle.Set(kvp.Key, kvp.Value.ToString());
                 });
-
-            // Note: Setting default topic configuration properties via default.topic.config is depreciated 
-            // and this functionality will be removed in a future version of the library.
-            var defaultTopicConfig = (IEnumerable<KeyValuePair<string, object>>)config.FirstOrDefault(prop => prop.Key == "default.topic.config").Value;
-            if (defaultTopicConfig != null)
-            {
-                defaultTopicConfig.ToList().ForEach(
-                    (kvp) => {
-                        if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter in 'default.topic.config' must not be null.");
-                        configHandle.Set(kvp.Key, kvp.Value.ToString());
-                    }
-                );
-            }
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             rebalanceDelegate = RebalanceCallback;
@@ -206,6 +282,207 @@ namespace Confluent.Kafka
             }
         }
 
+        private static byte[] KeyAsByteArray(rd_kafka_message msg)
+        {
+            byte[] keyAsByteArray = null;
+            if (msg.key != IntPtr.Zero)
+            {
+                keyAsByteArray = new byte[(int) msg.key_len];
+                Marshal.Copy(msg.key, keyAsByteArray, 0, (int) msg.key_len);
+            }
+            return keyAsByteArray;       
+        }
+
+        private static byte[] ValueAsByteArray(rd_kafka_message msg)
+        {
+            byte[] valAsByteArray = null;
+            if (msg.val != IntPtr.Zero)
+            {
+                valAsByteArray = new byte[(int) msg.len];
+                Marshal.Copy(msg.val, valAsByteArray, 0, (int) msg.len);
+            }
+            return valAsByteArray;
+        }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
+        public bool Consume(out ConsumerRecord<TKey, TValue> record, int millisecondsTimeout)
+        {
+            var msgPtr = kafkaHandle.ConsumerPoll(enableTimestampMarshaling, enableHeaderMarshaling, (IntPtr)millisecondsTimeout);
+            if (msgPtr == IntPtr.Zero)
+            {
+                record = null;
+                return false;
+            }
+
+            try
+            {
+                var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(msgPtr);
+
+                string topic = null;
+                if (this.enableTopicNamesMarshaling)
+                {
+                    if (msg.rkt != IntPtr.Zero)
+                    {
+                        topic = Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(msg.rkt));
+                    }
+                }
+
+                if (msg.err == ErrorCode.Local_PartitionEOF)
+                {
+                    record = null;
+                    OnPartitionEOF?.Invoke(this, new TopicPartitionOffset(topic, msg.partition, msg.offset));
+                    return false;
+                }
+
+                long timestampUnix = 0;
+                IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+                if (enableTimestampMarshaling)
+                {
+                    timestampUnix = Librdkafka.message_timestamp(msgPtr, out timestampType);
+                }
+                var timestamp = new Timestamp(timestampUnix, (TimestampType)timestampType);
+
+                Headers headers = null;
+                if (enableHeaderMarshaling)
+                {
+                    headers = new Headers();
+                    Librdkafka.message_headers(msgPtr, out IntPtr hdrsPtr);
+                    if (hdrsPtr != IntPtr.Zero)
+                    {
+                        for (var i=0; ; ++i)
+                        {
+                            var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                            if (err != ErrorCode.NoError)
+                            {
+                                break;
+                            }
+                            var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                            var headerValue = new byte[(int)sizep];
+                            Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                            headers.Add(new Header(headerName, headerValue));
+                        }
+                    }
+                }
+
+                if (msg.err != ErrorCode.NoError)
+                {
+                    throw new ConsumeException(
+                        new ConsumerRecord<byte[], byte[]>
+                        {
+                            TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(msg.err)),
+                            Message = new Message<byte[], byte[]>
+                            {
+                                Timestamp = timestamp,
+                                Headers = headers,
+                                Key = KeyAsByteArray(msg),
+                                Value = ValueAsByteArray(msg)
+                            }
+                        }
+                    );
+                }
+
+                TKey key;
+                try
+                {
+                    unsafe
+                    {
+                        key = this.KeyDeserializer.Deserialize(
+                            topic,
+                            msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
+                            msg.key == IntPtr.Zero
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ConsumeException(
+                        new ConsumerRecord<byte[], byte[]>
+                        {
+                            TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.Local_KeyDeserialization, ex.ToString())),
+                            Message = new Message<byte[], byte[]>
+                            {
+                                Timestamp = timestamp,
+                                Headers = headers,
+                                Key = KeyAsByteArray(msg),
+                                Value = ValueAsByteArray(msg)
+                            }
+                        }
+                    );
+                }
+
+                TValue val;
+                try
+                {
+                    unsafe
+                    {
+                        val = this.ValueDeserializer.Deserialize(
+                            topic, 
+                            msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
+                            msg.val == IntPtr.Zero);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ConsumeException(
+                        new ConsumerRecord<byte[], byte[]>
+                        {
+                            TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.Local_ValueDeserialization, ex.ToString())),
+                            Message = new Message<byte[], byte[]>
+                            {
+                                Timestamp = timestamp,
+                                Headers = headers,
+                                Key = KeyAsByteArray(msg),
+                                Value = ValueAsByteArray(msg)
+                            }
+                        }
+                    );
+                }
+
+                record = new ConsumerRecord<TKey, TValue> 
+                { 
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.NoError)),
+                    Message = new Message<TKey, TValue>
+                    {
+                        Timestamp = timestamp,
+                        Headers = headers,
+                        Key = key,
+                        Value = val
+                    }
+                };
+
+                return true;
+            }
+            finally
+            {
+                Librdkafka.message_destroy(msgPtr);
+            }
+        }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
+        public bool Consume(out ConsumerRecord<TKey, TValue> record, TimeSpan timeout)
+            => Consume(out record, timeout.TotalMillisecondsAsInt());
+
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
+        public void Poll(int millisecondsTimeout)
+        {
+            if (Consume(out var record, millisecondsTimeout))
+            {
+                OnRecord?.Invoke(this, record);
+            }
+        }
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
+        public void Poll(TimeSpan timeout)
+        {
+            if (Consume(out var record, timeout))
+            {
+                OnRecord?.Invoke(this, record);
+            }
+        }
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsAssigned"]/*' />
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
@@ -218,20 +495,18 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnConsumeError"]/*' />
-        public event EventHandler<ConsumerRecord> OnConsumeError;
-
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics;
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
         public event EventHandler<LogMessage> OnLog;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnRecord"]/*' />
-        public event EventHandler<ConsumerRecord> OnRecord;
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
         public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
+
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
+        public event EventHandler<ConsumerRecord<TKey, TValue>> OnRecord;
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assignment"]/*' />
         public List<TopicPartition> Assignment
@@ -273,53 +548,8 @@ namespace Confluent.Kafka
         public void Unassign()
             => kafkaHandle.Assign(null);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
-        public bool Consume(out ConsumerRecord record, int millisecondsTimeout)
-        {
-            if (kafkaHandle.ConsumerPoll(out record, enableTimestampMarshaling, enableHeaderMarshaling, (IntPtr)millisecondsTimeout))
-            {
-                switch (record.Error.Code)
-                {
-                    case ErrorCode.NoError:
-                        return true;
-                    case ErrorCode.Local_PartitionEOF:
-                        OnPartitionEOF?.Invoke(this, record.TopicPartitionOffset);
-                        return false;
-                    default:
-                        OnConsumeError?.Invoke(this, record);
-                        return false;
-                }
-            }
-
-            return false;
-        }
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
-        public bool Consume(out ConsumerRecord record, TimeSpan timeout)
-            => Consume(out record, timeout.TotalMillisecondsAsInt());
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
-        public void Poll(TimeSpan timeout)
-        {
-            if (Consume(out ConsumerRecord record, timeout))
-            {
-                OnRecord?.Invoke(this, record);
-            }
-        }
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
-        public void Poll(int millisecondsTimeout)
-        {
-            if (Consume(out ConsumerRecord record, millisecondsTimeout))
-            {
-                OnRecord?.Invoke(this, record);
-            }
-        }
-
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_ConsumerRecord"]/*' />
-        public TopicPartitionOffsetError StoreOffset(ConsumerRecord record)
+        public TopicPartitionOffsetError StoreOffset(ConsumerRecord<TKey, TValue> record)
             => StoreOffsets(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) })[0];
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
@@ -329,9 +559,9 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
         public CommittedOffsets Commit()
             => kafkaHandle.Commit();
-        
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
-        public CommittedOffsets Commit(ConsumerRecord record)
+        public CommittedOffsets Commit(ConsumerRecord<TKey, TValue> record)
         {
             if (record.Error.Code != ErrorCode.NoError)
             {
@@ -343,6 +573,19 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
         public CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.Commit(offsets);
+
+        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
+        public void Dispose()
+        {
+            // note: consumers always own their own handles.
+
+            KeyDeserializer?.Dispose();
+            ValueDeserializer?.Dispose();
+
+            // note: consumers always own their handles.
+            kafkaHandle.ConsumerClose();
+            kafkaHandle.Dispose();
+        }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Seek"]/*' />
         public void Seek(TopicPartitionOffset tpo)
@@ -363,14 +606,6 @@ namespace Confluent.Kafka
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Position_IEnumerable"]/*' />
         public List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Position(partitions);
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
-        public void Dispose()
-        {
-            // note: consumers always own their handles.
-            kafkaHandle.ConsumerClose();
-            kafkaHandle.Dispose();
-        }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
         public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)

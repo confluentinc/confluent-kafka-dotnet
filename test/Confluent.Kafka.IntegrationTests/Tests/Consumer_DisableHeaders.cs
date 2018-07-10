@@ -63,9 +63,6 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnError += (_, e) =>
                     Assert.False(true);
 
-                consumer.OnConsumeError += (_, e) =>
-                    Assert.False(true);
-
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 Assert.True(consumer.Consume(out ConsumerRecord<Null, string> record, TimeSpan.FromSeconds(30)));

@@ -29,10 +29,10 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void SerializeDeserialize()
         {
-            Assert.Equal("hello world", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "hello world")));
-            Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "ឆ្មាត្រូវបានហែលទឹក")));
-            Assert.Equal("вы не банан", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "вы не банан")));
-            Assert.Null(new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", null)));
+            Assert.Equal("hello world", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "hello world"), false));
+            Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "ឆ្មាត្រូវបានហែលទឹក"), false));
+            Assert.Equal("вы не банан", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "вы не банан"), false));
+            Assert.Null(new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", null), true));
 
             // TODO: check some serialize / deserialize operations that are not expected to work, including some
             //       cases where Deserialize can be expected to throw an exception.
@@ -48,7 +48,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             var deserializer = new StringDeserializer();
             var newConfig = deserializer.Configure(config, true);
             Assert.Empty(newConfig);
-            Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized));
+            Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized, false));
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             var deserializer = new StringDeserializer();
             var newConfig = deserializer.Configure(config, false);
             Assert.Empty(newConfig);
-            Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized));
+            Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized, false));
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             var newConfig = serializer.Configure(config, true);
             Assert.Empty(newConfig);
             var serialized = serializer.Serialize("mytopic", testString);
-            Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized), testString);
+            Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized, false), testString);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             var newConfig = serializer.Configure(config, false);
             Assert.Empty(newConfig);
             var serialized = serializer.Serialize("mytopic", testString);
-            Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized), testString);
+            Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized, false), testString);
         }
 
         [Fact]

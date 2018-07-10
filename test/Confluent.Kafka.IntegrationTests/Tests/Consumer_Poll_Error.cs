@@ -69,13 +69,6 @@ namespace Confluent.Kafka.IntegrationTests
                     msgCnt += 1;
                 };
 
-                consumer.OnConsumeError += (_, msg) =>
-                {
-                    errCnt += 1;
-                    Assert.Equal(ErrorCode.Local_KeyDeserialization, msg.Error.Code);
-                    Assert.Equal(firstProduced.Offset.Value, msg.Offset.Value);
-                };
-
                 consumer.OnPartitionEOF += (_, partition)
                     => done = true;
 
@@ -93,7 +86,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (!done)
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    try
+                    {
+                        consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    }
+                    catch (ConsumeException e)
+                    {
+                        errCnt += 1;
+                        Assert.Equal(ErrorCode.Local_KeyDeserialization, e.Error.Code);
+                        Assert.Equal(firstProduced.Offset.Value, e.ConsumerRecord.Offset.Value);
+                    }
                 }
 
                 Assert.Equal(1, msgCnt);
@@ -112,13 +114,6 @@ namespace Confluent.Kafka.IntegrationTests
                     msgCnt += 1;
                 };
                 
-                consumer.OnConsumeError += (_, record) =>
-                {
-                    errCnt += 1;
-                    Assert.Equal(ErrorCode.Local_ValueDeserialization, record.Error.Code);
-                    Assert.Equal(firstProduced.Offset.Value + 1, record.Offset.Value);
-                };
-
                 consumer.OnPartitionEOF += (_, partition)
                     => done = true;
 
@@ -136,7 +131,16 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (!done)
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    try
+                    {
+                        consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    }
+                    catch (ConsumeException e)
+                    {
+                        errCnt += 1;
+                        Assert.Equal(ErrorCode.Local_ValueDeserialization, e.Error.Code);
+                        Assert.Equal(firstProduced.Offset.Value + 1, e.ConsumerRecord.Offset.Value);
+                    }
                 }
 
                 Assert.Equal(1, msgCnt);

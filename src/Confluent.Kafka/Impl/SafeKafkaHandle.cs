@@ -226,12 +226,12 @@ namespace Confluent.Kafka.Impl
 
         internal ErrorCode Produce(
             string topic, 
-            byte[] val, int valOffset, int valLength, 
-            byte[] key, int keyOffset, int keyLength, 
-            int partition, 
-            long timestamp, 
+            byte[] val, int valOffset, int valLength,
+            byte[] key, int keyOffset, int keyLength,
+            int partition,
+            long timestamp,
             IEnumerable<Header> headers,
-            IntPtr opaque, 
+            IntPtr opaque,
             bool blockIfQueueFull)
         {
             var pValue = IntPtr.Zero;
@@ -466,8 +466,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal bool ConsumerPoll(
-            out ConsumerRecord record,
+        internal IntPtr ConsumerPoll(
             bool enableTimestampMarshaling,
             bool enableHeaderMarshaling,
             IntPtr millisecondsTimeout)
@@ -475,75 +474,7 @@ namespace Confluent.Kafka.Impl
             ThrowIfHandleClosed();
             
             // TODO: There is a newer librdkafka interface for this now. Use that.
-            IntPtr msgPtr = Librdkafka.consumer_poll(handle, millisecondsTimeout);
-            if (msgPtr == IntPtr.Zero)
-            {
-                record = null;
-                return false;
-            }
-
-            var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(msgPtr);
-
-            byte[] val = null;
-            if (msg.val != IntPtr.Zero)
-            {
-                val = new byte[(int) msg.len];
-                Marshal.Copy(msg.val, val, 0, (int) msg.len);
-            }
-            byte[] key = null;
-            if (msg.key != IntPtr.Zero)
-            {
-                key = new byte[(int) msg.key_len];
-                Marshal.Copy(msg.key, key, 0, (int) msg.key_len);
-            }
-
-            string topic = null;
-            if (msg.rkt != IntPtr.Zero)
-            {
-                topic = Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(msg.rkt));
-            }
-
-            long timestamp = 0;
-            IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
-            if (enableTimestampMarshaling)
-            {
-                timestamp = Librdkafka.message_timestamp(msgPtr, out timestampType);
-            }
-
-            Headers headers = null;
-            if (enableHeaderMarshaling)
-            {
-                headers = new Headers();
-                Librdkafka.message_headers(msgPtr, out IntPtr hdrsPtr);
-                if (hdrsPtr != IntPtr.Zero)
-                {
-                    for (var i=0; ; ++i)
-                    {
-                        var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
-                        if (err != ErrorCode.NoError)
-                        {
-                            break;
-                        }
-                        var headerName = Util.Marshal.PtrToStringUTF8(namep);
-                        var headerValue = new byte[(int)sizep];
-                        Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                        headers.Add(new Header(headerName, headerValue));
-                    }
-                }
-            }
-
-            Librdkafka.message_destroy(msgPtr);
-
-            record = new ConsumerRecord
-            {
-                Topic = topic,
-                Partition = msg.partition,
-                Offset = msg.offset,
-                Error = msg.err,
-                Message = new Message { Key = key, Value = val, Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
-            };
-
-            return true;
+            return Librdkafka.consumer_poll(handle, millisecondsTimeout);
         }
 
         internal void ConsumerClose()

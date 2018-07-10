@@ -34,12 +34,15 @@ namespace Confluent.Kafka.Serialization
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this deserializer).
         /// </param>
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
+        /// </param>
         /// <returns>
         ///     null
         /// </returns>
-        public Null Deserialize(string topic, byte[] data)
+        public Null Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
-            if (data != null)
+            if (!isNull)
             {
                 throw new System.ArgumentException("NullDeserializer may only be used to deserialize data that is null.");
             }

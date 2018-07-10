@@ -89,14 +89,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
             using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
             {
-                consumer.OnRecord += (o, record)
-                    => Console.WriteLine($"user key name: {record.Key}, user value favorite color: {record.Value.favorite_color}");
-
                 consumer.OnError += (_, e)
                     => Console.WriteLine("Error: " + e.Reason);
-
-                consumer.OnConsumeError += (_, e)
-                    => Console.WriteLine("Consume error: " + e.Error.Reason);
 
                 consumer.Subscribe(topicName);
 
@@ -105,7 +99,17 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 {
                     while (!cts.Token.IsCancellationRequested)
                     {
-                        consumer.Poll(100);
+                        try
+                        {
+                            if (consumer.Consume(out var record, 100))
+                            {
+                                Console.WriteLine($"user key name: {record.Key}, user value favorite color: {record.Value.favorite_color}");
+                            }
+                        }
+                        catch (ConsumeException e)
+                        {
+                            Console.WriteLine("Consume error: " + e.Error.Reason);
+                        }
                     }
                 });
 

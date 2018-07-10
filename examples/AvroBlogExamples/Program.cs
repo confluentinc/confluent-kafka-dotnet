@@ -102,17 +102,21 @@ namespace AvroBlogExample
             using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(
                 consumerConfig, null, new AvroDeserializer<MessageTypes.LogMessage>()))
             {
-                consumer.OnConsumeError 
-                    += (_, error) => Console.WriteLine($"an error occured: {error.Error.Reason}");
-
-                consumer.OnRecord 
-                    += (_, record) => Console.WriteLine($"{record.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{record.Value.Severity}] {record.Value.Message}");
-
                 consumer.Subscribe("log-messages");
 
                 while (true)
                 {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
+                    try
+                    {
+                        if (consumer.Consume(out var record, TimeSpan.FromSeconds(1)))
+                        {
+                            Console.WriteLine($"{record.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{record.Value.Severity}] {record.Value.Message}");
+                        }
+                    }
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"an error occured: {e.Error.Reason}");
+                    }
                 }
             }
         }

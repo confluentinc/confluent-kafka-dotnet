@@ -298,15 +298,20 @@ namespace Confluent.Kafka
                     {
                         Key = Key,
                         Value = Value,
-                        Timestamp = deliveryReport.Message.Timestamp,
-                        Headers = deliveryReport.Message.Headers
+                        Timestamp = deliveryReport.Message == null 
+                            ? new Timestamp(0, TimestampType.NotAvailable) 
+                            : deliveryReport.Message.Timestamp,
+                        Headers = deliveryReport.Message?.Headers
                     }
                 };
                 // topic is cached in this object, not set in the deliveryReport to avoid the 
                 // cost of marshalling it.
                 dr.Topic = Topic;
 
-                Handler(dr);
+                if (Handler != null)
+                {
+                    Handler(dr);
+                }
             }
         }
 
@@ -361,7 +366,7 @@ namespace Confluent.Kafka
             var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
 
             producer.ProduceImpl(
-                topicPartition.Topic, 
+                topicPartition.Topic,
                 valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                 keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                 message.Timestamp, topicPartition.Partition, 
@@ -656,13 +661,6 @@ namespace Confluent.Kafka
                     headers,
                     IntPtr.Zero, 
                     blockIfQueueFull);
-
-                if (deliveryHandler != null)
-                {
-                    deliveryHandler.HandleDeliveryReport(
-                        new DeliveryReport { Topic = topic, Error = new Error(ErrorCode.NoError) }
-                    );
-                }
 
                 if (err != ErrorCode.NoError)
                 {

@@ -98,18 +98,22 @@ namespace ConfluentCloudExample
             { 
                 consumer.Subscribe("dotnet-test-topic");
 
-                consumer.OnConsumeError += (_, err)
-                    => Console.WriteLine($"consume error: {err.Error.Reason}");
-
-                consumer.OnRecord += (_, msg)
-                    => Console.WriteLine($"consumed: {msg.Value}");
-
                 consumer.OnPartitionEOF += (_, tpo)
                     => Console.WriteLine($"end of partition: {tpo}");
 
                 while (true)
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    try
+                    {
+                        if (consumer.Consume(out var record, TimeSpan.FromMilliseconds(100)))
+                        {
+                            Console.WriteLine($"consumed: {record.Value}");
+                        }
+                    }
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"consume error: {e.Error.Reason}");
+                    }
                 }  
             }
         }
