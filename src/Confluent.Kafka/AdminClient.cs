@@ -157,7 +157,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -166,11 +166,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new CreateTopicsException(result));
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).TrySetException(new CreateTopicsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -179,7 +179,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -189,11 +189,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new DeleteTopicsException(result));
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).TrySetException(new DeleteTopicsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -202,7 +202,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -212,11 +212,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).TrySetException(new CreatePartitionsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -225,7 +225,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -234,11 +234,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetException(new DescribeConfigsException(result));
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).TrySetException(new DescribeConfigsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -247,7 +247,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -257,11 +257,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).SetException(new AlterConfigsException(result));
+                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).TrySetException(new AlterConfigsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigResult>>) adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<AlterConfigResult>>) adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;

@@ -17,12 +17,14 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-using System.Runtime.InteropServices;
 
 
 namespace Confluent.Kafka
@@ -464,9 +466,40 @@ namespace Confluent.Kafka
         public bool Consume(out ConsumerRecord<TKey, TValue> record, TimeSpan timeout)
             => Consume(out record, timeout.TotalMillisecondsAsInt());
 
+        public bool Consume(out ConsumerRecord<TKey, TValue> record, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            while (true)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    record = null;
+                    return false;
+                }
+
+                if (Consume(out record, 100))
+                {
+                    return true;
+                }
+            }
+        }
+
+        public Task<ConsumerRecord<TKey, TValue>> ConsumeAsync(TimeSpan timeout)
+        {
+            return null;
+        }
+
+        public Task<ConsumerRecord<TKey, TValue>> ConsumeAsync(int millisecondsTimeout)
+        {
+            return null;
+        }
+
+        public Task<ConsumerRecord<TKey, TValue>> ConsumeAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return null;
+        }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
-        public void Poll(int millisecondsTimeout)
+        internal void Poll(int millisecondsTimeout)
         {
             if (Consume(out var record, millisecondsTimeout))
             {
@@ -560,6 +593,11 @@ namespace Confluent.Kafka
         public CommittedOffsets Commit()
             => kafkaHandle.Commit();
 
+        public Task<CommittedOffsets> CommitAsync()
+        {
+            return null;
+        }
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
         public CommittedOffsets Commit(ConsumerRecord<TKey, TValue> record)
         {
@@ -570,9 +608,19 @@ namespace Confluent.Kafka
             return Commit(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) });
         }
 
+        public Task<CommittedOffsets> CommitAsync(ConsumerRecord<TKey, TValue> record)
+        {
+            return null;
+        }
+
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
         public CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.Commit(offsets);
+
+        public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
+        {
+            return null;
+        }
 
         /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
         public void Dispose()
