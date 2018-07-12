@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 
 
@@ -36,7 +37,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The System.Byte[] value <paramref name="data" /> encoded as a byte array. 
         /// </returns>
-        public byte[] Serialize(string topic, byte[] data)
+        public ReadOnlySpan<byte> Serialize(string topic, byte[] data)
         {
             return data;
         }

@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The <see cref="System.Int32"/> value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
         /// </returns>
-        public byte[] Serialize(string topic, int data)
+        public ReadOnlySpan<byte> Serialize(string topic, int data)
         {
             var result = new byte[4]; // int is always 32 bits on .NET.
             // network byte order -> big endian -> most significant byte in the smallest address.

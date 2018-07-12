@@ -38,7 +38,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        byte[] Serialize(string topic, T data);
+        ReadOnlySpan<byte> Serialize(string topic, T data);
 
         /// <include file='../include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
         IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey);

@@ -15,10 +15,12 @@
 // Refer to LICENSE for more information.
 
 
+using System;
+
 namespace Confluent.Kafka.Serialization
 {
     internal interface IAvroSerializerImpl<T>
     {
-        byte[] Serialize(string topic, T data);
+        ReadOnlySpan<byte> Serialize(string topic, T data);
     }
 }

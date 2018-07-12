@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The <see cref="System.Int64"/> value <paramref name="data" /> encoded as a byte array of length 8 (network byte order).
         /// </returns>
-        public byte[] Serialize(string topic, long data)
+        public ReadOnlySpan<byte> Serialize(string topic, long data)
         {
             var result = new byte[8];
             result[0] = (byte)(data >> 56);
