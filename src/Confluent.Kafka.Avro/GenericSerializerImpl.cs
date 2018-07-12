@@ -14,12 +14,13 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using Confluent.SchemaRegistry;
 using Avro.Generic;
 using Avro.IO;
+using Confluent.SchemaRegistry;
 
 
 namespace Confluent.Kafka.Serialization
@@ -64,7 +65,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public byte[] Serialize(string topic, GenericRecord data)
+        public ReadOnlySpan<byte> Serialize(string topic, GenericRecord data)
         {
             int schemaId;
             Avro.RecordSchema writerSchema;
@@ -145,7 +146,9 @@ namespace Confluent.Kafka.Serialization
                 writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                 new GenericWriter<GenericRecord>(writerSchema)
                     .Write(data, new BinaryEncoder(stream));
-                return stream.ToArray();
+
+                Span<byte> buffer = stream.GetBuffer();
+                return buffer.Slice(0, (int)stream.Length);
             }
         }
     }

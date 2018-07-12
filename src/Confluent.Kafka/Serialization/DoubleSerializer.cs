@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The System.Double value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
         /// </returns>
-        public byte[] Serialize(string topic, double data)
+        public ReadOnlySpan<byte> Serialize(string topic, double data)
         {
             if (BitConverter.IsLittleEndian)
             {

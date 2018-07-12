@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     null
         /// </returns>
-        public byte[] Serialize(string topic, Null data)
+        public ReadOnlySpan<byte> Serialize(string topic, Null data)
         {
             return null;
         }

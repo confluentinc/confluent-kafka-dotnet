@@ -132,7 +132,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public byte[] Serialize(string topic, T data)
+        public ReadOnlySpan<byte> Serialize(string topic, T data)
         { 
             if (serializerImpl == null)
             {

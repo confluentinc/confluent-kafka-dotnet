@@ -110,7 +110,7 @@ namespace Confluent.Kafka.Serialization
             writerSchemaString = writerSchema.ToString();
         }
 
-        public byte[] Serialize(string topic, T data)
+        public ReadOnlySpan<byte> Serialize(string topic, T data)
         {
             lock (serializeLockObj)
             {
@@ -138,8 +138,8 @@ namespace Confluent.Kafka.Serialization
                 writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
                 avroWriter.Write(data, new BinaryEncoder(stream));
 
-                // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
-                return stream.ToArray();
+                Span<byte> buffer = stream.GetBuffer();
+                return buffer.Slice(0, (int)stream.Length);
             }
         }
     }

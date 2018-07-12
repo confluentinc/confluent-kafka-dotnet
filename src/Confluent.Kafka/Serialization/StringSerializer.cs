@@ -75,7 +75,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="data" /> encoded in a byte array (or null if <paramref name="data" /> is null).
         /// </returns>
-        public byte[] Serialize(string topic, string data)
+        public ReadOnlySpan<byte> Serialize(string topic, string data)
         {
             if (data == null)
             {

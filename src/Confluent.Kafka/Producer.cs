@@ -324,13 +324,13 @@ namespace Confluent.Kafka
                 producer.enableDeliveryReportKey ? message.Key : default(TKey),
                 producer.enableDeliveryReportValue ? message.Value : default(TValue));
 
-            var keyBytes = keySerializer?.Serialize(topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+            var keyBytes = (keySerializer is null) ? ReadOnlySpan<byte>.Empty : keySerializer.Serialize(topic, message.Key);
+            var valBytes = (valueSerializer is null) ? ReadOnlySpan<byte>.Empty : valueSerializer.Serialize(topic, message.Value);
 
             producer.ProduceImpl(
                 topic,
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                valBytes,
+                keyBytes,
                 message.Timestamp, Partition.Any, message.Headers, 
                 producer.blockIfQueueFullPropertyValue, handler);
 
@@ -345,13 +345,13 @@ namespace Confluent.Kafka
                 producer.enableDeliveryReportKey ? message.Key : default(TKey),
                 producer.enableDeliveryReportValue ? message.Value : default(TValue));
 
-            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
-            
+            var keyBytes = (keySerializer is null) ? ReadOnlySpan<byte>.Empty : keySerializer.Serialize(topicPartition.Topic, message.Key);
+            var valBytes = (valueSerializer is null) ? ReadOnlySpan<byte>.Empty : valueSerializer.Serialize(topicPartition.Topic, message.Value);
+
             producer.ProduceImpl(
                 topicPartition.Topic, 
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                valBytes,
+                keyBytes,
                 message.Timestamp, topicPartition.Partition, message.Headers, 
                 producer.blockIfQueueFullPropertyValue, handler);
 
@@ -362,13 +362,13 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
-            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+            var keyBytes = (keySerializer is null) ? ReadOnlySpan<byte>.Empty : keySerializer.Serialize(topicPartition.Topic, message.Key);
+            var valBytes = (valueSerializer is null) ? ReadOnlySpan<byte>.Empty : valueSerializer.Serialize(topicPartition.Topic, message.Value);
 
             producer.ProduceImpl(
                 topicPartition.Topic,
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                valBytes,
+                keyBytes,
                 message.Timestamp, topicPartition.Partition, 
                 message.Headers, producer.blockIfQueueFullPropertyValue, 
                 new TypedDeliveryHandlerShim_Action(
@@ -383,13 +383,13 @@ namespace Confluent.Kafka
         /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         public void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
-            var keyBytes = keySerializer?.Serialize(topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+            var keyBytes = (keySerializer is null) ? ReadOnlySpan<byte>.Empty : keySerializer.Serialize(topic, message.Key);
+            var valBytes = (valueSerializer is null) ? ReadOnlySpan<byte>.Empty : valueSerializer.Serialize(topic, message.Value);
 
             producer.ProduceImpl(
                 topic,
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                valBytes,
+                keyBytes,
                 message.Timestamp, Partition.Any,
                 message.Headers, producer.blockIfQueueFullPropertyValue,
                 new TypedDeliveryHandlerShim_Action(
@@ -607,8 +607,8 @@ namespace Confluent.Kafka
 
         internal void ProduceImpl(
             string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
+            ReadOnlySpan<byte> val,
+            ReadOnlySpan<byte> key,
             Timestamp timestamp,
             Partition partition, 
             IEnumerable<Header> headers,
@@ -636,8 +636,8 @@ namespace Confluent.Kafka
 
                 var err = kafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    val,
+                    key,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -654,8 +654,8 @@ namespace Confluent.Kafka
             {
                 var err = kafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    val,
+                    key,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,

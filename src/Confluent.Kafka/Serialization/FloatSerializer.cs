@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     The System.Single value <paramref name="data" /> encoded as a byte array of length 4 (network byte order).
         /// </returns>
-        public byte[] Serialize(string topic, float data)
+        public ReadOnlySpan<byte> Serialize(string topic, float data)
         {
             if (BitConverter.IsLittleEndian)
             {
