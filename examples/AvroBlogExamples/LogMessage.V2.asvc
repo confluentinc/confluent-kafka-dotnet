@@ -1,0 +1,20 @@
+{ 
+  "namespace": "MessageTypes",
+  "type": "record",
+  "doc": "A simple log message type as used by this blog post.",
+  "name": "LogMessage",
+  "fields": [
+    { "name": "IP", "type": "string" },
+    { "name": "Message", "type": "string" },
+    { "name": "Tags",
+      "type": { "type": "map",
+                "values": "string"},
+                "default": {}},
+    { "name": "Severity",
+      "type": { "namespace": "MessageTypes",
+                "type": "enum",
+                "doc": "Enumerates the set of allowable log levels.",
+                "name": "LogLevel",
+                "symbols": ["None", "Verbose", "Info", "Warning", "Error"]}}
+  ]
+}

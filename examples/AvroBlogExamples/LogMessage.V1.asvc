@@ -1,0 +1,11 @@
+{ 
+  "namespace": "MessageTypes",
+  "type": "record",
+  "doc": "A simple log message type as used by this blog post.",
+  "name": "LogMessage",
+  "fields": [
+    { "name": "IP", "type": "string" },
+    { "name": "Message", "type": "string" },
+    { "name": "Severity", "type": MessageTypes.LogLevel }
+  ]
+}

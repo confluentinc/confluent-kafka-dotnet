@@ -111,18 +111,26 @@ namespace Confluent.Kafka.Serialization
                 var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                 if (!registeredSchemas.Contains(subjectSchemaPair))
                 {
+                    int newSchemaId;
                     // first usage: register/get schema to check compatibility
                     if (autoRegisterSchema)
                     {
-                        schemaIds.Add(
-                            writerSchemaString,
-                            schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                        newSchemaId = schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
                     }
                     else
                     {
-                        schemaIds.Add(
-                            writerSchemaString,
-                            schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult());
+                        newSchemaId = schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
+                    }
+
+                    if (!schemaIds.ContainsKey(writerSchemaString))
+                    {
+                        schemaIds.Add(writerSchemaString, newSchemaId);
+                    }
+                    else if (schemaIds[writerSchemaString] != newSchemaId)
+                    {
+                        schemaIds.Clear();
+                        registeredSchemas.Clear();
+                        throw new KafkaException(new Error(isKey ? ErrorCode.Local_KeySerialization : ErrorCode.Local_ValueSerialization, $"Duplicate schema registration encountered: Schema ids {schemaIds[writerSchemaString]} and {newSchemaId} are associated with the same schema."));
                     }
 
                     registeredSchemas.Add(subjectSchemaPair);
