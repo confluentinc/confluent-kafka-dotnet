@@ -116,6 +116,11 @@ namespace Confluent.Kafka
                 => OnConsumeError?.Invoke(this, msg);
         }
 
+        public Message<TKey, TValue> Consume(int millisecondsTimeout) =>
+            consumer.Consume(millisecondsTimeout)?.Deserialize(KeyDeserializer, ValueDeserializer);
+
+        public Message<TKey, TValue> Consume(TimeSpan timeout) => Consume(timeout.TotalMillisecondsAsInt());
+
         /// <summary>
         ///     Poll for new messages / consumer events. Blocks until a new 
         ///     message or event is ready to be handled or the timeout period
@@ -1060,6 +1065,13 @@ namespace Confluent.Kafka
         /// </summary>
         public void Unassign()
             => kafkaHandle.Assign(null);
+
+        public Message Consume(int millisecondsTimeout) =>
+            kafkaHandle.ConsumerPoll(out var message, (IntPtr)millisecondsTimeout)
+                ? message
+                : null;
+
+        public Message Consume(TimeSpan timeout) => Consume(timeout.TotalMillisecondsAsInt());
 
         /// <summary>
         ///     Poll for new messages / consumer events. Blocks until a new 
