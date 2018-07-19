@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
-                ConsumerRecord<Null, string> record;
+                ConsumeResult<Null, string> record;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {

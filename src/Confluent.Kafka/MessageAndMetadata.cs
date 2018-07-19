@@ -78,41 +78,5 @@ namespace Confluent.Kafka
         ///     The message that was produced.
         /// </summary>
         public Message Message { get; set; }
-
-        /// <summary>
-        ///     The Kafka message Key.
-        /// </summary>
-        public byte[] Key
-        {
-            get { return Message.Key; }
-            set { Message.Key = value; }
-        }
-
-        /// <summary>
-        ///     The Kafka message Value.
-        /// </summary>
-        public byte[] Value
-        {
-            get { return Message.Value; }
-            set { Message.Value = value; }
-        }
-
-        /// <summary>
-        ///     The Kafka message timestamp.
-        /// </summary>
-        public Timestamp Timestamp
-        {
-            get { return Message.Timestamp; }
-            set { Message.Timestamp = value; }
-        }
-
-        /// <summary>
-        ///     The Kafka message headers.
-        /// </summary>
-        public Headers Headers
-        {
-            get { return Message.Headers; }
-            set { Message.Headers = value; }
-        }
     }
 }

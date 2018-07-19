@@ -427,7 +427,12 @@ namespace Confluent.Kafka.Impl
                     throw new KafkaException(errorCode);
                 }
 
-                return GetTopicPartitionOffsetErrorList(cOffsets);
+                var result = GetTopicPartitionOffsetErrorList(cOffsets);
+                if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
+                {
+                    throw new OffsetsRequestException(result);
+                }
+                return result;
             }
             finally
             {
@@ -636,11 +641,6 @@ namespace Confluent.Kafka.Impl
         internal CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
             => CommitSync(offsets);
 
-        internal Task<CommittedOffsets> CommitAsync()
-            => Task.Run(() => CommitSync(null));
-
-        internal Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets)
-            => Task.Run(() => CommitSync(offsets));
 
         internal void Seek(string topic, Partition partition, Offset offset, int millisecondsTimeout)
         {
@@ -715,13 +715,21 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
+            
             ErrorCode err = Librdkafka.committed(handle, list, timeout_ms);
             var result = GetTopicPartitionOffsetErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
+            
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(err);
             }
+
+            if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
+            {
+                throw new OffsetsRequestException(result);
+            }
+
             return result;
         }
 
@@ -734,6 +742,7 @@ namespace Confluent.Kafka.Impl
         internal List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
         {
             ThrowIfHandleClosed();
+
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
@@ -743,6 +752,7 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
+            
             ErrorCode err = Librdkafka.position(handle, list);
             var result = GetTopicPartitionOffsetErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
@@ -750,6 +760,12 @@ namespace Confluent.Kafka.Impl
             {
                 throw new KafkaException(err);
             }
+
+            if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
+            {
+                throw new OffsetsRequestException(result);
+            }
+            
             return result;
         }
 

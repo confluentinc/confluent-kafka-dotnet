@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                ConsumerRecord<Ignore, Ignore> record;
+                ConsumeResult<Ignore, Ignore> record;
                 Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(record);
                 Assert.Null(record.Message.Key);
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
 
-                ConsumerRecord<Ignore, byte[]> record;
+                ConsumeResult<Ignore, byte[]> record;
                 Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(record);
                 Assert.Null(record.Message.Key);

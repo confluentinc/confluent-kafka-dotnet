@@ -71,7 +71,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(consumer.Handle))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
-                ConsumerRecord<byte[], byte[]> record;
+                ConsumeResult<byte[], byte[]> record;
                 Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
 
                 var getOffsets = adminClient.GetWatermarkOffsets(dr.TopicPartition);

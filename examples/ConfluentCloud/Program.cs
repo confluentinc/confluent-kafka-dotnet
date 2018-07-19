@@ -98,16 +98,18 @@ namespace ConfluentCloudExample
             { 
                 consumer.Subscribe("dotnet-test-topic");
 
-                consumer.OnPartitionEOF += (_, tpo)
-                    => Console.WriteLine($"end of partition: {tpo}");
-
                 while (true)
                 {
                     try
                     {
-                        if (consumer.Consume(out var record, TimeSpan.FromMilliseconds(100)))
+                        var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                        if (consumeResult.Message != null)
                         {
-                            Console.WriteLine($"consumed: {record.Value}");
+                            Console.WriteLine($"consumed: {consumeResult.Value}");
+                        }
+                        if (consumeResult.IsPartitionEOF)
+                        {
+                            Console.WriteLine($"end of partition: {consumeResult.TopicPartitionOffset}");
                         }
                     }
                     catch (ConsumeException e)

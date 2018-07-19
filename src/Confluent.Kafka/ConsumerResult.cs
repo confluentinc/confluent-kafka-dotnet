@@ -22,5 +22,8 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents a message consumed from kafka cluster.
     /// </summary>
-    public class ConsumerRecord<TKey, TValue> : MessageAndMetadata<TKey, TValue> {}
+    public class ConsumeResult<TKey, TValue> : MessageAndMetadata<TKey, TValue>
+    {
+        public bool IsPartitionEOF { get => Error.Code == ErrorCode.Local_PartitionEOF; }
+    }
 }

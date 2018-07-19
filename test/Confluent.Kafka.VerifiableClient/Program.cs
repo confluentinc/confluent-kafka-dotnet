@@ -474,7 +474,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// Handle consumed message (or consumer error)
         /// </summary>
         /// <param name="record"></param>
-        private void HandleMessage(ConsumerRecord<Null, string> record)
+        private void HandleMessage(ConsumeResult<Null, string> record)
         {
             AssignedPartition ap;
 

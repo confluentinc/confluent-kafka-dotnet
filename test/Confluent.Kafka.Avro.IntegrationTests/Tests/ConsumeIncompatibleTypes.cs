@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 bool hadError = false;
                 try
                 {
-                    consumer.Consume(out ConsumerRecord<User, User> record, TimeSpan.FromSeconds(10));
+                    consumer.Consume(out ConsumeResult<User, User> record, TimeSpan.FromSeconds(10));
                 }
                 catch (ConsumeException e)
                 {
@@ -89,7 +89,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 bool hadError = false;
                 try
                 {
-                    consumer.Consume(out ConsumerRecord<string, string> record, TimeSpan.FromSeconds(10));
+                    consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
                 }
                 catch (ConsumeException e)
                 {

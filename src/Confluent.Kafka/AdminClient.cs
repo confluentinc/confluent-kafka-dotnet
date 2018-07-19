@@ -524,18 +524,68 @@ namespace Confluent.Kafka
 #endregion
 
 #region WatermarkOffsets
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
+        /// <summary>
+        ///     Get last known low (oldest/beginning) and high (newest/end)
+        ///     offsets for a topic/partition.
+        /// </summary>
+        /// <remarks>
+        ///     This method is only avilable on instances constructed from a Consumer
+        ///     handle. The low offset is updated periodically (if statistics.interval.ms 
+        ///     is set) while the high offset is updated on each fetched message set from
+        ///     the broker. If there is no cached offset (either low or high, or both) then
+        ///     Offset.Invalid will be returned for the respective offset.
+        /// </remarks>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
+        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
+        {
+            if (!Handle.Owner.GetType().Name.Contains("Consumer"))
+            {
+                throw new InvalidCastException(
+                    "GetWatermarkOffsets is only available on AdminClient instances constructed from a Consumer handle.");
+            }
+            return kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
+        }
+
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition (blocking).
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call may block.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
+
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
 #endregion
+
 
 #region Metadata
         private SafeTopicHandle getKafkaTopicHandle(string topic) 
@@ -611,13 +661,6 @@ namespace Confluent.Kafka
             {
                 ownedClient.Dispose();
             }
-        }
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog
-        {
-            add { this.handle.Owner.OnLog += value; }
-            remove { this.handle.Owner.OnLog -= value; }
         }
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />

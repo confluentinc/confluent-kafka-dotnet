@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
         private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryReport<Null, string> dr, string testString)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
-            ConsumerRecord<byte[], byte[]> r;
+            ConsumeResult<byte[], byte[]> r;
             Assert.True(consumer.Consume(out r, TimeSpan.FromSeconds(10)));
             Assert.NotNull(r);
             Assert.Equal(testString, r.Message.Value == null ? null : Encoding.UTF8.GetString(r.Message.Value, 0, r.Message.Value.Length));

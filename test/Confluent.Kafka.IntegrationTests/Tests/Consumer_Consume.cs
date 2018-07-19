@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 while (!done)
                 {
-                    ConsumerRecord<Null, string> record;
+                    ConsumeResult<Null, string> record;
                     if (consumer.Consume(out record, TimeSpan.FromMilliseconds(100)))
                     {
                         Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);

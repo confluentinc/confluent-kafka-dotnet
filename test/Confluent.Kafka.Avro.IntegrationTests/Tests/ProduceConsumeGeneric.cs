@@ -101,7 +101,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 // consume generic record produced as a generic record.
                 c.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                c.Consume(out ConsumerRecord<Null, GenericRecord> record, 20000);
+                c.Consume(out ConsumeResult<Null, GenericRecord> record, 20000);
                 record.Message.Value.TryGetValue("name", out object msgName);
                 record.Message.Value.TryGetValue("favorite_number", out object msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out object msgColor);
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var c = new Consumer<Null, User>(cconfig, null, new AvroDeserializer<User>()))
             {
                 c.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                c.Consume(out ConsumerRecord<Null, User> record, 20000);
+                c.Consume(out ConsumeResult<Null, User> record, 20000);
                 Assert.Equal("my name 2", record.Message.Value.name);
                 Assert.Equal(44, record.Message.Value.favorite_number);
                 Assert.Null(record.Message.Value.favorite_color);

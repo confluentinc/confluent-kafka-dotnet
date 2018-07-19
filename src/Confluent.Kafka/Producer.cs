@@ -131,13 +131,6 @@ namespace Confluent.Kafka
         public string Name
             => this.handle.Owner.Name;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog
-        {
-            add { this.handle.Owner.OnLog += value; }
-            remove { this.handle.Owner.OnLog -= value; }
-        }
-
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics
         {
@@ -566,6 +559,27 @@ namespace Confluent.Kafka
         /// </summary>
         public const string EnableDeliveryReportTimestampName = "dotnet.producer.enable.delivery.report.timestamps";
 
+        /// <summary>
+        ///     Name of the configuration property that specifies a delegate for
+        ///     handling log messages. If not specified, a default callback that
+        ///     writes to stderr will be used.
+        /// </summary>
+        /// <remarks>
+        ///     By default not many log messages are generated.
+        ///
+        ///     For more verbose logging, specify one or more debug contexts 
+        ///     using the 'debug' configuration property. The 'log_level'
+        ///     configuration property is also relevant, however logging is
+        ///     verbose by default given a debug context has been specified,
+        ///     so you typically shouldn't adjust this value.
+        ///
+        ///     Warning: Log handlers are called spontaneously from internal 
+        ///     librdkafka threads and the application must not call any 
+        ///     Confluent.Kafka APIs from within a log handler or perform any
+        ///     prolonged operations.
+        /// </remarks>
+        public const string LogDelegateName = "log.delegate";
+
         private readonly bool manualPoll = false;
         private readonly bool enableDeliveryReports = true;
         internal readonly bool blockIfQueueFullPropertyValue = true;
@@ -607,19 +621,20 @@ namespace Confluent.Kafka
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private readonly Librdkafka.LogDelegate logDelegate;
+        Action<LogMessage> logDelegate;
+        private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
-            if (OnLog == null)
+            if (logDelegate == null)
             {
                 // Log to stderr by default if no logger is specified.
                 Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
                 return;
             }
 
-            OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
+            logDelegate(new LogMessage(name, level, fac, buf));
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -777,7 +792,8 @@ namespace Confluent.Kafka
                     prop.Key != EnableDeliveryReportHeadersName &&
                     prop.Key != EnableDeliveryReportKeyName &&
                     prop.Key != EnableDeliveryReportValueName &&
-                    prop.Key != EnableDeliveryReportTimestampName);
+                    prop.Key != EnableDeliveryReportTimestampName &&
+                    prop.Key != LogDelegateName);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -830,6 +846,12 @@ namespace Confluent.Kafka
                 this.enableDeliveryReportTimestamp = bool.Parse(enableDeliveryReportTimestampObj.ToString());
             }
 
+            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == LogDelegateName).Value;
+            if (logDelegateObj != null)
+            {
+                this.logDelegate = (Action<LogMessage>)logDelegateObj;
+            }
+
             // Note: changing the default value of produce.offset.report at the binding level is less than
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
             // .NET client. The default should probably be changed in librdkafka as well.
@@ -855,13 +877,13 @@ namespace Confluent.Kafka
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             errorDelegate = ErrorCallback;
-            logDelegate = LogCallback;
+            logCallbackDelegate = LogCallback;
             statsDelegate = StatsCallback;
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
             Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logDelegate);
+            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
@@ -892,9 +914,6 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics;
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog;
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name

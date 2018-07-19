@@ -59,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                ConsumerRecord<byte[], byte[]> record;
+                ConsumeResult<byte[], byte[]> record;
                 Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
                 Assert.NotNull(record);
                 Assert.Null(record.Message.Key);

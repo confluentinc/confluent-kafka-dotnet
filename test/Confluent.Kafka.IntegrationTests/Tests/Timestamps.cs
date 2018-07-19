@@ -165,7 +165,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
-                ConsumerRecord<byte[], byte[]> record;
+                ConsumeResult<byte[], byte[]> record;
 
                 // serializing async
 
@@ -214,7 +214,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                ConsumerRecord<Null, string> record;
+                ConsumeResult<Null, string> record;
 
                 // serializing async
 
@@ -242,7 +242,7 @@ namespace Confluent.Kafka.IntegrationTests
 
         private static void assertCloseToNowTyped(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
         {
-            ConsumerRecord<Null, string> msg;
+            ConsumeResult<Null, string> msg;
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
             Assert.Equal(TimestampType.CreateTime, msg.Message.Timestamp.Type);
@@ -251,7 +251,7 @@ namespace Confluent.Kafka.IntegrationTests
 
         private static void assertCloseToNow(Consumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
         {
-            ConsumerRecord<byte[], byte[]> msg;
+            ConsumeResult<byte[], byte[]> msg;
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
             Assert.Equal(TimestampType.CreateTime, msg.Message.Timestamp.Type);
