@@ -157,7 +157,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -166,11 +166,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetException(new CreateTopicsException(result));
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).TrySetException(new CreateTopicsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<CreateTopicResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -179,7 +179,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -189,11 +189,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetException(new DeleteTopicsException(result));
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).TrySetException(new DeleteTopicsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<DeleteTopicResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -202,7 +202,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -212,11 +212,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetException(new CreatePartitionsException(result));
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).TrySetException(new CreatePartitionsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<CreatePartitionsResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -225,7 +225,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -234,11 +234,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetException(new DescribeConfigsException(result));
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).TrySetException(new DescribeConfigsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<DescribeConfigResult>>)adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -247,7 +247,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).SetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -257,11 +257,11 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).SetException(new AlterConfigsException(result));
+                                                ((TaskCompletionSource<List<AlterConfigResult>>)adminClientResult).TrySetException(new AlterConfigsException(result));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigResult>>) adminClientResult).SetResult(result);
+                                                ((TaskCompletionSource<List<AlterConfigResult>>) adminClientResult).TrySetResult(result);
                                             }
                                         }
                                         break;
@@ -524,18 +524,68 @@ namespace Confluent.Kafka
 #endregion
 
 #region WatermarkOffsets
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="GetWatermarkOffsets_TopicPartition"]/*' />
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition_TimeSpan"]/*' />
+        /// <summary>
+        ///     Get last known low (oldest/beginning) and high (newest/end)
+        ///     offsets for a topic/partition.
+        /// </summary>
+        /// <remarks>
+        ///     This method is only avilable on instances constructed from a Consumer
+        ///     handle. The low offset is updated periodically (if statistics.interval.ms 
+        ///     is set) while the high offset is updated on each fetched message set from
+        ///     the broker. If there is no cached offset (either low or high, or both) then
+        ///     Offset.Invalid will be returned for the respective offset.
+        /// </remarks>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
+        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
+        {
+            if (!Handle.Owner.GetType().Name.Contains("Consumer"))
+            {
+                throw new InvalidCastException(
+                    "GetWatermarkOffsets is only available on AdminClient instances constructed from a Consumer handle.");
+            }
+            return kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
+        }
+
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition (blocking).
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call may block.
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="QueryWatermarkOffsets_TopicPartition"]/*' />
+
+        /// <summary>
+        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition of interest.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     
+        /// </param>
+        /// <returns>
+        ///     The requested WatermarkOffsets.
+        /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
 #endregion
+
 
 #region Metadata
         private SafeTopicHandle getKafkaTopicHandle(string topic) 
@@ -611,13 +661,6 @@ namespace Confluent.Kafka
             {
                 ownedClient.Dispose();
             }
-        }
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog
-        {
-            add { this.handle.Owner.OnLog += value; }
-            remove { this.handle.Owner.OnLog -= value; }
         }
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />

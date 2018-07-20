@@ -108,9 +108,10 @@ namespace AvroBlogExample
                 {
                     try
                     {
-                        if (consumer.Consume(out var record, TimeSpan.FromSeconds(1)))
+                        var consumeResult = consumer.Consume(TimeSpan.FromSeconds(1));
+                        if (consumeResult.Message != null)
                         {
-                            Console.WriteLine($"{record.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{record.Value.Severity}] {record.Value.Message}");
+                            Console.WriteLine($"{consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
                         }
                     }
                     catch (ConsumeException e)

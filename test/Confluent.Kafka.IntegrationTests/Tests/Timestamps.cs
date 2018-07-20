@@ -165,14 +165,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
             {
-                ConsumerRecord<byte[], byte[]> record;
-
                 // serializing async
 
                 assertCloseToNow(consumer, drs[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
@@ -183,7 +182,8 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_1[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_1[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
@@ -194,7 +194,8 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs2[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs2[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
@@ -205,25 +206,29 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_2[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_2[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
                 assertCloseToNow(consumer, drs_2[2].TopicPartitionOffset);
+
+                consumer.Close();
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                ConsumerRecord<Null, string> record;
+                ConsumeResult<Null, string> cr;
 
                 // serializing async
 
                 assertCloseToNowTyped(consumer, drs[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
-                Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(cr.Message);
+                Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
+                Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
                 
                 assertCloseToNowTyped(consumer, drs[2].TopicPartitionOffset);
 
@@ -232,30 +237,33 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNowTyped(consumer, drs_1[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_1[1].TopicPartitionOffset});
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
-                Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(cr.Message);
+                Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
+                Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
                 assertCloseToNowTyped(consumer, drs_1[2].TopicPartitionOffset);
+
+                consumer.Close();
             }
         }
 
         private static void assertCloseToNowTyped(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
         {
-            ConsumerRecord<Null, string> msg;
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
-            Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-            Assert.Equal(TimestampType.CreateTime, msg.Message.Timestamp.Type);
-            Assert.True(Math.Abs((msg.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
+            var cr = consumer.Consume(TimeSpan.FromSeconds(10));
+            Assert.NotNull(cr.Message);
+            Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
+            Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
         }
 
         private static void assertCloseToNow(Consumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
         {
-            ConsumerRecord<byte[], byte[]> msg;
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
-            Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-            Assert.Equal(TimestampType.CreateTime, msg.Message.Timestamp.Type);
-            Assert.True(Math.Abs((msg.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
+            var cr = consumer.Consume(TimeSpan.FromSeconds(10));
+            Assert.NotNull(cr.Message);
+            Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
+            Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
         }
 
     }

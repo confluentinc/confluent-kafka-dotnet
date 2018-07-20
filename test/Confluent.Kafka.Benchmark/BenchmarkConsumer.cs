@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Benchmark
             public void Dispose() {}
         }
 
-        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders, bool usePoll)
+        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders)
         {
             var consumerConfig = new Dictionary<string, object>
             {
@@ -57,35 +57,23 @@ namespace Confluent.Kafka.Benchmark
             {
                 for (var j=0; j<nTests; ++j)
                 {
-                    Console.WriteLine($"{consumer.Name} consuming from {topic} " + (usePoll ? "[Poll]" : "[Consume]"));
+                    Console.WriteLine($"{consumer.Name} consuming from {topic}");
 
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    consumer.Consume(out ConsumerRecord<byte[], byte[]> record, TimeSpan.FromSeconds(10));
+                    var record = consumer.Consume(TimeSpan.FromSeconds(10));
 
                     long startTime = DateTime.Now.Ticks;
 
-                    if (usePoll)
-                    {
-                        int cnt = 0;
-                        consumer.OnRecord += (_, r) => { cnt += 1; };
+                    var cnt = 0;
 
-                        while (cnt < nMessages-1)
-                        {
-                            consumer.Poll(TimeSpan.FromSeconds(1));
-                        }
-                    }
-                    else
+                    while (cnt < nMessages-1)
                     {
-                        var cnt = 0;
-
-                        while (cnt < nMessages-1)
+                        record = consumer.Consume(TimeSpan.FromSeconds(1));
+                        if (record.Message != null)
                         {
-                            if (consumer.Consume(out record, TimeSpan.FromSeconds(1)))
-                            {
-                                cnt += 1;
-                            }
+                            cnt += 1;
                         }
                     }
 
@@ -94,10 +82,12 @@ namespace Confluent.Kafka.Benchmark
                     Console.WriteLine($"Consumed {nMessages-1} messages in {duration/10000.0:F0}ms");
                     Console.WriteLine($"{(nMessages-1) / (duration/10000.0):F0}k msg/s");
                 }
+
+                consumer.Close();
             }
         }
 
         public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders, false);
+            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders);
     }
 }

@@ -285,7 +285,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableConsumer : VerifiableClient, IDisposable
     {
-        Consumer<Null, string> Handle; // Client Handle
+        Consumer<Null, string> consumer;
         VerifiableConsumerConfig Config;
 
         private Dictionary<TopicPartition, AssignedPartition> currentAssignment;
@@ -314,13 +314,13 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
-            Handle = new Consumer<Null, string>(Config.Conf, new NullDeserializer(), new StringDeserializer(Encoding.UTF8));
+            consumer = new Consumer<Null, string>(Config.Conf, new NullDeserializer(), new StringDeserializer(Encoding.UTF8));
             consumedMsgsAtLastCommit = 0;
-            Dbg($"Created Consumer {Handle.Name} with AutoCommit={Config.AutoCommit}");
+            Dbg($"Created Consumer {consumer.Name} with AutoCommit={Config.AutoCommit}");
         }
 
         /// <summary>
-        ///   Override WaitTerm to periodically send records_consumed stats to driver
+        ///     Override WaitTerm to periodically send records_consumed stats to driver
         /// </summary>
         public override void WaitTerm()
         {
@@ -333,10 +333,10 @@ namespace Confluent.Kafka.VerifiableClient
 
         public override void Dispose()
         {
-            Dbg($"Disposing of Consumer {Handle}");
-            if (Handle != null)
+            Dbg($"Disposing of Consumer {consumer}");
+            if (consumer != null)
             {
-                Handle.Dispose();
+                consumer.Dispose();
             }
         }
 
@@ -391,9 +391,11 @@ namespace Confluent.Kafka.VerifiableClient
         }
 
         /// <summary>
-        /// Send result of offset commit to test-driver
+        ///     Send result of offset commit to test-driver
         /// </summary>
-        /// <param name="offsets">Committed offsets</param>
+        /// <param name="offsets">
+        ///     Committed offsets
+        /// </param>
         private void SendOffsetsCommitted(CommittedOffsets offsets)
         {
             Dbg($"OffsetCommit {offsets.Error}: {string.Join(", ", offsets.Offsets)}");
@@ -438,7 +440,7 @@ namespace Confluent.Kafka.VerifiableClient
         }
 
         /// <summary>
-        /// Commit offsets every commitEvery messages or when immediate is true.
+        ///     Commit offsets every commitEvery messages or when immediate is true.
         /// </summary>
         /// <param name="immediate"></param>
         private void Commit(bool immediate)
@@ -466,15 +468,31 @@ namespace Confluent.Kafka.VerifiableClient
 
             consumedMsgsAtLastCommit = consumedMsgs;
 
-            SendOffsetsCommitted(Handle.Commit());
+            var error = new Error(ErrorCode.NoError);
+            List<TopicPartitionOffsetError> results;
+            try
+            {
+                results = consumer.CommitAsync().Result;
+            }
+            catch (KafkaException ex)
+            {
+                results = null;
+                error = ex.Error;
+            }
+            catch (TopicPartitionOffsetException ex)
+            {
+                results = ex.Results;
+            }
+
+            SendOffsetsCommitted(new CommittedOffsets(results, error));
         }
 
 
         /// <summary>
-        /// Handle consumed message (or consumer error)
+        ///     Handle consumed message (or consumer error)
         /// </summary>
         /// <param name="record"></param>
-        private void HandleMessage(ConsumerRecord<Null, string> record)
+        private void HandleMessage(ConsumeResult<Null, string> record)
         {
             AssignedPartition ap;
 
@@ -522,7 +540,7 @@ namespace Confluent.Kafka.VerifiableClient
 
 
         /// <summary>
-        /// Send partition list to test-driver
+        ///     Send partition list to test-driver
         /// </summary>
         /// <param name="name"></param>
         /// <param name="partitions"></param>
@@ -544,7 +562,7 @@ namespace Confluent.Kafka.VerifiableClient
 
 
         /// <summary>
-        /// Handle new partition assignment
+        ///     Handle new partition assignment
         /// </summary>
         /// <param name="partitions"></param>
         private void HandleAssign(IEnumerable<TopicPartition> partitions)
@@ -562,13 +580,13 @@ namespace Confluent.Kafka.VerifiableClient
                 currentAssignment[p] = new AssignedPartition();
             }
 
-            Handle.Assign(partitions);
+            consumer.Assign(partitions);
 
             SendPartitions("partitions_assigned", partitions);
         }
 
         /// <summary>
-        /// Handle partition revocal
+        ///     Handle partition revocal
         /// </summary>
         private void HandleRevoke(IEnumerable<TopicPartition> partitions)
         {
@@ -583,7 +601,7 @@ namespace Confluent.Kafka.VerifiableClient
 
             currentAssignment = null;
 
-            Handle.Unassign();
+            consumer.Unassign();
 
             SendPartitions("partitions_revoked", partitions);
         }
@@ -593,23 +611,20 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Send("startup_complete", new Dictionary<string, object>());
 
-            Handle.OnRecord += (_, record)
-                => HandleMessage(record);
-
-            Handle.OnError += (_, error)
+            consumer.OnError += (_, error)
                 => Dbg($"Error: {error}");
 
-            Handle.OnPartitionsAssigned += (_, partitions)
+            consumer.OnPartitionsAssigned += (_, partitions)
                 => HandleAssign(partitions);
 
-            Handle.OnPartitionsRevoked += (_, partitions)
+            consumer.OnPartitionsRevoked += (_, partitions)
                 => HandleRevoke(partitions);
 
             // Only used when auto-commits enabled
-            Handle.OnOffsetsCommitted += (_, offsets)
+            consumer.OnOffsetsCommitted += (_, offsets)
                 => SendOffsetsCommitted(offsets);
 
-            Handle.Subscribe(Config.Topic);
+            consumer.Subscribe(Config.Topic);
 
             var cts = new CancellationTokenSource();
             var ct = cts.Token;
@@ -617,7 +632,8 @@ namespace Confluent.Kafka.VerifiableClient
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    Handle.Poll(100);
+                    var cr = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    HandleMessage(cr);
                 }
             }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
@@ -629,8 +645,9 @@ namespace Confluent.Kafka.VerifiableClient
 
             // Explicitly handle dispose to catch hang-on-dispose errors
             Dbg("Closing Consumer");
-            Handle.Dispose();
-            Handle = null;
+            consumer.Close();
+            consumer.Dispose();
+            consumer = null;
 
             Send("shutdown_complete", new Dictionary<string, object>());
         }

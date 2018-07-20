@@ -97,11 +97,11 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 { "schema.registry.url", schemaRegistryServers }
             };
 
-            using (var c = new Consumer<Null, GenericRecord>(cconfig, null, new AvroDeserializer<GenericRecord>()))
+            using (var consumer = new Consumer<Null, GenericRecord>(cconfig, null, new AvroDeserializer<GenericRecord>()))
             {
                 // consume generic record produced as a generic record.
-                c.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                c.Consume(out ConsumerRecord<Null, GenericRecord> record, 20000);
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
+                var record = consumer.Consume(TimeSpan.FromMilliseconds(20000));
                 record.Message.Value.TryGetValue("name", out object msgName);
                 record.Message.Value.TryGetValue("favorite_number", out object msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out object msgColor);
@@ -114,7 +114,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Null(msgColor);
 
                 // consume generic record produced as a specific record.
-                c.Consume(out record, 20000);
+                record = consumer.Consume(TimeSpan.FromMilliseconds(20000));
                 record.Message.Value.TryGetValue("name", out msgName);
                 record.Message.Value.TryGetValue("favorite_number", out msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out msgColor);
@@ -126,15 +126,19 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("my name 3", msgName);
                 Assert.Equal(47, msgNumber);
                 Assert.Equal("orange", msgColor);
+
+                consumer.Close();
             }
 
-            using (var c = new Consumer<Null, User>(cconfig, null, new AvroDeserializer<User>()))
+            using (var consumer = new Consumer<Null, User>(cconfig, null, new AvroDeserializer<User>()))
             {
-                c.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                c.Consume(out ConsumerRecord<Null, User> record, 20000);
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
+                var record = consumer.Consume(TimeSpan.FromMilliseconds(20000));
                 Assert.Equal("my name 2", record.Message.Value.name);
                 Assert.Equal(44, record.Message.Value.favorite_number);
                 Assert.Null(record.Message.Value.favorite_color);
+
+                consumer.Close();
             }
         }
 

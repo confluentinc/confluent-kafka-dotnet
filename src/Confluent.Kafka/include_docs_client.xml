@@ -1,76 +1,5 @@
 <API> 
 
-<Member name="Name">
-    <summary>
-        Gets the name of this client instance.
-        Contains (but is not equal to) the client.id configuration parameter.
-    </summary>
-    <remarks>
-        This name will be unique across all client instances
-        in a given application which allows log messages to be
-        associated with the corresponding instance.
-    </remarks>
-</Member>
-
-<Member name="OnLog">
-    <summary>
-        Raised when there is information that should be logged.
-    </summary>
-    <remarks>
-        By default not many log messages are generated.
-     
-        For more verbose logging, specify one or more debug contexts 
-        using the 'debug' configuration property. The 'log_level'
-        configuration property is also relevant, however logging is
-        verbose by default given a debug context has been specified,
-        so you typically shouldn't adjust this value.
-    
-        Warning: Log handlers are called spontaneously from internal 
-        librdkafka threads and the application must not call any 
-        Confluent.Kafka APIs from within a log handler or perform any
-        prolonged operations.
-    </remarks>
-</Member>
-
-<Member name="OnStatistics">
-    <summary>
-        Raised on librdkafka statistics events. JSON formatted
-        string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
-    </summary>
-    <remarks>
-        You can enable statistics and set the statistics interval
-        using the statistics.interval.ms configuration parameter
-        (disabled by default).
-    
-        Called as a side effect of calls to `Poll` (producer/consumer) or 
-        `Consume` (consumer), on the same thread.
-    </remarks>
-</Member>
-
-<Member name="AddBrokers_string">
-    <summary>
-        Adds one or more brokers to the Client's list of initial
-        bootstrap brokers. 
-    
-        Note: Additional brokers are discovered automatically as 
-        soon as the Client connects to any broker by querying the 
-        broker metadata. Calling this method is only required in 
-        some scenarios where the address of all brokers in the 
-        cluster changes.
-    </summary>
-    <param name="brokers">
-        Comma-separated list of brokers in the same format as 
-        the bootstrap.server configuration parameter.
-    </param>
-    <remarks>
-        There is currently no API to remove existing configured, 
-        added or learnt brokers.
-    </remarks>
-    <returns>
-        The number of brokers added. This value includes brokers
-        that may have been specified a second time.
-    </returns>
-</Member>
 
 <Member name="GetMetadata_bool_string_TimeSpan">
     <summary>
@@ -127,21 +56,7 @@
 </Member>
 
 <Member name="QueryWatermarkOffsets_TopicPartition_TimeSpan">
-    <summary>
-        Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
-        offsets for the specified topic/partition (blocking).
-    
-        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
-    </summary>
-    <param name="topicPartition">
-        The topic/partition of interest.
-    </param>
-    <param name="timeout">
-        The maximum period of time the call may block.
-    </param>
-    <returns>
-        The requested WatermarkOffsets.
-    </returns>
+
 </Member>
 
 <Member name="QueryWatermarkOffsets_TopicPartition">

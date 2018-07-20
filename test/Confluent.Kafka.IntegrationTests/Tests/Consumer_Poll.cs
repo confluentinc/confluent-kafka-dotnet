@@ -49,17 +49,6 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 bool done = false;
 
-                consumer.OnRecord += (_, record) =>
-                {
-                    Assert.Equal(ErrorCode.NoError, record.Error.Code);
-                    Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                    Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                    msgCnt += 1;
-                };
-
-                consumer.OnPartitionEOF += (_, partition)
-                    => done = true;
-
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
@@ -74,10 +63,23 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (!done)
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (record.Message != null)
+                    {
+                        Assert.Equal(ErrorCode.NoError, record.Error.Code);
+                        Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
+                        Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                        msgCnt += 1;
+                    }
+                    if (record.IsPartitionEOF)
+                    {
+                        done = true;
+                    }
                 }
 
                 Assert.Equal(N, msgCnt);
+
+                consumer.Close();
             }
         }
 

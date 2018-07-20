@@ -71,8 +71,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(consumer.Handle))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
-                ConsumerRecord<byte[], byte[]> record;
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
 
                 var getOffsets = adminClient.GetWatermarkOffsets(dr.TopicPartition);
                 Assert.Equal(getOffsets.Low, Offset.Invalid);
@@ -82,6 +82,8 @@ namespace Confluent.Kafka.IntegrationTests
                 var queryOffsets = adminClient.QueryWatermarkOffsets(dr.TopicPartition);
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
+
+                consumer.Close();
             }
         }
 

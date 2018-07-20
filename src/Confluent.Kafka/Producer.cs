@@ -103,7 +103,7 @@ namespace Confluent.Kafka
         ///     Creates a new Producer instance
         /// </summary>
         /// <param name="handle">
-        ///     A librdkafka handle to use for Kafka cluster communications.
+        ///     A librdkafka handle to use for Kafka cluster communication.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -127,48 +127,137 @@ namespace Confluent.Kafka
             setAndValidateSerializers(keySerializer, valueSerializer);
         }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
+
+        /// <summary>
+        ///     Gets the name of this client instance.
+        ///     Contains (but is not equal to) the client.id configuration parameter.
+        /// </summary>
+        /// <remarks>
+        ///     This name will be unique across all client instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding instance.
+        /// </remarks>
         public string Name
             => this.handle.Owner.Name;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog
-        {
-            add { this.handle.Owner.OnLog += value; }
-            remove { this.handle.Owner.OnLog -= value; }
-        }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
+        /// <summary>
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
+        /// </summary>
+        /// <remarks>
+        ///     You can enable statistics and set the statistics interval
+        ///     using the statistics.interval.ms configuration parameter
+        ///     (disabled by default).
+        /// </remarks>
         public event EventHandler<string> OnStatistics
         {
             add { this.handle.Owner.OnStatistics += value; }
             remove { this.handle.Owner.OnStatistics -= value; }
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
+
+        /// <summary>
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic
+        /// </summary>
+        /// <remarks>
+        ///     Called on the Producer poll thread.
+        /// </remarks>
         public event EventHandler<Error> OnError
         {
             add { this.handle.Owner.OnError += value; }
             remove { this.handle.Owner.OnError -= value; }
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
-        public int Flush(int millisecondsTimeout)
+
+        internal int Flush(int millisecondsTimeout)
             => ((Producer)this.handle.Owner).Flush(millisecondsTimeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
+
+        /// <summary>
+        ///     Wait until all outstanding produce requests and delievery report
+        ///     callbacks are completed.
+        ///    
+        ///     [API-SUBJECT-TO-CHANGE] - the semantics and/or type of the return value is
+        ///     subject to change.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block. You should typically use a
+        ///     relatively short timout period because this operation cannot be
+        ///     cancelled.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. This should be interpreted
+        ///     as a rough indication of the number of messages waiting to be sent
+        ///     to or acknowledged by the broker. If zero, there are no outstanding
+        ///     messages or callbacks. Specifically, the value is equal to the sum
+        ///     of the number of produced messages for which a delivery report has
+        ///     not yet been handled and a number which is less than or equal to the
+        ///     number of pending delivery report callback events (as determined by
+        ///     an internal librdkafka implementation detail).
+        /// </returns>
+        /// <remarks>
+        ///     This method should typically be called prior to destroying a producer
+        ///     instance to make sure all queued and in-flight produce requests are
+        ///     completed before terminating. The wait time is bounded by the
+        ///     millisecondsTimeout parameter.
+        ///    
+        ///     A related configuration parameter is message.timeout.ms which determines
+        ///     the maximum length of time librdkafka attempts to deliver a message 
+        ///     before giving up and so also affects the maximum time a call to Flush 
+        ///     may block.
+        /// </remarks>
         public int Flush(TimeSpan timeout)
             => ((Producer)this.handle.Owner).Flush(timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
-        public int Poll(int millisecondsTimeout)
+        public int Flush(CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                int result = Flush(100);
+                if (result == 0)
+                {
+                    return 0;
+                }
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    // TODO: include flush number in exception.
+                    throw new OperationCanceledException();
+                }
+            }
+        }
+
+
+        internal int Poll(int millisecondsTimeout)
             => ((Producer)this.handle.Owner).Poll(millisecondsTimeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
+
+        /// <summary>
+        ///     Poll for callback events. You will not typically need
+        ///     to call this method. Only call on producer instances 
+        ///     where background polling is not enabled.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time to block if no callback events
+        ///     are waiting. You should typically use a relatively short 
+        ///     timout period because this operation cannot be cancelled.
+        /// </param>
+        /// <returns>
+        ///     Returns the number of events served.
+        /// </returns>
         public int Poll(TimeSpan timeout)
             => ((Producer)this.handle.Owner).Poll(timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
+        /// <summary>
+        ///     Releases all resources used by this Producer.
+        /// </summary>
+        /// <remarks>
+        ///     You will often want to call <see cref="Flush(int)" />
+        ///     before disposing a Producer instance.
+        /// </remarks>
         public void Dispose()
         {
             if (keySerializer != null)
@@ -187,9 +276,32 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+
+        /// <summary>
+        ///     Adds one or more brokers to the Client's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as
+        ///     soon as the Client connects to any broker by querying the
+        ///     broker metadata. Calling this method is only required in
+        ///     some scenarios where the address of all brokers in the
+        ///     cluster changes.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Comma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
+        /// </param>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
         public int AddBrokers(string brokers)
             => this.handle.Owner.AddBrokers(brokers);
+
 
         /// <summary>
         ///     An opaque reference to the underlying librdkafka client instance.
@@ -221,9 +333,9 @@ namespace Confluent.Kafka
                 if (deliveryReport == null)
                 {
 #if NET45
-                    System.Threading.Tasks.Task.Run(() => SetResult(null));
+                    System.Threading.Tasks.Task.Run(() => TrySetResult(null));
 #else
-                    SetResult(null);
+                    TrySetResult(null);
 #endif
                     return;
                 }
@@ -250,16 +362,16 @@ namespace Confluent.Kafka
                 }
                 else
                 {
-                    System.Threading.Tasks.Task.Run(() => SetResult(dr));
+                    System.Threading.Tasks.Task.Run(() => TrySetResult(dr));
                 }
 #else
                 if (dr.Error.IsError)
                 {
-                    SetException(new ProduceMessageException<TKey, TValue>(dr.Error, dr));
+                    TrySetException(new ProduceMessageException<TKey, TValue>(dr.Error, dr));
                 }
                 else
                 {
-                    SetResult(dr);
+                    TrySetResult(dr);
                 }
 #endif
             }
@@ -318,11 +430,13 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message)
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message, CancellationToken cancellationToken = default(CancellationToken))
         {
             var handler = new TypedTaskDeliveryHandlerShim(topic,
                 producer.enableDeliveryReportKey ? message.Key : default(TKey),
                 producer.enableDeliveryReportValue ? message.Value : default(TValue));
+
+            cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
             var keyBytes = keySerializer?.Serialize(topic, message.Key);
             var valBytes = valueSerializer?.Serialize(topic, message.Value);
@@ -339,11 +453,13 @@ namespace Confluent.Kafka
 
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
         /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message)
+        public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message, CancellationToken cancellationToken = default(CancellationToken))
         {
             var handler = new TypedTaskDeliveryHandlerShim(topicPartition.Topic,
                 producer.enableDeliveryReportKey ? message.Key : default(TKey),
                 producer.enableDeliveryReportValue ? message.Value : default(TValue));
+
+            cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
             var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
             var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
@@ -408,81 +524,6 @@ namespace Confluent.Kafka
     /// </summary>
     internal class Producer : IClient
     {
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     block if the send queue is full when producing messages. If false, a 
-        ///     KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) will be 
-        ///     thrown if an attempt is made to produce a message and the send queue
-        ///     is full.
-        ///
-        ///     Warning: if this configuration property is set to true, the
-        ///     dotnet.producer.manual.poll configuration property is set to true, 
-        ///     and Poll is not being called in another thread, this method will 
-        ///     block indefinitely in the event it is called when the send queue
-        ///     is full.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string BlockIfQueueFullPropertyName = "dotnet.producer.block.if.queue.full";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not 
-        ///     the producer should start a background poll thread to receive 
-        ///     delivery reports and event notifications. Generally, this should be
-        ///     set to true. If set to false, you will need to call the Poll function
-        ///     manually.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableBackgroundPollPropertyName = "dotnet.producer.enable.background.poll";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to enable 
-        ///     notification of delivery reports. Typically you should set this 
-        ///     parameter to true. Set it to false for "fire and forget" semantics
-        ///     and a small boost in performance.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportsPropertyName = "dotnet.producer.enable.delivery.reports";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make
-        ///     message headers available in delivery reports. Note that 
-        ///     disabling header marshaling will improve maximum throughput even 
-        ///     for the case where messages do not have any headers.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportHeadersName = "dotnet.producer.enable.delivery.report.headers";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make
-        ///     message keys available in delivery reports. Disabling this will 
-        ///     improve maximum throughput and reduce memory usage.
-        ///
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportKeyName = "dotnet.producer.enable.delivery.report.keys";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make 
-        ///     message values available in delivery reports. Disabling this will
-        ///     improve maximum throughput and reduce memory usage.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportValueName = "dotnet.producer.enable.delivery.report.values";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make
-        ///     message timestamps available in delivery reports.null Disabling this
-        ///     will improve maximum throughput.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportTimestampName = "dotnet.producer.enable.delivery.report.timestamps";
-
         private readonly bool manualPoll = false;
         private readonly bool enableDeliveryReports = true;
         internal readonly bool blockIfQueueFullPropertyValue = true;
@@ -524,19 +565,20 @@ namespace Confluent.Kafka
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private readonly Librdkafka.LogDelegate logDelegate;
+        Action<LogMessage> logDelegate;
+        private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
-            if (OnLog == null)
+            if (logDelegate == null)
             {
                 // Log to stderr by default if no logger is specified.
                 Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
                 return;
             }
 
-            OnLog.Invoke(this, new LogMessage(name, level, fac, buf));
+            logDelegate(new LogMessage(name, level, fac, buf));
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -688,13 +730,14 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != BlockIfQueueFullPropertyName &&
-                    prop.Key != EnableBackgroundPollPropertyName &&
-                    prop.Key != EnableDeliveryReportsPropertyName &&
-                    prop.Key != EnableDeliveryReportHeadersName &&
-                    prop.Key != EnableDeliveryReportKeyName &&
-                    prop.Key != EnableDeliveryReportValueName &&
-                    prop.Key != EnableDeliveryReportTimestampName);
+                    prop.Key != ConfigPropertyNames.BlockIfQueueFullPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableBackgroundPollPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableDeliveryReportsPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableDeliveryReportHeadersName &&
+                    prop.Key != ConfigPropertyNames.EnableDeliveryReportKeyName &&
+                    prop.Key != ConfigPropertyNames.EnableDeliveryReportValueName &&
+                    prop.Key != ConfigPropertyNames.EnableDeliveryReportTimestampName &&
+                    prop.Key != ConfigPropertyNames.LogDelegateName);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -705,46 +748,52 @@ namespace Confluent.Kafka
                 throw new ArgumentException("The 'delivery.report.only.error' property is not supported by this client");
             }
 
-            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == EnableBackgroundPollPropertyName).Value;
+            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableBackgroundPollPropertyName).Value;
             if (enableBackgroundPollObj != null)
             {
                 this.manualPoll = !bool.Parse(enableBackgroundPollObj.ToString());
             }
 
-            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportsPropertyName).Value;
+            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportsPropertyName).Value;
             if (enableDeliveryReportsObj != null)
             {
                 this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
             }
 
-            var blockIfQueueFullObj = config.FirstOrDefault(prop => prop.Key == BlockIfQueueFullPropertyName).Value;
+            var blockIfQueueFullObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.BlockIfQueueFullPropertyName).Value;
             if (blockIfQueueFullObj != null)
             {
                 this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullObj.ToString());
             }
 
-            var enableDeliveryReportHeadersObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportHeadersName).Value;
+            var enableDeliveryReportHeadersObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportHeadersName).Value;
             if (enableDeliveryReportHeadersObj != null)
             {
                 this.enableDeliveryReportHeaders = bool.Parse(enableDeliveryReportHeadersObj.ToString());
             }
 
-            var enableDeliveryReportKeyObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportKeyName).Value;
+            var enableDeliveryReportKeyObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportKeyName).Value;
             if (enableDeliveryReportKeyObj != null)
             {
                 this.enableDeliveryReportKey = bool.Parse(enableDeliveryReportKeyObj.ToString());
             }
 
-            var enableDeliveryReportValueObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportValueName).Value;
+            var enableDeliveryReportValueObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportValueName).Value;
             if (enableDeliveryReportValueObj != null)
             {
                 this.enableDeliveryReportValue = bool.Parse(enableDeliveryReportValueObj.ToString());
             }
 
-            var enableDeliveryReportTimestampObj = config.FirstOrDefault(prop => prop.Key == EnableDeliveryReportTimestampName).Value;
+            var enableDeliveryReportTimestampObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportTimestampName).Value;
             if (enableDeliveryReportTimestampObj != null)
             {
                 this.enableDeliveryReportTimestamp = bool.Parse(enableDeliveryReportTimestampObj.ToString());
+            }
+
+            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogDelegateName).Value;
+            if (logDelegateObj != null)
+            {
+                this.logDelegate = (Action<LogMessage>)logDelegateObj;
             }
 
             // Note: changing the default value of produce.offset.report at the binding level is less than
@@ -772,13 +821,13 @@ namespace Confluent.Kafka
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             errorDelegate = ErrorCallback;
-            logDelegate = LogCallback;
+            logCallbackDelegate = LogCallback;
             statsDelegate = StatsCallback;
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
             Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logDelegate);
+            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
@@ -791,42 +840,67 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_int"]/*' />
-        public int Poll(int millisecondsTimeout)
+        internal int Poll(int millisecondsTimeout)
         {
             if (!manualPoll)
             {
-                throw new InvalidOperationException("Poll method called when manualPoll not enabled.");
+                throw new InvalidOperationException("Poll method called, but manual polling is not enabled.");
             }
+
             return this.kafkaHandle.Poll((IntPtr)millisecondsTimeout);
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
         public int Poll(TimeSpan timeout)
             => Poll(timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
         public event EventHandler<Error> OnError;
 
         /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         public event EventHandler<string> OnStatistics;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog;
-
         /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
             => kafkaHandle.Name;
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
-        public int Flush(int millisecondsTimeout)
+        internal int Flush(int millisecondsTimeout)
             => kafkaHandle.Flush(millisecondsTimeout);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
+
+        /// <summary>
+        ///     Wait until all outstanding produce requests and delievery 
+        ///     report callbacks are completed.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block. You should typically
+        ///     use a relatively short timout period because this operation
+        ///     cannot be cancelled.
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. This should be
+        ///     interpreted as a rough indication of the number of messages
+        ///     waiting to be sent to or acknowledged by the broker. If zero,
+        ///     there are no outstanding messages or callbacks. Specifically,
+        ///     the value is equal to the sum of the number of produced messages
+        ///     for which a delivery report has not yet been handled and a
+        ///     number which is less than or equal to the number of pending
+        ///     delivery report callback events (as determined by an internal
+        ///     librdkafka implementation detail).
+        /// </returns>
+        /// <remarks>
+        ///     This method should typically be called prior to destroying a
+        ///     producer instance to make sure all queued and in-flight produce
+        ///     requests are completed before terminating. The wait time is
+        ///     bounded by the millisecondsTimeout parameter.
+        ///
+        ///     A related configuration parameter is message.timeout.ms which
+        ///     determines the maximum length of time librdkafka attempts to
+        ///     deliver a message before giving up and so also affects the
+        ///     maximum time a call to Flush may block.
+        /// </remarks>
         public int Flush(TimeSpan timeout)
             => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Dispose"]/*' />
+
         public void Dispose()
         {
             // TODO: If this method is called in a finalizer, can callbackTask potentially be null?
@@ -854,9 +928,10 @@ namespace Confluent.Kafka
             kafkaHandle.Dispose();
         }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />  
+
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
+
 
         /// <summary>
         ///     An opaque reference to the underlying librdkafka client instance.

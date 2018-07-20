@@ -57,9 +57,9 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
             var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer());
-            consumer.Poll(TimeSpan.FromMilliseconds(10));
+            consumer.Consume(TimeSpan.FromMilliseconds(10));
             consumer.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => consumer.Poll(TimeSpan.FromMilliseconds(10)));
+            Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
         }
 
         /// <summary>
@@ -92,9 +92,9 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
             var consumer = new Consumer<Null, Null>(consumerConfig, null, null);
-            consumer.Poll(TimeSpan.FromMilliseconds(10));
+            consumer.Consume(TimeSpan.FromMilliseconds(10));
             consumer.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => consumer.Poll(TimeSpan.FromMilliseconds(10)));
+            Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
         }
     }
 }

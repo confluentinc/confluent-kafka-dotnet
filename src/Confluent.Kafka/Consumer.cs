@@ -17,12 +17,14 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
-using System.Runtime.InteropServices;
 
 
 namespace Confluent.Kafka
@@ -33,34 +35,12 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of headers when consuming messages. Note that 
-        ///     disabling header marshaling will measurably improve maximum throughput 
-        ///     even for the case where messages do not have any headers.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableHeadersPropertyName = "dotnet.consumer.enable.headers";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of timestamps when consuming messages. Disabling this
-        ///     will improve maximum throughput.
-        /// </summary>
-        public const string EnableTimestampPropertyName = "dotnet.consumer.enable.timestamps";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of topic names when consuming messages. Disabling
-        ///     this will improve maximum throughput.
-        /// </summary>
-        public const string EnableTopicNamesPropertyName = "dotnet.consumer.enable.topic.names";
-
-
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
         private readonly bool enableTopicNamesMarshaling = true;
+
+        private IDeserializer<TKey> KeyDeserializer { get; }
+        private IDeserializer<TValue> ValueDeserializer { get; }
 
         private readonly SafeKafkaHandle kafkaHandle;
 
@@ -79,19 +59,20 @@ namespace Confluent.Kafka
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
-        private readonly Librdkafka.LogDelegate logDelegate;
+        private Action<LogMessage> logDelegate;
+        private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
-            if (OnLog == null)
+            if (logDelegate == null)
             {
                 // A stderr logger is used by default if none is specified.
                 Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
                 return;
             }
 
-            OnLog?.Invoke(this, new LogMessage(name, level, fac, buf));
+            logDelegate(new LogMessage(name, level, fac, buf));
         }
 
         private readonly Librdkafka.RebalanceDelegate rebalanceDelegate;
@@ -141,12 +122,6 @@ namespace Confluent.Kafka
             ));
         }
 
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="KeyDeserializer"]/*' />
-        public IDeserializer<TKey> KeyDeserializer { get; }
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="ValueDeserializer"]/*' />
-        public IDeserializer<TValue> ValueDeserializer { get; }
 
         /// <summary>
         ///     Creates a new Consumer instance.
@@ -225,26 +200,33 @@ namespace Confluent.Kafka
 
             var modifiedConfig = configWithoutDeserializerProperties
                 .Where(prop => 
-                    prop.Key != EnableHeadersPropertyName &&
-                    prop.Key != EnableTimestampPropertyName &&
-                    prop.Key != EnableTopicNamesPropertyName);
+                    prop.Key != ConfigPropertyNames.EnableHeadersPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableTimestampPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableTopicNamesPropertyName &&
+                    prop.Key != ConfigPropertyNames.LogDelegateName);
 
-            var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableHeadersPropertyName).Value;
+            var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableHeadersPropertyName).Value;
             if (enableHeaderMarshalingObj != null)
             {
                 this.enableHeaderMarshaling = bool.Parse(enableHeaderMarshalingObj.ToString());
             }
 
-            var enableTimestampMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableTimestampPropertyName).Value;
+            var enableTimestampMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableTimestampPropertyName).Value;
             if (enableTimestampMarshalingObj != null)
             {
                 this.enableTimestampMarshaling = bool.Parse(enableTimestampMarshalingObj.ToString());
             }
 
-            var enableTopicNamesMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableTopicNamesPropertyName).Value;
+            var enableTopicNamesMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableTopicNamesPropertyName).Value;
             if (enableTopicNamesMarshalingObj != null)
             {
                 this.enableTopicNamesMarshaling = bool.Parse(enableTopicNamesMarshalingObj.ToString());
+            }
+
+            var logDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogDelegateName).Value;
+            if (logDelegateObj != null)
+            {
+                this.logDelegate = (Action<LogMessage>)logDelegateObj;
             }
 
             var configHandle = SafeConfigHandle.Create();
@@ -259,7 +241,7 @@ namespace Confluent.Kafka
             rebalanceDelegate = RebalanceCallback;
             commitDelegate = CommitCallback;
             errorDelegate = ErrorCallback;
-            logDelegate = LogCallback;
+            logCallbackDelegate = LogCallback;
             statsDelegate = StatsCallback;
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
@@ -268,7 +250,7 @@ namespace Confluent.Kafka
             Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
 
             Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logDelegate);
+            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr);
@@ -304,15 +286,32 @@ namespace Confluent.Kafka
             return valAsByteArray;
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_int"]/*' />
-        public bool Consume(out ConsumerRecord<TKey, TValue> record, int millisecondsTimeout)
+        /// <summary>
+        ///     Poll for new messages / consumer events. Blocks until a new 
+        ///     message or event is ready to be handled or the timeout period
+        ///     has elapsed.
+        /// </summary>
+        /// <returns>
+        ///     A consumed record, or null if no messages are 
+        ///     available for consumption.
+        ///     true: a message (with non-error state) was consumed.
+        ///     false: no message was available for consumption.
+        /// </returns>
+        /// <remarks>
+        ///     Will invoke events for OnPartitionsAssigned/Revoked,
+        ///     OnOffsetsCommitted, OnConsumeError etc. on the calling 
+        ///     thread.
+        /// </remarks>
+        internal ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll(enableTimestampMarshaling, enableHeaderMarshaling, (IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
-                record = null;
-                return false;
+                return new ConsumeResult<TKey, TValue>
+                {
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(null, Partition.Any, Offset.Invalid, new Error(ErrorCode.Local_TimedOut)),
+                    Message = null
+                };
             }
 
             try
@@ -330,9 +329,10 @@ namespace Confluent.Kafka
 
                 if (msg.err == ErrorCode.Local_PartitionEOF)
                 {
-                    record = null;
-                    OnPartitionEOF?.Invoke(this, new TopicPartitionOffset(topic, msg.partition, msg.offset));
-                    return false;
+                    return new ConsumeResult<TKey, TValue>
+                    {
+                        TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(msg.err))
+                    };
                 }
 
                 long timestampUnix = 0;
@@ -368,7 +368,7 @@ namespace Confluent.Kafka
                 if (msg.err != ErrorCode.NoError)
                 {
                     throw new ConsumeException(
-                        new ConsumerRecord<byte[], byte[]>
+                        new ConsumeResult<byte[], byte[]>
                         {
                             TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(msg.err)),
                             Message = new Message<byte[], byte[]>
@@ -397,7 +397,7 @@ namespace Confluent.Kafka
                 catch (Exception ex)
                 {
                     throw new ConsumeException(
-                        new ConsumerRecord<byte[], byte[]>
+                        new ConsumeResult<byte[], byte[]>
                         {
                             TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.Local_KeyDeserialization, ex.ToString())),
                             Message = new Message<byte[], byte[]>
@@ -425,7 +425,7 @@ namespace Confluent.Kafka
                 catch (Exception ex)
                 {
                     throw new ConsumeException(
-                        new ConsumerRecord<byte[], byte[]>
+                        new ConsumeResult<byte[], byte[]>
                         {
                             TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.Local_ValueDeserialization, ex.ToString())),
                             Message = new Message<byte[], byte[]>
@@ -439,7 +439,7 @@ namespace Confluent.Kafka
                     );
                 }
 
-                record = new ConsumerRecord<TKey, TValue> 
+                return new ConsumeResult<TKey, TValue> 
                 { 
                     TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.NoError)),
                     Message = new Message<TKey, TValue>
@@ -450,8 +450,6 @@ namespace Confluent.Kafka
                         Value = val
                     }
                 };
-
-                return true;
             }
             finally
             {
@@ -459,174 +457,477 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord"]/*' />
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Consume_ConsumerRecord_TimeSpan"]/*' />
-        public bool Consume(out ConsumerRecord<TKey, TValue> record, TimeSpan timeout)
-            => Consume(out record, timeout.TotalMillisecondsAsInt());
+
+        public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
+            => Consume(timeout.TotalMillisecondsAsInt());
 
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_int"]/*' />
-        public void Poll(int millisecondsTimeout)
+        public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (Consume(out var record, millisecondsTimeout))
+            while (true)
             {
-                OnRecord?.Invoke(this, record);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var result = Consume(100);
+
+                switch(result.Error.Code)
+                {
+                    case ErrorCode.Local_TimedOut:
+                        continue;
+                    default:
+                        return result;
+                }
             }
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Poll_TimeSpan"]/*' />
-        public void Poll(TimeSpan timeout)
-        {
-            if (Consume(out var record, timeout))
-            {
-                OnRecord?.Invoke(this, record);
-            }
-        }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsAssigned"]/*' />
+        public Task<ConsumeResult<TKey, TValue>> ConsumeAsync(TimeSpan timeout)
+            => Task.Run(() => Consume(timeout));
+
+
+        public Task<ConsumeResult<TKey, TValue>> ConsumeAsync(CancellationToken cancellationToken = default(CancellationToken))
+            => Task.Run(() => Consume(cancellationToken));
+
+
+        /// <summary>
+        ///     Raised on new partition assignment.
+        ///     You should typically call the Consumer.Assign method in this handler.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler 
+        ///     (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionsRevoked"]/*' />
+
+        /// <summary>
+        ///     Raised when a partition assignment is revoked.
+        ///     You should typically call the Consumer.Unassign method in this handler.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler 
+        ///     (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnOffsetsCommitted"]/*' />
+
+        /// <summary>
+        ///     Raised to report the result of (automatic) offset commits.
+        ///     Not raised as a result of the use of the Commit method.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler 
+        ///     (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnError"]/*' />
+
+        /// <summary>
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event 
+        ///     handler (except OnLog which may be called from an arbitrary thread).
+        /// </remarks>
         public event EventHandler<Error> OnError;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
+
+        /// <summary>
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
+        /// </summary>
+        /// <remarks>
+        ///     You can enable statistics and set the statistics interval
+        ///     using the statistics.interval.ms configuration parameter
+        ///     (disabled by default).
+        ///
+        ///     Called as a side effect of calls to `Poll` (producer/consumer) or 
+        ///     `Consume` (consumer), on the same thread.
+        /// </remarks>
         public event EventHandler<string> OnStatistics;
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        public event EventHandler<LogMessage> OnLog;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnPartitionEOF"]/*' />
-        public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
-
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OnMessage"]/*' />
-        public event EventHandler<ConsumerRecord<TKey, TValue>> OnRecord;
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assignment"]/*' />
+        /// <summary>
+        ///     Gets the current partition assignment as set by Assign.
+        /// </summary>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Subscription"]/*' />
+
+        /// <summary>
+        ///     Gets the current partition subscription as set by Subscribe.
+        /// </summary>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Subscribe_IEnumerable"]/*' />
+
+        /// <summary>
+        ///     Update the subscription set to topics.
+        ///
+        ///     Any previous subscription will be unassigned and unsubscribed first.
+        ///
+        ///     The subscription set denotes the desired topics to consume and this
+        ///     set is provided to the partition assignor (one of the elected group
+        ///     members) for all clients which then uses the configured
+        ///     partition.assignment.strategy to assign the subscription sets's
+        ///     topics's partitions to the consumers, depending on their subscription.
+        /// </summary>
         public void Subscribe(IEnumerable<string> topics)
             => kafkaHandle.Subscribe(topics);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Subscribe_string"]/*' />
+
+        /// <summary>
+        ///     Update the subscription set to a single topic.
+        ///
+        ///     Any previous subscription will be unassigned and unsubscribed first.
+        /// </summary>
         public void Subscribe(string topic)
             => Subscribe(new[] { topic });
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Unsubscribe"]/*' />
+
+        /// <summary>
+        ///     Unsubscribe from the current subscription set.
+        /// </summary>
         public void Unsubscribe()
             => kafkaHandle.Unsubscribe();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_TopicPartition"]/*' />
+
+        /// <summary>
+        ///     Update the assignment set to a single <paramref name="partition" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partition">
+        ///     The partition to consume from. Consumption will resume from the last
+        ///     committed offset, or according to the 'auto.offset.reset' configuration
+        ///     parameter if no offsets have been committed yet.
+        /// </param>
         public void Assign(TopicPartition partition)
             => this.Assign(new List<TopicPartition> { partition });
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_TopicPartitionOffset"]/*' />
+
+        /// <summary>
+        ///     Update the assignment set to a single <paramref name="partition" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partition">
+        ///     The partition to consume from. If an offset value of Offset.Invalid
+        ///     (-1001) is specified, consumption will resume from the last committed
+        ///     offset, or according to the 'auto.offset.reset' configuration parameter
+        ///     if no offsets have been committed yet.
+        /// </param>
         public void Assign(TopicPartitionOffset partition)
             => this.Assign(new List<TopicPartitionOffset> { partition });
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_IEnumerable_TopicPartitionOffset"]/*' />
+
+        /// <summary>
+        ///     Update the assignment set to <paramref name="partitions" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of partitions to consume from. If an offset value of
+        ///     Offset.Invalid (-1001) is specified for a partition, consumption
+        ///     will resume from the last committed offset on that partition, or
+        ///     according to the 'auto.offset.reset' configuration parameter if
+        ///     no offsets have been committed yet.
+        /// </param>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
             => kafkaHandle.Assign(partitions.ToList());
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Assign_IEnumerable_TopicPartition"]/*' />
+
+        /// <summary>
+        ///     Update the assignment set to <paramref name="partitions" />.
+        ///
+        ///     The assignment set is the complete set of partitions to consume
+        ///     from and will replace any previous assignment.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of partitions to consume from. Consumption will resume
+        ///     from the last committed offset on each partition, or according
+        ///     to the 'auto.offset.reset' configuration parameter if no offsets
+        ///     have been committed yet.
+        /// </param>
         public void Assign(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Unassign"]/*' />
+
+        /// <summary>
+        ///     Stop consumption and remove the current assignment.
+        /// </summary>
         public void Unassign()
             => kafkaHandle.Assign(null);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffset_ConsumerRecord"]/*' />
-        public TopicPartitionOffsetError StoreOffset(ConsumerRecord<TKey, TValue> record)
+
+        /// <summary>
+        ///     Store offsets for a single partition based on the topic/partition/offset
+        ///     of a consumer record.
+        /// 
+        ///     The offset will be committed (written) to the offset store according
+        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        /// </summary>
+        /// <remarks>
+        ///     `enable.auto.offset.store` must be set to "false" when using this API.
+        /// </remarks>
+        /// <param name="record">
+        ///     A consumer record used to determine the offset to store and topic/partition.
+        /// </param>
+        /// <returns>
+        ///     Current stored offset or a partition specific error.
+        /// </returns>
+        public TopicPartitionOffsetError StoreOffset(ConsumeResult<TKey, TValue> record)
             => StoreOffsets(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) })[0];
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="StoreOffsets"]/*' />
+
+        /// <summary>
+        ///     Store offsets for one or more partitions. 
+        /// 
+        ///     The offset will be committed (written) to the offset store according
+        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        /// </summary>
+        /// <remarks>
+        ///     `enable.auto.offset.store` must be set to "false" when using this API.
+        /// </remarks>
+        /// <param name="offsets">
+        ///     List of offsets to be commited.
+        /// </param>
+        /// <returns>
+        ///     For each topic/partition returns current stored offset
+        ///     or a partition specific error.
+        /// </returns>
         public List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.StoreOffsets(offsets);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit"]/*' />
-        public CommittedOffsets Commit()
-            => kafkaHandle.Commit();
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_ConsumerRecord"]/*' />
-        public CommittedOffsets Commit(ConsumerRecord<TKey, TValue> record)
+        /// <summary>
+        ///     Commit offsets for the current assignment.
+        /// </summary>
+        public Task<List<TopicPartitionOffsetError>> CommitAsync(CancellationToken cancellationToken = default(CancellationToken))
+            => Task.Run(() => kafkaHandle.CommitSync(null));
+
+
+        /// <summary>
+        ///     Commits an offset based on the topic/partition/offset of a message.
+        ///     The next message to be read will be that following <paramref name="record" />.
+        /// </summary>
+        /// <param name="record">
+        ///     The ConsumerRecord instance used to determine the committed offset.
+        /// </param>
+        /// <remarks>
+        ///     A consumer which has position N has consumed records with offsets 0 through N-1 
+        ///     and will next receive the record with offset N. Hence, this method commits an 
+        ///     offset of <paramref name="record" />.Offset + 1.
+        /// </remarks>
+        public Task<List<TopicPartitionOffsetError>> CommitAsync(ConsumeResult<TKey, TValue> record, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (record.Error.Code != ErrorCode.NoError)
             {
                 throw new InvalidOperationException("Attempt was made to commit offset corresponding to an errored message");
             }
-            return Commit(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) });
+
+            return CommitAsync(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) }, cancellationToken);
         }
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Commit_IEnumerable"]/*' />
-        public CommittedOffsets Commit(IEnumerable<TopicPartitionOffset> offsets)
-            => kafkaHandle.Commit(offsets);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Dispose"]/*' />
-        public void Dispose()
-        {
-            // note: consumers always own their own handles.
+        /// <summary>
+        ///     Commit an explicit list of offsets.
+        /// </summary>
+        /// <remarks>
+        ///     Note: A consumer which has position N has consumed records with offsets 0 through N-1 
+        ///     and will next receive the record with offset N.
+        /// </remarks>
+        public Task<List<TopicPartitionOffsetError>> CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken))
+            => Task.Run(() => kafkaHandle.CommitSync(offsets));
 
-            KeyDeserializer?.Dispose();
-            ValueDeserializer?.Dispose();
 
-            // note: consumers always own their handles.
-            kafkaHandle.ConsumerClose();
-            kafkaHandle.Dispose();
-        }
-
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Seek"]/*' />
+        /// <summary>
+        ///     Seek consumer for topic+partition to <parmref name="offset"/> which is either an
+        ///     absolute or logical offset. This must only be done for partitions that are 
+        ///     currently being consumed (i.e., have been Assign()ed). To set the start offset for 
+        ///     not-yet-consumed partitions you should use the 
+        ///     <see cref="Confluent.Kafka.Consumer.Assign(IEnumerable{TopicPartitionOffset})" /> 
+        ///     method instead.
+        /// </summary>
+        /// <param name="tpo">
+        ///     The topic/partition to seek on and the offset to seek to.
+        /// </param>
         public void Seek(TopicPartitionOffset tpo)
             => kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, -1);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Pause"]/*' />
+
+        /// <summary>
+        ///     Pause consumption for the provided list of partitions.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The partitions to pause consumption of.
+        /// </param>
+        /// <returns>
+        ///     Per partition success or error.
+        /// </returns>
         public List<TopicPartitionError> Pause(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Pause(partitions);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Resume"]/*' />
+
+        /// <summary>
+        ///     Resume consumption for the provided list of partitions.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The partitions to resume consumption of.
+        /// </param>
+        /// <returns>
+        ///     Per partition success or error.
+        /// </returns>
         public List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Resume(partitions);
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Committed_IEnumerable_TimeSpan"]/*' />
-        public List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
-            => kafkaHandle.Committed(partitions, (IntPtr) timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="Position_IEnumerable"]/*' />
-        public List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
-            => kafkaHandle.Position(partitions);
+        /// <summary>
+        ///     Retrieve current committed offsets for topics + partitions.
+        ///
+        ///     The offset field of each requested partition will be set to the offset
+        ///     of the last consumed message, or Offset.Invalid in case there was
+        ///     no previous message, or, alternately a partition specific error may also be
+        ///     returned.
+        ///
+        ///     throws KafkaException if there was a problem retrieving the above information.
+        /// </summary>
+        public Task<List<TopicPartitionOffsetError>> CommittedAsync(
+            IEnumerable<TopicPartition> partitions, TimeSpan timeout,
+            CancellationToken cancellationToken = default(CancellationToken)
+        )
+            => Task.Run(() => kafkaHandle.Committed(partitions, (IntPtr)timeout.TotalMillisecondsAsInt()));
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="OffsetsForTimes"]/*' />
-        public IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
-            => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
-        public int AddBrokers(string brokers)
-            => kafkaHandle.AddBrokers(brokers);
+        /// <summary>
+        ///     Gets the current positions (offsets) for the specified topics + partitions.
+        ///
+        ///     The offset field of each requested partition will be set to the offset
+        ///     of the last consumed message + 1, or Offset.Invalid in case there was
+        ///     no previous message consumed by this consumer, or, alternately a partition
+        ///     specific error may also be returned.
+        /// </summary>
+        public Task<List<TopicPartitionOffsetError>> PositionAsync(IEnumerable<TopicPartition> partitions)
+            => Task.Run(() => kafkaHandle.Position(partitions));
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
-        public string Name
-            => kafkaHandle.Name;
 
-        /// <include file='include_docs_consumer.xml' path='API/Member[@name="MemberId"]/*' />
+        /// <summary>
+        ///     Look up the offsets for the given partitions by timestamp. The returned offset for each partition is the
+        ///     earliest offset whose timestamp is greater than or equal to the given timestamp in the corresponding partition.
+        /// </summary>
+        /// <remarks>
+        ///     This is a blocking call. The consumer does not have to be assigned the partitions.
+        ///     If the message format version in a partition is before 0.10.0, i.e. the messages do not have timestamps, null
+        ///     will be returned for that partition.
+        ///     Note that this method may block for the maximum timeout period if the partition does not exist.
+        /// </remarks>
+        /// <param name="timestampsToSearch">
+        ///     The mapping from partition to the timestamp to look up.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call may block.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to cancel this operation.
+        /// </param>
+        /// <returns>
+        ///    A mapping from partition to the timestamp and offset of the first message with timestamp greater
+        ///    than or equal to the target timestamp. null will be returned for the partition if there is no such message.
+        /// </returns>
+        public Task<IEnumerable<TopicPartitionOffsetError>> OffsetsForTimesAsync(
+            IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout,
+            CancellationToken cancellationToken = default(CancellationToken)
+        )
+            => Task.Run(() => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt()));
+
+
+        /// <summary>
+        ///     Gets the (dynamic) group member id of this consumer (as set by the broker).
+        /// </summary>
         public string MemberId
             => kafkaHandle.MemberId;
 
+
+        /// <summary>
+        ///     Adds one or more brokers to the Client's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as
+        ///     soon as the Client connects to any broker by querying the
+        ///     broker metadata. Calling this method is only required in
+        ///     some scenarios where the address of all brokers in the
+        ///     cluster changes.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Comma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
+        /// </param>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
+        public int AddBrokers(string brokers)
+            => kafkaHandle.AddBrokers(brokers);
+
+
+        /// <summary>
+        ///     Gets the name of this client instance.
+        ///     Contains (but is not equal to) the client.id configuration parameter.
+        /// </summary>
+        /// <remarks>
+        ///     This name will be unique across all client instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding instance.
+        /// </remarks>
+        public string Name
+            => kafkaHandle.Name;
+
+
         /// <summary>
         ///     An opaque reference to the underlying librdkafka client instance.
+        ///     This can be used to construct an AdminClient that utilizes the same
+        ///     underlying librdkafka client as this Consumer instance.
         /// </summary>
         public Handle Handle 
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
+
+
+        /// <summary>
+        ///     Alerts the group coodinator that the consumer is exiting the group
+        ///     then releases all resources used by this Consumer. If you do not
+        ///     call Close before the consumer instance is disposed (or your application
+        ///     exits), the group rebalance will not be immediate - it will occur after
+        ///     the period of time specified by the broker config `group.max.session.timeout.ms`.
+        /// </summary>
+        public void Close()
+        {
+            kafkaHandle.ConsumerClose();
+            this.Dispose();
+        }
+
+
+        /// <summary>
+        ///     Releases all resources used by this Consumer. Does not block. Typically,
+        ///     you should call Close instead of (or in addition to) Dispose to ensure a
+        ///     speedy group rebalance. 
+        /// </summary>
+        public void Dispose()
+        {
+            // note: consumers always own their own handles.
+            KeyDeserializer?.Dispose();
+            ValueDeserializer?.Dispose();
+
+            kafkaHandle.Dispose();
+        }
     }
 }

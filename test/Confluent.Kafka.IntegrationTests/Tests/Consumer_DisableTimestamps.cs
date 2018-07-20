@@ -65,10 +65,13 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                Assert.True(consumer.Consume(out ConsumerRecord<Null, string> record, TimeSpan.FromSeconds(30)));
+                var record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
                 Assert.NotNull(record.Message.Headers);
                 Assert.Equal(TimestampType.NotAvailable, record.Timestamp.Type);
                 Assert.Equal(0, record.Timestamp.UnixTimestampMs);
+
+                consumer.Close();
             }
         }
 

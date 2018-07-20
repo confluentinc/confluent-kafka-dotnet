@@ -24,22 +24,14 @@ namespace Confluent.Kafka
     /// </summary>
     public interface IClient : IDisposable
     {
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Handle"]/*' />
         Handle Handle { get; }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Name"]/*' />
         string Name { get; }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
         int AddBrokers(string brokers);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnLog"]/*' />
-        event EventHandler<LogMessage> OnLog;
-
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
         event EventHandler<string> OnStatistics;
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
         event EventHandler<Error> OnError;
     }
 }

@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
-                ConsumerRecord<Null, string> record;
+                ConsumeResult<Null, string> record;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -59,19 +59,23 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (assignedPartitions == null)
                 {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
+                    consumer.Consume(TimeSpan.FromSeconds(1));
                 }
 
-                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(1)));
+                record = consumer.Consume(TimeSpan.FromSeconds(1));
+                Assert.Null(record.Message);
 
                 Assert.False(producer.ProduceAsync(topic, new Message<Null, string> { Value = "test store offset value" }).Result.Error.IsError);
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
                 var result = consumer.StoreOffset(record);
 
                 Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(record.Topic, result.Topic);
                 Assert.Equal(record.Partition, result.Partition);
                 Assert.Equal(record.Offset.Value+1, result.Offset.Value);
+
+                consumer.Close();
             }
         }
 

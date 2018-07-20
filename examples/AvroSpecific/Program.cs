@@ -101,9 +101,10 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     {
                         try
                         {
-                            if (consumer.Consume(out var record, 100))
+                            var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                            if (consumeResult.Message != null)
                             {
-                                Console.WriteLine($"user key name: {record.Key}, user value favorite color: {record.Value.favorite_color}");
+                                Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
                             }
                         }
                         catch (ConsumeException e)

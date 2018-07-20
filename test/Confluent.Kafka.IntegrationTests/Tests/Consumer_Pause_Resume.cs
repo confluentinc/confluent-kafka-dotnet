@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
-                ConsumerRecord<Null, string> record;
+                ConsumeResult<Null, string> record;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -59,17 +59,24 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (assignedPartitions == null)
                 {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
+                    consumer.Consume(TimeSpan.FromSeconds(1));
                 }
-                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(1)));
+                record = consumer.Consume(TimeSpan.FromSeconds(1));
+                Assert.Null(record.Message);
 
                 Assert.False(producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result.Error.IsError);
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
+
                 consumer.Pause(assignedPartitions);
                 producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value 2" }).Wait();
-                Assert.False(consumer.Consume(out record, TimeSpan.FromSeconds(2)));
+                record = consumer.Consume(TimeSpan.FromSeconds(2));
+                Assert.Null(record.Message);
                 consumer.Resume(assignedPartitions);
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(10)));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
+
+                consumer.Close();
             }
         }
 

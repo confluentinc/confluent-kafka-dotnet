@@ -42,7 +42,7 @@ namespace Confluent.Kafka.UnitTests
             
             InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new Consumer<byte[], byte[]>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer()));
             Assert.Contains("ssl.ca.location failed", e.Message);
-            // note: if this test fail, it may be because an other error is thrown
+            // note: if this test fails, it may be because another error is thrown
             // in a new librdkafka version, adpat test in this case
 
             e = Assert.Throws<InvalidOperationException>(() => new Consumer<Null, Null>(config, null, null));

@@ -91,9 +91,10 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     {
                         try
                         {
-                            if (consumer.Consume(out var record, 100))
+                            var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                            if (consumeResult.Message != null)
                             {
-                                Console.WriteLine($"Key: {record.Key}\nValue: {record.Value}");
+                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
                             }
                         }
                         catch (ConsumeException e)

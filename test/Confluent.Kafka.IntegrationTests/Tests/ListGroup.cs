@@ -49,11 +49,6 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             using (var adminClient = new AdminClient(consumer.Handle))
             {
-                bool done = false;
-
-                consumer.OnRecord += (_, record)
-                    => done = true;
-
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
@@ -63,9 +58,13 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (!done)
+                while (true)
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (record.Message != null)
+                    {
+                        break;
+                    }
                 }
 
                 var g = adminClient.ListGroup(groupId);
@@ -77,6 +76,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 g = adminClient.ListGroup("non-existent-cg");
                 Assert.Null(g);
+
+                consumer.Close();
             }
         }
 

@@ -1,0 +1,55 @@
+
+- Allow OnLog and OnError (others?) to be configured before clients are constructed.
+- Log to stdout behavior.
+- Support defining headers inline.
+- Span<T> serializers.
+- Message header serializers
+- Optimise ConfigSource == operator.
+- GetAwaiter - nonsense remove this.
+- Configure await on producer? 
+- Re-assess ConfigureResourceType name.
+- Fix AlterConfigs API
+- Per topic Consume (consider this).
+- Check synonyms collection.
+- Assign related. Argue with magnus on behavior.
+- Comment on System.Reactive (pull vs push).
+- Should AddBrokers take a list of brokers rather than a string? (probably not).
+- OffsetsForTimes - implement cancellationtoken functionality.
+  - implement for indefinite blocking in particular.
+- Document config properties (including serdes + dotnet specific).
+- Do example for AWS lambda.
+- producer poll method returns the number of events served. should it?
+
+
+# Changes
+
+## New Features
+- There is now an AdminClient (provides `CreateTopics`, `DeleteTopics`, `CreatePartitions`, `DescribeConfigs` and `AlterConfigs`).
+- Added capability to produce / consume message headers
+- Added capability to produce custom timestamps.
+- Added IClient / IProducer and IConsumer interfaces (useful for mocking in tests).
+- Added a `Handle` property to all clients classes:
+  - Producers can utilize the underlying librdkafka handle from other Producers.
+  - AdminClient can utilize the underlying librdkafka handle from other AdminClients, Producers or Consumers.
+
+## Major Breaking API Changes
+- The `Message` class has been re-purposed and now encapsulates specifically the message payload only.
+- The signatures/names of methods used to produce messages has changed.
+  - Methods that accept a callback are named `BeginProduce` (not `ProduceAsync`), analogous to similar methods in the standard library.
+  - Callbacks are now specified as `Action<DeliveryReport<TKey, TValue>>` delegates, not `IDeliveryHandler` implementations.
+  - The `IDeliveryHandler` interface has been depreciated.
+  - There are two variants of `ProduceAsync` and `BeginProduce`, the first takes a topic name and a Message. The second takes a `TopicPartition` and a message.
+    - i.e. when producing, there is now clear separation between what is produced and where it is produced to.
+  - The new API is more future proof, and better models the problem being solved.
+  - `ProduceAsync` now calls `SetException` instead of `SetResult` on the returned Task, making error checking more convenient and less prone to developer mistakes.
+- `IDeserializer<T>.Deserialize` supplies message byte data via a ReadOnlySpan<T> parameter that references librdkafka managed memory directly leading to large performance gains.
+- The non-serializing `Producer` and non-deserializing `Consumer` types have been removed (use generic types with `byte[]` instead), considerably reducing API surface area.
+- The `ISerializingProducer` interface has been removed - you should share client handles instead.
+
+## Minor Enhancements / Fixes
+- When delivery reports are disable, `ProduceAsync` will return completed `Task`s rather than `Task`s that will never complete.
+- Avro serializers / deserializer now handle `null` values.
+- Examples upgraded to target 2.1.
+- Removed cast from error to bool.
+- Changed name of `HasError` to `IsError`
+

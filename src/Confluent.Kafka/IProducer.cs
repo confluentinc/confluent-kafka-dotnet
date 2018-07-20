@@ -34,26 +34,22 @@ namespace Confluent.Kafka
     /// </summary>
     public interface IProducer<TKey, TValue> : IClient
     {
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message);
+        Task<DeliveryReport<TKey, TValue>> ProduceAsync(
+            string topic,
+            Message<TKey, TValue> message,
+            CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
-        Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message);
+        Task<DeliveryReport<TKey, TValue>> ProduceAsync(
+            TopicPartition topicPartition,
+            Message<TKey, TValue> message,
+            CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
         void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_int"]/*' />
-        int Flush(int millisecondsTimeout);
-
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Flush_TimeSpan"]/*' />
         int Flush(TimeSpan timeout);
+
+        int Flush(CancellationToken cancellationToken = default(CancellationToken));
     }
 }

@@ -58,34 +58,36 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                ConsumerRecord<Ignore, Ignore> record;
-                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(record);
+                ConsumeResult<Ignore, Ignore> record = consumer.Consume(TimeSpan.FromMinutes(1));
+                Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
 
-                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(record);
+                record = consumer.Consume(TimeSpan.FromMinutes(1));
+                Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
 
-                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(record);
+                record = consumer.Consume(TimeSpan.FromMinutes(1));
+                Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
+
+                consumer.Close();
             }
 
             using (var consumer = new Consumer<Ignore, byte[]>(consumerConfig, null, new ByteArrayDeserializer()))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
 
-                ConsumerRecord<Ignore, byte[]> record;
-                Assert.True(consumer.Consume(out record, TimeSpan.FromMinutes(1)));
-                Assert.NotNull(record);
-                Assert.Null(record.Message.Key);
-                Assert.NotNull(record.Message.Value);
-                Assert.Equal(42, record.Message.Value[0]);
-                Assert.Equal(240, record.Message.Value[1]);
+                ConsumeResult<Ignore, byte[]> record = consumer.Consume(TimeSpan.FromMinutes(1));
+                Assert.NotNull(record.Message);
+                Assert.Null(record.Key);
+                Assert.NotNull(record.Value);
+                Assert.Equal(42, record.Value[0]);
+                Assert.Equal(240, record.Value[1]);
+
+                consumer.Close();
             }
         }
 
