@@ -9,8 +9,8 @@ namespace Confluent.Kafka
         // ---- Producer
 
         /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     block if the send queue is full when producing messages. If false, a 
+        ///     Name of the configuration property that specifies whether or not 
+        ///     produce calls should block if the send queue is full. If false, a 
         ///     KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) will be 
         ///     thrown if an attempt is made to produce a message and the send queue
         ///     is full.
@@ -139,13 +139,13 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Name of the configuration parameter used to specify the encoding
-        ///     when deserializing keys.
+        ///     when deserializing string keys.
         /// </summary>
         public const string DeserializerKeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
 
         /// <summary>
         ///     Name of the configuration parameter used to specify the encoding
-        ///     when deserializing values.
+        ///     when deserializing string values.
         /// </summary>
         public const string DeserializerValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
 
@@ -154,30 +154,35 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Name of the configuration parameter used to specify the encoding 
-        ///     when serializing keys.
+        ///     when serializing string keys.
         /// </summary>
         public const string SerializerKeyEncodingConfigParam = "dotnet.string.serializer.encoding.key";
 
         /// <summary>
         ///     Name of the configuration parameter used to specify the encoding 
-        ///     when serializing values.
+        ///     when serializing string values.
         /// </summary>
         public const string SerializerValueEncodingConfigParam = "dotnet.string.serializer.encoding.value";
 
 
         /// <summary>
-        ///     (default 128). Initial size (in bytes) of the buffer 
-        ///     used for message serialization. Use a value high enough to avoid resizing 
-        ///     the buffer, but small enough to avoid excessive memory use. Inspect the size of 
-        ///     the byte array returned by the Serialize method to estimate an appropriate value. 
-        ///     Note: each call to serialize creates a new buffer.
+        ///     Name of the configuration parameter used to specify the initial size 
+        ///     (in bytes) of the buffer used for Avro message serialization. Use a value 
+        ///     high enough to avoid resizing the buffer, but small enough to avoid 
+        ///     excessive memory use. Inspect the size of the byte array returned by the
+        ///     Serialize method to estimate an appropriate value. Note: each call to 
+        ///     serialize creates a new buffer.
+        /// 
+        ///     default: 128
         /// </summary>
         public const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
 
         /// <summary>
-        ///     (default: true) - true if the serializer should 
-        ///     attempt to auto-register unrecognized schemas with Confluent Schema Registry, 
-        ///     false if not.
+        ///     Name of the configuration parameter used to specify whether or not the
+        ///     Avro serializer should attempt to auto-register unrecognized schemas with
+        ///     Confluent Schema Registry.
+        ///
+        ///     default: true
         /// </summary>
         public const string AutoRegisterSchemaPropertyName = "avro.serializer.auto.register.schemas";
 
@@ -185,19 +190,25 @@ namespace Confluent.Kafka
         // ---- Schema Registry Client
 
         /// <summary>
-        ///     A comma-separated list of URLs for schema registry 
-        ///     instances that are used to register or lookup schemas.
+        ///     Name of the configuration parameter used to specify a comma-separated list
+        ///     of URLs for schema registry instances that are used to register or lookup
+        ///     schemas.
         /// </summary>
         public const string SchemaRegistryUrlPropertyName = "schema.registry.url";
 
-
         /// <summary>
-        ///     (default: 30000) - Timeout for requests to Confluent Schema Registry.
+        ///     Name of the configuration parameter used to specify the timeout for requests
+        ///     to Confluent Schema Registry.
+        /// 
+        ///     default: 30000
         /// </summary>
         public const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
 
         /// <summary>
-        ///     (default: 1000) - The maximum number of schemas to cache locally.
+        ///     Name of the configuration parameter used to specify the maximum number of
+        ///     schemas CachedSchemaRegistryClient should cache locally.
+        /// 
+        ///     default: 1000
         /// </summary>
         public const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
     }

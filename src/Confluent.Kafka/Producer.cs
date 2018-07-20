@@ -428,8 +428,25 @@ namespace Confluent.Kafka
         }
 
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+        /// <summary>
+        ///     Asynchronously send a single message to a Kafka topic.
+        ///     The partition the message is sent to is determined using
+        ///     the partitioner defined using the 'partitioner' 
+        ///     configuration property.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to abort this request.
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with a delivery report corresponding to
+        ///     the produce request, or an exception if an error occured.
+        /// </returns>
         public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message, CancellationToken cancellationToken = default(CancellationToken))
         {
             var handler = new TypedTaskDeliveryHandlerShim(topic,
@@ -451,8 +468,23 @@ namespace Confluent.Kafka
             return handler.Task;
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_Common"]/*' />
+
+        /// <summary>
+        ///     Asynchronously send a single message to a Kafka topic/partition.
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to abort this request.
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with a delivery report corresponding to
+        ///     the produce request, or an exception if an error occured.
+        /// </returns>
         public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message, CancellationToken cancellationToken = default(CancellationToken))
         {
             var handler = new TypedTaskDeliveryHandlerShim(topicPartition.Topic,
@@ -474,8 +506,20 @@ namespace Confluent.Kafka
             return handler.Task;
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_TopicPartition_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+
+        /// <summary>
+        ///     Asynchronously send a single message to a Kafka topic/partition.
+        /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic/partition to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     A delegate that will be called with a delivery report corresponding
+        ///     to the produce request (if enabled).
+        /// </param>
         public void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
@@ -495,8 +539,22 @@ namespace Confluent.Kafka
             );
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="ProduceAsync_string_Message"]/*' />
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="Produce_Action"]/*' />
+
+        /// <summary>
+        ///     Asynchronously send a single message to a Kafka topic.
+        ///     The partition the message is sent to is determined using
+        ///     the partitioner defined using the 'partitioner' 
+        ///     configuration property.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     
+        /// </param>
         public void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             var keyBytes = keySerializer?.Serialize(topic, message.Key);
