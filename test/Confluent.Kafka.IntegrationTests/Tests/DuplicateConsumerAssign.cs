@@ -61,15 +61,20 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 ConsumeResult<byte[], byte[]> record;
-                var haveMsg1 = consumer1.Consume(out record, TimeSpan.FromSeconds(10));
+                record = consumer1.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record);
-                var haveMsg2 = consumer2.Consume(out record, TimeSpan.FromSeconds(10));
+                Assert.NotNull(record.Message);
+                record = consumer2.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record);
-
+                Assert.NotNull(record.Message);
+                
                 // NOTE: two consumers from the same group should never be assigned to the same
                 // topic / partition. This 'test' is here because I was curious to see what happened
                 // in practice if this did occur. Because this is not expected usage, no validation
                 // has been included in this test.
+
+                consumer1.Close();
+                consumer2.Close();
             }
         }
 

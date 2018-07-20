@@ -58,104 +58,122 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
                 
                 // Test #1
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
-                var os = consumer.Commit();
-                Assert.Equal(firstMsgOffset + 1, os.Offsets[0].Offset);
-                var ps = consumer.Position( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) });
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                var os = consumer.CommitAsync().Result;
+                Assert.Equal(firstMsgOffset + 1, os[0].Offset);
+                var ps = consumer.PositionAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }).Result;
+                var co = consumer.CommittedAsync( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 1, co[0].Offset);
                 Assert.Equal(firstMsgOffset + 1, ps[0].Offset);
                 
                 // Test #2
-                consumer.Consume(out ConsumeResult<string, string> record2, TimeSpan.FromSeconds(10));
-                os = consumer.Commit();
-                Assert.Equal(firstMsgOffset + 2, os.Offsets[0].Offset);
-                ps = consumer.Position( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) });
-                co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var record2 = consumer.Consume(TimeSpan.FromSeconds(10));
+                os = consumer.CommitAsync().Result;
+                Assert.Equal(firstMsgOffset + 2, os[0].Offset);
+                ps = consumer.PositionAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }).Result;
+                co = consumer.CommittedAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 2, ps[0].Offset);
                 Assert.Equal(firstMsgOffset + 2, ps[0].Offset);
+
+                consumer.Close();
             }
 
             // Test #3
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
-                var os = consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 5) });
-                Assert.Equal(firstMsgOffset + 5, os.Offsets[0].Offset);
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var os = consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 5) }).Result;
+                Assert.Equal(firstMsgOffset + 5, os[0].Offset);
+                var co = consumer.CommittedAsync( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 5, co[0].Offset);
+
+                consumer.Close();
             }
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
 
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
-                var ps = consumer.Position( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) });
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                var ps = consumer.PositionAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }).Result;
                 Assert.Equal(firstMsgOffset + 6, ps[0].Offset);
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var co = consumer.CommittedAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 5, co[0].Offset);
+
+                consumer.Close();
             }
 
             // Test #4
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
-                var os = consumer.Commit(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 3) });
-                Assert.Equal(firstMsgOffset + 3, os.Offsets[0].Offset);
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var os = consumer.CommitAsync(new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset + 3) }).Result;
+                Assert.Equal(firstMsgOffset + 3, os[0].Offset);
+                var co = consumer.CommittedAsync( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
+
+                consumer.Close();
             }
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
-                var ps = consumer.Position( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) });
+                var record = consumer.Consume( TimeSpan.FromSeconds(10));
+                var ps = consumer.PositionAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }).Result;
                 Assert.Equal(firstMsgOffset + 4, ps[0].Offset);
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var co = consumer.CommittedAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
+
+                consumer.Close();
             }
 
             // Test #5
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
-                consumer.Consume(out ConsumeResult<string, string> record2, TimeSpan.FromSeconds(10));
-                consumer.Consume(out ConsumeResult<string, string> record3, TimeSpan.FromSeconds(10));
-                var os = consumer.Commit(record3);
-                Assert.Equal(firstMsgOffset + 3, os.Offsets[0].Offset);
-                consumer.Consume(out ConsumeResult<string, string> record4, TimeSpan.FromSeconds(10));
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                var record2 = consumer.Consume(TimeSpan.FromSeconds(10));
+                var record3 = consumer.Consume(TimeSpan.FromSeconds(10));
+                var os = consumer.CommitAsync(record3).Result;
+                Assert.Equal(firstMsgOffset + 3, os[0].Offset);
+                var record4 = consumer.Consume(TimeSpan.FromSeconds(10));
+                var co = consumer.CommittedAsync( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
+
+                consumer.Close();
             }
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 3, record.Offset);
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var co = consumer.CommittedAsync( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
+
+                consumer.Close();
             }
 
             // Test #6
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, firstMsgOffset));
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
-                consumer.Consume(out ConsumeResult<string, string> record2, TimeSpan.FromSeconds(10));
-                consumer.Consume(out ConsumeResult<string, string> record3, TimeSpan.FromSeconds(10));
-                var os = consumer.Commit(record3);
-                Assert.Equal(firstMsgOffset + 3, os.Offsets[0].Offset);
-                consumer.Consume(out ConsumeResult<string, string> record4, TimeSpan.FromSeconds(10));
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                var record2 = consumer.Consume(TimeSpan.FromSeconds(10));
+                var record3 = consumer.Consume(TimeSpan.FromSeconds(10));
+                var os = consumer.CommitAsync(record3).Result;
+                Assert.Equal(firstMsgOffset + 3, os[0].Offset);
+                var record4 = consumer.Consume(TimeSpan.FromSeconds(10));
+                var co = consumer.CommittedAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
+
+                consumer.Close();
             }
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
-                consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Equal(firstMsgOffset + 3, record.Offset);
-                var co = consumer.Committed( new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
+                var co = consumer.CommittedAsync(new List<TopicPartition> { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
+
+                consumer.Close();
             }
         }
 

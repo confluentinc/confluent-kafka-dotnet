@@ -33,65 +33,41 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void OnLog(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            var logCount = 0;
+            Action<LogMessage> logger = (LogMessage m) => logCount += 1;
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
                 { "log_level", 7 },
-                { "debug", "all" }
+                { "debug", "all" },
+                { "log.delegate", logger }
             };
 
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "log_level", 7 },
-                { "debug", "all" }
+                { "debug", "all" },
+                { "log.delegate", logger }
             };
 
-            // byte array producer.
-            int logCount = 0;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
-            {
-                producer.OnLog += (_, LogMessage)
-                  => logCount += 1;
-
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> {}).Wait();
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
-            Assert.True(logCount > 0);
-
-            // serializing producer.
             DeliveryReport<Null, string> dr;
-            logCount = 0;
+
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
-                producer.OnLog += (_, LogMessage)
-                  => logCount += 1;
-
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
-            // byte array consumer.
-            logCount = 0;
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
-            {
-                consumer.OnLog += (_, LogMessage)
-                  => logCount += 1;
-
-                consumer.Poll(TimeSpan.FromMilliseconds(100));
-            }
-            Assert.True(logCount > 0);
-
-            // deserializing consumer.
             logCount = 0;
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.OnLog += (_, LogMessage)
-                  => logCount += 1;
+                consumer.Consume(TimeSpan.FromMilliseconds(100));
 
-                consumer.Poll(TimeSpan.FromMilliseconds(100));
+                consumer.Close();
             }
             Assert.True(logCount > 0);
         }

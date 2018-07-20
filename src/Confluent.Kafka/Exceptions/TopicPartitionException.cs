@@ -19,12 +19,12 @@ using System.Linq;
 using System.Collections.Generic;
 
 
-namespace Confluent.Kafka.Admin
+namespace Confluent.Kafka
 {
     /// <summary>
     ///     Represents an error that occured during a Consumer.Position request.
     /// </summary>
-    public class OffsetsRequestException : Exception
+    public class TopicPartitionException : Exception
     {
         /// <summary>
         ///     Initializes a new instance of OffsetsRequestExceptoion.
@@ -34,9 +34,9 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these 
         ///     results will be in error.
         /// </param>
-        public OffsetsRequestException(List<TopicPartitionOffsetError> results)
+        public TopicPartitionException(List<TopicPartitionError> results)
             : base(
-                "An error occurred retrieving offsets for: [" +
+                "An error occurred for topic partitions: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.TopicPartition)) +
                 "]. Inspect the Results property of this exception for further information.")
         {
@@ -48,6 +48,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<TopicPartitionOffsetError> Results { get; }
+        public List<TopicPartitionError> Results { get; }
     }
 }

@@ -24,6 +24,10 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumeResult<TKey, TValue> : MessageAndMetadata<TKey, TValue>
     {
+        /// <summary>
+        ///     True if the ConsumeResult represents an end-of-partition event,
+        ///     false otherwise.
+        /// </summary>
         public bool IsPartitionEOF { get => Error.Code == ErrorCode.Local_PartitionEOF; }
     }
 }

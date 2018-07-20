@@ -45,9 +45,6 @@ namespace Confluent.Kafka.Serialization
 
         private IAvroSerializerImpl<T> serializerImpl;
 
-        private const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
-
-        private const string AutoRegisterSchemaPropertyName = "avro.serializer.auto.register.schemas";
 
         /// <summary>
         ///     The default initial size (in bytes) of buffers used for message 
@@ -154,15 +151,15 @@ namespace Confluent.Kafka.Serialization
 
             if (avroConfig.Count() != 0)
             {
-                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, InitialBufferSizePropertyName, "AvroSerializer", typeof(int));
+                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.InitialBufferSizePropertyName, "AvroSerializer", typeof(int));
                 if (initialBufferSize != null) { this.initialBufferSize = initialBufferSize.Value; }
 
-                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, AutoRegisterSchemaPropertyName, "AvroSerializer", typeof(bool));
+                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.AutoRegisterSchemaPropertyName, "AvroSerializer", typeof(bool));
                 if (autoRegisterSchema != null) { this.autoRegisterSchema = autoRegisterSchema.Value; }
 
                 foreach (var property in avroConfig)
                 {
-                    if (property.Key != AutoRegisterSchemaPropertyName && property.Key != InitialBufferSizePropertyName)
+                    if (property.Key != ConfigPropertyNames.AutoRegisterSchemaPropertyName && property.Key != ConfigPropertyNames.InitialBufferSizePropertyName)
                     {
                         throw new ArgumentException($"{keyOrValue} AvroSerializer: unexpected configuration parameter {property.Key}");
                     }

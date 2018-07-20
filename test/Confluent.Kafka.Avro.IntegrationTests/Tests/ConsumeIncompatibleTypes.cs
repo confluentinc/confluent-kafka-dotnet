@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 bool hadError = false;
                 try
                 {
-                    consumer.Consume(out ConsumeResult<User, User> record, TimeSpan.FromSeconds(10));
+                    consumer.Consume(TimeSpan.FromSeconds(10));
                 }
                 catch (ConsumeException e)
                 {
@@ -80,6 +80,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
 
                 Assert.True(hadError);
+
+                consumer.Close();
             }
 
             using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
@@ -89,7 +91,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 bool hadError = false;
                 try
                 {
-                    consumer.Consume(out ConsumeResult<string, string> record, TimeSpan.FromSeconds(10));
+                    consumer.Consume(TimeSpan.FromSeconds(10));
                 }
                 catch (ConsumeException e)
                 {
@@ -100,6 +102,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
 
                 Assert.True(hadError);
+
+                consumer.Close();
             }
 
         }

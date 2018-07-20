@@ -64,14 +64,6 @@ namespace Confluent.Kafka.IntegrationTests
                 int errCnt = 0;
                 bool done = false;
 
-                consumer.OnRecord += (_, msg) =>
-                {
-                    msgCnt += 1;
-                };
-
-                consumer.OnPartitionEOF += (_, partition)
-                    => done = true;
-
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
@@ -88,7 +80,15 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     try
                     {
-                        consumer.Poll(TimeSpan.FromMilliseconds(100));
+                        var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                        if (record.Message != null)
+                        {
+                            msgCnt += 1;
+                        }
+                        if (record.IsPartitionEOF)
+                        {
+                            done = true;
+                        }
                     }
                     catch (ConsumeException e)
                     {
@@ -100,6 +100,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Assert.Equal(1, msgCnt);
                 Assert.Equal(1, errCnt);
+
+                consumer.Close();
             }
 
             // test value deserialization error behavior
@@ -108,14 +110,6 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 int errCnt = 0;
                 bool done = false;
-
-                consumer.OnRecord += (_, record) =>
-                {
-                    msgCnt += 1;
-                };
-                
-                consumer.OnPartitionEOF += (_, partition)
-                    => done = true;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -133,7 +127,15 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     try
                     {
-                        consumer.Poll(TimeSpan.FromMilliseconds(100));
+                        var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                        if (record.Message != null)
+                        {
+                            msgCnt += 1;
+                        }
+                        if (record.IsPartitionEOF)
+                        {
+                            done = true;
+                        }
                     }
                     catch (ConsumeException e)
                     {
@@ -145,6 +147,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Assert.Equal(1, msgCnt);
                 Assert.Equal(1, errCnt);
+
+                consumer.Close();
             }
 
         }

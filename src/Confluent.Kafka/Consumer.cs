@@ -35,52 +35,6 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of headers when consuming messages. Note that 
-        ///     disabling header marshaling will improve maximum throughput even for
-        ///     the case where messages do not have any headers.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableHeadersPropertyName = "dotnet.consumer.enable.headers";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of timestamps when consuming messages. Disabling this
-        ///     will improve maximum throughput.
-        /// </summary>
-        public const string EnableTimestampPropertyName = "dotnet.consumer.enable.timestamps";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of topic names when consuming messages. Disabling
-        ///     this will improve maximum throughput.
-        /// </summary>
-        public const string EnableTopicNamesPropertyName = "dotnet.consumer.enable.topic.names";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies a delegate for
-        ///     handling log messages. If not specified, a default callback that
-        ///     writes to stderr will be used.
-        /// </summary>
-        /// <remarks>
-        ///     By default not many log messages are generated.
-        ///
-        ///     For more verbose logging, specify one or more debug contexts 
-        ///     using the 'debug' configuration property. The 'log_level'
-        ///     configuration property is also relevant, however logging is
-        ///     verbose by default given a debug context has been specified,
-        ///     so you typically shouldn't adjust this value.
-        ///
-        ///     Warning: Log handlers are called spontaneously from internal 
-        ///     librdkafka threads and the application must not call any 
-        ///     Confluent.Kafka APIs from within a log handler or perform any
-        ///     prolonged operations.
-        /// </remarks>
-        public const string LogDelegateName = "log.delegate";
-
-
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
         private readonly bool enableTopicNamesMarshaling = true;
@@ -246,30 +200,30 @@ namespace Confluent.Kafka
 
             var modifiedConfig = configWithoutDeserializerProperties
                 .Where(prop => 
-                    prop.Key != EnableHeadersPropertyName &&
-                    prop.Key != EnableTimestampPropertyName &&
-                    prop.Key != EnableTopicNamesPropertyName &&
-                    prop.Key != LogDelegateName);
+                    prop.Key != ConfigPropertyNames.EnableHeadersPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableTimestampPropertyName &&
+                    prop.Key != ConfigPropertyNames.EnableTopicNamesPropertyName &&
+                    prop.Key != ConfigPropertyNames.LogDelegateName);
 
-            var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableHeadersPropertyName).Value;
+            var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableHeadersPropertyName).Value;
             if (enableHeaderMarshalingObj != null)
             {
                 this.enableHeaderMarshaling = bool.Parse(enableHeaderMarshalingObj.ToString());
             }
 
-            var enableTimestampMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableTimestampPropertyName).Value;
+            var enableTimestampMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableTimestampPropertyName).Value;
             if (enableTimestampMarshalingObj != null)
             {
                 this.enableTimestampMarshaling = bool.Parse(enableTimestampMarshalingObj.ToString());
             }
 
-            var enableTopicNamesMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == EnableTopicNamesPropertyName).Value;
+            var enableTopicNamesMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableTopicNamesPropertyName).Value;
             if (enableTopicNamesMarshalingObj != null)
             {
                 this.enableTopicNamesMarshaling = bool.Parse(enableTopicNamesMarshalingObj.ToString());
             }
 
-            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == LogDelegateName).Value;
+            var logDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogDelegateName).Value;
             if (logDelegateObj != null)
             {
                 this.logDelegate = (Action<LogMessage>)logDelegateObj;
@@ -755,8 +709,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit offsets for the current assignment.
         /// </summary>
-        public Task<CommittedOffsets> CommitAsync(CancellationToken cancellationToken = default(CancellationToken))
-            => Task.Run(() => kafkaHandle.Commit());
+        public Task<List<TopicPartitionOffsetError>> CommitAsync(CancellationToken cancellationToken = default(CancellationToken))
+            => Task.Run(() => kafkaHandle.CommitSync(null));
 
 
         /// <summary>
@@ -771,7 +725,7 @@ namespace Confluent.Kafka
         ///     and will next receive the record with offset N. Hence, this method commits an 
         ///     offset of <paramref name="record" />.Offset + 1.
         /// </remarks>
-        public Task<CommittedOffsets> CommitAsync(ConsumeResult<TKey, TValue> record, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<List<TopicPartitionOffsetError>> CommitAsync(ConsumeResult<TKey, TValue> record, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (record.Error.Code != ErrorCode.NoError)
             {
@@ -781,6 +735,7 @@ namespace Confluent.Kafka
             return CommitAsync(new[] { new TopicPartitionOffset(record.TopicPartition, record.Offset + 1) }, cancellationToken);
         }
 
+
         /// <summary>
         ///     Commit an explicit list of offsets.
         /// </summary>
@@ -788,8 +743,8 @@ namespace Confluent.Kafka
         ///     Note: A consumer which has position N has consumed records with offsets 0 through N-1 
         ///     and will next receive the record with offset N.
         /// </remarks>
-        public Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken))
-            => Task.Run(() => kafkaHandle.Commit(offsets));
+        public Task<List<TopicPartitionOffsetError>> CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken))
+            => Task.Run(() => kafkaHandle.CommitSync(offsets));
 
 
         /// <summary>

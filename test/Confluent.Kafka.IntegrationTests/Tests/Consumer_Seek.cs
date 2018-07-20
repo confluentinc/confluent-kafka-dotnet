@@ -57,14 +57,19 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                ConsumeResult<Null, string> record;
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
+                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
+                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
                 consumer.Seek(dr.TopicPartitionOffset);
 
-                Assert.True(consumer.Consume(out record, TimeSpan.FromSeconds(30)));
+                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record.Message);
                 Assert.Equal(checkValue, record.Message.Value);
+
+                consumer.Close();
             }
         }
 

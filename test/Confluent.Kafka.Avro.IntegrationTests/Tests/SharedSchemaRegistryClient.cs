@@ -72,34 +72,32 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
                 using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(schemaRegistryClient), new AvroDeserializer<User>(schemaRegistryClient)))
                 {
-                    bool done = false;
-                    int i = 0;
-                    consumer.OnRecord += (o, record) =>
-                    {
-                        Assert.Equal(i.ToString(), record.Message.Key);
-                        Assert.Equal(i.ToString(), record.Message.Value.name);
-                        Assert.Equal(i, record.Message.Value.favorite_number);
-                        Assert.Equal("blue", record.Message.Value.favorite_color);
-
-                        i++;
-                    };
-
-                    consumer.OnError += (o, error) =>
-                    {
-                        Assert.True(false, error.Reason);
-                    };
-
-                    consumer.OnPartitionEOF += (o, e)
-                        => done = true;
-
+                    consumer.OnError += (o, error) => Assert.True(false, error.Reason);
+                    
                     consumer.Subscribe(topic);
 
-                    while (!done)
+                    int i = 0;
+
+                    while (true)
                     {
-                        consumer.Poll(TimeSpan.FromMilliseconds(100));
+                        var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                        if (record.Message != null)
+                        {
+                            Assert.Equal(i.ToString(), record.Message.Key);
+                            Assert.Equal(i.ToString(), record.Message.Value.name);
+                            Assert.Equal(i, record.Message.Value.favorite_number);
+                            Assert.Equal("blue", record.Message.Value.favorite_color);
+                            i += 1;
+                        }
+                        if (record.IsPartitionEOF)
+                        {
+                            break;
+                        }
                     }
 
                     Assert.Equal(100, i);
+
+                    consumer.Close();
                 }
             }
         }

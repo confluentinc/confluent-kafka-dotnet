@@ -56,9 +56,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 Assert.Empty(consumer.Assignment);
-                consumer.Poll(TimeSpan.FromSeconds(10));
+                consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Single(consumer.Assignment);
                 Assert.Equal(singlePartitionTopic, consumer.Assignment[0].Topic);
+
+                consumer.Close();
             }
         }
     }

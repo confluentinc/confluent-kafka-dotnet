@@ -55,7 +55,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Subscribe(singlePartitionTopic);
-                consumer.Poll(1000);
+                consumer.Consume(TimeSpan.FromMilliseconds(1000));
+
+                consumer.Close();
             }
 
             GC.Collect();

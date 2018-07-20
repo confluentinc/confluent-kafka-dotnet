@@ -69,11 +69,11 @@ namespace Confluent.Kafka
 
         List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
 
-        Task<CommittedOffsets> CommitAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<TopicPartitionOffsetError>> CommitAsync(CancellationToken cancellationToken = default(CancellationToken));
 
-        Task<CommittedOffsets> CommitAsync(ConsumeResult<TKey, TValue> record, CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<TopicPartitionOffsetError>> CommitAsync(ConsumeResult<TKey, TValue> record, CancellationToken cancellationToken = default(CancellationToken));
 
-        Task<CommittedOffsets> CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<TopicPartitionOffsetError>> CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));
 
         void Seek(TopicPartitionOffset tpo);
 
