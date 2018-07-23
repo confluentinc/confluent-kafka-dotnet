@@ -526,7 +526,7 @@ namespace Confluent.Kafka
 #region WatermarkOffsets
 
         /// <summary>
-        ///     Get last known low (oldest/beginning) and high (newest/end)
+        ///     Get last known low (oldest available/beginning) and high (newest/end)
         ///     offsets for a topic/partition.
         /// </summary>
         /// <remarks>
@@ -540,7 +540,7 @@ namespace Confluent.Kafka
         ///     The topic/partition of interest.
         /// </param>
         /// <returns>
-        ///     The requested WatermarkOffsets.
+        ///     The requested WatermarkOffsets (see that class for additional documentation).
         /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
         {
@@ -553,7 +553,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     Query the Kafka cluster for low (oldest available/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition (blocking).
         /// </summary>
         /// <param name="topicPartition">
@@ -563,14 +563,14 @@ namespace Confluent.Kafka
         ///     The maximum period of time the call may block.
         /// </param>
         /// <returns>
-        ///     The requested WatermarkOffsets.
+        ///     The requested WatermarkOffsets (see that class for additional documentation).
         /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
-        ///     Query the Kafka cluster for low (oldest/beginning) and high (newest/end)
+        ///     Query the Kafka cluster for low (oldest available/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
         /// </summary>
         /// <param name="topicPartition">
@@ -580,7 +580,7 @@ namespace Confluent.Kafka
         ///     
         /// </param>
         /// <returns>
-        ///     The requested WatermarkOffsets.
+        ///     The requested WatermarkOffsets (see that class for additional documentation).
         /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
