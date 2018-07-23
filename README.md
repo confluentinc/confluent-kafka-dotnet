@@ -69,7 +69,7 @@ Take a look in the [examples](examples) directory for example usage. The [integr
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
 
-**Note:** The control loop in librdkafka makes use of file descriptor events to wake up in a timely fashion which is unfortunately not supported on Windows. If you are on Windows and experiencing poor latency, try setting `socket.blocking.max.ms` to `1` which will limit the time librdkafa blocks on the socket to 1ms (the trade-off being higher CPU usage). This issue will be addressed in a future version of the library.
+**Note:** The mechanism used by librdkafka to poll simultaneously for both new application and socket events is not supported on Windows. If you are on Windows and experiencing poor latency (which may happen in low throughput scenarios in particular), set `socket.blocking.max.ms` to `1` to limit the time librdkafka will block waiting for network events to 1ms (the trade-off being higher CPU usage). We will optimize the librdkafka control loop for use on Windows in a future version of the library.
 
 
 ### Basic Producer Example
