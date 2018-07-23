@@ -69,8 +69,6 @@ Take a look in the [examples](examples) directory for example usage. The [integr
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
 
-API documentation is available on the [Confluent website](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html). Note that there is currently an issue with the build process that is preventing some of this documentation from being generated. For missing information, please refer instead to the XML doc comments in the source code.
-
 ### Basic Producer Example
 
 ```csharp
@@ -159,6 +157,11 @@ avrogen -s your_schema.asvc .
 ### Confluent Cloud
 
 The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
+
+
+### Known Issues
+
+The mechanism used by librdkafka to poll simultaneously for both new application and socket events is not supported on Windows. If you are on Windows and experiencing poor latency (which may happen in low throughput scenarios in particular), set `socket.blocking.max.ms` to `1` to limit the time librdkafka will block waiting for network events to 1ms (the trade-off being higher CPU usage). We will optimize the librdkafka control loop for use on Windows in a future version of the library.
 
 
 ## Build
