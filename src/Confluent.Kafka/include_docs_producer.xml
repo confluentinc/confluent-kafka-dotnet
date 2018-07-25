@@ -15,20 +15,6 @@
     </remarks>
 </Member>
 
-<Member name="ProduceAsync_string_Message">
-    <summary>
-        Asynchronously send a single message to a Kafka topic.
-        The partition the message is sent to is determined using
-        the partitioner defined using the 'partitioner' 
-        configuration property.
-    </summary>
-    <param name="topic">
-        The topic to produce the message to.
-    </param>
-    <param name="message">
-        The message to produce.
-    </param>
-</Member>
 
 <Member name="ProduceAsync_TopicPartition_Message">
     <summary>

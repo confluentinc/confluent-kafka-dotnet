@@ -20,18 +20,70 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines methods common to all Apache Kafka client types.
+    ///     Defines methods common to all client types.
     /// </summary>
     public interface IClient : IDisposable
     {
+        /// <summary>
+        ///     An opaque reference to the underlying librdkafka client instance.
+        ///     This can be used to construct an AdminClient that utilizes the same
+        ///     underlying librdkafka client as this instance.
+        /// </summary>
         Handle Handle { get; }
 
+        /// <summary>
+        ///     Gets the name of this client instance.
+        ///     Contains (but is not equal to) the client.id configuration
+        ///     parameter.
+        /// </summary>
+        /// <remarks>
+        ///     This name will be unique across all client instances
+        ///     in a given application which allows log messages to be
+        ///     associated with the corresponding instance.
+        /// </remarks>
         string Name { get; }
 
+        /// <summary>
+        ///     Adds one or more brokers to the Client's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as
+        ///     soon as the Client connects to any broker by querying the
+        ///     broker metadata. Calling this method is only required in
+        ///     some scenarios where the address of all brokers in the
+        ///     cluster changes.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Comma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
+        /// </param>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
         int AddBrokers(string brokers);
 
+        /// <summary>
+        ///     Raised on librdkafka statistics events. JSON formatted
+        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
+        /// </summary>
+        /// <remarks>
+        ///     You can enable statistics and set the statistics interval
+        ///     using the statistics.interval.ms configuration parameter
+        ///     (disabled by default).
+        /// </remarks>
         event EventHandler<string> OnStatistics;
 
+        /// <summary>
+        ///     Raised on critical errors, e.g. connection failures or all 
+        ///     brokers down. Note that the client will try to automatically 
+        ///     recover from errors - these errors should be seen as 
+        ///     informational rather than catastrophic.
+        /// </summary>
         event EventHandler<Error> OnError;
     }
 }

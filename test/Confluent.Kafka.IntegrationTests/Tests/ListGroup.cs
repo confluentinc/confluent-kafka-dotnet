@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             using (var adminClient = new AdminClient(consumer.Handle))
             {
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
                 {
                     Assert.Single(partitions);
                     Assert.Equal(partitions[0], firstProduced.TopicPartition);

@@ -20,6 +20,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+
 
 namespace Confluent.Kafka.VerifiableClient
 {
@@ -472,7 +474,7 @@ namespace Confluent.Kafka.VerifiableClient
             List<TopicPartitionOffsetError> results;
             try
             {
-                results = consumer.CommitAsync().Result;
+                results = consumer.CommitAsync().Result.Select(r => new TopicPartitionOffsetError(r, new Error(ErrorCode.NoError))).ToList();
             }
             catch (KafkaException ex)
             {
@@ -614,10 +616,10 @@ namespace Confluent.Kafka.VerifiableClient
             consumer.OnError += (_, error)
                 => Dbg($"Error: {error}");
 
-            consumer.OnPartitionsAssigned += (_, partitions)
+            consumer.OnPartitionAssignmentReceived += (_, partitions)
                 => HandleAssign(partitions);
 
-            consumer.OnPartitionsRevoked += (_, partitions)
+            consumer.OnPartitionAssignmentRevoked += (_, partitions)
                 => HandleRevoke(partitions);
 
             // Only used when auto-commits enabled

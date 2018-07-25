@@ -27,6 +27,7 @@ namespace Confluent.Kafka
     public interface IAdminClient : IClient
     {
         List<GroupInfo> ListGroups(TimeSpan timeout);
+        
         GroupInfo ListGroup(string group, TimeSpan timeout);
 
         WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);

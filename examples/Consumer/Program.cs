@@ -59,7 +59,7 @@ namespace Confluent.Kafka.Examples.Consumer
                     => Console.WriteLine($"Error: {error}");
 
                 // Raised when the consumer is assigned a new set of partitions.
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
                     // If you don't add a handler to the OnPartitionsAssigned event,
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.Examples.Consumer
                 };
 
                 // Raised when the consumer's current assignment set has been revoked.
-                consumer.OnPartitionsRevoked += (_, partitions) =>
+                consumer.OnPartitionAssignmentRevoked += (_, partitions) =>
                 {
                     Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
                     // If you don't add a handler to the OnPartitionsRevoked event,
@@ -167,7 +167,7 @@ namespace Confluent.Kafka.Examples.Consumer
                         // switch (cr.Error.Code)
                         // {
                         //     case ErrorCode.Local_TimedOut:
-                        //         // Only possible when timeout specified when calling Consume.
+                        //         // Only possible when timeout specified when calling Consume (i.e. can't happen here).
                         //         break;
                         //     case ErrorCode.NoError:
                         //         Console.WriteLine($"Read message from {cr.TopicPartitionOffset}: ${cr.Message}");
@@ -183,6 +183,7 @@ namespace Confluent.Kafka.Examples.Consumer
                     catch (ConsumeException e)
                     {
                         Console.WriteLine($"Consume error: {e.Error}");
+                        break;
                     }
                 }
 

@@ -68,11 +68,15 @@ namespace Confluent.Kafka
             }
         }
 
+
         /// <summary>
         ///     Creates a new Producer instance.
         /// </summary>
         /// <param name="config">
-        ///     librdkafka configuration parameters (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
+        ///     A collection of librdkafka configuration parameters 
+        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     and parameters specific to this client (refer to: 
+        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />)
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.
@@ -553,7 +557,8 @@ namespace Confluent.Kafka
         ///     The message to produce.
         /// </param>
         /// <param name="deliveryHandler">
-        ///     
+        ///     A delegate that will be called with a delivery report corresponding
+        ///     to the produce request (if enabled).
         /// </param>
         public void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
@@ -924,38 +929,7 @@ namespace Confluent.Kafka
             => kafkaHandle.Flush(millisecondsTimeout);
 
 
-        /// <summary>
-        ///     Wait until all outstanding produce requests and delievery 
-        ///     report callbacks are completed.
-        /// </summary>
-        /// <param name="timeout">
-        ///     The maximum length of time to block. You should typically
-        ///     use a relatively short timout period because this operation
-        ///     cannot be cancelled.
-        /// </param>
-        /// <returns>
-        ///     The current librdkafka out queue length. This should be
-        ///     interpreted as a rough indication of the number of messages
-        ///     waiting to be sent to or acknowledged by the broker. If zero,
-        ///     there are no outstanding messages or callbacks. Specifically,
-        ///     the value is equal to the sum of the number of produced messages
-        ///     for which a delivery report has not yet been handled and a
-        ///     number which is less than or equal to the number of pending
-        ///     delivery report callback events (as determined by an internal
-        ///     librdkafka implementation detail).
-        /// </returns>
-        /// <remarks>
-        ///     This method should typically be called prior to destroying a
-        ///     producer instance to make sure all queued and in-flight produce
-        ///     requests are completed before terminating. The wait time is
-        ///     bounded by the millisecondsTimeout parameter.
-        ///
-        ///     A related configuration parameter is message.timeout.ms which
-        ///     determines the maximum length of time librdkafka attempts to
-        ///     deliver a message before giving up and so also affects the
-        ///     maximum time a call to Flush may block.
-        /// </remarks>
-        public int Flush(TimeSpan timeout)
+        internal int Flush(TimeSpan timeout)
             => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
 
 
@@ -984,6 +958,7 @@ namespace Confluent.Kafka
                 }
             }
             kafkaHandle.Dispose();
+            kafkaHandle.FlagAsClosed();
         }
 
 

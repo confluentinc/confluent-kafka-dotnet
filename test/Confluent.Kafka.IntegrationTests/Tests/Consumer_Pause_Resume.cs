@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
                 {
                     consumer.Assign(partitions);
                     assignedPartitions = partitions;

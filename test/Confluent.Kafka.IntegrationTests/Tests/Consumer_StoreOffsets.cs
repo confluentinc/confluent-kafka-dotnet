@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
                 {
                     consumer.Assign(partitions);
                     assignedPartitions = partitions;
@@ -70,7 +70,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Message);
                 var result = consumer.StoreOffset(record);
 
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(record.Topic, result.Topic);
                 Assert.Equal(record.Partition, result.Partition);
                 Assert.Equal(record.Offset.Value+1, result.Offset.Value);

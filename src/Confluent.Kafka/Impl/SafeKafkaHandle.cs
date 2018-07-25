@@ -88,6 +88,31 @@ namespace Confluent.Kafka.Impl
     {
         private const int RD_KAFKA_PARTITION_UA = -1;
 
+        private bool flaggedAsClosed = false;
+
+        /// <summary>
+        ///     This functionality is awkward. It is intended that this method be called AFTER 
+        ///     the handle has been disposed. The IsClosed property of the handle is set to true
+        ///     immediately when Dispose is called, but calling rd_kafka_destroy() may have
+        ///     side-effects that require use of the handle (which is valid during the dispose).
+        ///     librdkafka should be changed such that close is not called during dispose.
+        /// </summary>
+        public void FlagAsClosed() => flaggedAsClosed = true;
+
+        /// <summary>
+        ///     Prevent AccessViolationException when handle has already been closed.
+        ///     Should be called at start of every function using the handle,
+        ///     except in ReleaseHandle. 
+        /// </summary>
+        protected override void ThrowIfHandleClosed()
+        {
+            if (flaggedAsClosed)
+            {
+                throw new ObjectDisposedException($"handle is closed", innerException: null);
+            }
+        }
+
+
         public SafeKafkaHandle() : base("kafka") { }
 
         public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config)
@@ -418,7 +443,7 @@ namespace Confluent.Kafka.Impl
             return new WatermarkOffsets(low, high);
         }
 
-        internal IEnumerable<TopicPartitionOffsetError> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, int millisecondsTimeout)
+        internal List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, int millisecondsTimeout)
         {
             var offsets = timestampsToSearch.Select(t => new TopicPartitionOffset(t.TopicPartition, t.Timestamp.UnixTimestampMs)).ToList();
             IntPtr cOffsets = GetCTopicPartitionList(offsets);
@@ -439,7 +464,7 @@ namespace Confluent.Kafka.Impl
                     throw new TopicPartitionOffsetException(result);
                 }
 
-                return result;
+                return result.Select(r => r.TopicPartitionOffset).ToList();
             }
             finally
             {
@@ -566,23 +591,8 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        /// <summary>
-        ///     Store offsets for one or more partitions.
-        ///   
-        ///     The offset will be committed (written) to the offset store according
-        ///     to `auto.commit.interval.ms` or manual offset-less commit().
-        /// </summary>
-        /// <remarks>
-        ///     `enable.auto.offset.store` must be set to "false" when using this API.
-        /// </remarks>
-        /// <param name="offsets">
-        ///     List of offsets to be commited.
-        /// </param>
-        /// <returns>
-        ///     For each topic/partition returns current stored offset
-        ///     or a partition specific error.
-        /// </returns>
-        internal List<TopicPartitionOffsetError> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+
+        internal List<TopicPartitionOffset> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();
 
@@ -601,26 +611,21 @@ namespace Confluent.Kafka.Impl
                 throw new TopicPartitionOffsetException(results);
             }
 
-
-            return results;
+            return results.Select(r => r.TopicPartitionOffset).ToList();
         }
 
         /// <summary>
-        ///  Dummy commit callback that does nothing but prohibits
-        ///  triggering the global offset_commit_cb.
-        ///  Used by manual commits.
+        ///     Dummy commit callback that does nothing but prohibits
+        ///     triggering the global offset_commit_cb.
+        ///     Used by manual commits.
         /// </summary>
         static void DummyOffsetCommitCb(IntPtr rk, ErrorCode err, IntPtr offsets, IntPtr opaque)
         {
             return;
         }
 
-        /// <summary>
-        /// Manual sync commit, will block indefinately.
-        /// </summary>
-        /// <param name="offsets">Offsets to commit, or null for current assignment.</param>
-        /// <returns>CommittedOffsets with global or per-partition errors.</returns>
-        internal List<TopicPartitionOffsetError> CommitSync(IEnumerable<TopicPartitionOffset> offsets)
+
+        internal List<TopicPartitionOffset> CommitSync(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();
 
@@ -666,7 +671,7 @@ namespace Confluent.Kafka.Impl
                 throw new TopicPartitionOffsetException(result);
             }
 
-            return result;
+            return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
 
@@ -747,13 +752,8 @@ namespace Confluent.Kafka.Impl
             return result;
         }
 
-        /// <summary>
-        ///     for each topic/partition returns the current committed offset
-        ///     or a partition specific error. if no stored offset, Offset.Invalid.
-        ///
-        ///     throws KafkaException if the above information cannot be retrieved.
-        /// </summary>
-        internal List<TopicPartitionOffsetError> Committed(IEnumerable<TopicPartition> partitions, IntPtr timeout_ms)
+
+        internal List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, IntPtr timeout_ms)
         {
             ThrowIfHandleClosed();
 
@@ -781,16 +781,11 @@ namespace Confluent.Kafka.Impl
                 throw new TopicPartitionOffsetException(result);
             }
 
-            return result;
+            return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
-        /// <summary>
-        ///     for each topic/partition returns the current position (last consumed offset + 1)
-        ///     or a partition specific error.
-        ///
-        ///     throws KafkaException if the above information cannot be retrieved.
-        /// </summary>
-        internal List<TopicPartitionOffsetError> Position(IEnumerable<TopicPartition> partitions)
+
+        internal List<TopicPartitionOffset> Position(IEnumerable<TopicPartition> partitions)
         {
             ThrowIfHandleClosed();
 
@@ -817,7 +812,7 @@ namespace Confluent.Kafka.Impl
                 throw new TopicPartitionOffsetException(result);
             }
             
-            return result;
+            return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
         internal string MemberId

@@ -1,4 +1,6 @@
 
+- The OfPartitionsRevoked / Assigned is crap with events with the current semantics. should allow only one method.
+
 - Allow OnLog and OnError (others?) to be configured before clients are constructed.
 - Log to stdout behavior.
 - Support defining headers inline.
@@ -19,6 +21,9 @@
 - Document config properties (including serdes + dotnet specific).
 - Do example for AWS lambda.
 - producer poll method returns the number of events served. should it?
+- Document retry behavior, add commentary on what happens when leader shutdown (cleanly or not).
+- should OffsetsForTimesAsync be on AdminClient?
+- Document the OnError method better. do we even need this over log? Why is it here? is it just confusing?
 
 
 # Changes

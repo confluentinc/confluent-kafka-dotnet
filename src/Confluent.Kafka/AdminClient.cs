@@ -457,8 +457,10 @@ namespace Confluent.Kafka
         ///     Initialize a new AdminClient instance.
         /// </summary>
         /// <param name="config">
-        ///     librdkafka configuration parameters (refer to 
-        ///     https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md).
+        ///     A collection of librdkafka configuration parameters 
+        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     and parameters specific to this client (refer to: 
+        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />)
         /// </param>
         public AdminClient(IEnumerable<KeyValuePair<string, object>> config)
         {
@@ -609,11 +611,31 @@ namespace Confluent.Kafka
                 timeout.TotalMillisecondsAsInt());
 #endregion
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="AddBrokers_string"]/*' />
+        /// <summary>
+        ///     Adds one or more brokers to the Client's list of initial
+        ///     bootstrap brokers. 
+        ///
+        ///     Note: Additional brokers are discovered automatically as
+        ///     soon as the Client connects to any broker by querying the
+        ///     broker metadata. Calling this method is only required in
+        ///     some scenarios where the address of all brokers in the
+        ///     cluster changes.
+        /// </summary>
+        /// <param name="brokers">
+        ///     Comma-separated list of brokers in the same format as 
+        ///     the bootstrap.server configuration parameter.
+        /// </param>
+        /// <remarks>
+        ///     There is currently no API to remove existing configured, 
+        ///     added or learnt brokers.
+        /// </remarks>
+        /// <returns>
+        ///     The number of brokers added. This value includes brokers
+        ///     that may have been specified a second time.
+        /// </returns>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="Client_Name"]/*' />
         public string Name
             => kafkaHandle.Name;
 
@@ -660,6 +682,7 @@ namespace Confluent.Kafka
             if (handle.Owner == this)
             {
                 ownedClient.Dispose();
+                ownedClient.Handle.LibrdkafkaHandle.FlagAsClosed();
             }
         }
 
