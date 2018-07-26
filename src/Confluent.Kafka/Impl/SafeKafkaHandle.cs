@@ -258,8 +258,7 @@ namespace Confluent.Kafka.Impl
             int partition,
             long timestamp,
             IEnumerable<Header> headers,
-            IntPtr opaque,
-            bool blockIfQueueFull)
+            IntPtr opaque)
         {
             var pValue = IntPtr.Zero;
             var pKey = IntPtr.Zero;
@@ -301,7 +300,7 @@ namespace Confluent.Kafka.Impl
                     handle,
                     topic,
                     partition,
-                    (IntPtr)(MsgFlags.MSG_F_COPY | (blockIfQueueFull ? MsgFlags.MSG_F_BLOCK : 0)),
+                    (IntPtr)MsgFlags.MSG_F_COPY,
                     pValue, (UIntPtr)valLength,
                     pKey, (UIntPtr)keyLength,
                     timestamp,

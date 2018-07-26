@@ -55,7 +55,7 @@ namespace Confluent.Kafka.Benchmark
 
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new BenchmarkDeserializer(), new BenchmarkDeserializer()))
             {
-                for (var j=0; j<nTests; ++j)
+                for (var j=0; j<nTests; j += 1)
                 {
                     Console.WriteLine($"{consumer.Name} consuming from {topic}");
 

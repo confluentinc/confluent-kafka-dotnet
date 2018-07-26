@@ -10,23 +10,6 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Name of the configuration property that specifies whether or not 
-        ///     produce calls should block if the send queue is full. If false, a 
-        ///     KafkaExcepion (with Error.Code == ErrorCode.Local_QueueFull) will be 
-        ///     thrown if an attempt is made to produce a message and the send queue
-        ///     is full.
-        ///
-        ///     Warning: if this configuration property is set to true, the
-        ///     dotnet.producer.manual.poll configuration property is set to true, 
-        ///     and Poll is not being called in another thread, this method will 
-        ///     block indefinitely in the event it is called when the send queue
-        ///     is full.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string BlockIfQueueFullPropertyName = "dotnet.producer.block.if.queue.full";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not 
         ///     the producer should start a background poll thread to receive 
         ///     delivery reports and event notifications. Generally, this should be
         ///     set to true. If set to false, you will need to call the Poll function

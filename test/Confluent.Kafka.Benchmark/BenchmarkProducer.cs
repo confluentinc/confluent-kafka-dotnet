@@ -63,7 +63,7 @@ namespace Confluent.Kafka.Benchmark
 
             using (var producer = new Producer<byte[], byte[]>(config, new ByteArraySerializer(), new ByteArraySerializer()))
             {
-                for (var j=0; j<nTests; ++j)
+                for (var j=0; j<nTests; j += 1)
                 {
                     Console.WriteLine($"{producer.Name} producing on {topic} " + (useDeliveryHandler ? "[Action<Message>]" : "[Task]"));
 
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.Benchmark
                             }
                         };
 
-                        for (int i = 0; i < nMessages; i++)
+                        for (int i = 0; i < nMessages; i += 1)
                         {
                             producer.BeginProduce(topic, new Message<byte[], byte[]> { Value = val, Headers = headers }, deliveryHandler);
                         }
@@ -97,7 +97,7 @@ namespace Confluent.Kafka.Benchmark
                     else
                     {
                         var tasks = new Task[nMessages];
-                        for (int i = 0; i < nMessages; i++)
+                        for (int i = 0; i < nMessages; i += 1)
                         {
                             tasks[i] = producer.ProduceAsync(topic, new Message<byte[], byte[]> { Value = val, Headers = headers });
                         }

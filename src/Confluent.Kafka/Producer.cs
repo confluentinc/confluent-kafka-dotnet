@@ -467,7 +467,7 @@ namespace Confluent.Kafka
                 valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                 keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
                 message.Timestamp, Partition.Any, message.Headers, 
-                producer.blockIfQueueFullPropertyValue, handler);
+                handler);
 
             return handler.Task;
         }
@@ -505,7 +505,7 @@ namespace Confluent.Kafka
                 valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                 keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                 message.Timestamp, topicPartition.Partition, message.Headers, 
-                producer.blockIfQueueFullPropertyValue, handler);
+                handler);
 
             return handler.Task;
         }
@@ -534,7 +534,7 @@ namespace Confluent.Kafka
                 valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                 keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                 message.Timestamp, topicPartition.Partition, 
-                message.Headers, producer.blockIfQueueFullPropertyValue, 
+                message.Headers, 
                 new TypedDeliveryHandlerShim_Action(
                     topicPartition.Topic,
                     producer.enableDeliveryReportKey ? message.Key : default(TKey),
@@ -570,7 +570,7 @@ namespace Confluent.Kafka
                 valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                 keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
                 message.Timestamp, Partition.Any,
-                message.Headers, producer.blockIfQueueFullPropertyValue,
+                message.Headers,
                 new TypedDeliveryHandlerShim_Action(
                     topic,
                     producer.enableDeliveryReportKey ? message.Key : default(TKey), 
@@ -589,7 +589,6 @@ namespace Confluent.Kafka
     {
         private readonly bool manualPoll = false;
         private readonly bool enableDeliveryReports = true;
-        internal readonly bool blockIfQueueFullPropertyValue = true;
         internal readonly bool enableDeliveryReportHeaders = true;
         internal readonly bool enableDeliveryReportKey = true;
         internal readonly bool enableDeliveryReportValue = true;
@@ -717,7 +716,6 @@ namespace Confluent.Kafka
             Timestamp timestamp,
             Partition partition, 
             IEnumerable<Header> headers,
-            bool blockIfQueueFull,
             IDeliveryHandler deliveryHandler)
         {
             if (timestamp.Type != TimestampType.CreateTime)
@@ -746,8 +744,7 @@ namespace Confluent.Kafka
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
-                    ptr,
-                    blockIfQueueFull);
+                    ptr);
 
                 if (err != ErrorCode.NoError)
                 {
@@ -764,8 +761,7 @@ namespace Confluent.Kafka
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
-                    IntPtr.Zero, 
-                    blockIfQueueFull);
+                    IntPtr.Zero);
 
                 if (err != ErrorCode.NoError)
                 {
@@ -793,7 +789,6 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.BlockIfQueueFullPropertyName &&
                     prop.Key != ConfigPropertyNames.EnableBackgroundPollPropertyName &&
                     prop.Key != ConfigPropertyNames.EnableDeliveryReportsPropertyName &&
                     prop.Key != ConfigPropertyNames.EnableDeliveryReportHeadersName &&
@@ -821,12 +816,6 @@ namespace Confluent.Kafka
             if (enableDeliveryReportsObj != null)
             {
                 this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
-            }
-
-            var blockIfQueueFullObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.BlockIfQueueFullPropertyName).Value;
-            if (blockIfQueueFullObj != null)
-            {
-                this.blockIfQueueFullPropertyValue = bool.Parse(blockIfQueueFullObj.ToString());
             }
 
             var enableDeliveryReportHeadersObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportHeadersName).Value;
