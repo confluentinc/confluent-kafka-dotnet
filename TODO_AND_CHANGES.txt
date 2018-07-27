@@ -24,6 +24,12 @@
 - Document retry behavior, add commentary on what happens when leader shutdown (cleanly or not).
 - should OffsetsForTimesAsync be on AdminClient?
 - Document the OnError method better. do we even need this over log? Why is it here? is it just confusing?
+- producer dispose my block for up to 100ms. we need a mechanism for immediate shutdown (i.e. use cancel of poll).
+- implement dispose pattern on all IDisposable classes.
+- document when to call flush.
+- Review API in light of nullable reference types (C# 8).
+- Need a background poll loop on admin client for OnError and OnSTatistics and ??.
+- Update integration tests to use AdminClient rather than require bootstrap-topics.sh.
 
 
 # Changes

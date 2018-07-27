@@ -74,51 +74,6 @@
     </returns>
 </Member>
 
-<Member name="ListGroups_TimeSpan">
-    <summary>
-        Get information pertaining to all groups in the Kafka cluster (blocking)
-    
-        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
-        is subject to change.
-    </summary>
-    <param name="timeout">
-        The maximum period of time the call may block.
-    </param>
-</Member>
 
-<Member name="ListGroup_string_TimeSpan">
-    <summary>
-        Get information pertaining to a particular group in the
-        Kafka cluster (blocking).
-    
-        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
-    </summary>
-    <param name="group">
-        The group of interest.
-    </param>
-    <param name="timeout">
-        The maximum period of time the call may block.
-    </param>
-    <returns>
-        Returns information pertaining to the specified group
-        or null if this group does not exist.
-    </returns>
-</Member>
-
-<Member name="ListGroup_string">
-    <summary>
-        Get information pertaining to a particular group in the
-        Kafka cluster (blocks, potentially indefinitely).
-    
-        [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
-    </summary>
-    <param name="group">
-        The group of interest.
-    </param>
-    <returns>
-        Returns information pertaining to the specified group
-        or null if this group does not exist.
-    </returns>
-</Member>
 
 </API>

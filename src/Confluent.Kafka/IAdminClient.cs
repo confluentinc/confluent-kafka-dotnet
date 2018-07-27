@@ -16,7 +16,9 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
+using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka
@@ -26,18 +28,71 @@ namespace Confluent.Kafka
     /// </summary>
     public interface IAdminClient : IClient
     {
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.ListGroups(TimeSpan)" />
+        /// </summary>
         List<GroupInfo> ListGroups(TimeSpan timeout);
-        
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.ListGroup(string, TimeSpan)" />
+        /// </summary>
         GroupInfo ListGroup(string group, TimeSpan timeout);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetWatermarkOffsets(TopicPartition)" />
+        /// </summary>
         WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.QueryWatermarkOffsets(TopicPartition, TimeSpan)" />
+        /// </summary>
         WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout);
 
-        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition);
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetMetadata(bool, string, TimeSpan)" />
+        /// </summary>
         Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetMetadata(bool, TimeSpan)" />
+        /// </summary>
         Metadata GetMetadata(bool allTopics, TimeSpan timeout);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.CreatePartitionsAsync(IEnumerable{NewPartitions}, CreatePartitionsOptions)" />
+        /// </summary>
+        Task<List<CreatePartitionsResult>> CreatePartitionsAsync(
+            IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.DeleteTopicsAsync(IEnumerable{string}, DeleteTopicsOptions)" />
+        /// </summary>
+        Task<List<DeleteTopicResult>> DeleteTopicsAsync(IEnumerable<string> topics, DeleteTopicsOptions options = null);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.CreateTopicsAsync(IEnumerable{NewTopic}, CreateTopicsOptions)" />
+        /// </summary>
+        Task<List<CreateTopicResult>> CreateTopicsAsync(IEnumerable<NewTopic> topics, CreateTopicsOptions options = null);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.AlterConfigsAsync(Dictionary{ConfigResource, List{ConfigEntry}}, AlterConfigsOptions)" />
+        /// </summary>
+        Task<List<AlterConfigResult>> AlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, AlterConfigsOptions options = null);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.DescribeConfigsAsync(IEnumerable{ConfigResource}, DescribeConfigsOptions)" />
+        /// </summary>
+        Task<List<DescribeConfigResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null);
     }
+
 }

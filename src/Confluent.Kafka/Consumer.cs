@@ -584,32 +584,14 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all 
-        ///     brokers down. Note that the client will try to automatically 
-        ///     recover from errors - these errors should be seen as 
-        ///     informational rather than catastrophic.
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />
         /// </summary>
-        /// <remarks>
-        ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
-        ///     (on the same thread).
-        /// </remarks>
         public event EventHandler<Error> OnError;
 
 
         /// <summary>
-        ///     Raised on librdkafka statistics events. JSON formatted
-        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />
         /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        ///
-        ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
-        ///     (on the same thread).
-        /// </remarks>
         public event EventHandler<string> OnStatistics;
 
 
@@ -1035,41 +1017,14 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Adds one or more brokers to the Client's list of initial
-        ///     bootstrap brokers. 
-        ///
-        ///     Note: Additional brokers are discovered automatically as
-        ///     soon as the Client connects to any broker by querying the
-        ///     broker metadata. Calling this method is only required in
-        ///     some scenarios where the address of all brokers in the
-        ///     cluster changes.
+        ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
         /// </summary>
-        /// <param name="brokers">
-        ///     Comma-separated list of brokers in the same format as 
-        ///     the bootstrap.server configuration parameter.
-        /// </param>
-        /// <remarks>
-        ///     There is currently no API to remove existing configured, 
-        ///     added or learnt brokers.
-        /// </remarks>
-        /// <returns>
-        ///     The number of brokers added. This value includes brokers
-        ///     that may have been specified a second time.
-        /// </returns>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
-
         /// <summary>
-        ///     Gets the name of this client instance.
-        ///     Contains (but is not equal to) the client.id configuration
-        ///     parameter.
+        ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
         /// </summary>
-        /// <remarks>
-        ///     This name will be unique across all client instances
-        ///     in a given application which allows log messages to be
-        ///     associated with the corresponding instance.
-        /// </remarks>
         public string Name
             => kafkaHandle.Name;
 

@@ -62,35 +62,42 @@ namespace Confluent.Kafka
             Members = members;
         }
 
+
         /// <summary>
         ///     Gets the originating-broker info.
         /// </summary>
         public BrokerMetadata Broker { get; }
+
 
         /// <summary>
         ///     Gets the group name
         /// </summary>
         public string Group { get; }
 
+
         /// <summary>
         ///     Gets a rich <see cref="Error"/> value associated with the information encapsulated by this class.
         /// </summary>
         public Error Error { get; }
+
 
         /// <summary>
         ///     Gets the group state
         /// </summary>
         public string State { get; }
 
+
         /// <summary>
         ///     Gets the group protocol type
         /// </summary>
         public string ProtocolType { get; }
 
+
         /// <summary>
         ///     Gets the group protocol
         /// </summary>
         public string Protocol { get; }
+
 
         /// <summary>
         ///     Gets the group members

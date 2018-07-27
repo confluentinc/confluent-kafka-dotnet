@@ -34,22 +34,51 @@ namespace Confluent.Kafka
     /// </summary>
     public interface IProducer<TKey, TValue> : IClient
     {
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.ProduceAsync(string, Message{TKey, TValue}, CancellationToken)" />
+        /// </summary>
         Task<DeliveryReport<TKey, TValue>> ProduceAsync(
             string topic,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.ProduceAsync(TopicPartition, Message{TKey, TValue}, CancellationToken)" />
+        /// </summary>
         Task<DeliveryReport<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        /// </summary>
         void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        /// </summary>
         void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.Poll(TimeSpan)" />
+        /// </summary>
+        int Poll(TimeSpan timeout);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.Flush(TimeSpan)" />
+        /// </summary>
         int Flush(TimeSpan timeout);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.Flush(CancellationToken)" />
+        /// </summary>
         int Flush(CancellationToken cancellationToken = default(CancellationToken));
     }
 }

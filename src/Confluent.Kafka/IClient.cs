@@ -31,6 +31,7 @@ namespace Confluent.Kafka
         /// </summary>
         Handle Handle { get; }
 
+
         /// <summary>
         ///     Gets the name of this client instance.
         ///     Contains (but is not equal to) the client.id configuration
@@ -42,6 +43,7 @@ namespace Confluent.Kafka
         ///     associated with the corresponding instance.
         /// </remarks>
         string Name { get; }
+
 
         /// <summary>
         ///     Adds one or more brokers to the Client's list of initial
@@ -67,6 +69,7 @@ namespace Confluent.Kafka
         /// </returns>
         int AddBrokers(string brokers);
 
+
         /// <summary>
         ///     Raised on librdkafka statistics events. JSON formatted
         ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
@@ -75,8 +78,14 @@ namespace Confluent.Kafka
         ///     You can enable statistics and set the statistics interval
         ///     using the statistics.interval.ms configuration parameter
         ///     (disabled by default).
+        /// 
+        ///     On the Consumer, executes as a side-effect of 
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
+        ///     (on the same thread) and on the Producer and AdminClient, on the
+        ///     background poll thread.
         /// </remarks>
         event EventHandler<string> OnStatistics;
+
 
         /// <summary>
         ///     Raised on critical errors, e.g. connection failures or all 
@@ -84,6 +93,12 @@ namespace Confluent.Kafka
         ///     recover from errors - these errors should be seen as 
         ///     informational rather than catastrophic.
         /// </summary>
+        /// <remarks>
+        ///     On the Consumer, executes as a side-effect of 
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
+        ///     (on the same thread) and on the Producer and AdminClient, on the
+        ///     background poll thread.
+        /// </remarks>
         event EventHandler<Error> OnError;
     }
 }

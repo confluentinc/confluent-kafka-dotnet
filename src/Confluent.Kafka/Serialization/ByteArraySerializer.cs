@@ -20,12 +20,14 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Serialization
 {
     /// <summary>
-    ///     System.Byte[] serializer. This serializer simply passes through the provided System.Byte[] value.
+    ///     System.Byte[] serializer. This serializer simply passes 
+    ///     through the provided System.Byte[] value.
     /// </summary>
     public class ByteArraySerializer : ISerializer<byte[]>
     {
         /// <summary>
-        ///     Serializes the specified System.Byte[] value (or null) to a byte array. Byte order is original order. 
+        ///     Serializes the specified System.Byte[] value (or null) to 
+        ///     a byte array. Byte order is original order. 
         /// </summary>
         /// <param name="topic">
         ///     The topic associated with the data (ignored by this serializer).
@@ -41,9 +43,13 @@ namespace Confluent.Kafka.Serialization
             return data;
         }
 
-        /// <include file='../include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Serialization.ISerializer{T}.Configure(IEnumerable{KeyValuePair{string, object}}, bool)" />
+        /// </summary>
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
             => config;
+
 
         /// <summary>
         ///     Releases any unmanaged resources owned by the serializer (noop for this type).

@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
 
-                var queryOffsets = adminClient.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0));
+                var queryOffsets = adminClient.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0), TimeSpan.FromSeconds(20));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.NotEqual(queryOffsets.High, Offset.Invalid);
 
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // the offset of the next message to be read.
                 Assert.Equal(getOffsets.High, dr.Offset + 1);
 
-                var queryOffsets = adminClient.QueryWatermarkOffsets(dr.TopicPartition);
+                var queryOffsets = adminClient.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
 

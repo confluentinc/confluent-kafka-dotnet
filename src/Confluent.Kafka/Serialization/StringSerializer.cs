@@ -75,7 +75,10 @@ namespace Confluent.Kafka.Serialization
             return encoding.GetBytes(data);
         }
 
-        /// <include file='../include_docs.xml' path='API/Member[@name="ISerializer_Configure"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Serialization.ISerializer{T}.Configure(IEnumerable{KeyValuePair{string, object}}, bool)" />
+        /// </summary>
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
             var propertyName = isKey ? ConfigPropertyNames.SerializerKeyEncodingConfigParam : ConfigPropertyNames.SerializerValueEncodingConfigParam;

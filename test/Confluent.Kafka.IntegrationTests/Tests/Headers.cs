@@ -35,7 +35,8 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new Dictionary<string, object>
             {
-                { "bootstrap.servers", bootstrapServers }
+                { "bootstrap.servers", bootstrapServers },
+                { "max.in.flight", 1 }
             };
 
             var consumerConfig = new Dictionary<string, object>

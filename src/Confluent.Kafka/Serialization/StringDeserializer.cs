@@ -82,7 +82,10 @@ namespace Confluent.Kafka.Serialization
 #endif
         }
 
-        /// <include file='../include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Serialization.IDeserializer{T}.Configure(IEnumerable{KeyValuePair{string, object}}, bool)" />
+        /// </summary>
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
             var propertyName = isKey ? ConfigPropertyNames.DeserializerKeyEncodingConfigParam : ConfigPropertyNames.DeserializerValueEncodingConfigParam;
@@ -120,6 +123,7 @@ namespace Confluent.Kafka.Serialization
 
             return config;
         }
+
 
         /// <summary>
         ///     Releases any unmanaged resources owned by the deserializer (noop for this type).

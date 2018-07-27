@@ -511,21 +511,55 @@ namespace Confluent.Kafka
         }
 
 
-#region Groups
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroups_TimeSpan"]/*' />
+        /// <summary>
+        ///     Get information pertaining to all groups in the Kafka cluster (blocking)
+        ///
+        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
+        ///     is subject to change.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call may block.
+        /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string_TimeSpan"]/*' />
+
+        /// <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster (blocking).
+        ///
+        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <param name="timeout">
+        ///     The maximum period of time the call may block.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="ListGroup_string"]/*' />
+
+        ///  <summary>
+        ///     Get information pertaining to a particular group in the
+        ///     Kafka cluster (blocks, potentially indefinitely).
+        ///
+        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+        /// </summary>
+        /// <param name="group">
+        ///     The group of interest.
+        /// </param>
+        /// <returns>
+        ///     Returns information pertaining to the specified group
+        ///     or null if this group does not exist.
+        /// </returns>
         public GroupInfo ListGroup(string group)
             => kafkaHandle.ListGroup(group, -1);
-#endregion
 
-#region WatermarkOffsets
 
         /// <summary>
         ///     Get last known low (oldest available/beginning) and high (newest/end)
@@ -554,6 +588,7 @@ namespace Confluent.Kafka
             return kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
         }
 
+
         /// <summary>
         ///     Query the Kafka cluster for low (oldest available/beginning) and high (newest/end)
         ///     offsets for the specified topic/partition (blocking).
@@ -572,30 +607,25 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Query the Kafka cluster for low (oldest available/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocks, potentially indefinitely).
+        ///     Query the cluster for metadata corresponding to all topics in the cluster (blocking).
+        ///
+        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
         /// </summary>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets (see that class for additional documentation).
-        /// </returns>
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, -1);
-#endregion
-
-
-#region Metadata
         private SafeTopicHandle getKafkaTopicHandle(string topic) 
             => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="GetMetadata_bool_TimeSpan"]/*' />
+
+        /// <summary>
+        ///     Query the cluster for metadata.
+        ///
+        ///     - allTopics = true - request all topics from cluster
+        ///     - allTopics = false - request only locally known topics.
+        /// 
+        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+        /// </summary>
         public Metadata GetMetadata(bool allTopics, TimeSpan timeout)
             => kafkaHandle.GetMetadata(allTopics, null, timeout.TotalMillisecondsAsInt());
+
 
         /// <summary>
         ///     Query the cluster for metadata (blocking).
@@ -603,50 +633,42 @@ namespace Confluent.Kafka
         ///     - allTopics = true - request all topics from cluster
         ///     - allTopics = false, topic = null - request only locally known topics.
         ///     - allTopics = false, topic = valid - request specific topic
+        /// 
+        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
         /// </summary>
         public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
             => kafkaHandle.GetMetadata(
                 allTopics, 
                 topic == null ? null : getKafkaTopicHandle(topic), 
                 timeout.TotalMillisecondsAsInt());
-#endregion
+
 
         /// <summary>
-        ///     Adds one or more brokers to the Client's list of initial
-        ///     bootstrap brokers. 
-        ///
-        ///     Note: Additional brokers are discovered automatically as
-        ///     soon as the Client connects to any broker by querying the
-        ///     broker metadata. Calling this method is only required in
-        ///     some scenarios where the address of all brokers in the
-        ///     cluster changes.
+        ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
         /// </summary>
-        /// <param name="brokers">
-        ///     Comma-separated list of brokers in the same format as 
-        ///     the bootstrap.server configuration parameter.
-        /// </param>
-        /// <remarks>
-        ///     There is currently no API to remove existing configured, 
-        ///     added or learnt brokers.
-        /// </remarks>
-        /// <returns>
-        ///     The number of brokers added. This value includes brokers
-        ///     that may have been specified a second time.
-        /// </returns>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
+        /// </summary>
         public string Name
             => kafkaHandle.Name;
 
+
         /// <summary>
-        ///     An opaque reference to the underlying librdkafka client instance.
+        ///     An opaque reference to the underlying librdkafka 
+        ///     client instance.
         /// </summary>
         public Handle Handle
             => handle;
 
+
         /// <summary>
-        ///     Releases all resources used by this client.
+        ///     Releases all resources used by this Producer. In the current
+        ///     implementation, this method may block for up to 100ms. This 
+        ///     will be replaced with a non-blocking version in the future.
         /// </summary>
         public void Dispose()
         {
@@ -686,14 +708,20 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <include file='include_docs_client.xml' path='API/Member[@name="OnStatistics"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />
+        /// </summary>
         public event EventHandler<string> OnStatistics
         {
             add { this.handle.Owner.OnStatistics += value; }
             remove { this.handle.Owner.OnStatistics -= value; }
         }
 
-        /// <include file='include_docs_producer.xml' path='API/Member[@name="OnError"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />
+        /// </summary>
         public event EventHandler<Error> OnError
         {
             add { this.handle.Owner.OnError += value; }
