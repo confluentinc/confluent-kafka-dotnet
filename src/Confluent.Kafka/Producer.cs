@@ -451,23 +451,46 @@ namespace Confluent.Kafka
         /// </returns>
         public Task<DeliveryReport<TKey, TValue>> ProduceAsync(string topic, Message<TKey, TValue> message, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var handler = new TypedTaskDeliveryHandlerShim(topic,
-                producer.enableDeliveryReportKey ? message.Key : default(TKey),
-                producer.enableDeliveryReportValue ? message.Value : default(TValue));
+            if (this.producer.enableDeliveryReports)
+            {
+                var handler = new TypedTaskDeliveryHandlerShim(topic,
+                    producer.enableDeliveryReportKey ? message.Key : default(TKey),
+                    producer.enableDeliveryReportValue ? message.Value : default(TValue));
 
-            cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
+                cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
-            var keyBytes = keySerializer?.Serialize(topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+                var keyBytes = keySerializer?.Serialize(topic, message.Key);
+                var valBytes = valueSerializer?.Serialize(topic, message.Value);
 
-            producer.ProduceImpl(
-                topic,
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                message.Timestamp, Partition.Any, message.Headers, 
-                handler);
+                producer.ProduceImpl(
+                    topic,
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    message.Timestamp, Partition.Any, message.Headers, 
+                    handler);
 
-            return handler.Task;
+                return handler.Task;
+            }
+            else
+            {
+                var keyBytes = keySerializer?.Serialize(topic, message.Key);
+                var valBytes = valueSerializer?.Serialize(topic, message.Value);
+
+                producer.ProduceImpl(
+                    topic,
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    message.Timestamp, Partition.Any, message.Headers, 
+                    null);
+
+                var result = new DeliveryReport<TKey, TValue>
+                {
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(new TopicPartition(topic, Partition.Any), Offset.Invalid, new Error(ErrorCode.NoError)),
+                    Message = message
+                };
+
+                return Task.FromResult(result);
+            }
         }
 
 
@@ -489,23 +512,46 @@ namespace Confluent.Kafka
         /// </returns>
         public Task<DeliveryReport<TKey, TValue>> ProduceAsync(TopicPartition topicPartition, Message<TKey, TValue> message, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var handler = new TypedTaskDeliveryHandlerShim(topicPartition.Topic,
-                producer.enableDeliveryReportKey ? message.Key : default(TKey),
-                producer.enableDeliveryReportValue ? message.Value : default(TValue));
+            if (this.producer.enableDeliveryReports)
+            {
+                var handler = new TypedTaskDeliveryHandlerShim(topicPartition.Topic,
+                    producer.enableDeliveryReportKey ? message.Key : default(TKey),
+                    producer.enableDeliveryReportValue ? message.Value : default(TValue));
 
-            cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
+                cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
-            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
-            
-            producer.ProduceImpl(
-                topicPartition.Topic, 
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                message.Timestamp, topicPartition.Partition, message.Headers, 
-                handler);
+                var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
+                var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+                
+                producer.ProduceImpl(
+                    topicPartition.Topic, 
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                    message.Timestamp, topicPartition.Partition, message.Headers, 
+                    handler);
 
-            return handler.Task;
+                return handler.Task;
+            }
+            else
+            {
+                var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
+                var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+                
+                producer.ProduceImpl(
+                    topicPartition.Topic, 
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                    message.Timestamp, topicPartition.Partition, message.Headers, 
+                    null);
+
+                var result = new DeliveryReport<TKey, TValue>
+                {
+                    TopicPartitionOffsetError = new TopicPartitionOffsetError(topicPartition, Offset.Invalid, new Error(ErrorCode.NoError)),
+                    Message = message
+                };
+
+                return Task.FromResult(result);
+            }
         }
 
 
@@ -586,7 +632,7 @@ namespace Confluent.Kafka
     internal class Producer : IClient
     {
         private readonly bool manualPoll = false;
-        private readonly bool enableDeliveryReports = true;
+        internal readonly bool enableDeliveryReports = true;
         internal readonly bool enableDeliveryReportHeaders = true;
         internal readonly bool enableDeliveryReportKey = true;
         internal readonly bool enableDeliveryReportValue = true;

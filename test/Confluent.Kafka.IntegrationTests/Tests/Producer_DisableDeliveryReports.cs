@@ -49,21 +49,37 @@ namespace Confluent.Kafka.IntegrationTests
                 { "dotnet.producer.enable.delivery.report.values", true },
             };
 
-            // if delivery reports are disabled
-            //  1. callback functions should never called, even if specified.
-            //  2. specifying no delivery report handlers is valid.
+            // If delivery reports are disabled:
+            //   1. callback functions should never called, even if specified.
+            //   2. specifying no delivery report handlers is valid.
+            //   3. tasks should complete immediately.
             int count = 0;
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
-                producer.BeginProduce(
-                    singlePartitionTopic,
-                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
-                    (DeliveryReport<byte[], byte[]> dr) => count += 1
-                );
-
+                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue }, (DeliveryReport<byte[], byte[]> dr) => count += 1);
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
 
-                producer.Flush(TimeSpan.FromSeconds(10));
+                var drTask = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                Assert.True(drTask.IsCompleted);
+                Assert.Equal(ErrorCode.NoError, drTask.Result.Error.Code);
+                Assert.Equal(Offset.Invalid, drTask.Result.Offset);
+                Assert.Equal(Partition.Any, drTask.Result.Partition);
+                Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
+                Assert.Equal(TestKey, drTask.Result.Message.Key);
+                Assert.Equal(TestValue, drTask.Result.Message.Value);
+
+                drTask = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                Assert.True(drTask.IsCompleted);
+                Assert.Equal(ErrorCode.NoError, drTask.Result.Error.Code);
+                Assert.Equal(Offset.Invalid, drTask.Result.Offset);
+                Assert.Equal(0, (int)drTask.Result.Partition);
+                Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
+                Assert.Equal(TestKey, drTask.Result.Message.Key);
+                Assert.Equal(TestValue, drTask.Result.Message.Value);
+
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             Assert.Equal(0, count);
