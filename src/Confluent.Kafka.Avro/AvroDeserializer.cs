@@ -109,7 +109,9 @@ namespace Confluent.Kafka.Serialization
             return deserializerImpl.Deserialize(topic, data.ToArray());
         }
 
-        /// <include file='../Confluent.Kafka/include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
+        /// <summary>
+        ///     Refer to: <see cref="Confluent.Kafka.Serialization.ISerializer{T}.Configure(IEnumerable{KeyValuePair{string, object}}, bool)" />
+        /// </summary>
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
             var keyOrValue = isKey ? "Key" : "Value";
