@@ -161,7 +161,7 @@ The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to confi
 
 ### Known Issues
 
-The mechanism used by librdkafka to poll simultaneously for both new application and socket events is not supported on Windows. If you are on Windows and experiencing poor latency (which may happen in low throughput scenarios in particular), set `socket.blocking.max.ms` to `1` to limit the time librdkafka will block waiting for network events to 1ms (the trade-off being higher CPU usage). We will optimize the librdkafka control loop for use on Windows in a future version of the library.
+The mechanism used by librdkafka to poll simultaneously for both new application and socket events is not supported on Windows. If you are on Windows and experiencing poor latency (which may happen in low throughput scenarios in particular), as a workaround, set `socket.blocking.max.ms` to `1` to limit the time librdkafka will block waiting for network events to 1ms (the trade-off being higher CPU usage). We will optimize the librdkafka control loop for use on Windows in a future version of the library.
 
 
 ## Build
