@@ -30,7 +30,9 @@
 - Review API in light of nullable reference types (C# 8).
 - Need a background poll loop on admin client for OnError and OnSTatistics and ??.
 - Update integration tests to use AdminClient rather than require bootstrap-topics.sh.
-
+- Example of using Consumer with more than one topic, pause/resume.
+  possibly this scenario: https://github.com/confluentinc/confluent-kafka-dotnet/issues/421
+  explain difference between pause/resume and the method implemented. 
 
 # Changes
 
@@ -64,3 +66,4 @@
 - Removed cast from error to bool.
 - Changed name of `HasError` to `IsError`
 
+- offsets for times, no args, return empty.

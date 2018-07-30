@@ -49,13 +49,14 @@ namespace Confluent.Kafka.IntegrationTests
             var lastMessage = messages[N - 1];
             using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
             {
-                // NOTE: When calling OffsetsForTimes a proper timeout for must be set. 
-                // If it will be too short, we'll get an exception here or incorrect result.
-                // See librdkafka implementation for details https://github.com/edenhill/librdkafka/blob/master/src/rdkafka.c#L2475
                 var timeout = TimeSpan.FromSeconds(10);
 
+                // If empty request, expect empty result.
+                var result = consumer.OffsetsForTimesAsync(new TopicPartitionTimestamp[0], timeout).Result.ToList();
+                Assert.Empty(result);
+
                 // Getting the offset for the first produced message timestamp
-                var result = consumer.OffsetsForTimesAsync(
+                result = consumer.OffsetsForTimesAsync(
                         new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Message.Timestamp) },
                         timeout).Result
                     .ToList();

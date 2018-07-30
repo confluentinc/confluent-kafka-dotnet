@@ -147,13 +147,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.StoreOffset(ConsumeResult{TKey, TValue})" />
         /// </summary>
-        TopicPartitionOffset StoreOffset(ConsumeResult<TKey, TValue> result);
+        void StoreOffset(ConsumeResult<TKey, TValue> result);
 
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.StoreOffsets(IEnumerable{TopicPartitionOffset})" />
         /// </summary>
-        List<TopicPartitionOffset> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
+        void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
 
 
         /// <summary>
@@ -165,13 +165,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.CommitAsync(ConsumeResult{TKey, TValue}, CancellationToken)" />
         /// </summary>
-        Task<List<TopicPartitionOffset>> CommitAsync(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken));
+        Task<TopicPartitionOffset> CommitAsync(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.CommitAsync(IEnumerable{TopicPartitionOffset}, CancellationToken)" />
         /// </summary>
-        Task<List<TopicPartitionOffset>> CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));
+        Task CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
@@ -199,9 +199,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.PositionAsync(IEnumerable{TopicPartition})" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Position(IEnumerable{TopicPartition})" />
         /// </summary>
-        Task<List<TopicPartitionOffset>> PositionAsync(IEnumerable<TopicPartition> partitions);
+        List<TopicPartitionOffset> Position(IEnumerable<TopicPartition> partitions);
 
 
         /// <summary>

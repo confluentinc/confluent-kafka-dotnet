@@ -741,8 +741,8 @@ namespace Confluent.Kafka
         /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
         ///     Thrown if result is in error.
         /// </exception>
-        public TopicPartitionOffset StoreOffset(ConsumeResult<TKey, TValue> result)
-            => StoreOffsets(new[] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) })[0];
+        public void StoreOffset(ConsumeResult<TKey, TValue> result)
+            => StoreOffsets(new[] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
 
 
         /// <summary>
@@ -770,7 +770,7 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public List<TopicPartitionOffset> StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        public void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
             => kafkaHandle.StoreOffsets(offsets);
 
 
@@ -817,7 +817,7 @@ namespace Confluent.Kafka
         /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
         ///     Thrown if the result is in error.
         /// </exception>
-        public Task<List<TopicPartitionOffset>> CommitAsync(
+        public Task<TopicPartitionOffset> CommitAsync(
             ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (result.Error.Code != ErrorCode.NoError)
@@ -825,7 +825,7 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Attempt was made to commit offset corresponding to an errored message");
             }
 
-            return CommitAsync(new[] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) }, cancellationToken);
+            return Task.Run(() => kafkaHandle.CommitSync(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) })[0]);
         }
 
 
@@ -852,10 +852,7 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public Task<List<TopicPartitionOffset>> CommitAsync(
-            IEnumerable<TopicPartitionOffset> offsets, 
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
+        public Task CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken))
             // TODO: use a librdkafka queue for this.
             => Task.Run(() => kafkaHandle.CommitSync(offsets));
 
@@ -961,9 +958,9 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public Task<List<TopicPartitionOffset>> PositionAsync(IEnumerable<TopicPartition> partitions)
+        public List<TopicPartitionOffset> Position(IEnumerable<TopicPartition> partitions)
             // TODO: use a librdkafka queue for this.
-            => Task.Run(() => kafkaHandle.Position(partitions));
+            => kafkaHandle.Position(partitions);
 
 
         /// <summary>

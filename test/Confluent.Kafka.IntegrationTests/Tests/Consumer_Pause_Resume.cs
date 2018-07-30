@@ -76,6 +76,10 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
 
+                // check that these don't throw.
+                consumer.Pause(new List<TopicPartition>());
+                consumer.Resume(new List<TopicPartition>());
+
                 consumer.Close();
             }
         }
