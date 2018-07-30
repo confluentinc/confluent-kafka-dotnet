@@ -79,6 +79,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.Flush(CancellationToken)" />
         /// </summary>
-        int Flush(CancellationToken cancellationToken = default(CancellationToken));
+        void Flush(CancellationToken cancellationToken = default(CancellationToken));
     }
 }

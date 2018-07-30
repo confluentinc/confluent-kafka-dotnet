@@ -205,20 +205,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Wait until all outstanding produce requests and delievery report
         ///     callbacks are completed.
-        ///    
-        ///     [API-SUBJECT-TO-CHANGE] - the semantics and/or type of the return value
-        ///     is subject to change.
         /// </summary>
-        /// <returns>
-        ///     The current librdkafka out queue length. This should be interpreted
-        ///     as a rough indication of the number of messages waiting to be sent
-        ///     to or acknowledged by the broker. If zero, there are no outstanding
-        ///     messages or callbacks. Specifically, the value is equal to the sum
-        ///     of the number of produced messages for which a delivery report has
-        ///     not yet been handled and a number which is less than or equal to the
-        ///     number of pending delivery report callback events (as determined by
-        ///     an internal librdkafka implementation detail).
-        /// </returns>
         /// <remarks>
         ///     This method should typically be called prior to destroying a producer
         ///     instance to make sure all queued and in-flight produce requests are
@@ -229,14 +216,17 @@ namespace Confluent.Kafka
         ///     before giving up and so also affects the maximum time a call to Flush 
         ///     may block.
         /// </remarks>
-        public int Flush(CancellationToken cancellationToken)
+        /// <exception cref="System.OperationCanceledException">
+        ///     Thrown if the operation is cancelled.
+        /// </exception>
+        public void Flush(CancellationToken cancellationToken)
         {
             while (true)
             {
                 int result = Flush(100);
                 if (result == 0)
                 {
-                    return 0;
+                    return;
                 }
                 if (cancellationToken.IsCancellationRequested)
                 {
