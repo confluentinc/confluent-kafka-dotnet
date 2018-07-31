@@ -61,13 +61,11 @@ namespace Confluent.Kafka.Impl
 
         internal IntPtr Dup()
         {
-            ThrowIfHandleClosed();
             return Librdkafka.conf_dup(handle);
         }
 
         internal Dictionary<string, string> Dump()
         {
-            ThrowIfHandleClosed();
             UIntPtr cntp = (UIntPtr) 0;
             IntPtr data = Librdkafka.conf_dump(handle, out cntp);
 
@@ -101,7 +99,6 @@ namespace Confluent.Kafka.Impl
 
         internal void Set(string name, string value)
         {
-            ThrowIfHandleClosed();
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
             ConfRes res = Librdkafka.conf_set(handle, name, value,
                     errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
@@ -125,7 +122,6 @@ namespace Confluent.Kafka.Impl
 
         internal string Get(string name)
         {
-            ThrowIfHandleClosed();
             UIntPtr destSize = (UIntPtr) 0;
             StringBuilder sb = null;
 

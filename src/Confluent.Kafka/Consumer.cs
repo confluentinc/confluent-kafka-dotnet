@@ -34,6 +34,10 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
+        private bool isDisposed = false;
+        private object isDisposedLockObj = new object();
+
+
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
         private readonly bool enableTopicNamesMarshaling = true;
@@ -48,12 +52,15 @@ namespace Confluent.Kafka
         private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return; }
             OnError?.Invoke(this, new Error(err, reason));
         }
 
         private readonly Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return 0; }
+
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
@@ -62,6 +69,11 @@ namespace Confluent.Kafka
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
+            // the log delegate should never make use of the client instance, so the
+            // following is not necessary. also, the callback may also be called when
+            // kafkaHandle is null.
+            // if (kafkaHandle.IsDestroyed) { return; }
+
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
             if (logDelegate == null)
@@ -81,6 +93,8 @@ namespace Confluent.Kafka
             IntPtr partitions,
             IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return; }
+
             var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
             if (err == ErrorCode.Local_AssignPartitions)
             {
@@ -115,6 +129,8 @@ namespace Confluent.Kafka
             IntPtr offsets,
             IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return; }
+
             OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
                 SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
                 new Error(err)
@@ -1031,55 +1047,86 @@ namespace Confluent.Kafka
         ///     This can be used to construct an AdminClient that utilizes the same
         ///     underlying librdkafka client as this Consumer instance.
         /// </summary>
-        public Handle Handle 
+        public Handle Handle
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
 
         /// <summary>
         ///     Alerts the group coodinator that the consumer is exiting the group
-        ///     then releases all resources used by this consumer. If you do not
-        ///     call <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> before 
-        ///     the consumer instance is disposed (or your application exits), the
-        ///     group rebalance will not be immediate - it will occur after the period
-        ///     of time specified by the broker config `group.max.session.timeout.ms`.
+        ///     then releases all resources used by this consumer. You should call
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> instead
+        ///     of <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose()" />
+        ///     (or just before) to ensure a timely consumer-group rebalance. If you
+        ///     do not call <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />,
+        ///     the group will rebalance after a timeout specified by the broker
+        ///     config property `group.max.session.timeout.ms`. Note: the
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentRevoked" />
+        ///     event (TODO: others?) will be called as a side-effect of calling this
+        ///     method.
         /// </summary>
         /// <remarks>
-        ///     Note: Currently the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose" />
-        ///     method actually does call this method automatically. In the future, the
-        ///     behavior of <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose" /> will be
-        ///     changed so that it does not.
+        ///     Currently the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose()" />
+        ///     and <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> methods
+        ///     are in fact identical. This will change in the future.
         /// </remarks>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the operation fails.
         /// </exception>
         public void Close()
-            => kafkaHandle.ConsumerClose();
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
 
         /// <summary>
-        ///     Releases all resources used by this Consumer. You should call 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> prior to 
-        ///     this method. In the current implementation, if you have not previously
-        ///     called <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />, this
-        ///     will be called automatically for you as a side effect of calling this
-        ///     method, which is (a) a blocking operation and (b) will result in the 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentRevoked" />
-        ///     event being triggered (if handlers have been added) which may result in
-        ///     an exception (if your handler(s) can throw exceptions). In the future,
-        ///     we will change the Dispose method to not call
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />
-        ///     and to never block. The current behavior is at-odds with
-        ///     .NET conventions but reflects the operation of the underlying librdkafka
-        ///     library.
+        ///     [Desired functionality, refer to remarks for actual current 
+        ///     behavior]: Releases all resources used by this Consumer without
+        ///     alerting the group coordinator that the consumer is exiting
+        ///     the group. The group will rebalance after a timeout specified
+        ///     by the broker config property `group.max.session.timeout.ms`.
         /// </summary>
+        /// <remarks>
+        ///     This method is currently (a) a blocking operation and (b) will 
+        ///     result in the consumer cleanly exiting the group. In the future,
+        ///     we will change this behavior to that stated in the summary. The
+        ///     current behavior is at-odds with .NET conventions but reflects
+        ///     the operation of the underlying librdkafka library.
+        /// </remarks>
         public void Dispose()
         {
-            // consumers always own their own handles.
-            KeyDeserializer?.Dispose();
-            ValueDeserializer?.Dispose();
-
-            kafkaHandle.Dispose();
-            kafkaHandle.FlagAsClosed();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+
+        /// <summary>
+        ///     Releases the unmanaged resources used by the
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}" />
+        ///     and optionally disposes the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        ///     true to release both managed and unmanaged resources;
+        ///     false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            lock (isDisposedLockObj)
+            { 
+                if (isDisposed) { return; }
+                isDisposed = true;
+            }
+
+            if (disposing)
+            {
+                KeyDeserializer?.Dispose();
+                ValueDeserializer?.Dispose();
+
+                // consumers always own their own handles.
+                kafkaHandle.ConsumerClose();
+                kafkaHandle.Dispose();
+            }
+        }
+
     }
 }

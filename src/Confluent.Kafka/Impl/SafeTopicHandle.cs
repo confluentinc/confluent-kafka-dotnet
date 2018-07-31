@@ -54,7 +54,6 @@ namespace Confluent.Kafka.Impl
 
         internal bool PartitionAvailable(int partition)
         {
-            ThrowIfHandleClosed();
             return Librdkafka.topic_partition_available(handle, partition);
         }
     }

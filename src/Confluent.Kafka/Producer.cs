@@ -269,22 +269,40 @@ namespace Confluent.Kafka
         /// </remarks>
         public void Dispose()
         {
-            if (keySerializer != null)
-            {
-                keySerializer.Dispose();
-            }
-
-            if (valueSerializer != null)
-            {
-                valueSerializer.Dispose();
-            }
-
-            if (ownedClient == this.handle.Owner) 
-            {
-                ownedClient.Dispose();
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
+
+        /// <summary>
+        ///     Releases the unmanaged resources used by the
+        ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
+        ///     and optionally disposes the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        ///     true to release both managed and unmanaged resources;
+        ///     false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (keySerializer != null)
+                {
+                    keySerializer.Dispose();
+                }
+
+                if (valueSerializer != null)
+                {
+                    valueSerializer.Dispose();
+                }
+
+                if (ownedClient == this.handle.Owner) 
+                {
+                    ownedClient.Dispose();
+                }
+            }
+        }
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
@@ -651,12 +669,15 @@ namespace Confluent.Kafka
         private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return; }
             OnError?.Invoke(this, new Error(err, reason));
         }
 
         private readonly Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return 0; }
+
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
@@ -665,6 +686,11 @@ namespace Confluent.Kafka
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
+            // the log delegate should never make use of the client instance, so the
+            // following is not necessary. also, the callback may also be called when
+            // kafkaHandle is null.
+            // if (kafkaHandle.IsDestroyed) { return; }
+
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
             if (logDelegate == null)
@@ -685,6 +711,8 @@ namespace Confluent.Kafka
         /// </remarks>
         private void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
+            if (kafkaHandle.IsDestroyed) { return; }
+
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
             // the msg._private property has dual purpose. Here, it is an opaque pointer set
@@ -970,30 +998,41 @@ namespace Confluent.Kafka
         /// </summary>
         public void Dispose()
         {
-            // TODO: If this method is called in a finalizer, can callbackTask potentially be null?
-            if (!this.manualPoll)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+        /// <summary>
+        ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                callbackCts.Cancel();
-                try
+                if (!this.manualPoll)
                 {
-                    // Note: It's necessary to wait on callbackTask before disposing kafkaHandle
-                    // since the poll loop makes use of this.
-                    callbackTask.Wait();
-                }
-                catch (AggregateException e)
-                {
-                    if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                    callbackCts.Cancel();
+                    try
                     {
-                        throw e.InnerException;
+                        // Note: It's necessary to wait on callbackTask before disposing kafkaHandle
+                        // since the poll loop makes use of this.
+                        callbackTask.Wait();
+                    }
+                    catch (AggregateException e)
+                    {
+                        if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                        {
+                            throw e.InnerException;
+                        }
+                    }
+                    finally
+                    {
+                        callbackCts.Dispose();
                     }
                 }
-                finally
-                {
-                    callbackCts.Dispose();
-                }
+                kafkaHandle.Dispose();
             }
-            kafkaHandle.Dispose();
-            kafkaHandle.FlagAsClosed();
         }
 
 

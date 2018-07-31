@@ -247,10 +247,19 @@ namespace Confluent.SchemaRegistry
 
         public void Dispose()
         {
-            foreach (var client in this.clients)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                client.Dispose();
-            }    
+                foreach (var client in this.clients)
+                {
+                    client.Dispose();
+                }
+            }
         }
     }
 }

@@ -666,31 +666,51 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Releases all resources used by this Producer. In the current
+        ///     Releases all resources used by this AdminClient. In the current
         ///     implementation, this method may block for up to 100ms. This 
         ///     will be replaced with a non-blocking version in the future.
         /// </summary>
         public void Dispose()
         {
-            callbackCts.Cancel();
-            try
-            {
-                callbackTask.Wait();
-            }
-            catch (AggregateException e)
-            {
-                if (e.InnerException.GetType() != typeof(TaskCanceledException))
-                {
-                    throw e.InnerException;
-                }
-            }
-            finally
-            {
-                callbackCts.Dispose();
-            }
-
-            DisposeResources();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+
+        /// <summary>
+        ///     Releases the unmanaged resources used by the
+        ///     <see cref="Confluent.Kafka.AdminClient" />
+        ///     and optionally disposes the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        ///     true to release both managed and unmanaged resources;
+        ///     false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                callbackCts.Cancel();
+                try
+                {
+                    callbackTask.Wait();
+                }
+                catch (AggregateException e)
+                {
+                    if (e.InnerException.GetType() != typeof(TaskCanceledException))
+                    {
+                        throw e.InnerException;
+                    }
+                }
+                finally
+                {
+                    callbackCts.Dispose();
+                }
+
+                DisposeResources();
+            }
+        }
+
 
         private void DisposeResources()
         {
@@ -704,7 +724,6 @@ namespace Confluent.Kafka
             if (handle.Owner == this)
             {
                 ownedClient.Dispose();
-                ownedClient.Handle.LibrdkafkaHandle.FlagAsClosed();
             }
         }
 

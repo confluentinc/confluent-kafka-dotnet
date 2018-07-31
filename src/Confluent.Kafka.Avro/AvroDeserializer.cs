@@ -146,11 +146,28 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         public void Dispose()
         {
-            if (disposeClientOnDispose)
-            {
-                schemaRegistryClient.Dispose();
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
+
+        /// <summary>
+        ///     Releases the unmanaged resources used by this object
+        ///     and optionally disposes the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        ///     true to release both managed and unmanaged resources;
+        ///     false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (disposeClientOnDispose)
+                {
+                    schemaRegistryClient.Dispose();
+                }
+            }
+        }
     }
 }

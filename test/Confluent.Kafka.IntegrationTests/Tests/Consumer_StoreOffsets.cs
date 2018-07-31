@@ -37,8 +37,8 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
                 { "auto.offset.reset", "latest" },
-                { "enable.auto.commit", true},
-                { "enable.auto.offset.store", false}
+                { "enable.auto.commit", true },
+                { "enable.auto.offset.store", false }
             };
 
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
