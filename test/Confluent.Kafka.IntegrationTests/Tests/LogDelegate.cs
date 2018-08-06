@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests that log messages are received by OnLog on all Producer and Consumer variants.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void OnLog(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void LogDelegate(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
             var logCount = 0;
             Action<LogMessage> logger = (LogMessage m) => logCount += 1;
@@ -40,7 +40,6 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
-                { "log_level", 7 },
                 { "debug", "all" },
                 { "log.delegate", logger }
             };
@@ -48,7 +47,6 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
-                { "log_level", 7 },
                 { "debug", "all" },
                 { "log.delegate", logger }
             };

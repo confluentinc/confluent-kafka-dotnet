@@ -682,25 +682,27 @@ namespace Confluent.Kafka
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
+        private object loggerLockObj = new object();
         Action<LogMessage> logDelegate;
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            // the log delegate should never make use of the client instance, so the
-            // following is not necessary. also, the callback may also be called when
-            // kafkaHandle is null.
-            // if (kafkaHandle.IsDestroyed) { return; }
+            // note: the log delegate should never make use of the client instance,
+            // so checking if the kafkaHandle is destroyed is not necessary here.
 
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
-            if (logDelegate == null)
+            lock (loggerLockObj)
             {
-                // Log to stderr by default if no logger is specified.
-                Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
-                return;
-            }
+                if (logDelegate == null)
+                {
+                    // Log to stderr by default if no logger is specified.
+                    Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
+                    return;
+                }
 
-            logDelegate(new LogMessage(name, level, fac, buf));
+                logDelegate(new LogMessage(name, level, fac, buf));
+            }
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;

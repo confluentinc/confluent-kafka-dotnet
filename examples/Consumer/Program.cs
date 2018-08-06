@@ -186,8 +186,6 @@ namespace Confluent.Kafka.Examples.Consumer
                         break;
                     }
                 }
-
-                consumer.Close();
             }
         }
 
