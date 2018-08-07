@@ -26,18 +26,54 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
         public static void GetAllSubjects(string server)
         {
+            GetAllSubjects(new Dictionary<string, object>{ { "schema.registry.url", server } });
+        }
+        
+        [Theory, MemberData(nameof(SchemaRegistryParameters))]
+        public static void GetAllSubjectsTopicNameStrategy(string server)
+        {
+            GetAllSubjects(new Dictionary<string, object>
+            {
+                { "schema.registry.url", server },
+                { "schema.registry.subject.name.strategy", "topic_name_strategy" }
+            });
+        }
+        
+        [Theory, MemberData(nameof(SchemaRegistryParameters))]
+        public static void GetAllSubjectsRecordNameStrategy(string server)
+        {
+            GetAllSubjects(new Dictionary<string, object>
+            {
+                { "schema.registry.url", server },
+                { "schema.registry.subject.name.strategy", "record_name_strategy" }
+            });
+        }
+        
+        [Theory, MemberData(nameof(SchemaRegistryParameters))]
+        public static void GetAllSubjectsTopicRecordNameStrategy(string server)
+        {
+            GetAllSubjects(new Dictionary<string, object>
+            {
+                { "schema.registry.url", server },
+                { "schema.registry.subject.name.strategy", "topic_record_name_strategy" }
+            });
+        }
+        
+        private static void GetAllSubjects(Dictionary<string, object> config)
+        {
             var topicName = Guid.NewGuid().ToString();
+            var schemaName = Guid.NewGuid().ToString();
 
             var testSchema1 = 
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>{ { "schema.registry.url", server } });
+            var sr = new CachedSchemaRegistryClient(config);
 
             var subjectsBefore = sr.GetAllSubjectsAsync().Result;
 
-            var subject = sr.ConstructKeySubjectName(topicName);
+            var subject = sr.ConstructKeySubjectName(topicName, schemaName);
             var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var subjectsAfter = sr.GetAllSubjectsAsync().Result;

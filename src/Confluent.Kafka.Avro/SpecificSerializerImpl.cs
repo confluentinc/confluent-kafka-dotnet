@@ -22,6 +22,7 @@ using Confluent.SchemaRegistry;
 using System.Net;
 using System.IO;
 using System.Reflection;
+using Avro;
 
 
 namespace Confluent.Kafka.Serialization
@@ -39,7 +40,7 @@ namespace Confluent.Kafka.Serialization
 
         private SpecificWriter<T> avroWriter;
        
-        private HashSet<string> topicsRegistered = new HashSet<string>();
+        private HashSet<string> subjectsRegistered = new HashSet<string>();
 
         private object serializeLockObj = new object();
 
@@ -110,11 +111,11 @@ namespace Confluent.Kafka.Serialization
         {
             lock (serializeLockObj)
             {
-                if (!topicsRegistered.Contains(topic))
+                if (!subjectsRegistered.Contains(topic))
                 {
                     string subject = isKey
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic);
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic, GetSchemaName())
+                        : schemaRegistryClient.ConstructValueSubjectName(topic, GetSchemaName());
 
                     // first usage: register/get schema to check compatibility
 
@@ -122,7 +123,7 @@ namespace Confluent.Kafka.Serialization
                         ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult()
                         : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                    topicsRegistered.Add(topic);
+                    subjectsRegistered.Add(topic);
                 }
             }
 
@@ -137,6 +138,15 @@ namespace Confluent.Kafka.Serialization
                 // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
                 return stream.ToArray();
             }
+        }
+
+        private string GetSchemaName()
+        {
+            if (writerSchema is NamedSchema namedSchema)
+            {
+                return namedSchema.Fullname;
+            }
+            return writerSchema.Name;
         }
     }
 }

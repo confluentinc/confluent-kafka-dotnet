@@ -106,8 +106,8 @@ namespace Confluent.Kafka.Serialization
                 // better to use hash functions based on the writerSchemaString 
                 // object reference, not value.
                 string subject = this.isKey
-                    ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                    : schemaRegistryClient.ConstructValueSubjectName(topic);
+                    ? schemaRegistryClient.ConstructKeySubjectName(topic, writerSchema.Fullname)
+                    : schemaRegistryClient.ConstructValueSubjectName(topic, writerSchema.Fullname);
                 var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                 if (!registeredSchemas.Contains(subjectSchemaPair))
                 {

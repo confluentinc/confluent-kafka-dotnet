@@ -14,12 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
 using System;
-using System.Threading;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Confluent.SchemaRegistry
 {
@@ -31,6 +29,7 @@ namespace Confluent.SchemaRegistry
         private const string SchemaRegistryUrlPropertyName = "schema.registry.url";
         private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
         private const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
+        private const string SchemaRegistrySubjectNameStrategyPropertyName = "schema.registry.subject.name.strategy";
 
         private IRestService restService;
         private readonly int identityMapCapacity;
@@ -38,7 +37,9 @@ namespace Confluent.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         private readonly object cacheLock = new object();
-
+        
+        private readonly ISubjectNameStrategy subjectNameStrategy;
+        
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
@@ -78,6 +79,10 @@ namespace Confluent.SchemaRegistry
 
             var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
             this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : (int)identityMapCapacityMaybe.Value;
+            
+            var subjectNameStrategyMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistrySubjectNameStrategyPropertyName).FirstOrDefault();
+            this.subjectNameStrategy = subjectNameStrategyMaybe.Value == null ? SubjectNameStrategies.Default : 
+                SubjectNameStrategies.GetSubjectNameStrategy((string)subjectNameStrategyMaybe.Value);
 
             foreach (var property in config)
             {
@@ -88,7 +93,8 @@ namespace Confluent.SchemaRegistry
 
                 if (property.Key != SchemaRegistryUrlPropertyName && 
                     property.Key != SchemaRegistryConnectionTimeoutMsPropertyName && 
-                    property.Key != SchemaRegistryMaxCachedSchemasPropertyName)
+                    property.Key != SchemaRegistryMaxCachedSchemasPropertyName && 
+                    property.Key != SchemaRegistrySubjectNameStrategyPropertyName)
                 {
                     throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");
                 }
@@ -230,12 +236,12 @@ namespace Confluent.SchemaRegistry
             => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(false);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
-        public string ConstructKeySubjectName(string topic)
-            => $"{topic}-key";
+        public string ConstructKeySubjectName(string topic, string schemaName)
+            => subjectNameStrategy.ConstructSubjectName(topic, true, schemaName);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructValueSubjectName"]/*' />
-        public string ConstructValueSubjectName(string topic)
-            => $"{topic}-value";
+        public string ConstructValueSubjectName(string topic, string schemaName)
+            => subjectNameStrategy.ConstructSubjectName(topic, false, schemaName);
 
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.

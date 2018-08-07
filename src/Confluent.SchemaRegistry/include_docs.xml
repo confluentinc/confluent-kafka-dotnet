@@ -108,25 +108,31 @@
 
 <Member name="ISchemaRegistryClient_ConstructKeySubjectName">
     <summary>
-        Returns the schema registry key subject name given a topic name.
+        Returns the schema registry key subject name given a topic and schema name.
     </summary>
     <param name="topic">
         The topic name.
     </param>
+    <param name="schemaName">
+        The the fully qualified schema name.
+    </param>
     <returns>
-        The key subject name given a topic name.
+        The key subject name given a topic and schema name.
     </returns>
 </Member>
 
 <Member name="ISchemaRegistryClient_ConstructValueSubjectName">
     <summary>
-        Returns the schema registry value subject name given a topic name.
+        Returns the schema registry value subject name given a topic and schema name.
     </summary>
     <param name="topic">
         The topic name.
     </param>
+    <param name="schemaName">
+        The the fully qualified schema name.
+    </param>
     <returns>
-        The value subject name given a topic name.
+        The value subject name given a topic and schema name.
     </returns>
 </Member>
 

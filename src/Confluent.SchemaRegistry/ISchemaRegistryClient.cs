@@ -51,9 +51,9 @@ namespace Confluent.SchemaRegistry
         Task<bool> IsCompatibleAsync(string subject, string schema);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
-        string ConstructKeySubjectName(string topic);
+        string ConstructKeySubjectName(string topic, string schemaName);
 
         /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructValueSubjectName"]/*' />
-        string ConstructValueSubjectName(string topic);
+        string ConstructValueSubjectName(string topic, string schemaName);
     }
 }
