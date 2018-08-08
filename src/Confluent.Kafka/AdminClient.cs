@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -444,13 +443,8 @@ namespace Confluent.Kafka
         private IClient ownedClient;
         private Handle handle;
 
-        private SafeKafkaHandle kafkaHandle
+        private KafkaHandle kafkaHandle
             => handle.LibrdkafkaHandle;
-
-        private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
-            = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
-
-        private Func<string, SafeTopicHandle> topicHandlerFactory;
 
 
         /// <summary>
@@ -494,16 +488,6 @@ namespace Confluent.Kafka
 
         private void Init()
         {
-            // note: ConcurrentDictionary.GetorAdd() method is not atomic
-            this.topicHandlerFactory = (string topicName) =>
-            {
-                // Note: there is a possible (benign) race condition here - topicHandle could have already
-                // been created for the topic (and possibly added to topicHandles). If the topicHandle has
-                // already been created, rdkafka will return it and not create another. the call to rdkafka
-                // is threadsafe.
-                return kafkaHandle.Topic(topicName, IntPtr.Zero);
-            };
-
             resultQueue = kafkaHandle.CreateQueue();
 
             callbackCts = new CancellationTokenSource();
@@ -606,14 +590,6 @@ namespace Confluent.Kafka
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Query the cluster for metadata corresponding to all topics in the cluster (blocking).
-        ///
-        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
-        /// </summary>
-        private SafeTopicHandle getKafkaTopicHandle(string topic) 
-            => topicHandles.GetOrAdd(topic, topicHandlerFactory);
-
 
         /// <summary>
         ///     Query the cluster for metadata.
@@ -639,7 +615,7 @@ namespace Confluent.Kafka
         public Metadata GetMetadata(bool allTopics, string topic, TimeSpan timeout)
             => kafkaHandle.GetMetadata(
                 allTopics, 
-                topic == null ? null : getKafkaTopicHandle(topic), 
+                topic == null ? null : kafkaHandle.getKafkaTopicHandle(topic), 
                 timeout.TotalMillisecondsAsInt());
 
 
@@ -715,11 +691,6 @@ namespace Confluent.Kafka
         private void DisposeResources()
         {
             kafkaHandle.DestroyQueue(resultQueue);
-
-            foreach (var kv in topicHandles)
-            {
-                kv.Value.Dispose();
-            }
 
             if (handle.Owner == this)
             {

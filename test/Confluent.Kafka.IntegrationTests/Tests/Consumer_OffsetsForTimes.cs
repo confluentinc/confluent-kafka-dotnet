@@ -34,6 +34,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Consumer_OffsetsForTimes");
+
             const int N = 10;
             const int Partition = 0;
 
@@ -91,9 +93,9 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Assert.Single(result);
                 Assert.Equal(0, result[0].Offset);
-
-                consumer.Close();
             }
+
+            LogToFile("end   Consumer_OffsetsForTimes");
         }
 
         private static DeliveryReport<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)

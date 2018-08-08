@@ -37,6 +37,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void DuplicateConsumerAssign(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start DuplicateConsumerAssign");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -72,10 +74,9 @@ namespace Confluent.Kafka.IntegrationTests
                 // topic / partition. This 'test' is here because I was curious to see what happened
                 // in practice if this did occur. Because this is not expected usage, no validation
                 // has been included in this test.
-
-                consumer1.Close();
-                consumer2.Close();
             }
+
+            LogToFile("end   DuplicateConsumerAssign");
         }
 
     }

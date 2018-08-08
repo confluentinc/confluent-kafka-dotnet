@@ -38,6 +38,7 @@ namespace Confluent.Kafka.Admin
             : base(
                 "An error occurred altering the following resources: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.ConfigResource)) +
+                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) + 
                 "]. Inspect the Results property of this exception for further information.")
         {
             Results = results;

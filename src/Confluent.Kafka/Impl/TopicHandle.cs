@@ -31,22 +31,20 @@ namespace Confluent.Kafka.Impl
     }
 
     /// <remarks>
-    ///     TODO: remove when get_metadata works with string for only_topic
+    ///     TODO: support finalization.
     /// </remarks>
-    internal sealed class SafeTopicHandle : SafeHandleZeroIsInvalid
+    internal sealed class TopicHandle : IDisposable
     {
         const int RD_KAFKA_PARTITION_UA = -1;
 
-        internal SafeKafkaHandle kafkaHandle;
+        private IntPtr handle;
+        internal KafkaHandle kafkaHandle;
 
-        private SafeTopicHandle() : base("kafka topic") { }
+        public TopicHandle(IntPtr handle) { this.handle = handle; }
 
-        protected override bool ReleaseHandle()
+        public void Dispose()
         {
-            Librdkafka.topic_destroy(handle);
-            // See SafeKafkaHandle.Topic
-            kafkaHandle.DangerousRelease();
-            return true;
+            Librdkafka.topic_destroy(this.handle);
         }
 
         internal string GetName()
@@ -56,5 +54,7 @@ namespace Confluent.Kafka.Impl
         {
             return Librdkafka.topic_partition_available(handle, partition);
         }
+
+        internal IntPtr Handle => handle;
     }
 }

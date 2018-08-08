@@ -20,6 +20,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Serialization;
@@ -36,12 +37,15 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void AdminClient_AlterConfigs(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start AdminClient_AlterConfigs");
+
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
                 // 1. create a new topic to play with.
                 string topicName = Guid.NewGuid().ToString();
                 var createTopicsResult = adminClient.CreateTopicsAsync(
                     new List<NewTopic> { new NewTopic { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throw unknown topic/partition error.
 
                 // 2. do an invalid alter configs call to change it.
                 var configResource = new ConfigResource { Name = topicName, Type = ResourceType.Topic };
@@ -70,20 +74,20 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // 3. test that in the failed alter configs call for the specified config resource, the 
                 // config that was specified correctly wasn't updated.
-                var describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
+                List<DescribeConfigResult> describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
                 Assert.NotEqual("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 4. do a valid call, and check that the alteration did correctly happen.
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 { 
-                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="10001" } } } 
+                    { configResource, new List<ConfigEntry> { new ConfigEntry { Name = "flush.ms", Value="10011" } } } 
                 };
                 var rr = adminClient.AlterConfigsAsync(toUpdate).Result;
                 Assert.Single(rr);
                 Assert.False(rr[0].Error.IsError);
                 Assert.Equal(rr[0].ConfigResource, configResource);
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
-                Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
+                Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 4. test ValidateOnly = true does not update config entry.
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
@@ -95,7 +99,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.False(rr[0].Error.IsError);
                 Assert.Equal(rr[0].ConfigResource, configResource);
                 describeConfigsResult = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
-                Assert.Equal("10001", describeConfigsResult[0].Entries["flush.ms"].Value);
+                Assert.Equal("10011", describeConfigsResult[0].Entries["flush.ms"].Value);
 
                 // 5. test updating broker resource. 
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
@@ -105,23 +109,16 @@ namespace Confluent.Kafka.IntegrationTests
                         new List<ConfigEntry> { new ConfigEntry { Name="num.network.threads", Value="2" } }
                     }
                 };
-                try
-                {
-                    rr = adminClient.AlterConfigsAsync(toUpdate).Result;
-                    Assert.True(false);
-                }
-                catch (Exception ex)
-                {
-                    Assert.True(ex.InnerException.GetType() == typeof(AlterConfigsException));
-                    var ace = (AlterConfigsException)ex.InnerException;
-                    Assert.Single(ace.Results);
-                    Assert.True(ace.Results[0].Error.IsError);
-                }
-
-                // 6. test updating more than on resource.
+                rr = adminClient.AlterConfigsAsync(toUpdate).Result;
+                Assert.Single(rr);
+                Assert.False(rr[0].Error.IsError);
+                
+                // 6. test updating more than one resource.
                 string topicName2 = Guid.NewGuid().ToString();
                 var createTopicsResult2 = adminClient.CreateTopicsAsync(
                     new List<NewTopic> { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throw unknown topic/partition error.
+
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 
                 {
@@ -140,6 +137,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("222", describeConfigsResult[0].Entries["flush.ms"].Value);
                 Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
             }
+
+            LogToFile("end   AdminClient_AlterConfigs");
         }
     }
 }

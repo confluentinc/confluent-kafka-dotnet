@@ -35,6 +35,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_Seek(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Consumer_Seek");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -42,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
+            var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers} };
 
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
@@ -68,9 +70,9 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(record.Message);
                 Assert.Equal(checkValue, record.Message.Value);
-
-                consumer.Close();
             }
+
+            LogToFile("end   Consumer_Seek");
         }
 
     }

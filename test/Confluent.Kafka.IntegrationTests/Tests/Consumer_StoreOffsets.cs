@@ -32,6 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_StoreOffsets(string bootstrapServers, string topic, string partitionedTopic)
         {
+            LogToFile("start Consumer_StoreOffsets");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -75,8 +77,10 @@ namespace Confluent.Kafka.IntegrationTests
                 // test doesn't throw.
                 consumer.StoreOffsets(new List<TopicPartitionOffset>());
 
-                consumer.Close();
+                consumer.Unsubscribe();
             }
+
+            LogToFile("end   Consumer_StoreOffsets");
         }
 
     }

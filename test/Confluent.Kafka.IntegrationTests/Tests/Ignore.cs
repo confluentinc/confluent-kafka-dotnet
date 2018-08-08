@@ -32,6 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void IgnoreTest(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start IgnoreTest");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -72,8 +74,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
-
-                consumer.Close();
             }
 
             using (var consumer = new Consumer<Ignore, byte[]>(consumerConfig, null, new ByteArrayDeserializer()))
@@ -86,9 +86,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Value);
                 Assert.Equal(42, record.Value[0]);
                 Assert.Equal(240, record.Value[1]);
-
-                consumer.Close();
             }
+
+            LogToFile("end   IgnoreTest");
         }
 
     }

@@ -35,6 +35,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_Poll_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Consumer_Poll_Error");
+
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers }
@@ -151,6 +153,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
             }
 
+            LogToFile("end   Consumer_Poll_Error");
         }
 
     }

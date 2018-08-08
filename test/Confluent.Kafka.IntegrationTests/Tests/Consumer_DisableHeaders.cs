@@ -35,6 +35,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_DisableHeaders(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Consumer_DisableHeaders");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -70,9 +72,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(record.Message.Headers);
                 Assert.NotEqual(TimestampType.NotAvailable, record.Timestamp.Type);
                 Assert.NotEqual(0, record.Timestamp.UnixTimestampMs);
-
-                consumer.Close();
             }
+
+            LogToFile("end   Consumer_DisableHeaders");
         }
 
     }

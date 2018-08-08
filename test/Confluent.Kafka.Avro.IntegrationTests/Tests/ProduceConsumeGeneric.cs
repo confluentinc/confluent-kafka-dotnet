@@ -126,8 +126,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("my name 3", msgName);
                 Assert.Equal(47, msgNumber);
                 Assert.Equal("orange", msgColor);
-
-                consumer.Close();
             }
 
             using (var consumer = new Consumer<Null, User>(cconfig, null, new AvroDeserializer<User>()))
@@ -137,8 +135,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("my name 2", record.Message.Value.name);
                 Assert.Equal(44, record.Message.Value.favorite_number);
                 Assert.Null(record.Message.Value.favorite_color);
-
-                consumer.Close();
             }
         }
 

@@ -80,8 +80,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
 
                 Assert.True(hadError);
-
-                consumer.Close();
             }
 
             using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
@@ -102,8 +100,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
 
                 Assert.True(hadError);
-
-                consumer.Close();
             }
 
         }

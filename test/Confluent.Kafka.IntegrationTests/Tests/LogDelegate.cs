@@ -33,6 +33,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void LogDelegate(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start LogDelegate");
+
             var logCount = 0;
             Action<LogMessage> logger = (LogMessage m) => logCount += 1;
 
@@ -64,10 +66,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Consume(TimeSpan.FromMilliseconds(100));
-
-                consumer.Close();
             }
             Assert.True(logCount > 0);
+
+            LogToFile("end   LogDelegate");
         }
 
     }

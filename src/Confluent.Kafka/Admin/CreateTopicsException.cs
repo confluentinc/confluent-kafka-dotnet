@@ -38,6 +38,7 @@ namespace Confluent.Kafka.Admin
             : base(
                 "An error occurred creating topics: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
+                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
                 "]. Inspect the Results property of this exception for further information.")
         {
             this.Results = results;

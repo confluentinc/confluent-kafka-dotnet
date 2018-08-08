@@ -33,6 +33,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void CustomTimestampTests(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start CustomTimestampTests");
+
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers }
@@ -212,8 +214,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
                 assertCloseToNow(consumer, drs_2[2].TopicPartitionOffset);
-
-                consumer.Close();
             }
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
@@ -243,9 +243,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
                 assertCloseToNowTyped(consumer, drs_1[2].TopicPartitionOffset);
-
-                consumer.Close();
             }
+            
+            LogToFile("end   CustomTimestampTests");
         }
 
         private static void assertCloseToNowTyped(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
@@ -265,6 +265,5 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
             Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
         }
-
     }
 }

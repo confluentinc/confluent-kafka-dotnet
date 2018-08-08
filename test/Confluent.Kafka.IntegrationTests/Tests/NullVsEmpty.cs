@@ -33,6 +33,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void NullVsEmpty(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start NullVsEmpty");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -78,9 +80,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Message);
                 Assert.Equal(record.Message.Key, new byte[0]);
                 Assert.Equal(record.Message.Value, new byte[0]);
-
-                consumer.Close();
             }
+
+            LogToFile("end   NullVsEmpty");
         }
 
     }

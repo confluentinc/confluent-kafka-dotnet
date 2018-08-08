@@ -37,6 +37,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void AdminClient_CreatePartitions(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start AdminClient_CreatePartitions");
+
             var topicName1 = Guid.NewGuid().ToString();
             var topicName2 = Guid.NewGuid().ToString();
             var topicName3 = Guid.NewGuid().ToString();
@@ -147,6 +149,7 @@ namespace Confluent.Kafka.IntegrationTests
                         new NewTopic { Name = topicName6, NumPartitions = 1, ReplicationFactor = 1 }
                     }
                 ).Wait();
+                Thread.Sleep(TimeSpan.FromSeconds(1));
 
                 // just a simple check there wasn't an exception.
                 adminClient.CreatePartitionsAsync(
@@ -158,6 +161,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Wait();
             }
 
+            LogToFile("end   AdminClient_CreatePartitions");
         }
     }
 }

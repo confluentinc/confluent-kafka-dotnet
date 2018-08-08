@@ -34,6 +34,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void WatermarkOffsets(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start WatermarkOffsets");
+
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers }
@@ -82,9 +84,9 @@ namespace Confluent.Kafka.IntegrationTests
                 var queryOffsets = adminClient.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
-
-                consumer.Close();
             }
+
+            LogToFile("end   WatermarkOffsets");
         }
 
     }

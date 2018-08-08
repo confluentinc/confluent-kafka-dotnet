@@ -27,6 +27,17 @@ namespace Confluent.Kafka.IntegrationTests
     {
         private static List<object[]> kafkaParameters;
 
+        private static object logLockObj = new object();
+        private static void LogToFile(string msg)
+        {
+            lock (logLockObj)
+            {
+                // Uncomment to enable logging to a file. Useful for debugging
+                // which test caused librdkafka to segfault.
+                File.AppendAllLines("/tmp/test.txt", new [] { msg });
+            }
+        }
+
         static Tests()
         {
             // Quick fix for https://github.com/Microsoft/vstest/issues/918

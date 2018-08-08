@@ -27,6 +27,6 @@ namespace Confluent.Kafka
     {
         internal IClient Owner { get; set; }
 
-        internal SafeKafkaHandle LibrdkafkaHandle { get; set; }
+        internal KafkaHandle LibrdkafkaHandle { get; set; }
     }
 }

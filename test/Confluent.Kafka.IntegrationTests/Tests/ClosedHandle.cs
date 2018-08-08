@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Serialization;
@@ -33,6 +34,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ClosedHandle(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Producer_ClosedHandle");
+
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
@@ -42,6 +45,8 @@ namespace Confluent.Kafka.IntegrationTests
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
+
+            LogToFile("end   Producer_ClosedHandle");
         }
 
         /// <summary>
@@ -51,6 +56,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
+            LogToFile("start Consumer_ClosedHandle");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -60,6 +67,8 @@ namespace Confluent.Kafka.IntegrationTests
             consumer.Consume(TimeSpan.FromMilliseconds(10));
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
+            
+            LogToFile("end   Consumer_ClosedHandle");
         }
 
         /// <summary>
@@ -69,6 +78,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void TypedProducer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
+            LogToFile("start TypedProducer_ClosedHandle");
+
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
@@ -76,7 +87,10 @@ namespace Confluent.Kafka.IntegrationTests
             var producer = new Producer<Null, Null>(producerConfig, null, null);
             producer.Flush(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
+            Thread.Sleep(TimeSpan.FromMilliseconds(500)); // kafka handle destroy is done on the poll thread, is not immediate.
             Assert.Throws<ObjectDisposedException>(() => producer.Flush(TimeSpan.FromMilliseconds(10)));
+
+            LogToFile("end   TypedProducer_ClosedHandle");
         }
 
         /// <summary>
@@ -86,6 +100,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void TypedConsumer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
         {
+            LogToFile("start TypedConsumer_ClosedHandle");
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -95,6 +111,8 @@ namespace Confluent.Kafka.IntegrationTests
             consumer.Consume(TimeSpan.FromMilliseconds(10));
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
+
+            LogToFile("end   TypedConsumer_ClosedHandle");
         }
     }
 }

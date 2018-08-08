@@ -33,6 +33,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void MessageHeaderProduceConsume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start MessageHeaderProduceConsume");
+
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
@@ -151,7 +153,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
 
                 Assert.Single(drs_2[0].Message.Headers);
-                Assert.Empty(drs_2[1].Message.Headers);
+                Assert.Empty(drs_2[1].Message.Headers); // TODO: this is intermittently not working.
                 Assert.Single(drs_2[2].Message.Headers);
                 Assert.Single(drs_2[3].Message.Headers);
             }
@@ -270,8 +272,6 @@ namespace Confluent.Kafka.IntegrationTests
                 var record19 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record19.Message);
                 Assert.Single(record19.Message.Headers);
-
-                consumer.Close();
             }
 
             // null key
@@ -296,6 +296,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Throws<ArgumentNullException>(() => headers2.Add(new Header(null, new byte[] { 42 })));
             }
 
+            LogToFile("end   MessageHeaderProduceConsume");
         }
     }
 }

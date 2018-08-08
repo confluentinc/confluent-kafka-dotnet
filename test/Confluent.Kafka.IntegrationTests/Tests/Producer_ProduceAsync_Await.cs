@@ -34,6 +34,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Producer_ProduceAsync_Await");
+
             Func<Task> mthd = async () => 
             {
                 using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
@@ -45,16 +47,22 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             mthd().Wait();
+
+            LogToFile("end   Producer_ProduceAsync_Await");
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
         public static async Task Producer_ProduceAsync_Await2(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Producer_ProduceAsync_Await2");
+
             using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
             {
                 var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
             }
+            
+            LogToFile("end   Producer_ProduceAsync_Await2");
         }
 
         /// <summary>
@@ -63,11 +71,15 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static async Task Producer_ProduceAsync_Await3(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Producer_ProduceAsync_Await3");
+
             using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
             {
                 await Assert.ThrowsAsync<ProduceMessageException<Null, string>>(
                     async () => await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 42), new Message<Null, string> { Value = "test string" }));
             }
+            
+            LogToFile("end   Producer_ProduceAsync_Await3");
         }
     }
 }

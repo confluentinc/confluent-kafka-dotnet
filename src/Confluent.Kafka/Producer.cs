@@ -639,6 +639,10 @@ namespace Confluent.Kafka
     /// </summary>
     internal class Producer : IClient
     {
+        private bool DisposeHasBeenCalled { get { lock(disposeHasBeenCalledLockObj) { return disposeHasBeenCalled; } } }
+        private bool disposeHasBeenCalled = false;
+        private object disposeHasBeenCalledLockObj = new object();
+
         private readonly bool manualPoll = false;
         internal readonly bool enableDeliveryReports = true;
         internal readonly bool enableDeliveryReportHeaders = true;
@@ -646,7 +650,7 @@ namespace Confluent.Kafka
         internal readonly bool enableDeliveryReportValue = true;
         internal readonly bool enableDeliveryReportTimestamp = true;
 
-        private readonly SafeKafkaHandle kafkaHandle;
+        private readonly KafkaHandle kafkaHandle;
 
         private readonly Task callbackTask;
         private readonly CancellationTokenSource callbackCts;
@@ -669,15 +673,16 @@ namespace Confluent.Kafka
         private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            if (kafkaHandle.IsDestroyed) { return; }
+            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
+            if (DisposeHasBeenCalled) { return; }
             OnError?.Invoke(this, new Error(err, reason));
         }
 
         private readonly Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
-            if (kafkaHandle.IsDestroyed) { return 0; }
-
+            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
+            if (DisposeHasBeenCalled) { return 0; }
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
@@ -687,8 +692,8 @@ namespace Confluent.Kafka
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            // note: the log delegate should never make use of the client instance,
-            // so checking if the kafkaHandle is destroyed is not necessary here.
+            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
+            if (DisposeHasBeenCalled) { return; }
 
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
@@ -713,7 +718,8 @@ namespace Confluent.Kafka
         /// </remarks>
         private void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
-            if (kafkaHandle.IsDestroyed) { return; }
+            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
+            if (DisposeHasBeenCalled) { return; }
 
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
@@ -943,7 +949,7 @@ namespace Confluent.Kafka
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
-            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr);
+            this.kafkaHandle = KafkaHandle.Create(RdKafkaType.Producer, configPtr);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             if (!manualPoll)
@@ -1010,6 +1016,13 @@ namespace Confluent.Kafka
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
+            // Calling Dispose a second or subsequent time should be a no-op.
+            lock (disposeHasBeenCalledLockObj)
+            { 
+                if (disposeHasBeenCalled) { return; }
+                disposeHasBeenCalled = true;
+            }
+
             if (disposing)
             {
                 if (!this.manualPoll)
@@ -1033,6 +1046,12 @@ namespace Confluent.Kafka
                         callbackCts.Dispose();
                     }
                 }
+
+                // calls to rd_kafka_destroy may result in callbacks
+                // as a side-effect. however the callbacks this class
+                // registers with librdkafka ensure that any registered
+                // events are not called if disposeHadBeenCalled is true.
+                // this avoids deadlocks in common scenarios.
                 kafkaHandle.Dispose();
             }
         }

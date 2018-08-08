@@ -34,6 +34,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_Poll(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start Consumer_Poll");
+
             int N = 2;
             var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
 
@@ -81,6 +83,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Close();
             }
+
+            LogToFile("end   Consumer_Poll");
         }
 
     }

@@ -36,6 +36,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void AdminClient_CreateTopics(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start AdminClient_CreateTopics");
+
             var topicName1 = Guid.NewGuid().ToString();
             var topicName2 = Guid.NewGuid().ToString();
             var topicName3 = Guid.NewGuid().ToString();
@@ -137,6 +139,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(topicName5, result.First().Topic);
             }
 
+            LogToFile("end   AdminClient_CreateTopics");
         }
     }
 }

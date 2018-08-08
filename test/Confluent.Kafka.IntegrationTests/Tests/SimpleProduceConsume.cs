@@ -33,6 +33,8 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SimpleProduceConsume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
+            LogToFile("start SimpleProduceConsume");
+
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers }
@@ -60,9 +62,9 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
-
-                consumer.Close();
             }
+
+            LogToFile("end   SimpleProduceConsume");
         }
 
         private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryReport<Null, string> dr, string testString)
