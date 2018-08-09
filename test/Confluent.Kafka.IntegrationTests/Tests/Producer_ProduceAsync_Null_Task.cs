@@ -65,7 +65,8 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal((Partition)0, drs[0].Result.Partition);
-
+            
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Null_Task");
         }
 

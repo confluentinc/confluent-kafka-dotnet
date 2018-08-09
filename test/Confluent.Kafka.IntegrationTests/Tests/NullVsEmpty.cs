@@ -82,6 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(record.Message.Value, new byte[0]);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   NullVsEmpty");
         }
 

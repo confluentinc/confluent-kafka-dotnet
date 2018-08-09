@@ -70,6 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(cr.Message.Value, testString2);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AssignOverloads");
         }
 

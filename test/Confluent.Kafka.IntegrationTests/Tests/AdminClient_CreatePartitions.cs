@@ -161,6 +161,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Wait();
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AdminClient_CreatePartitions");
         }
     }

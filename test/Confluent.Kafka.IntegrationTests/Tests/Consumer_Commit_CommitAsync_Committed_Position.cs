@@ -171,6 +171,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(firstMsgOffset + 3, co[0].Offset);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_Commit_CommitAsync_Committed_Position");
         }
 

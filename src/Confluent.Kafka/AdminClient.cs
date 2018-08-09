@@ -443,7 +443,7 @@ namespace Confluent.Kafka
         private IClient ownedClient;
         private Handle handle;
 
-        private KafkaHandle kafkaHandle
+        private SafeKafkaHandle kafkaHandle
             => handle.LibrdkafkaHandle;
 
 

@@ -117,6 +117,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // }).Result;
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AdminClient_DescribeConfigs");
         }
 

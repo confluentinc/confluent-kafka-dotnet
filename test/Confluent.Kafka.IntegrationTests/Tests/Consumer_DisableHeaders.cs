@@ -74,6 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotEqual(0, record.Timestamp.UnixTimestampMs);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_DisableHeaders");
         }
 

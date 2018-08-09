@@ -93,6 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_AutoCommit");
         }
 

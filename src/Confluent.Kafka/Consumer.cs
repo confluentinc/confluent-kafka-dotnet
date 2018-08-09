@@ -46,7 +46,7 @@ namespace Confluent.Kafka
         private IDeserializer<TKey> KeyDeserializer { get; }
         private IDeserializer<TValue> ValueDeserializer { get; }
 
-        private readonly KafkaHandle kafkaHandle;
+        private readonly SafeKafkaHandle kafkaHandle;
 
         private static readonly byte[] EmptyBytes = new byte[0];
 
@@ -97,7 +97,7 @@ namespace Confluent.Kafka
             IntPtr partitions,
             IntPtr opaque)
         {
-            var partitionList = KafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
+            var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
 
             // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
             if (DisposeHasBeenCalled)
@@ -152,7 +152,7 @@ namespace Confluent.Kafka
             if (DisposeHasBeenCalled) { return; }
 
             OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
-                KafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
+                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
                 new Error(err)
             ));
         }
@@ -290,7 +290,7 @@ namespace Confluent.Kafka
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
-            this.kafkaHandle = KafkaHandle.Create(RdKafkaType.Consumer, configPtr);
+            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             var pollSetConsumerError = kafkaHandle.PollSetConsumer();

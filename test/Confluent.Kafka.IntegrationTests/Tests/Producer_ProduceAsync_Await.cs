@@ -47,7 +47,8 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             mthd().Wait();
-
+            
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await");
         }
 
@@ -61,7 +62,8 @@ namespace Confluent.Kafka.IntegrationTests
                 var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
             }
-            
+
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await2");
         }
 
@@ -79,6 +81,7 @@ namespace Confluent.Kafka.IntegrationTests
                     async () => await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 42), new Message<Null, string> { Value = "test string" }));
             }
             
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await3");
         }
     }

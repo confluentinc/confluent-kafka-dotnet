@@ -46,6 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ClosedHandle");
         }
 
@@ -68,6 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
             
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_ClosedHandle");
         }
 
@@ -90,6 +92,7 @@ namespace Confluent.Kafka.IntegrationTests
             Thread.Sleep(TimeSpan.FromMilliseconds(500)); // kafka handle destroy is done on the poll thread, is not immediate.
             Assert.Throws<ObjectDisposedException>(() => producer.Flush(TimeSpan.FromMilliseconds(10)));
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   TypedProducer_ClosedHandle");
         }
 
@@ -112,6 +115,7 @@ namespace Confluent.Kafka.IntegrationTests
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   TypedConsumer_ClosedHandle");
         }
     }

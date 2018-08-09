@@ -76,6 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // has been included in this test.
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   DuplicateConsumerAssign");
         }
 

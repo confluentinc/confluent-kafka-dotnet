@@ -80,6 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Unsubscribe();
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_StoreOffsets");
         }
 

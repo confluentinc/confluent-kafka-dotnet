@@ -138,6 +138,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("333", describeConfigsResult[1].Entries["flush.ms"].Value);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AdminClient_AlterConfigs");
         }
     }

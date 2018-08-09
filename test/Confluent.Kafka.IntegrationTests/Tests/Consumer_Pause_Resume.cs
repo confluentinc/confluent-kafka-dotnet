@@ -85,6 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_Pause_Resume");
         }
 

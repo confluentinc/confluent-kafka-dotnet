@@ -245,6 +245,7 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNowTyped(consumer, drs_1[2].TopicPartitionOffset);
             }
             
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   CustomTimestampTests");
         }
 

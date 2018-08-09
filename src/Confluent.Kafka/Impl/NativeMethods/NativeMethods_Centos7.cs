@@ -204,7 +204,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr rkt, int partition);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_new(
+        internal static extern SafeKafkaHandle rd_kafka_new(
                 RdKafkaType type, IntPtr conf,
                 StringBuilder errstr,
                 UIntPtr errstr_size);
@@ -219,7 +219,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern /* char * */ IntPtr rd_kafka_memberid(IntPtr rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_topic_new(
+        internal static extern SafeTopicHandle rd_kafka_topic_new(
                 IntPtr rk,
                 [MarshalAs(UnmanagedType.LPStr)] string topic,
                 /* rd_kafka_topic_conf_t * */ IntPtr conf);

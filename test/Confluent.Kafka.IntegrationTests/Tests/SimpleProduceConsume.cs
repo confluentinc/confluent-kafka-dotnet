@@ -63,7 +63,8 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
             }
-
+            
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   SimpleProduceConsume");
         }
 

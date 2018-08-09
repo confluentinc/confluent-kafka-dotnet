@@ -92,6 +92,7 @@ namespace Confluent.Kafka.IntegrationTests
                 }
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AdminClient_DeleteTopics");
         }
     }

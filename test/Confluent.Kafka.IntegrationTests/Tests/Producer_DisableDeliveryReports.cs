@@ -86,6 +86,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(0, count);
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_DisableDeliveryReports");
         }
     }

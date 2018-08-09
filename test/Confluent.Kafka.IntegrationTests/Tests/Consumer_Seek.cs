@@ -72,6 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(checkValue, record.Message.Value);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_Seek");
         }
 

@@ -650,7 +650,7 @@ namespace Confluent.Kafka
         internal readonly bool enableDeliveryReportValue = true;
         internal readonly bool enableDeliveryReportTimestamp = true;
 
-        private readonly KafkaHandle kafkaHandle;
+        private readonly SafeKafkaHandle kafkaHandle;
 
         private readonly Task callbackTask;
         private readonly CancellationTokenSource callbackCts;
@@ -949,7 +949,7 @@ namespace Confluent.Kafka
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
 
-            this.kafkaHandle = KafkaHandle.Create(RdKafkaType.Producer, configPtr);
+            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             if (!manualPoll)

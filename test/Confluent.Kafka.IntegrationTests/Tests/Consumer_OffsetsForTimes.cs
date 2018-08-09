@@ -95,6 +95,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, result[0].Offset);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_OffsetsForTimes");
         }
 

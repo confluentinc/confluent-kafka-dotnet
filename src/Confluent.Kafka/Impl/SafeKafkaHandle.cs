@@ -85,30 +85,39 @@ namespace Confluent.Kafka.Impl
         internal /* rd_kafka_topic_partition_t * */ IntPtr elems;
     };
 
-    /// <remarks>
-    ///     Why a SafeHandle is much better:
-    ///     https://msdn.microsoft.com/en-us/library/system.runtime.interopservices.safehandle(v=vs.110).aspx
-    ///     Unfortunately, this is difficult because the librdkafka destroy
-    ///     method can produce callback side effects. TODO: support Finalization.
-    /// </remarks>
-    internal sealed class KafkaHandle : IDisposable
+    internal sealed class SafeKafkaHandle : SafeHandleZeroIsInvalid
     {
-        private IntPtr handle;
         private const int RD_KAFKA_PARTITION_UA = -1;
 
+        public volatile IClient owner;
 
-        private ConcurrentDictionary<string, TopicHandle> topicHandles
-            = new ConcurrentDictionary<string, TopicHandle>(StringComparer.Ordinal);
+        private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
+            = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
-        private Func<string, TopicHandle> topicHandlerFactory;
+        private Func<string, SafeTopicHandle> topicHandlerFactory;
 
-        internal TopicHandle getKafkaTopicHandle(string topic) 
+        internal SafeTopicHandle getKafkaTopicHandle(string topic) 
             => topicHandles.GetOrAdd(topic, topicHandlerFactory);
 
-        private KafkaHandle(IntPtr handle)
-        {
-            this.handle = handle;
+        /// <summary>
+        ///     This object is tightly coupled to the referencing Producer /
+        ///     Consumer via callback objects passed into the librdkafka
+        ///     config. These are not tracked by the CLR, so we need to
+        ///     maintain an explicit reference to the containing object here
+        ///     so the delegates - which may get called by librdkafka during
+        ///     destroy - are guaranteed to exist during finalization.
+        ///     Note: objects referenced by this handle (recursively) will 
+        ///     not be GC'd at the time of finalization as the freachable
+        ///     list is a GC root. Also, the delegates are ok to use since they
+        ///     don't have finalizers.
+        ///     
+        ///     this is a useful reference:
+        ///     https://stackoverflow.com/questions/6964270/which-objects-can-i-use-in-a-finalizer-method
+        /// </summary>
+        internal void SetOwner(IClient owner) { this.owner = owner; }
 
+        public SafeKafkaHandle() : base("kafka")
+        {
             // note: ConcurrentDictionary.GetorAdd() method is not atomic
             this.topicHandlerFactory = (string topicName) =>
             {
@@ -120,17 +129,18 @@ namespace Confluent.Kafka.Impl
             };
         }
 
-        public static KafkaHandle Create(RdKafkaType type, IntPtr config)
+        public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config, IClient owner)
         {
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
             var kh = Librdkafka.kafka_new(type, config, errorStringBuilder,(UIntPtr) errorStringBuilder.Capacity);
-            if (kh == IntPtr.Zero)
+            if (kh.IsInvalid)
             {
                 Librdkafka.conf_destroy(config);
                 throw new InvalidOperationException(errorStringBuilder.ToString());
             }
+            kh.SetOwner(owner);
             Library.IncrementKafkaHandleCreateCount();
-            return new KafkaHandle(kh);
+            return kh;
         }
 
         private object isDestroyedLockObj = new object();
@@ -156,26 +166,29 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        /// <remarks>
-        ///     librdkafka's destroy method may cause callbacks, which 
-        ///     in turn will cause code execution via a delegate. But this 
-        ///     is an object, and in the finalizer may have been cleaned up.
-        ///     also, the destroy method is called via a delegate, which
-        ///     in the finalizer also may have already been cleaned up.
-        ///     because of all this, we don't support finalization for
-        ///     kafka client classes.
-        /// </remarks>
-        public void Dispose()
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                foreach (var kv in topicHandles)
+                {
+                    kv.Value.Dispose();
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+
+        protected override bool ReleaseHandle()
         {
             Library.IncrementKafkaHandleDestroyCount();
             
-            foreach (var kv in topicHandles)
-            {
-                kv.Value.Dispose();
-            }
-
+            // Librdkafka.destroy is a static object which means at
+            // this point we can be sure it hasn't already been GC'd.
             Librdkafka.destroy(handle);
             IsDestroyed = true;
+
+            return true;
         }
 
         private string name;
@@ -226,17 +239,26 @@ namespace Confluent.Kafka.Impl
         ///     does not exist. Note: Only the first applied configuration for a specific
         ///     topic will be used.
         /// </summary>
-        internal TopicHandle Topic(string topic, IntPtr config)
+        internal SafeTopicHandle Topic(string topic, IntPtr config)
         {
             ThrowIfHandleDestroyed();
 
-            var topicHandlePtr = Librdkafka.topic_new(handle, topic, config);
-            if (topicHandlePtr == IntPtr.Zero)
+            // Increase the refcount to this handle to keep it alive for
+            // at least as long as the topic handle.
+            // Corresponding decrement happens in the topic handle ReleaseHandle method.
+            bool success = false;
+            DangerousAddRef(ref success);
+            if (!success)
+            {
+                Librdkafka.topic_conf_destroy(config);
+                throw new Exception("Failed to create topic (DangerousAddRef failed)");
+            }
+            var topicHandle = Librdkafka.topic_new(handle, topic, config);
+            if (topicHandle.IsInvalid)
             {
                 throw new KafkaException(Librdkafka.last_error());
             }
 
-            var topicHandle = new TopicHandle(topicHandlePtr);
             topicHandle.kafkaHandle = this;
             return topicHandle;
         }
@@ -386,13 +408,13 @@ namespace Confluent.Kafka.Impl
         ///     - allTopics=false, topic=null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
         ///     - allTopics=false, topic=valid - request specific topic
         /// </summary>
-        internal Metadata GetMetadata(bool allTopics, TopicHandle topic, int millisecondsTimeout)
+        internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
         {
             ThrowIfHandleDestroyed();
 
             ErrorCode err = Librdkafka.metadata(
                 handle, allTopics,
-                topic?.Handle ?? IntPtr.Zero,
+                topic?.DangerousGetHandle() ?? IntPtr.Zero,
                 /* const struct rd_kafka_metadata ** */ out IntPtr metaPtr,
                 (IntPtr)millisecondsTimeout);
 
@@ -722,8 +744,25 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleDestroyed();
 
-            TopicHandle rtk = getKafkaTopicHandle(topic);
-            var result = Librdkafka.seek(rtk.Handle, partition, offset, (IntPtr)millisecondsTimeout);
+            SafeTopicHandle rtk = getKafkaTopicHandle(topic);
+
+            bool success = false;
+            rtk.DangerousAddRef(ref success);
+
+            if (!success)
+            {
+                throw new Exception("Seek failed (DangerousAddRef failed)");
+            }
+
+            ErrorCode result;
+            try
+            {
+                result = Librdkafka.seek(rtk.DangerousGetHandle(), partition, offset, (IntPtr)millisecondsTimeout);
+            }
+            finally
+            {
+                rtk.DangerousRelease();
+            }
             
             if (result != ErrorCode.NoError)
             {

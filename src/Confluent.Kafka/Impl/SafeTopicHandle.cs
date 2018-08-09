@@ -30,21 +30,21 @@ namespace Confluent.Kafka.Impl
         MSG_F_BLOCK = 4
     }
 
-    /// <remarks>
-    ///     TODO: support finalization.
-    /// </remarks>
-    internal sealed class TopicHandle : IDisposable
+    internal sealed class SafeTopicHandle : SafeHandleZeroIsInvalid
     {
         const int RD_KAFKA_PARTITION_UA = -1;
 
-        private IntPtr handle;
-        internal KafkaHandle kafkaHandle;
+        internal SafeKafkaHandle kafkaHandle;
 
-        public TopicHandle(IntPtr handle) { this.handle = handle; }
+        public SafeTopicHandle() : base("kafka topic") { }
 
-        public void Dispose()
+        protected override bool ReleaseHandle()
         {
-            Librdkafka.topic_destroy(this.handle);
+            Librdkafka.topic_destroy(handle);
+            // This corresponds to the DangerousAddRef call when
+            // the TopicHandle was created.
+            kafkaHandle.DangerousRelease();
+            return true;
         }
 
         internal string GetName()
@@ -54,7 +54,5 @@ namespace Confluent.Kafka.Impl
         {
             return Librdkafka.topic_partition_available(handle, partition);
         }
-
-        internal IntPtr Handle => handle;
     }
 }

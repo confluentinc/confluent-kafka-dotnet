@@ -69,6 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
             Assert.True(logCount > 0);
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   LogDelegate");
         }
 

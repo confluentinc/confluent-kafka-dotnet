@@ -86,6 +86,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(getOffsets.High, queryOffsets.High);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   WatermarkOffsets");
         }
 

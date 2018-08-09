@@ -296,6 +296,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Throws<ArgumentNullException>(() => headers2.Add(new Header(null, new byte[] { 42 })));
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   MessageHeaderProduceConsume");
         }
     }

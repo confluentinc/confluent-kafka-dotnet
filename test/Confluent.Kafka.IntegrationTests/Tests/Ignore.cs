@@ -88,6 +88,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(240, record.Value[1]);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   IgnoreTest");
         }
 

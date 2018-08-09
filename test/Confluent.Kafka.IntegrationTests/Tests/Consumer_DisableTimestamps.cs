@@ -73,7 +73,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(TimestampType.NotAvailable, record.Timestamp.Type);
                 Assert.Equal(0, record.Timestamp.UnixTimestampMs);
             }
-
+            
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_DisableTimestamps");
         }
 

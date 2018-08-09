@@ -139,6 +139,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(topicName5, result.First().Topic);
             }
 
+            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   AdminClient_CreateTopics");
         }
     }
