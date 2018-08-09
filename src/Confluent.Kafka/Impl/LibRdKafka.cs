@@ -336,8 +336,8 @@ namespace Confluent.Kafka.Impl
                         dllDirectory = Path.Combine(
                             baseDirectory,
                             is64
-                                ? @"runtimes\win7-x64\native"
-                                : @"runtimes\win7-x86\native");
+                                ? @"runtimes\win-x64\native"
+                                : @"runtimes\win-x86\native");
                         path = Path.Combine(dllDirectory, "librdkafka.dll");
                     }
 

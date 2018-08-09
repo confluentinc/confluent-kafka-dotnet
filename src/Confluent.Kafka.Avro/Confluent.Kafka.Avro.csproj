@@ -13,7 +13,7 @@
     <PackageId>Confluent.Kafka.Avro</PackageId>
     <Title>Confluent.Kafka.Avro</Title>
     <AssemblyName>Confluent.Kafka.Avro</AssemblyName>
-    <VersionPrefix>1.0-experimental-8</VersionPrefix>
+    <VersionPrefix>1.0-experimental-9</VersionPrefix>
     <TargetFrameworks>netstandard2.0;net452;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
