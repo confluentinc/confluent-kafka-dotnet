@@ -692,7 +692,7 @@ namespace Confluent.Kafka
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            // kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
+            // Note: kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
 
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));

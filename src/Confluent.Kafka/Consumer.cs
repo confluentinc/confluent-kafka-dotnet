@@ -73,7 +73,7 @@ namespace Confluent.Kafka
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            // kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
+            // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
 
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
@@ -103,10 +103,10 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed)
             { 
-                // The RebalanceCallback should actually never be invoked as a side effect of Dispose,
-                // but if for some reason flow of execution gets here, something is badly wrong - 
-                // a closed librdkafka handle is also expecting an assign call ... 
-                throw new Exception("unexpected rebalance callback when kafkaHandle disposed");
+                // The RebalanceCallback should never be invoked as a side effect of Dispose.
+                // If for some reason flow of execution gets here, something is badly wrong. 
+                // (and we have a closed librdkafka handle that is expecting an assign call...)
+                throw new Exception("unexpected rebalance callback on disposed kafkaHandle");
             }
 
             if (err == ErrorCode.Local_AssignPartitions)
@@ -1066,24 +1066,19 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Alerts the group coodinator that the consumer is exiting the group
-        ///     then releases all resources used by this consumer. You should call
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> instead
-        ///     of <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose()" />
+        ///     Commits offsets, alerts the group coodinator that the consumer is
+        ///     exiting the group then releases all resources used by this consumer.
+        ///     You should call <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />
+        ///     instead of <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose()" />
         ///     (or just before) to ensure a timely consumer-group rebalance. If you
         ///     do not call <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />
         ///     or <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unsubscribe" />,
         ///     the group will rebalance after a timeout specified by the broker
         ///     config property `group.max.session.timeout.ms`. Note: the
         ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentRevoked" />
-        ///     event (TODO: others?) will be called as a side-effect of calling this
+        ///     event will be called as a side-effect of calling this
         ///     method.
         /// </summary>
-        /// <remarks>
-        ///     Currently the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose()" />
-        ///     and <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> methods
-        ///     are in fact identical. This will change in the future.
-        /// </remarks>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the operation fails.
         /// </exception>
@@ -1098,23 +1093,17 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     [Desired functionality, refer to remarks for actual current 
-        ///     behavior]: Releases all resources used by this Consumer without
+        ///     Releases all resources used by this Consumer without
         ///     committing offsets and without alerting the group coordinator
-        ///     that the consumer is exiting the group. The group will 
-        ///     rebalance after a timeout specified by the broker config
-        ///     property `group.max.session.timeout.ms`. You should commit
-        ///     offsets / unsubscribe from the group before calling this
-        ///     method (typically by calling 
+        ///     that the consumer is exiting the group. If you do not call 
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> or
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unsubscribe" />
+        ///     prior to Dispose, the group will rebalance after a timeout 
+        ///     specified by the broker config property `group.max.session.timeout.ms`.
+        ///     You should commit offsets / unsubscribe from the group before 
+        ///     calling this method (typically by calling 
         ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close()" />).
         /// </summary>
-        /// <remarks>
-        ///     This method is currently (a) a blocking operation and (b) will 
-        ///     result in the consumer cleanly exiting the group. In the future,
-        ///     we will change this behavior to that stated in the summary. The
-        ///     current behavior is at-odds with .NET conventions but reflects
-        ///     the operation of the underlying librdkafka library.
-        /// </remarks>
         public void Dispose()
         {
             Dispose(true);
@@ -1148,7 +1137,7 @@ namespace Confluent.Kafka
                 // calls to rd_kafka_destroy may result in callbacks
                 // as a side-effect. however the callbacks this class
                 // registers with librdkafka ensure that any registered
-                // events are not called if disposeHadBeenCalled is true.
+                // events are not called if the kafkaHandle is closed.
                 // this avoids deadlocks in common scenarios.
                 kafkaHandle.Dispose();
             }

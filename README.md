@@ -51,7 +51,7 @@ To add a reference to a dotnet core project, execute the following at the comman
 dotnet add package -v 1.0-experimental-9 Confluent.Kafka
 ```
 
-We recommend using 1.0 pre-release versions for new projects. The new API provides more features, is considerably improved, is more performant and more robust. We reserve the right to make breaking API changes before the 1.0 release but the API is now close to it's final form. Confluent will continue to support existing 0.11.x releases as well as make additional 0.11.x maintenance releases going forward.
+We recommend using 1.0 pre-release versions of Confluent.Kafka for new projects. The 1.0 API provides more features, is considerably improved, is more performant and more robust than 0.11.x releases. Be warned that we may still make breaking API changes before the 1.0 release but the API is now close to it's final form. In addition to 1.x releases, we will continue 0.11.x maintenance releases going forward.
 
 Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web url - you 
 should specify it in the nuget package manger):
