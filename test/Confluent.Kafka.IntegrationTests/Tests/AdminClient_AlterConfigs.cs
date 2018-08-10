@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 string topicName = Guid.NewGuid().ToString();
                 var createTopicsResult = adminClient.CreateTopicsAsync(
                     new List<NewTopic> { new NewTopic { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
-                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throw unknown topic/partition error.
+                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 // 2. do an invalid alter configs call to change it.
                 var configResource = new ConfigResource { Name = topicName, Type = ResourceType.Topic };
@@ -117,7 +117,7 @@ namespace Confluent.Kafka.IntegrationTests
                 string topicName2 = Guid.NewGuid().ToString();
                 var createTopicsResult2 = adminClient.CreateTopicsAsync(
                     new List<NewTopic> { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
-                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throw unknown topic/partition error.
+                Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };
                 toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>> 

@@ -245,6 +245,7 @@ namespace Confluent.Kafka.Impl
             var topicHandle = Librdkafka.topic_new(handle, topic, config);
             if (topicHandle.IsInvalid)
             {
+                DangerousRelease();
                 throw new KafkaException(Librdkafka.last_error());
             }
 

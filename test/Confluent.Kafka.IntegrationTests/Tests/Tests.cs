@@ -32,9 +32,9 @@ namespace Confluent.Kafka.IntegrationTests
         {
             lock (logLockObj)
             {
-                // Uncomment to enable logging to a file. Useful for debugging
-                // which test caused librdkafka to segfault.
-                File.AppendAllLines("/tmp/test.txt", new [] { msg });
+                // Uncomment to enable logging to a file. Useful for debugging,
+                // for example, which test caused librdkafka to segfault.
+                // File.AppendAllLines("/tmp/test.txt", new [] { msg });
             }
         }
 

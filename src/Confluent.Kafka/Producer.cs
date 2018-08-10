@@ -1050,7 +1050,7 @@ namespace Confluent.Kafka
                 // calls to rd_kafka_destroy may result in callbacks
                 // as a side-effect. however the callbacks this class
                 // registers with librdkafka ensure that any registered
-                // events are not called if disposeHadBeenCalled is true.
+                // events are not called if kafkaHandle has been closed.
                 // this avoids deadlocks in common scenarios.
                 kafkaHandle.Dispose();
             }

@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Impl
 
         internal SafeKafkaHandle kafkaHandle;
 
-        public SafeTopicHandle() : base("kafka topic") { }
+        private SafeTopicHandle() : base("kafka topic") { }
 
         protected override bool ReleaseHandle()
         {

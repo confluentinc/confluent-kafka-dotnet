@@ -123,11 +123,6 @@ namespace Confluent.Kafka
         ///     The total number librdkafka client instances that have been
         ///     created and not yet disposed.
         /// </summary>
-        /// <remarks>
-        ///     This count includes any librdkafka client instances for which
-        ///     all references have been lost (the Producer / Consumer /
-        ///     AdminClient classes to not provide finalizers). 
-        /// </remarks>
         public static int HandleCount
         {
             get { lock(instanceCountLockObj) { return kafkaHandleCreateCount - kafkaHandleDestroyCount; } }

@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Consumer_AutoCommit");
 
             // check each synonym.
-            foreach (var param in new[] { "enable.auto.commit" }) /* TODO: this fails: "auto.commit.enable"  */
+            foreach (var param in new[] { "enable.auto.commit",  "auto.commit.enable" })
             {
                 int N = 2;
                 var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
