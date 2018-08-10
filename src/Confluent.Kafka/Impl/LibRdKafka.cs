@@ -241,6 +241,11 @@ namespace Confluent.Kafka.Impl
                                 : @"runtimes\win7-x86\native");
                         path = Path.Combine(dllDirectory, "librdkafka.dll");
                     }
+
+                    if (!File.Exists(path))
+                    {
+                        path = Path.Combine(baseDirectory, "librdkafka.dll");
+                    }
                 }
 
                 if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
