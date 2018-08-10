@@ -349,8 +349,6 @@ namespace Confluent.Kafka.Impl
                         path = Path.Combine(dllDirectory, "librdkafka.dll");
                     }
 
-                    //As librdkafka DLLs getting dumped into bin/debug folder
-                    //in some cases, an attempt to get them from baseDirectory
                     if (!File.Exists(path))
                     {
                         path = Path.Combine(baseDirectory, "librdkafka.dll");
