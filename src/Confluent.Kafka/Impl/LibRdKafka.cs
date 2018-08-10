@@ -351,6 +351,7 @@ namespace Confluent.Kafka.Impl
 
                     if (!File.Exists(path))
                     {
+
                         path = Path.Combine(baseDirectory, "librdkafka.dll");
                     }
                 }
