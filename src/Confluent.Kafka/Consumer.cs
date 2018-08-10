@@ -34,7 +34,6 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
     {
-        private bool DisposeHasBeenCalled { get { lock(disposeHasBeenCalledLockObj) { return disposeHasBeenCalled; } } }
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
@@ -53,16 +52,17 @@ namespace Confluent.Kafka
         private readonly Librdkafka.ErrorDelegate errorDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
-            if (DisposeHasBeenCalled) { return; }
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            if (kafkaHandle.IsClosed) { return; }
             OnError?.Invoke(this, new Error(err, reason));
         }
 
         private readonly Librdkafka.StatsDelegate statsDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
-            if (DisposeHasBeenCalled) { return 0; }
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            if (kafkaHandle.IsClosed) { return 0; }
+
             OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
@@ -72,8 +72,9 @@ namespace Confluent.Kafka
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
-            if (DisposeHasBeenCalled) { return; }
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            // kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
+            if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
 
             var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
 
@@ -99,20 +100,13 @@ namespace Confluent.Kafka
         {
             var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
 
-            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
-            if (DisposeHasBeenCalled)
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            if (kafkaHandle.IsClosed)
             { 
                 // The RebalanceCallback should actually never be invoked as a side effect of Dispose,
-                // but if for some reason it ever is, librdkafka will require the Assign call. 
-                if (err == ErrorCode.Local_AssignPartitions)
-                {
-                    Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
-                }
-                else if (err == ErrorCode.Local_RevokePartitions)
-                {
-                    Unassign();
-                }
-                return;
+                // but if for some reason flow of execution gets here, something is badly wrong - 
+                // a closed librdkafka handle is also expecting an assign call ... 
+                throw new Exception("unexpected rebalance callback when kafkaHandle disposed");
             }
 
             if (err == ErrorCode.Local_AssignPartitions)
@@ -148,8 +142,8 @@ namespace Confluent.Kafka
             IntPtr offsets,
             IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose (prevents deadlocks in common scenarios).
-            if (DisposeHasBeenCalled) { return; }
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            if (kafkaHandle.IsClosed) { return; }
 
             OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
                 SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
