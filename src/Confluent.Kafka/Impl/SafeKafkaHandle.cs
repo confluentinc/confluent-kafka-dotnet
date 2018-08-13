@@ -91,6 +91,8 @@ namespace Confluent.Kafka.Impl
 
         public volatile IClient owner;
 
+        public RdKafkaType type;
+
         private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
             = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
@@ -139,6 +141,7 @@ namespace Confluent.Kafka.Impl
                 throw new InvalidOperationException(errorStringBuilder.ToString());
             }
             kh.SetOwner(owner);
+            kh.type = type;
             Library.IncrementKafkaHandleCreateCount();
             return kh;
         }
@@ -173,9 +176,18 @@ namespace Confluent.Kafka.Impl
         {
             Library.IncrementKafkaHandleDestroyCount();
             
-            // Librdkafka.destroy is a static object which means at
-            // this point we can be sure it hasn't already been GC'd.
-            Librdkafka.destroy(handle);
+            // Librdkafka.destroy / Librdkafka.destroy_flags is a static
+            // object which means at this point we can be sure it hasn't
+            // already been GC'd.
+
+            if (type == RdKafkaType.Producer)
+            {
+                Librdkafka.destroy(handle);
+            }
+            else
+            {
+                Librdkafka.destroy_flags(handle, (IntPtr)Librdkafka.DestroyFlags.RD_KAFKA_DESTROY_F_NO_CONSUMER_CLOSE);
+            }
 
             return true;
         }

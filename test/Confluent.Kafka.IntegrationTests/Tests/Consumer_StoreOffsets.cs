@@ -77,7 +77,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // test doesn't throw.
                 consumer.StoreOffsets(new List<TopicPartitionOffset>());
 
-                consumer.Unsubscribe();
+                consumer.Close();
             }
 
             Assert.Equal(0, Library.HandleCount);

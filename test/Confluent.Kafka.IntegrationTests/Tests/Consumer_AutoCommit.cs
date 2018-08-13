@@ -38,64 +38,59 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Consumer_AutoCommit");
 
-            // check each synonym.
-            foreach (var param in new[] { "enable.auto.commit",  "auto.commit.enable" })
-            {
-                int N = 2;
-                var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
+            int N = 2;
+            var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
 
-                var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new Dictionary<string, object>
+            {
+                { "group.id", Guid.NewGuid().ToString() },
+                { "bootstrap.servers", bootstrapServers },
+                { "session.timeout.ms", 6000 },
+                { "auto.commit.interval.ms", 1000 },
+                { "enable.auto.commit", false }
+            };
+
+            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            {
+                bool done = false;
+
+                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
                 {
-                    { "group.id", Guid.NewGuid().ToString() },
-                    { "bootstrap.servers", bootstrapServers },
-                    { "session.timeout.ms", 6000 },
-                    { "auto.commit.interval.ms", 1000 },
-                    { param, false }
+                    Assert.Single(partitions);
+                    consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset));
                 };
 
-                using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+                consumer.Subscribe(singlePartitionTopic);
+
+                int msgCnt = 0;
+                while (!done)
                 {
-                    bool done = false;
-
-                    consumer.OnPartitionAssignmentReceived += (_, partitions) =>
+                    ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (record.Message != null)
                     {
-                        Assert.Single(partitions);
-                        consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset));
-                    };
-
-                    consumer.Subscribe(singlePartitionTopic);
-
-                    int msgCnt = 0;
-                    while (!done)
-                    {
-                        ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        if (record.Message != null)
-                        {
-                            msgCnt += 1;
-                        }
-                        if (record.IsPartitionEOF)
-                        {
-                            done = true;
-                        }
+                        msgCnt += 1;
                     }
-
-                    Assert.Equal(msgCnt, N);
-
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
-
-                    var committed = consumer.CommittedAsync(new [] { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
-
-                    // if this was committing, would expect the committed offset to be first committed offset + N
-                    // (don't need to subtract 1 since the next message to be consumed is the value that is committed).
-                    Assert.NotEqual(firstProduced.Offset + N, committed[0].Offset);
-
-                    consumer.Close();
+                    if (record.IsPartitionEOF)
+                    {
+                        done = true;
+                    }
                 }
+
+                Assert.Equal(msgCnt, N);
+
+                Thread.Sleep(TimeSpan.FromSeconds(3));
+
+                var committed = consumer.CommittedAsync(new [] { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
+
+                // if this was committing, would expect the committed offset to be first committed offset + N
+                // (don't need to subtract 1 since the next message to be consumed is the value that is committed).
+                Assert.NotEqual(firstProduced.Offset + N, committed[0].Offset);
+
+                consumer.Close();
             }
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_AutoCommit");
         }
-
     }
 }

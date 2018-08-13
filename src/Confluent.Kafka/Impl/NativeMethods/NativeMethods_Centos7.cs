@@ -213,6 +213,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern void rd_kafka_destroy(IntPtr rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_destroy_flags(IntPtr rk, IntPtr flags);
+        
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* const char * */ IntPtr rd_kafka_name(IntPtr rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

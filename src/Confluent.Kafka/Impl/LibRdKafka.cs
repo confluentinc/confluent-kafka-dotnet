@@ -35,6 +35,21 @@ namespace Confluent.Kafka.Impl
 {
     internal static class Librdkafka
     {
+        internal enum DestroyFlags
+        {
+            /*!
+            * Don't call consumer_close() to leave group and commit final offsets.
+            *
+            * This also disables consumer callbacks to be called from rd_kafka_destroy*(),
+            * such as rebalance_cb.
+            *
+            * The consumer group handler is still closed internally, but from an
+            * application perspective none of the functionality from consumer_close()
+            * is performed.
+            */
+            RD_KAFKA_DESTROY_F_NO_CONSUMER_CLOSE = 0x8
+        }
+
         internal enum AdminOp
         {
             Any = 0,
@@ -273,8 +288,8 @@ namespace Confluent.Kafka.Impl
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_result_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
 
-            _destroyMethodInfo = methods.Single(m => m.Name == "rd_kafka_destroy");
-            _destroy = (Action<IntPtr>)_destroyMethodInfo.CreateDelegate(typeof(Action<IntPtr>));
+            _destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_destroy").CreateDelegate(typeof(Action<IntPtr>));
+            _destroy_flags = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_destroy_flags").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
 
             try
             {
@@ -449,13 +464,6 @@ namespace Confluent.Kafka.Impl
 
                 isInitialized = true;
 
-                // Protect the _destroy and _destroyMethodInfo objects from garbage collection. This is
-                // required since the Producer/Consumer finalizers may reference them, and they might
-                // have otherwise been cleaned up at that point. To keep things simple, there is no reference
-                // counting / corresponding Free() call - there is negligible overhead in keeping these
-                // references around for the lifetime of the process.
-                GCHandle.Alloc(_destroy, GCHandleType.Normal);
-                GCHandle.Alloc(_destroyMethodInfo, GCHandleType.Normal);
 
                 return isInitialized;
             }
@@ -666,9 +674,11 @@ namespace Confluent.Kafka.Impl
                 StringBuilder errstr, UIntPtr errstr_size)
             => _new(type, conf, errstr, errstr_size);
 
-        private static MethodInfo _destroyMethodInfo;
         private static Action<IntPtr> _destroy;
         internal static void destroy(IntPtr rk) => _destroy(rk);
+
+        private static Action<IntPtr, IntPtr> _destroy_flags;
+        internal static void destroy_flags(IntPtr rk, IntPtr flags) => _destroy_flags(rk, flags);
 
         private static Func<IntPtr, IntPtr> _name;
         internal static IntPtr name(IntPtr rk) => _name(rk);
