@@ -37,6 +37,11 @@ namespace Confluent.Kafka
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
+        /// <summary>
+        ///     keeps track of whether or not assign has been called during
+        ///     invocation of a rebalance callback event.
+        /// </summary>
+        private bool assignCalled = false;
 
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
@@ -114,24 +119,30 @@ namespace Confluent.Kafka
                 var handler = OnPartitionAssignmentReceived;
                 if (handler != null && handler.GetInvocationList().Length > 0)
                 {
+                    assignCalled = false;
                     handler(this, partitionList);
+                    if (assignCalled)
+                    {
+                        return;
+                    }
                 }
-                else
-                {
-                    Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
-                }
+
+                Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
                 var handler = OnPartitionAssignmentRevoked;
                 if (handler != null && handler.GetInvocationList().Length > 0)
                 {
+                    assignCalled = false;
                     handler(this, partitionList);
+                    if (assignCalled)
+                    {
+                        return;
+                    }
                 }
-                else
-                {
-                    Unassign();
-                }
+                
+                Unassign();
             }
         }
 
@@ -571,13 +582,15 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Raised when a new partition assignment is received.
         /// 
-        ///     You must call the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartitionOffset})" />
-        ///     method (or other overload) if you specify this handler. If no handler is provided,
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartition})" />
-        ///     will be called automatically.
+        ///     If you do not call the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartition})" />
+        ///     method (or another overload of this method) in a handler added to this event, following execution of your handler(s),
+        ///     the consumer will be automatically assigned to the set of partitions as specified in the event data and 
+        ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset, in
+        ///     accordance with the `auto.offset.reset` configuration property. This default behavior will not occur if you call Assign
+        ///     yourself in a handler added to this event. The set of partitions you assign to is not required to match the
+        ///     assignment given to you, but typically will.
         /// </summary>
         /// <remarks>
-        /// 
         ///     Executes as a side-effect of
         ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
         ///     (on the same thread).
@@ -588,9 +601,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Raised when a partition assignment is revoked.
         /// 
-        ///     You must the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartitionOffset})" />
-        ///     method (or other overload) if you specify this handler. If no handler is provided,
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unassign" /> will be called automatically.
+        ///     If you do not call the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unassign" /> or 
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartition})" />
+        ///     (or other overload) method in a handler added to this event, all partitions will be 
+        ///     automatically unassigned following execution of your handler(s). This default behavior 
+        ///     will not occur if you call Unassign (or Assign) yourself in a handler added to this event.
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of
@@ -690,7 +705,7 @@ namespace Confluent.Kafka
         ///     parameter if no offsets have been committed yet.
         /// </param>
         public void Assign(TopicPartition partition)
-            => this.Assign(new List<TopicPartition> { partition });
+            => Assign(new List<TopicPartition> { partition });
 
 
         /// <summary>
@@ -706,7 +721,7 @@ namespace Confluent.Kafka
         ///     if no offsets have been committed yet.
         /// </param>
         public void Assign(TopicPartitionOffset partition)
-            => this.Assign(new List<TopicPartitionOffset> { partition });
+            => Assign(new List<TopicPartitionOffset> { partition });
 
 
         /// <summary>
@@ -723,7 +738,10 @@ namespace Confluent.Kafka
         ///     no offsets have been committed yet.
         /// </param>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
-            => kafkaHandle.Assign(partitions.ToList());
+        {
+            assignCalled = true;
+            kafkaHandle.Assign(partitions.ToList());
+        }
 
 
         /// <summary>
@@ -739,15 +757,20 @@ namespace Confluent.Kafka
         ///     have been committed yet.
         /// </param>
         public void Assign(IEnumerable<TopicPartition> partitions)
-            => kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+        {
+            assignCalled = true;
+            kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+        }
 
 
         /// <summary>
         ///     Stop consumption and remove the current assignment.
         /// </summary>
         public void Unassign()
-            => kafkaHandle.Assign(null);
-
+        {
+            assignCalled = true;
+            kafkaHandle.Assign(null);
+        }
 
         /// <summary>
         ///     Store offsets for a single partition based on the topic/partition/offset

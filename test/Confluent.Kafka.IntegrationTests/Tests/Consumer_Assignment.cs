@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic DeserializingConsumer test (consume mode).
+        ///     
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_Assignment(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
@@ -46,9 +46,9 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
+            // Test in which both receive and revoke events are specified.
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                // Test empty case.
                 Assert.Empty(consumer.Assignment);
 
                 consumer.OnPartitionAssignmentReceived += (_, partitions) =>
@@ -63,12 +63,87 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(0, (int)consumer.Assignment[0].Partition);
                 };
 
-                consumer.OnPartitionAssignmentRevoked += (_, partitions)
-                    => consumer.Unassign();
+                consumer.OnPartitionAssignmentRevoked += (_, partitions) =>
+                {
+                    Assert.Single(consumer.Assignment);
+                    consumer.Unassign();
+                    Assert.Empty(consumer.Assignment);
+                };
 
                 consumer.Subscribe(singlePartitionTopic);
 
                 var r = consumer.Consume(TimeSpan.FromSeconds(20));
+
+                consumer.Close();
+            }
+
+            // test in which only the revoked event handler is specified.
+            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            {
+                consumer.Subscribe(singlePartitionTopic);
+
+                consumer.OnPartitionAssignmentRevoked += (_, partitions) =>
+                {
+                    Assert.Single(consumer.Assignment);
+                    consumer.Unassign();
+                    Assert.Empty(consumer.Assignment);
+                };
+
+                // assignment will happen as a side effect of this:
+                var r = consumer.Consume(TimeSpan.FromSeconds(5));
+                Assert.Single(consumer.Assignment);
+
+                consumer.Unsubscribe();
+
+                // revoke will happen as side effect of this:
+                r = consumer.Consume(TimeSpan.FromSeconds(5));
+
+                Assert.Empty(consumer.Assignment);
+
+                consumer.Close();
+            }
+
+            // test in which only the receive event handler is specified.
+            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            {
+                consumer.Subscribe(singlePartitionTopic);
+
+                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
+                {
+                    Assert.Empty(consumer.Assignment);
+                    consumer.Assign(partitions);
+                    Assert.Single(consumer.Assignment);
+                };
+
+                // assignment will happen as a side effect of this:
+                var r = consumer.Consume(TimeSpan.FromSeconds(5));
+                Assert.Single(consumer.Assignment);
+
+                consumer.Unsubscribe();
+
+                // revoke will happen as side effect of this:
+                r = consumer.Consume(TimeSpan.FromSeconds(5));
+
+                Assert.Empty(consumer.Assignment);
+
+                consumer.Close();
+            }
+
+            // test in which neither the receive or revoke handler is specified.
+            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            {
+                consumer.Subscribe(singlePartitionTopic);
+
+                // assignment will happen as a side effect of this:
+                var r = consumer.Consume(TimeSpan.FromSeconds(5));
+                Assert.Single(consumer.Assignment);
+
+                consumer.Unsubscribe();
+
+                // revoke will happen as side effect of this:
+                r = consumer.Consume(TimeSpan.FromSeconds(5));
+
+                Assert.Empty(consumer.Assignment);
 
                 consumer.Close();
             }
