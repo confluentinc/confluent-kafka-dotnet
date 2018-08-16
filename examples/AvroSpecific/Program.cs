@@ -95,7 +95,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 consumer.Subscribe(topicName);
 
                 CancellationTokenSource cts = new CancellationTokenSource();
-                var consumeTask = Task.Factory.StartNew(() =>
+                var consumeTask = Task.Run(() =>
                 {
                     while (!cts.Token.IsCancellationRequested)
                     {
@@ -112,7 +112,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                             Console.WriteLine("Consume error: " + e.Error.Reason);
                         }
                     }
-                });
+                }, cts.Token);
 
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
@@ -127,7 +127,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 }
 
                 cts.Cancel();
-                consumeTask.Wait();
+                consumer.Close();
             }
         }
     }

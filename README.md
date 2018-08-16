@@ -53,7 +53,7 @@ dotnet add package -v 1.0-experimental-9 Confluent.Kafka
 
 We recommend using 1.0 pre-release versions of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. Be warned that we may still make breaking API changes before the 1.0 release but the API is now close to it's final form. We are not depreciating 0.11.x releases immediately. In addition to 1.x releases, we will continue with 0.11.x maintenance releases going forward.
 
-Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web url - you 
+Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web URL - you 
 should specify it in the nuget package manger):
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
 matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 

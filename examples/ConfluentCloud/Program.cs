@@ -107,7 +107,7 @@ namespace ConfluentCloudExample
                         {
                             Console.WriteLine($"consumed: {consumeResult.Value}");
                         }
-                        if (consumeResult.IsPartitionEOF)
+                        else if (consumeResult.IsPartitionEOF)
                         {
                             Console.WriteLine($"end of partition: {consumeResult.TopicPartitionOffset}");
                         }
@@ -116,7 +116,9 @@ namespace ConfluentCloudExample
                     {
                         Console.WriteLine($"consume error: {e.Error.Reason}");
                     }
-                }  
+                }
+
+                consumer.Close();
             }
         }
     }

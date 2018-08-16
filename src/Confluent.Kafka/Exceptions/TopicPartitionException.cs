@@ -38,7 +38,7 @@ namespace Confluent.Kafka
             : base(
                 "An error occurred for topic partitions: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.TopicPartition)) +
-                "]. Inspect the Results property of this exception for further information.")
+                "].")
         {
             Results = results;
         }

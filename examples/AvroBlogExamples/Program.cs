@@ -75,7 +75,7 @@ namespace AvroBlogExample
             using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, new AvroSerializer<MessageTypes.LogMessage>()))
             {
                 producer.ProduceAsync("log-messages", 
-                    new Message<Null,MessageTypes.LogMessage> 
+                    new Message<Null, MessageTypes.LogMessage> 
                     {
                         Value = new MessageTypes.LogMessage
                         {
