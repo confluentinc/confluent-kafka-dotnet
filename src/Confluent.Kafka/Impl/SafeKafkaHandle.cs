@@ -1078,12 +1078,25 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        private void setOption_Timeout(IntPtr optionsPtr, TimeSpan? timeout)
+        private void setOption_RequestTimeout(IntPtr optionsPtr, TimeSpan? timeout)
         {
             if (timeout != null)
             {
                 var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
                 var errorCode = Librdkafka.AdminOptions_set_request_timeout(optionsPtr, (IntPtr)(int)(timeout.Value.TotalMilliseconds), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+                if (errorCode != ErrorCode.NoError)
+                {
+                    throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                }
+            }
+        }
+
+        private void setOption_OperationTimeout(IntPtr optionsPtr, TimeSpan? timeout)
+        {
+            if (timeout != null)
+            {
+                var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+                var errorCode = Librdkafka.AdminOptions_set_operation_timeout(optionsPtr, (IntPtr)(int)(timeout.Value.TotalMilliseconds), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                 if (errorCode != ErrorCode.NoError)
                 {
                     throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
@@ -1106,7 +1119,7 @@ namespace Confluent.Kafka.Impl
             options = options == null ? new AlterConfigsOptions() : options;
             IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.AlterConfigs);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
-            setOption_Timeout(optionsPtr, options.Timeout);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] configPtrs = new IntPtr[configs.Count()];
@@ -1158,7 +1171,7 @@ namespace Confluent.Kafka.Impl
 
             options = options == null ? new DescribeConfigsOptions() : options;
             IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeConfigs);
-            setOption_Timeout(optionsPtr, options.Timeout);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] configPtrs = new IntPtr[resources.Count()];
@@ -1196,7 +1209,8 @@ namespace Confluent.Kafka.Impl
             options = options == null ? new CreatePartitionsOptions() : options;
             IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.CreatePartitions);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
-            setOption_Timeout(optionsPtr, options.Timeout);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] newPartitionsPtrs = new IntPtr[newPartitions.Count()];
@@ -1257,7 +1271,8 @@ namespace Confluent.Kafka.Impl
 
             options = options == null ? new DeleteTopicsOptions() : options;
             IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteTopics);
-            setOption_Timeout(optionsPtr, options.Timeout);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] deleteTopicsPtrs = new IntPtr[deleteTopics.Count()];
@@ -1292,7 +1307,8 @@ namespace Confluent.Kafka.Impl
             options = options == null ? new CreateTopicsOptions() : options;
             IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.CreateTopics);
             setOption_ValidatOnly(optionsPtr, options.ValidateOnly);
-            setOption_Timeout(optionsPtr, options.Timeout);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] newTopicPtrs = new IntPtr[newTopics.Count()];

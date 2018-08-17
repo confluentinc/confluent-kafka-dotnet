@@ -25,18 +25,30 @@ namespace Confluent.Kafka.Admin
     public class CreatePartitionsOptions
     {
         /// <summary>
-        ///     If true, the request should be validated only without creating the topic.
+        ///     If true, the request should be validated only without creating the partitions.
         /// 
         ///     Default: false
         /// </summary>
         public bool ValidateOnly { get; set; } = false;
 
         /// <summary>
-        ///     The request timeout in milliseconds for this operation or null if the
-        ///     default request timeout for the AdminClient should be used.
+        ///     The overall request timeout, including broker lookup, request 
+        ///     transmission, operation time on broker, and response. If set
+        ///     to null, the default request timeout for the AdminClient will
+        ///     be used.
         /// 
         ///     Default: null
         /// </summary>
-        public TimeSpan? Timeout { get; set; }
+        public TimeSpan? RequestTimeout { get; set; }
+
+        /// <summary>
+        ///     The broker's operation timeout - the maximum time to wait for
+        ///     CreatePartitions before returning a result to the application.
+        ///     If set to null, will return immediately upon triggering partition
+        ///     creation.
+        /// 
+        ///     Default: null
+        /// </summary>
+        public TimeSpan? OperationTimeout { get; set; }
     }
 }
