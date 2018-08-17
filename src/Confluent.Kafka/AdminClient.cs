@@ -371,10 +371,10 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The results of the create topic requests.
         /// </returns>
-        public Task<List<CreateTopicResult>> CreateTopicsAsync(IEnumerable<NewTopic> topics, CreateTopicsOptions options = null)
+        public Task<List<CreateTopicResult>> CreateTopicsAsync(IEnumerable<TopicSpecification> topics, CreateTopicsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
-            // public List<Task<CreateTopicResult>> CreateTopicsConcurrent(IEnumerable<NewTopic> topics, CreateTopicsOptions options = null)
+            // public List<Task<CreateTopicResult>> CreateTopicsConcurrent(IEnumerable<TopicSpecification> topics, CreateTopicsOptions options = null)
 
             var completionSource = new TaskCompletionSource<List<CreateTopicResult>>();
             var gch = GCHandle.Alloc(completionSource);
@@ -415,27 +415,27 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Increase the number of partitions for one or more topics as per
-        ///     the supplied NewPartitions specifications.
+        ///     the supplied PartitionsSpecifications.
         /// </summary>
-        /// <param name="newPartitions">
-        ///     A collection of NewPartitions specifications.
+        /// <param name="partitionsSpecifications">
+        ///     A collection of PartitionsSpecifications.
         /// </param>
         /// <param name="options">
         ///     The options to use when creating the partitions.
         /// </param>
         /// <returns>
-        ///     The results of the NewPartitions requests.
+        ///     The results of the PartitionsSpecification requests.
         /// </returns>
         public Task<List<CreatePartitionsResult>> CreatePartitionsAsync(
-            IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
+            IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
-            // List<Task<CreatePartitionResult>> CreatePartitionsConcurrent(IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null)
+            // List<Task<CreatePartitionResult>> CreatePartitionsConcurrent(IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null)
 
             var completionSource = new TaskCompletionSource<List<CreatePartitionsResult>>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.CreatePartitions(
-                newPartitions, options, resultQueue,
+                partitionsSpecifications, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }

@@ -1197,7 +1197,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal void CreatePartitions(
-            IEnumerable<NewPartitions> newPartitions,
+            IEnumerable<PartitionsSpecification> newPartitions,
             CreatePartitionsOptions options,
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)
@@ -1295,7 +1295,7 @@ namespace Confluent.Kafka.Impl
         }
 
         internal void CreateTopics(
-            IEnumerable<NewTopic> newTopics,
+            IEnumerable<TopicSpecification> newTopics,
             CreateTopicsOptions options,
             IntPtr resultQueuePtr,
             IntPtr completionSourcePtr)

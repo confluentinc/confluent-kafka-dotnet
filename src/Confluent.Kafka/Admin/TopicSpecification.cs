@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Specification of a new topic to be created via the CreateTopics method.
     /// </summary>
-    public class NewTopic
+    public class TopicSpecification
     {
         /// <summary>
         ///     The configuration to use to create the new topic.
@@ -35,13 +35,13 @@ namespace Confluent.Kafka.Admin
         public string Name { get; set; }
 
         /// <summary>
-        ///     The numer of partitions for the new topic or -1 (the default) if a 
+        ///     The number of partitions for the new topic or -1 (the default) if a 
         ///     replica assignment is specified.
         /// </summary>
         public int NumPartitions { get; set; } = -1;
 
         /// <summary>
-        ///     A map from partition id to replica ids (i.e.static broker ids) or null
+        ///     A map from partition id to replica ids (i.e., static broker ids) or null
         ///     if the number of partitions and replication factor are specified
         ///     instead.
         /// </summary>

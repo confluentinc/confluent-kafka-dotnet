@@ -50,10 +50,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
                 List<CreateTopicResult> result = adminClient.CreateTopicsAsync(
-                    new NewTopic[]
+                    new TopicSpecification[]
                     { 
-                        new NewTopic { Name = topicName1, NumPartitions = 2, ReplicationFactor = 1 },
-                        new NewTopic { Name = topicName2, NumPartitions = 12, ReplicationFactor = 1 }
+                        new TopicSpecification { Name = topicName1, NumPartitions = 2, ReplicationFactor = 1 },
+                        new TopicSpecification { Name = topicName2, NumPartitions = 12, ReplicationFactor = 1 }
                     }
                 ).Result;
 
@@ -72,7 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient2 = new AdminClient(producer.Handle))
             {
                 List<CreateTopicResult> result = adminClient2.CreateTopicsAsync(
-                    new List<NewTopic> { new NewTopic { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } }).Result;
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } }).Result;
                 Assert.Single(result);
                 Assert.False(result[0].Error.IsError);
                 Assert.Equal(topicName3, result[0].Topic);
@@ -93,10 +93,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    var result = adminClient.CreateTopicsAsync(new List<NewTopic> 
+                    var result = adminClient.CreateTopicsAsync(new List<TopicSpecification> 
                         { 
-                            new NewTopic { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 },
-                            new NewTopic { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 }
+                            new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 },
+                            new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 }
                         }
                     ).Result;
                     Assert.True(false, "Expect CreateTopics request to throw an exception.");
@@ -121,8 +121,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
                 var result = adminClient.CreateTopicsAsync(
-                    new List<NewTopic> { new NewTopic { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }, 
-                    new CreateTopicsOptions { ValidateOnly = true, Timeout = TimeSpan.FromSeconds(30) }
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }, 
+                    new CreateTopicsOptions { ValidateOnly = true, RequestTimeout = TimeSpan.FromSeconds(30) }
                 ).Result;
 
                 Assert.Single(result);
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // creating for real shouldn't throw exception.
                 result = adminClient.CreateTopicsAsync(
-                    new List<NewTopic> { new NewTopic { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }
                 ).Result;
 
                 Assert.Single(result);

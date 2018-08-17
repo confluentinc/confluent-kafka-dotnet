@@ -65,10 +65,10 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.AdminClient.CreatePartitionsAsync(IEnumerable{NewPartitions}, CreatePartitionsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.CreatePartitionsAsync(IEnumerable{PartitionsSpecification}, CreatePartitionsOptions)" />
         /// </summary>
         Task<List<CreatePartitionsResult>> CreatePartitionsAsync(
-            IEnumerable<NewPartitions> newPartitions, CreatePartitionsOptions options = null);
+            IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null);
 
 
         /// <summary>
@@ -78,9 +78,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.AdminClient.CreateTopicsAsync(IEnumerable{NewTopic}, CreateTopicsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.CreateTopicsAsync(IEnumerable{TopicSpecification}, CreateTopicsOptions)" />
         /// </summary>
-        Task<List<CreateTopicResult>> CreateTopicsAsync(IEnumerable<NewTopic> topics, CreateTopicsOptions options = null);
+        Task<List<CreateTopicResult>> CreateTopicsAsync(IEnumerable<TopicSpecification> topics, CreateTopicsOptions options = null);
 
 
         /// <summary>

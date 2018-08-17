@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // 1. create a new topic to play with.
                 string topicName = Guid.NewGuid().ToString();
                 var createTopicsResult = adminClient.CreateTopicsAsync(
-                    new List<NewTopic> { new NewTopic { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 // 2. do an invalid alter configs call to change it.
@@ -116,7 +116,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // 6. test updating more than one resource.
                 string topicName2 = Guid.NewGuid().ToString();
                 var createTopicsResult2 = adminClient.CreateTopicsAsync(
-                    new List<NewTopic> { new NewTopic { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
                 Thread.Sleep(TimeSpan.FromSeconds(1)); // without this, sometimes describe topic throws unknown topic/partition error.
 
                 var configResource2 = new ConfigResource { Name = topicName2, Type = ResourceType.Topic };

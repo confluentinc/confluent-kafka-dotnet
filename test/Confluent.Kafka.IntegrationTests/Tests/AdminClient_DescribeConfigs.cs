@@ -72,7 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // options are specified.
                 // ---
-                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }, new DescribeConfigsOptions { Timeout = TimeSpan.FromSeconds(10) }).Result;
+                results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }, new DescribeConfigsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).Result;
                 Assert.Single(results);
                 Assert.True(results[0].Entries.Count > 20);
 

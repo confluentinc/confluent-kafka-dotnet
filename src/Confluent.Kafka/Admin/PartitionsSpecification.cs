@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Specification for new partitions to be added to a topic.
     /// </summary>
-    public class NewPartitions
+    public class PartitionsSpecification
     {
         /// <summary>
         ///     The topic that the new partitions specification corresponds to.
@@ -31,7 +31,8 @@ namespace Confluent.Kafka.Admin
         
         /// <summary>
         ///     The replica assignments for the new partitions, or null if the assignment
-        ///     will be done by the controller.
+        ///     will be done by the controller. the outer list is indexed by the new 
+        ///     partitions relative index, and the inner list contains the broker ids.
         /// </summary>
         public List<List<int>> Assignments { get; set; } = null;
 
