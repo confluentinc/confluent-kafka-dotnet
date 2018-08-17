@@ -58,14 +58,13 @@ namespace Confluent.Kafka.IntegrationTests
             int count = 0;
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue }, (DeliveryReport<byte[], byte[]> dr) => count += 1);
+                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue }, (DeliveryReportResult<byte[], byte[]> dr) => count += 1);
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
 
                 var drTask = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 Assert.True(drTask.IsCompleted);
-                Assert.Equal(ErrorCode.NoError, drTask.Result.Error.Code);
                 Assert.Equal(Offset.Invalid, drTask.Result.Offset);
                 Assert.Equal(Partition.Any, drTask.Result.Partition);
                 Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
@@ -74,7 +73,6 @@ namespace Confluent.Kafka.IntegrationTests
 
                 drTask = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 Assert.True(drTask.IsCompleted);
-                Assert.Equal(ErrorCode.NoError, drTask.Result.Error.Code);
                 Assert.Equal(Offset.Invalid, drTask.Result.Offset);
                 Assert.Equal(0, (int)drTask.Result.Partition);
                 Assert.Equal(singlePartitionTopic, drTask.Result.Topic);

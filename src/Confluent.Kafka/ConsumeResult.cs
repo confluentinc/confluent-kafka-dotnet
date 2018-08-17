@@ -20,14 +20,93 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents a message consumed from kafka cluster.
+    ///     Represents a message consumed from a Kafka cluster.
     /// </summary>
-    public class ConsumeResult<TKey, TValue> : MessageAndMetadata<TKey, TValue>
+    public class ConsumeResult<TKey, TValue>
     {
+        /// <summary>
+        ///     The topic associated with the message.
+        /// </summary>
+        public string Topic { get; set; }
+
+        /// <summary>
+        ///     The partition associated with the message.
+        /// </summary>
+        public Partition Partition { get; set; }
+
+        /// <summary>
+        ///     The partition offset associated with the message.
+        /// </summary>
+        public Offset Offset { get; set; }
+
+        /// <summary>
+        ///     The TopicPartition associated with the message.
+        /// </summary>
+        public TopicPartition TopicPartition
+            => new TopicPartition(Topic, Partition);
+
+        /// <summary>
+        ///     The TopicPartitionOffset assoicated with the message.
+        /// </summary>
+        public TopicPartitionOffset TopicPartitionOffset
+        {
+            get
+            {
+                return new TopicPartitionOffset(Topic, Partition, Offset);
+            }
+            set
+            {
+                Topic = value.Topic;
+                Partition = value.Partition;
+                Offset = value.Offset;
+            }
+        }
+
+        /// <summary>
+        ///     The Kafka message.
+        /// </summary>
+        public Message<TKey, TValue> Message { get; set; }
+
+        /// <summary>
+        ///     The Kafka message Key.
+        /// </summary>
+        public TKey Key
+        {
+            get { return Message.Key; }
+            set { Message.Key = value; }
+        }
+
+        /// <summary>
+        ///     The Kafka message Value.
+        /// </summary>
+        public TValue Value
+        {
+            get { return Message.Value; }
+            set { Message.Value = value; }
+        }
+
+        /// <summary>
+        ///     The Kafka message timestamp.
+        /// </summary>
+        public Timestamp Timestamp
+        {
+            get { return Message.Timestamp; }
+            set { Message.Timestamp = value; }
+        }
+
+        /// <summary>
+        ///     The Kafka message headers.
+        /// </summary>
+        public Headers Headers
+        {
+            get { return Message.Headers; }
+            set { Message.Headers = value; }
+        }
+
         /// <summary>
         ///     True if the ConsumeResult represents an end-of-partition event,
         ///     false otherwise.
         /// </summary>
-        public bool IsPartitionEOF { get => Error.Code == ErrorCode.Local_PartitionEOF; }
+        public bool IsPartitionEOF { get; set; }
     }
 }

@@ -20,9 +20,9 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates a Kafka message and contextual information about that message.
+    ///     Encapsulates the result of a produce request.
     /// </summary>
-    public class MessageAndMetadata<TKey, TValue>
+    public class DeliveryReportResult<TKey, TValue>
     {
         /// <summary>
         ///     The topic associated with the message.
@@ -113,6 +113,6 @@ namespace Confluent.Kafka
         {
             get { return Message.Headers; }
             set { Message.Headers = value; }
-        }
+        }   
     }
 }

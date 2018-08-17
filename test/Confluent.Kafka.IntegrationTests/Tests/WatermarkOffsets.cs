@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
-                producer.Flush(TimeSpan.FromSeconds(10));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
 
                 var queryOffsets = adminClient.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0), TimeSpan.FromSeconds(20));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);

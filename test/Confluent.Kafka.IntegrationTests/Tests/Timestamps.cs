@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
-            var drs_1 = new List<DeliveryReport<Null, string>>();
+            var drs_1 = new List<DeliveryReportResult<Null, string>>();
             List<DeliveryReport<Null, string>> drs = new List<DeliveryReport<Null, string>>();
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
@@ -88,8 +88,8 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 ).Result);
 
-                Action<DeliveryReport<Null, string>> dh 
-                    = (DeliveryReport<Null, string> dr) => drs_1.Add(dr);
+                Action<DeliveryReportResult<Null, string>> dh 
+                    = (DeliveryReportResult<Null, string> dr) => drs_1.Add(dr);
 
                 producer.BeginProduce(singlePartitionTopic, new Message<Null, string> { Value = "testvalue" }, dh);
 
@@ -134,7 +134,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            var drs_2 = new List<DeliveryReport<byte[], byte[]>>();
+            var drs_2 = new List<DeliveryReportResult<byte[], byte[]>>();
             List<DeliveryReport<byte[], byte[]>> drs2 = new List<DeliveryReport<byte[], byte[]>>();
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
@@ -149,7 +149,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() => producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }).Result);
 
-                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
+                Action<DeliveryReportResult<byte[], byte[]>> dh = (DeliveryReportResult<byte[], byte[]> dr) => drs_2.Add(dr);
 
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 

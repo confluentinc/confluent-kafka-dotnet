@@ -53,15 +53,15 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReportResult{TKey, TValue}})" />
         /// </summary>
-        void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
+        void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReportResult<TKey, TValue>> deliveryHandler);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey, TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReportResult{TKey, TValue}})" />
         /// </summary>
-        void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReport<TKey, TValue>> deliveryHandler);
+        void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReportResult<TKey, TValue>> deliveryHandler);
 
 
         /// <summary>

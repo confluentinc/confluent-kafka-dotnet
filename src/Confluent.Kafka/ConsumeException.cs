@@ -14,21 +14,24 @@ namespace Confluent.Kafka
         ///     An object that provides information know about the consumer 
         ///     record for which the error occured.
         /// </param>
-        public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord)
+        /// <param name="error">
+        ///     The error that occured.
+        /// </param>
+        public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error)
         {
             ConsumerRecord = consumerRecord;
+            Error = error;
         }
 
         /// <summary>
         ///     An object that provides information known about the consumer
         ///     record for which the error occured.
         /// </summary>
-        public ConsumeResult<byte[], byte[]> ConsumerRecord { get; }
+        public ConsumeResult<byte[], byte[]> ConsumerRecord { get; private set; }
 
         /// <summary>
-        ///     A convenience property that provides a duplicate of the error
-        ///     provided by ConsumerRecord.
+        ///     The error that occurred.
         /// </summary>
-        public Error Error { get => ConsumerRecord.Error; }
+        public Error Error { get; private set; }
     }
 }

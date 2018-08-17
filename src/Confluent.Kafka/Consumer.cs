@@ -338,7 +338,7 @@ namespace Confluent.Kafka
             {
                 return new ConsumeResult<TKey, TValue>
                 {
-                    TopicPartitionOffsetError = new TopicPartitionOffsetError(null, Partition.Any, Offset.Invalid, new Error(ErrorCode.Local_TimedOut)),
+                    TopicPartitionOffset = new TopicPartitionOffset(null, Partition.Any, Offset.Invalid),
                     Message = null
                 };
             }
@@ -360,7 +360,8 @@ namespace Confluent.Kafka
                 {
                     return new ConsumeResult<TKey, TValue>
                     {
-                        TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(msg.err))
+                        TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                        IsPartitionEOF = true
                     };
                 }
 
@@ -399,7 +400,7 @@ namespace Confluent.Kafka
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
-                            TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(msg.err)),
+                            TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -407,7 +408,8 @@ namespace Confluent.Kafka
                                 Key = KeyAsByteArray(msg),
                                 Value = ValueAsByteArray(msg)
                             }
-                        }
+                        },
+                        new Error(msg.err)
                     );
                 }
 
@@ -428,7 +430,7 @@ namespace Confluent.Kafka
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
-                            TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.Local_KeyDeserialization, ex.ToString())),
+                            TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -436,7 +438,8 @@ namespace Confluent.Kafka
                                 Key = KeyAsByteArray(msg),
                                 Value = ValueAsByteArray(msg)
                             }
-                        }
+                        },
+                        new Error(ErrorCode.Local_KeyDeserialization, ex.ToString())
                     );
                 }
 
@@ -456,7 +459,7 @@ namespace Confluent.Kafka
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
-                            TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.Local_ValueDeserialization, ex.ToString())),
+                            TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                             Message = new Message<byte[], byte[]>
                             {
                                 Timestamp = timestamp,
@@ -464,13 +467,14 @@ namespace Confluent.Kafka
                                 Key = KeyAsByteArray(msg),
                                 Value = ValueAsByteArray(msg)
                             }
-                        }
+                        },
+                        new Error(ErrorCode.Local_ValueDeserialization, ex.ToString())
                     );
                 }
 
                 return new ConsumeResult<TKey, TValue> 
                 { 
-                    TopicPartitionOffsetError = new TopicPartitionOffsetError(topic, msg.partition, msg.offset, new Error(ErrorCode.NoError)),
+                    TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                     Message = new Message<TKey, TValue>
                     {
                         Timestamp = timestamp,
@@ -527,16 +531,9 @@ namespace Confluent.Kafka
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
                 var result = Consume(100);
-
-                switch(result.Error.Code)
-                {
-                    case ErrorCode.Local_TimedOut:
-                        continue;
-                    default:
-                        return result;
-                }
+                if (result.Message == null) { continue; }
+                return result;
             }
         }
 
@@ -873,9 +870,9 @@ namespace Confluent.Kafka
         public Task<TopicPartitionOffset> CommitAsync(
             ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (result.Error.Code != ErrorCode.NoError)
+            if (result.Message == null)
             {
-                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an errored message");
+                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
             }
 
             return Task.Run(() => kafkaHandle.CommitSync(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) })[0]);

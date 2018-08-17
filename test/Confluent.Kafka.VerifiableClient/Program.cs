@@ -172,7 +172,7 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(DeliveryReport<Null, string> record)
+        public void HandleDelivery(DeliveryReportResult<Null, string> record)
         {
             var d = new Dictionary<string, object>
             {
@@ -502,12 +502,6 @@ namespace Confluent.Kafka.VerifiableClient
                 !currentAssignment.TryGetValue(record.TopicPartition, out ap))
             {
                 Dbg($"Received Message on unassigned partition {record.TopicPartition}");
-                return;
-            }
-
-            if (record.Error.Code != ErrorCode.NoError)
-            {
-                Dbg($"Message error {record.Error} at {record.TopicPartitionOffset}");
                 return;
             }
 

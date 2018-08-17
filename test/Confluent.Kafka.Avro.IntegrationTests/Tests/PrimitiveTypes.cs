@@ -106,7 +106,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(stringTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal("hello", result.Message.Key);
                 Assert.Equal("world", result.Message.Value);
             }
@@ -115,7 +114,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(bytesTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(new byte[] { 1, 4, 11 }, result.Message.Key);
                 Assert.Equal(new byte[] { }, result.Message.Value);
             }
@@ -124,7 +122,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(intTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(42, result.Message.Key);
                 Assert.Equal(43, result.Message.Value);
             }
@@ -133,7 +130,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(longTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(-32, result.Message.Key);
                 Assert.Equal(-33, result.Message.Value);
             }
@@ -142,7 +138,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(boolTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.True(result.Message.Key);
                 Assert.False(result.Message.Value);
             }
@@ -151,7 +146,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(floatTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(44.0f, result.Message.Key);
                 Assert.Equal(45.0f, result.Message.Value);
             }
@@ -160,7 +154,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(doubleTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Equal(46.0, result.Message.Key);
                 Assert.Equal(47.0, result.Message.Value);
             }
@@ -169,7 +162,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(nullTopic, 0, 0) });
                 var result = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal(ErrorCode.NoError, result.Error.Code);
                 Assert.Null(result.Key);
                 Assert.Null(result.Value);
             }

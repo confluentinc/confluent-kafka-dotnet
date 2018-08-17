@@ -61,8 +61,6 @@ namespace Confluent.Kafka.IntegrationTests
 
                 var dr1 = producer.ProduceAsync(new TopicPartition(topicName1, 0), new Message<Null, Null> {}).Result;
                 var dr2 = producer.ProduceAsync(new TopicPartition(topicName1, 1), new Message<Null, Null> {}).Result;
-                Assert.False(dr1.Error.IsError);
-                Assert.False(dr2.Error.IsError);
                 
                 try
                 {
@@ -84,7 +82,6 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // forces a metadata request.
                 var dr1 = producer.ProduceAsync(new TopicPartition(topicName2, 0), new Message<Null, Null> {}).Result;
-                Assert.False(dr1.Error.IsError);
                 try
                 {
                     // since we have metadata, this throws immediately (i.e. not wrapped in AggregateException)

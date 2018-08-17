@@ -83,6 +83,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
             Assert.NotNull(result);
+            Assert.NotNull(result.Message);
             Assert.Equal(topic, result.Topic);
             Assert.NotEqual<long>(result.Offset, Offset.Invalid);
             Assert.Equal(TimestampType.CreateTime, result.Message.Timestamp.Type);

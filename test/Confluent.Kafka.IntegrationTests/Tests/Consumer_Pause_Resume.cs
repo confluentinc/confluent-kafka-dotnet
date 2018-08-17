@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(record.Message);
 
-                Assert.False(producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result.Error.IsError);
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(30));
                 Assert.NotNull(record.Message);
 

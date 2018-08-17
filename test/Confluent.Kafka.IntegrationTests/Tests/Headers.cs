@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
-            var drs = new List<DeliveryReport<Null, string>>();
+            var drs = new List<DeliveryReportResult<Null, string>>();
             DeliveryReport<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
             DeliveryReport<Null, string> dr_ol1, dr_ol3;
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("test-header", dr_ol3.Message.Headers[0].Key);
                 Assert.Equal(new byte[] { 142 }, dr_ol3.Message.Headers[0].Value);
 
-                Action<DeliveryReport<Null, string>> dh = (DeliveryReport<Null, string> dr) => drs.Add(dr);
+                Action<DeliveryReportResult<Null, string>> dh = (DeliveryReportResult<Null, string> dr) => drs.Add(dr);
 
                 // Test headers work as expected with all serializing Produce variants. 
 
@@ -123,7 +123,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, drs[1].Message.Headers.Count);
             }
 
-            List<DeliveryReport<byte[], byte[]>> drs_2 = new List<DeliveryReport<byte[], byte[]>>();
+            List<DeliveryReportResult<byte[], byte[]>> drs_2 = new List<DeliveryReportResult<byte[], byte[]>>();
             DeliveryReport<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
             {
@@ -143,7 +143,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Test headers work as expected with all non-serializing Produce variants.
 
-                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
+                Action<DeliveryReportResult<byte[], byte[]>> dh = (DeliveryReportResult<byte[], byte[]> dr) => drs_2.Add(dr);
 
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }, dh);

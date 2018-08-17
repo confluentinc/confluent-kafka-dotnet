@@ -99,12 +99,13 @@ namespace Confluent.Kafka.Examples.Consumer
                     try
                     {
                         var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                        if (consumeResult.Message == null)
+                        {
+                            continue;
+                        }
                         if (consumeResult.IsPartitionEOF)
                         {
                             Console.WriteLine($"Reached end of topic {consumeResult.Topic} partition {consumeResult.Partition}, next message will be at offset {consumeResult.Offset}");
-                        }
-                        if (consumeResult.Message == null)
-                        {
                             continue;
                         }
 
@@ -121,6 +122,8 @@ namespace Confluent.Kafka.Examples.Consumer
                         Console.WriteLine($"Consume error: {e.Error}");
                     }
                 }
+
+                consumer.Close();
             }
         }
 
@@ -161,24 +164,6 @@ namespace Confluent.Kafka.Examples.Consumer
                         {
                             Console.WriteLine($"Received message at {cr.TopicPartitionOffset}: ${cr.Message}");
                         }
-
-                        // Alternative:
-                        //
-                        // switch (cr.Error.Code)
-                        // {
-                        //     case ErrorCode.Local_TimedOut:
-                        //         // Only possible when timeout specified when calling Consume (i.e. can't happen here).
-                        //         break;
-                        //     case ErrorCode.NoError:
-                        //         Console.WriteLine($"Read message from {cr.TopicPartitionOffset}: ${cr.Message}");
-                        //         break;
-                        //     case ErrorCode.Local_PartitionEOF:
-                        //         Console.WriteLine($"Reached end of partition: {cr.TopicPartition}");
-                        //         break;
-                        //     default:
-                        //         Console.WriteLine($"Error occured: {cr.Error}");
-                        //         break;
-                        // }
                     }
                     catch (ConsumeException e)
                     {
@@ -186,6 +171,8 @@ namespace Confluent.Kafka.Examples.Consumer
                         break;
                     }
                 }
+
+                consumer.CommitAsync().Wait();
             }
         }
 

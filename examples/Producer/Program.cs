@@ -90,16 +90,19 @@ namespace Confluent.Kafka.Examples.Producer
                         val = text.Substring(index + 1);
                     }
 
-                    // Calling .Result on the asynchronous produce request below causes it to
-                    // block until it completes. Generally, you should avoid producing
-                    // synchronously because this has a huge impact on throughput. For this
-                    // interactive console example though, it's what we want.
-                    var deliveryReport = producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val }).Result;
-                    Console.WriteLine(
-                        deliveryReport.Error.Code == ErrorCode.NoError
-                            ? $"delivered to: {deliveryReport.TopicPartitionOffset}"
-                            : $"failed to deliver message: {deliveryReport.Error.Reason}"
-                    );
+                    try
+                    {
+                        // Calling .Result on the asynchronous produce request below causes it to
+                        // block until it completes. Generally, you should avoid producing
+                        // synchronously because this has a huge impact on throughput. For this
+                        // interactive console example though, it's what we want.
+                        var deliveryReport = producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val }).Result;
+                        Console.WriteLine($"delivered to: {deliveryReport.TopicPartitionOffset}");
+                    }
+                    catch (ProduceException<string, string> e)
+                    {
+                        Console.WriteLine($"failed to deliver message: {e.Message} [{e.Error.Code}]");
+                    }
                 }
 
                 // Since we are producing synchronously, at this point there will be no messages

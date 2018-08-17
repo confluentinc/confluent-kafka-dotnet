@@ -24,17 +24,17 @@ using Confluent.Kafka.Serialization;
 namespace ConfluentCloudExample
 {
     /// <summary>
-    ///     This is a simple example demonstrating how to produce a message to 
+    ///     This is a simple example demonstrating how to produce a message to
     ///     Confluent Cloud then read it back again.
     ///     
     ///     https://www.confluent.io/confluent-cloud/
     /// 
-    ///     Confluent Cloud does not auto-create topics. You will need to use the ccloud 
-    ///     cli to create the dotnet-test-topic topic before running this example. The 
+    ///     Confluent Cloud does not auto-create topics. You will need to use the ccloud
+    ///     cli to create the dotnet-test-topic topic before running this example. The
     ///     <ccloud bootstrap servers>, <ccloud key> and <ccloud secret> parameters are
     ///     available via the confluent cloud web interface. For more information,
     ///     refer to the quick-start:
-    ///     
+    ///
     ///     https://docs.confluent.io/current/cloud-quickstart.html
     /// </summary>
     class Program
@@ -48,9 +48,9 @@ namespace ConfluentCloudExample
                 { "api.version.fallback.ms", 0 },
                 { "sasl.mechanisms", "PLAIN" },
                 { "security.protocol", "SASL_SSL" },
-                // On Windows, default trusted root CA certificates are stored in the Windows Registry. 
-                // They are not automatically discovered by Confluent.Kafka and it's not possible to 
-                // reference them using the `ssl.ca.location` property. You will need to obtain these 
+                // On Windows, default trusted root CA certificates are stored in the Windows Registry.
+                // They are not automatically discovered by Confluent.Kafka and it's not possible to
+                // reference them using the `ssl.ca.location` property. You will need to obtain these
                 // from somewhere else, for example use the cacert.pem file distributed with curl:
                 // https://curl.haxx.se/ca/cacert.pem and reference that file in the `ssl.ca.location`
                 // property:
@@ -63,18 +63,9 @@ namespace ConfluentCloudExample
             using (var producer = new Producer<Null, string>(pConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Key = null, Value = "test value" })
-                    .ContinueWith(result => 
-                        {
-                            var msg = result.Result;
-                            if (msg.Error.Code != ErrorCode.NoError)
-                            {
-                                Console.WriteLine($"failed to deliver message: {msg.Error.Reason}");
-                            }
-                            else 
-                            {
-                                Console.WriteLine($"delivered to: {result.Result.TopicPartitionOffset}");
-                            }
-                        });
+                    .ContinueWith(task => task.IsFaulted
+                        ? $"error producing message: {task.Exception.Message}"
+                        : $"produced to: {task.Result.TopicPartitionOffset}");
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

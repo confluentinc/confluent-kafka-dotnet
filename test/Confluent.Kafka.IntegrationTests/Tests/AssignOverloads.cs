@@ -50,9 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
-                Assert.False(dr.Error.IsError);
                 var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Result;
-                Assert.False(dr2.Error.IsError);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

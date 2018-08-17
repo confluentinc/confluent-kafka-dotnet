@@ -79,7 +79,7 @@ namespace Confluent.Kafka.Benchmark
                     {
                         var autoEvent = new AutoResetEvent(false);
                         var msgCount = nMessages;
-                        Action<DeliveryReport<byte[], byte[]>> deliveryHandler = (DeliveryReport<byte[], byte[]> deliveryReport) => 
+                        Action<DeliveryReportResult<byte[], byte[]>> deliveryHandler = (DeliveryReportResult<byte[], byte[]> deliveryReport) => 
                         {
                             if (--msgCount == 0)
                             {

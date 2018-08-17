@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             int count = 0;
-            Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
+            Action<DeliveryReportResult<string, string>> dh = (DeliveryReportResult<string, string> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
