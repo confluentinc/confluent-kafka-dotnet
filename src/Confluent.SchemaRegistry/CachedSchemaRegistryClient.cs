@@ -35,6 +35,8 @@ namespace Confluent.SchemaRegistry
         private const string SchemaRegistryUrlPropertyName = "schema.registry.url";
         private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
         private const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
+        private const string SchemaRegistryBasicAuthCredentialsSourcePropertyName = "schema.registry.basic.auth.credentials.source";
+        private const string SchemaRegistryBasicAuthUserInfoPropertyName = "schema.registry.basic.auth.user.info";
 
         private IRestService restService;
         private readonly int identityMapCapacity;
@@ -73,18 +75,71 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentNullException("config properties must be specified.");
             }
 
-            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryUrlPropertyName).FirstOrDefault();
+            var schemaRegistryUrisMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryUrlPropertyName);
             if (schemaRegistryUrisMaybe.Value == null)
             {
                 throw new ArgumentException("schema.registry.url configuration property must be specified.");
             }
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
-            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryConnectionTimeoutMsPropertyName).FirstOrDefault();
-            var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
+            var timeoutMsMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConnectionTimeoutMsPropertyName);
+            int timeoutMs;
+            try { timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : Convert.ToInt32(timeoutMsMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"CachedSchemaRegistryClient: configured value for {SchemaRegistryConnectionTimeoutMsPropertyName} must be an integer."); }
 
-            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
-            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : (int)identityMapCapacityMaybe.Value;
+            var identityMapCapacityMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName);
+            try { this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"CachedSchemaRegistryClient: configured value for {SchemaRegistryMaxCachedSchemasPropertyName} must be an integer."); }
+
+            // Convert.ToString returns "" in the null case here.
+            var basicAuthSource = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryBasicAuthCredentialsSourcePropertyName).Value);
+            var basicAuthInfo = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryBasicAuthUserInfoPropertyName).Value);
+
+            if (basicAuthInfo != "" && basicAuthSource == "")
+            {
+                throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryBasicAuthUserInfoPropertyName} was specified, but {SchemaRegistryBasicAuthCredentialsSourcePropertyName} was not.");
+            }
+
+            string username = null;
+            string password = null;
+
+            if (basicAuthSource == "USER_INFO")
+            {
+                if (basicAuthInfo == "")
+                {
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryBasicAuthCredentialsSourcePropertyName} was set to 'USER_INFO', but no value was specified for {SchemaRegistryBasicAuthUserInfoPropertyName}.");
+                }
+                var userPass = (basicAuthInfo).Split(':');
+                if (userPass.Length != 2)
+                {
+                    throw new ArgumentException($"CachedSchemaRegistryClient: Configuration property {SchemaRegistryBasicAuthUserInfoPropertyName} must be of the form 'username:password'.");
+                }
+                username = userPass[0];
+                password = userPass[1];
+            }
+            else if (basicAuthSource == "SASL_INHERIT")
+            {
+                if (basicAuthInfo != "")
+                {
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryBasicAuthCredentialsSourcePropertyName} was set to 'SASL_INHERIT', but {SchemaRegistryBasicAuthUserInfoPropertyName} as also specified.");
+                }
+                var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
+                var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
+                if (saslUsername.Value == null)
+                {
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryBasicAuthCredentialsSourcePropertyName} was set to 'SASL_INHERIT', but 'sasl.username' property was not specified.");
+                }
+                if (saslPassword.Value == null)
+                {
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryBasicAuthCredentialsSourcePropertyName} was set to 'SASL_INHERIT', but 'sasl.password' property was not specified.");
+                }
+                username = Convert.ToString(saslUsername.Value);
+                password = Convert.ToString(saslPassword.Value);
+            }
+            else
+            {
+                // no basic auth info.
+            }
 
             foreach (var property in config)
             {
@@ -95,13 +150,15 @@ namespace Confluent.SchemaRegistry
 
                 if (property.Key != SchemaRegistryUrlPropertyName && 
                     property.Key != SchemaRegistryConnectionTimeoutMsPropertyName && 
-                    property.Key != SchemaRegistryMaxCachedSchemasPropertyName)
+                    property.Key != SchemaRegistryMaxCachedSchemasPropertyName &&
+                    property.Key != SchemaRegistryBasicAuthCredentialsSourcePropertyName &&
+                    property.Key != SchemaRegistryBasicAuthUserInfoPropertyName)
                 {
                     throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");
                 }
             }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password);
         }
 
         /// <remarks>
