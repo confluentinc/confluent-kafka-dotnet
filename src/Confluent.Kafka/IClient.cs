@@ -68,37 +68,5 @@ namespace Confluent.Kafka
         ///     that may have been specified a second time.
         /// </returns>
         int AddBrokers(string brokers);
-
-
-        /// <summary>
-        ///     Raised on librdkafka statistics events. JSON formatted
-        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
-        /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        /// 
-        ///     On the Consumer, executes as a side-effect of 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
-        ///     (on the same thread) and on the Producer and AdminClient, on the
-        ///     background poll thread.
-        /// </remarks>
-        event EventHandler<string> OnStatistics;
-
-
-        /// <summary>
-        ///     Raised on critical errors, e.g. connection failures or all 
-        ///     brokers down. Note that the client will try to automatically 
-        ///     recover from errors - these errors should be seen as 
-        ///     informational rather than catastrophic.
-        /// </summary>
-        /// <remarks>
-        ///     On the Consumer, executes as a side-effect of 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
-        ///     (on the same thread) and on the Producer and AdminClient, on the
-        ///     background poll thread.
-        /// </remarks>
-        event EventHandler<Error> OnError;
     }
 }

@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new AdminClient(config))
             {
-                var metadata = producer.GetMetadata(true, null, TimeSpan.FromSeconds(10));
+                var metadata = producer.GetMetadata(TimeSpan.FromSeconds(10));
                 Assert.NotNull(metadata.Brokers);
                 Assert.True(metadata.Brokers.Count > 0);
 

@@ -54,26 +54,37 @@ namespace Confluent.Kafka
 
         private static readonly byte[] EmptyBytes = new byte[0];
 
-        private readonly Librdkafka.ErrorDelegate errorDelegate;
+
+        private Action<Error> errorDelegate = null;
+        private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            OnError?.Invoke(this, new Error(err, reason));
+
+            if (errorDelegate != null)
+            {
+                errorDelegate(new Error(err, reason));
+            }
         }
 
-        private readonly Librdkafka.StatsDelegate statsDelegate;
+        private Action<string> statsDelegate = null;
+        private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
 
-            OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
+            if (statsDelegate != null)
+            {
+                statsDelegate(Util.Marshal.PtrToStringUTF8(json));
+            }
+
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
         private object loggerLockObj = new object();
-        private Action<LogMessage> logDelegate;
+        private Action<LogMessage> logDelegate = null;
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
@@ -245,7 +256,9 @@ namespace Confluent.Kafka
                     prop.Key != ConfigPropertyNames.EnableHeadersPropertyName &&
                     prop.Key != ConfigPropertyNames.EnableTimestampPropertyName &&
                     prop.Key != ConfigPropertyNames.EnableTopicNamesPropertyName &&
-                    prop.Key != ConfigPropertyNames.LogDelegateName);
+                    prop.Key != ConfigPropertyNames.LogDelegateName &&
+                    prop.Key != ConfigPropertyNames.ErrorDelegateName &&
+                    prop.Key != ConfigPropertyNames.StatsDelegateName);
 
             var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableHeadersPropertyName).Value;
             if (enableHeaderMarshalingObj != null)
@@ -271,6 +284,19 @@ namespace Confluent.Kafka
                 this.logDelegate = (Action<LogMessage>)logDelegateObj;
             }
 
+            var errorDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorDelegateName).Value;
+            if (errorDelegateObj != null)
+            {
+                this.errorDelegate = (Action<Error>)errorDelegateObj;
+            }
+
+            var statsDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsDelegateName).Value;
+            if (statsDelegateObj != null)
+            {
+                this.statsDelegate = (Action<string>)statsDelegateObj;
+            }
+
+
             var configHandle = SafeConfigHandle.Create();
             modifiedConfig
                 .ToList()
@@ -282,18 +308,18 @@ namespace Confluent.Kafka
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             rebalanceDelegate = RebalanceCallback;
             commitDelegate = CommitCallback;
-            errorDelegate = ErrorCallback;
+            errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
-            statsDelegate = StatsCallback;
+            statsCallbackDelegate = StatsCallback;
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
             Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
             Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
 
-            Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
+            Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statsCallbackDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
@@ -623,18 +649,6 @@ namespace Confluent.Kafka
         ///     (on the same thread).
         /// </remarks>
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />
-        /// </summary>
-        public event EventHandler<Error> OnError;
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />
-        /// </summary>
-        public event EventHandler<string> OnStatistics;
 
 
         /// <summary>

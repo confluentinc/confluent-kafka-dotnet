@@ -45,7 +45,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 { "bootstrap.servers", bootstrapServers },
                 { "group.id", Guid.NewGuid().ToString() },
                 { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" }
+                { "auto.offset.reset", "smallest" },
+                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
             };
 
             var schemaRegistryConfig = new Dictionary<string, object>
@@ -72,8 +73,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
                 using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(schemaRegistryClient), new AvroDeserializer<User>(schemaRegistryClient)))
                 {
-                    consumer.OnError += (o, error) => Assert.True(false, error.Reason);
-                    
                     consumer.Subscribe(topic);
 
                     int i = 0;

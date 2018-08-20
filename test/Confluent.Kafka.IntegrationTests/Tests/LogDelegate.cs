@@ -43,14 +43,14 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
                 { "debug", "all" },
-                { "log.delegate", logger }
+                { "log_cb", logger }
             };
 
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "debug", "all" },
-                { "log.delegate", logger }
+                { "log_cb", logger }
             };
 
             DeliveryReport<Null, string> dr;

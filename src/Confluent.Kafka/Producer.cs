@@ -141,26 +141,6 @@ namespace Confluent.Kafka
             => this.handle.Owner.Name;
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />
-        /// </summary>
-        public event EventHandler<string> OnStatistics
-        {
-            add { this.handle.Owner.OnStatistics += value; }
-            remove { this.handle.Owner.OnStatistics -= value; }
-        }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />
-        /// </summary>
-        public event EventHandler<Error> OnError
-        {
-            add { this.handle.Owner.OnError += value; }
-            remove { this.handle.Owner.OnError -= value; }
-        }
-
-
         internal int Flush(int millisecondsTimeout)
             => ((Producer)this.handle.Owner).Flush(millisecondsTimeout);
 
@@ -727,25 +707,39 @@ namespace Confluent.Kafka
                     catch (OperationCanceledException) {}
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-        private readonly Librdkafka.ErrorDelegate errorDelegate;
+
+        private Action<Error> errorDelegate = null;
+        private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            OnError?.Invoke(this, new Error(err, reason));
+            
+            if (errorDelegate != null)
+            {
+                errorDelegate(new Error(err, reason));
+            }
         }
 
-        private readonly Librdkafka.StatsDelegate statsDelegate;
+
+        private Action<string> statsDelegate = null;
+        private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-            OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
+
+            if (statsDelegate != null)
+            {
+                statsDelegate(Util.Marshal.PtrToStringUTF8(json));
+            }
+
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
+
         private object loggerLockObj = new object();
-        Action<LogMessage> logDelegate;
+        Action<LogMessage> logDelegate = null;
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
@@ -920,7 +914,9 @@ namespace Confluent.Kafka
                     prop.Key != ConfigPropertyNames.EnableDeliveryReportKeyName &&
                     prop.Key != ConfigPropertyNames.EnableDeliveryReportValueName &&
                     prop.Key != ConfigPropertyNames.EnableDeliveryReportTimestampName &&
-                    prop.Key != ConfigPropertyNames.LogDelegateName);
+                    prop.Key != ConfigPropertyNames.LogDelegateName &&
+                    prop.Key != ConfigPropertyNames.ErrorDelegateName &&
+                    prop.Key != ConfigPropertyNames.StatsDelegateName);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -973,6 +969,19 @@ namespace Confluent.Kafka
                 this.logDelegate = (Action<LogMessage>)logDelegateObj;
             }
 
+            var errorDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorDelegateName).Value;
+            if (errorDelegateObj != null)
+            {
+                this.errorDelegate = (Action<Error>)errorDelegateObj;
+            }
+
+            var statsDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsDelegateName).Value;
+            if (statsDelegateObj != null)
+            {
+                this.statsDelegate = (Action<string>)statsDelegateObj;
+            }
+
+
             // Note: changing the default value of produce.offset.report at the binding level is less than
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
             // .NET client. The default should probably be changed in librdkafka as well.
@@ -997,15 +1006,15 @@ namespace Confluent.Kafka
             }
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
-            errorDelegate = ErrorCallback;
+            errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
-            statsDelegate = StatsCallback;
+            statsCallbackDelegate = StatsCallback;
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
-            Librdkafka.conf_set_error_cb(configPtr, errorDelegate);
+            Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statsDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statsCallbackDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
@@ -1045,18 +1054,6 @@ namespace Confluent.Kafka
         /// </summary>
         internal int Flush(TimeSpan timeout)
             => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
-
-
-        /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
-        /// </summary>
-        public event EventHandler<Error> OnError;
-
-
-        /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
-        /// </summary>
-        public event EventHandler<string> OnStatistics;
 
 
         /// <summary>

@@ -46,7 +46,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
-                { "schema.registry.url", schemaRegistryServers }
+                { "schema.registry.url", schemaRegistryServers },
+                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
             };
 
             using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
@@ -66,7 +67,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
             {
-                consumer.OnError += (o, error) => Assert.True(false, error.Reason);
                 consumer.Subscribe(topic);
 
                 int i = 0;

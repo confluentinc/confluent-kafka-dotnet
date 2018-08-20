@@ -57,7 +57,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "group.id", Guid.NewGuid() },
-                { "schema.registry.url", schemaRegistryUrl }
+                { "schema.registry.url", schemaRegistryUrl },
+                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) }
             };
 
             // Note: Each AvroSerializer and AvroDeserializer instance created below internally creates and manages 
@@ -91,9 +92,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
                 {
-                    consumer.OnError += (_, e)
-                        => Console.WriteLine("Error: " + e.Reason);
-
                     consumer.Subscribe(topicName);
 
                     while (!cts.Token.IsCancellationRequested)

@@ -41,7 +41,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
-                { "bootstrap.servers", bootstrapServers }
+                { "bootstrap.servers", bootstrapServers },
+                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers} };
@@ -49,9 +50,6 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.OnError += (_, e) =>
-                    Assert.False(true);
-
                 const string checkValue = "check value";
                 var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = checkValue }).Result;
                 var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "second value" }).Result;

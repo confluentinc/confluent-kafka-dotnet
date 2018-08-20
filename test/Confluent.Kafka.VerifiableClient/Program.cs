@@ -607,9 +607,6 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Send("startup_complete", new Dictionary<string, object>());
 
-            consumer.OnError += (_, error)
-                => Dbg($"Error: {error}");
-
             consumer.OnPartitionAssignmentReceived += (_, partitions)
                 => HandleAssign(partitions);
 

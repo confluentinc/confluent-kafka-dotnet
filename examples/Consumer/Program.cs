@@ -48,16 +48,15 @@ namespace Confluent.Kafka.Examples.Consumer
                 { "enable.auto.commit", false },
                 { "statistics.interval.ms", 60000 },
                 { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" }
+                { "auto.offset.reset", "smallest" },
+                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) },
+                { "stats_cb", (Action<string>)(json => Console.WriteLine($"Statistics: {json}")) }
             };
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
                 // Note: All event handlers are called on the main thread.
                 
-                consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error}");
-
                 // Raised when the consumer is assigned a new set of partitions.
                 consumer.OnPartitionAssignmentReceived += (_, partitions) =>
                 {
@@ -80,9 +79,6 @@ namespace Confluent.Kafka.Examples.Consumer
                     // partitions.
                     consumer.Unassign();
                 };
-
-                consumer.OnStatistics += (_, json)
-                    => Console.WriteLine($"Statistics: {json}");
 
                 consumer.Subscribe(topics);
 
@@ -144,16 +140,13 @@ namespace Confluent.Kafka.Examples.Consumer
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
                 // to prevent this from occuring.
-                { "enable.auto.commit", false }
+                { "enable.auto.commit", false },
+                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) }
             };
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
-
-                // Raised on critical errors, e.g. connection failures or all brokers down.
-                consumer.OnError += (_, error)
-                    => Console.WriteLine($"Error: {error}");
 
                 while (true)
                 {

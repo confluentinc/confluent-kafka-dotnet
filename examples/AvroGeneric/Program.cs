@@ -59,7 +59,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "group.id", Guid.NewGuid() },
-                { "schema.registry.url", schemaRegistryUrl }
+                { "schema.registry.url", schemaRegistryUrl },
+                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) }
             };
 
             // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));
@@ -81,9 +82,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 using (var consumer = new Consumer<string, GenericRecord>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<GenericRecord>()))
                 {
-                    consumer.OnError += (_, e)
-                        => Console.WriteLine("Error: " + e.Reason);
-
                     consumer.Subscribe(topicName);
 
                     while (!cts.Token.IsCancellationRequested)

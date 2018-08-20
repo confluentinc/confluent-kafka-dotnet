@@ -93,13 +93,26 @@ namespace Confluent.Kafka.Impl
 
         public RdKafkaType type;
 
-        private ConcurrentDictionary<string, SafeTopicHandle> topicHandles
-            = new ConcurrentDictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
+        private object topicHandlesLock = new object();
+        private Dictionary<string, SafeTopicHandle> topicHandles
+            = new Dictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
-        private Func<string, SafeTopicHandle> topicHandlerFactory;
+        internal SafeTopicHandle getKafkaTopicHandle(string topic)
+        {
+            lock (topicHandlesLock)
+            {
+                if (this.topicHandles.ContainsKey(topic))
+                {
+                    return topicHandles[topic];
+                }
 
-        internal SafeTopicHandle getKafkaTopicHandle(string topic) 
-            => topicHandles.GetOrAdd(topic, topicHandlerFactory);
+                var topicHandle = this.NewTopic(topic, IntPtr.Zero);
+                topicHandles.Add(topic, topicHandle);
+                return topicHandle;
+            }
+        }
+
+        public SafeKafkaHandle() : base("kafka") {}
 
         /// <summary>
         ///     This object is tightly coupled to the referencing Producer /
@@ -117,19 +130,6 @@ namespace Confluent.Kafka.Impl
         ///     https://stackoverflow.com/questions/6964270/which-objects-can-i-use-in-a-finalizer-method
         /// </summary>
         internal void SetOwner(IClient owner) { this.owner = owner; }
-
-        public SafeKafkaHandle() : base("kafka")
-        {
-            // note: ConcurrentDictionary.GetorAdd() method is not atomic
-            this.topicHandlerFactory = (string topicName) =>
-            {
-                // Note: there is a possible (benign) race condition here - topicHandle could have already
-                // been created for the topic (and possibly added to topicHandles). If the topicHandle has
-                // already been created, rdkafka will return it and not create another. the call to rdkafka
-                // is threadsafe.
-                return Topic(topicName, IntPtr.Zero);
-            };
-        }
 
         public static SafeKafkaHandle Create(RdKafkaType type, IntPtr config, IClient owner)
         {
@@ -240,7 +240,7 @@ namespace Confluent.Kafka.Impl
         ///     does not exist. Note: Only the first applied configuration for a specific
         ///     topic will be used.
         /// </summary>
-        internal SafeTopicHandle Topic(string topic, IntPtr config)
+        internal SafeTopicHandle NewTopic(string topic, IntPtr config)
         {
             ThrowIfHandleClosed();
 

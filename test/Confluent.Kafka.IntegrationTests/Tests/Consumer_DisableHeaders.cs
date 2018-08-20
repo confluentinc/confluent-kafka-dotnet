@@ -42,7 +42,8 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.enable.headers", false }
+                { "dotnet.consumer.enable.headers", false },
+                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
@@ -62,9 +63,6 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
-                consumer.OnError += (_, e) =>
-                    Assert.False(true);
-
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 var record = consumer.Consume(TimeSpan.FromSeconds(30));
