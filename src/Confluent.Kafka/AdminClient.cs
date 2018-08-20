@@ -330,11 +330,15 @@ namespace Confluent.Kafka
         ///     Update the configuration for the specified resources. Updates are not transactional
         ///     so they may succeed for some resources while fail for others. The configs for a 
         ///     particular resource are updated atomically. This operation is supported by brokers 
-        ///     with version 0.11.0.0 or higher.
+        ///     with version 0.11.0.0 or higher. IMPORTANT NOTE: Unspecified configuration properties
+        ///     will be reverted to their default values. Furthermore, if you use DescribeConfigsAsync
+        ///     to obtain the current set of configuration values, modify them, then use 
+        ///     AlterConfigsAsync to set them, you will loose any non-default values that are marked 
+        ///     as sensitive because they are not provided by DescribeConfigsAsync.
         /// </summary>
         /// <param name="configs">
         ///     The resources with their configs (topic is the only resource type with configs
-        ///     that can be updated currently)
+        ///     that can be updated currently).
         /// </param>
         /// <param name="options">
         ///     The options to use when altering configs.
