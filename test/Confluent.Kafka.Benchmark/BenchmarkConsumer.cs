@@ -48,9 +48,7 @@ namespace Confluent.Kafka.Benchmark
                 { "group.id", "benchmark-consumer-group" },
                 { "bootstrap.servers", bootstrapServers },
                 { "session.timeout.ms", 6000 },
-                { "dotnet.consumer.enable.headers", nHeaders != 0 },
-                { "dotnet.consumer.enable.timestamps", false },
-                { "dotnet.consumer.enable.topic.names", false }
+                { "dotnet.consumer.enabled.fields", nHeaders == 0 ? "none" : "headers" }
             };
 
             using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new BenchmarkDeserializer(), new BenchmarkDeserializer()))

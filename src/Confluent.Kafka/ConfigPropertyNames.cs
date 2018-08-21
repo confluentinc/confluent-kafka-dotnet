@@ -9,89 +9,48 @@ namespace Confluent.Kafka
         // ---- Producer
 
         /// <summary>
-        ///     Name of the configuration property that specifies whether or not 
-        ///     the producer should start a background poll thread to receive 
-        ///     delivery reports and event notifications. Generally, this should be
-        ///     set to true. If set to false, you will need to call the Poll function
-        ///     manually.
+        ///     Specifies whether or not the producer should start a background poll 
+        ///     thread to receive delivery reports and event notifications. Generally,
+        ///     this should be set to true. If set to false, you will need to call 
+        ///     the Poll function manually.
         /// 
         ///     default: true
         /// </summary>
         public const string EnableBackgroundPollPropertyName = "dotnet.producer.enable.background.poll";
 
         /// <summary>
-        ///     Name of the configuration property that specifies whether to enable 
-        ///     notification of delivery reports. Typically you should set this 
-        ///     parameter to true. Set it to false for "fire and forget" semantics
-        ///     and a small boost in performance.
+        ///     Specifies whether to enable notification of delivery reports. Typically
+        ///     you should set this parameter to true. Set it to false for "fire and
+        ///     forget" semantics and a small boost in performance.
         /// 
         ///     default: true
         /// </summary>
         public const string EnableDeliveryReportsPropertyName = "dotnet.producer.enable.delivery.reports";
 
         /// <summary>
-        ///     Name of the configuration property that specifies whether to make
-        ///     message headers available in delivery reports. Note that 
-        ///     disabling header marshaling will improve maximum throughput even 
-        ///     for the case where messages do not have any headers.
+        ///     A comma separated list of fields that may be optionally set in delivery
+        ///     reports. Disabling delivery report fields that you do not require will
+        ///     improve maximum throughput and reduce memory usage. Allowed values:
+        ///     key, value, timestamp, headers, all, none.
         /// 
-        ///     default: true
+        ///     default: all
         /// </summary>
-        public const string EnableDeliveryReportHeadersName = "dotnet.producer.enable.delivery.report.headers";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make
-        ///     message keys available in delivery reports. Disabling this will 
-        ///     improve maximum throughput and reduce memory usage.
-        ///
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportKeyName = "dotnet.producer.enable.delivery.report.keys";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make 
-        ///     message values available in delivery reports. Disabling this will
-        ///     improve maximum throughput and reduce memory usage.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportValueName = "dotnet.producer.enable.delivery.report.values";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether to make
-        ///     message timestamps available in delivery reports.null Disabling this
-        ///     will improve maximum throughput.
-        /// 
-        ///     default: true
-        /// </summary>
-        public const string EnableDeliveryReportTimestampName = "dotnet.producer.enable.delivery.report.timestamps";
-
+        public const string DeliveryReportEnabledFieldsPropertyName = "dotnet.producer.delivery.report.enabled.fields";
 
         // ---- Consumer
 
         /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of headers when consuming messages. Note that 
-        ///     disabling header marshaling will improve maximum throughput even for
-        ///     the case where messages do not have any headers.
+        ///     A comma separated list of fields that may be optionally set
+        ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />
+        ///     objects returned by the
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.TimeSpan)" />
+        ///     method. Disabling fields that you do not require will improve 
+        ///     throughput and reduce memory consumption. Allowed values:
+        ///     headers, timestamp, topic, all, none
         /// 
-        ///     default: true
+        ///     default: all
         /// </summary>
-        public const string EnableHeadersPropertyName = "dotnet.consumer.enable.headers";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of timestamps when consuming messages. Disabling this
-        ///     will improve maximum throughput.
-        /// </summary>
-        public const string EnableTimestampPropertyName = "dotnet.consumer.enable.timestamps";
-
-        /// <summary>
-        ///     Name of the configuration property that specifies whether or not to
-        ///     enable marshaling of topic names when consuming messages. Disabling
-        ///     this will improve maximum throughput.
-        /// </summary>
-        public const string EnableTopicNamesPropertyName = "dotnet.consumer.enable.topic.names";
+        public const string ConsumerEnabledFieldsPropertyName = "dotnet.consumer.enabled.fields";
 
 
         // ---- Client

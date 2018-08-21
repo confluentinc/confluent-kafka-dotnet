@@ -44,10 +44,7 @@ namespace Confluent.Kafka.Benchmark
                 { "linger.ms", 100 }
             };
 
-            config["dotnet.producer.enable.delivery.report.headers"] = false;
-            config["dotnet.producer.enable.delivery.report.keys"] = false;
-            config["dotnet.producer.enable.delivery.report.values"] = false;
-            config["dotnet.producer.enable.delivery.report.timestamps"] = false;
+            config["dotnet.producer.delivery.report.enabled.fields"] = "none";
 
             DeliveryReport<byte[], byte[]> firstDeliveryReport = null;
 

@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.enable.timestamps", false },
+                { "dotnet.consumer.enabled.fields", "topic,headers" },
                 { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
             };
 

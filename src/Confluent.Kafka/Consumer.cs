@@ -253,29 +253,36 @@ namespace Confluent.Kafka
 
             var modifiedConfig = configWithoutDeserializerProperties
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.EnableHeadersPropertyName &&
-                    prop.Key != ConfigPropertyNames.EnableTimestampPropertyName &&
-                    prop.Key != ConfigPropertyNames.EnableTopicNamesPropertyName &&
+                    prop.Key != ConfigPropertyNames.ConsumerEnabledFieldsPropertyName &&
                     prop.Key != ConfigPropertyNames.LogDelegateName &&
                     prop.Key != ConfigPropertyNames.ErrorDelegateName &&
                     prop.Key != ConfigPropertyNames.StatsDelegateName);
 
-            var enableHeaderMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableHeadersPropertyName).Value;
-            if (enableHeaderMarshalingObj != null)
+            var enabledFieldsObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ConsumerEnabledFieldsPropertyName).Value;
+            if (enabledFieldsObj != null)
             {
-                this.enableHeaderMarshaling = bool.Parse(enableHeaderMarshalingObj.ToString());
-            }
-
-            var enableTimestampMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableTimestampPropertyName).Value;
-            if (enableTimestampMarshalingObj != null)
-            {
-                this.enableTimestampMarshaling = bool.Parse(enableTimestampMarshalingObj.ToString());
-            }
-
-            var enableTopicNamesMarshalingObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableTopicNamesPropertyName).Value;
-            if (enableTopicNamesMarshalingObj != null)
-            {
-                this.enableTopicNamesMarshaling = bool.Parse(enableTopicNamesMarshalingObj.ToString());
+                var fields = enabledFieldsObj.ToString().Replace(" ", "");
+                if (fields != "all")
+                {
+                    this.enableHeaderMarshaling = false;
+                    this.enableTimestampMarshaling = false;
+                    this.enableTopicNamesMarshaling = false;
+                    if (fields != "none")
+                    {
+                        var parts = fields.Split(',');
+                        foreach (var part in parts)
+                        {
+                            switch (part)
+                            {
+                                case "headers": this.enableHeaderMarshaling = true; break;
+                                case "timestamp": this.enableTimestampMarshaling = true; break;
+                                case "topic": this.enableTopicNamesMarshaling = true; break;
+                                default: throw new ArgumentException(
+                                    $"Unexpected consume result field name '{part}' in config value '{ConfigPropertyNames.ConsumerEnabledFieldsPropertyName}'.");
+                            }
+                        }
+                    }
+                }
             }
 
             var logDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogDelegateName).Value;

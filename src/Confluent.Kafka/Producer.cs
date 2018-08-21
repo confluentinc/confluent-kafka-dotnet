@@ -910,10 +910,7 @@ namespace Confluent.Kafka
                 .Where(prop => 
                     prop.Key != ConfigPropertyNames.EnableBackgroundPollPropertyName &&
                     prop.Key != ConfigPropertyNames.EnableDeliveryReportsPropertyName &&
-                    prop.Key != ConfigPropertyNames.EnableDeliveryReportHeadersName &&
-                    prop.Key != ConfigPropertyNames.EnableDeliveryReportKeyName &&
-                    prop.Key != ConfigPropertyNames.EnableDeliveryReportValueName &&
-                    prop.Key != ConfigPropertyNames.EnableDeliveryReportTimestampName &&
+                    prop.Key != ConfigPropertyNames.DeliveryReportEnabledFieldsPropertyName &&
                     prop.Key != ConfigPropertyNames.LogDelegateName &&
                     prop.Key != ConfigPropertyNames.ErrorDelegateName &&
                     prop.Key != ConfigPropertyNames.StatsDelegateName);
@@ -939,28 +936,33 @@ namespace Confluent.Kafka
                 this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
             }
 
-            var enableDeliveryReportHeadersObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportHeadersName).Value;
-            if (enableDeliveryReportHeadersObj != null)
+            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.DeliveryReportEnabledFieldsPropertyName).Value;
+            if (deliveryReportEnabledFieldsObj != null)
             {
-                this.enableDeliveryReportHeaders = bool.Parse(enableDeliveryReportHeadersObj.ToString());
-            }
-
-            var enableDeliveryReportKeyObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportKeyName).Value;
-            if (enableDeliveryReportKeyObj != null)
-            {
-                this.enableDeliveryReportKey = bool.Parse(enableDeliveryReportKeyObj.ToString());
-            }
-
-            var enableDeliveryReportValueObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportValueName).Value;
-            if (enableDeliveryReportValueObj != null)
-            {
-                this.enableDeliveryReportValue = bool.Parse(enableDeliveryReportValueObj.ToString());
-            }
-
-            var enableDeliveryReportTimestampObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportTimestampName).Value;
-            if (enableDeliveryReportTimestampObj != null)
-            {
-                this.enableDeliveryReportTimestamp = bool.Parse(enableDeliveryReportTimestampObj.ToString());
+                var fields = deliveryReportEnabledFieldsObj.ToString().Replace(" ", "");
+                if (fields != "all")
+                {
+                    this.enableDeliveryReportKey = false;
+                    this.enableDeliveryReportValue = false;
+                    this.enableDeliveryReportHeaders = false;
+                    this.enableDeliveryReportTimestamp = false;
+                    if (fields != "none")
+                    {
+                        var parts = fields.Split(',');
+                        foreach (var part in parts)
+                        {
+                            switch (part)
+                            {
+                                case "key": this.enableDeliveryReportKey = true; break;
+                                case "value": this.enableDeliveryReportValue = true; break;
+                                case "timestamp": this.enableDeliveryReportTimestamp = true; break;
+                                case "headers": this.enableDeliveryReportHeaders = true; break;
+                                default: throw new ArgumentException(
+                                    $"Unexpected delivery report field name '{part}' in config value '{ConfigPropertyNames.DeliveryReportEnabledFieldsPropertyName}'.");
+                            }
+                        }
+                    }
+                }
             }
 
             var logDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogDelegateName).Value;

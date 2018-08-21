@@ -25,8 +25,7 @@ using Confluent.Kafka.Serialization;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test dotnet.producer.enable.delivery.reports == true
-    ///     results in no delivery report.
+    ///     Test where no fields are enabled in delivery report.
     /// </summary>
     public static partial class Tests
     {
@@ -41,10 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.producer.enable.delivery.report.headers", false },
-                { "dotnet.producer.enable.delivery.report.timestamps", false },
-                { "dotnet.producer.enable.delivery.report.keys", false },
-                { "dotnet.producer.enable.delivery.report.values", false },
+                { "dotnet.producer.delivery.report.enabled.fields", "none" }
             };
 
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
