@@ -147,7 +147,7 @@ namespace Confluent.Kafka
         ///     Serialize method to estimate an appropriate value. Note: each call to 
         ///     serialize creates a new buffer.
         /// 
-        ///     default: 128
+        ///     default: 1024
         /// </summary>
         public const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
 

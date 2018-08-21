@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Serialization
         ///     The default initial size (in bytes) of buffers used for message 
         ///     serialization.
         /// </summary>
-        public const int DefaultInitialBufferSize = 128;
+        public const int DefaultInitialBufferSize = 1024;
 
         /// <summary>
         ///     Initialize a new instance of AvroSerializer.
