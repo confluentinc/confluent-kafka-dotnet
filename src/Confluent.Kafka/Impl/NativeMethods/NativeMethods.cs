@@ -668,7 +668,23 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, IntPtr timeout_ms);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_queue_get_partition(IntPtr rk,
+            [MarshalAs(UnmanagedType.LPStr)] string topic,
+            int partition);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_queue_forward(IntPtr src, IntPtr dst);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_consume_queue(IntPtr rkqu, int timeout_ms);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_consume_batch_queue(IntPtr rkqu,
+            int timeout_ms, IntPtr[] rkmessages, IntPtr rkmessages_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_queue_get_consumer(IntPtr rk);
 
         //
         // Events

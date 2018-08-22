@@ -581,6 +581,17 @@ namespace Confluent.Kafka.Impl
             return Librdkafka.consumer_poll(handle, millisecondsTimeout);
         }
 
+        internal int QueuePoll(IntPtr rkqu, IntPtr[] messages, int millisecondsTimeout)
+        {
+            ThrowIfHandleClosed();
+
+            // TODO: prevent GC from moving messages.
+            var numMessages = (int)Librdkafka.consume_batch_queue(
+                rkqu, millisecondsTimeout, messages, (IntPtr)messages.Length);
+
+            return numMessages;
+        }
+
         internal void ConsumerClose()
         {
             ThrowIfHandleClosed();
@@ -656,6 +667,27 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal IntPtr ForwardPartitionToQueue(TopicPartition partition)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr rkqu = Librdkafka.queue_get_partition(handle, partition.Topic, partition.Partition);
+            if (rkqu == IntPtr.Zero)
+            {
+                throw new Exception("queue_get_partition failed");
+            }
+
+            Librdkafka.queue_forward(rkqu, IntPtr.Zero);
+            return rkqu;
+        }
+
+        internal void RestoreQueue(IntPtr rkqu)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr consumer_queue = Librdkafka.queue_get_consumer(handle);
+            Librdkafka.queue_forward(rkqu, consumer_queue);
+        }
 
         internal void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {
