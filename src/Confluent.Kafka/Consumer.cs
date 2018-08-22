@@ -50,7 +50,7 @@ namespace Confluent.Kafka
         private IDeserializer<TKey> KeyDeserializer { get; }
         private IDeserializer<TValue> ValueDeserializer { get; }
 
-        private readonly SafeKafkaHandle kafkaHandle;
+        internal readonly SafeKafkaHandle kafkaHandle;
 
         private static readonly byte[] EmptyBytes = new byte[0];
 
@@ -367,6 +367,12 @@ namespace Confluent.Kafka
         internal ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll(enableTimestampMarshaling, enableHeaderMarshaling, (IntPtr)millisecondsTimeout);
+            return GetMessage(msgPtr);
+        }
+
+
+        internal ConsumeResult<TKey, TValue> GetMessage(IntPtr msgPtr)
+        {
             if (msgPtr == IntPtr.Zero)
             {
                 return new ConsumeResult<TKey, TValue>
@@ -413,7 +419,7 @@ namespace Confluent.Kafka
                     Librdkafka.message_headers(msgPtr, out IntPtr hdrsPtr);
                     if (hdrsPtr != IntPtr.Zero)
                     {
-                        for (var i=0; ; ++i)
+                        for (var i = 0; ; ++i)
                         {
                             var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                             if (err != ErrorCode.NoError)
@@ -482,7 +488,7 @@ namespace Confluent.Kafka
                     unsafe
                     {
                         val = this.ValueDeserializer.Deserialize(
-                            topic, 
+                            topic,
                             msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
                             msg.val == IntPtr.Zero);
                     }
@@ -505,8 +511,8 @@ namespace Confluent.Kafka
                     );
                 }
 
-                return new ConsumeResult<TKey, TValue> 
-                { 
+                return new ConsumeResult<TKey, TValue>
+                {
                     TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                     Message = new Message<TKey, TValue>
                     {
@@ -749,17 +755,13 @@ namespace Confluent.Kafka
         ///     from and will replace any previous assignment.
         /// </summary>
         /// <param name="partitions">
-        ///     The set of partitions to consume from. If an offset value of
-        ///     Offset.Invalid (-1001) is specified for a partition, consumption
-        ///     will resume from the last committed offset on that partition, or
-        ///     according to the 'auto.offset.reset' configuration parameter if
-        ///     no offsets have been committed yet.
+        ///     The set of partitions to consume from. Consumption will resume
+        ///     from the last committed offset on each partition, or according
+        ///     to the 'auto.offset.reset' configuration parameter if no offsets
+        ///     have been committed yet.
         /// </param>
-        public void Assign(IEnumerable<TopicPartitionOffset> partitions)
-        {
-            assignCalled = true;
-            kafkaHandle.Assign(partitions.ToList());
-        }
+        public void Assign(IEnumerable<TopicPartition> partitions)
+            => Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
 
 
         /// <summary>
@@ -769,22 +771,23 @@ namespace Confluent.Kafka
         ///     from and will replace any previous assignment.
         /// </summary>
         /// <param name="partitions">
-        ///     The set of partitions to consume from. Consumption will resume
-        ///     from the last committed offset on each partition, or according
-        ///     to the 'auto.offset.reset' configuration parameter if no offsets
-        ///     have been committed yet.
+        ///     The set of partitions to consume from. If an offset value of
+        ///     Offset.Invalid (-1001) is specified for a partition, consumption
+        ///     will resume from the last committed offset on that partition, or
+        ///     according to the 'auto.offset.reset' configuration parameter if
+        ///     no offsets have been committed yet.
         /// </param>
-        public void Assign(IEnumerable<TopicPartition> partitions)
+        public virtual void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
             assignCalled = true;
-            kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+            kafkaHandle.Assign(partitions.ToList());
         }
 
 
         /// <summary>
         ///     Stop consumption and remove the current assignment.
         /// </summary>
-        public void Unassign()
+        public virtual void Unassign()
         {
             assignCalled = true;
             kafkaHandle.Assign(null);

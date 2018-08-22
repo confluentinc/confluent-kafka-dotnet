@@ -222,7 +222,12 @@ namespace Confluent.Kafka.Impl
             _event_topic_partition_list = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_event_topic_partition_list").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _event_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_event_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _queue_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_queue_poll").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
-            
+            _queue_get_partition = (Func<IntPtr, string, int, IntPtr>)methods.Single(m => m.Name == "rd_kafka_queue_get_partition").CreateDelegate(typeof(Func<IntPtr, string, int, IntPtr>));
+            _queue_forward = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_queue_forward").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+            _consume_queue = (Func<IntPtr, int, IntPtr>)methods.Single(m => m.Name == "rd_kafka_consume_queue").CreateDelegate(typeof(Func<IntPtr, int, IntPtr>));
+            _consume_batch_queue = (Func<IntPtr, int, IntPtr[], IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_consume_batch_queue").CreateDelegate(typeof(Func<IntPtr, int, IntPtr[], IntPtr, IntPtr>));
+            _queue_get_consumer = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_queue_get_consumer").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+
             _AdminOptions_new = (Func<IntPtr, AdminOp, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_new").CreateDelegate(typeof(Func<IntPtr, AdminOp, IntPtr>));
             _AdminOptions_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _AdminOptions_set_request_timeout = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_request_timeout").CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
@@ -1177,6 +1182,25 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr queue_poll(IntPtr rkqu, int timeout_ms)
             => _queue_poll(rkqu, (IntPtr)timeout_ms);
 
+        private static Func<IntPtr, string, int, IntPtr> _queue_get_partition;
+        internal static IntPtr queue_get_partition(IntPtr rk, string topic, int partition)
+            => _queue_get_partition(rk, topic, partition);
+
+        private static Action<IntPtr, IntPtr> _queue_forward;
+        internal static void queue_forward(IntPtr src, IntPtr dst)
+            => _queue_forward(src, dst);
+
+        private static Func<IntPtr, int, IntPtr> _consume_queue;
+        internal static IntPtr consume_queue(IntPtr rkqu, int timeout_ms)
+            => _consume_queue(rkqu, timeout_ms);
+
+        private static Func<IntPtr, int, IntPtr[], IntPtr, IntPtr> _consume_batch_queue;
+        internal static IntPtr consume_batch_queue(IntPtr rkqu, int timeout_ms, IntPtr[] rkmessages, IntPtr rkmessages_size)
+            => _consume_batch_queue(rkqu, timeout_ms, rkmessages, rkmessages_size);
+
+        private static Func<IntPtr, IntPtr> _queue_get_consumer;
+        internal static IntPtr queue_get_consumer(IntPtr rk)
+            => _queue_get_consumer(rk);
 
         //
         // Events
