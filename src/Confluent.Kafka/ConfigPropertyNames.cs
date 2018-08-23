@@ -56,9 +56,8 @@ namespace Confluent.Kafka
         // ---- Client
 
         /// <summary>
-        ///     Name of the configuration property that specifies a delegate for
-        ///     handling log messages. If not specified, a default callback that
-        ///     writes to stderr will be used.
+        ///     Specifies a delegate for handling log messages. If not specified,
+        ///     a default callback that writes to stderr will be used.
         /// </summary>
         /// <remarks>
         ///     By default not many log messages are generated.
@@ -77,11 +76,10 @@ namespace Confluent.Kafka
         public const string LogDelegateName = "log_cb";
 
         /// <summary>
-        ///     Name of the configuration property that specifies a delegate for
-        ///     handling error events e.g. connection failures or all 
-        ///     brokers down. Note that the client will try to automatically 
-        ///     recover from errors - these errors should be seen as 
-        ///     informational rather than catastrophic.
+        ///     Specifies a delegate for handling error events e.g. connection
+        ///     failures or all brokers down. Note that the client will try 
+        ///     to automatically recover from errors - these errors should be
+        ///     seen as informational rather than catastrophic.
         /// </summary>
         /// <remarks>
         ///     On the Consumer, executes as a side-effect of 
@@ -92,9 +90,9 @@ namespace Confluent.Kafka
         public const string ErrorDelegateName = "error_cb";
 
         /// <summary>
-        ///     Name of the configuration property that specifies a delegate for
-        ///     handling statistics events - a JSON formatted
-        ///     string as defined here: https://github.com/edenhill/librdkafka/wiki/Statistics
+        ///     Specifies a delegate for handling statistics events - a JSON
+        ///     formatted string as defined here: 
+        ///     https://github.com/edenhill/librdkafka/wiki/Statistics
         /// </summary>
         /// <remarks>
         ///     You can enable statistics and set the statistics interval
@@ -112,14 +110,12 @@ namespace Confluent.Kafka
         // ---- Deserializers
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the encoding
-        ///     when deserializing string keys.
+        ///     Specifies the encoding when deserializing string keys.
         /// </summary>
         public const string DeserializerKeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the encoding
-        ///     when deserializing string values.
+        ///     Specifies the encoding when deserializing string values.
         /// </summary>
         public const string DeserializerValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
 
@@ -127,34 +123,30 @@ namespace Confluent.Kafka
         // ---- Serializers
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the encoding 
-        ///     when serializing string keys.
+        ///     Specifies the encoding when serializing string keys.
         /// </summary>
         public const string SerializerKeyEncodingConfigParam = "dotnet.string.serializer.encoding.key";
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the encoding 
-        ///     when serializing string values.
+        ///     Specifies the encoding when serializing string values.
         /// </summary>
         public const string SerializerValueEncodingConfigParam = "dotnet.string.serializer.encoding.value";
 
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the initial size 
-        ///     (in bytes) of the buffer used for Avro message serialization. Use a value 
-        ///     high enough to avoid resizing the buffer, but small enough to avoid 
-        ///     excessive memory use. Inspect the size of the byte array returned by the
-        ///     Serialize method to estimate an appropriate value. Note: each call to 
-        ///     serialize creates a new buffer.
+        ///     Specifies the initial size (in bytes) of the buffer used for Avro message
+        ///     serialization. Use a value high enough to avoid resizing the buffer, but
+        ///     small enough to avoid excessive memory use. Inspect the size of the byte
+        ///     array returned by the Serialize method to estimate an appropriate value.
+        ///     Note: each call to serialize creates a new buffer.
         /// 
         ///     default: 1024
         /// </summary>
         public const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify whether or not the
-        ///     Avro serializer should attempt to auto-register unrecognized schemas with
-        ///     Confluent Schema Registry.
+        ///     Specifies whether or not the Avro serializer should attempt to auto-register
+        ///     unrecognized schemas with Confluent Schema Registry.
         ///
         ///     default: true
         /// </summary>
@@ -164,23 +156,21 @@ namespace Confluent.Kafka
         // ---- Schema Registry Client
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify a comma-separated list
-        ///     of URLs for schema registry instances that are used to register or lookup
-        ///     schemas.
+        ///     A comma-separated list of URLs for schema registry instances that are
+        ///     used to register or lookup schemas.
         /// </summary>
         public const string SchemaRegistryUrlPropertyName = "schema.registry.url";
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the timeout for requests
-        ///     to Confluent Schema Registry.
+        ///     Specifies the timeout for requests to Confluent Schema Registry.
         /// 
         ///     default: 30000
         /// </summary>
-        public const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
+        public const string SchemaRegistryRequestTimeoutMsPropertyName = "schema.registry.request.timeout.ms";
 
         /// <summary>
-        ///     Name of the configuration parameter used to specify the maximum number of
-        ///     schemas CachedSchemaRegistryClient should cache locally.
+        ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
+        ///     should cache locally.
         /// 
         ///     default: 1000
         /// </summary>

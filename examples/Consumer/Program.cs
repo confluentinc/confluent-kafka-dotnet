@@ -109,7 +109,7 @@ namespace Confluent.Kafka.Examples.Consumer
 
                         if (consumeResult.Offset % 5 == 0)
                         {
-                            var committedOffsets = consumer.CommitAsync(consumeResult).Result;
+                            var committedOffsets = consumer.Commit(consumeResult);
                             Console.WriteLine($"Committed offset: {committedOffsets}");
                         }
                     }
@@ -165,7 +165,7 @@ namespace Confluent.Kafka.Examples.Consumer
                     }
                 }
 
-                consumer.CommitAsync().Wait();
+                consumer.Commit();
             }
         }
 

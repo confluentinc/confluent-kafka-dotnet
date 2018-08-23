@@ -77,7 +77,8 @@ namespace Confluent.Kafka
         ///     A collection of librdkafka configuration parameters 
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />)
+        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
+        ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </param>
         /// <param name="keySerializer">
         ///     An ISerializer implementation instance that will be used to serialize keys.

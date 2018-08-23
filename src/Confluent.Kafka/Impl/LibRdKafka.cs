@@ -1207,3 +1207,11 @@ namespace Confluent.Kafka.Impl
             => _event_topic_partition_list(rkev);
     }
 }
+
+
+// [2018-08-22 11:46:31,423] INFO [GroupMetadataManager brokerId=3] Group 24874.BDLF.Olympus.ConsumerGroup_LM transitioned to Dead in generation 66 (kafka.coordinator.group.GroupMetadataManager)
+// [2018-08-22 11:46:31,425] INFO Rolled new log segment for '__consumer_offsets-49' in 2 ms. (kafka.log.Log)
+// [2018-08-22 11:46:31,426] INFO [GroupMetadataManager brokerId=3] Removed 5 expired offsets in 3 milliseconds. (kafka.coordinator.group.GroupMetadataManager)
+
+// client disconnected two minutes after
+// 

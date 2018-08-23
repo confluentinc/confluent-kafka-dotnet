@@ -5,7 +5,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents an error that occured during message consumption.
     /// </summary>
-    public class ConsumeException : Exception
+    public class ConsumeException : KafkaException
     {
         /// <summary>
         ///     Initialize a new instance of ConsumeException
@@ -18,9 +18,9 @@ namespace Confluent.Kafka
         ///     The error that occured.
         /// </param>
         public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error)
+            : base(error)
         {
             ConsumerRecord = consumerRecord;
-            Error = error;
         }
 
         /// <summary>
@@ -28,10 +28,5 @@ namespace Confluent.Kafka
         ///     record for which the error occured.
         /// </summary>
         public ConsumeResult<byte[], byte[]> ConsumerRecord { get; private set; }
-
-        /// <summary>
-        ///     The error that occurred.
-        /// </summary>
-        public Error Error { get; private set; }
     }
 }

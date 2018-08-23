@@ -41,7 +41,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(TimeSpan)" />
-        /// </summary>s
+        /// </summary>
         ConsumeResult<TKey, TValue> Consume(TimeSpan timeout);
 
 
@@ -49,18 +49,6 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
         /// </summary>
         ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.ConsumeAsync(TimeSpan)" />
-        /// </summary>
-        Task<ConsumeResult<TKey, TValue>> ConsumeAsync(TimeSpan timeout);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.ConsumeAsync(CancellationToken)" />
-        /// </summary>
-        Task<ConsumeResult<TKey, TValue>> ConsumeAsync(CancellationToken cancellationToken);
 
 
         /// <summary>
@@ -157,21 +145,21 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.CommitAsync(CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Commit(CancellationToken)" />
         /// </summary>
-        Task<List<TopicPartitionOffset>> CommitAsync(CancellationToken cancellationToken = default(CancellationToken));
+        List<TopicPartitionOffset> Commit(CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.CommitAsync(ConsumeResult{TKey, TValue}, CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Commit(ConsumeResult{TKey, TValue}, CancellationToken)" />
         /// </summary>
-        Task<TopicPartitionOffset> CommitAsync(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken));
+        TopicPartitionOffset Commit(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.CommitAsync(IEnumerable{TopicPartitionOffset}, CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Commit(IEnumerable{TopicPartitionOffset}, CancellationToken)" />
         /// </summary>
-        Task CommitAsync(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));
+        void Commit(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
@@ -193,9 +181,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.CommittedAsync(IEnumerable{TopicPartition}, TimeSpan, CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Committed(IEnumerable{TopicPartition}, TimeSpan, CancellationToken)" />
         /// </summary>
-        Task<List<TopicPartitionOffset>> CommittedAsync(IEnumerable<TopicPartition> partitions, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken));
+        List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
@@ -205,8 +193,8 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OffsetsForTimesAsync(IEnumerable{TopicPartitionTimestamp}, TimeSpan, CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OffsetsForTimes(IEnumerable{TopicPartitionTimestamp}, TimeSpan, CancellationToken)" />
         /// </summary>
-        Task<List<TopicPartitionOffset>> OffsetsForTimesAsync(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken));
+        List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

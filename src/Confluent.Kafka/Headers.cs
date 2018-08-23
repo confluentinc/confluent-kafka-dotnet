@@ -29,7 +29,7 @@ namespace Confluent.Kafka
     /// </remarks>
     public class Headers : IEnumerable<Header>
     {
-        private List<Header> headers = new List<Header>();
+        private readonly List<Header> headers = new List<Header>();
 
         /// <summary>
         ///     Append a new header to the collection.
@@ -185,9 +185,7 @@ namespace Confluent.Kafka
         ///     The zero-based index of the element to get.
         /// </param>
         public Header this[int index]
-        {
-            get { return headers[index]; }
-        }
+            => headers[index];
 
         /// <summary>
         ///     The number of headers in the collection.

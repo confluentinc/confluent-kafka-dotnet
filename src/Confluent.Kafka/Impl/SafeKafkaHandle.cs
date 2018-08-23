@@ -570,10 +570,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal IntPtr ConsumerPoll(
-            bool enableTimestampMarshaling,
-            bool enableHeaderMarshaling,
-            IntPtr millisecondsTimeout)
+        internal IntPtr ConsumerPoll(IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
             
@@ -688,7 +685,7 @@ namespace Confluent.Kafka.Impl
         }
 
 
-        internal List<TopicPartitionOffset> CommitSync(IEnumerable<TopicPartitionOffset> offsets)
+        internal List<TopicPartitionOffset> Commit(IEnumerable<TopicPartitionOffset> offsets)
         {
             ThrowIfHandleClosed();
 
