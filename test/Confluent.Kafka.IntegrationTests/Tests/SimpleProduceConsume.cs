@@ -72,7 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
             var r = consumer.Consume(TimeSpan.FromSeconds(10));
-            Assert.NotNull(r.Message);
+            Assert.NotNull(r?.Message);
             Assert.Equal(testString, r.Message.Value == null ? null : Encoding.UTF8.GetString(r.Message.Value, 0, r.Message.Value.Length));
             Assert.Null(r.Message.Key);
             Assert.Equal(r.Message.Timestamp.Type, dr.Message.Timestamp.Type);
@@ -82,8 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
         private static DeliveryReport<Null, string> ProduceMessage(string topic, Producer<Null, string> producer, string testString)
         {
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
-            Assert.NotNull(result);
-            Assert.NotNull(result.Message);
+            Assert.NotNull(result?.Message);
             Assert.Equal(topic, result.Topic);
             Assert.NotEqual<long>(result.Offset, Offset.Invalid);
             Assert.Equal(TimestampType.CreateTime, result.Message.Timestamp.Type);

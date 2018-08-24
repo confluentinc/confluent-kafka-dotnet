@@ -51,9 +51,9 @@ To add a reference to a dotnet core project, execute the following at the comman
 dotnet add package -v 1.0-experimental-10 Confluent.Kafka
 ```
 
-We recommend using 1.0-beta versions of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. However, be warned that we may still make breaking API changes before the 1.0 release. 
+We recommend using the latest 1.0 beta version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. However, be warned that we may still make breaking API changes prior to the final 1.0 release. 
 
-Nuget packages corresponding to commits to release branches are available from the following nuget package source (Note: this is not a web URL - you 
+Nuget packages corresponding to all commits to release branches are available from the following nuget package source (Note: this is not a web URL - you 
 should specify it in the nuget package manger):
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
 matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
@@ -89,7 +89,7 @@ class Program
                 var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
-            catch (KafkaException e)
+            catch (ProduceException<Null, string> e)
             {
                 Console.WriteLine($"An error occured: {e.Error.Reason}");
             }
@@ -135,6 +135,8 @@ class Program
                     Console.WriteLine($"Error occured: {e.Error.Reason}");
                 }
             }
+            
+            c.Close();
         }
     }
 }
