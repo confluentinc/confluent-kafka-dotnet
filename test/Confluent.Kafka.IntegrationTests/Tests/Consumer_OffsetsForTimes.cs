@@ -54,22 +54,22 @@ namespace Confluent.Kafka.IntegrationTests
                 var timeout = TimeSpan.FromSeconds(10);
 
                 // If empty request, expect empty result.
-                var result = consumer.OffsetsForTimesAsync(new TopicPartitionTimestamp[0], timeout).Result.ToList();
+                var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
                 Assert.Empty(result);
 
                 // Getting the offset for the first produced message timestamp
-                result = consumer.OffsetsForTimesAsync(
+                result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Message.Timestamp) },
-                        timeout).Result
+                        timeout)
                     .ToList();
 
                 Assert.Single(result);
                 Assert.Equal(result[0].Offset, firstMessage.Offset);
 
                 // Getting the offset for the last produced message timestamp
-                result = consumer.OffsetsForTimesAsync(
+                result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Message.Timestamp) },
-                        timeout).Result
+                        timeout)
                     .ToList();
 
                 Assert.Single(result);
@@ -77,18 +77,18 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Getting the offset for the timestamp that is very far in the past
                 var unixTimeEpoch = Timestamp.UnixTimeEpoch;
-                result = consumer.OffsetsForTimesAsync(
+                result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },
-                        timeout).Result
+                        timeout)
                     .ToList();
 
                 Assert.Single(result);
                 Assert.Equal(0, result[0].Offset);
 
                 // Getting the offset for the timestamp that very far in the future
-                result = consumer.OffsetsForTimesAsync(
+                result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(int.MaxValue, TimestampType.CreateTime)) },
-                        timeout).Result
+                        timeout)
                     .ToList();
 
                 Assert.Single(result);

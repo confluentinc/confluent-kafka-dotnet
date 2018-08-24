@@ -73,24 +73,22 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
                 using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(schemaRegistryClient), new AvroDeserializer<User>(schemaRegistryClient)))
                 {
-                    consumer.Subscribe(topic);
+                    bool consuming = true;
+                    consumer.OnPartitionEOF += (_, topicPartitionOffset)
+                        => consuming = false;
 
                     int i = 0;
 
-                    while (true)
+                    while (consuming)
                     {
                         var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        if (record.Message != null)
+                        if (record != null)
                         {
                             Assert.Equal(i.ToString(), record.Message.Key);
                             Assert.Equal(i.ToString(), record.Message.Value.name);
                             Assert.Equal(i, record.Message.Value.favorite_number);
                             Assert.Equal("blue", record.Message.Value.favorite_color);
                             i += 1;
-                        }
-                        if (record.IsPartitionEOF)
-                        {
-                            break;
                         }
                     }
 

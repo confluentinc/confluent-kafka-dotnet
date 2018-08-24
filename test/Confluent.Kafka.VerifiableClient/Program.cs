@@ -474,7 +474,7 @@ namespace Confluent.Kafka.VerifiableClient
             List<TopicPartitionOffsetError> results;
             try
             {
-                results = consumer.CommitAsync().Result.Select(r => new TopicPartitionOffsetError(r, new Error(ErrorCode.NoError))).ToList();
+                results = consumer.Commit().Select(r => new TopicPartitionOffsetError(r, new Error(ErrorCode.NoError))).ToList();
             }
             catch (KafkaException ex)
             {
@@ -607,10 +607,10 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Send("startup_complete", new Dictionary<string, object>());
 
-            consumer.OnPartitionAssignmentReceived += (_, partitions)
+            consumer.OnPartitionsAssigned += (_, partitions)
                 => HandleAssign(partitions);
 
-            consumer.OnPartitionAssignmentRevoked += (_, partitions)
+            consumer.OnPartitionsRevoked += (_, partitions)
                 => HandleRevoke(partitions);
 
             // Only used when auto-commits enabled

@@ -588,8 +588,8 @@ namespace Confluent.Kafka
         ///
         ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
         /// </summary>
-        public Metadata GetMetadata(TimeSpan timeout)
-            => kafkaHandle.GetMetadata(true, null, timeout.TotalMillisecondsAsInt());
+        public Metadata QueryMetadata(TimeSpan timeout)
+            => kafkaHandle.QueryMetadata(true, null, timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
@@ -597,8 +597,8 @@ namespace Confluent.Kafka
         /// 
         ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
         /// </summary>
-        public Metadata GetMetadata(string topic, TimeSpan timeout)
-            => kafkaHandle.GetMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
+        public Metadata QueryMetadata(string topic, TimeSpan timeout)
+            => kafkaHandle.QueryMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>

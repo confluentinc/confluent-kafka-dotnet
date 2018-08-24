@@ -36,9 +36,9 @@ namespace Confluent.Kafka.IntegrationTests
 
             var config = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
-            using (var producer = new AdminClient(config))
+            using (var adminClient = new AdminClient(config))
             {
-                var metadata = producer.GetMetadata(TimeSpan.FromSeconds(10));
+                var metadata = adminClient.QueryMetadata(TimeSpan.FromSeconds(10));
                 Assert.NotNull(metadata.Brokers);
                 Assert.True(metadata.Brokers.Count > 0);
 

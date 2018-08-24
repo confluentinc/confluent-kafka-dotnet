@@ -52,15 +52,15 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentReceived" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionsAssigned" />
         /// </summary>
-        event EventHandler<List<TopicPartition>> OnPartitionAssignmentReceived;
+        event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentRevoked" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionsRevoked" />
         /// </summary>
-        event EventHandler<List<TopicPartition>> OnPartitionAssignmentRevoked;
+        event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
 
         /// <summary>

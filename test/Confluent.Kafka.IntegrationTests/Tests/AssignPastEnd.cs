@@ -62,10 +62,10 @@ namespace Confluent.Kafka.IntegrationTests
                 // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Null(record.Message);
+                Assert.Null(record);
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
                 consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Null(record.Message);
+                Assert.Null(record);
             }
 
             consumerConfig["auto.offset.reset"] = "earliest";
@@ -74,13 +74,13 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeResult<byte[], byte[]> record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Null(record.Message);
+                Assert.Null(record);
                 // Note: dr.Offset+2 is an invalid (c.f. dr.Offset+1 which is valid), so auto.offset.reset will come
                 // into play here to determine which offset to start from (earliest). Due to the the produce call above,
                 // there is guarenteed to be a message on the topic, so consumer.Consume will return true.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.NotNull(record.Message);
+                Assert.NotNull(record?.Message);
             }
 
             Assert.Equal(0, Library.HandleCount);

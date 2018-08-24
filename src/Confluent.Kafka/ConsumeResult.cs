@@ -102,11 +102,5 @@ namespace Confluent.Kafka
             get { return Message.Headers; }
             set { Message.Headers = value; }
         }
-
-        /// <summary>
-        ///     True if the ConsumeResult represents an end-of-partition event,
-        ///     false otherwise.
-        /// </summary>
-        public bool IsPartitionEOF { get; set; }
     }
 }

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Avro;
 using Avro.Generic;
 using Confluent.Kafka;
@@ -92,6 +93,12 @@ namespace AvroBlogExample
 
         static void ConsumeSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
+            };
+
             var consumerConfig = new Dictionary<string, object>
             {
                 { "group.id", Guid.NewGuid().ToString() },
@@ -105,19 +112,17 @@ namespace AvroBlogExample
             {
                 consumer.Subscribe("log-messages");
 
-                while (true)
+                while (!cts.IsCancellationRequested)
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume(TimeSpan.FromSeconds(1));
-                        if (consumeResult.Message != null)
-                        {
-                            Console.WriteLine($"{consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
-                        }
+                        var consumeResult = consumer.Consume(cts.Token);
+                        Console.WriteLine($"{consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
                     }
                     catch (ConsumeException e)
                     {
                         Console.WriteLine($"an error occured: {e.Error.Reason}");
+                        break;
                     }
                 }
 

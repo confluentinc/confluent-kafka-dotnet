@@ -98,11 +98,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     {
                         try
                         {
-                            var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                            if (consumeResult.Message != null)
-                            {
-                                Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
-                            }
+                            var consumeResult = consumer.Consume(cts.Token);
+                            Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
                         }
                         catch (ConsumeException e)
                         {

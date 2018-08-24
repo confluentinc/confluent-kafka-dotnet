@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
 
-                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
+                consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     consumer.Assign(partitions);
                     assignedPartitions = partitions;
@@ -64,19 +64,19 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Consume(TimeSpan.FromSeconds(1));
                 }
                 record = consumer.Consume(TimeSpan.FromSeconds(1));
-                Assert.Null(record.Message);
+                Assert.Null(record);
 
                 producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(30));
-                Assert.NotNull(record.Message);
+                Assert.NotNull(record?.Message);
 
                 consumer.Pause(assignedPartitions);
                 producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value 2" }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(2));
-                Assert.Null(record.Message);
+                Assert.Null(record);
                 consumer.Resume(assignedPartitions);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.NotNull(record.Message);
+                Assert.NotNull(record?.Message);
 
                 // check that these don't throw.
                 consumer.Pause(new List<TopicPartition>());

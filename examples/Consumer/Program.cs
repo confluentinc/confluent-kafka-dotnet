@@ -35,11 +35,9 @@ namespace Confluent.Kafka.Examples.Consumer
         /// <summary>
         ///     In this example
         ///         - offsets are manually committed.
-        ///         - consumer.Consume is used to consume messages.
-        ///             (all other events are still handled by event handlers)
         ///         - no extra thread is created for the Poll (Consume) loop.
         /// </summary>
-        public static void Run_Consume(string brokerList, List<string> topics)
+        public static void Run_Consume(string brokerList, List<string> topics, CancellationToken cancellationToken)
         {
             var config = new Dictionary<string, object>
             {
@@ -49,62 +47,33 @@ namespace Confluent.Kafka.Examples.Consumer
                 { "statistics.interval.ms", 60000 },
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
+                // note: typically, you should treat error_cb events as information only.
                 { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) },
                 { "stats_cb", (Action<string>)(json => Console.WriteLine($"Statistics: {json}")) }
             };
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
-                // Note: All event handlers are called on the main thread.
+                // Note: All event handlers are called on the main .Consume thread.
                 
-                // Raised when the consumer is assigned a new set of partitions.
-                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
-                {
-                    Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
-                    // If you don't add a handler to the OnPartitionsAssigned event,
-                    // the below .Assign call happens automatically. If you do, you
-                    // must call .Assign explicitly in order for the consumer to 
-                    // start consuming messages.
-                    consumer.Assign(partitions);
-                };
+                // Raised when the consumer has been notified of a new assignment set.
+                consumer.OnPartitionsAssigned += (_, partitions)
+                    => Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
 
                 // Raised when the consumer's current assignment set has been revoked.
-                consumer.OnPartitionAssignmentRevoked += (_, partitions) =>
-                {
-                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
-                    // If you don't add a handler to the OnPartitionsRevoked event,
-                    // the below .Unassign call happens automatically. If you do, 
-                    // you must call .Unassign explicitly in order for the consumer
-                    // to stop consuming messages from it's previously assigned 
-                    // partitions.
-                    consumer.Unassign();
-                };
+                consumer.OnPartitionsRevoked += (_, partitions)
+                    => Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
+
+                consumer.OnPartitionEOF += (_, tpo)
+                    => Console.WriteLine($"Reached end of topic {tpo.Topic} partition {tpo.Partition}, next message will be at offset {tpo.Offset}");
 
                 consumer.Subscribe(topics);
 
-                Console.WriteLine($"Started consumer, Ctrl-C to stop consuming");
-
-                var cancelled = false;
-                Console.CancelKeyPress += (_, e) => {
-                    e.Cancel = true; // prevent the process from terminating.
-                    cancelled = true;
-                };
-
-                while (!cancelled)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        if (consumeResult.Message == null)
-                        {
-                            continue;
-                        }
-                        if (consumeResult.IsPartitionEOF)
-                        {
-                            Console.WriteLine($"Reached end of topic {consumeResult.Topic} partition {consumeResult.Partition}, next message will be at offset {consumeResult.Offset}");
-                            continue;
-                        }
-
+                        var consumeResult = consumer.Consume(cancellationToken);
                         Console.WriteLine($"Topic: {consumeResult.Topic} Partition: {consumeResult.Partition} Offset: {consumeResult.Offset} {consumeResult.Value}");
 
                         if (consumeResult.Offset % 5 == 0)
@@ -129,7 +98,7 @@ namespace Confluent.Kafka.Examples.Consumer
         ///         - the consumer is manually assigned to a partition and always starts consumption
         ///           from a specific offset (0).
         /// </summary>
-        public static void Run_ManualAssign(string brokerList, List<string> topics)
+        public static void Run_ManualAssign(string brokerList, List<string> topics, CancellationToken cancellationToken)
         {
             var config = new Dictionary<string, object>
             {
@@ -141,6 +110,7 @@ namespace Confluent.Kafka.Examples.Consumer
                 // subscribed to the group. in this example, auto commit is disabled
                 // to prevent this from occuring.
                 { "enable.auto.commit", false },
+                // note: typically, you should treat error_cb events as information only.
                 { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) }
             };
 
@@ -148,15 +118,16 @@ namespace Confluent.Kafka.Examples.Consumer
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
 
-                while (true)
+                consumer.OnPartitionEOF += (_, topicPartitionOffset)
+                    => Console.WriteLine($"End of partition: {topicPartitionOffset}");
+
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
-                        var cr = consumer.Consume();
-                        if (cr.Message != null)
-                        {
-                            Console.WriteLine($"Received message at {cr.TopicPartitionOffset}: ${cr.Message}");
-                        }
+                        var consumeResult = consumer.Consume(cancellationToken);
+                        Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Message}");
+                        consumer.Commit(consumeResult);
                     }
                     catch (ConsumeException e)
                     {
@@ -165,7 +136,7 @@ namespace Confluent.Kafka.Examples.Consumer
                     }
                 }
 
-                consumer.Commit();
+                consumer.Close();
             }
         }
 
@@ -184,13 +155,21 @@ namespace Confluent.Kafka.Examples.Consumer
             var brokerList = args[1];
             var topics = args.Skip(2).ToList();
 
+            Console.WriteLine($"Started consumer, Ctrl-C to stop consuming");
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
+            };
+
             switch (mode)
             {
                 case "consume":
-                    Run_Consume(brokerList, topics);
+                    Run_Consume(brokerList, topics, cts.Token);
                     break;
                 case "manual":
-                    Run_ManualAssign(brokerList, topics);
+                    Run_ManualAssign(brokerList, topics, cts.Token);
                     break;
                 default:
                     PrintUsage();

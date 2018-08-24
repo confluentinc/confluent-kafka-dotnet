@@ -19,6 +19,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.Serialization;
@@ -28,7 +29,8 @@ namespace Confluent.Kafka.Examples.Producer
 {
     public class Program
     {
-        public static void Main(string[] args)
+        // Note: async Main requires C# 7.1 or above.
+        public static async Task Main(string[] args)
         {
             if (args.Length != 2)
             {
@@ -92,11 +94,9 @@ namespace Confluent.Kafka.Examples.Producer
 
                     try
                     {
-                        // Calling .Result on the asynchronous produce request below causes it to
-                        // block until it completes. Generally, you should avoid producing
-                        // synchronously because this has a huge impact on throughput. For this
-                        // interactive console example though, it's what we want.
-                        var deliveryReport = producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val }).Result;
+                        // Awaiting the asynchronous produce request below prevents flow of execution
+                        // from proceeding until the acknowledgement from the broker is received.
+                        var deliveryReport = await producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val });
                         Console.WriteLine($"delivered to: {deliveryReport.TopicPartitionOffset}");
                     }
                     catch (ProduceException<string, string> e)
@@ -106,9 +106,8 @@ namespace Confluent.Kafka.Examples.Producer
                 }
 
                 // Since we are producing synchronously, at this point there will be no messages
-                // in flight and no delivery reports waiting to be acknowledged, so there is no
-                // need to call producer.Flush before disposing the producer, as you typically 
-                // would.
+                // in-flight and no delivery reports waiting to be acknowledged, so there is no
+                // need to call producer.Flush before disposing the producer.
             }
         }
     }

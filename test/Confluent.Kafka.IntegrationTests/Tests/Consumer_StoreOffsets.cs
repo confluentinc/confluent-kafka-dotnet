@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
 
-                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
+                consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     consumer.Assign(partitions);
                     assignedPartitions = partitions;
@@ -65,11 +65,11 @@ namespace Confluent.Kafka.IntegrationTests
                 }
 
                 record = consumer.Consume(TimeSpan.FromSeconds(1));
-                Assert.Null(record.Message);
+                Assert.Null(record);
 
                 producer.ProduceAsync(topic, new Message<Null, string> { Value = "test store offset value" }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(30));
-                Assert.NotNull(record.Message);
+                Assert.NotNull(record?.Message);
 
                 // test doesn't throw.
                 consumer.StoreOffset(record);

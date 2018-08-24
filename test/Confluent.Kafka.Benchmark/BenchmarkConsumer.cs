@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Benchmark
                     while (cnt < nMessages-1)
                     {
                         record = consumer.Consume(TimeSpan.FromSeconds(1));
-                        if (record.Message != null)
+                        if (record != null)
                         {
                             cnt += 1;
                         }

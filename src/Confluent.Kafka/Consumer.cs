@@ -127,7 +127,7 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                var handler = OnPartitionAssignmentReceived;
+                var handler = OnPartitionsAssigned;
                 if (handler != null && handler.GetInvocationList().Length > 0)
                 {
                     assignCalled = false;
@@ -142,7 +142,7 @@ namespace Confluent.Kafka
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                var handler = OnPartitionAssignmentRevoked;
+                var handler = OnPartitionsRevoked;
                 if (handler != null && handler.GetInvocationList().Length > 0)
                 {
                     assignCalled = false;
@@ -371,11 +371,7 @@ namespace Confluent.Kafka
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
-                return new ConsumeResult<TKey, TValue>
-                {
-                    TopicPartitionOffset = new TopicPartitionOffset(null, Partition.Any, Offset.Invalid),
-                    Message = null
-                };
+                return null;
             }
 
             try
@@ -393,11 +389,8 @@ namespace Confluent.Kafka
 
                 if (msg.err == ErrorCode.Local_PartitionEOF)
                 {
-                    return new ConsumeResult<TKey, TValue>
-                    {
-                        TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
-                        IsPartitionEOF = true
-                    };
+                    OnPartitionEOF?.Invoke(this, new TopicPartitionOffset(topic, msg.partition, msg.offset));
+                    return null;
                 }
 
                 long timestampUnix = 0;
@@ -589,7 +582,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
         ///     (on the same thread).
         /// </remarks>
-        public event EventHandler<List<TopicPartition>> OnPartitionAssignmentReceived;
+        public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
 
         /// <summary>
@@ -607,7 +600,7 @@ namespace Confluent.Kafka
         ///     and <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close()" />
         ///     (on the same thread).
         /// </remarks>
-        public event EventHandler<List<TopicPartition>> OnPartitionAssignmentRevoked;
+        public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
 
         /// <summary>
@@ -620,6 +613,15 @@ namespace Confluent.Kafka
         ///     (on the same thread).
         /// </remarks>
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
+
+
+        /// <summary>
+        ///     Raised when the consumer reaches the end of a topic/partition it is reading from.
+        /// </summary>
+        /// <remarks>
+        ///     Executes on the same thread as every other Consumer event handler.
+        /// </remarks>
+        public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
 
         /// <summary>
@@ -1080,7 +1082,7 @@ namespace Confluent.Kafka
         ///     or <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unsubscribe" />,
         ///     the group will rebalance after a timeout specified by the broker
         ///     config property `group.max.session.timeout.ms`. Note: the
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentRevoked" />
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionsRevoked" />
         ///     event will be called as a side-effect of calling this
         ///     method.
         /// </summary>

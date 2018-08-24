@@ -53,8 +53,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
             {
                 bool done = false;
+                consumer.OnPartitionEOF += (_, tpo)
+                    => done = true;
 
-                consumer.OnPartitionAssignmentReceived += (_, partitions) =>
+                consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
                     consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset));
@@ -66,13 +68,9 @@ namespace Confluent.Kafka.IntegrationTests
                 while (!done)
                 {
                     ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                    if (record.Message != null)
+                    if (record != null)
                     {
                         msgCnt += 1;
-                    }
-                    if (record.IsPartitionEOF)
-                    {
-                        done = true;
                     }
                 }
 
@@ -80,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 Thread.Sleep(TimeSpan.FromSeconds(3));
 
-                var committed = consumer.CommittedAsync(new [] { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10)).Result;
+                var committed = consumer.Committed(new [] { new TopicPartition(singlePartitionTopic, 0) }, TimeSpan.FromSeconds(10));
 
                 // if this was committing, would expect the committed offset to be first committed offset + N
                 // (don't need to subtract 1 since the next message to be consumed is the value that is committed).

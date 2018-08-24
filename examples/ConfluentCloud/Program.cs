@@ -66,7 +66,8 @@ namespace ConfluentCloudExample
                     .ContinueWith(task => task.IsFaulted
                         ? $"error producing message: {task.Exception.Message}"
                         : $"produced to: {task.Result.TopicPartitionOffset}");
-
+                
+                // since the above call to ProduceAsync is asynchronous, 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -89,24 +90,14 @@ namespace ConfluentCloudExample
             { 
                 consumer.Subscribe("dotnet-test-topic");
 
-                while (true)
+                try
                 {
-                    try
-                    {
-                        var consumeResult = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        if (consumeResult.Message != null)
-                        {
-                            Console.WriteLine($"consumed: {consumeResult.Value}");
-                        }
-                        else if (consumeResult.IsPartitionEOF)
-                        {
-                            Console.WriteLine($"end of partition: {consumeResult.TopicPartitionOffset}");
-                        }
-                    }
-                    catch (ConsumeException e)
-                    {
-                        Console.WriteLine($"consume error: {e.Error.Reason}");
-                    }
+                    var consumeResult = consumer.Consume();
+                    Console.WriteLine($"consumed: {consumeResult.Value}");
+                }
+                catch (ConsumeException e)
+                {
+                    Console.WriteLine($"consume error: {e.Error.Reason}");
                 }
 
                 consumer.Close();

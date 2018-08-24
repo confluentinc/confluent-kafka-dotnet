@@ -46,14 +46,14 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
-            for (int i=0; i<5; ++i)
+            for (int i=0; i<4; ++i)
             {
                 using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
                 {
-                    consumer.OnPartitionAssignmentReceived += (_, partitions)
+                    consumer.OnPartitionsAssigned += (_, partitions)
                         => consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
 
-                    consumer.OnPartitionAssignmentRevoked += (_, partitions)
+                    consumer.OnPartitionsRevoked += (_, partitions)
                         => consumer.Unassign();
 
                     consumer.Subscribe(singlePartitionTopic);
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
                     while (tryCount-- > 0)
                     {
                         ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromMilliseconds(1000));
-                        if (record.Message != null)
+                        if (record != null)
                         {
                             break;
                         }
@@ -77,10 +77,7 @@ namespace Confluent.Kafka.IntegrationTests
                             consumer.Unsubscribe();
                             break;
                         case 1:
-                            consumer.CommitAsync().Wait();
-                            break;
-                        case 2:
-                            consumer.CommitAsync();
+                            consumer.Commit();
                             break;
                         case 3:
                             consumer.Close();
