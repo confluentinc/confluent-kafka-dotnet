@@ -49,19 +49,13 @@ namespace Confluent.Kafka.IntegrationTests
             //  - creation of more than one topic.
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                List<CreateTopicResult> result = adminClient.CreateTopicsAsync(
+                adminClient.CreateTopicsAsync(
                     new TopicSpecification[]
                     { 
                         new TopicSpecification { Name = topicName1, NumPartitions = 2, ReplicationFactor = 1 },
                         new TopicSpecification { Name = topicName2, NumPartitions = 12, ReplicationFactor = 1 }
                     }
-                ).Result;
-
-                Assert.Equal(2, result.Count);
-                Assert.False(result[0].Error.IsError);
-                Assert.False(result[1].Error.IsError);
-                Assert.Equal(topicName1, result[0].Topic);
-                Assert.Equal(topicName2, result[1].Topic);
+                ).Wait();
             }
 
             // test 
@@ -71,11 +65,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, Null>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, null))
             using (var adminClient2 = new AdminClient(producer.Handle))
             {
-                List<CreateTopicResult> result = adminClient2.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } }).Result;
-                Assert.Single(result);
-                Assert.False(result[0].Error.IsError);
-                Assert.Equal(topicName3, result[0].Topic);
+                adminClient2.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } }).Wait();
 
                 var deliveryReport1 = producer.ProduceAsync(topicName1, new Message<Null, Null> {}).Result;
                 var deliveryReport2 = producer.ProduceAsync(topicName2, new Message<Null, Null> {}).Result;
@@ -93,12 +84,12 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 try
                 {
-                    var result = adminClient.CreateTopicsAsync(new List<TopicSpecification> 
+                    adminClient.CreateTopicsAsync(new List<TopicSpecification> 
                         { 
                             new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 },
                             new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 }
                         }
-                    ).Result;
+                    ).Wait();
                     Assert.True(false, "Expect CreateTopics request to throw an exception.");
                 }
 
@@ -120,23 +111,15 @@ namespace Confluent.Kafka.IntegrationTests
             //  - validate only
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                var result = adminClient.CreateTopicsAsync(
+                adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }, 
                     new CreateTopicsOptions { ValidateOnly = true, RequestTimeout = TimeSpan.FromSeconds(30) }
-                ).Result;
-
-                Assert.Single(result);
-                Assert.False(result.First().Error.IsError);
-                Assert.Equal(topicName5, result.First().Topic);
+                ).Wait();
 
                 // creating for real shouldn't throw exception.
-                result = adminClient.CreateTopicsAsync(
+                adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }
-                ).Result;
-
-                Assert.Single(result);
-                Assert.False(result.First().Error.IsError);
-                Assert.Equal(topicName5, result.First().Topic);
+                ).Wait();
             }
 
             Assert.Equal(0, Library.HandleCount);

@@ -46,7 +46,6 @@ namespace Confluent.Kafka.IntegrationTests
                 var results = adminClient.DescribeConfigsAsync(new List<ConfigResource> { configResource }).Result;
 
                 Assert.Single(results);
-                Assert.False(results[0].Error.IsError);
                 Assert.True(results[0].Entries.Count > 50);
                 // note: unlike other parts of the api, Entries is kept as a dictionary since it's convenient for
                 // the most typical use case.
@@ -63,8 +62,6 @@ namespace Confluent.Kafka.IntegrationTests
                 }).Result;
 
                 Assert.Equal(2, results.Count);
-                Assert.False(results[0].Error.IsError);
-                Assert.False(results[0].Error.IsError);
                 Assert.True(results[0].Entries.Count > 20);
                 Assert.True(results[1].Entries.Count > 20);
                 Assert.Single(results[0].Entries.Where(e => e.Key == "compression.type"));

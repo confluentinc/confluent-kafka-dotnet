@@ -14,28 +14,26 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of a request to delete a specific topic.
+    ///     The result of a request to describe the configs of a specific resource.
     /// </summary>
-    public class DeleteTopicResult 
+    public class DescribeConfigsResult
     {
         /// <summary>
-        ///     The topic.
+        ///     The resource associated with the describe configs request.
         /// </summary>
-        public string Topic { get; set; }
+        public ConfigResource ConfigResource;
 
         /// <summary>
-        ///     The error (or success) of the delete topic request.
+        ///     Configuration entries for the specified resource.
         /// </summary>
-        public Error Error { get; set; }
+        public Dictionary<string, ConfigEntryResult> Entries { get; set; }
+
+        internal Error Error { get; set; }
     }
 }

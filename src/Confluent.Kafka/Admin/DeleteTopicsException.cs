@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public DeleteTopicsException(List<DeleteTopicResult> results)
+        public DeleteTopicsException(List<DeleteTopicExceptionResult> results)
             : base(
                 "An error occurred deleting topics: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
@@ -49,6 +49,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<DeleteTopicResult> Results { get; }
+        public List<DeleteTopicExceptionResult> Results { get; }
     }
 }

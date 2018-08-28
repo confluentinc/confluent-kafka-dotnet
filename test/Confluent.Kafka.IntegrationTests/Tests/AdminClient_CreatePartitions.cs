@@ -50,14 +50,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, Null>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, null))
             using (var adminClient = new AdminClient(producer.Handle))
             {
-                var cResult = adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
-                Assert.Single(cResult);
-                Assert.False(cResult.First().Error.IsError);
-                
-                var cpResult = adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName1, IncreaseTo = 2 } }).Result;
-                Assert.Single(cpResult);
-                Assert.False(cpResult.First().Error.IsError);
-                Assert.Equal(topicName1, cpResult.First().Topic);
+                adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+                adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName1, IncreaseTo = 2 } }).Wait();
 
                 var dr1 = producer.ProduceAsync(new TopicPartition(topicName1, 0), new Message<Null, Null> {}).Result;
                 var dr2 = producer.ProduceAsync(new TopicPartition(topicName1, 1), new Message<Null, Null> {}).Result;
@@ -78,7 +72,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
-                var cpResult = adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName2, IncreaseTo = 10 } }, new CreatePartitionsOptions { ValidateOnly = true }).Result;
+                adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName2, IncreaseTo = 10 } }, new CreatePartitionsOptions { ValidateOnly = true }).Wait();
 
                 // forces a metadata request.
                 var dr1 = producer.ProduceAsync(new TopicPartition(topicName2, 0), new Message<Null, Null> {}).Result;
@@ -99,16 +93,13 @@ namespace Confluent.Kafka.IntegrationTests
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
-                var cpResult = adminClient.CreatePartitionsAsync(
+                adminClient.CreatePartitionsAsync(
                     new List<PartitionsSpecification> 
                     {
                         new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 0 } } } 
                     }, 
                     new CreatePartitionsOptions { ValidateOnly = true }
-                ).Result;
-
-                Assert.Single(cpResult);
-                Assert.False(cpResult.First().Error.IsError);
+                ).Wait();
             }
 
             // check invalid Assignments property value works.
@@ -119,13 +110,13 @@ namespace Confluent.Kafka.IntegrationTests
 
                 try
                 {
-                    var cpResult = adminClient.CreatePartitionsAsync(
+                    adminClient.CreatePartitionsAsync(
                         new List<PartitionsSpecification> 
                         {
                             new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 42 } } } 
                         }, 
                         new CreatePartitionsOptions { ValidateOnly = true }
-                    ).Result;
+                    ).Wait();
                     Assert.True(false, "Expecting exception");
                 }
                 catch (AggregateException ex)

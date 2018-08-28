@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public AlterConfigsException(List<AlterConfigResult> results)
+        public AlterConfigsException(List<AlterConfigsExceptionResult> results)
             : base(
                 "An error occurred altering the following resources: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.ConfigResource)) +
@@ -49,6 +49,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<AlterConfigResult> Results { get; }
+        public List<AlterConfigsExceptionResult> Results { get; }
     }
 }

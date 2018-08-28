@@ -653,8 +653,10 @@ namespace Confluent.Kafka
         ///     topics's partitions to the consumers, depending on their subscription.
         /// </summary>
         /// <param name="topics">
-        ///     The topics to subscribe to. A regex can also be specified to subscribe
-        ///     to the set of all matching topics (updated as topics are added/removed).
+        ///     The topics to subscribe to. A regex can be specified to subscribe to 
+        ///     the set of all matching topics (which is updated as topics are added
+        ///     / removed). A regex must be front anchored to be recognized as a regex.
+        ///     e.g. ^myregex
         /// </param>
         public void Subscribe(IEnumerable<string> topics)
             => kafkaHandle.Subscribe(topics);
@@ -666,8 +668,10 @@ namespace Confluent.Kafka
         ///     Any previous subscription will be unassigned and unsubscribed first.
         /// </summary>
         /// <param name="topic">
-        ///     The topic to subscribe to. A regex can also be specified to subscribe
-        ///     to the set of all matching topics (updated as topics are added/removed).
+        ///     The topic to subscribe to. A regex can be specified to subscribe to 
+        ///     the set of all matching topics (which is updated as topics are added
+        ///     / removed). A regex must be front anchored to be recognized as a regex.
+        ///     e.g. ^myregex
         /// </param>
         public void Subscribe(string topic)
             => Subscribe(new[] { topic });

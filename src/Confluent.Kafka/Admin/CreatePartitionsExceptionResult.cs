@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     The result of a create partitions request for a specific topic.
     /// </summary>
-    public class CreatePartitionsResult
+    public class CreatePartitionsExceptionResult
     {
         /// <summary>
         ///     The topic.

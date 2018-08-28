@@ -46,19 +46,12 @@ namespace Confluent.Kafka.IntegrationTests
             // test single delete topic.
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                var cResult = adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 Thread.Sleep(TimeSpan.FromSeconds(1));
 
-                Assert.Single(cResult);
-                Assert.False(cResult.First().Error.IsError);
-
                 Thread.Sleep(TimeSpan.FromSeconds(2)); // git the topic some time to be created.
-                var dResult = adminClient.DeleteTopicsAsync(new List<string> { topicName1 }).Result;
-
-                Assert.Single(dResult);
-                Assert.False(dResult.First().Error.IsError);
-                Assert.Equal(topicName1, dResult.First().Topic);
+                adminClient.DeleteTopicsAsync(new List<string> { topicName1 }).Wait();
             }
 
             // test
@@ -66,20 +59,17 @@ namespace Confluent.Kafka.IntegrationTests
             //  - check that explicitly giving options doesn't obviously not work.
             using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
             {
-                var cResult = adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Result;
+                adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 Thread.Sleep(TimeSpan.FromSeconds(1));
-
-                Assert.Single(cResult);
-                Assert.False(cResult.First().Error.IsError);
 
                 Thread.Sleep(TimeSpan.FromSeconds(2));
                 try
                 {
-                    var dResult = adminClient.DeleteTopicsAsync(
+                    adminClient.DeleteTopicsAsync(
                         new List<string> { topicName2, topicName3 },
                         new DeleteTopicsOptions { RequestTimeout = TimeSpan.FromSeconds(30) }
-                    ).Result;
+                    ).Wait();
                 }
                 catch (AggregateException ex)
                 {

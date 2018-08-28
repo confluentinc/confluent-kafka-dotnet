@@ -24,17 +24,17 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of a request to create a specific topic.
+    ///     The result of a request to delete a specific topic.
     /// </summary>
-    public class CreateTopicResult
+    public class DeleteTopicExceptionResult 
     {
         /// <summary>
-        ///     The topic name.
+        ///     The topic.
         /// </summary>
         public string Topic { get; set; }
 
         /// <summary>
-        ///     The error (or success) of the create topic request.
+        ///     The error (or success) of the delete topic request.
         /// </summary>
         public Error Error { get; set; }
     }
