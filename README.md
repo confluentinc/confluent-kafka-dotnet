@@ -90,7 +90,7 @@ class Program
                 var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
-            catch (ProduceException<Null, string> e)
+            catch (KafkaException e)
             {
                 Console.WriteLine($"Delivery failed: {e.Error.Reason}");
             }

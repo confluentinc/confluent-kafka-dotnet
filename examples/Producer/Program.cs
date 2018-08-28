@@ -98,7 +98,7 @@ namespace Confluent.Kafka.Examples.Producer
                         var deliveryReport = await producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val });
                         Console.WriteLine($"delivered to: {deliveryReport.TopicPartitionOffset}");
                     }
-                    catch (ProduceException<string, string> e)
+                    catch (KafkaException e)
                     {
                         Console.WriteLine($"failed to deliver message: {e.Message} [{e.Error.Code}]");
                     }
