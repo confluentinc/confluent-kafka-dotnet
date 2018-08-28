@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
+                { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers} };

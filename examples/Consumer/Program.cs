@@ -44,24 +44,35 @@ namespace Confluent.Kafka.Examples.Consumer
                 { "bootstrap.servers", brokerList },
                 { "group.id", "csharp-consumer" },
                 { "enable.auto.commit", false },
-                { "statistics.interval.ms", 60000 },
+                { "statistics.interval.ms", 5000 },
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
                 // note: typically, you should treat error_cb events as information only.
-                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) },
+                { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) },
                 { "stats_cb", (Action<string>)(json => Console.WriteLine($"Statistics: {json}")) }
             };
+
+            const int commitPeriod = 5;
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
             {
                 // Note: All event handlers are called on the main .Consume thread.
                 
                 // Raised when the consumer has been notified of a new assignment set.
-                consumer.OnPartitionsAssigned += (_, partitions)
+                // You can use this event to perform actions such as retrieving offsets
+                // from an external source / manually setting start offsets using
+                // the Assign method. You can even call Assign with a different set of
+                // partitions than those in the assignment. If you do not call Assign
+                // in a handler of this event, the consumer will be automatically
+                // assigned to the partitions of the assignment set and consumption
+                // will start from last committed offsets or in accordance with
+                // the auto.offset.reset configuration parameter for partitions where
+                // there is no committed offset.
+                consumer.OnPartitionAssignment += (_, partitions)
                     => Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
 
                 // Raised when the consumer's current assignment set has been revoked.
-                consumer.OnPartitionsRevoked += (_, partitions)
+                consumer.OnPartitionAssignmentRevoked += (_, partitions)
                     => Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
 
                 consumer.OnPartitionEOF += (_, tpo)
@@ -76,8 +87,14 @@ namespace Confluent.Kafka.Examples.Consumer
                         var consumeResult = consumer.Consume(cancellationToken);
                         Console.WriteLine($"Topic: {consumeResult.Topic} Partition: {consumeResult.Partition} Offset: {consumeResult.Offset} {consumeResult.Value}");
 
-                        if (consumeResult.Offset % 5 == 0)
+                        if (consumeResult.Offset % commitPeriod == 0)
                         {
+                            // The Commit method sends a "commit offsets" request to the Kafka
+                            // cluster and synchronously waits for the response. This is very
+                            // slow compared to the rate at which the consumer is capable of
+                            // consuming messages. A high performance application will typically
+                            // commit offsets relatively infrequently and be designed handle
+                            // duplicate messages in the event of failure.
                             var committedOffsets = consumer.Commit(consumeResult);
                             Console.WriteLine($"Committed offset: {committedOffsets}");
                         }
@@ -109,9 +126,10 @@ namespace Confluent.Kafka.Examples.Consumer
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
                 // to prevent this from occuring.
-                { "enable.auto.commit", false },
+                { "enable.auto.commit", true },
                 // note: typically, you should treat error_cb events as information only.
-                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) }
+                // the client will automatically try to recover from all errors
+                { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) }
             };
 
             using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
@@ -127,12 +145,10 @@ namespace Confluent.Kafka.Examples.Consumer
                     {
                         var consumeResult = consumer.Consume(cancellationToken);
                         Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Message}");
-                        consumer.Commit(consumeResult);
                     }
                     catch (ConsumeException e)
                     {
                         Console.WriteLine($"Consume error: {e.Error}");
-                        break;
                     }
                 }
 

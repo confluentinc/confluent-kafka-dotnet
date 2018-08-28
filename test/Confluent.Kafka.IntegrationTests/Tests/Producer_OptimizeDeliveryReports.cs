@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object> 
             { 
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.producer.delivery.report.enabled.fields", "none" }
+                { "dotnet.producer.delivery.report.fields", "none" }
             };
 
             using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))

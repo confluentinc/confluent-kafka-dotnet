@@ -25,7 +25,8 @@ namespace Confluent.Kafka.Admin
     public class CreateTopicsOptions
     {
         /// <summary>
-        ///     If true, the request should be validated only without creating the topic.
+        ///     If true, the request should be validated on the broker only
+        ///     without creating the topic.
         /// 
         ///     Default: false
         /// </summary>

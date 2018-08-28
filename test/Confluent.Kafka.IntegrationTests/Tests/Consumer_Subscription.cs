@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // Test empty case.
                 Assert.Empty(consumer.Subscription);
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignment += (_, partitions) =>
                 {
                     Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(singlePartitionTopic, consumer.Subscription[0]);
                 };
 
-                consumer.OnPartitionsRevoked += (_, partitions)
+                consumer.OnPartitionAssignmentRevoked += (_, partitions)
                     => consumer.Unassign();
 
                 consumer.Subscribe(singlePartitionTopic);

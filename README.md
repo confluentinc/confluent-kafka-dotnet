@@ -82,6 +82,7 @@ class Program
     {
         var config = new Dictionary<string, object> { { "bootstrap.servers", "localhost:9092" } };
 
+        // A Producer for sending messages with null keys and UTF-8 encoded values.
         using (var p = new Producer<Null, string>(config, null, new StringSerializer(Encoding.UTF8)))
         {
             try
@@ -91,7 +92,7 @@ class Program
             }
             catch (ProduceException<Null, string> e)
             {
-                Console.WriteLine($"An error occured: {e.Error.Reason}");
+                Console.WriteLine($"Delivery failed: {e.Error.Reason}");
             }
         }
     }
@@ -127,8 +128,8 @@ class Program
             {
                 try
                 {
-                    var r = c.Consume();
-                    Console.WriteLine($"Consumed message '{r.Value}' at: '{r.TopicPartitionOffset}'.");
+                    var cr = c.Consume();
+                    Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
                 }
                 catch (ConsumeException e)
                 {

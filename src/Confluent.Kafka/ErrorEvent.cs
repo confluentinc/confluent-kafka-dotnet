@@ -16,28 +16,21 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-
-
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     OnLog callback event handler implementations.
+    ///     Encapsulates an error and severity level.
     /// </summary>
-    /// <remarks>
-    ///     Warning: Log handlers are called spontaneously from internal librdkafka 
-    ///     threads and the application must not call any Confluent.Kafka APIs from 
-    ///     within a log handler or perform any prolonged operations.
-    /// </remarks>
-    public static class Loggers
+    public class ErrorEvent
     {
         /// <summary>
-        ///     The method used to log messages by default.
+        ///     A librdkafka error
         /// </summary>
-        public static void ConsoleLogger(LogMessage logInfo)
-        {
-            var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-            Console.Error.WriteLine($"{logInfo.Level}|{now}|{logInfo.Name}|{logInfo.Facility}| {logInfo.Message}");
-        }
+        public Error Error;
+
+        /// <summary>
+        ///     The error severity level
+        /// </summary>
+        public SyslogLevel Level;
     }
 }

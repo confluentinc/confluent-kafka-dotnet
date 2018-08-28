@@ -155,8 +155,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="timeout">
         ///     The maximum length of time to block. You should typically use a
-        ///     relatively short timout period because this operation cannot be
-        ///     cancelled.
+        ///     relatively short timout period and loop until the return value
+        ///     becomes zero because this operation cannot be cancelled. 
         /// </param>
         /// <returns>
         ///     The current librdkafka out queue length. This should be interpreted
@@ -166,7 +166,7 @@ namespace Confluent.Kafka
         ///     of the number of produced messages for which a delivery report has
         ///     not yet been handled and a number which is less than or equal to the
         ///     number of pending delivery report callback events (as determined by
-        ///     an internal librdkafka implementation detail).
+        ///     the number of outstanding protocol requests).
         /// </returns>
         /// <remarks>
         ///     This method should typically be called prior to destroying a producer
@@ -246,7 +246,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     You will often want to call <see cref="Flush(int)" />
-        ///     before disposing a Producer instance.
+        ///     before disposing a Producer instance to make sure all
+        ///     outstanding/queued messages are delivered.
         /// </remarks>
         public void Dispose()
         {
@@ -294,8 +295,10 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     An opaque reference to the underlying librdkafka client instance.
-        ///     This can be used to construct an AdminClient that utilizes the same
-        ///     underlying librdkafka client as this Producer instance.
+        ///     This can be used to construct an <see cref="Confluent.Kafka.AdminClient" />
+        ///     or <see cref="Confluent.Kafka.Producer{TKey, TValue}" /> instance that
+        ///     utilizes the same underlying librdkafka client as this Producer 
+        ///     instance.
         /// </summary>
         public Handle Handle 
             => handle;
@@ -715,7 +718,7 @@ namespace Confluent.Kafka
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            
+
             if (errorDelegate != null)
             {
                 errorDelegate(new Error(err, reason));
@@ -752,13 +755,6 @@ namespace Confluent.Kafka
 
             lock (loggerLockObj)
             {
-                if (logDelegate == null)
-                {
-                    // Log to stderr by default if no logger is specified.
-                    Loggers.ConsoleLogger(this, new LogMessage(name, level, fac, buf));
-                    return;
-                }
-
                 logDelegate(new LogMessage(name, level, fac, buf));
             }
         }
@@ -805,8 +801,12 @@ namespace Confluent.Kafka
                             break;
                         }
                         var headerName = Util.Marshal.PtrToStringUTF8(namep);
-                        var headerValue = new byte[(int)sizep];
-                        Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                        byte[] headerValue = null;
+                        if (valuep != IntPtr.Zero)
+                        {
+                            headerValue = new byte[(int)sizep];
+                            Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                        }
                         headers.Add(headerName, headerValue);
                     }
                 }
@@ -909,12 +909,12 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.EnableBackgroundPollPropertyName &&
-                    prop.Key != ConfigPropertyNames.EnableDeliveryReportsPropertyName &&
-                    prop.Key != ConfigPropertyNames.DeliveryReportEnabledFieldsPropertyName &&
-                    prop.Key != ConfigPropertyNames.LogDelegateName &&
-                    prop.Key != ConfigPropertyNames.ErrorDelegateName &&
-                    prop.Key != ConfigPropertyNames.StatsDelegateName);
+                    prop.Key != ConfigPropertyNames.ProducerEnableBackgroundPoll &&
+                    prop.Key != ConfigPropertyNames.ProducerEnableDeliveryReports &&
+                    prop.Key != ConfigPropertyNames.ProducerDeliveryReportFields &&
+                    prop.Key != ConfigPropertyNames.LogCallback &&
+                    prop.Key != ConfigPropertyNames.ErrorCallback &&
+                    prop.Key != ConfigPropertyNames.StatsCallback);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -925,19 +925,19 @@ namespace Confluent.Kafka
                 throw new ArgumentException("The 'delivery.report.only.error' property is not supported by this client");
             }
 
-            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableBackgroundPollPropertyName).Value;
+            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ProducerEnableBackgroundPoll).Value;
             if (enableBackgroundPollObj != null)
             {
                 this.manualPoll = !bool.Parse(enableBackgroundPollObj.ToString());
             }
 
-            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.EnableDeliveryReportsPropertyName).Value;
+            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ProducerEnableDeliveryReports).Value;
             if (enableDeliveryReportsObj != null)
             {
                 this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
             }
 
-            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.DeliveryReportEnabledFieldsPropertyName).Value;
+            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ProducerDeliveryReportFields).Value;
             if (deliveryReportEnabledFieldsObj != null)
             {
                 var fields = deliveryReportEnabledFieldsObj.ToString().Replace(" ", "");
@@ -959,26 +959,30 @@ namespace Confluent.Kafka
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
                                 default: throw new ArgumentException(
-                                    $"Unexpected delivery report field name '{part}' in config value '{ConfigPropertyNames.DeliveryReportEnabledFieldsPropertyName}'.");
+                                    $"Unexpected delivery report field name '{part}' in config value '{ConfigPropertyNames.ProducerDeliveryReportFields}'.");
                             }
                         }
                     }
                 }
             }
 
-            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogDelegateName).Value;
+            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogCallback).Value;
             if (logDelegateObj != null)
             {
                 this.logDelegate = (Action<LogMessage>)logDelegateObj;
             }
+            else
+            {
+                this.logDelegate = Loggers.ConsoleLogger;
+            }
 
-            var errorDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorDelegateName).Value;
+            var errorDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorCallback).Value;
             if (errorDelegateObj != null)
             {
                 this.errorDelegate = (Action<Error>)errorDelegateObj;
             }
 
-            var statsDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsDelegateName).Value;
+            var statsDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsCallback).Value;
             if (statsDelegateObj != null)
             {
                 this.statsDelegate = (Action<string>)statsDelegateObj;

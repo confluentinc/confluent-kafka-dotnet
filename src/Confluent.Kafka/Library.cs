@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Threading;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl;
 
@@ -112,20 +113,17 @@ namespace Confluent.Kafka
         public static bool Load(string path)
             => Librdkafka.Initialize(path);
 
-        private static object instanceCountLockObj = new object();
         private static int kafkaHandleCreateCount = 0;
         private static int kafkaHandleDestroyCount = 0;
 
-        internal static void IncrementKafkaHandleCreateCount() { lock (instanceCountLockObj) { kafkaHandleCreateCount += 1; } }
-        internal static void IncrementKafkaHandleDestroyCount() { lock (instanceCountLockObj) { kafkaHandleDestroyCount += 1; } }
+        internal static void IncrementKafkaHandleCreateCount() { Interlocked.Increment(ref kafkaHandleCreateCount); }
+        internal static void IncrementKafkaHandleDestroyCount() { Interlocked.Increment(ref kafkaHandleDestroyCount); }
 
         /// <summary>
         ///     The total number librdkafka client instances that have been
         ///     created and not yet disposed.
         /// </summary>
         public static int HandleCount
-        {
-            get { lock(instanceCountLockObj) { return kafkaHandleCreateCount - kafkaHandleDestroyCount; } }
-        }
+            => kafkaHandleCreateCount - kafkaHandleDestroyCount;
     }
 }

@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 Assert.Empty(consumer.Assignment);
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignment += (_, partitions) =>
                 {
                     Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
@@ -63,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(0, (int)consumer.Assignment[0].Partition);
                 };
 
-                consumer.OnPartitionsRevoked += (_, partitions) =>
+                consumer.OnPartitionAssignmentRevoked += (_, partitions) =>
                 {
                     Assert.Single(consumer.Assignment);
                     consumer.Unassign();
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
 
-                consumer.OnPartitionsRevoked += (_, partitions) =>
+                consumer.OnPartitionAssignmentRevoked += (_, partitions) =>
                 {
                     Assert.Single(consumer.Assignment);
                     consumer.Unassign();
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignment += (_, partitions) =>
                 {
                     Assert.Empty(consumer.Assignment);
                     consumer.Assign(partitions);

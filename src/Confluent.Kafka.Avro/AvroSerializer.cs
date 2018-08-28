@@ -154,15 +154,15 @@ namespace Confluent.Kafka.Serialization
 
             if (avroConfig.Count() != 0)
             {
-                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.InitialBufferSizePropertyName, "AvroSerializer", typeof(int));
+                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.AvroSerializerBufferBytes, "AvroSerializer", typeof(int));
                 if (initialBufferSize != null) { this.initialBufferSize = initialBufferSize.Value; }
 
-                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.AutoRegisterSchemaPropertyName, "AvroSerializer", typeof(bool));
+                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.AvroSerializerAutoRegisterSchemas, "AvroSerializer", typeof(bool));
                 if (autoRegisterSchema != null) { this.autoRegisterSchema = autoRegisterSchema.Value; }
 
                 foreach (var property in avroConfig)
                 {
-                    if (property.Key != ConfigPropertyNames.AutoRegisterSchemaPropertyName && property.Key != ConfigPropertyNames.InitialBufferSizePropertyName)
+                    if (property.Key != ConfigPropertyNames.AvroSerializerAutoRegisterSchemas && property.Key != ConfigPropertyNames.AvroSerializerBufferBytes)
                     {
                         throw new ArgumentException($"{keyOrValue} AvroSerializer: unexpected configuration parameter {property.Key}");
                     }

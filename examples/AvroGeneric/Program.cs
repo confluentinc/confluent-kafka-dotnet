@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 { "bootstrap.servers", bootstrapServers },
                 { "group.id", Guid.NewGuid() },
                 { "schema.registry.url", schemaRegistryUrl },
-                { "error_cb", (Action<Error>)(error => Console.WriteLine("Error: " + error.Reason)) }
+                { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) }
             };
 
             // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));

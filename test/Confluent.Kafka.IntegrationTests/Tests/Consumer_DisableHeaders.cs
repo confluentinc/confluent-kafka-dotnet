@@ -42,8 +42,8 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "acks", "all" },
                 { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.enabled.fields", "timestamp,topic" },
-                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
+                { "dotnet.consumer.consume.result.fields", "timestamp,topic" },
+                { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
             };
 
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};

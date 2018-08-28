@@ -293,7 +293,7 @@ namespace Confluent.Kafka.Impl
                         pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
                         valuePtr = pinnedValue.AddrOfPinnedObject();
                     }
-                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)header.Value.Length);
+                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(header.Value == null ? 0 : header.Value.Length));
                     // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
                     pinnedKey.Free();
                     if (header.Value != null)
@@ -410,7 +410,7 @@ namespace Confluent.Kafka.Impl
         ///     - allTopics=false, topic=null - request only locally known topics (topic_new():ed topics or otherwise locally referenced once, such as consumed topics)
         ///     - allTopics=false, topic=valid - request specific topic
         /// </summary>
-        internal Metadata QueryMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
+        internal Metadata GetMetadata(bool allTopics, SafeTopicHandle topic, int millisecondsTimeout)
         {
             ThrowIfHandleClosed();
 
@@ -743,10 +743,10 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            SafeTopicHandle rtk = getKafkaTopicHandle(topic);
+            SafeTopicHandle rkt = getKafkaTopicHandle(topic);
 
             bool success = false;
-            rtk.DangerousAddRef(ref success);
+            rkt.DangerousAddRef(ref success);
 
             if (!success)
             {
@@ -756,11 +756,11 @@ namespace Confluent.Kafka.Impl
             ErrorCode result;
             try
             {
-                result = Librdkafka.seek(rtk.DangerousGetHandle(), partition, offset, (IntPtr)millisecondsTimeout);
+                result = Librdkafka.seek(rkt.DangerousGetHandle(), partition, offset, (IntPtr)millisecondsTimeout);
             }
             finally
             {
-                rtk.DangerousRelease();
+                rkt.DangerousRelease();
             }
             
             if (result != ErrorCode.NoError)
@@ -1216,7 +1216,7 @@ namespace Confluent.Kafka.Impl
             {
                 var topic = newPartitionsForTopic.Topic;
                 var increaseTo = newPartitionsForTopic.IncreaseTo;
-                var assignments = newPartitionsForTopic.Assignments;
+                var assignments = newPartitionsForTopic.ReplicaAssignments;
 
                 IntPtr ptr = Librdkafka.NewPartitions_new(topic, (UIntPtr)increaseTo, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                 if (ptr == IntPtr.Zero)

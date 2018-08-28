@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // the below are just a few extra tests that the property is recognized (all 
                 // set to defaults). the functionality is not tested.
                 { "dotnet.producer.enable.background.poll", true },
-                { "dotnet.producer.delivery.report.enabled.fields", "all" },
+                { "dotnet.producer.delivery.report.fields", "all" },
             };
 
             // If delivery reports are disabled:

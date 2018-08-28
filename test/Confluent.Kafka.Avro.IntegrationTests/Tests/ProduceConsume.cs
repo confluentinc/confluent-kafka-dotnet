@@ -47,7 +47,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
                 { "schema.registry.url", schemaRegistryServers },
-                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
+                { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
             };
 
             using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))

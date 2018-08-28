@@ -29,7 +29,6 @@ namespace Confluent.Kafka.Examples.Producer
 {
     public class Program
     {
-        // Note: async Main requires C# 7.1 or above.
         public static async Task Main(string[] args)
         {
             if (args.Length != 2)

@@ -122,10 +122,10 @@ namespace AvroBlogExample
                     catch (ConsumeException e)
                     {
                         Console.WriteLine($"an error occured: {e.Error.Reason}");
-                        break;
                     }
                 }
 
+                // commit final offsets and leave the group.
                 consumer.Close();
             }
         }

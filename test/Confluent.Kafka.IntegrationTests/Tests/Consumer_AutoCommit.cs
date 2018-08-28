@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionEOF += (_, tpo)
                     => done = true;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.OnPartitionAssignment += (_, partitions) =>
                 {
                     Assert.Single(partitions);
                     consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset));

@@ -67,7 +67,8 @@ namespace ConfluentCloudExample
                         ? $"error producing message: {task.Exception.Message}"
                         : $"produced to: {task.Result.TopicPartitionOffset}");
                 
-                // since the above call to ProduceAsync is asynchronous, 
+                // block until all in-flight produce requests have completed (successfully
+                // or otherwise) or 10s has elapsed.
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 

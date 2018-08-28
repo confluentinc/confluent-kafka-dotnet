@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     will be done by the controller. The outer list is indexed by the new 
         ///     partitions relative index, and the inner list contains the broker ids.
         /// </summary>
-        public List<List<int>> Assignments { get; set; } = null;
+        public List<List<int>> ReplicaAssignments { get; set; } = null;
 
         /// <summary>
         ///     The partition count for the specified topic is increased to this value.

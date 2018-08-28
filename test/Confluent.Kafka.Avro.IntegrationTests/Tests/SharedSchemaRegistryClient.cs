@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
-                { "error_cb", (Action<Error>)(error => Assert.True(false, error.Reason)) }
+                { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
             };
 
             var schemaRegistryConfig = new Dictionary<string, object>

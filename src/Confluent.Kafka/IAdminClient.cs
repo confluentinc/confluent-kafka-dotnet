@@ -53,15 +53,15 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.AdminClient.QueryMetadata(string, TimeSpan)" />
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetMetadata(string, TimeSpan)" />
         /// </summary>
-        Metadata QueryMetadata(string topic, TimeSpan timeout);
+        Metadata GetMetadata(string topic, TimeSpan timeout);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.AdminClient.QueryMetadata(TimeSpan)" />
+        ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetMetadata(TimeSpan)" />
         /// </summary>
-        Metadata QueryMetadata(TimeSpan timeout);
+        Metadata GetMetadata(TimeSpan timeout);
 
 
         /// <summary>

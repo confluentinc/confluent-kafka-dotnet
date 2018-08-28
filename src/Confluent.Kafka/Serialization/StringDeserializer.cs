@@ -88,7 +88,7 @@ namespace Confluent.Kafka.Serialization
         /// </summary>
         public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
         {
-            var propertyName = isKey ? ConfigPropertyNames.DeserializerKeyEncodingConfigParam : ConfigPropertyNames.DeserializerValueEncodingConfigParam;
+            var propertyName = isKey ? ConfigPropertyNames.StringDeserializerEncodingKey : ConfigPropertyNames.StringDeserializerEncodingValue;
             var keyOrValue = isKey ? "Key" : "Value";
 
             if (config.Any(ci => ci.Key == propertyName))

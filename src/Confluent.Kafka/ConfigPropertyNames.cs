@@ -16,7 +16,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: true
         /// </summary>
-        public const string EnableBackgroundPollPropertyName = "dotnet.producer.enable.background.poll";
+        public const string ProducerEnableBackgroundPoll = "dotnet.producer.enable.background.poll";
 
         /// <summary>
         ///     Specifies whether to enable notification of delivery reports. Typically
@@ -25,7 +25,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: true
         /// </summary>
-        public const string EnableDeliveryReportsPropertyName = "dotnet.producer.enable.delivery.reports";
+        public const string ProducerEnableDeliveryReports = "dotnet.producer.enable.delivery.reports";
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set in delivery
@@ -35,7 +35,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: all
         /// </summary>
-        public const string DeliveryReportEnabledFieldsPropertyName = "dotnet.producer.delivery.report.enabled.fields";
+        public const string ProducerDeliveryReportFields = "dotnet.producer.delivery.report.fields";
 
         // ---- Consumer
 
@@ -50,7 +50,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: all
         /// </summary>
-        public const string ConsumerEnabledFieldsPropertyName = "dotnet.consumer.enabled.fields";
+        public const string ConsumerConsumeResultFields = "dotnet.consumer.consume.result.fields";
 
 
         // ---- Client
@@ -73,7 +73,7 @@ namespace Confluent.Kafka
         ///     Confluent.Kafka APIs from within a log handler or perform any
         ///     prolonged operations.
         /// </remarks>
-        public const string LogDelegateName = "log_cb";
+        public const string LogCallback = "log_cb";
 
         /// <summary>
         ///     Specifies a delegate for handling error events e.g. connection
@@ -87,7 +87,7 @@ namespace Confluent.Kafka
         ///     (on the same thread) and on the Producer and AdminClient, on the
         ///     background poll thread.
         /// </remarks>
-        public const string ErrorDelegateName = "error_cb";
+        public const string ErrorCallback = "error_cb";
 
         /// <summary>
         ///     Specifies a delegate for handling statistics events - a JSON
@@ -104,7 +104,7 @@ namespace Confluent.Kafka
         ///     (on the same thread) and on the Producer and AdminClient, on the
         ///     background poll thread.
         /// </remarks>
-        public const string StatsDelegateName = "stats_cb";
+        public const string StatsCallback = "stats_cb";
 
 
         // ---- Deserializers
@@ -112,12 +112,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Specifies the encoding when deserializing string keys.
         /// </summary>
-        public const string DeserializerKeyEncodingConfigParam = "dotnet.string.deserializer.encoding.key";
+        public const string StringDeserializerEncodingKey = "dotnet.string.deserializer.encoding.key";
 
         /// <summary>
         ///     Specifies the encoding when deserializing string values.
         /// </summary>
-        public const string DeserializerValueEncodingConfigParam = "dotnet.string.deserializer.encoding.value";
+        public const string StringDeserializerEncodingValue = "dotnet.string.deserializer.encoding.value";
 
 
         // ---- Serializers
@@ -125,12 +125,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Specifies the encoding when serializing string keys.
         /// </summary>
-        public const string SerializerKeyEncodingConfigParam = "dotnet.string.serializer.encoding.key";
+        public const string StringSerializerEncodingKey = "dotnet.string.serializer.encoding.key";
 
         /// <summary>
         ///     Specifies the encoding when serializing string values.
         /// </summary>
-        public const string SerializerValueEncodingConfigParam = "dotnet.string.serializer.encoding.value";
+        public const string StringSerializerEncodingValue = "dotnet.string.serializer.encoding.value";
 
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: 1024
         /// </summary>
-        public const string InitialBufferSizePropertyName = "avro.serializer.buffer.bytes";
+        public const string AvroSerializerBufferBytes = "avro.serializer.buffer.bytes";
 
         /// <summary>
         ///     Specifies whether or not the Avro serializer should attempt to auto-register
@@ -150,7 +150,7 @@ namespace Confluent.Kafka
         ///
         ///     default: true
         /// </summary>
-        public const string AutoRegisterSchemaPropertyName = "avro.serializer.auto.register.schemas";
+        public const string AvroSerializerAutoRegisterSchemas = "avro.serializer.auto.register.schemas";
 
 
         // ---- Schema Registry Client
@@ -159,14 +159,14 @@ namespace Confluent.Kafka
         ///     A comma-separated list of URLs for schema registry instances that are
         ///     used to register or lookup schemas.
         /// </summary>
-        public const string SchemaRegistryUrlPropertyName = "schema.registry.url";
+        public const string SchemaRegistryUrl = "schema.registry.url";
 
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
         /// 
         ///     default: 30000
         /// </summary>
-        public const string SchemaRegistryRequestTimeoutMsPropertyName = "schema.registry.request.timeout.ms";
+        public const string SchemaRegistryRequestTimeoutMs = "schema.registry.request.timeout.ms";
 
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
@@ -174,6 +174,6 @@ namespace Confluent.Kafka
         /// 
         ///     default: 1000
         /// </summary>
-        public const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
+        public const string SchemaRegistryMaxCachedSchemas = "schema.registry.max.cached.schemas";
     }
 }

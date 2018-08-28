@@ -365,7 +365,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Create a batch of new topics.
+        ///     Create a set of new topics.
         /// </summary>
         /// <param name="topics">
         ///     A collection of specifications for the new topics to create.
@@ -459,7 +459,8 @@ namespace Confluent.Kafka
         ///     A collection of librdkafka configuration parameters 
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />)
+        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />). Only
+        ///     the bootstrap.servers property is required.
         /// </param>
         public AdminClient(IEnumerable<KeyValuePair<string, object>> config)
         {
@@ -542,7 +543,7 @@ namespace Confluent.Kafka
         ///     offsets for a topic/partition.
         /// </summary>
         /// <remarks>
-        ///     This method is only avilable on instances constructed from a Consumer
+        ///     This method is only available on instances constructed from a Consumer
         ///     handle. The low offset is updated periodically (if statistics.interval.ms 
         ///     is set) while the high offset is updated on each fetched message set from
         ///     the broker. If there is no cached offset (either low or high, or both) then
@@ -588,8 +589,8 @@ namespace Confluent.Kafka
         ///
         ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
         /// </summary>
-        public Metadata QueryMetadata(TimeSpan timeout)
-            => kafkaHandle.QueryMetadata(true, null, timeout.TotalMillisecondsAsInt());
+        public Metadata GetMetadata(TimeSpan timeout)
+            => kafkaHandle.GetMetadata(true, null, timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
@@ -597,8 +598,8 @@ namespace Confluent.Kafka
         /// 
         ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
         /// </summary>
-        public Metadata QueryMetadata(string topic, TimeSpan timeout)
-            => kafkaHandle.QueryMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
+        public Metadata GetMetadata(string topic, TimeSpan timeout)
+            => kafkaHandle.GetMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>

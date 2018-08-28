@@ -57,7 +57,7 @@ namespace Confluent.Kafka.Examples
             var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
             using (var adminClient = new AdminClient(config))
             {
-                var meta = adminClient.QueryMetadata(TimeSpan.FromSeconds(20));
+                var meta = adminClient.GetMetadata(TimeSpan.FromSeconds(20));
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
                 meta.Brokers.ForEach(broker =>
                     Console.WriteLine($"Broker: {broker.BrokerId} {broker.Host}:{broker.Port}"));
@@ -77,7 +77,7 @@ namespace Confluent.Kafka.Examples
 
         public static void Main(string[] args)
         {
-            Console.WriteLine($"Librdkafka Version: {Library.VersionString} ({Library.Version:X})");
+            Console.WriteLine($"librdkafka Version: {Library.VersionString} ({Library.Version:X})");
             Console.WriteLine($"Debug Contexts: {string.Join(", ", Library.DebugContexts)}");
 
             if (args.Contains("--list-groups"))

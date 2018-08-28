@@ -25,14 +25,14 @@ namespace Confluent.Kafka.Admin
     public class ConfigResource
     {
         /// <summary>
-        ///     The resource name (required)
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
         ///     The resource type (required)
         /// </summary>
         public ResourceType Type { get; set; }
+
+        /// <summary>
+        ///     The resource name (required)
+        /// </summary>
+        public string Name { get; set; }
 
         /// <summary>
         ///     Tests whether this ConfigResource instance is equal to the specified object.
@@ -108,6 +108,6 @@ namespace Confluent.Kafka.Admin
         ///     A string representation of the ConfigResource object.
         /// </returns>
         public override string ToString()
-            => $"{Name} ({Type})";
+            => $"[{Type}] {Name}";
     }
 }

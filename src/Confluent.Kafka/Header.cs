@@ -44,7 +44,7 @@ namespace Confluent.Kafka
         ///     The header key.
         /// </param>
         /// <param name="value">
-        ///     The header value.
+        ///     The header value (may be null).
         /// </param>
         public Header(string key, byte[] value)
         {

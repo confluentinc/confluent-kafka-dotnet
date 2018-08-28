@@ -102,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var cpResult = adminClient.CreatePartitionsAsync(
                     new List<PartitionsSpecification> 
                     {
-                        new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, Assignments = new List<List<int>> { new List<int> { 0 } } } 
+                        new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 0 } } } 
                     }, 
                     new CreatePartitionsOptions { ValidateOnly = true }
                 ).Result;
@@ -122,7 +122,7 @@ namespace Confluent.Kafka.IntegrationTests
                     var cpResult = adminClient.CreatePartitionsAsync(
                         new List<PartitionsSpecification> 
                         {
-                            new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, Assignments = new List<List<int>> { new List<int> { 42 } } } 
+                            new PartitionsSpecification { Topic = topicName2, IncreaseTo = 2, ReplicaAssignments = new List<List<int>> { new List<int> { 42 } } } 
                         }, 
                         new CreatePartitionsOptions { ValidateOnly = true }
                     ).Result;
