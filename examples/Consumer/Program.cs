@@ -68,11 +68,11 @@ namespace Confluent.Kafka.Examples.Consumer
                 // will start from last committed offsets or in accordance with
                 // the auto.offset.reset configuration parameter for partitions where
                 // there is no committed offset.
-                consumer.OnPartitionAssignment += (_, partitions)
+                consumer.OnPartitionsAssigned += (_, partitions)
                     => Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}], member id: {consumer.MemberId}");
 
                 // Raised when the consumer's current assignment set has been revoked.
-                consumer.OnPartitionAssignmentRevoked += (_, partitions)
+                consumer.OnPartitionsRevoked += (_, partitions)
                     => Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
 
                 consumer.OnPartitionEOF += (_, tpo)

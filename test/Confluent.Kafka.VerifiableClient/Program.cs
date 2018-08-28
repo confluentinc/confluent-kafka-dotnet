@@ -607,10 +607,10 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Send("startup_complete", new Dictionary<string, object>());
 
-            consumer.OnPartitionAssignment += (_, partitions)
+            consumer.OnPartitionsAssigned += (_, partitions)
                 => HandleAssign(partitions);
 
-            consumer.OnPartitionAssignmentRevoked += (_, partitions)
+            consumer.OnPartitionsRevoked += (_, partitions)
                 => HandleRevoke(partitions);
 
             // Only used when auto-commits enabled

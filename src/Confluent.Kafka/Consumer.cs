@@ -120,7 +120,7 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                var handler = OnPartitionAssignment;
+                var handler = OnPartitionsAssigned;
                 if (handler != null && handler.GetInvocationList().Length > 0)
                 {
                     assignCallCount = 0;
@@ -128,14 +128,14 @@ namespace Confluent.Kafka
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
-                        throw new InvalidOperationException($"Assign/Unassign was called {assignCallCount} times after OnPartitionAssigment was raised. It must be called at most once.");
+                        throw new InvalidOperationException($"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
                     }
                 }
                 Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                var handler = OnPartitionAssignmentRevoked;
+                var handler = OnPartitionsRevoked;
                 if (handler != null && handler.GetInvocationList().Length > 0)
                 {
                     assignCallCount = 0;
@@ -143,7 +143,7 @@ namespace Confluent.Kafka
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
-                        throw new InvalidOperationException($"Assign/Unassign was called {assignCallCount} times after OnPartitionAssigment was raised. It must be called at most once.");
+                        throw new InvalidOperationException($"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
                     }
                 }
                 Unassign();
@@ -531,7 +531,7 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionAssignment[Revoked], OnOffsetsCommitted and 
+        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and 
         ///     OnPartitionEOF events may be invoked as a side-effect of 
         ///     calling this method (on the same thread).
         /// </remarks>
@@ -551,7 +551,7 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionAssignment[Revoked], OnOffsetsCommitted and
+        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and
         ///     OnPartitionEOF events may be invoked as a side-effect of
         ///     calling this method (on the same thread).
         /// </remarks>
@@ -583,7 +583,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
         ///     (on the same thread).
         /// </remarks>
-        public event EventHandler<List<TopicPartition>> OnPartitionAssignment;
+        public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
 
 
         /// <summary>
@@ -601,7 +601,7 @@ namespace Confluent.Kafka
         ///     and <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close()" />
         ///     (on the same thread).
         /// </remarks>
-        public event EventHandler<List<TopicPartition>> OnPartitionAssignmentRevoked;
+        public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
 
 
         /// <summary>
@@ -1085,7 +1085,7 @@ namespace Confluent.Kafka
         ///     or <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unsubscribe" />,
         ///     the group will rebalance after a timeout specified by the group's 
         ///     `session.timeout.ms`. Note: the
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionAssignmentRevoked" />
+        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionsRevoked" />
         ///     and 
         ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnOffsetsCommitted" />
         ///     events may be called as a side-effect of calling this method.

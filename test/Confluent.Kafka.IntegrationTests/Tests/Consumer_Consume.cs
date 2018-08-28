@@ -52,14 +52,14 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnPartitionEOF += (_, tpo)
                     => done = true;
 
-                consumer.OnPartitionAssignment += (_, partitions) =>
+                consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
 
-                consumer.OnPartitionAssignmentRevoked += (_, partitions)
+                consumer.OnPartitionsRevoked += (_, partitions)
                     => consumer.Unassign();
 
                 consumer.Subscribe(singlePartitionTopic);

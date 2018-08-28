@@ -34,7 +34,6 @@
 - The `Consumer.OnConsumeError` has been removed. Consume errors are now exposed via a `ConsumeException`.
 - The `Consumer.Consume` method now returns a `ConsumeResult` object, rather than a `Message` via an out parameter.
 - Added `Consumer.ConsumeAsync` methods.
-- `OnPartitionsAssigned` and `OnPartitionsRevoked` have been renamed `OnPartitionAssignmentReceived` and `OnPartitionAssignmentRevoked`.
   - TODO: this is not finalized. there is an ongoing discussion relating to rebalence semantics.
 - `CommitAsync` errors are now reported via an exception and method return values have correspondingly changed.
 - `ListGroups`, `ListGroup`, `GetWatermarkOffsets`, `QueryWatermarkOffsets`, and `GetMetadata` have been removed from `Producer` and `Consumer` and exposed only via `AdminClient`.

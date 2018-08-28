@@ -50,10 +50,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
                 {
-                    consumer.OnPartitionAssignment += (_, partitions)
+                    consumer.OnPartitionsAssigned += (_, partitions)
                         => consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
 
-                    consumer.OnPartitionAssignmentRevoked += (_, partitions)
+                    consumer.OnPartitionsRevoked += (_, partitions)
                         => consumer.Unassign();
 
                     consumer.Subscribe(singlePartitionTopic);
