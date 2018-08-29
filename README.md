@@ -51,7 +51,11 @@ To add a reference to a dotnet core project, execute the following at the comman
 dotnet add package -v 1.0-experimental-12 Confluent.Kafka
 ```
 
-We recommend using the latest 1.0 beta version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. However, be warned that we may still make breaking API changes prior to the final 1.0 release. 
+We recommend using the latest 1.0-beta version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). 
+The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. However, be warned that we may still
+make breaking API changes prior to the final 1.0 release. 
+
+### Branch builds
 
 Nuget packages corresponding to all commits to release branches are available from the following nuget package source (Note: this is not a web URL - you 
 should specify it in the nuget package manger):
@@ -66,7 +70,12 @@ Take a look in the [examples](examples) directory for example usage. The [integr
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
 
-### Basic Producer Example
+### Basic Producer Examples
+
+You should use the `ProduceAsync` method if you would like to wait for the result of your produce
+requests before proceeding. You might typically want to do this in highly concurrent scenarios,
+for example in the context of handling web requests. Behind the scenes, the client will manage 
+optimizing communication with the Kafka brokers for you, batching requests as appropriate.
 
 ```csharp
 using System;
@@ -94,6 +103,44 @@ class Program
             {
                 Console.WriteLine($"Delivery failed: {e.Error.Reason}");
             }
+        }
+    }
+}
+```
+
+However, a server round-trip is slow (3ms at a minimum; actual latency depends on many factors).
+In highly concurrent scenarios you will get high overall throughput out of the producer using 
+the above approach, but there will be a delay on each `await` call. In stream processing 
+applications, where you would like to process many messages in rapid succession, you would typically
+make use the `BeginProduce` method instead:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Confluent.Kafka;
+using Confluent.Kafka.Serialization;
+
+class Program
+{
+    public static void Main(string[] args)
+    {
+        var conf = new Dictionary<string, object> { { "bootstrap.servers", "localhost:9092" } };
+
+        Action<DeliveryReportResult<Null, string>> handler = r => 
+            Console.WriteLine(!r.Error.IsError
+                ? $"Delivered message to {r.TopicPartitionOffset}"
+                : $"Delivery Error: {r.Error.Reason}");
+
+        using (var p = new Producer<Null, string>(conf, null, new StringSerializer(Encoding.UTF8)))
+        {
+            for (int i=0; i<100; ++i)
+            {
+                p.BeginProduce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
+            }
+
+            // wait for up to 10 seconds for any inflight messages to be delivered.
+            p.Flush(TimeSpan.FromSeconds(10));
         }
     }
 }
