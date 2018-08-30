@@ -53,7 +53,8 @@ dotnet add package -v 1.0-experimental-12 Confluent.Kafka
 
 We recommend using the latest 1.0-beta version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). 
 The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. However, be warned that we may still
-make breaking API changes prior to the final 1.0 release. 
+make breaking API changes prior to the final 1.0 release. You can track progress and provide feedback on the new 1.0 API
+[here](https://github.com/confluentinc/confluent-kafka-dotnet/issues/614).
 
 ### Branch builds
 
