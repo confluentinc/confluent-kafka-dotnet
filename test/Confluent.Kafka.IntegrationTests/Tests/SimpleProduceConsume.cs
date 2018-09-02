@@ -52,13 +52,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryReport<Null, string> produceResult1;
             DeliveryReport<Null, string> produceResult2;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);

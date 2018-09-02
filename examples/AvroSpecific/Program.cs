@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Serialization;
+using Confluent.SchemaRegistry;
 
 
 namespace Confluent.Kafka.Examples.AvroSpecific
@@ -40,6 +41,10 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var producerConfig = new Dictionary<string, object>
             {
                 { "bootstrap.servers", bootstrapServers },
+            };
+
+            var producerSRConfig = new Dictionary<string, object>
+            {
                 // Note: you can specify more than one schema registry url using the
                 // schema.registry.url property for redundancy (comma separated list). 
                 // The property name is not plural to follow the convention set by
@@ -57,7 +62,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 { "bootstrap.servers", bootstrapServers },
                 { "group.id", Guid.NewGuid() },
-                { "schema.registry.url", schemaRegistryUrl },
                 { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) }
             };
 
@@ -90,7 +94,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
+                using (var avro = new AvroSerdeProvider(new Dictionary<string, object> {{ "schema.registry.url", schemaRegistryUrl }}))
+                using (var consumer = new Consumer<string, User>(consumerConfig, avro.CreateAvroDeserializer<string>(), avro.CreateAvroDeserializer<User>()))
                 {
                     consumer.Subscribe(topicName);
 
@@ -111,7 +116,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 }
             }, cts.Token);
 
-            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
+            using (var avro = new AvroSerdeProvider(producerSRConfig))
+            using (var producer = new Producer<string, User>(producerConfig, avro.CreateAvroKeySerializer<string>(), avro.CreateAvroValueSerializer<User>()))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

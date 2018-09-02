@@ -35,7 +35,7 @@ namespace Confluent.Kafka.UnitTests
                 { "sasl.password", null }               
             };
             configWithNullValue["sasl.password"] = null;
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Producer<byte[], byte[]>(configWithNullValue, new ByteArraySerializer(), new ByteArraySerializer()); });
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Producer<byte[], byte[]>(configWithNullValue); });
             Assert.Contains("sasl.password", e.Message);
         }
     }

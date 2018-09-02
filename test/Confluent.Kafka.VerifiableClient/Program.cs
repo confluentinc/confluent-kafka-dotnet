@@ -158,7 +158,7 @@ namespace Confluent.Kafka.VerifiableClient
         public VerifiableProducer(VerifiableProducerConfig clientConfig)
         {
             Config = clientConfig;
-            Handle = new Producer<Null, string>(Config.Conf, new NullSerializer(), new StringSerializer(Encoding.UTF8));
+            Handle = new Producer<Null, string>(Config.Conf);
             ProduceLock = new object();
             Dbg("Created producer " + Handle.Name);
         }
@@ -316,7 +316,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
-            consumer = new Consumer<Null, string>(Config.Conf, new NullDeserializer(), new StringDeserializer(Encoding.UTF8));
+            consumer = new Consumer<Null, string>(Config.Conf, null, Deserializers.UTF8);
             consumedMsgsAtLastCommit = 0;
             Dbg($"Created Consumer {consumer.Name} with AutoCommit={Config.AutoCommit}");
         }

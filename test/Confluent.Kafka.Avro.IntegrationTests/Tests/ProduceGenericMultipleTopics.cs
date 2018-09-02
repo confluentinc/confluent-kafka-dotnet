@@ -30,11 +30,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                   }"
             );
 
-            var config = new Dictionary<string, object>()
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var config = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var srConfig = new Dictionary<string, object> { { "schema.registry.url", schemaRegistryServers } };
 
             var topic = Guid.NewGuid().ToString();
             var topic2 = Guid.NewGuid().ToString();
@@ -42,7 +39,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             DeliveryReport<Null, GenericRecord> dr;
             DeliveryReport<Null, GenericRecord> dr2;
 
-            using (var p = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
+            using (var avro = new AvroSerdeProvider(srConfig))
+            using (var p = new Producer<Null, GenericRecord>(config, null, avro.CreateAvroValueSerializer<GenericRecord>()))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");

@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             var drs = new List<Task<DeliveryReport<string, string>>>();
-            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<string, string>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),

@@ -50,12 +50,12 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers }
             };
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" }).Wait();
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
                 consumer.Consume(TimeSpan.FromMilliseconds(1000));

@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "bootstrap.servers", bootstrapServers },
                 { "dotnet.producer.enable.background.poll", false }
             };
-            var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer());
+            var producer = new Producer<byte[], byte[]>(producerConfig);
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
@@ -64,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers }
             };
-            var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer());
+            var consumer = new Consumer<byte[], byte[]>(consumerConfig);
             consumer.Consume(TimeSpan.FromMilliseconds(10));
             consumer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));

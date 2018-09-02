@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             for (int i=0; i<4; ++i)
             {
-                using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+                using (var consumer = new Consumer<Null, string>(consumerConfig))
                 {
                     consumer.OnPartitionsAssigned += (_, partitions)
                         => consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));

@@ -46,7 +46,6 @@ namespace Confluent.Kafka.Serialization
         /// </returns>
         T Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull);
 
-
         /// <summary>
         ///     Configure the deserializer using relevant configuration parameter(s) in <paramref name="config" /> (if present).
         /// </summary>

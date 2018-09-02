@@ -23,6 +23,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Serialization;
@@ -30,6 +31,8 @@ using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka
 {
+    public delegate byte[] Serializer<T>(string topic, T data);
+
     /// <summary>
     ///     Implements a high-level Apache Kafka producer with key
     ///     and value serialization.
@@ -39,22 +42,29 @@ namespace Confluent.Kafka
         private readonly Producer ownedClient;
         private readonly Handle handle;
         private Producer producer;
-        private ISerializer<TKey> keySerializer;
-        private ISerializer<TValue> valueSerializer;
+        private Serializer<TKey> keySerializer;
+        private Serializer<TValue> valueSerializer;
 
-        private void setAndValidateSerializers(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
+        private void setAndValidateSerializers(Serializer<TKey> keySerializer, Serializer<TValue> valueSerializer)
         {
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
 
-            if (keySerializer != null && keySerializer == valueSerializer)
-            {
-                throw new ArgumentException("Key and value serializers must not be the same object.");
-            }
-
             if (keySerializer == null)
             {
-                if (typeof(TKey) != typeof(Null))
+                if (typeof(TKey) == typeof(Null))
+                {
+                    this.keySerializer = Serializers.Null as Serializer<TKey>;
+                }
+                else if (typeof(TKey) == typeof(byte[]))
+                {
+                    this.keySerializer = Serializers.ByteArray as Serializer<TKey>;
+                }
+                else if (typeof(TKey) == typeof(string))
+                {
+                    this.keySerializer = Serializers.UTF8 as Serializer<TKey>;
+                }
+                else
                 {
                     throw new ArgumentNullException("Key serializer must be specified.");
                 }
@@ -62,7 +72,19 @@ namespace Confluent.Kafka
 
             if (valueSerializer == null)
             {
-                if (typeof(TValue) != typeof(Null))
+                if (typeof(TValue) == typeof(Null))
+                {
+                    this.valueSerializer = Serializers.Null as Serializer<TValue>;
+                }
+                else if (typeof(TValue) == typeof(byte[]))
+                {
+                    this.valueSerializer = Serializers.ByteArray as Serializer<TValue>;
+                }
+                else if (typeof(TValue) == typeof(string))
+                {
+                    this.valueSerializer = Serializers.UTF8 as Serializer<TValue>;
+                }
+                else
                 {
                     throw new ArgumentNullException("Value serializer must be specified.");
                 }
@@ -88,18 +110,10 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(
             IEnumerable<KeyValuePair<string, object>> config,
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer)
+            Serializer<TKey> keySerializer = null,
+            Serializer<TValue> valueSerializer = null)
         {
-            var configWithoutKeySerializerProperties = keySerializer?.Configure(config, true) ?? config;
-            var configWithoutValueSerializerProperties = valueSerializer?.Configure(config, false) ?? config;
-
-            var configWithoutSerializerProperties = config.Where(item => 
-                configWithoutKeySerializerProperties.Any(ci => ci.Key == item.Key) &&
-                configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
-            );
-
-            this.ownedClient = new Producer(configWithoutSerializerProperties);
+            this.ownedClient = new Producer(config);
             this.handle = ownedClient.Handle;
             this.producer = ownedClient;
             setAndValidateSerializers(keySerializer, valueSerializer);
@@ -120,8 +134,8 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(
             Handle handle,
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer)
+            Serializer<TKey> keySerializer = null,
+            Serializer<TValue> valueSerializer = null)
         {
             if (!(handle.Owner is Producer))
             {
@@ -269,16 +283,6 @@ namespace Confluent.Kafka
         {
             if (disposing)
             {
-                if (keySerializer != null)
-                {
-                    keySerializer.Dispose();
-                }
-
-                if (valueSerializer != null)
-                {
-                    valueSerializer.Dispose();
-                }
-
                 if (ownedClient == this.handle.Owner) 
                 {
                     ownedClient.Dispose();
@@ -451,8 +455,8 @@ namespace Confluent.Kafka
 
                 cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
-                var keyBytes = keySerializer?.Serialize(topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topic, message.Value);
+                var keyBytes = keySerializer(topic, message.Key);
+                var valBytes = valueSerializer(topic, message.Value);
 
                 producer.ProduceImpl(
                     topic,
@@ -465,8 +469,8 @@ namespace Confluent.Kafka
             }
             else
             {
-                var keyBytes = keySerializer?.Serialize(topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topic, message.Value);
+                var keyBytes = keySerializer(topic, message.Key);
+                var valBytes = valueSerializer(topic, message.Value);
 
                 producer.ProduceImpl(
                     topic,
@@ -512,8 +516,8 @@ namespace Confluent.Kafka
 
                 cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
-                var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+                var keyBytes = keySerializer(topicPartition.Topic, message.Key);
+                var valBytes = valueSerializer(topicPartition.Topic, message.Value);
                 
                 producer.ProduceImpl(
                     topicPartition.Topic, 
@@ -526,8 +530,8 @@ namespace Confluent.Kafka
             }
             else
             {
-                var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+                var keyBytes = keySerializer(topicPartition.Topic, message.Key);
+                var valBytes = valueSerializer(topicPartition.Topic, message.Value);
                 
                 producer.ProduceImpl(
                     topicPartition.Topic, 
@@ -562,8 +566,8 @@ namespace Confluent.Kafka
         /// </param>
         public void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
         {
-            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+            var keyBytes = keySerializer(topicPartition.Topic, message.Key);
+            var valBytes = valueSerializer(topicPartition.Topic, message.Value);
 
             producer.ProduceImpl(
                 topicPartition.Topic,
@@ -598,8 +602,8 @@ namespace Confluent.Kafka
         /// </param>
         public void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
         {
-            var keyBytes = keySerializer?.Serialize(topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+            var keyBytes = keySerializer(topic, message.Key);
+            var valBytes = valueSerializer(topic, message.Value);
 
             producer.ProduceImpl(
                 topic,

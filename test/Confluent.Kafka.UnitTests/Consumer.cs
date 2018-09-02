@@ -31,27 +31,17 @@ namespace Confluent.Kafka.UnitTests
             // Throw exception if 'group.id' is not set in config and ensure that exception
             // mentions 'group.id'.
             var config = new Dictionary<string, object>();
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(config, Deserializers.ByteArray, Deserializers.ByteArray); });
             Assert.Contains("group.id", e.Message);
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, Deserializers.UTF8); });
             Assert.Contains("group.id", e.Message);
 
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.
             var configWithNullValue = CreateValidConfiguration();
             configWithNullValue["sasl.password"] = null;
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue, Deserializers.ByteArray, Deserializers.ByteArray); });
             Assert.Contains("sasl.password", e.Message);
-
-            // Throw exception when serializer and deserializer are equal and ensure that exception
-            // message indicates the issue.
-            e = Assert.Throws<ArgumentException>(() => 
-            {
-                var validConfig = CreateValidConfiguration();
-                var deserializer = new StringDeserializer(Encoding.UTF8);
-                var c = new Consumer<string, string>(validConfig, deserializer, deserializer); 
-            });
-            Assert.Contains("must not be the same object", e.Message);
 
             // positve case covered by integration tests. here, avoiding creating a rd_kafka_t instance.
         }

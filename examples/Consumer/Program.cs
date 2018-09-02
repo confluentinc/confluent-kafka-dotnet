@@ -54,7 +54,7 @@ namespace Confluent.Kafka.Examples.Consumer
 
             const int commitPeriod = 5;
 
-            using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 // Note: All event handlers are called on the main .Consume thread.
                 
@@ -132,13 +132,18 @@ namespace Confluent.Kafka.Examples.Consumer
                 { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) }
             };
 
-            using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
 
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
                     => Console.WriteLine($"End of partition: {topicPartitionOffset}");
 
+                foreach (var cr in consumer)
+                {
+                    Console.WriteLine(cr.Value);
+                }
+                
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     try

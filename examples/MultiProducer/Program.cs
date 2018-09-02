@@ -32,10 +32,10 @@ namespace Confluent.Kafka.Examples.MultiProducer
         {
             var config = new Dictionary<string, object> { { "bootstrap.servers", args[0] } };
 
-            using (var producer = new Producer<string, string>(config, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<string, string>(config))
             {
                 // create a producer of different type that reuses producer's Handle.
-                var producer2 = new Producer<Null, int>(producer.Handle, null, new IntSerializer());
+                var producer2 = new Producer<Null, int>(producer.Handle, null, Serializers.Int32);
 
                 // write (string, string) data to topic "first-topic", statically type checked.
                 producer.ProduceAsync("first-topic", new Message<string, string> { Key = "my-key-value", Value = "my-value" });

@@ -55,7 +55,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<string, string>(producerConfig))
             {
                 producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0), 

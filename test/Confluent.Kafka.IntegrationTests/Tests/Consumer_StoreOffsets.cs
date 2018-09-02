@@ -45,8 +45,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
