@@ -60,7 +60,7 @@ namespace ConfluentCloudExample
                 { "sasl.password", "<ccloud secret>" }
             };
 
-            using (var producer = new Producer<Null, string>(pConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(pConfig))
             {
                 producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Key = null, Value = "test value" })
                     .ContinueWith(task => task.IsFaulted
@@ -87,10 +87,27 @@ namespace ConfluentCloudExample
                 { "auto.offset.reset", "smallest" }
             };
 
-            using (var consumer = new Consumer<Null, string>(cConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(cConfig))
             { 
                 consumer.Subscribe("dotnet-test-topic");
 
+                try
+                {
+                    var consumeResult = consumer.Consume();
+                    Console.WriteLine($"consumed: {consumeResult.Value}");
+                }
+                catch (ConsumeException e)
+                {
+                    Console.WriteLine($"consume error: {e.Error.Reason}");
+                }
+
+                consumer.Close();
+            }
+
+            using (var consumer = new Consumer<byte[], byte[]>(cConfig))
+            {
+                consumer.Subscribe("dotnet-test-topic");
+                
                 try
                 {
                     var consumeResult = consumer.Consume();

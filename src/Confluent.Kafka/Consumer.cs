@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -29,10 +30,12 @@ using Confluent.Kafka.Serialization;
 
 namespace Confluent.Kafka
 {
+    public delegate T Deserializer<T>(string topic, ReadOnlySpan<byte> data, bool isNull);
+
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer.
     /// </summary>
-    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
+    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IEnumerable<ConsumeResult<TKey, TValue>>
     {
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
@@ -47,8 +50,9 @@ namespace Confluent.Kafka
         private readonly bool enableTimestampMarshaling = true;
         private readonly bool enableTopicNamesMarshaling = true;
 
-        private IDeserializer<TKey> KeyDeserializer { get; }
-        private IDeserializer<TValue> ValueDeserializer { get; }
+
+        private Deserializer<TKey> KeyDeserializer { get; }
+        private Deserializer<TValue> ValueDeserializer { get; }
 
         private readonly SafeKafkaHandle kafkaHandle;
 
@@ -186,28 +190,31 @@ namespace Confluent.Kafka
         /// </param>
         public Consumer(
             IEnumerable<KeyValuePair<string, object>> config,
-            IDeserializer<TKey> keyDeserializer,
-            IDeserializer<TValue> valueDeserializer)
+            Deserializer<TKey> keyDeserializer = null,
+            Deserializer<TValue> valueDeserializer = null)
         {
             Librdkafka.Initialize(null);
 
             KeyDeserializer = keyDeserializer;
             ValueDeserializer = valueDeserializer;
 
-            if (keyDeserializer != null && keyDeserializer == valueDeserializer)
-            {
-                throw new ArgumentException("Key and value deserializers must not be the same object.");
-            }
-
             if (KeyDeserializer == null)
             {
                 if (typeof(TKey) == typeof(Null))
                 {
-                    KeyDeserializer = (IDeserializer<TKey>)new NullDeserializer();
+                    KeyDeserializer = Deserializers.Null as Deserializer<TKey>;
                 }
                 else if (typeof(TKey) == typeof(Ignore))
                 {
-                    KeyDeserializer = (IDeserializer<TKey>)new IgnoreDeserializer();
+                    KeyDeserializer = Deserializers.Ignore as Deserializer<TKey>;
+                }
+                else if (typeof(TKey) == typeof(string))
+                {
+                    KeyDeserializer = Deserializers.UTF8 as Deserializer<TKey>;
+                }
+                else if (typeof(TKey) == typeof(byte[]))
+                {
+                    KeyDeserializer = Deserializers.ByteArray as Deserializer<TKey>;
                 }
                 else
                 {
@@ -219,11 +226,19 @@ namespace Confluent.Kafka
             {
                 if (typeof(TValue) == typeof(Null))
                 {
-                    ValueDeserializer = (IDeserializer<TValue>)new NullDeserializer();
+                    ValueDeserializer = Deserializers.Null as Deserializer<TValue>;
                 }
                 else if (typeof(TValue) == typeof(Ignore))
                 {
-                    ValueDeserializer = (IDeserializer<TValue>)new IgnoreDeserializer();
+                    ValueDeserializer = Deserializers.Ignore as Deserializer<TValue>;
+                }
+                else if (typeof(TValue) == typeof(string))
+                {
+                    ValueDeserializer = Deserializers.UTF8 as Deserializer<TValue>;
+                }
+                else if (typeof(TValue) == typeof(byte[]))
+                {
+                    ValueDeserializer = Deserializers.ByteArray as Deserializer<TValue>;
                 }
                 else
                 {
@@ -231,29 +246,19 @@ namespace Confluent.Kafka
                 }
             }
 
-            var configWithoutKeyDeserializerProperties = KeyDeserializer.Configure(config, true);
-            var configWithoutValueDeserializerProperties = ValueDeserializer.Configure(config, false);
-
-            var configWithoutDeserializerProperties = config.Where(item => 
-                configWithoutKeyDeserializerProperties.Any(ci => ci.Key == item.Key) &&
-                configWithoutValueDeserializerProperties.Any(ci => ci.Key == item.Key)
-            );
-
-            config = null;
-
-            if (configWithoutDeserializerProperties.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
+            if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
             }
 
-            var modifiedConfig = configWithoutDeserializerProperties
+            var modifiedConfig = config
                 .Where(prop => 
                     prop.Key != ConfigPropertyNames.ConsumerConsumeResultFields &&
                     prop.Key != ConfigPropertyNames.LogCallback &&
                     prop.Key != ConfigPropertyNames.ErrorCallback &&
                     prop.Key != ConfigPropertyNames.StatsCallback);
 
-            var enabledFieldsObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ConsumerConsumeResultFields).Value;
+            var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ConsumerConsumeResultFields).Value;
             if (enabledFieldsObj != null)
             {
                 var fields = enabledFieldsObj.ToString().Replace(" ", "");
@@ -280,7 +285,7 @@ namespace Confluent.Kafka
                 }
             }
 
-            var logDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogCallback).Value;
+            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogCallback).Value;
             if (logDelegateObj != null)
             {
                 this.logDelegate = (Action<LogMessage>)logDelegateObj;
@@ -290,13 +295,13 @@ namespace Confluent.Kafka
                 this.logDelegate = Loggers.ConsoleLogger;
             }
 
-            var errorDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorCallback).Value;
+            var errorDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorCallback).Value;
             if (errorDelegateObj != null)
             {
                 this.errorDelegate = (Action<ErrorEvent>)errorDelegateObj;
             }
 
-            var statsDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsCallback).Value;
+            var statsDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsCallback).Value;
             if (statsDelegateObj != null)
             {
                 this.statsDelegate = (Action<string>)statsDelegateObj;
@@ -447,7 +452,7 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        key = this.KeyDeserializer.Deserialize(
+                        key = this.KeyDeserializer(
                             topic,
                             msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
                             msg.key == IntPtr.Zero
@@ -477,7 +482,7 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        val = this.ValueDeserializer.Deserialize(
+                        val = this.ValueDeserializer(
                             topic, 
                             msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
                             msg.val == IntPtr.Zero);
@@ -1142,9 +1147,6 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
-                KeyDeserializer?.Dispose();
-                ValueDeserializer?.Dispose();
-
                 // calls to rd_kafka_destroy may result in callbacks
                 // as a side-effect. however the callbacks this class
                 // registers with librdkafka ensure that any registered
@@ -1154,5 +1156,36 @@ namespace Confluent.Kafka
             }
         }
 
+        public class ConsumerEnumerator : IEnumerator<ConsumeResult<TKey, TValue>>
+        {
+            public ConsumeResult<TKey, TValue> Current => throw new NotImplementedException();
+
+            object IEnumerator.Current => throw new NotImplementedException();
+
+            public void Dispose()
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool MoveNext()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Reset()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public IEnumerator<ConsumeResult<TKey, TValue>> GetEnumerator()
+        {
+            return new ConsumerEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

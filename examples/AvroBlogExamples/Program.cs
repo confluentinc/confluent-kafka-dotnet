@@ -35,13 +35,11 @@ namespace AvroBlogExample
     {
         static void ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
+            var config = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var srConfig = new Dictionary<string, object> { { "schema.registry.url", schemaRegistryUrl } };
 
-            using (var producer = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
+            using (var avro = new AvroSerdeProvider(srConfig))
+            using (var producer = new Producer<Null, GenericRecord>(config, null, avro.CreateAvroValueSerializer<GenericRecord>()))
             {
                 var logLevelSchema = (EnumSchema)Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
@@ -68,13 +66,11 @@ namespace AvroBlogExample
 
         static void ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
+            var config = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var srConfig = new Dictionary<string, object> { { "schema.registry.url", schemaRegistryUrl } };
 
-            using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, new AvroSerializer<MessageTypes.LogMessage>()))
+            using (var avro = new AvroSerdeProvider(srConfig))
+            using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, avro.CreateAvroValueSerializer<MessageTypes.LogMessage>()))
             {
                 producer.ProduceAsync("log-messages", 
                     new Message<Null, MessageTypes.LogMessage> 
@@ -103,12 +99,12 @@ namespace AvroBlogExample
             {
                 { "group.id", Guid.NewGuid().ToString() },
                 { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl },
-                { "auto.offset.reset", "beginning" }
+                { "auto.offset.reset", "beginning" },
+                { "schema.registry.url", schemaRegistryUrl }
             };
 
-            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(
-                consumerConfig, null, new AvroDeserializer<MessageTypes.LogMessage>()))
+            using (var avro = new AvroSerdeProvider(consumerConfig.Where(c => c.Key.StartsWith("schema.registry"))))
+            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(consumerConfig.Where(c => !c.Key.StartsWith("schema.registry")), null, avro.CreateAvroDeserializer<MessageTypes.LogMessage>()))
             {
                 consumer.Subscribe("log-messages");
 

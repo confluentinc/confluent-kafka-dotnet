@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             TopicPartitionOffset firstProduced = null;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
                 firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }).Result.TopicPartitionOffset;
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // test key deserialization error behavior
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 int msgCnt = 0;
                 int errCnt = 0;
@@ -106,7 +106,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test value deserialization error behavior
-            using (var consumer = new Consumer<string, Null>(consumerConfig, new StringDeserializer(Encoding.UTF8), null))
+            using (var consumer = new Consumer<string, Null>(consumerConfig))
             {
                 int msgCnt = 0;
                 int errCnt = 0;

@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
 
             DeliveryReport<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 dr = producer.ProduceAsync(
                     singlePartitionTopic,
@@ -61,7 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Result;
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 

@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
                 { "enable.auto.commit", false }
             };
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 bool done = false;
                 consumer.OnPartitionEOF += (_, tpo)

@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
 
-            using (var producer = new Producer<byte[], byte[]>(config, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(config))
             {
                 for (var j=0; j<nTests; j += 1)
                 {

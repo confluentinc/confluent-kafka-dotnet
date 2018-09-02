@@ -46,11 +46,16 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 { "group.id", Guid.NewGuid().ToString() },
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
-                { "schema.registry.url", schemaRegistryServers },
                 { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
             };
 
-            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
+            var srConfig = new Dictionary<string, object>
+            {
+                { "schema.registry.url", schemaRegistryServers }
+            };
+
+            using (var avro = new AvroSerdeProvider(srConfig))
+            using (var producer = new Producer<string, User>(producerConfig, avro.CreateAvroKeySerializer<string>(), avro.CreateAvroValueSerializer<User>()))
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -65,7 +70,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
+            using (var avro = new AvroSerdeProvider(srConfig))
+            using (var consumer = new Consumer<string, User>(consumerConfig, avro.CreateAvroDeserializer<string>(), avro.CreateAvroDeserializer<User>()))
             {
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
