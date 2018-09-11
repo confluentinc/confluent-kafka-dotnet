@@ -93,7 +93,7 @@ class Program
         var config = new Dictionary<string, object> { { "bootstrap.servers", "localhost:9092" } };
 
         // A Producer for sending messages with null keys and UTF-8 encoded values.
-        using (var p = new Producer<Null, string>(config, null, new StringSerializer(Encoding.UTF8)))
+        using (var p = new Producer<Null, string>(config))
         {
             try
             {
@@ -133,7 +133,7 @@ class Program
                 ? $"Delivered message to {r.TopicPartitionOffset}"
                 : $"Delivery Error: {r.Error.Reason}");
 
-        using (var p = new Producer<Null, string>(conf, null, new StringSerializer(Encoding.UTF8)))
+        using (var p = new Producer<Null, string>(conf))
         {
             for (int i=0; i<100; ++i)
             {
@@ -168,7 +168,7 @@ class Program
             { "auto.offset.reset", "earliest" }
         };
 
-        using (var c = new Consumer<Ignore, string>(conf, null, new StringDeserializer(Encoding.UTF8)))
+        using (var c = new Consumer<Ignore, string>(conf))
         {
             c.Subscribe("my-topic");
 

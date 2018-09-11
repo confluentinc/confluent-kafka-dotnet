@@ -55,28 +55,28 @@ namespace Confluent.Kafka.IntegrationTests
                 { "session.timeout.ms", 6000 }
             };
 
-            using (var typedProducer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var typedProducer = new Producer<Null, string>(producerConfig))
             {
                 TestMetadata(
                     () => typedProducer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
                     typedProducer.AddBrokers);
             }
 
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 TestMetadata(
                     () => producer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
                     producer.AddBrokers);
             }
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
             {
                 TestMetadata(
                     () => consumer.GetMetadata(false, TimeSpan.FromSeconds(3)),
                     consumer.AddBrokers);
             }
 
-            using (var typedConsumer = new Consumer<Null, Null>(consumerConfig, new NullDeserializer(), new NullDeserializer()))
+            using (var typedConsumer = new Consumer<Null, Null>(consumerConfig))
             {
                 TestMetadata(
                     () => typedConsumer.GetMetadata(false, TimeSpan.FromSeconds(3)),

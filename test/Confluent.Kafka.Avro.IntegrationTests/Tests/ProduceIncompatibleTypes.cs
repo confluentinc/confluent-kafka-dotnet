@@ -32,29 +32,26 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var consumerConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString(),
+                SessionTimeoutMs = 6000,
+                AutoOffsetReset = AutoOffsetResetType.Earliest,
             };
-
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "group.id", Guid.NewGuid().ToString() },
-                { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
-            using (var producer = new Producer<string, string>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<string>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, string>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<string>()))
             {
                 producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var producer = new Producer<int, string>(producerConfig, new AvroSerializer<int>(), new AvroSerializer<string>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<int, string>(producerConfig, serdeProvider.CreateKeySerializer<int>(), serdeProvider.CreateValueSerializer<string>()))
             {
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
@@ -69,7 +66,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 });
             }
 
-            using (var producer = new Producer<string, int>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<int>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
             {
                 Assert.Throws<SchemaRegistryException>(() =>
                 {

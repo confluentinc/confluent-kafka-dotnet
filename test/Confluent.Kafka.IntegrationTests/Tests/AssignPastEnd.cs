@@ -36,26 +36,26 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start AssignPastEnd");
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000
             };
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var testString = "hello world";
 
             DeliveryReport<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.True(dr.Offset >= 0);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            consumerConfig["auto.offset.reset"] = "latest";
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            consumerConfig.AutoOffsetReset = AutoOffsetResetType.Latest;
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
             {
                 ConsumeResult<byte[], byte[]> record;
 
@@ -68,8 +68,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(record);
             }
 
-            consumerConfig["auto.offset.reset"] = "earliest";
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            consumerConfig.AutoOffsetReset = AutoOffsetResetType.Earliest;
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
             {
                 ConsumeResult<byte[], byte[]> record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });

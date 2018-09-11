@@ -35,23 +35,23 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start MessageHeaderProduceConsume");
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "max.in.flight", 1 }
+                BootstrapServers = bootstrapServers,
+                MaxInFlight = 1
             };
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000
             };
 
             var drs = new List<DeliveryReportResult<Null, string>>();
             DeliveryReport<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
             DeliveryReport<Null, string> dr_ol1, dr_ol3;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 // single header value.
                 var headers = new Headers();
@@ -125,7 +125,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             List<DeliveryReportResult<byte[], byte[]>> drs_2 = new List<DeliveryReportResult<byte[], byte[]>>();
             DeliveryReport<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 var headers = new Headers();
                 headers.Add("hkey", new byte[] { 44 });
@@ -158,7 +158,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(drs_2[3].Message.Headers);
             }
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new ByteArrayDeserializer(), new ByteArrayDeserializer()))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_single.TopicPartitionOffset});
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -275,7 +275,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // null key
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 var headers = new Headers();
                 var threw = false;
@@ -299,7 +299,7 @@ namespace Confluent.Kafka.IntegrationTests
             // null value
 
             DeliveryReport<Null, string> nulldr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 var headers = new Headers();
                 headers.Add("my-header", null);
@@ -307,7 +307,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(nulldr.Headers);
                 Assert.Null(nulldr.Headers[0].Value);
             }
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, nulldr.Offset));
                 var cr = consumer.Consume(TimeSpan.FromSeconds(20));

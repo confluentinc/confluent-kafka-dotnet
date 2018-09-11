@@ -38,24 +38,24 @@ namespace Confluent.Kafka.IntegrationTests
             var logCount = 0;
             Action<LogMessage> logger = (LogMessage m) => logCount += 1;
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "debug", "all" },
-                { "log_cb", logger }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                Debug = "all",
+                LogCallback = logger
             };
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "debug", "all" },
-                { "log_cb", logger }
+                BootstrapServers = bootstrapServers,
+                Debug = "all",
+                LogCallback = logger
             };
 
             DeliveryReport<Null, string> dr;
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
@@ -63,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(logCount > 0);
 
             logCount = 0;
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.Consume(TimeSpan.FromMilliseconds(100));
             }

@@ -60,15 +60,9 @@ namespace Confluent.Kafka.Serialization
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Serialization.ISerializer{T}.Configure(IEnumerable{KeyValuePair{string, object}}, bool)" />
+        ///     Refer to <see cref="Confluent.Kafka.Serialization.ISerializer{T}.Configure(IEnumerable{KeyValuePair{string, string}}, bool)" />
         /// </summary>
-        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+        public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
             => config;
-
-
-        /// <summary>
-        ///     Releases any unmanaged resources owned by the serializer (noop for this type).
-        /// </summary>
-        public void Dispose() {}
     }
 }

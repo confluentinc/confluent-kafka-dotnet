@@ -47,16 +47,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                   }"
             );
 
-            var config = new Dictionary<string, object>()
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var config = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
 
             DeliveryReport<Null, GenericRecord> dr;
-            using (var p = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.CreateValueSerializer<GenericRecord>()))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
@@ -66,7 +64,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             // produce a specific record (to later consume back as a generic record).
-            using (var p = new Producer<Null, User>(config, null, new AvroSerializer<User>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var p = new Producer<Null, User>(config, null, serdeProvider.CreateValueSerializer<User>()))
             {
                 var user = new User
                 {
@@ -90,14 +89,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             Assert.Equal(44, number);
             Assert.Null(color);
 
-            var cconfig = new Dictionary<string, object>()
-            {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var cconfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
-            using (var consumer = new Consumer<Null, GenericRecord>(cconfig, null, new AvroDeserializer<GenericRecord>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var consumer = new Consumer<Null, GenericRecord>(cconfig, null, serdeProvider.CreateDeserializer<GenericRecord>()))
             {
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
@@ -128,7 +123,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("orange", msgColor);
             }
 
-            using (var consumer = new Consumer<Null, User>(cconfig, null, new AvroDeserializer<User>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var consumer = new Consumer<Null, User>(cconfig, null, serdeProvider.CreateDeserializer<User>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.Consume(TimeSpan.FromSeconds(20));

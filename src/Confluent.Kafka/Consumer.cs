@@ -166,7 +166,6 @@ namespace Confluent.Kafka
             ));
         }
 
-
         /// <summary>
         ///     Creates a new <see cref="Confluent.Kafka.Consumer{TKey, TValue}" /> instance.
         /// </summary>
@@ -185,9 +184,9 @@ namespace Confluent.Kafka
         ///     An IDeserializer implementation instance for deserializing values.
         /// </param>
         public Consumer(
-            IEnumerable<KeyValuePair<string, object>> config,
-            IDeserializer<TKey> keyDeserializer,
-            IDeserializer<TValue> valueDeserializer)
+            ConsumerConfig config,
+            IDeserializer<TKey> keyDeserializer = null,
+            IDeserializer<TValue> valueDeserializer = null)
         {
             Librdkafka.Initialize(null);
 
@@ -209,6 +208,14 @@ namespace Confluent.Kafka
                 {
                     KeyDeserializer = (IDeserializer<TKey>)new IgnoreDeserializer();
                 }
+                else if (typeof(TKey) == typeof(byte[]))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new ByteArrayDeserializer();
+                }
+                else if (typeof(TKey) == typeof(string))
+                {
+                    KeyDeserializer = (IDeserializer<TKey>)new StringDeserializer(System.Text.Encoding.UTF8);
+                }
                 else
                 {
                     throw new ArgumentNullException("Key deserializer must be specified.");
@@ -225,6 +232,14 @@ namespace Confluent.Kafka
                 {
                     ValueDeserializer = (IDeserializer<TValue>)new IgnoreDeserializer();
                 }
+                else if (typeof(TValue) == typeof(byte[]))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new ByteArrayDeserializer();
+                }
+                else if (typeof(TValue) == typeof(string))
+                {
+                    ValueDeserializer = (IDeserializer<TValue>)new StringDeserializer(System.Text.Encoding.UTF8);
+                }
                 else
                 {
                     throw new ArgumentNullException("Value deserializer must be specified.");
@@ -239,8 +254,6 @@ namespace Confluent.Kafka
                 configWithoutValueDeserializerProperties.Any(ci => ci.Key == item.Key)
             );
 
-            config = null;
-
             if (configWithoutDeserializerProperties.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
@@ -248,10 +261,7 @@ namespace Confluent.Kafka
 
             var modifiedConfig = configWithoutDeserializerProperties
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.ConsumerConsumeResultFields &&
-                    prop.Key != ConfigPropertyNames.LogCallback &&
-                    prop.Key != ConfigPropertyNames.ErrorCallback &&
-                    prop.Key != ConfigPropertyNames.StatsCallback);
+                    prop.Key != ConfigPropertyNames.ConsumerConsumeResultFields);
 
             var enabledFieldsObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ConsumerConsumeResultFields).Value;
             if (enabledFieldsObj != null)
@@ -280,28 +290,9 @@ namespace Confluent.Kafka
                 }
             }
 
-            var logDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogCallback).Value;
-            if (logDelegateObj != null)
-            {
-                this.logDelegate = (Action<LogMessage>)logDelegateObj;
-            }
-            else 
-            {
-                this.logDelegate = Loggers.ConsoleLogger;
-            }
-
-            var errorDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorCallback).Value;
-            if (errorDelegateObj != null)
-            {
-                this.errorDelegate = (Action<ErrorEvent>)errorDelegateObj;
-            }
-
-            var statsDelegateObj = configWithoutDeserializerProperties.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsCallback).Value;
-            if (statsDelegateObj != null)
-            {
-                this.statsDelegate = (Action<string>)statsDelegateObj;
-            }
-
+            this.logDelegate = (config.LogCallback != null) ? config.LogCallback : Loggers.ConsoleLogger;
+            this.errorDelegate = config.ErrorCallback;
+            this.statsDelegate = config.StatsCallback;
 
             var configHandle = SafeConfigHandle.Create();
             modifiedConfig
@@ -1142,9 +1133,6 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
-                KeyDeserializer?.Dispose();
-                ValueDeserializer?.Dispose();
-
                 // calls to rd_kafka_destroy may result in callbacks
                 // as a side-effect. however the callbacks this class
                 // registers with librdkafka ensure that any registered

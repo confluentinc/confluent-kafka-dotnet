@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start AdminClient_DescribeConfigs");
 
-            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
             {
                 // broker configs
                 // ---

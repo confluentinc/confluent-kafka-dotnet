@@ -30,9 +30,9 @@ namespace Confluent.Kafka.Examples.MultiProducer
     {
         public static void Main(string[] args)
         {
-            var config = new Dictionary<string, object> { { "bootstrap.servers", args[0] } };
+            var config = new ProducerConfig { BootstrapServers = args[0] };
 
-            using (var producer = new Producer<string, string>(config, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<string, string>(config))
             {
                 // create a producer of different type that reuses producer's Handle.
                 var producer2 = new Producer<Null, int>(producer.Handle, null, new IntSerializer());

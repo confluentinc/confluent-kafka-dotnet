@@ -33,7 +33,7 @@ namespace Confluent.SchemaRegistry
         // Confluent.SchemaRegistry doesn't depend on Confluent.Kafka, so these are redefined here.
         // If these change, they should be kept in-sync in the two places.
         private const string SchemaRegistryUrlPropertyName = "schema.registry.url";
-        private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
+        private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.request.timeout.ms";
         private const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
 
         private IRestService restService;
@@ -66,7 +66,7 @@ namespace Confluent.SchemaRegistry
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, object>> config)
+        public CachedSchemaRegistryClient(SchemaRegistryConfig config)
         {
             if (config == null)
             {
@@ -81,10 +81,10 @@ namespace Confluent.SchemaRegistry
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
             var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryConnectionTimeoutMsPropertyName).FirstOrDefault();
-            var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
+            var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : int.Parse(timeoutMsMaybe.Value);
 
             var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
-            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : (int)identityMapCapacityMaybe.Value;
+            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : int.Parse(identityMapCapacityMaybe.Value);
 
             foreach (var property in config)
             {

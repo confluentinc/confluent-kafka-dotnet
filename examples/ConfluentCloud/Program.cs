@@ -41,26 +41,26 @@ namespace ConfluentCloudExample
     {
         static void Main(string[] args)
         {
-            var pConfig = new Dictionary<string, object>
+            var pConfig = new ProducerConfig
             {
-                { "bootstrap.servers", "<ccloud bootstrap servers>" },
-                { "broker.version.fallback", "0.10.0.0" },
-                { "api.version.fallback.ms", 0 },
-                { "sasl.mechanisms", "PLAIN" },
-                { "security.protocol", "SASL_SSL" },
+                BootstrapServers = "<ccloud bootstrap servers>",
+                BrokerVersionFallback = "0.10.0.0",
+                ApiVersionFallbackMs = 0,
+                SaslMechanism = "PLAIN",
+                SecurityProtocol = SecurityProtocolType.Sasl_ssl,
                 // On Windows, default trusted root CA certificates are stored in the Windows Registry.
                 // They are not automatically discovered by Confluent.Kafka and it's not possible to
                 // reference them using the `ssl.ca.location` property. You will need to obtain these
                 // from somewhere else, for example use the cacert.pem file distributed with curl:
                 // https://curl.haxx.se/ca/cacert.pem and reference that file in the `ssl.ca.location`
                 // property:
-                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" }, // suitable configuration for linux, osx.
-                // { "ssl.ca.location", "c:\\path\\to\\cacert.pem" },     // windows
-                { "sasl.username", "<ccloud key>" },
-                { "sasl.password", "<ccloud secret>" }
+                SslCaLocation = "/usr/local/etc/openssl/cert.pem", // suitable configuration for linux, osx.
+                // SslCaLocation = "c:\\path\\to\\cacert.pem", // windows
+                SaslUsername = "<ccloud key>",
+                SaslPassword = "<ccloud secret>"
             };
 
-            using (var producer = new Producer<Null, string>(pConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(pConfig))
             {
                 producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Key = null, Value = "test value" })
                     .ContinueWith(task => task.IsFaulted
@@ -72,22 +72,22 @@ namespace ConfluentCloudExample
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            var cConfig = new Dictionary<string, object>
+            var cConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", "<confluent cloud bootstrap servers>" },
-                { "broker.version.fallback", "0.10.0.0" },
-                { "api.version.fallback.ms", 0 },
-                { "sasl.mechanisms", "PLAIN" },
-                { "security.protocol", "SASL_SSL" },
-                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" }, // suitable configuration for linux, osx.
-                // { "ssl.ca.location", "c:\\path\\to\\cacert.pem" },     // windows
-                { "sasl.username", "<confluent cloud key>" },
-                { "sasl.password", "<confluent cloud secret>" },
-                { "group.id", Guid.NewGuid().ToString() },
-                { "auto.offset.reset", "smallest" }
+                BootstrapServers = "<confluent cloud bootstrap servers>",
+                BrokerVersionFallback = "0.10.0.0",
+                ApiVersionFallbackMs = 0,
+                SaslMechanism = "PLAIN",
+                SecurityProtocol = SecurityProtocolType.Sasl_ssl,
+                SslCaLocation = "/usr/local/etc/openssl/cert.pem", // suitable configuration for linux, osx.
+                // SslCaLocation = "c:\\path\\to\\cacert.pem",     // windows
+                SaslUsername = "<confluent cloud key>",
+                SaslPassword = "<confluent cloud secret>",
+                GroupId = Guid.NewGuid().ToString(),
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            using (var consumer = new Consumer<Null, string>(cConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(cConfig))
             { 
                 consumer.Subscribe("dotnet-test-topic");
 
@@ -103,6 +103,7 @@ namespace ConfluentCloudExample
 
                 consumer.Close();
             }
+
         }
     }
 }

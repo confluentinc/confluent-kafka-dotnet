@@ -30,9 +30,7 @@ namespace Confluent.Kafka.Examples
 
         static void ListGroups(string brokerList)
         {
-            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
-
-            using (var adminClient = new AdminClient(config))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = brokerList }))
             {
                 var groups = adminClient.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
@@ -54,8 +52,7 @@ namespace Confluent.Kafka.Examples
 
         static void PrintMetadata(string brokerList)
         {
-            var config = new Dictionary<string, object> { { "bootstrap.servers", brokerList } };
-            using (var adminClient = new AdminClient(config))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = brokerList }))
             {
                 var meta = adminClient.GetMetadata(TimeSpan.FromSeconds(20));
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");

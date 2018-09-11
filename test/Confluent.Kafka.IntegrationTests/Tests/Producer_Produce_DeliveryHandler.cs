@@ -36,9 +36,9 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_Produce_DeliveryHandler");
 
-            var producerConfig = new Dictionary<string, object> 
+            var producerConfig = new ProducerConfig
             { 
-                { "bootstrap.servers", bootstrapServers }
+                BootstrapServers = bootstrapServers
             };
 
             int count = 0;
@@ -55,7 +55,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<string, string>(producerConfig))
             {
                 producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0), 

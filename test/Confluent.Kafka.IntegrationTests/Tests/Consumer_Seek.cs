@@ -37,18 +37,17 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Consumer_Seek");
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "acks", "all" },
-                { "bootstrap.servers", bootstrapServers },
-                { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                ErrorCallback = e => Assert.True(false, e.Error.Reason)
             };
 
-            var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers} };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 const string checkValue = "check value";
                 var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = checkValue }).Result;

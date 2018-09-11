@@ -35,16 +35,15 @@ namespace Confluent.Kafka.Benchmark
             bool useDeliveryHandler)
         {
             // mirrors the librdkafka performance test example.
-            var config = new Dictionary<string, object>
+            var config = new ProducerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "queue.buffering.max.messages", 2000000 },
-                { "message.send.max.retries", 3 },
-                { "retry.backoff.ms", 500 },
-                { "linger.ms", 100 }
+                BootstrapServers = bootstrapServers,
+                QueueBufferingMaxMessages = 2000000,
+                MessageSendMaxRetries = 3,
+                RetryBackoffMs = 500 ,
+                LingerMs = 100,
+                DeliveryReportFields = "none"
             };
-
-            config["dotnet.producer.delivery.report.fields"] = "none";
 
             DeliveryReport<byte[], byte[]> firstDeliveryReport = null;
 
@@ -58,7 +57,7 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
 
-            using (var producer = new Producer<byte[], byte[]>(config, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(config))
             {
                 for (var j=0; j<nTests; j += 1)
                 {

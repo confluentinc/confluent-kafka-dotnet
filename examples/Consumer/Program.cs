@@ -39,22 +39,22 @@ namespace Confluent.Kafka.Examples.Consumer
         /// </summary>
         public static void Run_Consume(string brokerList, List<string> topics, CancellationToken cancellationToken)
         {
-            var config = new Dictionary<string, object>
+            var config = new ConsumerConfig
             {
-                { "bootstrap.servers", brokerList },
-                { "group.id", "csharp-consumer" },
-                { "enable.auto.commit", false },
-                { "statistics.interval.ms", 5000 },
-                { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" },
-                // note: typically, you should treat error_cb events as information only.
-                { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) },
-                { "stats_cb", (Action<string>)(json => Console.WriteLine($"Statistics: {json}")) }
+                BootstrapServers = brokerList,
+                GroupId = "csharp-consumer",
+                EnableAutoCommit = false,
+                StatisticsIntervalMs = 5000,
+                SessionTimeoutMs = 6000,
+                AutoOffsetReset = AutoOffsetResetType.Earliest,
+                // note: typically, you should treat error events as information only.
+                ErrorCallback = e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}"),
+                StatsCallback = json => Console.WriteLine($"Statistics: {json}")
             };
 
             const int commitPeriod = 5;
 
-            using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 // Note: All event handlers are called on the main .Consume thread.
                 
@@ -117,22 +117,22 @@ namespace Confluent.Kafka.Examples.Consumer
         /// </summary>
         public static void Run_ManualAssign(string brokerList, List<string> topics, CancellationToken cancellationToken)
         {
-            var config = new Dictionary<string, object>
+            var config = new ConsumerConfig
             {
                 // the group.id property must be specified when creating a consumer, even 
                 // if you do not intend to use any consumer group functionality.
-                { "group.id", new Guid().ToString() },
-                { "bootstrap.servers", brokerList },
+                GroupId = new Guid().ToString(),
+                BootstrapServers = brokerList,
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
                 // to prevent this from occuring.
-                { "enable.auto.commit", true },
+                EnableAutoCommit = true,
                 // note: typically, you should treat error_cb events as information only.
                 // the client will automatically try to recover from all errors
-                { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) }
+                ErrorCallback = e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")
             };
 
-            using (var consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
 

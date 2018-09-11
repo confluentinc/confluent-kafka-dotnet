@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             Func<Task> mthd = async () => 
             {
-                using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
+                using (var producer = new Producer<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }))
                 {
                     var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
                     producer.Flush(TimeSpan.FromSeconds(10));
@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await2");
 
-            using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
                 var dr = await producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" });
             }
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await3");
 
-            using (var producer = new Producer<Null, string>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
                 await Assert.ThrowsAsync<ProduceException<Null, string>>(
                     async () => await producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 42), new Message<Null, string> { Value = "test string" }));

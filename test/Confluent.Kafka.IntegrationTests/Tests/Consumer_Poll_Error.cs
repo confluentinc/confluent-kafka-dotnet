@@ -37,13 +37,10 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Consumer_Poll_Error");
 
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             TopicPartitionOffset firstProduced = null;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
                 firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }).Result.TopicPartitionOffset;
@@ -52,15 +49,15 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000
             };
 
             // test key deserialization error behavior
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 int msgCnt = 0;
                 int errCnt = 0;
@@ -106,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test value deserialization error behavior
-            using (var consumer = new Consumer<string, Null>(consumerConfig, new StringDeserializer(Encoding.UTF8), null))
+            using (var consumer = new Consumer<string, Null>(consumerConfig))
             {
                 int msgCnt = 0;
                 int errCnt = 0;

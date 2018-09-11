@@ -463,7 +463,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />). Only
         ///     the bootstrap.servers property is required.
         /// </param>
-        public AdminClient(IEnumerable<KeyValuePair<string, object>> config)
+        public AdminClient(AdminClientConfig config)
         {
             if (
                 config.Where(prop => prop.Key.StartsWith("dotnet.producer.")).Count() > 0 ||
@@ -472,7 +472,7 @@ namespace Confluent.Kafka
                 throw new ArgumentException("AdminClient configuration must not include producer or consumer specific configuration properties.");
             }
 
-            this.ownedClient = new Producer(config);
+            this.ownedClient = new Producer(new ProducerConfig(config));
             this.handle = new Handle
             { 
                 Owner = this,

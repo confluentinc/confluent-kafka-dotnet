@@ -34,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Metadata");
 
-            var config = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var config = new AdminClientConfig { BootstrapServers = bootstrapServers };
 
             using (var adminClient = new AdminClient(config))
             {
