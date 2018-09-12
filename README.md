@@ -42,13 +42,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 0.11.4
+Install-Package Confluent.Kafka -Version 0.11.5
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 0.11.4 Confluent.Kafka
+dotnet add package -v 0.11.5 Confluent.Kafka
 ```
 
 ### Development Branch
@@ -56,7 +56,7 @@ dotnet add package -v 0.11.4 Confluent.Kafka
 We have started working towards a 1.0 release of the library which will occur after we add idempotence and transaction features. In order to best accomodate these and other changes,
 we will be making breaking changes to the API in that release. You can track our progress on the [1.0-experimental](https://github.com/confluentinc/confluent-kafka-dotnet/tree/1.0-experimental) 
 branch (as well as corresponding packages on [nuget.org](https://www.nuget.org/packages/Confluent.Kafka/)). We have already added an **AdminClient** as well as support for **message headers** 
-and **custom timestamps** amongst other things. Note that all work on this branch is subject to change and should not be considered production ready. All feedback is very welcome!
+and **custom timestamps** amongst other things. Note that all work on this branch is subject to change and should not be considered production ready. All feedback is very welcome! You can review the current CHANGELOG [here](https://github.com/confluentinc/confluent-kafka-dotnet/blob/1.0-experimental/CHANGELOG.md).
 
 Also, nuget packages corresponding to all release branch commits are available from the following nuget package source (Note: this is not a web url - you should specify it in the nuget package manger):
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
@@ -68,8 +68,6 @@ Also, nuget packages corresponding to all release branch commits are available f
 Take a look in the [examples](examples) directory for example usage. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
-
-API documentation is available on the [Confluent website](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html). Note that there is currently an issue with the build process that is preventing some of this documentation from being generated. For missing information, please refer instead to the XML doc comments in the source code.
 
 ### Basic Producer Example
 
@@ -159,6 +157,11 @@ avrogen -s your_schema.asvc .
 ### Confluent Cloud
 
 The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
+
+
+### Known Issues
+
+The mechanism used by librdkafka to poll simultaneously for both new application and socket events is not supported on Windows. If you are on Windows and experiencing poor latency (which may happen in low throughput scenarios in particular), as a workaround, set `socket.blocking.max.ms` to `1` to limit the time librdkafka will block waiting for network events to 1ms (the trade-off being higher CPU usage). We will optimize the librdkafka control loop for use on Windows in a future version of the library.
 
 
 ## Build
