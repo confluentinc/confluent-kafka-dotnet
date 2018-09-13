@@ -61,6 +61,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 
 namespace Confluent.Kafka
@@ -87,24 +88,26 @@ namespace Confluent.Kafka
             {
                 if (prop.Type == "pointer") { continue; }
                 var type = prop.Type == "enum" ? ConfigNameToDotnetName(prop.Name) + "Type" : prop.Type;
+                var nullableType = type == "string" ? "string" : type + "?";
 
                 codeText += $"        /// <summary>\n";
                 codeText += $"        ///     {prop.Description}\n";
                 codeText += $"        /// </summary>\n";
-                codeText += $"        public {type} {ConfigNameToDotnetName(prop.Name)} {{ get {{ return ";
+                codeText += $"        [DataMember(Name=\"{prop.Name}\")]\n";
+                codeText += $"        public {nullableType} {ConfigNameToDotnetName(prop.Name)} {{ get {{ return ";
                 switch (type)
                 {
                     case "string":
-                        codeText += $"this.properties[\"{prop.Name}\"]";
+                        codeText += $"Get(\"{prop.Name}\")";
                         break;
                     case "int":
-                        codeText += $"int.Parse(this.properties[\"{prop.Name}\"])";
+                        codeText += $"GetInt(\"{prop.Name}\")";
                         break;
                     case "bool":
-                        codeText += $"bool.Parse(this.properties[\"{prop.Name}\"])";
+                        codeText += $"GetBool(\"{prop.Name}\")";
                         break;
                     default:
-                        codeText += $"({type})Enum.Parse(typeof({type}), this.properties[\"{prop.Name}\"])";
+                        codeText += $"({nullableType})GetEnum(typeof({type}), \"{prop.Name}\")";
                         break;
                 }
                 codeText += $"; }} set {{ this.SetObject(\"{prop.Name}\", value); }} }}\n";
@@ -159,6 +162,7 @@ namespace Confluent.Kafka
             codeText += $"    /// <summary>\n";
             codeText += $"    ///     {docs}\n";
             codeText += $"    /// </summary>\n";
+            codeText += $"    [DataContract]\n";
             codeText += $"    public class {name}{(derive ? " : ClientConfig" : " : IEnumerable<KeyValuePair<string, string>>")}\n";
             codeText += $"    {{\n";
             return codeText;
@@ -236,6 +240,73 @@ namespace Confluent.Kafka
         public void Set(string key, string val)
         {
             this.properties[key] = val;
+        }
+
+        /// <summary>
+        ///     Gets a configuration property value given a key. Returns null if 
+        ///     the property has not been set.
+        /// </summary>
+        /// <param name=""key"">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        public string Get(string key)
+        {
+            if (this.properties.TryGetValue(key, out string val))
+            {
+                return val;
+            }
+            return null;
+        }
+
+        /// <summary>
+        ///     Gets a configuration property int? value given a key.
+        /// </summary>
+        /// <param name=""key"">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected int? GetInt(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return int.Parse(result);
+        }
+        
+        /// <summary>
+        ///     Gets a configuration property bool? value given a key.
+        /// </summary>
+        /// <param name=""key"">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected bool? GetBool(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return bool.Parse(result);
+        }
+
+        /// <summary>
+        ///     Gets a configuration property enum value given a key.
+        /// </summary>
+        /// <param name=""key"">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected object GetEnum(Type type, string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return Enum.Parse(type, result);
         }
 
         /// <summary>
@@ -326,7 +397,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: all
         /// </summary>
-        public string ConsumeResultFields { set { this.properties[""dotnet.consumer.consume.result.fields""] = value; } }
+        public string ConsumeResultFields { set { this.SetObject(""dotnet.consumer.consume.result.fields"", value); } }
 
 ";
         }
@@ -359,7 +430,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: true
         /// </summary>
-        public bool EnableBackgroundPoll { set { this.properties[""dotnet.producer.enable.background.poll""] = value.ToString(); } }
+        public bool? EnableBackgroundPoll { get { return GetBool(""dotnet.producer.enable.background.poll""); } set { this.SetObject(""dotnet.producer.enable.background.poll"", value); } }
 
         /// <summary>
         ///     Specifies whether to enable notification of delivery reports. Typically
@@ -368,7 +439,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: true
         /// </summary>
-        public bool EnableDeliveryReports { set { this.properties[""dotnet.producer.enable.delivery.reports""] = value.ToString(); } }
+        public bool? EnableDeliveryReports { get { return GetBool(""dotnet.producer.enable.delivery.reports""); } set { this.SetObject(""dotnet.producer.enable.delivery.reports"", value); } }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set in delivery
@@ -378,7 +449,7 @@ namespace Confluent.Kafka
         /// 
         ///     default: all
         /// </summary>
-        public string DeliveryReportFields { set { this.properties[""dotnet.producer.delivery.report.fields""] = value.ToString(); } }
+        public string DeliveryReportFields { get { return Get(""dotnet.producer.delivery.report.fields""); } set { this.SetObject(""dotnet.producer.delivery.report.fields"", value.ToString()); } }
 
 ";
         }
