@@ -91,7 +91,23 @@ namespace Confluent.Kafka
                 codeText += $"        /// <summary>\n";
                 codeText += $"        ///     {prop.Description}\n";
                 codeText += $"        /// </summary>\n";
-                codeText += $"        public {type} {ConfigNameToDotnetName(prop.Name)} {{ set {{ this.SetObject(\"{prop.Name}\", value); }} }}\n";
+                codeText += $"        public {type} {ConfigNameToDotnetName(prop.Name)} {{ get {{ return ";
+                switch (type)
+                {
+                    case "string":
+                        codeText += $"this.properties[\"{prop.Name}\"]";
+                        break;
+                    case "int":
+                        codeText += $"int.Parse(this.properties[\"{prop.Name}\"])";
+                        break;
+                    case "bool":
+                        codeText += $"bool.Parse(this.properties[\"{prop.Name}\"])";
+                        break;
+                    default:
+                        codeText += $"({type})Enum.Parse(typeof({type}), this.properties[\"{prop.Name}\"])";
+                        break;
+                }
+                codeText += $"; }} set {{ this.SetObject(\"{prop.Name}\", value); }} }}\n";
                 codeText += $"\n";
             }
             return codeText;
