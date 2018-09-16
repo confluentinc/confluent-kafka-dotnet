@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 GroupId = Guid.NewGuid().ToString(),
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetResetType.Earliest,
-                ErrorCallback = e => Assert.True(false, e.Error.Reason)
+                ErrorCallback = e => Assert.True(false, e.Reason)
             };
 
             var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };

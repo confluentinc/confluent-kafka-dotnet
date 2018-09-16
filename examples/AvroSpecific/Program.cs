@@ -58,7 +58,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             {
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString(),
-                ErrorCallback = e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")
+                ErrorCallback = e => Console.WriteLine($"Error: {e.Reason}")
             };
 
             // Note: The User class in this project was generated using the Confluent fork of the avrogen.exe tool 

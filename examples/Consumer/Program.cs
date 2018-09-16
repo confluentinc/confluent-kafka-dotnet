@@ -48,7 +48,7 @@ namespace Confluent.Kafka.Examples.Consumer
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetResetType.Earliest,
                 // note: typically, you should treat error events as information only.
-                ErrorCallback = e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}"),
+                ErrorCallback = e => Console.WriteLine($"Error: {e.Reason}"),
                 StatsCallback = json => Console.WriteLine($"Statistics: {json}")
             };
 
@@ -129,7 +129,7 @@ namespace Confluent.Kafka.Examples.Consumer
                 EnableAutoCommit = true,
                 // note: typically, you should treat error_cb events as information only.
                 // the client will automatically try to recover from all errors
-                ErrorCallback = e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")
+                ErrorCallback = e => Console.WriteLine($"Error: {e.Reason}")
             };
 
             using (var consumer = new Consumer<Ignore, string>(config))

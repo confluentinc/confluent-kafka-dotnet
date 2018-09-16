@@ -64,7 +64,7 @@ namespace Confluent.Kafka
 
             if (errorDelegate != null)
             {
-                errorDelegate(new ErrorEvent{ Error = new Error(err, reason), Level = SyslogLevel.Warning });
+                errorDelegate(new ErrorEvent(new Error(err, reason), false));
             }
         }
 

@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
                 ConsumeResultFields = "timestamp,topic",
-                ErrorCallback = e => Assert.True(false, e.Error.Reason)
+                ErrorCallback = e => Assert.True(false, e.Reason)
             };
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };

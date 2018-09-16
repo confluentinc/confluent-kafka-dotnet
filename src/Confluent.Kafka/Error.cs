@@ -25,6 +25,14 @@ namespace Confluent.Kafka
     public class Error
     {
         /// <summary>
+        ///     Initialize a new Error instance that is a copy of another.
+        /// </summary>
+        /// <param name="error">
+        ///     The error object to initialize from.
+        /// </param>
+        public Error(Error error) : this(error.Code, error.Reason) {}
+
+        /// <summary>
         ///     Initialize a new Error instance from a particular
         ///     <see cref="ErrorCode"/> value.
         /// </summary>
