@@ -168,61 +168,10 @@ namespace Confluent.Kafka
             return codeText;
         }
 
-        static string createCallbacks()
+        static string createCommon()
         {
             return
 @"        /// <summary>
-        ///     Specifies a delegate for handling log messages. If not specified,
-        ///     a default callback that writes to stderr will be used.
-        /// </summary>
-        /// <remarks>
-        ///     By default not many log messages are generated.
-        ///
-        ///     For more verbose logging, specify one or more debug contexts
-        ///     using the 'debug' configuration property. The 'log_level'
-        ///     configuration property is also relevant, however logging is
-        ///     verbose by default given a debug context has been specified,
-        ///     so you typically shouldn't adjust this value.
-        ///
-        ///     Warning: Log handlers are called spontaneously from internal
-        ///     librdkafka threads and the application must not call any
-        ///     Confluent.Kafka APIs from within a log handler or perform any
-        ///     prolonged operations.
-        /// </remarks>
-        public Action<LogMessage> LogCallback { get; set; }
-
-        /// <summary>
-        ///     Specifies a delegate for handling error events e.g. connection
-        ///     failures or all brokers down. Note that the client will try
-        ///     to automatically recover from errors - these errors should be
-        ///     seen as informational rather than catastrophic.
-        /// </summary>
-        /// <remarks>
-        ///     On the Consumer, executes as a side-effect of
-        ///     <see cref=""Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)"" />
-        ///     (on the same thread) and on the Producer and AdminClient, on the
-        ///     background poll thread.
-        /// </remarks>
-        public Action<ErrorEvent> ErrorCallback { get; set; }
-
-        /// <summary>
-        ///     Specifies a delegate for handling statistics events - a JSON
-        ///     formatted string as defined here:
-        ///     https://github.com/edenhill/librdkafka/wiki/Statistics
-        /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        ///
-        ///     On the Consumer, executes as a side-effect of
-        ///     <see cref=""Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)"" />
-        ///     (on the same thread) and on the Producer and AdminClient, on the
-        ///     background poll thread.
-        /// </remarks>
-        public Action<string> StatsCallback { get; set; }
-
-        /// <summary>
         ///     Set a configuration property using a string key / value pair.
         /// </summary>
         /// <remarks>
@@ -622,7 +571,7 @@ namespace Confluent.Kafka
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
             codeText += createClientSpecific();
             codeText += createProperties(props.Where(p => p.CPA == "*"));
-            codeText += createCallbacks();
+            codeText += createCommon();
             codeText += createClassFooter();
             codeText += createClassHeader("AdminClientConfig", "AdminClient configuration properties", true);
             codeText += createAdminClientSpecific();

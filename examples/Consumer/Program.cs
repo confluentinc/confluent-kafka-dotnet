@@ -46,10 +46,7 @@ namespace Confluent.Kafka.Examples.Consumer
                 EnableAutoCommit = false,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetResetType.Earliest,
-                // note: typically, you should treat error events as information only.
-                ErrorCallback = e => Console.WriteLine($"Error: {e.Reason}"),
-                StatsCallback = json => Console.WriteLine($"Statistics: {json}")
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
             const int commitPeriod = 5;
@@ -77,6 +74,12 @@ namespace Confluent.Kafka.Examples.Consumer
 
                 consumer.OnPartitionEOF += (_, tpo)
                     => Console.WriteLine($"Reached end of topic {tpo.Topic} partition {tpo.Partition}, next message will be at offset {tpo.Offset}");
+
+                consumer.OnError += (_, e)
+                    => Console.WriteLine($"Error: {e.Reason}");
+
+                consumer.OnStatistics += (_, json)
+                    => Console.WriteLine($"Statistics: {json}");
 
                 consumer.Subscribe(topics);
 
@@ -126,15 +129,15 @@ namespace Confluent.Kafka.Examples.Consumer
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
                 // to prevent this from occuring.
-                EnableAutoCommit = true,
-                // note: typically, you should treat error_cb events as information only.
-                // the client will automatically try to recover from all errors
-                ErrorCallback = e => Console.WriteLine($"Error: {e.Reason}")
+                EnableAutoCommit = true
             };
 
             using (var consumer = new Consumer<Ignore, string>(config))
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
+
+                consumer.OnError += (_, e)
+                    => Console.WriteLine($"Error: {e.Reason}");
 
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
                     => Console.WriteLine($"End of partition: {topicPartitionOffset}");

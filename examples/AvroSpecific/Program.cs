@@ -57,8 +57,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                GroupId = Guid.NewGuid().ToString(),
-                ErrorCallback = e => Console.WriteLine($"Error: {e.Reason}")
+                GroupId = Guid.NewGuid().ToString()
             };
 
             // Note: The User class in this project was generated using the Confluent fork of the avrogen.exe tool 
@@ -73,6 +72,9 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 using (var serdeProvider = new AvroSerdeProvider(avroConfig))
                 using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.CreateDeserializer<string>(), serdeProvider.CreateDeserializer<User>()))
                 {
+                    consumer.OnError += (_, e)
+                        => Console.WriteLine($"Error: {e.Reason}");
+
                     consumer.Subscribe(topicName);
 
                     while (!cts.Token.IsCancellationRequested)

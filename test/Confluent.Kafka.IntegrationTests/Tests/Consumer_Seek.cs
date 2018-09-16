@@ -40,8 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             var consumerConfig = new ConsumerConfig
             {
                 GroupId = Guid.NewGuid().ToString(),
-                BootstrapServers = bootstrapServers,
-                ErrorCallback = e => Assert.True(false, e.Reason)
+                BootstrapServers = bootstrapServers
             };
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
@@ -49,6 +48,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new Producer<Null, string>(producerConfig))
             using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
+                consumer.OnError += (_, e)
+                    => Assert.True(false, e.Reason);
+
                 const string checkValue = "check value";
                 var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = checkValue }).Result;
                 var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "second value" }).Result;

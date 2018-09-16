@@ -604,6 +604,33 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
+        /// </summary>
+        public event EventHandler<LogMessage> OnLog
+        {
+            add { handle.Owner.OnLog += value; }
+            remove { handle.Owner.OnLog -= value; }
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
+        /// </summary>
+        public event EventHandler<string> OnStatistics
+        {
+            add { handle.Owner.OnStatistics += value; }
+            remove { handle.Owner.OnStatistics -= value; }
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
+        /// </summary>
+        public event EventHandler<ErrorEvent> OnError
+        {
+            add { handle.Owner.OnError += value; }
+            remove { handle.Owner.OnError -= value; }
+        }
+
+        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
         /// </summary>
         public int AddBrokers(string brokers)

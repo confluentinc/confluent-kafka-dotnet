@@ -41,8 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                ConsumeResultFields = "topic,headers",
-                ErrorCallback = e => Assert.True(false, e.Reason)
+                ConsumeResultFields = "topic,headers"
             };
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
@@ -62,6 +61,9 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
+                consumer.OnError += (_, e)
+                    => Assert.True(false, e.Reason);
+                    
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 var record = consumer.Consume(TimeSpan.FromSeconds(30));

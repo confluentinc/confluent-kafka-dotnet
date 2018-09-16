@@ -41,8 +41,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString(),
                 SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetResetType.Earliest,
-                ErrorCallback = e => Assert.True(false, e.Reason)
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
             var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
@@ -69,6 +68,9 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
                     => consuming = false;
+
+                consumer.OnError += (_, e)
+                    => Assert.True(false, e.Reason);
 
                 consumer.Subscribe(topic);
 

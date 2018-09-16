@@ -36,27 +36,27 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start LogDelegate");
 
             var logCount = 0;
-            Action<LogMessage> logger = (LogMessage m) => logCount += 1;
 
             var consumerConfig = new ConsumerConfig
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                Debug = "all",
-                LogCallback = logger
+                Debug = "all"
             };
 
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers,
-                Debug = "all",
-                LogCallback = logger
+                Debug = "all"
             };
 
             DeliveryReport<Null, string> dr;
 
             using (var producer = new Producer<Null, string>(producerConfig))
             {
+                producer.OnLog += (_, m)
+                    => logCount += 1;
+
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
@@ -65,6 +65,9 @@ namespace Confluent.Kafka.IntegrationTests
             logCount = 0;
             using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
+                consumer.OnLog += (_, m)
+                    => logCount += 1;
+
                 consumer.Consume(TimeSpan.FromMilliseconds(100));
             }
             Assert.True(logCount > 0);

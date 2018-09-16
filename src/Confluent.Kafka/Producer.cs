@@ -301,6 +301,34 @@ namespace Confluent.Kafka
             }
         }
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
+        /// </summary>
+        public event EventHandler<LogMessage> OnLog
+        {
+            add { handle.Owner.OnLog += value; }
+            remove { handle.Owner.OnLog -= value; }
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
+        /// </summary>
+        public event EventHandler<string> OnStatistics
+        {
+            add { handle.Owner.OnStatistics += value; }
+            remove { handle.Owner.OnStatistics -= value; }
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
+        /// </summary>
+        public event EventHandler<ErrorEvent> OnError
+        {
+            add { handle.Owner.OnError += value; }
+            remove { handle.Owner.OnError -= value; }
+        }
+        
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
         /// </summary>
@@ -727,51 +755,33 @@ namespace Confluent.Kafka
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
-        private Action<ErrorEvent> errorDelegate = null;
         private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-
-            if (errorDelegate != null)
-            {
-                errorDelegate(new ErrorEvent(new Error(err, reason), false));
-            }
+            OnError.Invoke(this, new ErrorEvent(new Error(err, reason), false));
         }
 
 
-        private Action<string> statsDelegate = null;
         private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-
-            if (statsDelegate != null)
-            {
-                statsDelegate(Util.Marshal.PtrToStringUTF8(json));
-            }
-
+            OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
 
         private object loggerLockObj = new object();
-        Action<LogMessage> logDelegate = null;
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             // Note: kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
-
-            var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
-
-            lock (loggerLockObj)
-            {
-                logDelegate(new LogMessage(name, level, fac, buf));
-            }
+            OnLog?.Invoke(this, new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -908,6 +918,23 @@ namespace Confluent.Kafka
             }
         }
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
+        /// </summary>
+        public event EventHandler<LogMessage> OnLog;
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
+        /// </summary>
+        public event EventHandler<ErrorEvent> OnError;
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
+        /// </summary>
+        public event EventHandler<string> OnStatistics;
+
+
         /// <summary>
         ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
         /// </summary>
@@ -976,10 +1003,6 @@ namespace Confluent.Kafka
                     }
                 }
             }
-
-            this.logDelegate = (config.LogCallback != null) ? config.LogCallback : Loggers.ConsoleLogger;
-            this.errorDelegate = config.ErrorCallback;
-            this.statsDelegate = config.StatsCallback;
 
             // Note: changing the default value of produce.offset.report at the binding level is less than
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
