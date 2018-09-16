@@ -181,7 +181,7 @@ namespace Confluent.Kafka
         ///     An IDeserializer implementation instance for deserializing values.
         /// </param>
         public Consumer(
-            ConsumerConfig config,
+            IEnumerable<KeyValuePair<string, string>> config,
             IDeserializer<TKey> keyDeserializer = null,
             IDeserializer<TValue> valueDeserializer = null)
         {

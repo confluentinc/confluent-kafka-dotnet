@@ -111,7 +111,7 @@ namespace Confluent.Kafka
         ///     An ISerializer implementation instance that will be used to serialize values.
         /// </param>
         public Producer(
-            ProducerConfig config,
+            IEnumerable<KeyValuePair<string, string>> config,
             ISerializer<TKey> keySerializer = null,
             ISerializer<TValue> valueSerializer = null)
         {
@@ -938,7 +938,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
         /// </summary>
-        public Producer(ProducerConfig config)
+        public Producer(IEnumerable<KeyValuePair<string, string>> config)
         {
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 

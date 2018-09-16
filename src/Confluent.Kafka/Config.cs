@@ -62,14 +62,30 @@ namespace Confluent.Kafka
         Ssl,
 
         /// <summary>
-        ///     Sasl_plaintext
+        ///     Sasl_Plaintext
         /// </summary>
-        Sasl_plaintext,
+        Sasl_Plaintext,
 
         /// <summary>
-        ///     Sasl_ssl
+        ///     Sasl_Ssl
         /// </summary>
-        Sasl_ssl
+        Sasl_Ssl
+    }
+
+    /// <summary>
+    ///     PartitionAssignmentStrategy enum values
+    /// </summary>
+    public enum PartitionAssignmentStrategyType
+    {
+        /// <summary>
+        ///     Range
+        /// </summary>
+        Range,
+
+        /// <summary>
+        ///     Roundrobin
+        /// </summary>
+        Roundrobin
     }
 
     /// <summary>
@@ -86,6 +102,37 @@ namespace Confluent.Kafka
         ///     Lifo
         /// </summary>
         Lifo
+    }
+
+    /// <summary>
+    ///     Partitioner enum values
+    /// </summary>
+    public enum PartitionerType
+    {
+        /// <summary>
+        ///     Random
+        /// </summary>
+        Random,
+
+        /// <summary>
+        ///     Consistent
+        /// </summary>
+        Consistent,
+
+        /// <summary>
+        ///     Consistent_Random
+        /// </summary>
+        Consistent_Random,
+
+        /// <summary>
+        ///     Murmur2
+        /// </summary>
+        Murmur2,
+
+        /// <summary>
+        ///     Murmur2_Random
+        /// </summary>
+        Murmur2_Random
     }
 
     /// <summary>
@@ -110,6 +157,32 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
+    ///     SaslMechanism enum values
+    /// </summary>
+    public enum SaslMechanismType
+    {
+        /// <summary>
+        ///     GSSAPI
+        /// </summary>
+        Gssapi,
+
+        /// <summary>
+        ///     PLAIN
+        /// </summary>
+        Plain,
+
+        /// <summary>
+        ///     SCRAM-SHA-256
+        /// </summary>
+        ScramSha256,
+
+        /// <summary>
+        ///     SCRAM-SHA-512
+        /// </summary>
+        ScramSha512
+    }
+
+    /// <summary>
     ///     Configuration common to all clients
     /// </summary>
     [DataContract]
@@ -131,6 +204,165 @@ namespace Confluent.Kafka
         ///     an existing key/value pair collection.
         /// </summary>
         public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+
+        /// <summary>
+        ///     Set a configuration property using a string key / value pair.
+        /// </summary>
+        /// <remarks>
+        ///     Two scenarios where this is useful: 1. For setting librdkafka
+        ///     plugin config properties. 2. You are using a different version of 
+        ///     librdkafka to the one provided as a dependency of the Confluent.Kafka
+        ///     package and the configuration properties have evolved.
+        /// </remarks>
+        /// <param name="key">
+        ///     The configuration property name.
+        /// </param>
+        /// <param name="val">
+        ///     The property value.
+        /// </param>
+        public void Set(string key, string val)
+        {
+            this.properties[key] = val;
+        }
+
+        /// <summary>
+        ///     Gets a configuration property value given a key. Returns null if 
+        ///     the property has not been set.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        public string Get(string key)
+        {
+            if (this.properties.TryGetValue(key, out string val))
+            {
+                return val;
+            }
+            return null;
+        }
+
+        /// <summary>
+        ///     Gets a configuration property int? value given a key.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected int? GetInt(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return int.Parse(result);
+        }
+        
+        /// <summary>
+        ///     Gets a configuration property bool? value given a key.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected bool? GetBool(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return bool.Parse(result);
+        }
+
+        /// <summary>
+        ///     Gets a configuration property enum value given a key.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <param name="type">
+        ///     The enum type of the configuration property.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected object GetEnum(Type type, string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return Enum.Parse(type, result);
+        }
+
+        /// <summary>
+        ///     Set a configuration property using a key / value pair (null checked).
+        /// </summary>
+        protected void SetObject(string name, object val)
+        {
+            if (val == null)
+            {
+                this.properties.Remove(name);
+                return;
+            }
+
+            if (val is Enum)
+            {
+                this.properties[name] = val.ToString().ToLower();
+            }
+            else
+            {
+                this.properties[name] = val.ToString();
+            }
+        }
+
+        /// <summary>
+        ///     The configuration properties.
+        /// </summary>
+        protected Dictionary<string, string> properties = new Dictionary<string, string>();
+
+        /// <summary>
+        ///     	Returns an enumerator that iterates through the property collection.
+        /// </summary>
+        /// <returns>
+        ///         An enumerator that iterates through the property collection.
+        /// </returns>
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => this.properties.GetEnumerator();
+
+        /// <summary>
+        ///     	Returns an enumerator that iterates through the property collection.
+        /// </summary>
+        /// <returns>
+        ///         An enumerator that iterates through the property collection.
+        /// </returns>
+        IEnumerator IEnumerable.GetEnumerator() => this.properties.GetEnumerator();
+
+        /// <summary>
+        ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
+        /// </summary>
+        public SaslMechanismType? SaslMechanism
+        {
+            get
+            {
+                var r = Get("sasl.mechanism");
+                if (r == null) { return null; }
+                if (r == "GSSAPI") { return  SaslMechanismType.Gssapi; }
+                if (r == "PLAIN") { return SaslMechanismType.Plain; }
+                if (r == "SCRAM-SHA-256") { return SaslMechanismType.ScramSha256; }
+                if (r == "SCRAM-SHA-512") { return SaslMechanismType.ScramSha512; }
+                throw new ArgumentException($"Unknown sasl.mechanism value {r}");
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove("sasl.mechanism"); }
+                else if (value == SaslMechanismType.Gssapi) { this.properties["sasl.mechanism"] = "GSSAPI"; }
+                else if (value == SaslMechanismType.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
+                else if (value == SaslMechanismType.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
+                else if (value == SaslMechanismType.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
+                else throw new NotImplementedException($"Unknown sasl.mechanism value {value}");
+            }
+        }
+
         /// <summary>
         ///     Client identifier.
         /// </summary>
@@ -279,7 +511,7 @@ namespace Confluent.Kafka
         ///     Logging level (syslog(3) levels)
         /// </summary>
         [DataMember(Name="log_level")]
-        public int? Log_level { get { return GetInt("log_level"); } set { this.SetObject("log_level", value); } }
+        public int? Log_Level { get { return GetInt("log_level"); } set { this.SetObject("log_level", value); } }
 
         /// <summary>
         ///     Disable spontaneous log_cb from internal librdkafka threads, instead enqueue log messages on queue set with `rd_kafka_set_log_queue()` and serve log callbacks or events through the standard poll APIs. **NOTE**: Log messages will linger in a temporary queue until the log queue has been set.
@@ -396,12 +628,6 @@ namespace Confluent.Kafka
         public string SslKeystorePassword { get { return Get("ssl.keystore.password"); } set { this.SetObject("ssl.keystore.password", value); } }
 
         /// <summary>
-        ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name only one mechanism must be configured.
-        /// </summary>
-        [DataMember(Name="sasl.mechanism")]
-        public string SaslMechanism { get { return Get("sasl.mechanism"); } set { this.SetObject("sasl.mechanism", value); } }
-
-        /// <summary>
         ///     Kerberos principal name that Kafka runs as, not including /hostname@REALM
         /// </summary>
         [DataMember(Name="sasl.kerberos.service.name")]
@@ -459,7 +685,7 @@ namespace Confluent.Kafka
         ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
         /// </summary>
         [DataMember(Name="partition.assignment.strategy")]
-        public string PartitionAssignmentStrategy { get { return Get("partition.assignment.strategy"); } set { this.SetObject("partition.assignment.strategy", value); } }
+        public PartitionAssignmentStrategyType? PartitionAssignmentStrategy { get { return (PartitionAssignmentStrategyType?)GetEnum(typeof(PartitionAssignmentStrategyType), "partition.assignment.strategy"); } set { this.SetObject("partition.assignment.strategy", value); } }
 
         /// <summary>
         ///     Client group session and failure detection timeout.
@@ -485,125 +711,7 @@ namespace Confluent.Kafka
         [DataMember(Name="coordinator.query.interval.ms")]
         public int? CoordinatorQueryIntervalMs { get { return GetInt("coordinator.query.interval.ms"); } set { this.SetObject("coordinator.query.interval.ms", value); } }
 
-        /// <summary>
-        ///     Set a configuration property using a string key / value pair.
-        /// </summary>
-        /// <remarks>
-        ///     Two scenarios where this is useful: 1. For setting librdkafka
-        ///     plugin config properties. 2. You are using a different version of 
-        ///     librdkafka to the one provided as a dependency of the Confluent.Kafka
-        ///     package and the configuration properties have evolved.
-        /// </remarks>
-        /// <param name="key">
-        ///     The configuration property name.
-        /// </param>
-        /// <param name="val">
-        ///     The property value.
-        /// </param>
-        public void Set(string key, string val)
-        {
-            this.properties[key] = val;
-        }
-
-        /// <summary>
-        ///     Gets a configuration property value given a key. Returns null if 
-        ///     the property has not been set.
-        /// </summary>
-        /// <param name="key">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        public string Get(string key)
-        {
-            if (this.properties.TryGetValue(key, out string val))
-            {
-                return val;
-            }
-            return null;
-        }
-
-        /// <summary>
-        ///     Gets a configuration property int? value given a key.
-        /// </summary>
-        /// <param name="key">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        protected int? GetInt(string key)
-        {
-            var result = Get(key);
-            if (result == null) { return null; }
-            return int.Parse(result);
-        }
         
-        /// <summary>
-        ///     Gets a configuration property bool? value given a key.
-        /// </summary>
-        /// <param name="key">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        protected bool? GetBool(string key)
-        {
-            var result = Get(key);
-            if (result == null) { return null; }
-            return bool.Parse(result);
-        }
-
-        /// <summary>
-        ///     Gets a configuration property enum value given a key.
-        /// </summary>
-        /// <param name="key">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        protected object GetEnum(Type type, string key)
-        {
-            var result = Get(key);
-            if (result == null) { return null; }
-            return Enum.Parse(type, result);
-        }
-
-        /// <summary>
-        ///     Set a configuration property using a key / value pair (null checked).
-        /// </summary>
-        protected void SetObject(string name, object val)
-        {
-            if (val == null)
-            {
-                throw new ArgumentException($"value for property {name} cannot be null.");
-            }
-            this.properties[name] = val.ToString();
-        }
-
-        /// <summary>
-        ///     The configuration properties.
-        /// </summary>
-        protected Dictionary<string, string> properties = new Dictionary<string, string>();
-
-        /// <summary>
-        ///     	Returns an enumerator that iterates through the property collection.
-        /// </summary>
-        /// <returns>
-        ///         An enumerator that iterates through the property collection.
-        /// </returns>
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => this.properties.GetEnumerator();
-
-        /// <summary>
-        ///     	Returns an enumerator that iterates through the property collection.
-        /// </summary>
-        /// <returns>
-        ///         An enumerator that iterates through the property collection.
-        /// </returns>
-        IEnumerator IEnumerable.GetEnumerator() => this.properties.GetEnumerator();
     }
 
 
@@ -754,7 +862,7 @@ namespace Confluent.Kafka
         ///     Partitioner: `random` - random distribution, `consistent` - CRC32 hash of key (Empty and NULL keys are mapped to single partition), `consistent_random` - CRC32 hash of key (Empty and NULL keys are randomly partitioned), `murmur2` - Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition), `murmur2_random` - Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. This is functionally equivalent to the default partitioner in the Java Producer.).
         /// </summary>
         [DataMember(Name="partitioner")]
-        public string Partitioner { get { return Get("partitioner"); } set { this.SetObject("partitioner", value); } }
+        public PartitionerType? Partitioner { get { return (PartitionerType?)GetEnum(typeof(PartitionerType), "partitioner"); } set { this.SetObject("partitioner", value); } }
 
         /// <summary>
         ///     Compression level parameter for algorithm selected by configuration property `compression.codec`. Higher values will result in better compression at the cost of more CPU usage. Usable range is algorithm-dependent: [0-9] for gzip; [0-12] for lz4; only 0 for snappy; -1 = codec-dependent default compression level.

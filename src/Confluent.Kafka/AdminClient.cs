@@ -463,7 +463,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />). Only
         ///     the bootstrap.servers property is required.
         /// </param>
-        public AdminClient(AdminClientConfig config)
+        public AdminClient(IEnumerable<KeyValuePair<string, string>> config)
         {
             if (
                 config.Where(prop => prop.Key.StartsWith("dotnet.producer.")).Count() > 0 ||
