@@ -35,14 +35,14 @@ namespace Confluent.Kafka.UnitTests
             var cConfig = new ConsumerConfig
             {
                 GroupId = "test",
-                SaslMechanism = "PLAIN",
+                SaslMechanism = SaslMechanismType.Plain,
                 SecurityProtocol = SecurityProtocolType.Ssl,
                 SslCaLocation = "invalid"
             };
             
             var pConfig = new ProducerConfig
             {
-                SaslMechanism = "PLAIN",
+                SaslMechanism = SaslMechanismType.Plain,
                 SecurityProtocol = SecurityProtocolType.Ssl,
                 SslCaLocation = "invalid"
             };

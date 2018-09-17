@@ -184,7 +184,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 
 namespace Confluent.Kafka
@@ -224,7 +223,6 @@ namespace Confluent.Kafka
                 codeText += $"        /// <summary>\n";
                 codeText += $"        ///     {prop.Description}\n";
                 codeText += $"        /// </summary>\n";
-                codeText += $"        [DataMember(Name=\"{prop.Name}\")]\n";
                 codeText += $"        public {nullableType} {ConfigNameToDotnetName(prop.Name)} {{ get {{ return ";
                 switch (type)
                 {
@@ -301,7 +299,6 @@ namespace Confluent.Kafka
             codeText += $"    /// <summary>\n";
             codeText += $"    ///     {docs}\n";
             codeText += $"    /// </summary>\n";
-            codeText += $"    [DataContract]\n";
             codeText += $"    public class {name}{(derive ? " : ClientConfig" : " : IEnumerable<KeyValuePair<string, string>>")}\n";
             codeText += $"    {{\n";
             return codeText;

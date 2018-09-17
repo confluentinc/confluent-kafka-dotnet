@@ -760,7 +760,7 @@ namespace Confluent.Kafka
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            OnError.Invoke(this, new ErrorEvent(new Error(err, reason), false));
+            OnError?.Invoke(this, new ErrorEvent(new Error(err, reason), false));
         }
 
 

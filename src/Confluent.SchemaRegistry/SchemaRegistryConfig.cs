@@ -20,6 +20,9 @@ using System.Collections.Generic;
 
 namespace Confluent.SchemaRegistry
 {
+    /// <summary>
+    ///     <see cref="CachedSchemaRegistryClient" /> configuration properties.
+    /// </summary>
     public class SchemaRegistryConfig : IEnumerable<KeyValuePair<string, string>>
     {
         /// <summary>
