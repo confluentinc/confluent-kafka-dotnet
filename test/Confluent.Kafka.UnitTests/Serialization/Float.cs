@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serialization;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -29,7 +28,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             foreach (var value in TestData)
             {
-                Assert.Equal(value, new FloatDeserializer().Deserialize(null, new FloatSerializer().Serialize(null, value), false));
+                Assert.Equal(value, Deserializers.Float(null, Serializers.Float(null, value), false));
             }
         }
 
@@ -38,7 +37,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             var buffer = new byte[] { 23, 0, 0, 0 };
             var value = BitConverter.ToSingle(buffer, 0);
-            var data = new FloatSerializer().Serialize(null, value);
+            var data = Serializers.Float(null, value);
             Assert.Equal(23, data[3]);
             Assert.Equal(0, data[0]);
         }
@@ -46,15 +45,15 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentNullException>(() => new FloatDeserializer().Deserialize(null, null, true));
+            Assert.ThrowsAny<ArgumentNullException>(() => Deserializers.Float(null, null, true));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual4Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[0], false));
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[3], false));
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[5], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Float(null, new byte[0], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Float(null, new byte[3], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Float(null, new byte[5], false));
         }
 
         public static float[] TestData

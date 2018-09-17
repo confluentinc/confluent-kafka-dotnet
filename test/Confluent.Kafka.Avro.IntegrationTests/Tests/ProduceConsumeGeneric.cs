@@ -54,7 +54,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             DeliveryReport<Null, GenericRecord> dr;
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.CreateValueSerializer<GenericRecord>()))
+            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.SerializerGenerator<GenericRecord>()))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
@@ -65,7 +65,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             // produce a specific record (to later consume back as a generic record).
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var p = new Producer<Null, User>(config, null, serdeProvider.CreateValueSerializer<User>()))
+            using (var p = new Producer<Null, User>(config, null, serdeProvider.SerializerGenerator<User>()))
             {
                 var user = new User
                 {
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var cconfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<Null, GenericRecord>(cconfig, null, serdeProvider.CreateDeserializer<GenericRecord>()))
+            using (var consumer = new Consumer<Null, GenericRecord>(cconfig, null, serdeProvider.DeserializerGenerator<GenericRecord>()))
             {
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
@@ -124,7 +124,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<Null, User>(cconfig, null, serdeProvider.CreateDeserializer<User>()))
+            using (var consumer = new Consumer<Null, User>(cconfig, null, serdeProvider.DeserializerGenerator<User>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.Consume(TimeSpan.FromSeconds(20));

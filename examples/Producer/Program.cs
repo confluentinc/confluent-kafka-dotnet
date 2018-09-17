@@ -22,7 +22,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Examples.Producer

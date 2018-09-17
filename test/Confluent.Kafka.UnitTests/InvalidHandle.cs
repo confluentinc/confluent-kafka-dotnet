@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.UnitTests
@@ -52,13 +51,13 @@ namespace Confluent.Kafka.UnitTests
             // note: if this test fails, it may be because another error is thrown
             // in a new librdkafka version, adpat test in this case
 
-            e = Assert.Throws<InvalidOperationException>(() => new Consumer<Null, Null>(cConfig, null, null));
+            e = Assert.Throws<InvalidOperationException>(() => new Consumer<Null, Null>(cConfig));
             Assert.Contains("ssl.ca.location failed", e.Message);
 
             e = Assert.Throws<InvalidOperationException>(() => new Producer<byte[], byte[]>(pConfig));
             Assert.Contains("ssl.ca.location failed", e.Message);
 
-            e = Assert.Throws<InvalidOperationException>(() => new Producer<Null, Null>(pConfig, null, null));
+            e = Assert.Throws<InvalidOperationException>(() => new Producer<Null, Null>(pConfig));
             Assert.Contains("ssl.ca.location failed", e.Message);
         }
     }

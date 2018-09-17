@@ -44,14 +44,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             var topic = Guid.NewGuid().ToString();
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<string, string>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<string>()))
+            using (var producer = new Producer<string, string>(producerConfig, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<string>()))
             {
                 producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<int, string>(producerConfig, serdeProvider.CreateKeySerializer<int>(), serdeProvider.CreateValueSerializer<string>()))
+            using (var producer = new Producer<int, string>(producerConfig, serdeProvider.SerializerGenerator<int>(), serdeProvider.SerializerGenerator<string>()))
             {
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
+            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<int>()))
             {
                 Assert.Throws<SchemaRegistryException>(() =>
                 {

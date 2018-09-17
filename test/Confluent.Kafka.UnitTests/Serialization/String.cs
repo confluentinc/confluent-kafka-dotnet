@@ -17,7 +17,6 @@
 using Xunit;
 using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using System.Linq;
 using System;
 
@@ -29,170 +28,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void SerializeDeserialize()
         {
-            Assert.Equal("hello world", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "hello world"), false));
-            Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "ឆ្មាត្រូវបានហែលទឹក"), false));
-            Assert.Equal("вы не банан", new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", "вы не банан"), false));
-            Assert.Null(new StringDeserializer(Encoding.UTF8).Deserialize("topic", new StringSerializer(Encoding.UTF8).Serialize("topic", null), true));
+            Assert.Equal("hello world", Deserializers.UTF8("topic", Serializers.UTF8("topic", "hello world"), false));
+            Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", Deserializers.UTF8("topic", Serializers.UTF8("topic", "ឆ្មាត្រូវបានហែលទឹក"), false));
+            Assert.Equal("вы не банан", Deserializers.UTF8("topic", Serializers.UTF8("topic", "вы не банан"), false));
+            Assert.Null(Deserializers.UTF8("topic", Serializers.UTF8("topic", null), true));
 
             // TODO: check some serialize / deserialize operations that are not expected to work, including some
             //       cases where Deserialize can be expected to throw an exception.
         }
-
-        [Fact]
-        public void DeserializerConstructKeyViaConfig()
-        {
-            string testString = "hello world";
-            var serialized = new StringSerializer(Encoding.UTF8).Serialize("mytopic", testString);
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.deserializer.encoding.key", "utf-8");
-            var deserializer = new StringDeserializer();
-            var newConfig = deserializer.Configure(config, true);
-            Assert.Empty(newConfig);
-            Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized, false));
-        }
-
-        [Fact]
-        public void DeserializerConstructValueViaConfig()
-        {
-            string testString = "hello world";
-            var serialized = new StringSerializer(Encoding.UTF8).Serialize("mytopic", testString);
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.deserializer.encoding.value", "utf-8");
-            var deserializer = new StringDeserializer();
-            var newConfig = deserializer.Configure(config, false);
-            Assert.Empty(newConfig);
-            Assert.Equal(testString, deserializer.Deserialize("mytopic", serialized, false));
-        }
-
-        [Fact]
-        public void SerializerConstructKeyViaConfig()
-        {
-            string testString = "hello world";
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.serializer.encoding.key", "utf-8");
-            var serializer = new StringSerializer();
-            var newConfig = serializer.Configure(config, true);
-            Assert.Empty(newConfig);
-            var serialized = serializer.Serialize("mytopic", testString);
-            Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized, false), testString);
-        }
-
-        [Fact]
-        public void SerializerConstructValueViaConfig()
-        {
-            string testString = "hello world";
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.serializer.encoding.value", "utf-8");
-            var serializer = new StringSerializer();
-            var newConfig = serializer.Configure(config, false);
-            Assert.Empty(newConfig);
-            var serialized = serializer.Serialize("mytopic", testString);
-            Assert.Equal(new StringDeserializer(Encoding.UTF8).Deserialize("mytopic", serialized, false), testString);
-        }
-
-        [Fact]
-        public void SerializeDoubleConfigKey()
-        {
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.serializer.encoding.value", "utf-8");
-            try
-            {
-                var serializer = new StringSerializer(Encoding.UTF32);
-                serializer.Configure(config, false);
-            }
-            catch (ArgumentException)
-            {
-                return;
-            }
-
-            Assert.True(false, "Exception expected");
-        }
-
-        [Fact]
-        public void DeserializeDoubleConfigValue()
-        {
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.deserializer.encoding.value", "utf-8");
-            try
-            {
-                var deserializer = new StringDeserializer(Encoding.UTF32);
-                deserializer.Configure(config, false);
-            }
-            catch (ArgumentException)
-            {
-                return;
-            }
-
-            Assert.True(false, "Exception expected");
-        }
-
-        [Fact]
-        public void DeserializeInvalidConfigValue()
-        {
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.deserializer.encoding.value", "invalid-encoding");
-            try
-            {
-                var deserializer = new StringDeserializer();
-                deserializer.Configure(config, false);
-            }
-            catch (Exception)
-            {
-                return;
-            }
-
-            Assert.True(false, "Exception expected");
-        }
-
-        [Fact]
-        public void SerializeInvalidConfigValue()
-        {
-            var config = new Dictionary<string, string>();
-            config.Add("dotnet.string.serializer.encoding.value", "invalid-encoding");
-            try
-            {
-                var serializer = new StringSerializer();
-                serializer.Configure(config, false);
-            }
-            catch (Exception)
-            {
-                return;
-            }
-
-            Assert.True(false, "Exception expected");
-        }
-
-        [Fact]
-        public void DeserializeNoConfigValue()
-        {
-            try
-            {
-                var deserializer = new StringDeserializer();
-                deserializer.Configure(new Dictionary<string, string>(), false);
-            }
-            catch (Exception)
-            {
-                return;
-            }
-
-            Assert.True(false, "Exception expected");
-        }
-
-        [Fact]
-        public void SerializeNoConfigValue()
-        {
-            try
-            {
-                var serializer = new StringSerializer();
-                serializer.Configure(new Dictionary<string, string>(), false);
-            }
-            catch (Exception)
-            {
-                return;
-            }
-
-            Assert.True(false, "Exception expected");
-        }
-
     }
 }

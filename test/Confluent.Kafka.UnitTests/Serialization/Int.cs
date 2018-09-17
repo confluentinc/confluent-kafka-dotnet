@@ -16,7 +16,6 @@
 
 using System;
 using Xunit;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.UnitTests.Serialization
@@ -35,8 +34,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void IsBigEndian()
         {
-            var serializer = new IntSerializer();
-            var bytes = serializer.Serialize("topic", 42);
+            var bytes = Serializers.Int32("topic", 42);
             Assert.Equal(4, bytes.Length);
             // most significant byte in smallest address.
             Assert.Equal(0, bytes[0]);
@@ -51,8 +49,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
                 int networkOrder = System.Net.IPAddress.HostToNetworkOrder(theInt);
                 var bytes1 = BitConverter.GetBytes(networkOrder);
 
-                var serializer = new IntSerializer();
-                var bytes2 = serializer.Serialize("topic", theInt);
+                var bytes2 = Serializers.Int32("topic", theInt);
 
                 Assert.Equal(bytes1.Length, bytes2.Length);
 
@@ -66,12 +63,9 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void CanReconstructInt()
         {
-            var serializer = new IntSerializer();
-            var deserializer = new IntDeserializer();
-
             foreach (int theInt in toTest)
             {
-                var reconstructed = deserializer.Deserialize("topic", serializer.Serialize("topic", theInt), false);
+                var reconstructed = Deserializers.Int32("topic", Serializers.Int32("topic", theInt), false);
                 Assert.Equal(theInt, reconstructed);
             }
         }

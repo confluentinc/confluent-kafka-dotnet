@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var drs = new List<Task<DeliveryReport<Null, Null>>>();
-            using (var producer = new Producer<Null, Null>(producerConfig, null, null))
+            using (var producer = new Producer<Null, Null>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));

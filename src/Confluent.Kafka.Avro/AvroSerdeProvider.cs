@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Create a new avro deserializer. Use this deserializer with 
+        ///     Create a new avro deserializer generator. Use this with 
         ///     GenericRecord, types generated using the avrogen.exe tool or
         ///     one of the following primitive types: int, long, float,
         ///     double, boolean, string, byte[].
@@ -41,39 +41,32 @@ namespace Confluent.Kafka.Serialization
         ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
         ///       following bytes:  The serialized data.
         /// </remarks>
-        public IDeserializer<T> CreateDeserializer<T>()
+        public DeserializerGenerator<T> DeserializerGenerator<T>()
         {
-            var deserializer = new AvroDeserializer<T>(schemaRegistryClient);
-            deserializer.Configure(config, false);
-            return deserializer;
+            return (forKey) => 
+            {
+                var deserializer = new AvroDeserializer<T>(schemaRegistryClient);
+                deserializer.Configure(config, forKey);
+                return (string topic, ReadOnlySpan<byte> data, bool isNull) => deserializer.Deserialize(topic, data, isNull);
+            };
         }
 
         /// <summary>
-        ///     Create a new avro serializer for message keys. Use this serializer
+        ///     Create a new avro serializer generator for message keys. Use this
         ///     with GenericRecord, types generated using the avrogen.exe tool or
         ///     one of the following primitive types: int, long, float, double, 
         ///     boolean, string, byte[].
         /// </summary>
-        public ISerializer<T> CreateKeySerializer<T>()
+        public SerializerGenerator<T> SerializerGenerator<T>()
         {
-            var serializer = new AvroSerializer<T>(schemaRegistryClient);
-            serializer.Configure(config, true);
-            return serializer;
+            return (forKey) =>
+            {
+                var serializer = new AvroSerializer<T>(schemaRegistryClient);
+                serializer.Configure(config, true);
+                return (string topic, T data) => serializer.Serialize(topic, data);
+            };
         }
         
-        /// <summary>
-        ///     Create a new avro serializer for message values. Use this serializer
-        ///     with GenericRecord, types generated using the avrogen.exe tool or
-        ///     one of the following primitive types: int, long, float, double, 
-        ///     boolean, string, byte[].
-        /// </summary>
-        public ISerializer<T> CreateValueSerializer<T>()
-        {
-            var serializer = new AvroSerializer<T>(schemaRegistryClient);
-            serializer.Configure(config, false);
-            return serializer;
-        }
-
         /// <summary>
         ///     Releases all resources owned by this object.
         /// </summary>
@@ -83,4 +76,3 @@ namespace Confluent.Kafka.Serialization
         }
     }
 }
-

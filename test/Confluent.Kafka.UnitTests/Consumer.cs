@@ -18,7 +18,6 @@ using Xunit;
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.UnitTests
@@ -48,7 +47,7 @@ namespace Confluent.Kafka.UnitTests
             e = Assert.Throws<ArgumentException>(() => 
             {
                 var validConfig = CreateValidConfiguration();
-                var deserializer = new StringDeserializer(Encoding.UTF8);
+                var deserializer = Deserializers.UTF8;
                 var c = new Consumer<string, string>(validConfig, deserializer, deserializer); 
             });
             Assert.Contains("must not be the same object", e.Message);

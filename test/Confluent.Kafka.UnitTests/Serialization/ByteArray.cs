@@ -1,5 +1,4 @@
-﻿using Confluent.Kafka.Serialization;
-using Xunit;
+﻿using Xunit;
 
 
 namespace Confluent.Kafka.UnitTests.Serialization
@@ -12,12 +11,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [InlineData(new byte[] { 1, 2, 3, 4, 5 })]
         public void CanReconstructByteArray(byte[] values)
         {
-            Assert.Equal(values, new ByteArrayDeserializer().Deserialize(null, new ByteArraySerializer().Serialize(null, values), false));
+            Assert.Equal(values, Deserializers.ByteArray(null, Serializers.ByteArray(null, values), false));
         }
 
+        [Fact]
         public void CanReconstructByteArrayNull()
         {
-            Assert.Equal(null, new ByteArrayDeserializer().Deserialize(null, new ByteArraySerializer().Serialize(null, null), true));
+            Assert.Null(Deserializers.ByteArray(null, Serializers.ByteArray(null, null), true));
         }
     }
 }

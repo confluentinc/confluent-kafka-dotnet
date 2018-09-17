@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             };
 
             using (var serdeProvider = new AvroSerdeProvider(avroConfig))
-            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
+            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<int>()))
             {
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
@@ -65,7 +65,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var avroConfig2 = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             using (var serdeProvider = new AvroSerdeProvider(avroConfig2))
-            using (var producer = new Producer<string, int>(producerConfig2, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
+            using (var producer = new Producer<string, int>(producerConfig2, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<int>()))
             {
                 producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
@@ -75,7 +75,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             // config with avro.serializer.auto.register.schemas == false should work now.
             using (var serdeProvider = new AvroSerdeProvider(avroConfig3))
-            using (var producer = new Producer<string, int>(producerConfig3, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
+            using (var producer = new Producer<string, int>(producerConfig3, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<int>()))
             {
                 producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }

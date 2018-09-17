@@ -16,29 +16,12 @@
 
 using System;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkConsumer
     {
-        /// <summary>
-        ///     A deserializer that does nothing.
-        /// </summary>
-        public class BenchmarkDeserializer : IDeserializer<byte[]>
-        {
-            public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
-                => config;
-
-            /// <summary>
-            ///     The data parameter references librdkafka managed memory directly.
-            ///     Since we want a high benchmark
-            /// </summary>
-            public byte[] Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
-                => null;
-        }
-
         public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders)
         {
             var consumerConfig = new ConsumerConfig
@@ -49,7 +32,7 @@ namespace Confluent.Kafka.Benchmark
                 ConsumeResultFields = nHeaders == 0 ? "none" : "headers"
             };
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, new BenchmarkDeserializer(), new BenchmarkDeserializer()))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, (topic_, data, isNull) => null, (topic_, data, isNull) => null))
             {
                 for (var j=0; j<nTests; j += 1)
                 {
