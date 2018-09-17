@@ -35,13 +35,10 @@ namespace AvroBlogExample
     {
         static void ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
+            using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var producer = new Producer<Null, GenericRecord>(producerConfig, null, serdeProvider.CreateValueSerializer<GenericRecord>()))
             {
                 var logLevelSchema = (EnumSchema)Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
@@ -68,13 +65,10 @@ namespace AvroBlogExample
 
         static void ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, new AvroSerializer<MessageTypes.LogMessage>()))
+            using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var producer = new Producer<Null, MessageTypes.LogMessage>(producerConfig, null, serdeProvider.CreateValueSerializer<MessageTypes.LogMessage>()))
             {
                 producer.ProduceAsync("log-messages", 
                     new Message<Null, MessageTypes.LogMessage> 
@@ -99,16 +93,15 @@ namespace AvroBlogExample
                 cts.Cancel();
             };
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl },
-                { "auto.offset.reset", "beginning" }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(
-                consumerConfig, null, new AvroDeserializer<MessageTypes.LogMessage>()))
+            using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(consumerConfig, null, serdeProvider.CreateDeserializer<MessageTypes.LogMessage>()))
             {
                 consumer.Subscribe("log-messages");
 

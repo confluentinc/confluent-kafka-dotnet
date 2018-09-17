@@ -34,19 +34,19 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Consumer_StoreOffsets");
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "auto.offset.reset", "latest" },
-                { "enable.auto.commit", true },
-                { "enable.auto.offset.store", false }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                AutoOffsetReset = AutoOffsetResetType.Latest,
+                EnableAutoCommit = true,
+                EnableAutoOffsetStore = false
             };
 
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;

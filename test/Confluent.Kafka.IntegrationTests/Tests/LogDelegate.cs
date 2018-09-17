@@ -36,35 +36,38 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start LogDelegate");
 
             var logCount = 0;
-            Action<LogMessage> logger = (LogMessage m) => logCount += 1;
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "debug", "all" },
-                { "log_cb", logger }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                Debug = "all"
             };
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "debug", "all" },
-                { "log_cb", logger }
+                BootstrapServers = bootstrapServers,
+                Debug = "all"
             };
 
             DeliveryReport<Null, string> dr;
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
+                producer.OnLog += (_, m)
+                    => logCount += 1;
+
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
             logCount = 0;
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
+                consumer.OnLog += (_, m)
+                    => logCount += 1;
+
                 consumer.Consume(TimeSpan.FromMilliseconds(100));
             }
             Assert.True(logCount > 0);

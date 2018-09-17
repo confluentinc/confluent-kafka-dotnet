@@ -38,14 +38,14 @@ namespace Confluent.Kafka.IntegrationTests
             byte[] TestKey = new byte[] { 1, 2, 3, 4 };
             byte[] TestValue = new byte[] { 5, 6, 7, 8 };
 
-            var producerConfig = new Dictionary<string, object> 
+            var producerConfig = new ProducerConfig
             { 
-                { "bootstrap.servers", bootstrapServers },
-                { "dotnet.producer.enable.delivery.reports", false },
+                BootstrapServers = bootstrapServers,
+                EnableDeliveryReports = false,
                 // the below are just a few extra tests that the property is recognized (all 
                 // set to defaults). the functionality is not tested.
-                { "dotnet.producer.enable.background.poll", true },
-                { "dotnet.producer.delivery.report.fields", "all" },
+                EnableBackgroundPoll = true,
+                DeliveryReportFields = "all"
             };
 
             // If delivery reports are disabled:
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
             //   2. specifying no delivery report handlers is valid.
             //   3. tasks should complete immediately.
             int count = 0;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig, new ByteArraySerializer(), new ByteArraySerializer()))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue }, (DeliveryReportResult<byte[], byte[]> dr) => count += 1);
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });

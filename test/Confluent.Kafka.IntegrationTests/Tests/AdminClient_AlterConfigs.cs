@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start AdminClient_AlterConfigs");
 
-            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
             {
                 // 1. create a new topic to play with.
                 string topicName = Guid.NewGuid().ToString();

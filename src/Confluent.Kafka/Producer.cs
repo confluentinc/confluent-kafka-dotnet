@@ -54,7 +54,19 @@ namespace Confluent.Kafka
 
             if (keySerializer == null)
             {
-                if (typeof(TKey) != typeof(Null))
+                if (typeof(TKey) == typeof(Null))
+                {
+                    this.keySerializer = (ISerializer<TKey>) new NullSerializer();
+                }
+                else if (typeof(TKey) == typeof(byte[]))
+                {
+                    this.keySerializer = (ISerializer<TKey>) new ByteArraySerializer();
+                }
+                else if (typeof(TKey) == typeof(string))
+                {
+                    this.keySerializer = (ISerializer<TKey>) new StringSerializer(System.Text.Encoding.UTF8);
+                }
+                else 
                 {
                     throw new ArgumentNullException("Key serializer must be specified.");
                 }
@@ -62,7 +74,19 @@ namespace Confluent.Kafka
 
             if (valueSerializer == null)
             {
-                if (typeof(TValue) != typeof(Null))
+                if (typeof(TValue) == typeof(Null))
+                {
+                    this.valueSerializer = (ISerializer<TValue>)new NullSerializer();
+                }
+                else if (typeof(TValue) == typeof(byte[]))
+                {
+                    this.valueSerializer = (ISerializer<TValue>) new ByteArraySerializer();
+                }
+                else if (typeof(TValue) == typeof(string))
+                {
+                    this.valueSerializer = (ISerializer<TValue>) new StringSerializer(System.Text.Encoding.UTF8);
+                }
+                else
                 {
                     throw new ArgumentNullException("Value serializer must be specified.");
                 }
@@ -87,9 +111,9 @@ namespace Confluent.Kafka
         ///     An ISerializer implementation instance that will be used to serialize values.
         /// </param>
         public Producer(
-            IEnumerable<KeyValuePair<string, object>> config,
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer)
+            IEnumerable<KeyValuePair<string, string>> config,
+            ISerializer<TKey> keySerializer = null,
+            ISerializer<TValue> valueSerializer = null)
         {
             var configWithoutKeySerializerProperties = keySerializer?.Configure(config, true) ?? config;
             var configWithoutValueSerializerProperties = valueSerializer?.Configure(config, false) ?? config;
@@ -99,7 +123,8 @@ namespace Confluent.Kafka
                 configWithoutValueSerializerProperties.Any(ci => ci.Key == item.Key)
             );
 
-            this.ownedClient = new Producer(configWithoutSerializerProperties);
+            this.ownedClient = new Producer(config);
+
             this.handle = ownedClient.Handle;
             this.producer = ownedClient;
             setAndValidateSerializers(keySerializer, valueSerializer);
@@ -269,16 +294,6 @@ namespace Confluent.Kafka
         {
             if (disposing)
             {
-                if (keySerializer != null)
-                {
-                    keySerializer.Dispose();
-                }
-
-                if (valueSerializer != null)
-                {
-                    valueSerializer.Dispose();
-                }
-
                 if (ownedClient == this.handle.Owner) 
                 {
                     ownedClient.Dispose();
@@ -286,6 +301,34 @@ namespace Confluent.Kafka
             }
         }
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
+        /// </summary>
+        public event EventHandler<LogMessage> OnLog
+        {
+            add { handle.Owner.OnLog += value; }
+            remove { handle.Owner.OnLog -= value; }
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
+        /// </summary>
+        public event EventHandler<string> OnStatistics
+        {
+            add { handle.Owner.OnStatistics += value; }
+            remove { handle.Owner.OnStatistics -= value; }
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
+        /// </summary>
+        public event EventHandler<ErrorEvent> OnError
+        {
+            add { handle.Owner.OnError += value; }
+            remove { handle.Owner.OnError -= value; }
+        }
+        
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
         /// </summary>
@@ -451,8 +494,8 @@ namespace Confluent.Kafka
 
                 cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
-                var keyBytes = keySerializer?.Serialize(topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topic, message.Value);
+                var keyBytes = keySerializer.Serialize(topic, message.Key);
+                var valBytes = valueSerializer.Serialize(topic, message.Value);
 
                 producer.ProduceImpl(
                     topic,
@@ -465,8 +508,8 @@ namespace Confluent.Kafka
             }
             else
             {
-                var keyBytes = keySerializer?.Serialize(topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topic, message.Value);
+                var keyBytes = keySerializer.Serialize(topic, message.Key);
+                var valBytes = valueSerializer.Serialize(topic, message.Value);
 
                 producer.ProduceImpl(
                     topic,
@@ -512,8 +555,8 @@ namespace Confluent.Kafka
 
                 cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
-                var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+                var keyBytes = keySerializer.Serialize(topicPartition.Topic, message.Key);
+                var valBytes = valueSerializer.Serialize(topicPartition.Topic, message.Value);
                 
                 producer.ProduceImpl(
                     topicPartition.Topic, 
@@ -526,8 +569,8 @@ namespace Confluent.Kafka
             }
             else
             {
-                var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-                var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+                var keyBytes = keySerializer.Serialize(topicPartition.Topic, message.Key);
+                var valBytes = valueSerializer.Serialize(topicPartition.Topic, message.Value);
                 
                 producer.ProduceImpl(
                     topicPartition.Topic, 
@@ -562,8 +605,8 @@ namespace Confluent.Kafka
         /// </param>
         public void BeginProduce(TopicPartition topicPartition, Message<TKey, TValue> message, Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
         {
-            var keyBytes = keySerializer?.Serialize(topicPartition.Topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topicPartition.Topic, message.Value);
+            var keyBytes = keySerializer.Serialize(topicPartition.Topic, message.Key);
+            var valBytes = valueSerializer.Serialize(topicPartition.Topic, message.Value);
 
             producer.ProduceImpl(
                 topicPartition.Topic,
@@ -598,8 +641,8 @@ namespace Confluent.Kafka
         /// </param>
         public void BeginProduce(string topic, Message<TKey, TValue> message, Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
         {
-            var keyBytes = keySerializer?.Serialize(topic, message.Key);
-            var valBytes = valueSerializer?.Serialize(topic, message.Value);
+            var keyBytes = keySerializer.Serialize(topic, message.Key);
+            var valBytes = valueSerializer.Serialize(topic, message.Value);
 
             producer.ProduceImpl(
                 topic,
@@ -712,51 +755,33 @@ namespace Confluent.Kafka
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
-        private Action<Error> errorDelegate = null;
         private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-
-            if (errorDelegate != null)
-            {
-                errorDelegate(new Error(err, reason));
-            }
+            OnError?.Invoke(this, new ErrorEvent(new Error(err, reason), false));
         }
 
 
-        private Action<string> statsDelegate = null;
         private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-
-            if (statsDelegate != null)
-            {
-                statsDelegate(Util.Marshal.PtrToStringUTF8(json));
-            }
-
+            OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
 
         private object loggerLockObj = new object();
-        Action<LogMessage> logDelegate = null;
         private readonly Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             // Note: kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
-
-            var name = Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk));
-
-            lock (loggerLockObj)
-            {
-                logDelegate(new LogMessage(name, level, fac, buf));
-            }
+            OnLog?.Invoke(this, new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -895,9 +920,25 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
+        /// </summary>
+        public event EventHandler<LogMessage> OnLog;
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
+        /// </summary>
+        public event EventHandler<ErrorEvent> OnError;
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
+        /// </summary>
+        public event EventHandler<string> OnStatistics;
+
+
+        /// <summary>
         ///     <see cref="Confluent.Kafka.Producer{TKey, TValue}" />
         /// </summary>
-        public Producer(IEnumerable<KeyValuePair<string, object>> config)
+        public Producer(IEnumerable<KeyValuePair<string, string>> config)
         {
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
@@ -911,10 +952,7 @@ namespace Confluent.Kafka
                 .Where(prop => 
                     prop.Key != ConfigPropertyNames.ProducerEnableBackgroundPoll &&
                     prop.Key != ConfigPropertyNames.ProducerEnableDeliveryReports &&
-                    prop.Key != ConfigPropertyNames.ProducerDeliveryReportFields &&
-                    prop.Key != ConfigPropertyNames.LogCallback &&
-                    prop.Key != ConfigPropertyNames.ErrorCallback &&
-                    prop.Key != ConfigPropertyNames.StatsCallback);
+                    prop.Key != ConfigPropertyNames.ProducerDeliveryReportFields);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -966,35 +1004,12 @@ namespace Confluent.Kafka
                 }
             }
 
-            var logDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.LogCallback).Value;
-            if (logDelegateObj != null)
-            {
-                this.logDelegate = (Action<LogMessage>)logDelegateObj;
-            }
-            else
-            {
-                this.logDelegate = Loggers.ConsoleLogger;
-            }
-
-            var errorDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ErrorCallback).Value;
-            if (errorDelegateObj != null)
-            {
-                this.errorDelegate = (Action<Error>)errorDelegateObj;
-            }
-
-            var statsDelegateObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.StatsCallback).Value;
-            if (statsDelegateObj != null)
-            {
-                this.statsDelegate = (Action<string>)statsDelegateObj;
-            }
-
-
             // Note: changing the default value of produce.offset.report at the binding level is less than
             // ideal since it means the librdkafka configuration docs will no longer completely match the 
             // .NET client. The default should probably be changed in librdkafka as well.
             if (modifiedConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null)
             {
-                modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, object>[] { new KeyValuePair<string, object>("produce.offset.report", "true") });
+                modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, string>[] { new KeyValuePair<string, string>("produce.offset.report", "true") });
             }
 
             var configHandle = SafeConfigHandle.Create();

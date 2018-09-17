@@ -37,19 +37,17 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Consumer_DisableHeaders");
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "acks", "all" },
-                { "bootstrap.servers", bootstrapServers },
-                { "dotnet.consumer.consume.result.fields", "timestamp,topic" },
-                { "error_cb", (Action<ErrorEvent>)(e => Assert.True(false, e.Error.Reason)) }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                ConsumeResultFields = "timestamp,topic"
             };
 
-            var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             DeliveryReport<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 dr = producer.ProduceAsync(
                     singlePartitionTopic,
@@ -61,8 +59,11 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Result;
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
+                consumer.OnError += (_, e)
+                    => Assert.True(false, e.Reason);
+                    
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 var record = consumer.Consume(TimeSpan.FromSeconds(30));

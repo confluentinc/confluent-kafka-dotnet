@@ -19,18 +19,29 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Encapsulates an error and severity level.
+    ///     Encapsulates a librdkafka error and indication of whether or
+    ///     not the error should be considered fatal.
     /// </summary>
-    public class ErrorEvent
+    public class ErrorEvent : Error
     {
         /// <summary>
-        ///     A librdkafka error
+        ///     Initialize a new ErrorEvent instance 
         /// </summary>
-        public Error Error;
+        /// <param name="error">
+        ///     The error that occured.
+        /// </param>
+        /// <param name="isFatal">
+        ///     whether or not the error is fatal.
+        /// </param>
+        public ErrorEvent(Error error, bool isFatal)
+            : base(error)
+        {
+            IsFatal = isFatal;
+        }
 
         /// <summary>
-        ///     The error severity level
+        ///     Whether or not the event is fatal.
         /// </summary>
-        public SyslogLevel Level;
+        public bool IsFatal { get; set; }
     }
 }

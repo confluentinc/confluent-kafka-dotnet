@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Serialization
     ///     Implement this interface to define a deserializer 
     ///     for a particular type T.
     /// </summary>
-    public interface IDeserializer<T> : IDisposable
+    public interface IDeserializer<T>
     {
         /// <summary>
         ///     Deserialize a byte array to an instance of
@@ -60,6 +60,6 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     A configuration collection with configuration parameter(s) relevant to this deserializer removed.
         /// </returns>
-        IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey);
+        IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey);
     }
 }

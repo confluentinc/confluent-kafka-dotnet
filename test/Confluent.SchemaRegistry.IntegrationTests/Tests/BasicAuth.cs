@@ -80,22 +80,25 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             Assert.Throws<ArgumentException>(() => 
             {   
+                var srConfig = new SchemaRegistryConfig
+                {
+                    SchemaRegistryUrl = config.ServerWithAuth
+                    
+                };
+srConfig.
                 var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>
                 { 
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "USER_INFO" },
                     { "sasl.username", config.Username },
                     { "sasl.password", config.Password }
-                }); 
+                });
             });
 
             // conntect to authenticating without credentials. shouldn't work.
             Assert.Throws<HttpRequestException>(() => 
             { 
-                var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>
-                { 
-                    { "schema.registry.url", config.ServerWithAuth }
-                }); 
+                var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.ServerWithAuth });
                 var topicName = Guid.NewGuid().ToString();
                 var subject = sr.ConstructValueSubjectName(topicName);
                 try

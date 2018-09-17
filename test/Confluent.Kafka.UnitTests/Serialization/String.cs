@@ -43,7 +43,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             string testString = "hello world";
             var serialized = new StringSerializer(Encoding.UTF8).Serialize("mytopic", testString);
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.deserializer.encoding.key", "utf-8");
             var deserializer = new StringDeserializer();
             var newConfig = deserializer.Configure(config, true);
@@ -56,7 +56,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             string testString = "hello world";
             var serialized = new StringSerializer(Encoding.UTF8).Serialize("mytopic", testString);
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.deserializer.encoding.value", "utf-8");
             var deserializer = new StringDeserializer();
             var newConfig = deserializer.Configure(config, false);
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         public void SerializerConstructKeyViaConfig()
         {
             string testString = "hello world";
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.serializer.encoding.key", "utf-8");
             var serializer = new StringSerializer();
             var newConfig = serializer.Configure(config, true);
@@ -81,7 +81,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         public void SerializerConstructValueViaConfig()
         {
             string testString = "hello world";
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.serializer.encoding.value", "utf-8");
             var serializer = new StringSerializer();
             var newConfig = serializer.Configure(config, false);
@@ -93,7 +93,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void SerializeDoubleConfigKey()
         {
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.serializer.encoding.value", "utf-8");
             try
             {
@@ -111,7 +111,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeDoubleConfigValue()
         {
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.deserializer.encoding.value", "utf-8");
             try
             {
@@ -129,7 +129,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeInvalidConfigValue()
         {
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.deserializer.encoding.value", "invalid-encoding");
             try
             {
@@ -147,7 +147,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void SerializeInvalidConfigValue()
         {
-            var config = new Dictionary<string, object>();
+            var config = new Dictionary<string, string>();
             config.Add("dotnet.string.serializer.encoding.value", "invalid-encoding");
             try
             {
@@ -168,7 +168,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             try
             {
                 var deserializer = new StringDeserializer();
-                deserializer.Configure(new Dictionary<string, object>(), false);
+                deserializer.Configure(new Dictionary<string, string>(), false);
             }
             catch (Exception)
             {
@@ -184,7 +184,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
             try
             {
                 var serializer = new StringSerializer();
-                serializer.Configure(new Dictionary<string, object>(), false);
+                serializer.Configure(new Dictionary<string, string>(), false);
             }
             catch (Exception)
             {

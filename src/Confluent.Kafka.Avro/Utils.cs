@@ -23,7 +23,7 @@ namespace Confluent.Kafka.Serialization
 {
     internal static class Utils
     {
-        public static object ExtractPropertyValue(IEnumerable<KeyValuePair<string, object>> config, bool isKey, string name, string className, Type type)
+        public static object ExtractPropertyValue(IEnumerable<KeyValuePair<string, string>> config, bool isKey, string name, string className, Type type)
         {
             var keyOrValue = isKey ? "Key" : "Value";
 
@@ -40,11 +40,11 @@ namespace Confluent.Kafka.Serialization
                 {
                     if (type == typeof(bool))
                     {
-                        return bool.Parse(properties.First().Value.ToString());
+                        return bool.Parse(properties.First().Value);
                     }
                     else if (type == typeof(int))
                     {
-                        return int.Parse(properties.First().Value.ToString());
+                        return int.Parse(properties.First().Value);
                     }
                     throw new NotImplementedException($"cannot parse property of type {type.ToString()}");
                 }

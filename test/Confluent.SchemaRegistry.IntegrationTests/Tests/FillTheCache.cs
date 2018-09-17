@@ -33,11 +33,11 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            var srConfig = new Dictionary<string, object>
+            var srConfig = new SchemaRegistryConfig
             {
-                { "schema.registry.url", config.Server },
-                { "schema.registry.connection.timeout.ms", 3000 },
-                { "schema.registry.max.cached.schemas", capacity }
+                SchemaRegistryUrl = config.Server,
+                SchemaRegistryRequestTimeoutMs = 3000,
+                SchemaRegistryMaxCachedSchemas = capacity
             };
 
             var sr = new CachedSchemaRegistryClient(srConfig);

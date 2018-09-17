@@ -39,28 +39,25 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
+            var avroConfig = new AvroSerdeProviderConfig
             {
-                { "bootstrap.servers", bootstrapServers },
                 // Note: you can specify more than one schema registry url using the
-                // schema.registry.url property for redundancy (comma separated list).
-                // The property name is not plural to follow the convention set by
-                // the Java implementation.
-                { "schema.registry.url", schemaRegistryUrl },
+                // schemaRegistryUrl property for redundancy (comma separated list).
+                SchemaRegistryUrl = schemaRegistryUrl,
                 // optional schema registry client properties:
-                // { "schema.registry.connection.timeout.ms", 5000 },
-                // { "schema.registry.max.cached.schemas", 10 },
+                // SchemaRegistryRequestTimeoutMs = 5000, 
+                // SchemaRegistryMaxCachedSchemas = 10,
                 // optional avro serializer properties:
-                // { "avro.serializer.buffer.bytes", 50 },
-                // { "avro.serializer.auto.register.schemas", true }
+                // AvroSerializerBufferBytes = 50,
+                // AvroSerializerAutoRegisterSchemas = true
             };
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "group.id", Guid.NewGuid() },
-                { "schema.registry.url", schemaRegistryUrl },
-                { "error_cb", (Action<ErrorEvent>)(e => Console.WriteLine($"Error [{e.Level}]: {e.Error.Reason}")) }
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString()
             };
 
             // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));
@@ -80,8 +77,12 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                using (var consumer = new Consumer<string, GenericRecord>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<GenericRecord>()))
+                using (var serdeProvider = new AvroSerdeProvider(avroConfig))
+                using (var consumer = new Consumer<string, GenericRecord>(consumerConfig, serdeProvider.CreateDeserializer<string>(), serdeProvider.CreateDeserializer<GenericRecord>()))
                 {
+                    consumer.OnError += (_, e)
+                        => Console.WriteLine($"Error: {e.Reason}");
+
                     consumer.Subscribe(topicName);
 
                     while (!cts.Token.IsCancellationRequested)
@@ -101,7 +102,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 }
             }, cts.Token);            
 
-            using (var producer = new Producer<string, GenericRecord>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<GenericRecord>()))
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig))
+            using (var producer = new Producer<string, GenericRecord>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<GenericRecord>()))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

@@ -53,60 +53,6 @@ namespace Confluent.Kafka
         public const string ConsumerConsumeResultFields = "dotnet.consumer.consume.result.fields";
 
 
-        // ---- Client
-
-        /// <summary>
-        ///     Specifies a delegate for handling log messages. If not specified,
-        ///     a default callback that writes to stderr will be used.
-        /// </summary>
-        /// <remarks>
-        ///     By default not many log messages are generated.
-        ///
-        ///     For more verbose logging, specify one or more debug contexts 
-        ///     using the 'debug' configuration property. The 'log_level'
-        ///     configuration property is also relevant, however logging is
-        ///     verbose by default given a debug context has been specified,
-        ///     so you typically shouldn't adjust this value.
-        ///
-        ///     Warning: Log handlers are called spontaneously from internal 
-        ///     librdkafka threads and the application must not call any 
-        ///     Confluent.Kafka APIs from within a log handler or perform any
-        ///     prolonged operations.
-        /// </remarks>
-        public const string LogCallback = "log_cb";
-
-        /// <summary>
-        ///     Specifies a delegate for handling error events e.g. connection
-        ///     failures or all brokers down. Note that the client will try 
-        ///     to automatically recover from errors - these errors should be
-        ///     seen as informational rather than catastrophic.
-        /// </summary>
-        /// <remarks>
-        ///     On the Consumer, executes as a side-effect of 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
-        ///     (on the same thread) and on the Producer and AdminClient, on the
-        ///     background poll thread.
-        /// </remarks>
-        public const string ErrorCallback = "error_cb";
-
-        /// <summary>
-        ///     Specifies a delegate for handling statistics events - a JSON
-        ///     formatted string as defined here: 
-        ///     https://github.com/edenhill/librdkafka/wiki/Statistics
-        /// </summary>
-        /// <remarks>
-        ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
-        ///     (disabled by default).
-        /// 
-        ///     On the Consumer, executes as a side-effect of 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
-        ///     (on the same thread) and on the Producer and AdminClient, on the
-        ///     background poll thread.
-        /// </remarks>
-        public const string StatsCallback = "stats_cb";
-
-
         // ---- Deserializers
 
         /// <summary>

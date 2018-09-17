@@ -35,10 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_Produce_Null_DeliveryHandler");
 
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             int count = 0;
             Action<DeliveryReportResult<Null, Null>> dh = (DeliveryReportResult<Null, Null> dr) => 

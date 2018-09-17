@@ -36,10 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Null_Task");
 
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var drs = new List<Task<DeliveryReport<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig, null, null))

@@ -48,10 +48,10 @@ namespace Confluent.Kafka.Avro.UnitTests
         {
             var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
 
-            var config = new Dictionary<string, object>
+            var config = new Dictionary<string, string>
             {
-                { "avro.serializer.buffer.bytes", 42 },
-                { "avro.serializer.auto.register.schemas", false }
+                { "avro.serializer.buffer.bytes", "42" },
+                { "avro.serializer.auto.register.schemas", "false" }
             };
 
             var modifiedConfig = avroSerializer.Configure(config, true);
@@ -64,9 +64,7 @@ namespace Confluent.Kafka.Avro.UnitTests
         {
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
 
-            var config = new Dictionary<string, object>
-            {
-            };
+            var config = new Dictionary<string, string> { };
 
             var modifiedConfig = avroDeserializer.Configure(config, true);
 
@@ -78,9 +76,9 @@ namespace Confluent.Kafka.Avro.UnitTests
         {
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
 
-            var config = new Dictionary<string, object>
+            var config = new Dictionary<string, string>
             {
-                { "some.random.config.param", false }
+                { "some.random.config.param", "false" }
             };
 
             var modifiedConfig = avroDeserializer.Configure(config, true);
@@ -93,9 +91,9 @@ namespace Confluent.Kafka.Avro.UnitTests
         {
             var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
 
-            var config = new Dictionary<string, object>
+            var config = new Dictionary<string, string>
             {
-                { "some.random.config.param", false }
+                { "some.random.config.param", "false" }
             };
 
             var modifiedConfig = avroSerializer.Configure(config, true);
@@ -108,11 +106,11 @@ namespace Confluent.Kafka.Avro.UnitTests
         {
             var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
 
-            var config = new Dictionary<string, object>
+            var config = new Dictionary<string, string>
             {
-                { "avro.serializer.buffer.bytes", 42 },
-                { "avro.serializer.auto.register.schemas", false },
-                { "avro.unknown", 70 }
+                { "avro.serializer.buffer.bytes", "42" },
+                { "avro.serializer.auto.register.schemas", "false" },
+                { "avro.unknown", "70" }
             };
 
             Assert.Throws<ArgumentException>(() => { avroSerializer.Configure(config, true); });
@@ -123,35 +121,9 @@ namespace Confluent.Kafka.Avro.UnitTests
         {
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
 
-            var config = new Dictionary<string, object>
+            var config = new Dictionary<string, string>
             {
-                { "avro.serializer.auto.register.schemas", false }
-            };
-
-            Assert.Throws<ArgumentException>(() => { avroDeserializer.Configure(config, true); });
-        }
-
-        [Fact]
-        public void SerializerDoubleConfigureSchemaRegistry()
-        {
-            var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
-
-            var config = new Dictionary<string, object>
-            {
-                { "schema.registry.url", "localhost:8081" }
-            };
-
-            Assert.Throws<ArgumentException>(() => { avroSerializer.Configure(config, true); });
-        }
-
-        [Fact]
-        public void DeserializerDoubleConfigureSchemaRegistry()
-        {
-            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-
-            var config = new Dictionary<string, object>
-            {
-                { "schema.registry.url", "localhost:8081" }
+                { "avro.serializer.auto.register.schemas", "false" }
             };
 
             Assert.Throws<ArgumentException>(() => { avroDeserializer.Configure(config, true); });

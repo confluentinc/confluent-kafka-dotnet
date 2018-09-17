@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test 
             //  - construction of admin client from configuration.
             //  - creation of more than one topic.
-            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
             {
                 adminClient.CreateTopicsAsync(
                     new TopicSpecification[]
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.IntegrationTests
             //  - construction of admin client from a producer handle
             //  - creation of topic 
             //  - producing to created topics works.
-            using (var producer = new Producer<Null, Null>(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }, null, null))
+            using (var producer = new Producer<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }, null, null))
             using (var adminClient2 = new AdminClient(producer.Handle))
             {
                 adminClient2.CreateTopicsAsync(
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test
             //  - create topic with same name as existing topic
             //  - as well as another topic that does exist (and for which create should succeed).
-            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
             {
                 try
                 {
@@ -109,7 +109,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // test 
             //  - validate only
-            using (var adminClient = new AdminClient(new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } }))
+            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
             {
                 adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName5, NumPartitions = 1, ReplicationFactor = 1 } }, 

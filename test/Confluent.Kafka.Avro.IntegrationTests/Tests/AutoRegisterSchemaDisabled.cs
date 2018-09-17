@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Confluent.Kafka.Serialization;
 using Confluent.SchemaRegistry;
 using Xunit;
@@ -33,27 +34,19 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         {
             string topic = Guid.NewGuid().ToString();
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var avroConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers, AvroSerializerAutoRegisterSchemas = false };
+
+            var consumerConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "avro.serializer.auto.register.schemas", false }
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString(),
+                SessionTimeoutMs = 6000,
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "group.id", Guid.NewGuid().ToString() },
-                { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" }
-            };
-
-            var schemaRegistryConfig = new Dictionary<string, object>
-            {
-                { "schema.registry.url", schemaRegistryServers }
-            };
-
-            using (var schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<string, int>(producerConfig, new AvroSerializer<string>(schemaRegistryClient), new AvroSerializer<int>(schemaRegistryClient)))
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig))
+            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
             {
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
@@ -68,26 +61,21 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 });
             }
 
-            var producerConfig2 = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var producerConfig2 = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var avroConfig2 = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
-            using (var producer = new Producer<string, int>(producerConfig2, new AvroSerializer<string>(), new AvroSerializer<int>()))
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig2))
+            using (var producer = new Producer<string, int>(producerConfig2, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
             {
                 producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
 
-            var producerConfig3 = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers },
-                { "avro.serializer.auto.register.schemas", false }
-            };
+            var producerConfig3 = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var avroConfig3 = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers, AvroSerializerAutoRegisterSchemas = false };
 
             // config with avro.serializer.auto.register.schemas == false should work now.
-            using (var producer = new Producer<string, int>(producerConfig3, new AvroSerializer<string>(), new AvroSerializer<int>()))
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig3))
+            using (var producer = new Producer<string, int>(producerConfig3, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<int>()))
             {
                 producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
