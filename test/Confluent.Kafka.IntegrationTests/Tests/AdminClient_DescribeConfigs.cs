@@ -22,7 +22,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 

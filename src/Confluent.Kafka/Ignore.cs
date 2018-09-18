@@ -14,8 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serialization;
-
 
 namespace Confluent.Kafka
 {

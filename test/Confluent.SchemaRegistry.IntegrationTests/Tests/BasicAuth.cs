@@ -35,13 +35,14 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             // 1. valid configuration cases
 
-            using (var sr = new CachedSchemaRegistryClient(
-                new Dictionary<string, object>
-                { 
-                    { "schema.registry.url", config.ServerWithAuth },
-                    { "schema.registry.basic.auth.credentials.source", "USER_INFO" },
-                    { "schema.registry.basic.auth.user.info", $"{config.Username}:{config.Password}" }
-                }))
+            // 1.1. credentials specified as USER_INFO.
+            var conf = new Dictionary<string, string>
+            { 
+                { "schema.registry.url", config.ServerWithAuth },
+                { "schema.registry.basic.auth.credentials.source", "USER_INFO" },
+                { "schema.registry.basic.auth.user.info", $"{config.Username}:{config.Password}" }
+            };
+            using (var sr = new CachedSchemaRegistryClient(conf))
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = sr.ConstructValueSubjectName(topicName);
@@ -50,8 +51,24 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 Assert.Equal(schema.Id, id);
             }
 
+            // 1.2. credentials specified as USER_INFO implicitly (and using strongly typed SchemaRegistryConfig)
+            var conf2 = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = config.ServerWithAuth,
+                SchemaRegistryBasicAuthUserInfo = $"{config.Username}:{config.Password}"
+            };
+            using (var sr = new CachedSchemaRegistryClient(conf2))
+            {
+                var topicName = Guid.NewGuid().ToString();
+                var subject = sr.ConstructValueSubjectName(topicName);
+                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                Assert.Equal(schema.Id, id);
+            }
+
+            // 1.3. credentials specified as SASL_INHERIT.
             using (var sr = new CachedSchemaRegistryClient(
-                new Dictionary<string, object>
+                new Dictionary<string, string>
                 { 
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "SASL_INHERIT" },
@@ -66,11 +83,26 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 Assert.Equal(schema.Id, id);
             }
 
+            // 1.4. credentials specified as SASL_INHERIT via strongly typed config.
+            var conf3 = new SchemaRegistryConfig { SchemaRegistryUrl = config.ServerWithAuth };
+            conf3.Set(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource, "SASL_INHERIT");
+            conf3.Set("sasl.username", config.Username);
+            conf3.Set("sasl.password", config.Password);
+            using (var sr = new CachedSchemaRegistryClient(conf3))
+            {
+                var topicName = Guid.NewGuid().ToString();
+                var subject = sr.ConstructValueSubjectName(topicName);
+                var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
+                var schema = sr.GetLatestSchemaAsync(subject).Result;
+                Assert.Equal(schema.Id, id);
+            }
+
+
             // 2. invalid configuration cases
 
             Assert.Throws<ArgumentException>(() =>
             {
-                var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>
+                var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
                 { 
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "SASL_INHERIT" },
@@ -80,13 +112,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             Assert.Throws<ArgumentException>(() => 
             {   
-                var srConfig = new SchemaRegistryConfig
-                {
-                    SchemaRegistryUrl = config.ServerWithAuth
-                    
-                };
-srConfig.
-                var sr = new CachedSchemaRegistryClient(new Dictionary<string, object>
+                var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
                 { 
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "USER_INFO" },
@@ -95,7 +121,7 @@ srConfig.
                 });
             });
 
-            // conntect to authenticating without credentials. shouldn't work.
+            // connect to authenticating without credentials. shouldn't work.
             Assert.Throws<HttpRequestException>(() => 
             { 
                 var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.ServerWithAuth });

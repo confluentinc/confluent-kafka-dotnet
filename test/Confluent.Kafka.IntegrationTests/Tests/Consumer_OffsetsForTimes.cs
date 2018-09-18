@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests

@@ -26,6 +26,31 @@ namespace Confluent.Kafka.Serialization
     public class AvroSerdeProviderConfig : SchemaRegistryConfig
     {
         /// <summary>
+        ///     Configuration property names specific the avro serde provider.
+        /// </summary>
+        public new static class PropertyNames
+        {
+            /// <summary>
+            ///     Specifies the initial size (in bytes) of the buffer used for Avro message
+            ///     serialization. Use a value high enough to avoid resizing the buffer, but
+            ///     small enough to avoid excessive memory use. Inspect the size of the byte
+            ///     array returned by the Serialize method to estimate an appropriate value.
+            ///     Note: each call to serialize creates a new buffer.
+            ///
+            ///     default: 1024
+            /// </summary>
+            public const string AvroSerializerBufferBytes = "avro.serializer.buffer.bytes";
+
+            /// <summary>
+            ///     Specifies whether or not the Avro serializer should attempt to auto-register
+            ///     unrecognized schemas with Confluent Schema Registry.
+            ///
+            ///     default: true
+            /// </summary>
+            public const string AvroSerializerAutoRegisterSchemas = "avro.serializer.auto.register.schemas";
+        }
+
+        /// <summary>
         ///     Specifies the initial size (in bytes) of the buffer used for Avro message
         ///     serialization. Use a value high enough to avoid resizing the buffer, but
         ///     small enough to avoid excessive memory use. Inspect the size of the byte
@@ -34,7 +59,7 @@ namespace Confluent.Kafka.Serialization
         /// 
         ///     default: 1024
         /// </summary>
-        public int AvroSerializerBufferBytes { set { this.properties["avro.serializer.buffer.bytes"] = value.ToString(); } }
+        public int AvroSerializerBufferBytes { set { this.properties[PropertyNames.AvroSerializerBufferBytes] = value.ToString(); } }
 
         /// <summary>
         ///     Specifies whether or not the Avro serializer should attempt to auto-register
@@ -42,6 +67,6 @@ namespace Confluent.Kafka.Serialization
         ///
         ///     default: true
         /// </summary>
-        public bool AvroSerializerAutoRegisterSchemas { set { this.properties["avro.serializer.auto.register.schemas"] = value.ToString(); } }
+        public bool AvroSerializerAutoRegisterSchemas { set { this.properties[PropertyNames.AvroSerializerAutoRegisterSchemas] = value.ToString(); } }
     }
 }

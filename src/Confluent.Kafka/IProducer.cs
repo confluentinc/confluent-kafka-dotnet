@@ -22,7 +22,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
-using Confluent.Kafka.Serialization;
 using System.Collections.Concurrent;
 
 

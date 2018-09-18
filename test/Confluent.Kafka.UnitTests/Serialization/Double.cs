@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serialization;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -29,7 +28,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             foreach (var value in TestData)
             {
-                Assert.Equal(value, new DoubleDeserializer().Deserialize(null, new DoubleSerializer().Serialize(null, value), false));
+                Assert.Equal(value, Deserializers.Double(null, Serializers.Double(null, value), false));
             }
         }
 
@@ -38,7 +37,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             var buffer = new byte[] { 23, 0, 0, 0, 0, 0, 0, 0 };
             var value = BitConverter.ToDouble(buffer, 0);
-            var data = new DoubleSerializer().Serialize(null, value);
+            var data = Serializers.Double(null, value);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
@@ -46,15 +45,15 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentNullException>(() => new DoubleDeserializer().Deserialize(null, null, true));
+            Assert.ThrowsAny<ArgumentNullException>(() => Deserializers.Double(null, null, true));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[0], false));
-            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[7], false));
-            Assert.ThrowsAny<ArgumentException>(() => new DoubleDeserializer().Deserialize(null, new byte[9], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Double(null, new byte[0], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Double(null, new byte[7], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Double(null, new byte[9], false));
         }
 
         public static double[] TestData

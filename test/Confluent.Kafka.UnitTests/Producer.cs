@@ -18,7 +18,6 @@ using Xunit;
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.UnitTests

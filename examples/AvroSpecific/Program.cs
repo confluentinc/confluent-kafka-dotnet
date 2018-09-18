@@ -70,7 +70,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var consumeTask = Task.Run(() =>
             {
                 using (var serdeProvider = new AvroSerdeProvider(avroConfig))
-                using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.CreateDeserializer<string>(), serdeProvider.CreateDeserializer<User>()))
+                using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<User>()))
                 {
                     consumer.OnError += (_, e)
                         => Console.WriteLine($"Error: {e.Reason}");
@@ -95,7 +95,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             }, cts.Token);
 
             using (var serdeProvider = new AvroSerdeProvider(avroConfig))
-            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.CreateKeySerializer<string>(), serdeProvider.CreateValueSerializer<User>()))
+            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

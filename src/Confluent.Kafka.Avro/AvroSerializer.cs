@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Serialization
     ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T> : ISerializer<T>
+    public class AvroSerializer<T>
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
@@ -104,7 +104,7 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Serialization.IDeserializer{T}.Configure(IEnumerable{KeyValuePair{string, string}}, bool)" />
+        ///     Configure the serializer.
         /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
         {
@@ -114,15 +114,15 @@ namespace Confluent.Kafka.Serialization
 
             if (avroConfig.Count() != 0)
             {
-                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.AvroSerializerBufferBytes, "AvroSerializer", typeof(int));
+                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, AvroSerdeProviderConfig.PropertyNames.AvroSerializerBufferBytes, "AvroSerializer", typeof(int));
                 if (initialBufferSize != null) { this.initialBufferSize = initialBufferSize.Value; }
 
-                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, ConfigPropertyNames.AvroSerializerAutoRegisterSchemas, "AvroSerializer", typeof(bool));
+                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, AvroSerdeProviderConfig.PropertyNames.AvroSerializerAutoRegisterSchemas, "AvroSerializer", typeof(bool));
                 if (autoRegisterSchema != null) { this.autoRegisterSchema = autoRegisterSchema.Value; }
 
                 foreach (var property in avroConfig)
                 {
-                    if (property.Key != ConfigPropertyNames.AvroSerializerAutoRegisterSchemas && property.Key != ConfigPropertyNames.AvroSerializerBufferBytes)
+                    if (property.Key != AvroSerdeProviderConfig.PropertyNames.AvroSerializerAutoRegisterSchemas && property.Key != AvroSerdeProviderConfig.PropertyNames.AvroSerializerBufferBytes)
                     {
                         throw new ArgumentException($"{keyOrValue} AvroSerializer: unexpected configuration parameter {property.Key}");
                     }

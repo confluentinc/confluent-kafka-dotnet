@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serialization;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -27,13 +26,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [MemberData(nameof(TestData))]
         public void CanReconstructLong(long value)
         {
-            Assert.Equal(value, new LongDeserializer().Deserialize("topic", new LongSerializer().Serialize("topic", value), false));
+            Assert.Equal(value, Deserializers.Long("topic", Serializers.Long("topic", value), false));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = new LongSerializer().Serialize("topic", 23L);
+            var data = Serializers.Long("topic", 23L);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
@@ -41,14 +40,14 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNull()
         {
-            Assert.ThrowsAny<ArgumentException>(()=> new LongDeserializer().Deserialize("topic", null, true));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Long("topic", null, true));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[7], false));
-            Assert.ThrowsAny<ArgumentException>(() => new LongDeserializer().Deserialize("topic", new byte[9], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Long("topic", new byte[7], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Long("topic", new byte[9], false));
         }
 
         public static IEnumerable<object[]> TestData()
