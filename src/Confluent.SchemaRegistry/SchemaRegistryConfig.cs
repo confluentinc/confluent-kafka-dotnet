@@ -66,14 +66,22 @@ namespace Confluent.SchemaRegistry
         ///     A comma-separated list of URLs for schema registry instances that are
         ///     used to register or lookup schemas.
         /// </summary>
-        public string SchemaRegistryUrl { set { this.properties[SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl] = value.ToString(); } }
+        public string SchemaRegistryUrl
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); } 
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value.ToString()); }
+        }
 
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
         /// 
         ///     default: 30000
         /// </summary>
-        public int SchemaRegistryRequestTimeoutMs { set { this.properties[SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs] = value.ToString(); } }
+        public int? SchemaRegistryRequestTimeoutMs
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
+        }
 
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
@@ -81,12 +89,20 @@ namespace Confluent.SchemaRegistry
         /// 
         ///     default: 1000
         /// </summary>
-        public int SchemaRegistryMaxCachedSchemas { set { this.properties[SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas] = value.ToString(); } }
+        public int? SchemaRegistryMaxCachedSchemas
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas, value.ToString()); }
+        }
 
         /// <summary>
         ///     Basic auth credentials in the form {username}:{password}.
         /// </summary>
-        public string SchemaRegistryBasicAuthUserInfo { set { this.properties[SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo] = value; }}
+        public string SchemaRegistryBasicAuthUserInfo
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
+        }
 
         /// <summary>
         ///     Set a configuration property using a string key / value pair.
@@ -98,8 +114,20 @@ namespace Confluent.SchemaRegistry
         ///     The property value.
         /// </param>
         public void Set(string key, string val)
+            => SetObject(key, val);
+
+        /// <summary>
+        ///     Set a configuration property using a key / value pair (null checked).
+        /// </summary>
+        protected void SetObject(string name, object val)
         {
-            this.properties[key] = val;
+            if (val == null)
+            {
+                this.properties.Remove(name);
+                return;
+            }
+
+            this.properties[name] = val.ToString();
         }
 
         /// <summary>
@@ -119,6 +147,38 @@ namespace Confluent.SchemaRegistry
                 return val;
             }
             return null;
+        }
+        
+        /// <summary>
+        ///     Gets a configuration property int? value given a key.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected int? GetInt(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return int.Parse(result);
+        }
+
+        /// <summary>
+        ///     Gets a configuration property bool? value given a key.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected bool? GetBool(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return bool.Parse(result);
         }
         
         /// <summary>

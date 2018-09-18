@@ -59,7 +59,11 @@ namespace Confluent.Kafka.Serialization
         /// 
         ///     default: 1024
         /// </summary>
-        public int AvroSerializerBufferBytes { set { this.properties[PropertyNames.AvroSerializerBufferBytes] = value.ToString(); } }
+        public int? AvroSerializerBufferBytes
+        {
+            get { return GetInt(PropertyNames.AvroSerializerBufferBytes); }
+            set { SetObject(PropertyNames.AvroSerializerBufferBytes, value); }
+        }
 
         /// <summary>
         ///     Specifies whether or not the Avro serializer should attempt to auto-register
@@ -67,6 +71,10 @@ namespace Confluent.Kafka.Serialization
         ///
         ///     default: true
         /// </summary>
-        public bool AvroSerializerAutoRegisterSchemas { set { this.properties[PropertyNames.AvroSerializerAutoRegisterSchemas] = value.ToString(); } }
+        public bool? AvroSerializerAutoRegisterSchemas
+        {
+            get { return GetBool(PropertyNames.AvroSerializerAutoRegisterSchemas); }
+            set { SetObject(PropertyNames.AvroSerializerAutoRegisterSchemas, value); }
+        }
     }
 }
