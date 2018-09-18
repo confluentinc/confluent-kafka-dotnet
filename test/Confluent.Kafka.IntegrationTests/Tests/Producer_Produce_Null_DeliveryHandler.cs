@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(dr.Message.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                count += 1;  
+                count += 1;
             };
 
             using (var producer = new Producer<Null, Null>(producerConfig))

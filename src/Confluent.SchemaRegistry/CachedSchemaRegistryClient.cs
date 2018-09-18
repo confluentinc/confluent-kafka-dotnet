@@ -83,7 +83,9 @@ namespace Confluent.SchemaRegistry
             var basicAuthInfo = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value);
             if (basicAuthInfo != "" && basicAuthSource == "")
             {
-                throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} was specified, but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} was not.");
+                // default to USER_INFO if no source specified, since the strongly typed config
+                // class doesn't even expose the config source property.
+                basicAuthSource = "USER_INFO";
             }
 
             string username = null;

@@ -166,7 +166,9 @@ namespace Confluent.Kafka
 
             this.handle = ownedClient.Handle;
             this.producer = ownedClient;
-            setAndValidateSerializers(keySerializerGenerator(true), valueSerializerGenerator(false));
+            setAndValidateSerializers(
+                keySerializerGenerator == null ? null: keySerializerGenerator(true),
+                valueSerializerGenerator == null ? null : valueSerializerGenerator(false));
         }
 
 
@@ -184,8 +186,8 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(
             Handle handle,
-            Serializer<TKey> keySerializer,
-            Serializer<TValue> valueSerializer)
+            Serializer<TKey> keySerializer = null,
+            Serializer<TValue> valueSerializer = null)
         {
             if (!(handle.Owner is Producer))
             {
@@ -224,7 +226,9 @@ namespace Confluent.Kafka
             this.ownedClient = null;
             this.handle = handle;
             this.producer = (Producer)handle.Owner;
-            setAndValidateSerializers(keySerializerGenerator(true), valueSerializerGenerator(false));
+            setAndValidateSerializers(
+                keySerializerGenerator == null ? null : keySerializerGenerator(true),
+                valueSerializerGenerator == null ? null : valueSerializerGenerator(false));
         }
 
 

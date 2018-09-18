@@ -237,8 +237,13 @@ namespace Confluent.Kafka
         {
             Librdkafka.Initialize(null);
 
-            KeyDeserializer = keyDeserializerGenerator(true);
-            ValueDeserializer = valueDeserializerGenerator(false);
+            KeyDeserializer = keyDeserializerGenerator == null 
+                ? null
+                : keyDeserializerGenerator(true);
+                
+            ValueDeserializer = valueDeserializerGenerator == null
+                ? null
+                : valueDeserializerGenerator(false);
 
             if (KeyDeserializer != null && (object)KeyDeserializer == (object)ValueDeserializer)
             {

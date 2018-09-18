@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Serialization
             return (forKey) =>
             {
                 var serializer = new AvroSerializer<T>(schemaRegistryClient);
-                serializer.Configure(config, true);
+                serializer.Configure(config, forKey);
                 return (string topic, T data) => serializer.Serialize(topic, data);
             };
         }

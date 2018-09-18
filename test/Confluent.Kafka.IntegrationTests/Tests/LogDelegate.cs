@@ -67,6 +67,8 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.OnLog += (_, m)
                     => logCount += 1;
 
+                consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
+                
                 consumer.Consume(TimeSpan.FromMilliseconds(100));
             }
             Assert.True(logCount > 0);
