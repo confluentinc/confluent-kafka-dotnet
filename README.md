@@ -90,7 +90,7 @@ class Program
 {
     public static async Task Main(string[] args)
     {
-        var config = new Dictionary<string, object> { { "bootstrap.servers", "localhost:9092" } };
+        var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
         // A Producer for sending messages with null keys and UTF-8 encoded values.
         using (var p = new Producer<Null, string>(config))
@@ -109,8 +109,8 @@ class Program
 }
 ```
 
-However, a server round-trip is slow (3ms at a minimum; actual latency depends on many factors).
-In highly concurrent scenarios you will get high overall throughput out of the producer using 
+Note that a server round-trip is slow (3ms at a minimum; actual latency depends on many factors).
+In highly concurrent scenarios you will achieve high overall throughput out of the producer using 
 the above approach, but there will be a delay on each `await` call. In stream processing 
 applications, where you would like to process many messages in rapid succession, you would typically
 make use the `BeginProduce` method instead:
@@ -126,7 +126,7 @@ class Program
 {
     public static void Main(string[] args)
     {
-        var conf = new Dictionary<string, object> { { "bootstrap.servers", "localhost:9092" } };
+        var conf = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
         Action<DeliveryReportResult<Null, string>> handler = r => 
             Console.WriteLine(!r.Error.IsError
@@ -161,11 +161,11 @@ class Program
 {
     public static void Main(string[] args)
     {
-        var conf = new Dictionary<string, object> 
+        var conf = new ConsumerConfig
         { 
-            { "group.id", "test-consumer-group" },
-            { "bootstrap.servers", "localhost:9092" },
-            { "auto.offset.reset", "earliest" }
+            GroupId = "test-consumer-group",
+            BootstrapServers = "localhost:9092",
+            AutoOffsetReset = AutoOffsetResetType.Earliest
         };
 
         using (var c = new Consumer<Ignore, string>(conf))
