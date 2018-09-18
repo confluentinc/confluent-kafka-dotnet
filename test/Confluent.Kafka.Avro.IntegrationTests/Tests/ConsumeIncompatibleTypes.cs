@@ -48,7 +48,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<User>()))
+            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
             {
                 var user = new User
                 {
@@ -61,7 +61,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<User, User>(consumerConfig, serdeProvider.DeserializerGenerator<User>(), serdeProvider.DeserializerGenerator<User>()))
+            using (var consumer = new Consumer<User, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<User>(), serdeProvider.GetDeserializerGenerator<User>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<string, string>(consumerConfig, serdeProvider.DeserializerGenerator<string>(), serdeProvider.DeserializerGenerator<string>()))
+            using (var consumer = new Consumer<string, string>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<string>()))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 

@@ -14,7 +14,7 @@ namespace Confluent.Kafka.Serialization
     /// </summary>
     public class AvroSerdeProvider : IDisposable
     {
-        AvroSerdeProviderConfig config;
+        IEnumerable<KeyValuePair<string, string>> config;
         ISchemaRegistryClient schemaRegistryClient;
         
         /// <summary>
@@ -23,7 +23,7 @@ namespace Confluent.Kafka.Serialization
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public AvroSerdeProvider(AvroSerdeProviderConfig config)
+        public AvroSerdeProvider(IEnumerable<KeyValuePair<string, string>> config)
         {
             this.config = config;
             schemaRegistryClient = new CachedSchemaRegistryClient(config);
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Serialization
         ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
         ///       following bytes:  The serialized data.
         /// </remarks>
-        public DeserializerGenerator<T> DeserializerGenerator<T>()
+        public DeserializerGenerator<T> GetDeserializerGenerator<T>()
         {
             return (forKey) => 
             {
@@ -52,12 +52,12 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Create a new avro serializer generator for message keys. Use this
-        ///     with GenericRecord, types generated using the avrogen.exe tool or
+        ///     Create a new avro serializer generator. Use this with
+        ///     GenericRecord, types generated using the avrogen.exe tool or
         ///     one of the following primitive types: int, long, float, double, 
         ///     boolean, string, byte[].
         /// </summary>
-        public SerializerGenerator<T> SerializerGenerator<T>()
+        public SerializerGenerator<T> GetSerializerGenerator<T>()
         {
             return (forKey) =>
             {
@@ -70,9 +70,6 @@ namespace Confluent.Kafka.Serialization
         /// <summary>
         ///     Releases all resources owned by this object.
         /// </summary>
-        public void Dispose()
-        {
-            schemaRegistryClient.Dispose();
-        }
+        public void Dispose() => schemaRegistryClient.Dispose();
     }
 }

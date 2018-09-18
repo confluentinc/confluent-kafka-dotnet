@@ -29,14 +29,14 @@ namespace Confluent.SchemaRegistry
         ///     A comma-separated list of URLs for schema registry instances that are
         ///     used to register or lookup schemas.
         /// </summary>
-        public string SchemaRegistryUrl { set { this.properties["schema.registry.url"] = value.ToString(); } }
+        public string SchemaRegistryUrl { set { this.properties[CachedSchemaRegistryClient.SchemaRegistryUrlPropertyName] = value.ToString(); } }
 
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
         /// 
         ///     default: 30000
         /// </summary>
-        public int SchemaRegistryRequestTimeoutMs { set { this.properties["schema.registry.request.timeout.ms"] = value.ToString(); } }
+        public int SchemaRegistryRequestTimeoutMs { set { this.properties[CachedSchemaRegistryClient.SchemaRegistryRequestTimeoutMsPropertyName] = value.ToString(); } }
 
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry
         /// 
         ///     default: 1000
         /// </summary>
-        public int SchemaRegistryMaxCachedSchemas { set { this.properties["schema.registry.max.cached.schemas"] = value.ToString(); } }
+        public int SchemaRegistryMaxCachedSchemas { set { this.properties[CachedSchemaRegistryClient.SchemaRegistryMaxCachedSchemasPropertyName] = value.ToString(); } }
 
         /// <summary>
         ///     The configuration properties.

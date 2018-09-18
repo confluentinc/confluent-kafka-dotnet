@@ -104,7 +104,7 @@ namespace Confluent.Kafka.Serialization
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Serialization.IDeserializer{T}.Configure(IEnumerable{KeyValuePair{string, string}}, bool)" />
+        ///     Configure the serializer.
         /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
         {

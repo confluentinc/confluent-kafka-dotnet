@@ -229,7 +229,9 @@ namespace Confluent.Kafka
         };
 
         /// <summary>
-        ///     Generators for the standard deserializers.
+        ///     Generators for the standard deserializers (simply return the 
+        ///     appropriate deserializer regardless of the value of the forKey
+        ///     parameter)
         /// </summary>
         public static class Generators
         {

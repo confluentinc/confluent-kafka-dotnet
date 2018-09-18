@@ -47,7 +47,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.SerializerGenerator<string>(), serdeProvider.SerializerGenerator<User>()))
+            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -63,7 +63,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.DeserializerGenerator<string>(), serdeProvider.DeserializerGenerator<User>()))
+            using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<User>()))
             {
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)

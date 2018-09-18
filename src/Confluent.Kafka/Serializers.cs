@@ -156,7 +156,9 @@ namespace Confluent.Kafka
         public static Serializer<byte[]> ByteArray = (topic, data) => data;
 
         /// <summary>
-        ///     Generators for the standard serializers.
+        ///     Generators for the standard serializers (simply return the 
+        ///     appropriate serializer regardless of the value of the forKey
+        ///     parameter)
         /// </summary>
         public static class Generators
         {

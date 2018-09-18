@@ -32,9 +32,9 @@ namespace Confluent.SchemaRegistry
         // which acts as a central location where all config properties are documented. However,
         // Confluent.SchemaRegistry doesn't depend on Confluent.Kafka, so these are redefined here.
         // If these change, they should be kept in-sync in the two places.
-        private const string SchemaRegistryUrlPropertyName = "schema.registry.url";
-        private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.request.timeout.ms";
-        private const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
+        internal const string SchemaRegistryUrlPropertyName = "schema.registry.url";
+        internal const string SchemaRegistryRequestTimeoutMsPropertyName = "schema.registry.request.timeout.ms";
+        internal const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
 
         private IRestService restService;
         private readonly int identityMapCapacity;
@@ -66,7 +66,7 @@ namespace Confluent.SchemaRegistry
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public CachedSchemaRegistryClient(SchemaRegistryConfig config)
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
         {
             if (config == null)
             {
@@ -80,7 +80,7 @@ namespace Confluent.SchemaRegistry
             }
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
-            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryConnectionTimeoutMsPropertyName).FirstOrDefault();
+            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryRequestTimeoutMsPropertyName).FirstOrDefault();
             var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : int.Parse(timeoutMsMaybe.Value);
 
             var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
@@ -94,7 +94,7 @@ namespace Confluent.SchemaRegistry
                 }
 
                 if (property.Key != SchemaRegistryUrlPropertyName && 
-                    property.Key != SchemaRegistryConnectionTimeoutMsPropertyName && 
+                    property.Key != SchemaRegistryRequestTimeoutMsPropertyName && 
                     property.Key != SchemaRegistryMaxCachedSchemasPropertyName)
                 {
                     throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");

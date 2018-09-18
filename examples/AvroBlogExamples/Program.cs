@@ -38,7 +38,7 @@ namespace AvroBlogExample
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer<Null, GenericRecord>(producerConfig, null, serdeProvider.SerializerGenerator<GenericRecord>()))
+            using (var producer = new Producer<Null, GenericRecord>(producerConfig, null, serdeProvider.GetSerializerGenerator<GenericRecord>()))
             {
                 var logLevelSchema = (EnumSchema)Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
@@ -68,7 +68,7 @@ namespace AvroBlogExample
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer<Null, MessageTypes.LogMessage>(producerConfig, null, serdeProvider.SerializerGenerator<MessageTypes.LogMessage>()))
+            using (var producer = new Producer<Null, MessageTypes.LogMessage>(producerConfig, null, serdeProvider.GetSerializerGenerator<MessageTypes.LogMessage>()))
             {
                 producer.ProduceAsync("log-messages", 
                     new Message<Null, MessageTypes.LogMessage> 
@@ -101,7 +101,7 @@ namespace AvroBlogExample
             };
 
             using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(consumerConfig, null, serdeProvider.DeserializerGenerator<MessageTypes.LogMessage>()))
+            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(consumerConfig, null, serdeProvider.GetDeserializerGenerator<MessageTypes.LogMessage>()))
             {
                 consumer.Subscribe("log-messages");
 

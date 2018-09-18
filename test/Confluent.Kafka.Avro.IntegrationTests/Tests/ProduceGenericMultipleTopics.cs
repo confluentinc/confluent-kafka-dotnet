@@ -40,7 +40,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             DeliveryReport<Null, GenericRecord> dr2;
 
             using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.SerializerGenerator<GenericRecord>()))
+            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.GetSerializerGenerator<GenericRecord>()))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
