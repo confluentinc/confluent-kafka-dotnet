@@ -38,7 +38,6 @@ namespace ConfigGen
                 if (p.Name == "consume.callback.max.messages") { return false; }
                 if (p.Name == "offset.store.path") { return false; }
                 if (p.Name == "offset.store.sync.interval.ms") { return false; }
-                if (p.Name == "enabled_events") { return false; }
                 if (p.Name == "builtin.features") { return false; }
                 if (p.Name == "produce.offset.report") { return false; }
                 if (p.Name == "delivery.report.only.error") { return false; }
@@ -46,6 +45,7 @@ namespace ConfigGen
                 if (p.Name == "auto.commit.interval.ms" && !p.IsGlobal) { return false; }
                 if (p.Name == "enable.auto.commit" && !p.IsGlobal) { return false; }
                 if (p.Name == "auto.commit.enable" && !p.IsGlobal) { return false; }
+                if (p.Name.Contains("_")) { return false; }
                 return true;
             }).ToList();
 
@@ -136,7 +136,7 @@ namespace ConfigGen
     {
         public bool IsGlobal { get; set; }
         public string Name { get; set; }
-        public string CPorA { get; set; }
+        public string CPorA { get; set; }  // Consumer, Producer or All.
         public string Range { get; set; }
         public string Default { get; set; }
         public string Description { get; set; }

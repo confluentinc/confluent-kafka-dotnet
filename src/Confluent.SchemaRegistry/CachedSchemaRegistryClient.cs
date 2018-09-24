@@ -95,7 +95,7 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo == "")
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} was set to 'USER_INFO', but no value was specified for {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo}.");
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'USER_INFO', but no value specified for {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo}.");
                 }
                 var userPass = (basicAuthInfo).Split(':');
                 if (userPass.Length != 2)
@@ -109,17 +109,17 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo != "")
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} was set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
                 }
                 var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
                 var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
                 if (saslUsername.Value == null)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} was set to 'SASL_INHERIT', but 'sasl.username' property was not specified.");
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
                 }
                 if (saslPassword.Value == null)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} was set to 'SASL_INHERIT', but 'sasl.password' property was not specified.");
+                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
                 }
                 username = Convert.ToString(saslUsername.Value);
                 password = Convert.ToString(saslPassword.Value);
