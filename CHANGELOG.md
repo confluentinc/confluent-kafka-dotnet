@@ -1,5 +1,5 @@
 
-# 1.0.0-experimental
+# 1.0.0-beta
 
 ## New Features
 - Added an AdminClient, providing `CreateTopics`, `DeleteTopics`, `CreatePartitions`, `DescribeConfigs` and `AlterConfigs`.

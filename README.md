@@ -42,18 +42,19 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.0-experimental-13
+Install-Package Confluent.Kafka -Version 1.0-beta
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.0-experimental-13 Confluent.Kafka
+dotnet add package -v 1.0-beta Confluent.Kafka
 ```
 
-We recommend using the latest 1.0-beta version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5). 
-The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. However, be warned that we may still
-make breaking API changes prior to the final 1.0 release. You can track progress and provide feedback on the new 1.0 API
+**Note:** We recommend using the `1.0-beta` version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5).
+The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. In choosing the label 'beta',
+we are signaling that we do not anticipate making any high impact changes to the API before the 1.0 release, however be warned that some 
+breaking changes are still planned. You can track progress and provide feedback on the new 1.0 API
 [here](https://github.com/confluentinc/confluent-kafka-dotnet/issues/614).
 
 ### Branch builds
