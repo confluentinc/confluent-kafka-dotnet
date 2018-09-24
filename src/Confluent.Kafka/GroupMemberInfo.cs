@@ -16,14 +16,15 @@
 //
 // Refer to LICENSE for more information.
 
+
 namespace Confluent.Kafka
 {
     /// <summary>
     ///     Encapsulates information describing a particular
     ///     member of a Kafka group.
     /// </summary>
-    public class GroupMemberInfo {
-
+    public class GroupMemberInfo
+    {
         /// <summary>
         ///     Initializes a new GroupMemberInfo class instance.
         /// </summary>

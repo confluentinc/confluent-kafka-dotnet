@@ -34,39 +34,12 @@ namespace Confluent.Kafka.Serialization
     ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroDeserializer<T> : IDeserializer<T>
+    public class AvroDeserializer<T>
     {
-        private bool disposeClientOnDispose;
-
         private ISchemaRegistryClient schemaRegistryClient;
 
         private IAvroDeserializerImpl<T> deserializerImpl;
 
-        /// <summary>
-        ///     Initialize a new instance of AvroDeserializer.
-        ///     
-        ///     When passed as a parameter to the Confluent.Kafka.Consumer constructor,
-        ///     the following configuration properties will be extracted from the consumer's
-        ///     configuration property collection:
-        ///     
-        ///     schema.registry.url (required) - A comma-separated list of URLs for schema registry 
-        ///         instances that can be used to register or lookup schemas.
-        ///                           
-        ///     schema.registry.connection.timeout.ms (default: 30000) - Timeout for requests to 
-        ///         Confluent Schema Registry.
-        ///     
-        ///     schema.registry.max.cached.schemas (default: 1000) - The maximum number of schemas 
-        ///         to cache locally.
-        /// </summary>
-        /// <remarks>
-        ///     An instance of CachedSchemaRegistryClient will be created and managed 
-        ///     internally based on configuration properties extracted from the collection
-        ///     passed into the Consumer constructor.
-        /// </remarks>
-        public AvroDeserializer()
-        {
-            disposeClientOnDispose = true;
-        }
 
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
@@ -77,7 +50,6 @@ namespace Confluent.Kafka.Serialization
         /// </param>
         public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient)
         {
-            disposeClientOnDispose = false;
             schemaRegistryClient = schemaRegisteryClient;
         }
 
@@ -91,10 +63,13 @@ namespace Confluent.Kafka.Serialization
         ///     A byte array containing the object serialized in the format produced
         ///     by <see cref="AvroSerializer{T}" />.
         /// </param>
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
+        /// </param>
         /// <returns>
         ///     The deserialized <typeparamref name="T"/> value.
         /// </returns>
-        public T Deserialize(string topic, byte[] data)
+        public T Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
             if (deserializerImpl == null)
             {
@@ -103,14 +78,15 @@ namespace Confluent.Kafka.Serialization
                     : new SpecificDeserializerImpl<T>(schemaRegistryClient);
             }
 
-            return deserializerImpl.Deserialize(topic, data);
+            return deserializerImpl.Deserialize(topic, data.ToArray());
         }
 
-        /// <include file='../Confluent.Kafka/include_docs.xml' path='API/Member[@name="IDeserializer_Configure"]/*' />
-        public IEnumerable<KeyValuePair<string, object>> Configure(IEnumerable<KeyValuePair<string, object>> config, bool isKey)
+        /// <summary>
+        ///     Configure the deserializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
         {
             var keyOrValue = isKey ? "Key" : "Value";
-            var srConfig = config.Where(item => item.Key.StartsWith("schema.registry."));
             var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
 
             if (avroConfig.Count() != 0)
@@ -118,33 +94,7 @@ namespace Confluent.Kafka.Serialization
                 throw new ArgumentException($"{keyOrValue} AvroDeserializer: unexpected configuration parameter {avroConfig.First().Key}");
             }
 
-            if (srConfig.Count() != 0)
-            {
-                if (schemaRegistryClient != null)
-                {
-                    throw new ArgumentException($"{keyOrValue} AvroDeserializer schema registry client was configured via both the constructor and configuration parameters.");
-                }
-
-                schemaRegistryClient = new CachedSchemaRegistryClient(config);
-            }
-
-            if (schemaRegistryClient == null)
-            {
-                throw new ArgumentException($"{keyOrValue} AvroDeserializer schema registry client was not supplied or configured.");
-            }
-
-            return config.Where(item => !item.Key.StartsWith("schema.registry.") && !item.Key.StartsWith("avro."));
-        }
-
-        /// <summary>
-        ///     Releases any unmanaged resources owned by the deserializer.
-        /// </summary>
-        public void Dispose()
-        {
-            if (disposeClientOnDispose)
-            {
-                schemaRegistryClient.Dispose();
-            }
+            return config;
         }
 
     }

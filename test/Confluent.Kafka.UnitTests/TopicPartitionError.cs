@@ -27,9 +27,9 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpe = new TopicPartitionError("mytopic", 42, ErrorCode.Local_BadMsg);
 
-            Assert.Equal(tpe.Topic, "mytopic");
-            Assert.Equal(tpe.Partition, 42);
-            Assert.Equal(tpe.Error, new Error(ErrorCode.Local_BadMsg));
+            Assert.Equal("mytopic", tpe.Topic);
+            Assert.Equal((Partition)42, tpe.Partition);
+            Assert.Equal(new Error(ErrorCode.Local_BadMsg), tpe.Error);
         }
 
         [Fact]
@@ -83,10 +83,10 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpe = new TopicPartitionError("mytopic", 42, ErrorCode.Local_BadMsg);
 
-            Assert.True(tpe.ToString().Contains(tpe.Topic));
-            Assert.True(tpe.ToString().Contains(tpe.Partition.ToString()));
-            Assert.True(tpe.ToString().Contains(tpe.Error.ToString()));
-            Assert.True(tpe.ToString().Contains(tpe.Error.Reason));
+            Assert.Contains(tpe.Topic, tpe.ToString());
+            Assert.Contains(tpe.Partition.ToString(), tpe.ToString());
+            Assert.Contains(tpe.Error.ToString(), tpe.ToString());
+            Assert.Contains(tpe.Error.Reason, tpe.ToString());
         }
 
         [Fact]

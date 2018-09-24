@@ -18,7 +18,6 @@ using Xunit;
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.UnitTests
@@ -30,12 +29,9 @@ namespace Confluent.Kafka.UnitTests
         {
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.
-            var configWithNullValue = new Dictionary<string, object>
-            {
-                { "sasl.password", null }
-            };
-            configWithNullValue["sasl.password"] = null;
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Producer<byte[], byte[]>(configWithNullValue, new ByteArraySerializer(), new ByteArraySerializer()); });
+            var configWithNullValue = new ProducerConfig();
+            configWithNullValue.Set("sasl.password", null);
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Producer<byte[], byte[]>(configWithNullValue); });
             Assert.Contains("sasl.password", e.Message);
         }
     }

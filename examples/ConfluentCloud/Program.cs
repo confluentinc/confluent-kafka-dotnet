@@ -18,100 +18,91 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Confluent.Kafka;
-using Confluent.Kafka.Serialization;
 
 
 namespace ConfluentCloudExample
 {
     /// <summary>
-    ///     This is a simple example demonstrating how to produce a message to 
+    ///     This is a simple example demonstrating how to produce a message to
     ///     Confluent Cloud then read it back again.
     ///     
     ///     https://www.confluent.io/confluent-cloud/
     /// 
-    ///     Confluent Cloud does not auto-create topics. You will need to use the ccloud 
-    ///     cli to create the dotnet-test-topic topic before running this example. The 
+    ///     Confluent Cloud does not auto-create topics. You will need to use the ccloud
+    ///     cli to create the dotnet-test-topic topic before running this example. The
     ///     <ccloud bootstrap servers>, <ccloud key> and <ccloud secret> parameters are
     ///     available via the confluent cloud web interface. For more information,
     ///     refer to the quick-start:
-    ///     
+    ///
     ///     https://docs.confluent.io/current/cloud-quickstart.html
     /// </summary>
     class Program
     {
         static void Main(string[] args)
         {
-            var pConfig = new Dictionary<string, object>
+            var pConfig = new ProducerConfig
             {
-                { "bootstrap.servers", "<ccloud bootstrap servers>" },
-                { "broker.version.fallback", "0.10.0.0" },
-                { "api.version.fallback.ms", 0 },
-                { "sasl.mechanisms", "PLAIN" },
-                { "security.protocol", "SASL_SSL" },
-                // On Windows, default trusted root CA certificates are stored in the Windows Registry. 
-                // They are not automatically discovered by Confluent.Kafka and it's not possible to 
-                // reference them using the `ssl.ca.location` property. You will need to obtain these 
+                BootstrapServers = "<ccloud bootstrap servers>",
+                BrokerVersionFallback = "0.10.0.0",
+                ApiVersionFallbackMs = 0,
+                SaslMechanism = SaslMechanismType.Plain,
+                SecurityProtocol = SecurityProtocolType.Sasl_Ssl,
+                // On Windows, default trusted root CA certificates are stored in the Windows Registry.
+                // They are not automatically discovered by Confluent.Kafka and it's not possible to
+                // reference them using the `ssl.ca.location` property. You will need to obtain these
                 // from somewhere else, for example use the cacert.pem file distributed with curl:
                 // https://curl.haxx.se/ca/cacert.pem and reference that file in the `ssl.ca.location`
                 // property:
-                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" }, // suitable configuration for linux, osx.
-                // { "ssl.ca.location", "c:\\path\\to\\cacert.pem" },     // windows
-                { "sasl.username", "<ccloud key>" },
-                { "sasl.password", "<ccloud secret>" }
+                SslCaLocation = "/usr/local/etc/openssl/cert.pem", // suitable configuration for linux, osx.
+                // SslCaLocation = "c:\\path\\to\\cacert.pem", // windows
+                SaslUsername = "<ccloud key>",
+                SaslPassword = "<ccloud secret>"
             };
 
-            using (var producer = new Producer<Null, string>(pConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(pConfig))
             {
-                producer.ProduceAsync("dotnet-test-topic", null, "test value")
-                    .ContinueWith(result => 
-                        {
-                            var msg = result.Result;
-                            if (msg.Error.Code != ErrorCode.NoError)
-                            {
-                                Console.WriteLine($"failed to deliver message: {msg.Error.Reason}");
-                            }
-                            else 
-                            {
-                                Console.WriteLine($"delivered to: {result.Result.TopicPartitionOffset}");
-                            }
-                        });
-
+                producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Key = null, Value = "test value" })
+                    .ContinueWith(task => task.IsFaulted
+                        ? $"error producing message: {task.Exception.Message}"
+                        : $"produced to: {task.Result.TopicPartitionOffset}");
+                
+                // block until all in-flight produce requests have completed (successfully
+                // or otherwise) or 10s has elapsed.
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            var cConfig = new Dictionary<string, object>
+            var cConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", "<confluent cloud bootstrap servers>" },
-                { "broker.version.fallback", "0.10.0.0" },
-                { "api.version.fallback.ms", 0 },
-                { "sasl.mechanisms", "PLAIN" },
-                { "security.protocol", "SASL_SSL" },
-                { "ssl.ca.location", "/usr/local/etc/openssl/cert.pem" }, // suitable configuration for linux, osx.
-                // { "ssl.ca.location", "c:\\path\\to\\cacert.pem" },     // windows
-                { "sasl.username", "<confluent cloud key>" },
-                { "sasl.password", "<confluent cloud secret>" },
-                { "group.id", Guid.NewGuid().ToString() },
-                { "auto.offset.reset", "smallest" }
+                BootstrapServers = "<confluent cloud bootstrap servers>",
+                BrokerVersionFallback = "0.10.0.0",
+                ApiVersionFallbackMs = 0,
+                SaslMechanism = SaslMechanismType.Plain,
+                SecurityProtocol = SecurityProtocolType.Sasl_Ssl,
+                SslCaLocation = "/usr/local/etc/openssl/cert.pem", // suitable configuration for linux, osx.
+                // SslCaLocation = "c:\\path\\to\\cacert.pem",     // windows
+                SaslUsername = "<confluent cloud key>",
+                SaslPassword = "<confluent cloud secret>",
+                GroupId = Guid.NewGuid().ToString(),
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            using (var consumer = new Consumer<Null, string>(cConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(cConfig))
             { 
                 consumer.Subscribe("dotnet-test-topic");
 
-                consumer.OnConsumeError += (_, err)
-                    => Console.WriteLine($"consume error: {err.Error.Reason}");
-
-                consumer.OnMessage += (_, msg)
-                    => Console.WriteLine($"consumed: {msg.Value}");
-
-                consumer.OnPartitionEOF += (_, tpo)
-                    => Console.WriteLine($"end of partition: {tpo}");
-
-                while (true)
+                try
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
-                }  
+                    var consumeResult = consumer.Consume();
+                    Console.WriteLine($"consumed: {consumeResult.Value}");
+                }
+                catch (ConsumeException e)
+                {
+                    Console.WriteLine($"consume error: {e.Error.Reason}");
+                }
+
+                consumer.Close();
             }
+
         }
     }
 }

@@ -50,31 +50,6 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Initializes a new instance of CommittedOffsets with
-        ///     overall operation success.
-        /// </summary>
-        /// <param name="offsets">
-        ///     per-partition offsets and success/error.
-        /// </param>
-        public CommittedOffsets(IList<TopicPartitionOffsetError> offsets)
-        {
-            Offsets = offsets;
-            Error = new Error(ErrorCode.NoError);
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of CommittedOffsets with
-        ///     an empty per-partition list and the overall 
-        ///     success/error <paramref name="error" />.
-        /// </summary>
-        /// <param name="error"></param>
-        public CommittedOffsets(Error error)
-        {
-            Offsets = new List<TopicPartitionOffsetError>();
-            Error = error;
-        }
-
-        /// <summary>
         ///     Gets the overall operation success/error.
         /// </summary>
         public Error Error { get; }

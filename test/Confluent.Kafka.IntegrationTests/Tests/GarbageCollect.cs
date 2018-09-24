@@ -14,10 +14,12 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
+using System.Threading;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
@@ -34,31 +36,32 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void GarbageCollect(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers }
-            };
+            LogToFile("start GarbageCollect");
 
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
-                producer.ProduceAsync(singlePartitionTopic, null, "test string").Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" }).Wait();
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
-                consumer.Poll(1000);
+                consumer.Consume(TimeSpan.FromMilliseconds(1000));
+                consumer.Close();
             }
+
+            // The process running the tests has probably had many created / destroyed clients by now.
+            // This is an arbitrarily chosen test to put this check in.
+            Assert.Equal(0, Library.HandleCount);
 
             GC.Collect();
             // if an attempt is made to free an unmanaged resource a second time
             // in an object finalizer, the call to .Collect() will likely segfault.
+            
+            LogToFile("end   GarbageCollect");
         }
     }
 }

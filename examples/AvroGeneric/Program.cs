@@ -39,27 +39,25 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             string schemaRegistryUrl = args[1];
             string topicName = args[2];
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
+            var avroConfig = new AvroSerdeProviderConfig
             {
-                { "bootstrap.servers", bootstrapServers },
                 // Note: you can specify more than one schema registry url using the
-                // schema.registry.url property for redundancy (comma separated list).
-                // The property name is not plural to follow the convention set by
-                // the Java implementation.
-                { "schema.registry.url", schemaRegistryUrl },
+                // schemaRegistryUrl property for redundancy (comma separated list).
+                SchemaRegistryUrl = schemaRegistryUrl,
                 // optional schema registry client properties:
-                // { "schema.registry.connection.timeout.ms", 5000 },
-                // { "schema.registry.max.cached.schemas", 10 },
+                // SchemaRegistryRequestTimeoutMs = 5000, 
+                // SchemaRegistryMaxCachedSchemas = 10,
                 // optional avro serializer properties:
-                // { "avro.serializer.buffer.bytes", 50 },
-                // { "avro.serializer.auto.register.schemas", true }
+                // AvroSerializerBufferBytes = 50,
+                // AvroSerializerAutoRegisterSchemas = true
             };
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "group.id", Guid.NewGuid() },
-                { "schema.registry.url", schemaRegistryUrl }
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString()
             };
 
             // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));
@@ -75,30 +73,38 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     ]
                   }"
             );
-            
-            using (var consumer = new Consumer<string, GenericRecord>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<GenericRecord>()))
-            using (var producer = new Producer<string, GenericRecord>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<GenericRecord>()))
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            var consumeTask = Task.Run(() =>
             {
-                consumer.OnMessage += (o, e)
-                    => Console.WriteLine($"Key: {e.Key}\nValue: {e.Value}");
-
-                consumer.OnError += (_, e)
-                    => Console.WriteLine("Error: " + e.Reason);
-
-                consumer.OnConsumeError += (_, e)
-                    => Console.WriteLine("Consume error: " + e.Error.Reason);
-
-                consumer.Subscribe(topicName);
-
-                CancellationTokenSource cts = new CancellationTokenSource();
-                var consumeTask = Task.Factory.StartNew(() =>
+                using (var serdeProvider = new AvroSerdeProvider(avroConfig))
+                using (var consumer = new Consumer<string, GenericRecord>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<GenericRecord>()))
                 {
+                    consumer.OnError += (_, e)
+                        => Console.WriteLine($"Error: {e.Reason}");
+
+                    consumer.Subscribe(topicName);
+
                     while (!cts.Token.IsCancellationRequested)
                     {
-                        consumer.Poll(100);
+                        try
+                        {
+                            var consumeResult = consumer.Consume(cts.Token);
+                            Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
+                        }
+                        catch (ConsumeException e)
+                        {
+                            Console.WriteLine("Consume error: " + e.Error.Reason);
+                        }
                     }
-                });
-                
+
+                    consumer.Close();
+                }
+            }, cts.Token);            
+
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig))
+            using (var producer = new Producer<string, GenericRecord>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<GenericRecord>()))
+            {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 int i = 0;
@@ -111,13 +117,14 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     record.Add("favorite_color", "blue");
 
                     producer
-                        .ProduceAsync(topicName, text, record)
-                        .ContinueWith(task => Console.WriteLine($"Wrote to: {task.Result.TopicPartitionOffset}"));
+                        .ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record })
+                        .ContinueWith(task => task.IsFaulted
+                            ? $"error producing message: {task.Exception.Message}"
+                            : $"produced to: {task.Result.TopicPartitionOffset}");
                 }
-                
-                cts.Cancel();
-                consumeTask.Wait();
             }
+
+            cts.Cancel();
         }
     }
 }

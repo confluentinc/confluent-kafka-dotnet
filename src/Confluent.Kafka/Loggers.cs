@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The method used to log messages by default.
         /// </summary>
-        public static void ConsoleLogger(object obj, LogMessage logInfo)
+        public static void ConsoleLogger(LogMessage logInfo)
         {
             var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             Console.Error.WriteLine($"{logInfo.Level}|{now}|{logInfo.Name}|{logInfo.Facility}| {logInfo.Message}");

@@ -93,6 +93,10 @@ namespace Confluent.Kafka.Serialization
                 // with the Java avro serializer.
                 writerSchema = Avro.Schema.Parse("bytes");
             }
+            else if (writerType.Equals(typeof(Null)))
+            {
+                writerSchema = Avro.Schema.Parse("null");
+            }
             else
             {
                 throw new ArgumentException(
@@ -119,8 +123,8 @@ namespace Confluent.Kafka.Serialization
                     // first usage: register/get schema to check compatibility
 
                     writerSchemaId = autoRegisterSchema
-                        ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult()
-                        : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(false).GetAwaiter().GetResult();
+                        ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult()
+                        : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
 
                     topicsRegistered.Add(topic);
                 }

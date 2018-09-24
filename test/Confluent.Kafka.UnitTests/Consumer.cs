@@ -18,7 +18,6 @@ using Xunit;
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 
 
 namespace Confluent.Kafka.UnitTests
@@ -30,46 +29,38 @@ namespace Confluent.Kafka.UnitTests
         {
             // Throw exception if 'group.id' is not set in config and ensure that exception
             // mentions 'group.id'.
-            var config = new Dictionary<string, object>();
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
-            Assert.True(e.Message.Contains("group.id"));
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config, null, new StringDeserializer(Encoding.UTF8)); });
-            Assert.True(e.Message.Contains("group.id"));
+            var config = new ConsumerConfig();
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(config); });
+            Assert.Contains("group.id", e.Message);
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config); });
+            Assert.Contains("group.id", e.Message);
 
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.
             var configWithNullValue = CreateValidConfiguration();
-            configWithNullValue["sasl.password"] = null;
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
+            configWithNullValue.Set("sasl.password", null);
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue); });
             Assert.Contains("sasl.password", e.Message);
-
-            // Throw exception if a config value within default.topic.config is null and
-            // ensure that exception mentions the respective config key.
-            var configWithDefaultTopicNullValue = CreateValidConfiguration();
-            configWithDefaultTopicNullValue["default.topic.config"] = new Dictionary<string, object>() { { "auto.offset.reset", null } };
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithDefaultTopicNullValue, new ByteArrayDeserializer(), new ByteArrayDeserializer()); });
-            Assert.Contains("default.topic.config", e.Message);
-            Assert.Contains("auto.offset.reset", e.Message);
 
             // Throw exception when serializer and deserializer are equal and ensure that exception
             // message indicates the issue.
             e = Assert.Throws<ArgumentException>(() => 
             {
                 var validConfig = CreateValidConfiguration();
-                var deserializer = new StringDeserializer(Encoding.UTF8);
+                var deserializer = Deserializers.UTF8;
                 var c = new Consumer<string, string>(validConfig, deserializer, deserializer); 
             });
-            Assert.True(e.Message.Contains("must not be the same object"));
+            Assert.Contains("must not be the same object", e.Message);
 
             // positve case covered by integration tests. here, avoiding creating a rd_kafka_t instance.
         }
 
-        private static Dictionary<string, object> CreateValidConfiguration()
+        private static ConsumerConfig CreateValidConfiguration()
         {
-            return new Dictionary<string, object>
+            return new ConsumerConfig
             {
-                { "bootstrap.servers", "localhost:9092" },
-                { "group.id", "my-group" }
+                BootstrapServers = "localhost:9092",
+                GroupId = "my-group"
             };
         }
     }

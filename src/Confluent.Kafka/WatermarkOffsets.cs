@@ -20,9 +20,13 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents the low and high watermark offsets of
-    ///     a Kafka topic/partition.
+    ///     Represents the low and high watermark offsets of a Kafka 
+    ///     topic/partition.
     /// </summary>
+    /// <remarks>
+    ///     You can identify a partition that has not yet been written
+    ///     to by checking if the high watermark equals 0.
+    /// </remarks>
     public class WatermarkOffsets
     {
         /// <summary>
@@ -30,10 +34,14 @@ namespace Confluent.Kafka
         ///     with the specified offsets.
         /// </summary>
         /// <param name="low">
-        ///     The offset of the earlist message in the topic/partition.
+        ///     The offset of the earlist message in the topic/partition. If 
+        ///     no messages have been written to the topic, the low watermark
+        ///     offset is set to 0. The low watermark will also be 0 if 
+        ///     one message has been written to the partition (with offset 0).
         /// </param>
         /// <param name="high">
-        ///     The offset of the last stored message in the topic/partition.
+        ///     The high watermark offset, which is the offset of the latest
+        ///     message in the topic/partition available for consumption + 1.
         /// </param>
         public WatermarkOffsets(Offset low, Offset high)
         {
@@ -42,12 +50,16 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Gets the offset of the earlist message in the topic/partition.
+        ///     Gets the offset of the earlist message in the topic/partition. If 
+        ///     no messages have been written to the topic, the low watermark
+        ///     offset is set to 0. The low watermark will also be 0 if 
+        ///     one message has been written to the partition (with offset 0).
         /// </summary>
         public Offset Low { get; }
 
         /// <summary>
-        ///     Gets the offset of the last stored message in the topic/partition.
+        ///     Gets the high watermark offset, which is the offset of the latest
+        ///     message in the topic/partition available for consumption + 1.
         /// </summary>
         public Offset High { get; }
 

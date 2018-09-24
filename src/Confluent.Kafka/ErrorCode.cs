@@ -233,6 +233,31 @@ namespace Confluent.Kafka
         /// </summary>
         Local_ValueDeserialization = -159,
 
+        /// <summary>
+        ///     Partial response
+        /// </summary>
+        Local_Partial = -158,
+
+        /// <summary>
+        ///     Modification attempted on read-only object
+        /// </summary>
+        Local_ReadOnly = -157,
+
+        /// <summary>
+        ///     No such entry / item not found
+        /// </summary>
+        Local_NoEnt = -156,
+
+        /// <summary>
+        ///     Read underflow
+        /// </summary>
+        Local_Underflow = -155,
+
+        /// <summary>
+        ///     Invalid type
+        /// </summary>
+        Local_InvalidType = -154,
+
 
         /// <summary>
         ///     Unknown broker error
@@ -415,9 +440,109 @@ namespace Confluent.Kafka
         IllegalSaslState = 34,
 
         /// <summary>
-        ///     Unuspported version
+        ///     Unusupported version
         /// </summary>
-        UnsupportedVersion = 35
+        UnsupportedVersion = 35,
+
+        /// <summary>
+        ///     Topic already exists
+        /// </summary>
+        TopicAlreadyExists = 36,
+
+        /// <summary>
+        ///     Invalid number of partitions
+        /// </summary>
+        InvalidPartitions = 37,
+
+        /// <summary>
+        ///    Invalid replication factor
+        /// </summary>
+        InvalidReplicationFactor = 38,
+
+        /// <summary>
+        ///     Invalid replica assignment
+        /// </summary>
+        InvalidReplicaAssignment = 39,
+
+        /// <summary>
+        ///     Invalid config
+        /// </summary>
+        InvalidConfig = 40,
+
+        /// <summary>
+        ///     Not controller for cluster
+        /// </summary>
+        NotController = 41,
+
+        /// <summary>
+        ///     Invalid request
+        /// </summary>
+        InvalidRequest = 42,
+
+        /// <summary>
+        ///     Message format on broker does not support request
+        /// </summary>
+        UnsupportedForMessageFormat = 43,
+
+        /// <summary>
+        ///     Isolation policy volation
+        /// </summary>
+        PolicyViolation = 44,
+
+        /// <summary>
+        ///     Broker received an out of order sequence number
+        /// </summary>
+        OutOfOrderSequenceNumber = 45,
+
+        /// <summary>
+        ///     Broker received a duplicate sequence number
+        /// </summary>
+        DuplicateSequenceNumber = 46,
+
+        /// <summary>
+        ///     Producer attempted an operation with an old epoch
+        /// </summary>
+        InvalidProducerEpoch = 47,
+
+        /// <summary>
+        ///     Producer attempted a transactional operation in an invalid state
+        /// </summary>
+        InvalidTxnState = 48,
+
+        /// <summary>
+        ///     Producer attempted to use a producer id which is not currently assigned to its transactional id
+        /// </summary>
+        InvalidProducerIdMapping = 49,
+
+        /// <summary>
+        ///     Transaction timeout is larger than the maximum value allowed by the broker's max.transaction.timeout.ms
+        /// </summary>
+        InvalidTransactionTimeout = 50,
+
+        /// <summary>
+        ///     Producer attempted to update a transaction while another concurrent operation on the same transaction was ongoing
+        /// </summary>
+        ConcurrentTransactions = 51,
+
+        /// <summary>
+        ///     Indicates that the transaction coordinator sending a WriteTxnMarker is no longer the current coordinator for a given producer
+        /// </summary>
+        TransactionCoordinatorFenced = 52,
+
+        /// <summary>
+        ///     Transactional Id authorization failed
+        /// </summary>
+        TransactionalIdAuthorizationFailed = 53,
+
+        /// <summary>
+        ///     Security features are disabled
+        /// </summary>
+        SecurityDisabled = 54,
+
+        /// <summary>
+        ///     Operation not attempted
+        /// </summary>
+        OperationNotAttempted = 55,
     };
 
     /// <summary>
@@ -431,8 +556,8 @@ namespace Confluent.Kafka
         /// </summary>
         public static string GetReason(this ErrorCode code)
         {
-            Impl.LibRdKafka.Initialize(null);
-            return Internal.Util.Marshal.PtrToStringUTF8(Impl.LibRdKafka.err2str(code));
+            Impl.Librdkafka.Initialize(null);
+            return Internal.Util.Marshal.PtrToStringUTF8(Impl.Librdkafka.err2str(code));
         }
     }
 }

@@ -24,11 +24,11 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Constuctor()
         {
-            var lm = new LogMessage("myname", 42, "myfacility", "mymessage");
-            Assert.Equal(lm.Name, "myname");
-            Assert.Equal(lm.Level, 42);
-            Assert.Equal(lm.Facility, "myfacility");
-            Assert.Equal(lm.Message, "mymessage");
+            var lm = new LogMessage("myname", SyslogLevel.Error, "myfacility", "mymessage");
+            Assert.Equal("myname", lm.Name);
+            Assert.Equal(SyslogLevel.Error, lm.Level);
+            Assert.Equal("myfacility", lm.Facility);
+            Assert.Equal("mymessage", lm.Message);
         }
     }
 }

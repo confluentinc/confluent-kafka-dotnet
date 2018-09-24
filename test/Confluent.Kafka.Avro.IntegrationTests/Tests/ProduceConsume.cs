@@ -34,22 +34,20 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         {
             string topic = Guid.NewGuid().ToString();
 
-            var producerConfig = new Dictionary<string, object>
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
+            var consumerConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString(),
+                SessionTimeoutMs = 6000,
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "group.id", Guid.NewGuid().ToString() },
-                { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
-            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -59,46 +57,40 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         favorite_number = i,
                         favorite_color = "blue"
                     };
-                    producer.ProduceAsync(topic, user.name, user);
+                    producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var consumer = new Consumer<string, User>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<User>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<User>()))
             {
-                bool done = false;
-                int i = 0;
-                consumer.OnMessage += (o, e) =>
-                {
-                    Assert.Equal(i.ToString(), e.Key);
-                    Assert.Equal(i.ToString(), e.Value.name);
-                    Assert.Equal(i, e.Value.favorite_number);
-                    Assert.Equal("blue", e.Value.favorite_color);
+                bool consuming = true;
+                consumer.OnPartitionEOF += (_, topicPartitionOffset)
+                    => consuming = false;
 
-                    i++;
-                };
-
-                consumer.OnError += (o, e) =>
-                {
-                    Assert.True(false, e.Reason);
-                };
-
-                consumer.OnConsumeError += (o, e) =>
-                {
-                    Assert.True(false, e.Error.Reason);
-                };
-
-                consumer.OnPartitionEOF += (o, e)
-                    => done = true;
+                consumer.OnError += (_, e)
+                    => Assert.True(false, e.Reason);
 
                 consumer.Subscribe(topic);
 
-                while (!done)
+                int i = 0;
+                while (consuming)
                 {
-                    consumer.Poll(TimeSpan.FromMilliseconds(100));
+                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (record != null)
+                    {
+                        Assert.Equal(i.ToString(), record.Message.Key);
+                        Assert.Equal(i.ToString(), record.Message.Value.name);
+                        Assert.Equal(i, record.Message.Value.favorite_number);
+                        Assert.Equal("blue", record.Message.Value.favorite_color);
+                        i += 1;
+                    }
                 }
 
                 Assert.Equal(100, i);
+
+                consumer.Close();
             }
         }
 

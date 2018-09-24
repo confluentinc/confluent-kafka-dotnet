@@ -24,8 +24,18 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates a Kafka timestamp and its type.
     /// </summary>
-    public struct Timestamp
+    public struct Timestamp : IEquatable<Timestamp>
     {
+        private const long RD_KAFKA_NO_TIMESTAMP = 0;
+
+        /// <summary>
+        ///     A read-only field representing an unspecified timestamp.
+        /// </summary>
+        public static Timestamp Default
+        {
+            get { return new Timestamp(RD_KAFKA_NO_TIMESTAMP, TimestampType.NotAvailable); }
+        }
+
         /// <summary>
         ///     Unix epoch as a UTC DateTime. Unix time is defined as 
         ///     the number of seconds past this UTC time, excluding 
@@ -36,6 +46,7 @@ namespace Confluent.Kafka
 
         private const long UnixTimeEpochMilliseconds 
             = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
+
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -58,7 +69,7 @@ namespace Confluent.Kafka
         ///     if it is not already.
         /// </summary>
         /// <param name="dateTime">
-        ///     The DateTime value to create Timestamp from.
+        ///     The DateTime value corresponding to the timestamp.
         /// </param>
         /// <param name="type">
         ///     The type of the timestamp.
@@ -68,6 +79,30 @@ namespace Confluent.Kafka
             Type = type;
             UnixTimestampMs = DateTimeToUnixTimestampMs(dateTime);
         }
+
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        ///     Note: <paramref name="dateTime" /> is first converted
+        ///     to UTC if it is not already and TimestampType is set
+        ///     to CreateTime.
+        /// </summary>
+        /// <param name="dateTime">
+        ///     The DateTime value corresponding to the timestamp.
+        /// </param>
+        public Timestamp(DateTime dateTime)
+            : this(dateTime, TimestampType.CreateTime) 
+        {}
+
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        ///     Note: TimestampType is set to CreateTime.
+        /// </summary>
+        /// <param name="dateTimeOffset">
+        ///     The DateTimeOffset value corresponding to the timestamp.
+        /// </param>
+        public Timestamp(DateTimeOffset dateTimeOffset)
+            : this(dateTimeOffset.UtcDateTime, TimestampType.CreateTime) 
+        {}
 
         /// <summary>
         ///     Gets the timestamp type.
@@ -86,7 +121,7 @@ namespace Confluent.Kafka
             => UnixTimestampMsToDateTime(UnixTimestampMs);
 
         /// <summary>
-        ///     Determines whether two Timestamps have the same value
+        ///     Determines whether two Timestamps have the same value.
         /// </summary>
         /// <param name="obj">
         ///     Determines whether this instance and a specified object, 
@@ -99,14 +134,25 @@ namespace Confluent.Kafka
         /// </returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is Timestamp))
+            if (obj is Timestamp ts)
             {
-                return false;
+                return Equals(ts);
             }
 
-            var ts = (Timestamp)obj;
-            return ts.Type == Type && ts.UnixTimestampMs == UnixTimestampMs;
+            return false;
         }
+
+        /// <summary>
+        ///     Determines whether two Timestamps have the same value.
+        /// </summary>
+        /// <param name="other">
+        ///     The timestamp to test.
+        /// </param>
+        /// <returns>
+        ///     true if other has the same value. false otherwise.
+        /// </returns>
+        public bool Equals(Timestamp other)
+            => other.Type == Type && other.UnixTimestampMs == UnixTimestampMs;
 
         /// <summary>
         ///     Returns the hashcode for this Timestamp.

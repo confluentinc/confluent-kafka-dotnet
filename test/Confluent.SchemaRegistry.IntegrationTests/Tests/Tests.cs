@@ -44,13 +44,12 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
                 var jsonPath = Path.Combine(assemblyDirectory, "schema.registry.parameters.json");
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
-                schemaRegistryParameters = new List<object[]>
-                {
-                    new object[]
-                    {
-                        json["server"].ToString()
-                    }
-                };
+                var config = new Config();
+                config.Server = json["server"].ToString();
+                config.ServerWithAuth = json["server_with_auth"].ToString();
+                config.Username = json["username"].ToString();
+                config.Password = json["password"].ToString();
+                schemaRegistryParameters = new List<object[]> { new object[] { config } };
             }
             return schemaRegistryParameters;
         }

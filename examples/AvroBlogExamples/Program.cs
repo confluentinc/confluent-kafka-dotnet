@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Avro;
 using Avro.Generic;
 using Confluent.Kafka;
@@ -34,13 +35,10 @@ namespace AvroBlogExample
     {
         static void ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
+            using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var producer = new Producer<Null, GenericRecord>(producerConfig, null, serdeProvider.GetSerializerGenerator<GenericRecord>()))
             {
                 var logLevelSchema = (EnumSchema)Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
@@ -55,10 +53,11 @@ namespace AvroBlogExample
                 record.Add("IP", "127.0.0.1");
                 record.Add("Message", "a test log message");
                 record.Add("Severity", new GenericEnum(logLevelSchema, "Error"));
-                producer.ProduceAsync("log-messages", null, record)
-                    .ContinueWith(dr => Console.WriteLine(dr.Result.Error 
-                        ? $"error producing message: {dr.Result.Error.Reason}"
-                        : $"produced to: {dr.Result.TopicPartitionOffset}"));
+                producer.ProduceAsync("log-messages", new Message<Null, GenericRecord> { Value = record })
+                    .ContinueWith(task => Console.WriteLine(
+                        task.IsFaulted
+                            ? $"error producing message: {task.Exception.Message}"
+                            : $"produced to: {task.Result.TopicPartitionOffset}"));
 
                 producer.Flush(TimeSpan.FromSeconds(30));
             }
@@ -66,22 +65,21 @@ namespace AvroBlogExample
 
         static void ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, new AvroSerializer<MessageTypes.LogMessage>()))
+            using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var producer = new Producer<Null, MessageTypes.LogMessage>(producerConfig, null, serdeProvider.GetSerializerGenerator<MessageTypes.LogMessage>()))
             {
-                producer.ProduceAsync(
-                    "log-messages", null, 
-                    new MessageTypes.LogMessage
+                producer.ProduceAsync("log-messages", 
+                    new Message<Null, MessageTypes.LogMessage> 
                     {
-                        IP = "192.168.0.1",
-                        Message = "a test message 2",
-                        Severity = MessageTypes.LogLevel.Info,
-                        Tags = new Dictionary<string, string> { { "location", "CA" } }
+                        Value = new MessageTypes.LogMessage
+                        {
+                            IP = "192.168.0.1",
+                            Message = "a test message 2",
+                            Severity = MessageTypes.LogLevel.Info,
+                            Tags = new Dictionary<string, string> { { "location", "CA" } }
+                        }
                     });
                 producer.Flush(TimeSpan.FromSeconds(30));
             }
@@ -89,29 +87,39 @@ namespace AvroBlogExample
 
         static void ConsumeSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl },
-                { "auto.offset.reset", "beginning" }
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
             };
 
-            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(
-                consumerConfig, null, new AvroDeserializer<MessageTypes.LogMessage>()))
+            var consumerConfig = new ConsumerConfig
             {
-                consumer.OnConsumeError 
-                    += (_, error) => Console.WriteLine($"an error occured: {error.Error.Reason}");
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                AutoOffsetReset = AutoOffsetResetType.Earliest
+            };
 
-                consumer.OnMessage 
-                    += (_, msg) => Console.WriteLine($"{msg.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{msg.Value.Severity}] {msg.Value.Message}");
-
+            using (var serdeProvider = new AvroSerdeProvider(new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(consumerConfig, null, serdeProvider.GetDeserializerGenerator<MessageTypes.LogMessage>()))
+            {
                 consumer.Subscribe("log-messages");
 
-                while (true)
+                while (!cts.IsCancellationRequested)
                 {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
+                    try
+                    {
+                        var consumeResult = consumer.Consume(cts.Token);
+                        Console.WriteLine($"{consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
+                    }
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"an error occured: {e.Error.Reason}");
+                    }
                 }
+
+                // commit final offsets and leave the group.
+                consumer.Close();
             }
         }
 

@@ -65,7 +65,7 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     A Kafka error.
         /// </param>
-        public TopicPartitionOffsetError(string topic, int partition, Offset offset, Error error)
+        public TopicPartitionOffsetError(string topic, Partition partition, Offset offset, Error error)
         {
             Topic = topic;
             Partition = partition;
@@ -81,7 +81,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Kafka partition.
         /// </summary>
-        public int Partition { get; }
+        public Partition Partition { get; }
 
         /// <summary>
         ///     Gets the Kafka partition offset value.
@@ -149,9 +149,9 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(TopicPartitionOffsetError a, TopicPartitionOffsetError b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return (b is null);
             }
 
             return a.Equals(b);
@@ -184,7 +184,7 @@ namespace Confluent.Kafka
         /// </returns>
         public static explicit operator TopicPartitionOffset(TopicPartitionOffsetError tpoe)
         {
-            if (tpoe.Error.HasError)
+            if (tpoe.Error.IsError)
             {
                 throw new KafkaException(tpoe.Error);
             }

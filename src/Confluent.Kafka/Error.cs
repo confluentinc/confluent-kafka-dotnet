@@ -25,6 +25,14 @@ namespace Confluent.Kafka
     public class Error
     {
         /// <summary>
+        ///     Initialize a new Error instance that is a copy of another.
+        /// </summary>
+        /// <param name="error">
+        ///     The error object to initialize from.
+        /// </param>
+        public Error(Error error) : this(error.Code, error.Reason) {}
+
+        /// <summary>
         ///     Initialize a new Error instance from a particular
         ///     <see cref="ErrorCode"/> value.
         /// </summary>
@@ -65,7 +73,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ErrorCode Code { get; }
 
-        private string reason;
+        private readonly string reason;
 
         /// <summary>
         ///     Gets a human readable reason string associated with this error.
@@ -78,7 +86,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     true if Code != ErrorCode.NoError.
         /// </summary>
-        public bool HasError
+        public bool IsError
             => Code != ErrorCode.NoError;
 
         /// <summary>
@@ -92,15 +100,6 @@ namespace Confluent.Kafka
         /// </summary>
         public bool IsBrokerError
             => (int)Code > 0;
-
-        /// <summary>
-        ///     Converts the specified Error value to a boolean value (false if e.Code == ErrorCode.NoError, true otherwise).
-        /// </summary>
-        /// <param name="e">
-        ///     The Error value to convert.
-        /// </param>
-        public static implicit operator bool(Error e)
-            => e.HasError;
 
         /// <summary>
         ///     Converts the specified Error value to the value of it's Code property.
@@ -162,9 +161,9 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(Error a, Error b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return b is null;
             }
 
             return a.Equals(b);

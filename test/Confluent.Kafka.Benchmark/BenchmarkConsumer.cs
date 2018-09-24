@@ -22,64 +22,49 @@ namespace Confluent.Kafka.Benchmark
 {
     public static class BenchmarkConsumer
     {
-        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, bool usePoll)
+        public static void BenchmarkConsumerImpl(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests, int nHeaders)
         {
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", "benchmark-consumer-group" },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = "benchmark-consumer-group",
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000,
+                ConsumeResultFields = nHeaders == 0 ? "none" : "headers"
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig, (topic_, data, isNull) => null, (topic_, data, isNull) => null))
             {
-                for (var j=0; j<nTests; ++j)
+                for (var j=0; j<nTests; j += 1)
                 {
-                    Console.WriteLine($"{consumer.Name} consuming from {topic} " + (usePoll ? "[Poll]" : "[Consume]"));
+                    Console.WriteLine($"{consumer.Name} consuming from {topic}");
 
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    Message msg;
-                    consumer.Consume(out msg, TimeSpan.FromSeconds(10));
+                    var record = consumer.Consume(TimeSpan.FromSeconds(10));
 
                     long startTime = DateTime.Now.Ticks;
 
-                    if (usePoll)
-                    {
-                        int cnt = 0;
-                        consumer.OnMessage += (_, m) => { cnt += 1; };
+                    var cnt = 0;
 
-                        while (cnt < nMessages-1)
-                        {
-                            consumer.Poll(TimeSpan.FromSeconds(1));
-                        }
-                    }
-                    else
+                    while (cnt < nMessages-1)
                     {
-                        var cnt = 0;
-
-                        while (cnt < nMessages-1)
+                        record = consumer.Consume(TimeSpan.FromSeconds(1));
+                        if (record != null)
                         {
-                            if (consumer.Consume(out msg, TimeSpan.FromSeconds(1)))
-                            {
-                                cnt += 1;
-                            }
+                            cnt += 1;
                         }
                     }
 
                     var duration = DateTime.Now.Ticks - startTime;
 
-                    Console.WriteLine($"Consumed {nMessages-1} in {duration/10000.0:F0}ms");
-                    Console.WriteLine($"{(nMessages-1) / (duration/10000.0):F0} messages/ms");
+                    Console.WriteLine($"Consumed {nMessages-1} messages in {duration/10000.0:F0}ms");
+                    Console.WriteLine($"{(nMessages-1) / (duration/10000.0):F0}k msg/s");
                 }
             }
         }
 
-        public static void Poll(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, true);
-
-        public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nTests)
-            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, false);
+        public static void Consume(string bootstrapServers, string topic, long firstMessageOffset, int nMessages, int nHeaders, int nTests)
+            => BenchmarkConsumerImpl(bootstrapServers, topic, firstMessageOffset, nMessages, nTests, nHeaders);
     }
 }

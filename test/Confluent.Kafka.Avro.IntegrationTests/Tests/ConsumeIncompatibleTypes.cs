@@ -35,22 +35,20 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         {
             string topic = Guid.NewGuid().ToString();
 
-            var producerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "group.id", Guid.NewGuid().ToString() },
-                { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" },
-                { "schema.registry.url", schemaRegistryServers }
+                BootstrapServers = bootstrapServers,
+                GroupId = Guid.NewGuid().ToString(),
+                SessionTimeoutMs = 6000,
+                AutoOffsetReset = AutoOffsetResetType.Earliest
             };
+            
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
-            using (var producer = new Producer<string, User>(producerConfig, new AvroSerializer<string>(), new AvroSerializer<User>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
             {
                 var user = new User
                 {
@@ -58,40 +56,48 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     favorite_number = 107,
                     favorite_color = "orange"
                 };
-                producer.ProduceAsync(topic, user.name, user);
+                producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var consumer = new Consumer<User, User>(consumerConfig, new AvroDeserializer<User>(), new AvroDeserializer<User>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var consumer = new Consumer<User, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<User>(), serdeProvider.GetDeserializerGenerator<User>()))
             {
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
+
                 bool hadError = false;
-                consumer.OnConsumeError += (_, m) =>
+                try
                 {
-                    if (m.Error.Code == ErrorCode.Local_KeyDeserialization)
+                    consumer.Consume(TimeSpan.FromSeconds(10));
+                }
+                catch (ConsumeException e)
+                {
+                    if (e.Error.Code == ErrorCode.Local_KeyDeserialization)
                     {
                         hadError = true;
                     }
-                };
-
-                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
-                consumer.Consume(out Message<User, User> message, TimeSpan.FromSeconds(10));
+                }
 
                 Assert.True(hadError);
             }
 
-            using (var consumer = new Consumer<string, string>(consumerConfig, new AvroDeserializer<string>(), new AvroDeserializer<string>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var consumer = new Consumer<string, string>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<string>()))
             {
+                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
+
                 bool hadError = false;
-                consumer.OnConsumeError += (_, m) =>
+                try
                 {
-                    if (m.Error.Code == ErrorCode.Local_ValueDeserialization)
+                    consumer.Consume(TimeSpan.FromSeconds(10));
+                }
+                catch (ConsumeException e)
+                {
+                    if (e.Error.Code == ErrorCode.Local_ValueDeserialization)
                     {
                         hadError = true;
                     }
-                };
-
-                consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
-                consumer.Consume(out Message<string, string> message, TimeSpan.FromSeconds(10));
+                }
 
                 Assert.True(hadError);
             }

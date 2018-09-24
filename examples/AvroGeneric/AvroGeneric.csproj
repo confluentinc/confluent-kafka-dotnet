@@ -1,12 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <AssemblyName>AvroSpecific</AssemblyName>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.0;net452;</TargetFrameworks>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Confluent.Kafka.Avro\Confluent.Kafka.Avro.csproj" />
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka.Avro" Version="1.0-experimental-13" /> -->
+    <ProjectReference Include="../../src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj" />
   </ItemGroup>
 
 </Project>

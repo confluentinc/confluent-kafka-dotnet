@@ -1,3 +1,6 @@
 {
-  "server": "localhost:8081"
+  "server": "localhost:8081",
+  "server_with_auth": "localhost:8082",
+  "username": "ckp_tester",
+  "password": "test_secret"
 }

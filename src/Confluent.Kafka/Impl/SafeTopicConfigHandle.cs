@@ -32,7 +32,7 @@ namespace Confluent.Kafka.Impl
 
         internal static SafeTopicConfigHandle Create()
         {
-            var ch = LibRdKafka.topic_conf_new();
+            var ch = Librdkafka.topic_conf_new();
             if (ch.IsInvalid)
             {
                 throw new Exception("Failed to create TopicConfig");
@@ -42,16 +42,14 @@ namespace Confluent.Kafka.Impl
 
         internal IntPtr Dup()
         {
-            ThrowIfHandleClosed();
-            return LibRdKafka.topic_conf_dup(handle);
+            return Librdkafka.topic_conf_dup(handle);
         }
 
         // TODO: deduplicate, merge with other one
         internal Dictionary<string, string> Dump()
         {
-            ThrowIfHandleClosed();
             UIntPtr cntp = (UIntPtr) 0;
-            IntPtr data = LibRdKafka.topic_conf_dump(handle, out cntp);
+            IntPtr data = Librdkafka.topic_conf_dump(handle, out cntp);
 
             if (data == IntPtr.Zero)
             {
@@ -77,15 +75,14 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
-                LibRdKafka.conf_dump_free(data, cntp);
+                Librdkafka.conf_dump_free(data, cntp);
             }
         }
 
         internal void Set(string name, string value)
         {
-            ThrowIfHandleClosed();
-            var errorStringBuilder = new StringBuilder(LibRdKafka.MaxErrorStringLength);
-            ConfRes res = LibRdKafka.topic_conf_set(handle, name, value,
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            ConfRes res = Librdkafka.topic_conf_set(handle, name, value,
                     errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
             if (res == ConfRes.Ok)
             {
@@ -107,15 +104,14 @@ namespace Confluent.Kafka.Impl
 
         internal string Get(string name)
         {
-            ThrowIfHandleClosed();
             UIntPtr destSize = UIntPtr.Zero;
             StringBuilder sb = null;
 
-            ConfRes res = LibRdKafka.topic_conf_get(handle, name, null, ref destSize);
+            ConfRes res = Librdkafka.topic_conf_get(handle, name, null, ref destSize);
             if (res == ConfRes.Ok)
             {
                 sb = new StringBuilder((int) destSize);
-                res = LibRdKafka.topic_conf_get(handle, name, sb, ref destSize);
+                res = Librdkafka.topic_conf_get(handle, name, sb, ref destSize);
             }
             if (res != ConfRes.Ok)
             {

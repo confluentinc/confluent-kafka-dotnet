@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serialization;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -24,11 +23,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
 {
     public class FloatTests
     {
-        [Theory]
-        [MemberData(nameof(TestData))]
-        public void CanReconstruct(float value)
+        [Fact]
+        public void CanReconstructFloat()
         {
-            Assert.Equal(value, new FloatDeserializer().Deserialize(null, new FloatSerializer().Serialize(null, value)));
+            foreach (var value in TestData)
+            {
+                Assert.Equal(value, Deserializers.Float(null, Serializers.Float(null, value), false));
+            }
         }
 
         [Fact]
@@ -36,7 +37,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             var buffer = new byte[] { 23, 0, 0, 0 };
             var value = BitConverter.ToSingle(buffer, 0);
-            var data = new FloatSerializer().Serialize(null, value);
+            var data = Serializers.Float(null, value);
             Assert.Equal(23, data[3]);
             Assert.Equal(0, data[0]);
         }
@@ -44,34 +45,34 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<ArgumentNullException>(() => new FloatDeserializer().Deserialize(null, null));
+            Assert.ThrowsAny<ArgumentNullException>(() => Deserializers.Float(null, null, true));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual4Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[0]));
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[3]));
-            Assert.ThrowsAny<ArgumentException>(() => new FloatDeserializer().Deserialize(null, new byte[5]));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Float(null, new byte[0], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Float(null, new byte[3], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Float(null, new byte[5], false));
         }
 
-        public static IEnumerable<object[]> TestData()
+        public static float[] TestData
         {
-            float[] testData = new float[]
+            get
             {
-                0, 1, -1, 42, -42, 127, 128, 129, -127, -128,
-                -129,254, 255, 256, 257, -254, -255, -256, -257,
-                short.MinValue-1, short.MinValue, short.MinValue+1,
-                short.MaxValue-1, short.MaxValue,short.MaxValue+1,
-                int.MaxValue-1, int.MaxValue, int.MinValue, int.MinValue + 1,
-                float.MaxValue-1,float.MaxValue,float.MinValue,float.MinValue+1,
-                float.NaN,float.PositiveInfinity,float.NegativeInfinity,float.Epsilon,-float.Epsilon,
-                0.1f, -0.1f
-            };
+                float[] testData = new float[]
+                {
+                    0, 1, -1, 42, -42, 127, 128, 129, -127, -128,
+                    -129,254, 255, 256, 257, -254, -255, -256, -257,
+                    short.MinValue-1, short.MinValue, short.MinValue+1,
+                    short.MaxValue-1, short.MaxValue,short.MaxValue+1,
+                    int.MaxValue-1, int.MaxValue, int.MinValue, int.MinValue + 1,
+                    float.MaxValue-1,float.MaxValue,float.MinValue,float.MinValue+1,
+                    float.NaN,float.PositiveInfinity,float.NegativeInfinity,float.Epsilon,-float.Epsilon,
+                    0.1f, -0.1f
+                };
 
-            foreach (var v in testData)
-            {
-                yield return new object[] { v };
+                return testData;
             }
         }
     }

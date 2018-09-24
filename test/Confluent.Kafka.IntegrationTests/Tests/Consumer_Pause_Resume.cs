@@ -14,12 +14,13 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
@@ -32,20 +33,22 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_Pause_Resume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            var consumerConfig = new Dictionary<string, object>
+            LogToFile("start Consumer_Pause_Resume");
+
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "auto.offset.reset", "latest" }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                AutoOffsetReset = AutoOffsetResetType.Latest
             };
 
-            var producerConfig = new Dictionary<string, object> { {"bootstrap.servers", bootstrapServers}};
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
-                Message<Null, string> message;
+                ConsumeResult<Null, string> record;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -55,20 +58,34 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (assignedPartitions == null) 
+                while (assignedPartitions == null)
                 {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
+                    consumer.Consume(TimeSpan.FromSeconds(1));
                 }
-                Assert.False(consumer.Consume(out message, TimeSpan.FromSeconds(1)));
+                record = consumer.Consume(TimeSpan.FromSeconds(1));
+                Assert.Null(record);
 
-                Assert.False(producer.ProduceAsync(singlePartitionTopic, null, "test value").Result.Error);
-                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(30)));
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Wait();
+                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                Assert.NotNull(record?.Message);
+
                 consumer.Pause(assignedPartitions);
-                producer.ProduceAsync(singlePartitionTopic, null, "test value 2").Wait();
-                Assert.False(consumer.Consume(out message, TimeSpan.FromSeconds(2)));
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value 2" }).Wait();
+                record = consumer.Consume(TimeSpan.FromSeconds(2));
+                Assert.Null(record);
                 consumer.Resume(assignedPartitions);
-                Assert.True(consumer.Consume(out message, TimeSpan.FromSeconds(10)));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record?.Message);
+
+                // check that these don't throw.
+                consumer.Pause(new List<TopicPartition>());
+                consumer.Resume(new List<TopicPartition>());
+
+                consumer.Close();
             }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Consumer_Pause_Resume");
         }
 
     }

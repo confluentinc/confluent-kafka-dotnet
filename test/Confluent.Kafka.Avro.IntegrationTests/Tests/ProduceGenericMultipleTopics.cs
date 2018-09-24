@@ -30,26 +30,24 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                   }"
             );
 
-            var config = new Dictionary<string, object>()
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryServers }
-            };
+            var config = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
             var topic2 = Guid.NewGuid().ToString();
 
-            Message<Null, GenericRecord> dr;
-            Message<Null, GenericRecord> dr2;
+            DeliveryReport<Null, GenericRecord> dr;
+            DeliveryReport<Null, GenericRecord> dr2;
 
-            using (var p = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.GetSerializerGenerator<GenericRecord>()))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, null, record).Result;
-                dr2 = p.ProduceAsync(topic2, null, record).Result;
+                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr2 = p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
             }
 
             Assert.Null(dr.Key);

@@ -14,7 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
+using System.Text;
 using System.Collections.Generic;
 using Xunit;
 using System.Threading.Tasks;
@@ -23,53 +26,44 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer.ProduceAsync method overload that provides
-    ///     delivery reports via a Task
+    ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
+    ///     that provides delivery reports via a Task.
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Producer_ProduceAsync_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
-            };
+            LogToFile("start Producer_ProduceAsync_Task");
 
-            var key = new byte[] { 1, 2, 3, 4 };
-            var val = new byte[] { 5, 6, 7, 8 };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var drs = new List<Task<Message>>();
-            using (var producer = new Producer(producerConfig))
+            var drs = new List<Task<DeliveryReport<string, string>>>();
+            using (var producer = new Producer<string, string>(producerConfig))
             {
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, 1));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length, true));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 0, key.Length, val, 0, val.Length));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, val));
-                drs.Add(producer.ProduceAsync(partitionedTopic, key, 1, key.Length-1, val, 2, val.Length-2));
+                drs.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 1),
+                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }));
+                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }));
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            for (int i=0; i<5; ++i)
+            for (int i=0; i<2; ++i)
             {
                 var dr = drs[i].Result;
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);
-                Assert.Equal(key, dr.Key);
-                Assert.Equal(val, dr.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal($"test key {i}", dr.Message.Key);
+                Assert.Equal($"test val {i}", dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             }
 
-            Assert.Equal(new byte[] { 2, 3, 4 }, drs[5].Result.Key);
-            Assert.Equal(new byte[] { 7, 8 }, drs[5].Result.Value);
-
-            Assert.Equal(1, drs[0].Result.Partition);
-            Assert.Equal(1, drs[1].Result.Partition);
+            Assert.Equal((Partition)1, drs[0].Result.Partition);
+            
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Producer_ProduceAsync_Task");
         }
     }
 }

@@ -14,10 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
@@ -35,40 +36,47 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void DuplicateConsumerAssign(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            var consumerConfig = new Dictionary<string, object>
+            LogToFile("start DuplicateConsumerAssign");
+
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000
             };
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var testString = "hello world";
 
-            Message<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            DeliveryReport<Null, string> dr;
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.NotNull(dr);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer1 = new Consumer(consumerConfig))
-            using (var consumer2 = new Consumer(consumerConfig))
+            using (var consumer1 = new Consumer<byte[], byte[]>(consumerConfig))
+            using (var consumer2 = new Consumer<byte[], byte[]>(consumerConfig))
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                Message msg;
-                var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
-                Assert.NotNull(msg);
-                var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
-                Assert.NotNull(msg);
-
+                ConsumeResult<byte[], byte[]> record;
+                record = consumer1.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record);
+                Assert.NotNull(record.Message);
+                record = consumer2.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record);
+                Assert.NotNull(record.Message);
+                
                 // NOTE: two consumers from the same group should never be assigned to the same
                 // topic / partition. This 'test' is here because I was curious to see what happened
                 // in practice if this did occur. Because this is not expected usage, no validation
                 // has been included in this test.
             }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   DuplicateConsumerAssign");
         }
 
     }
