@@ -168,7 +168,12 @@ class Program
         {
             c.Subscribe("my-topic");
 
-            while (true)
+            bool consuming = true;
+            // The client will automatically recover from non-fatal errors. You typically
+            // don't need to take any action unless an error is marked as fatal.
+            c.OnError += (_, e) => consuming = !e.IsFatal;
+
+            while (consuming)
             {
                 try
                 {
@@ -178,7 +183,6 @@ class Program
                 catch (ConsumeException e)
                 {
                     Console.WriteLine($"Error occured: {e.Error.Reason}");
-                    break;
                 }
             }
             
