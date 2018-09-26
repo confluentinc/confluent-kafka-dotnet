@@ -81,11 +81,8 @@ optimizing communication with the Kafka brokers for you, batching requests as ap
 
 ```csharp
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.Kafka.Serialization;
 
 class Program
 {
@@ -118,10 +115,7 @@ make use the `BeginProduce` method instead:
 
 ```csharp
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Confluent.Kafka;
-using Confluent.Kafka.Serialization;
 
 class Program
 {
@@ -152,11 +146,7 @@ class Program
 
 ```csharp
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.Kafka.Serialization;
 
 class Program
 {
@@ -183,9 +173,11 @@ class Program
                 catch (ConsumeException e)
                 {
                     Console.WriteLine($"Error occured: {e.Error.Reason}");
+                    break;
                 }
             }
             
+            // Ensure the consumer leaves the group cleanly and final offsets are committed.
             c.Close();
         }
     }
