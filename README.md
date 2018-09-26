@@ -156,6 +156,11 @@ class Program
         { 
             GroupId = "test-consumer-group",
             BootstrapServers = "localhost:9092",
+            // Note: The AutoOffsetReset property determines the start offset in the event
+            // there are not yet any committed offsets for the consumer group for the
+            // topic/partitions of interest. By default, offsets are committed
+            // automatically, so in this example, consumption will only start from the
+            // eariest message in the topic 'my-topic' the first time you run the program.
             AutoOffsetReset = AutoOffsetResetType.Earliest
         };
 
