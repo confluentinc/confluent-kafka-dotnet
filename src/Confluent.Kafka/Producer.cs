@@ -564,19 +564,20 @@ namespace Confluent.Kafka
                     producer.enableDeliveryReportKey ? message.Key : default(TKey),
                     producer.enableDeliveryReportValue ? message.Value : default(TValue));
 
-                cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
+                using (cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException())))
+                {
+                    var keyBytes = keySerializer(topic, message.Key);
+                    var valBytes = valueSerializer(topic, message.Value);
 
-                var keyBytes = keySerializer(topic, message.Key);
-                var valBytes = valueSerializer(topic, message.Value);
+                    producer.ProduceImpl(
+                        topic,
+                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        message.Timestamp, Partition.Any, message.Headers,
+                        handler);
 
-                producer.ProduceImpl(
-                    topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                    message.Timestamp, Partition.Any, message.Headers, 
-                    handler);
-
-                return handler.Task;
+                    return handler.Task;
+                }
             }
             else
             {
