@@ -1,3 +1,15 @@
+# 1.0.0-beta2
+
+## New Features
+
+- References librdkafka [1.0.0-PRE1](https://github.com/edenhill/librdkafka/tree/v1.0.0-PRE1). Highlights:
+  - Idempotent producer.
+  - Sparse connections (broker connections are only held open when in use).
+
+## Enhancements / Fixes
+
+- Fixed a memory leak in `ProduceAsync` [#640](https://github.com/confluentinc/confluent-kafka-dotnet/pull/640) (regression from 0.11.x).
+
 
 # 1.0.0-beta
 
