@@ -382,7 +382,7 @@ namespace Confluent.Kafka
         public int? MessageCopyMaxBytes { get { return GetInt("message.copy.max.bytes"); } set { this.SetObject("message.copy.max.bytes", value); } }
 
         /// <summary>
-        ///     Maximum Kafka protocol response message size. This serves as a safety precaution to avoid memory exhaustion in case of protocol hickups. This value is automatically adjusted upwards to be at least `fetch.max.bytes` + 512 to allow for protocol overhead.
+        ///     Maximum Kafka protocol response message size. This serves as a safety precaution to avoid memory exhaustion in case of protocol hickups. This value must be at least `fetch.max.bytes`  + 512 to allow for protocol overhead; the value is adjusted automatically unless the configuration property is explicitly set.
         /// </summary>
         public int? ReceiveMessageMaxBytes { get { return GetInt("receive.message.max.bytes"); } set { this.SetObject("receive.message.max.bytes", value); } }
 
@@ -432,7 +432,7 @@ namespace Confluent.Kafka
         public int? SocketTimeoutMs { get { return GetInt("socket.timeout.ms"); } set { this.SetObject("socket.timeout.ms", value); } }
 
         /// <summary>
-        ///     Maximum time a broker socket operation may block. A lower value improves responsiveness at the expense of slightly higher CPU usage. **Deprecated**
+        ///     **DEPRECATED** No longer used.
         /// </summary>
         public int? SocketBlockingMaxMs { get { return GetInt("socket.blocking.max.ms"); } set { this.SetObject("socket.blocking.max.ms", value); } }
 
@@ -472,19 +472,29 @@ namespace Confluent.Kafka
         public BrokerAddressFamilyType? BrokerAddressFamily { get { return (BrokerAddressFamilyType?)GetEnum(typeof(BrokerAddressFamilyType), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
 
         /// <summary>
-        ///     Throttle broker reconnection attempts by this value +-50%.
+        ///     When enabled the client will only connect to brokers it needs to communicate with. When disabled the client will maintain connections to all brokers in the cluster.
+        /// </summary>
+        public bool? EnableSparseConnections { get { return GetBool("enable.sparse.connections"); } set { this.SetObject("enable.sparse.connections", value); } }
+
+        /// <summary>
+        ///     **DEPRECATED** No longer used. See `reconnect.backoff.ms` and `reconnect.backoff.max.ms`.
         /// </summary>
         public int? ReconnectBackoffJitterMs { get { return GetInt("reconnect.backoff.jitter.ms"); } set { this.SetObject("reconnect.backoff.jitter.ms", value); } }
+
+        /// <summary>
+        ///     The initial time to wait before reconnecting to a broker after the connection has been closed. The time is increased exponentially until `reconnect.backoff.max.ms` is reached. -25% to +50% jitter is applied to each reconnect backoff. A value of 0 disables the backoff and reconnects immediately.
+        /// </summary>
+        public int? ReconnectBackoffMs { get { return GetInt("reconnect.backoff.ms"); } set { this.SetObject("reconnect.backoff.ms", value); } }
+
+        /// <summary>
+        ///     The maximum time to wait before reconnecting to a broker after the connection has been closed.
+        /// </summary>
+        public int? ReconnectBackoffMaxMs { get { return GetInt("reconnect.backoff.max.ms"); } set { this.SetObject("reconnect.backoff.max.ms", value); } }
 
         /// <summary>
         ///     librdkafka statistics emit interval. The application also needs to register a stats callback using `rd_kafka_conf_set_stats_cb()`. The granularity is 1000ms. A value of 0 disables statistics.
         /// </summary>
         public int? StatisticsIntervalMs { get { return GetInt("statistics.interval.ms"); } set { this.SetObject("statistics.interval.ms", value); } }
-
-        /// <summary>
-        ///     Logging level (syslog(3) levels)
-        /// </summary>
-        public int? Log_Level { get { return GetInt("log_level"); } set { this.SetObject("log_level", value); } }
 
         /// <summary>
         ///     Disable spontaneous log_cb from internal librdkafka threads, instead enqueue log messages on queue set with `rd_kafka_set_log_queue()` and serve log callbacks or events through the standard poll APIs. **NOTE**: Log messages will linger in a temporary queue until the log queue has been set.
@@ -729,6 +739,16 @@ namespace Confluent.Kafka
         ///     default: all
         /// </summary>
         public string DeliveryReportFields { get { return Get("dotnet.producer.delivery.report.fields"); } set { this.SetObject("dotnet.producer.delivery.report.fields", value.ToString()); } }
+
+        /// <summary>
+        ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.inflight.requests.per.connection=5` (must be <= 5), `retries=INT32_MAX` (must be > 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.
+        /// </summary>
+        public bool? EnableIdempotence { get { return GetBool("enable.idempotence"); } set { this.SetObject("enable.idempotence", value); } }
+
+        /// <summary>
+        ///     When set to `true`, any error that could result in a gap in the produced message series when a batch of messages fails, will raise a fatal error (ERR__GAPLESS_GUARANTEE) and stop the producer. Requires `enable.idempotence=true`.
+        /// </summary>
+        public bool? EnableGaplessGuarantee { get { return GetBool("enable.gapless.guarantee"); } set { this.SetObject("enable.gapless.guarantee", value); } }
 
         /// <summary>
         ///     Maximum number of messages allowed on the producer queue.
