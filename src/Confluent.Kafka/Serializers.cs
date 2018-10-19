@@ -10,7 +10,7 @@ namespace Confluent.Kafka
     public static class Serializers
     {
         /// <summary>
-        ///     Gets the default Deserializer for an intrinsic type
+        ///     Gets the default Serializer for an intrinsic type
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="forKey"></param>
