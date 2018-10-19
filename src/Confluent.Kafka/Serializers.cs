@@ -10,6 +10,56 @@ namespace Confluent.Kafka
     public static class Serializers
     {
         /// <summary>
+        ///     Gets the default Deserializer for an intrinsic type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="forKey"></param>
+        public static Serializer<T> GetDefault<T>(bool forKey)
+        {
+            if (typeof(T) == typeof(Null))
+            {
+                return Generators.Null(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(byte[]))
+            {
+                return Generators.ByteArray(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(string))
+            {
+                return Generators.UTF8(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(long))
+            {
+                return Generators.Long(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(int))
+            {
+                return Generators.Int32(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(float))
+            {
+                return Generators.Float(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(double))
+            {
+                return Generators.Double(forKey) as Serializer<T>;
+            }
+
+            if (typeof(T) == typeof(Ignore))
+            {
+                throw new ArgumentException("Serializer not valid for Ignore.");
+            }
+
+            return null;
+        }
+
+        /// <summary>
         ///     Encodes a string value in a byte array.
         /// </summary>
         public static Serializer<string> UTF8 = (topic, data) =>
@@ -166,6 +216,11 @@ namespace Confluent.Kafka
             ///     Generates a UTF8 serializer (invariant on the value of forKey).
             /// </summary>
             public static SerializerGenerator<string> UTF8 = (forKey) => Serializers.UTF8;
+
+            /// <summary>
+            ///     Generates a ByteArray serializer (invariant on the value of forKey)
+            /// </summary>
+            public static SerializerGenerator<byte[]> ByteArray = (forKey) => Serializers.ByteArray;
 
             /// <summary>
             ///     Generates a Null serializer (invariant on the value of forKey).

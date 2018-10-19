@@ -17,7 +17,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -68,52 +67,25 @@ namespace Confluent.Kafka
 
         private void setAndValidateSerializers(Serializer<TKey> keySerializer, Serializer<TValue> valueSerializer)
         {
-            this.keySerializer = keySerializer;
-            this.valueSerializer = valueSerializer;
-
+            // if serializers are specified, check they are different
             if (keySerializer != null && (object)keySerializer == (object)valueSerializer)
             {
                 throw new ArgumentException("Key and value serializers must not be the same object.");
             }
 
-            if (keySerializer == null)
+            // use defaults is necessary
+            this.keySerializer = keySerializer ?? Serializers.GetDefault<TKey>(true);
+            this.valueSerializer = valueSerializer ?? Serializers.GetDefault<TValue>(false);
+
+            // verify they have both been set
+            if (this.keySerializer == null)
             {
-                if (typeof(TKey) == typeof(Null))
-                {
-                    this.keySerializer = Serializers.Null as Serializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(byte[]))
-                {
-                    this.keySerializer = Serializers.ByteArray as Serializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(string))
-                {
-                    this.keySerializer = Serializers.UTF8 as Serializer<TKey>;
-                }
-                else 
-                {
-                    throw new ArgumentNullException("Key serializer must be specified.");
-                }
+                throw new ArgumentNullException("Key serializer must be specified.");
             }
 
-            if (valueSerializer == null)
+            if (this.valueSerializer == null)
             {
-                if (typeof(TValue) == typeof(Null))
-                {
-                    this.valueSerializer = Serializers.Null as Serializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(byte[]))
-                {
-                    this.valueSerializer = Serializers.ByteArray as Serializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(string))
-                {
-                    this.valueSerializer = Serializers.UTF8 as Serializer<TValue>;
-                }
-                else
-                {
-                    throw new ArgumentNullException("Value serializer must be specified.");
-                }
+                throw new ArgumentNullException("Value serializer must be specified.");
             }
         }
 
@@ -138,7 +110,7 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config,
             Serializer<TKey> keySerializer = null,
             Serializer<TValue> valueSerializer = null
-        ) : this(config, (forKey) => keySerializer, (forKey) => valueSerializer) {}
+        ) : this(config, (forKey) => keySerializer, (forKey) => valueSerializer) { }
 
 
         /// <summary>
@@ -167,7 +139,7 @@ namespace Confluent.Kafka
             this.handle = ownedClient.Handle;
             this.producer = ownedClient;
             setAndValidateSerializers(
-                keySerializerGenerator == null ? null: keySerializerGenerator(true),
+                keySerializerGenerator == null ? null : keySerializerGenerator(true),
                 valueSerializerGenerator == null ? null : valueSerializerGenerator(false));
         }
 

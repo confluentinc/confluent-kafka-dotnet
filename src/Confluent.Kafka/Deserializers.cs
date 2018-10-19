@@ -10,6 +10,56 @@ namespace Confluent.Kafka
     public static class Deserializers
     {
         /// <summary>
+        ///     Gets the default Deserializer for an intrinsic type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="forKey"></param>
+        public static Deserializer<T> GetDefault<T>(bool forKey)
+        {
+            if (typeof(T) == typeof(Null))
+            {
+                return Generators.Null(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(Ignore))
+            {
+                return Generators.Ignore(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(byte[]))
+            {
+                return Generators.ByteArray(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(string))
+            {
+                return Generators.UTF8(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(long))
+            {
+                return Generators.Long(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(int))
+            {
+                return Generators.Int32(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(float))
+            {
+                return Generators.Float(forKey) as Deserializer<T>;
+            }
+
+            if (typeof(T) == typeof(double))
+            {
+                return Generators.Double(forKey) as Deserializer<T>;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         ///     Deserializes a UTF8 encoded string.
         /// </summary>
         public static Deserializer<string> UTF8 = (topic, data, isNull) =>

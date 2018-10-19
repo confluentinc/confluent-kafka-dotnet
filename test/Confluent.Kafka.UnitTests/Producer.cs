@@ -25,14 +25,71 @@ namespace Confluent.Kafka.UnitTests
     public class ProducerTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constuctor_Validate_Null_Config_Throws()
         {
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.
             var configWithNullValue = new ProducerConfig();
             configWithNullValue.Set("sasl.password", null);
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Producer<byte[], byte[]>(configWithNullValue); });
+            var e = Assert.Throws<ArgumentException>(() => { var p = new Producer<byte[], byte[]>(configWithNullValue); });
             Assert.Contains("sasl.password", e.Message);
+        }
+
+        [Fact]
+        public void Constuctor_Ensure_Different_Serializers()
+        {
+            // Throw exception when serializer and deserializer are equal and ensure that exception
+            // message indicates the issue.
+            var e = Assert.Throws<ArgumentException>(() =>
+            {
+                var validConfig = CreateValidConfiguration();
+                var deserializer = Serializers.UTF8;
+                var p = new Producer<string, string>(validConfig, deserializer, deserializer);
+            });
+            Assert.Contains("must not be the same object", e.Message);
+        }
+
+        [Fact]
+        public void Constuctor_Ensure_Default_Serializers()
+        {
+            var validConfig = CreateValidConfiguration();
+
+            // try creating some typical combinations
+            new Producer<string, string>(validConfig);
+            new Producer<byte[], byte[]>(validConfig);
+            new Producer<byte[], string>(validConfig);
+            new Producer<Null, string>(validConfig);
+            new Producer<int, string>(validConfig);
+            new Producer<long, string>(validConfig);
+            new Producer<float, string>(validConfig);
+            new Producer<double, string>(validConfig);
+        }
+
+        [Fact]
+        public void Constuctor_Ignore_Not_Valid()
+        {
+            // Throw exception when type is Ignore
+            var e = Assert.Throws<ArgumentException>(() =>
+            {
+                var validConfig = CreateValidConfiguration();
+                var p = new Producer<Ignore, string>(validConfig);
+            });
+            Assert.Contains("Serializer not valid for Ignore", e.Message);
+
+            e = Assert.Throws<ArgumentException>(() =>
+            {
+                var validConfig = CreateValidConfiguration();
+                var p = new Producer<string, Ignore>(validConfig);
+            });
+            Assert.Contains("Serializer not valid for Ignore", e.Message);
+        }
+
+        private static ProducerConfig CreateValidConfiguration()
+        {
+            return new ProducerConfig
+            {
+                BootstrapServers = "localhost:9092"
+            };
         }
     }
 }

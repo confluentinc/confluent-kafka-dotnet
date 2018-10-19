@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 
@@ -211,7 +210,7 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config,
             Deserializer<TKey> keyDeserializer = null,
             Deserializer<TValue> valueDeserializer = null
-        ) : this(config, (isKey) => keyDeserializer, (isKey) => valueDeserializer) {}
+        ) : this(config, (isKey) => keyDeserializer, (isKey) => valueDeserializer) { }
 
         /// <summary>
         ///     Creates a new <see cref="Confluent.Kafka.Consumer{TKey, TValue}" /> instance.
@@ -237,13 +236,8 @@ namespace Confluent.Kafka
         {
             Librdkafka.Initialize(null);
 
-            KeyDeserializer = keyDeserializerGenerator == null 
-                ? null
-                : keyDeserializerGenerator(true);
-                
-            ValueDeserializer = valueDeserializerGenerator == null
-                ? null
-                : valueDeserializerGenerator(false);
+            KeyDeserializer = keyDeserializerGenerator?.Invoke(true);
+            ValueDeserializer = valueDeserializerGenerator?.Invoke(false);
 
             if (KeyDeserializer != null && (object)KeyDeserializer == (object)ValueDeserializer)
             {
@@ -252,47 +246,16 @@ namespace Confluent.Kafka
 
             if (KeyDeserializer == null)
             {
-                if (typeof(TKey) == typeof(Null))
-                {
-                    KeyDeserializer = Deserializers.Null as Deserializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(Ignore))
-                {
-                    KeyDeserializer = Deserializers.Ignore as Deserializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(byte[]))
-                {
-                    KeyDeserializer = Deserializers.ByteArray as Deserializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(string))
-                {
-                    KeyDeserializer = Deserializers.UTF8 as Deserializer<TKey>;
-                }
-                else
+                KeyDeserializer = Deserializers.GetDefault<TKey>(true);
+                if (KeyDeserializer == null)
                 {
                     throw new ArgumentNullException("Key deserializer must be specified.");
                 }
             }
-
             if (ValueDeserializer == null)
             {
-                if (typeof(TValue) == typeof(Null))
-                {
-                    ValueDeserializer = Deserializers.Null as Deserializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(Ignore))
-                {
-                    ValueDeserializer = Deserializers.Ignore as Deserializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(byte[]))
-                {
-                    ValueDeserializer = Deserializers.ByteArray as Deserializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(string))
-                {
-                    ValueDeserializer = Deserializers.UTF8 as Deserializer<TValue>;
-                }
-                else
+                ValueDeserializer = Deserializers.GetDefault<TValue>(false);
+                if (ValueDeserializer == null)
                 {
                     throw new ArgumentNullException("Value deserializer must be specified.");
                 }
