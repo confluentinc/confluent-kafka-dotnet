@@ -19,13 +19,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Avro.Specific;
 using Avro.IO;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T>
     {
@@ -36,12 +38,12 @@ namespace Confluent.Kafka.Serialization
         private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
             = new Dictionary<int, DatumReader<T>>();
 
-        private object deserializeLockObj = new object();
+        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
 
         /// <summary>
         ///     The avro schema used to read values of type <typeparamref name="T"/>
         /// </summary>
-        public Avro.Schema ReaderSchema { get; private set; }
+        public global::Avro.Schema ReaderSchema { get; private set; }
 
         private ISchemaRegistryClient schemaRegistryClient;
 
@@ -51,39 +53,39 @@ namespace Confluent.Kafka.Serialization
 
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
             {
-                ReaderSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                ReaderSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
             }
             else if (typeof(T).Equals(typeof(int)))
             {
-                ReaderSchema = Avro.Schema.Parse("int");
+                ReaderSchema = global::Avro.Schema.Parse("int");
             }
             else if (typeof(T).Equals(typeof(bool)))
             {
-                ReaderSchema = Avro.Schema.Parse("boolean");
+                ReaderSchema = global::Avro.Schema.Parse("boolean");
             }
             else if (typeof(T).Equals(typeof(double)))
             {
-                ReaderSchema = Avro.Schema.Parse("double");
+                ReaderSchema = global::Avro.Schema.Parse("double");
             }
             else if (typeof(T).Equals(typeof(string)))
             {
-                ReaderSchema = Avro.Schema.Parse("string");
+                ReaderSchema = global::Avro.Schema.Parse("string");
             }
             else if (typeof(T).Equals(typeof(float)))
             {
-                ReaderSchema = Avro.Schema.Parse("float");
+                ReaderSchema = global::Avro.Schema.Parse("float");
             }
             else if (typeof(T).Equals(typeof(long)))
             {
-                ReaderSchema = Avro.Schema.Parse("long");
+                ReaderSchema = global::Avro.Schema.Parse("long");
             }
             else if (typeof(T).Equals(typeof(byte[])))
             {
-                ReaderSchema = Avro.Schema.Parse("bytes");
+                ReaderSchema = global::Avro.Schema.Parse("bytes");
             }
             else if (typeof(T).Equals(typeof(Null)))
             {
-                ReaderSchema = Avro.Schema.Parse("null");
+                ReaderSchema = global::Avro.Schema.Parse("null");
             }
             else
             {
@@ -95,7 +97,7 @@ namespace Confluent.Kafka.Serialization
             }
         }
 
-        public T Deserialize(string topic, byte[] array)
+        public async Task<T> Deserialize(string topic, byte[] array)
         {
             // Note: topic is not necessary for deserialization (or knowing if it's a key 
             // or value) only the schema id is needed.
@@ -112,7 +114,8 @@ namespace Confluent.Kafka.Serialization
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                 DatumReader<T> datumReader;
-                lock (deserializeLockObj)
+                await deserializeMutex.WaitAsync();
+                try
                 {
                     datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
                     if (datumReader == null)
@@ -122,13 +125,18 @@ namespace Confluent.Kafka.Serialization
                             datumReaderBySchemaId.Clear();
                         }
 
-                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
-                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+                        var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
+                        var writerSchema = global::Avro.Schema.Parse(writerSchemaJson);
 
                         datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                         datumReaderBySchemaId[writerId] = datumReader;
                     }
                 }
+                finally
+                {
+                    deserializeMutex.Release();
+                }
+                
                 return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }

@@ -17,11 +17,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
     ///     Avro serializer. Use this serializer with GenericRecord, types 
@@ -38,7 +39,6 @@ namespace Confluent.Kafka.Serialization
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
-        private bool isKeySerializer;
         private ISchemaRegistryClient schemaRegistryClient;
 
         private IAvroSerializerImpl<T> serializerImpl;
@@ -71,9 +71,37 @@ namespace Confluent.Kafka.Serialization
         ///	    An instance of an implementation of ISchemaRegistryClient used for
         ///	    communication with Confluent Schema Registry.
         /// </param>
-        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient)
+        /// <param name="config">
+        ///     Serializer configuration properties.
+        /// </param>
+        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
+            
+            if (config == null) { return; }
+
+            var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
+            if (nonAvroConfig.Count() > 0)
+            {
+                throw new ArgumentException($"AvroSerializer: unexpected configuration parameter {nonAvroConfig.First().Key}");
+            }
+
+            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
+            if (avroConfig.Count() == 0) { return; }
+
+            int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, AvroSerializerConfig.PropertyNames.BufferBytes, "AvroSerializer", typeof(int));
+            if (initialBufferSize != null) { this.initialBufferSize = initialBufferSize.Value; }
+
+            bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, AvroSerializerConfig.PropertyNames.AutoRegisterSchemas, "AvroSerializer", typeof(bool));
+            if (autoRegisterSchema != null) { this.autoRegisterSchema = autoRegisterSchema.Value; }
+
+            foreach (var property in avroConfig)
+            {
+                if (property.Key != AvroSerializerConfig.PropertyNames.AutoRegisterSchemas && property.Key != AvroSerializerConfig.PropertyNames.BufferBytes)
+                {
+                    throw new ArgumentException($"AvroSerializer: unexpected configuration parameter {property.Key}");
+                }
+            }
         }
 
         /// <summary>
@@ -88,48 +116,22 @@ namespace Confluent.Kafka.Serialization
         /// <param name="data">
         ///     The object to serialize.
         /// </param>
+        /// <param name="isKey">
+        ///     whether or not the data represents a message key.
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public byte[] Serialize(string topic, T data)
+        public Task<byte[]> Serialize(string topic, T data, bool isKey)
         { 
             if (serializerImpl == null)
             {
                 serializerImpl = typeof(T) == typeof(GenericRecord)
-                    ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize, isKeySerializer)
-                    : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize, isKeySerializer);
+                    ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize, isKey)
+                    : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize, isKey);
             }
 
             return serializerImpl.Serialize(topic, data);
-        }
-
-        /// <summary>
-        ///     Configure the serializer.
-        /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
-        {
-            var keyOrValue = isKey ? "Key" : "Value";
-            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
-            this.isKeySerializer = isKey;
-
-            if (avroConfig.Count() != 0)
-            {
-                int? initialBufferSize = (int?)Utils.ExtractPropertyValue(config, isKey, AvroSerdeProviderConfig.PropertyNames.AvroSerializerBufferBytes, "AvroSerializer", typeof(int));
-                if (initialBufferSize != null) { this.initialBufferSize = initialBufferSize.Value; }
-
-                bool? autoRegisterSchema = (bool?)Utils.ExtractPropertyValue(config, isKey, AvroSerdeProviderConfig.PropertyNames.AvroSerializerAutoRegisterSchemas, "AvroSerializer", typeof(bool));
-                if (autoRegisterSchema != null) { this.autoRegisterSchema = autoRegisterSchema.Value; }
-
-                foreach (var property in avroConfig)
-                {
-                    if (property.Key != AvroSerdeProviderConfig.PropertyNames.AvroSerializerAutoRegisterSchemas && property.Key != AvroSerdeProviderConfig.PropertyNames.AvroSerializerBufferBytes)
-                    {
-                        throw new ArgumentException($"{keyOrValue} AvroSerializer: unexpected configuration parameter {property.Key}");
-                    }
-                }
-            }
-
-            return config.Where(item => !item.Key.StartsWith("avro."));
         }
     }
 }

@@ -16,8 +16,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.Serialization;
+using Confluent.SchemaRegistry;
+using Confluent.Kafka.AvroSerdes;
 using Xunit;
 
 
@@ -34,7 +36,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         {
             string topic = Guid.NewGuid().ToString();
 
-            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers
+            };
 
             var consumerConfig = new ConsumerConfig
             {
@@ -44,11 +49,17 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
-
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
+            var schemaRegistryConfig = new SchemaRegistryConfig
             {
+                SchemaRegistryUrl = schemaRegistryServers
+            };
+
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var producer = new Producer(producerConfig))
+            {
+                var keySerializer = new AvroSerializer<string>(schemaRegistry);
+                var valueSerializer = new AvroSerializer<User>(schemaRegistry);
+
                 for (int i = 0; i < 100; ++i)
                 {
                     var user = new User
@@ -57,14 +68,23 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         favorite_number = i,
                         favorite_color = "blue"
                     };
-                    producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
+                    
+                    producer
+                        .ProduceAsync(
+                            keySerializer, valueSerializer,
+                            topic, new Message<string, User> { Key = user.name, Value = user },
+                            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .Wait();
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<User>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
+                var keyDeserializer = new AvroDeserializer<string>(schemaRegistry);
+                var valueDeserializer = new AvroDeserializer<User>(schemaRegistry);
+
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
                     => consuming = false;
@@ -77,7 +97,12 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 int i = 0;
                 while (consuming)
                 {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    var record = consumer
+                        .ConsumeAsync<string, User>(
+                            keyDeserializer, valueDeserializer, 
+                            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .Result;
+
                     if (record != null)
                     {
                         Assert.Equal(i.ToString(), record.Message.Key);

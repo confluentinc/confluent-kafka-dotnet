@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a successful produce request.
     /// </summary>
-    public class DeliveryReport<TKey, TValue>
+    public class DeliveryReport
     {
         /// <summary>
         ///     The topic associated with the message.
@@ -66,12 +66,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message.
         /// </summary>
-        public Message<TKey, TValue> Message { get; set; }
+        public Message Message { get; set; }
 
         /// <summary>
         ///     The Kafka message Key.
         /// </summary>
-        public TKey Key
+        public byte[] Key
         {
             get { return Message.Key; }
             set { Message.Key = value; }
@@ -80,7 +80,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message Value.
         /// </summary>
-        public TValue Value
+        public byte[] Value
         {
             get { return Message.Value; }
             set { Message.Value = value; }

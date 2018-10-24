@@ -17,12 +17,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.SchemaRegistry;
 using Avro.Generic;
 using Avro.IO;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     internal class GenericSerializerImpl : IAvroSerializerImpl<GenericRecord>
     {
@@ -31,11 +33,11 @@ namespace Confluent.Kafka.Serialization
         private int initialBufferSize;
         private bool isKey;
 
-        private Dictionary<Avro.RecordSchema, string> knownSchemas = new Dictionary<Avro.RecordSchema, string>();
+        private Dictionary<global::Avro.RecordSchema, string> knownSchemas = new Dictionary<global::Avro.RecordSchema, string>();
         private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
         private Dictionary<string, int> schemaIds = new Dictionary<string, int>();
 
-        private object serializeLockObj = new object();
+        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
 
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
@@ -64,11 +66,12 @@ namespace Confluent.Kafka.Serialization
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public byte[] Serialize(string topic, GenericRecord data)
+        public async Task<byte[]> Serialize(string topic, GenericRecord data)
         {
             int schemaId;
-            Avro.RecordSchema writerSchema;
-            lock (serializeLockObj)
+            global::Avro.RecordSchema writerSchema;
+            await serializeMutex.WaitAsync();
+            try
             {
                 // TODO: If any of these caches fills up, this is probably an
                 // indication of misuse of the serializer. Ideally we would do 
@@ -115,11 +118,11 @@ namespace Confluent.Kafka.Serialization
                     // first usage: register/get schema to check compatibility
                     if (autoRegisterSchema)
                     {
-                        newSchemaId = schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
+                        newSchemaId = await schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false);
                     }
                     else
                     {
-                        newSchemaId = schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
+                        newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false);
                     }
 
                     if (!schemaIds.ContainsKey(writerSchemaString))
@@ -136,6 +139,10 @@ namespace Confluent.Kafka.Serialization
                     registeredSchemas.Add(subjectSchemaPair);
                 }
                 schemaId = schemaIds[writerSchemaString];
+            }
+            finally
+            {
+                serializeMutex.Release();
             }
 
             using (var stream = new MemoryStream(initialBufferSize))

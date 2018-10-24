@@ -19,19 +19,17 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     internal static class Utils
     {
-        public static object ExtractPropertyValue(IEnumerable<KeyValuePair<string, string>> config, bool isKey, string name, string className, Type type)
+        public static object ExtractPropertyValue(IEnumerable<KeyValuePair<string, string>> config, string name, string className, Type type)
         {
-            var keyOrValue = isKey ? "Key" : "Value";
-
             var properties = config.Where(ci => ci.Key == name);
 
             if (properties.Count() > 1)
             {
-                throw new ArgumentException($"{keyOrValue} {className} {name} configuration parameter was specified more than once.");
+                throw new ArgumentException($"{className} {name} configuration parameter was specified more than once.");
             }
 
             if (properties.Count() == 1)
@@ -50,7 +48,7 @@ namespace Confluent.Kafka.Serialization
                 }
                 catch (Exception e)
                 {
-                    throw new ArgumentException($"{keyOrValue} {className} {name} configuration parameter was incorrectly specified.", e);
+                    throw new ArgumentException($"{className} {name} configuration parameter was incorrectly specified.", e);
                 }
             }
 

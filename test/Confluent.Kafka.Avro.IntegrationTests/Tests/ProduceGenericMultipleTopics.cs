@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.Serialization;
+using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry;
 using Avro;
 using Avro.Generic;
 using Xunit;
@@ -17,7 +18,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceGenericMultipleTopics(string bootstrapServers, string schemaRegistryServers)
         {
-            var s = (RecordSchema)Schema.Parse(
+            var s = (RecordSchema)RecordSchema.Parse(
                 @"{
                     ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
                     ""type"": ""record"",
@@ -31,7 +32,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             );
 
             var config = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var schemaRegistryConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
             var topic2 = Guid.NewGuid().ToString();
@@ -39,15 +40,17 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             DeliveryReport<Null, GenericRecord> dr;
             DeliveryReport<Null, GenericRecord> dr2;
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.GetSerializerGenerator<GenericRecord>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var p = new Producer(config))
             {
+                var valueSerializer = new AvroSerializer<GenericRecord>(schemaRegistry);
+
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
-                dr2 = p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr = p.ProduceAsync(Serializers.Null, valueSerializer, topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr2 = p.ProduceAsync(Serializers.Null, valueSerializer, topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
             }
 
             Assert.Null(dr.Key);
