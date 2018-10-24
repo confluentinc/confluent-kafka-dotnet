@@ -282,36 +282,30 @@ namespace Confluent.Kafka
         /// <param name="deserializer">
         ///     The deserializer.
         /// </param>
-        public void SetDeserializer<T>(Type type, Deserializer<T> deserializer)
+        public void RegisterDeserializer<T>(Deserializer<T> deserializer)
         {
-            deserializers.Add(type, deserializer);
+            deserializers.Add(typeof(T), deserializer);
         }
 
 
         /// <summary>
         ///     Removes the deserializer associated with the specified type.
         /// </summary>
-        /// <param name="type">
-        ///     The deserializer associated with this type will be removed.
-        /// </param>
-        public void RemoveDeserilizer(Type type)
+        public void UnregisterDeserilizer<T>()
         {
-            deserializers.Remove(type);
+            deserializers.Remove(typeof(T));
         }
 
 
         /// <summary>
         ///     Gets the deserializer that will be used to deserialize values of the specified type.
         /// </summary>
-        /// <param name="type">
-        ///     The type to get the corresponding deserializer for.
-        /// </param>
         /// <returns>
         ///     The deserializer corresponding to the specified type.
         /// </returns>
-        public Deserializer<T> GetDeerializer<T>(Type type)
+        public Deserializer<T> GetDeserializer<T>()
         {
-            return (Deserializer<T>)deserializers[type];
+            return (Deserializer<T>)deserializers[typeof(T)];
         }
 
 

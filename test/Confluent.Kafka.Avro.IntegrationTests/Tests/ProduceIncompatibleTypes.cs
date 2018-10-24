@@ -52,13 +52,12 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new Producer(producerConfig))
             {
-                var serializer = new AvroSerializer<string>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
 
                 producer
                     .ProduceAsync(
-                        serializer, serializer,
                         topic, new Message<string, string> { Key = "hello", Value = "world" },
-                        new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        SerdeType.Avro, SerdeType.Avro)
                     .Wait();
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
