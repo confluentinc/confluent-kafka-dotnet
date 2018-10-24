@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+using Confluent.SchemaRegistry;
+
 
 namespace Confluent.Kafka.AvroSerdes
 {
-    internal static class Constants
-    {
-        /// <summary>
-        ///     Magic byte that identifies an avro serialized message with Confluent Platform framing.
-        /// </summary>
-        public const byte MagicByte = 0;
-    }
+    /// <summary>
+    ///     <see cref="Confluent.Kafka.AvroSerdes.AvroDeserializer{T}" />
+    ///     configuration properties.
+    /// </summary>
+    public class AvroDeserializerConfig : Config {}
 }

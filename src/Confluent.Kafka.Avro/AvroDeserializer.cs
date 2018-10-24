@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
@@ -21,7 +22,7 @@ using System;
 using System.Linq;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
     ///     Avro deserializer. Use this deserializer with GenericRecord, types 
@@ -48,9 +49,26 @@ namespace Confluent.Kafka.Serialization
         ///     An instance of an implementation of ISchemaRegistryClient used for
         ///     communication with Confluent Schema Registry.
         /// </param>
-        public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient)
+        /// <param name="config">
+        ///     Deserializer configuration properties.
+        /// </param>
+        public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
             schemaRegistryClient = schemaRegisteryClient;
+
+            if (config == null) { return; }
+
+            var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
+            if (nonAvroConfig.Count() > 0)
+            {
+                throw new ArgumentException($"AvroDeserializer: unexpected configuration parameter {nonAvroConfig.First().Key}");
+            }
+
+            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
+            if (avroConfig.Count() != 0)
+            {
+                throw new ArgumentException($"AvroDeserializer: unexpected configuration parameter {avroConfig.First().Key}");
+            }
         }
 
         /// <summary>
@@ -63,13 +81,13 @@ namespace Confluent.Kafka.Serialization
         ///     A byte array containing the object serialized in the format produced
         ///     by <see cref="AvroSerializer{T}" />.
         /// </param>
-        /// <param name="isNull">
-        ///     True if the data is null, false otherwise.
+        /// <param name="isKey">
+        ///     True if message key data, false otherwise.
         /// </param>
         /// <returns>
         ///     The deserialized <typeparamref name="T"/> value.
         /// </returns>
-        public T Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
+        public async Task<T> Deserialize(string topic, byte[] data, bool isKey)
         {
             if (deserializerImpl == null)
             {
@@ -78,23 +96,7 @@ namespace Confluent.Kafka.Serialization
                     : new SpecificDeserializerImpl<T>(schemaRegistryClient);
             }
 
-            return deserializerImpl.Deserialize(topic, data.ToArray());
-        }
-
-        /// <summary>
-        ///     Configure the deserializer.
-        /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
-        {
-            var keyOrValue = isKey ? "Key" : "Value";
-            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
-
-            if (avroConfig.Count() != 0)
-            {
-                throw new ArgumentException($"{keyOrValue} AvroDeserializer: unexpected configuration parameter {avroConfig.First().Key}");
-            }
-
-            return config;
+            return await deserializerImpl.Deserialize(topic, data.ToArray());
         }
 
     }

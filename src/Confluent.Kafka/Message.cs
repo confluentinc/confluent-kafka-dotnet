@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2018 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,25 +16,23 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents a message stored in Kafka.
+    ///     Represents a (deserialized) message stored in Kafka.
     /// </summary>
-    public class Message
+    public class Message<TKey, TValue>
     {
-        /// <summary>
-        ///     Gets the message value (possibly null).
-        /// </summary>
-        public byte[] Value { get; set; }
-
         /// <summary>
         ///     Gets the message key value (possibly null).
         /// </summary>
-        public byte[] Key { get; set; }
+        public TKey Key { get; set; }
+
+        /// <summary>
+        ///     Gets the message value (possibly null).
+        /// </summary>
+        public TValue Value { get; set; }
 
         /// <summary>
         ///     The message timestamp. The timestamp type must be set to CreateTime. 
@@ -50,4 +48,9 @@ namespace Confluent.Kafka
         /// </summary>
         public Headers Headers { get; set; }
     }
+
+    /// <summary>
+    ///     Represents a message stored in Kafka.
+    /// </summary>
+    public class Message : Message<byte[], byte[]> {}
 }

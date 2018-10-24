@@ -16,8 +16,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.Serialization;
+using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry;
 using Avro;
 using Avro.Generic;
 using Xunit;
@@ -34,7 +36,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceConsumeGeneric(string bootstrapServers, string schemaRegistryServers)
         {
-            var s = (RecordSchema)Schema.Parse(
+            var s = (RecordSchema)RecordSchema.Parse(
                 @"{
                     ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
                     ""type"": ""record"",
@@ -48,32 +50,37 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             );
 
             var config = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var schemaRegistryConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
 
             DeliveryReport<Null, GenericRecord> dr;
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var p = new Producer<Null, GenericRecord>(config, null, serdeProvider.GetSerializerGenerator<GenericRecord>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var p = new Producer(config))
             {
+                var valueSerializer = new AvroSerializer<GenericRecord>(schemaRegistry);
+
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Value = record }).Result;
+                dr = p.ProduceAsync(Serializers.Null, valueSerializer, topic, new Message<Null, GenericRecord> { Value = record }).Result;
             }
 
             // produce a specific record (to later consume back as a generic record).
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var p = new Producer<Null, User>(config, null, serdeProvider.GetSerializerGenerator<User>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var p = new Producer(config))
             {
+                var valueSerializer = new AvroSerializer<User>(schemaRegistry);
+
                 var user = new User
                 {
                     name = "my name 3",
                     favorite_number = 47,
                     favorite_color = "orange"
                 };
-                p.ProduceAsync(topic, new Message<Null, User> { Value = user }).Wait();
+                
+                p.ProduceAsync(Serializers.Null, valueSerializer, topic, new Message<Null, User> { Value = user }).Wait();
             }
 
             Assert.Null(dr.Message.Key);
@@ -91,12 +98,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             var cconfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<Null, GenericRecord>(cconfig, null, serdeProvider.GetDeserializerGenerator<GenericRecord>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var consumer = new Consumer(cconfig))
             {
+                var valueDeserializer = new AvroDeserializer<GenericRecord>(schemaRegistry);
+
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                var record = consumer.Consume(TimeSpan.FromSeconds(20));
+                var record = consumer.ConsumeAsync(Deserializers.Null, valueDeserializer, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;
                 record.Message.Value.TryGetValue("name", out object msgName);
                 record.Message.Value.TryGetValue("favorite_number", out object msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out object msgColor);
@@ -109,7 +118,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Null(msgColor);
 
                 // consume generic record produced as a specific record.
-                record = consumer.Consume(TimeSpan.FromSeconds(20));
+                record = consumer.ConsumeAsync(Deserializers.Null, valueDeserializer, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;
                 record.Message.Value.TryGetValue("name", out msgName);
                 record.Message.Value.TryGetValue("favorite_number", out msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out msgColor);
@@ -123,11 +132,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("orange", msgColor);
             }
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<Null, User>(cconfig, null, serdeProvider.GetDeserializerGenerator<User>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var consumer = new Consumer(cconfig))
             {
+                var valueDeserializer = new AvroDeserializer<User>(schemaRegistry);
+
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                var record = consumer.Consume(TimeSpan.FromSeconds(20));
+                var record = consumer.ConsumeAsync(Deserializers.Null, valueDeserializer, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;
                 Assert.Equal("my name 2", record.Message.Value.name);
                 Assert.Equal(44, record.Message.Value.favorite_number);
                 Assert.Null(record.Message.Value.favorite_color);

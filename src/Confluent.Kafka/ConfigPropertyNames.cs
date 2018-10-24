@@ -1,3 +1,22 @@
+// Copyright 2018 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
+//
+// Refer to LICENSE for more information.
+
+
 namespace Confluent.Kafka
 {
     /// <summary>
@@ -37,13 +56,14 @@ namespace Confluent.Kafka
         /// </summary>
         public const string ProducerDeliveryReportFields = "dotnet.producer.delivery.report.fields";
 
+        
         // ---- Consumer
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />
         ///     objects returned by the
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.TimeSpan)" />
+        ///     <see cref="Confluent.Kafka.Consumer.Consume(System.TimeSpan)" />
         ///     method. Disabling fields that you do not require will improve 
         ///     throughput and reduce memory consumption. Allowed values:
         ///     headers, timestamp, topic, all, none

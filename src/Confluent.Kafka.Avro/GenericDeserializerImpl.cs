@@ -17,12 +17,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Avro.IO;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     internal class GenericDeserializerImpl : IAvroDeserializerImpl<GenericRecord>
     {
@@ -33,7 +35,7 @@ namespace Confluent.Kafka.Serialization
         private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
             = new Dictionary<int, DatumReader<GenericRecord>>();
        
-        private object deserializeLockObj = new object();
+        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
 
         private ISchemaRegistryClient schemaRegistryClient;
 
@@ -42,7 +44,7 @@ namespace Confluent.Kafka.Serialization
             this.schemaRegistryClient = schemaRegistryClient;
         }
 
-        public GenericRecord Deserialize(string topic, byte[] array)
+        public async Task<GenericRecord> Deserialize(string topic, byte[] array)
         {
             // Note: topic is not necessary for deserialization (or knowing if it's a key 
             // or value) only the schema id is needed.
@@ -59,7 +61,8 @@ namespace Confluent.Kafka.Serialization
                 var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                 DatumReader<GenericRecord> datumReader;
-                lock (deserializeLockObj)
+                await deserializeMutex.WaitAsync();
+                try
                 {
                     datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
                     if (datumReader == null)
@@ -73,13 +76,18 @@ namespace Confluent.Kafka.Serialization
                             datumReaderBySchemaId.Clear();
                         }
 
-                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
-                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+                        var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
+                        var writerSchema = global::Avro.Schema.Parse(writerSchemaJson);
 
                         datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
                         datumReaderBySchemaId[writerId] = datumReader;
                     }
                 }
+                finally
+                {
+                    deserializeMutex.Release();
+                }
+
                 return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
             }
         }
