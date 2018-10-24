@@ -58,13 +58,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new Producer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<string>(schemaRegistry);
-                var valueSerializer = new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false });
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }));
+
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer.ProduceAsync(keySerializer, valueSerializer, new Guid().ToString(), new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                        producer.ProduceAsync(new Guid().ToString(), new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro).Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -78,13 +79,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new Producer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false });
-                var valueSerializer = new AvroSerializer<int>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }));
+                producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
+
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer.ProduceAsync(keySerializer, valueSerializer, topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                        producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro).Wait();
                     }
                     catch (AggregateException e)
                     {

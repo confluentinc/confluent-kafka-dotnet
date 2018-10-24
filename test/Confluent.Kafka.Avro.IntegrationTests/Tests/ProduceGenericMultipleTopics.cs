@@ -43,14 +43,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var p = new Producer(config))
             {
-                var valueSerializer = new AvroSerializer<GenericRecord>(schemaRegistry);
+                p.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
 
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(Serializers.Null, valueSerializer, topic, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
-                dr2 = p.ProduceAsync(Serializers.Null, valueSerializer, topic2, new Message<Null, GenericRecord> { Key = null, Value = record }).Result;
+                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Key = null, Value = record }, SerdeType.Regular, SerdeType.Avro).Result;
+                dr2 = p.ProduceAsync(topic2, new Message<Null, GenericRecord> { Key = null, Value = record }, SerdeType.Regular, SerdeType.Avro).Result;
             }
 
             Assert.Null(dr.Key);

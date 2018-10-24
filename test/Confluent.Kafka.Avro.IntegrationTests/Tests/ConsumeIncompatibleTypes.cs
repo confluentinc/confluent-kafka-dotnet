@@ -58,8 +58,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new Producer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<string>(schemaRegistry);
-                var valueSerializer = new AvroSerializer<User>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<User>(schemaRegistry));
 
                 var user = new User
                 {
@@ -69,17 +69,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 };
 
                 producer
-                    .ProduceAsync(
-                        keySerializer, valueSerializer, 
-                        topic, new Message<string, User> { Key = user.name, Value = user },
-                        new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user },SerdeType.Avro, SerdeType.Avro)
                     .Wait();
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer = new Consumer(consumerConfig))
             {
-                var deserializer = new AvroDeserializer<User>(schemaRegistry);
+                consumer.RegisterAvroDeserializer(new AvroDeserializer<User>(schemaRegistry));
 
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
@@ -87,9 +84,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 try
                 {
                     consumer
-                        .ConsumeAsync<User, User>(
-                            deserializer, deserializer,
-                            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .ConsumeAsync<User, User>(SerdeType.Avro, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
                         .Wait();
                 }
                 catch (ConsumeException e)
@@ -106,14 +101,16 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer = new Consumer(consumerConfig))
             {
-                var deserializer = new AvroDeserializer<string>(schemaRegistry);
+                consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
 
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
                 bool hadError = false;
                 try
                 {
-                    consumer.ConsumeAsync<string, string>(deserializer, deserializer, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Wait();
+                    consumer
+                        .ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .Wait();
                 }
                 catch (ConsumeException e)
                 {

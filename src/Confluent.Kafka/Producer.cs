@@ -391,40 +391,31 @@ namespace Confluent.Kafka
         ///     Sets the serializer that will be used to serialize keys or values with
         ///     the specified type.
         /// </summary>
-        /// <param name="type">
-        ///     The type this serializer corresponds to.
-        /// </param>
         /// <param name="serializer">
         ///     The serializer.
         /// </param>
-        public void SetSerializer<T>(Type type, Serializer<T> serializer)
+        public void RegisterSerializer<T>(Serializer<T> serializer)
         {
-            serializers.Add(type, serializer);
+            serializers.Add(typeof(T), serializer);
         }
 
         /// <summary>
         ///     Removes the serializer associated with the specified type.
         /// </summary>
-        /// <param name="type">
-        ///     The serializer associated with this type will be removed.
-        /// </param>
-        public void RemoveSerializer(Type type)
+        public void UnregisterSerializer<T>()
         {
-            serializers.Remove(type);
+            serializers.Remove(typeof(T));
         }
 
         /// <summary>
         ///     Gets the serializer that will be used to serialize values of the specified type.
         /// </summary>
-        /// <param name="type">
-        ///     The type to get the corresponding serializer for.
-        /// </param>
         /// <returns>
         ///     The serializer corresponding to the specified type.
         /// </returns>
-        public Serializer<T> GetSerializer<T>(Type type)
+        public Serializer<T> GetSerializer<T>()
         {
-            return (Serializer<T>)serializers[type];
+            return (Serializer<T>)serializers[typeof(T)];
         }
 
         internal int Poll(int millisecondsTimeout)

@@ -61,8 +61,8 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
                 using (var consumer = new Consumer(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName }))
                 {
-                    var keyDeserializer = new AvroDeserializer<string>(schemaRegistry);
-                    var valueDeserializer = new AvroDeserializer<GenericRecord>(schemaRegistry);
+                    consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
+                    consumer.RegisterAvroDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry));
 
                     consumer.OnError += (_, e)
                         => Console.WriteLine($"Error: {e.Reason}");
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                     {
                         try
                         {
-                            var consumeResult = await consumer.ConsumeAsync(keyDeserializer, valueDeserializer, cts.Token);
+                            var consumeResult = await consumer.ConsumeAsync<string, GenericRecord>(SerdeType.Avro, SerdeType.Avro, cts.Token);
 
                             Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
                         }
@@ -90,10 +90,10 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
-                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
 
-                var keySerializer = new AvroSerializer<string>(schemaRegistry);
-                var valueSerializer = new AvroSerializer<GenericRecord>(schemaRegistry);
+                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 int i = 0;
                 string text;
@@ -105,8 +105,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                     record.Add("favorite_color", "blue");
 
                     await producer
-                        .ProduceAsync(keySerializer, valueSerializer, topicName, 
-                            new Message<string, GenericRecord> { Key = text, Value = record })
+                        .ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record }, SerdeType.Avro, SerdeType.Avro)
                         .ContinueWith(task => task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
                             : $"produced to: {task.Result.TopicPartitionOffset}");

@@ -57,8 +57,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new Producer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<string>(schemaRegistry);
-                var valueSerializer = new AvroSerializer<User>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<User>(schemaRegistry));
 
                 for (int i = 0; i < 100; ++i)
                 {
@@ -71,8 +71,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     
                     producer
                         .ProduceAsync(
-                            keySerializer, valueSerializer,
                             topic, new Message<string, User> { Key = user.name, Value = user },
+                            SerdeType.Avro, SerdeType.Avro,
                             new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
                         .Wait();
                 }
@@ -82,8 +82,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer = new Consumer(consumerConfig))
             {
-                var keyDeserializer = new AvroDeserializer<string>(schemaRegistry);
-                var valueDeserializer = new AvroDeserializer<User>(schemaRegistry);
+                consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
+                consumer.RegisterAvroDeserializer(new AvroDeserializer<User>(schemaRegistry));
 
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
@@ -99,7 +99,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 {
                     var record = consumer
                         .ConsumeAsync<string, User>(
-                            keyDeserializer, valueDeserializer, 
+                            SerdeType.Avro, SerdeType.Avro,
                             new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
                         .Result;
 

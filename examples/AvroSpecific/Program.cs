@@ -80,8 +80,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer = new Consumer(consumerConfig))
                 {
-                    var keyDeserializer = new AvroDeserializer<string>(schemaRegistry);
-                    var valueDeserializer = new AvroDeserializer<User>(schemaRegistry);
+                    consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
+                    consumer.RegisterAvroDeserializer(new AvroDeserializer<User>(schemaRegistry));
 
                     consumer.OnError += (_, e)
                         => Console.WriteLine($"Error: {e.Reason}");
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     {
                         try
                         {
-                            var consumeResult = await consumer.ConsumeAsync(keyDeserializer, valueDeserializer, cts.Token);
+                            var consumeResult = await consumer.ConsumeAsync<string, User>(SerdeType.Avro, SerdeType.Avro, cts.Token);
 
                             Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
                         }
@@ -109,8 +109,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new Producer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<string>(schemaRegistry, avroSerializerConfig);
-                var valueSerializer = new AvroSerializer<User>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry, avroSerializerConfig));
+                producer.RegisterAvroSerializer(new AvroSerializer<User>(schemaRegistry));
 
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
@@ -120,8 +120,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 {
                     User user = new User { name = text, favorite_color = "green", favorite_number = i++ };
                     await producer
-                        .ProduceAsync(keySerializer, valueSerializer, topicName, 
-                            new Message<string, User> { Key = text, Value = user})
+                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user}, SerdeType.Avro, SerdeType.Avro)
                         .ContinueWith(task => task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
                             : $"produced to: {task.Result.TopicPartitionOffset}");

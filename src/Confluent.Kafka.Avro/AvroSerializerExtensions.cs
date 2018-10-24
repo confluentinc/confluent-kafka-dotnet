@@ -33,23 +33,126 @@ namespace Confluent.Kafka.AvroSerdes
     /// </summary>
     public static class AvroSerializerExtensions
     {
-        private static async Task<DeliveryReport<TKey, TValue>> ProduceHelperAsync<TKey, TValue>(
-            Producer producer,
-            byte[] keyBytes,
-            byte[] valBytes,
-            TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken)
+        /// <summary>
+        ///     Sets the Avro serializer that will be used to serialize keys or values with
+        ///     the specified type.
+        /// </summary>
+        /// <param name="producer">
+        ///     The producer instance this applies to.
+        /// </param>
+        /// <param name="serializer">
+        ///     The avro serializer.
+        /// </param>
+        public static void RegisterAvroSerializer<T>(this Producer producer, AvroSerializer<T> serializer)
         {
-            var dr = await producer.ProduceAsync(
-                topicPartition,
+            if (!SerdeState.serializers.ContainsKey(producer))
+            {
+                SerdeState.serializers.Add(producer, new Dictionary<Type, object>());
+            }
+
+            SerdeState.serializers[producer].Add(typeof(T), serializer);
+        }
+
+
+        /// <summary>
+        ///     Removes the avro serializer associated with the specified type.
+        /// </summary>
+        /// <param name="producer">
+        ///     The producer instance this applies to.
+        /// </param>
+        public static void UnregisterAvroSerializer<T>(this Producer producer)
+        {
+            SerdeState.serializers[producer].Remove(typeof(T));
+        }
+
+
+        /// <summary>
+        ///     Gets the avro serializer that will be used to serialize values of the specified type.
+        /// </summary>
+        /// <param name="producer">
+        ///     The producer instance this applies to.
+        /// </param>
+        /// <returns>
+        ///     The avro serializer corresponding to the specified type.
+        /// </returns>
+        public static AvroSerializer<T> GetAvroSerializer<T>(this Producer producer)
+        {
+            return (AvroSerializer<T>)SerdeState.serializers[producer][typeof(T)];
+        }
+
+
+        private static async Task<Message> CreateMessage<TKey, TValue>(
+            Producer producer, Message<TKey, TValue> message, string topic, SerdeType keySerdeType, SerdeType valueSerdeType)
+        {
+            byte[] keyBytes = null;
+            if (keySerdeType == SerdeType.Regular)
+            {
+                keyBytes = producer.GetSerializer<TKey>()(message.Key);
+            }
+            else if (keySerdeType == SerdeType.Avro)
+            {
+                keyBytes = await producer.GetAvroSerializer<TKey>().Serialize(topic, message.Key, true);
+            }
+
+            byte[] valueBytes = null;
+            if (valueSerdeType == SerdeType.Regular)
+            {
+                valueBytes = producer.GetSerializer<TValue>()(message.Value);
+            }
+            else if (valueSerdeType == SerdeType.Avro)
+            {
+                valueBytes = await producer.GetAvroSerializer<TValue>().Serialize(topic, message.Value, false);
+            }
+
+            return 
                 new Message
                 {
                     Key = keyBytes,
-                    Value = valBytes,
+                    Value = valueBytes,
                     Timestamp = message.Timestamp,
                     Headers = message.Headers
-                },
+                };
+        }
+
+
+        /// <summary>
+        ///     Asynchronously produce a single
+        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
+        /// </summary>
+        /// <param name="producer">
+        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
+        /// </param>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="keySerdeType">
+        ///     Which type of serializer to use to serialize keys.
+        /// </param>
+        /// <param name="valueSerdeType">
+        ///     Which type of serializer to use to serialize values.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to abort this request.
+        /// </param>
+        /// <returns>
+        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
+        ///     a delivery report corresponding to the produce request, or an exception
+        ///     if an error occured.
+        /// </returns>
+        public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+            this Producer producer,
+            string topic,
+            Message<TKey, TValue> message,
+            SerdeType keySerdeType,
+            SerdeType valueSerdeType,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var dr = await producer.ProduceAsync(
+                new TopicPartition(topic, Partition.Any),
+                await CreateMessage(producer, message, topic, keySerdeType, valueSerdeType),
                 cancellationToken
             );
 
@@ -74,206 +177,17 @@ namespace Confluent.Kafka.AvroSerdes
         /// <param name="producer">
         ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
         /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topic">
-        ///     The topic to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
-        ///     a delivery report corresponding to the produce request, or an exception
-        ///     if an error occured.
-        /// </returns>
-        public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
-            this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
-            string topic,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
-            => await ProduceHelperAsync<TKey, TValue>(
-                producer,
-                await keySerializer.Serialize(topic, message.Key, true),
-                await valueSerializer.Serialize(topic, message.Value, false),
-                new TopicPartition(topic, Partition.Any),
-                message,
-                cancellationToken);
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topic">
-        ///     The topic to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
-        ///     a delivery report corresponding to the produce request, or an exception
-        ///     if an error occured.
-        /// </returns>
-        public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
-            this Producer producer,
-            Serializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
-            string topic,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
-            => await ProduceHelperAsync<TKey, TValue>(
-                producer,
-                keySerializer(message.Key),
-                await valueSerializer.Serialize(topic, message.Value, false),
-                new TopicPartition(topic, Partition.Any),
-                message,
-                cancellationToken);
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topic">
-        ///     The topic to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
-        ///     a delivery report corresponding to the produce request, or an exception
-        ///     if an error occured.
-        /// </returns>
-        public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
-            this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            Serializer<TValue> valueSerializer,
-            string topic,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
-            => await ProduceHelperAsync<TKey, TValue>(
-                producer,
-                await keySerializer.Serialize(topic, message.Key, true),
-                valueSerializer(message.Value),
-                new TopicPartition(topic, Partition.Any),
-                message,
-                cancellationToken);
-
-
-        // --- 
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic/partition.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
         /// <param name="topicPartition">
         ///     The topic/partition to produce the message to.
         /// </param>
         /// <param name="message">
         ///     The message to produce.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
+        /// <param name="keySerdeType">
+        ///     Which type of serializer to use to serialize keys.
         /// </param>
-        /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
-        ///     a delivery report corresponding to the produce request, or an exception
-        ///     if an error occured.
-        /// </returns>
-        public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
-            this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
-            TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
-            => await ProduceHelperAsync<TKey, TValue>(
-                producer,
-                await keySerializer.Serialize(topicPartition.Topic, message.Key, true),
-                await valueSerializer.Serialize(topicPartition.Topic, message.Value, false),
-                topicPartition,
-                message,
-                cancellationToken);
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic/partition.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topicPartition">
-        ///     The topic/partition to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
+        /// <param name="valueSerdeType">
+        ///     Which type of serializer to use to serialize values.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token that can be used to abort this request.
@@ -285,94 +199,29 @@ namespace Confluent.Kafka.AvroSerdes
         /// </returns>
         public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
             this Producer producer,
-            Serializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
-            => await ProduceHelperAsync<TKey, TValue>(
-                producer,
-                keySerializer(message.Key),
-                await valueSerializer.Serialize(topicPartition.Topic, message.Value, false),
-                topicPartition,
-                message,
-                cancellationToken);
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic/partition.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topicPartition">
-        ///     The topic/partition to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
-        ///     a delivery report corresponding to the produce request, or an exception
-        ///     if an error occured.
-        /// </returns>
-        public static async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
-            this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            Serializer<TValue> valueSerializer,
-            TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
-            => await ProduceHelperAsync<TKey, TValue>(
-                producer,
-                await keySerializer.Serialize(topicPartition.Topic, message.Key, true),
-                valueSerializer(message.Value),
-                topicPartition,
-                message,
-                cancellationToken);
-
-
-        // ---
-
-
-        private static void BeginProduceHelperAsync<TKey, TValue>(
-            Producer producer,
-            byte[] keyBytes,
-            byte[] valBytes,
-            TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler)
+            SerdeType keySerdeType,
+            SerdeType valueSerdeType,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            var msg = new Message
-            {
-                Timestamp = message.Timestamp,
-                Headers = message.Headers,
-                Key = keyBytes,
-                Value = valBytes
-            };
+            var dr = await producer.ProduceAsync(
+                topicPartition,
+                await CreateMessage(producer, message, topicPartition.Topic, keySerdeType, valueSerdeType),
+                cancellationToken
+            );
 
-            producer.BeginProduce(
-                topicPartition, msg,
-                (result) => deliveryHandler(
-                    new DeliveryReportResult<TKey, TValue>
-                    {
-                        TopicPartitionOffsetError = result.TopicPartitionOffsetError,
-                        Message = message
-                    }));
+            return new DeliveryReport<TKey, TValue>
+            {
+                TopicPartitionOffset = dr.TopicPartitionOffset,
+                Message = new Message<TKey, TValue>
+                {
+                    Key = message.Key,
+                    Value = message.Value,
+                    Timestamp = dr.Timestamp,
+                    Headers = dr.Headers
+                }
+            };
         }
 
 
@@ -383,19 +232,17 @@ namespace Confluent.Kafka.AvroSerdes
         /// <param name="producer">
         ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
         /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
         /// <param name="topic">
         ///     The topic to produce the message to.
         /// </param>
         /// <param name="message">
         ///     The message to produce.
+        /// </param>
+        /// <param name="keySerdeType">
+        ///     Which type of serializer to use to serialize keys.
+        /// </param>
+        /// <param name="valueSerdeType">
+        ///     Which type of serializer to use to serialize values.
         /// </param>
         /// <param name="deliveryHandler">
         ///     A delegate that will be called with a delivery report corresponding
@@ -407,19 +254,21 @@ namespace Confluent.Kafka.AvroSerdes
         /// </returns>
         public static async Task BeginProduceAsync<TKey, TValue>(
             this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
             string topic,
             Message<TKey, TValue> message,
+            SerdeType keySerdeType,
+            SerdeType valueSerdeType,
             Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
         )
-            => BeginProduceHelperAsync(
-                producer,
-                await keySerializer.Serialize(topic, message.Key, true),
-                await valueSerializer.Serialize(topic, message.Value, true),
+            => producer.BeginProduce(
                 new TopicPartition(topic, Partition.Any),
-                message,
-                deliveryHandler);
+                await CreateMessage(producer, message, topic, keySerdeType, valueSerdeType),
+                (result) => deliveryHandler(
+                    new DeliveryReportResult<TKey, TValue>
+                    {
+                        TopicPartitionOffsetError = result.TopicPartitionOffsetError,
+                        Message = message
+                    }));
 
 
         /// <summary>
@@ -429,115 +278,18 @@ namespace Confluent.Kafka.AvroSerdes
         /// <param name="producer">
         ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
         /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topic">
-        ///     The topic to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="deliveryHandler">
-        ///     A delegate that will be called with a delivery report corresponding
-        ///     to the produce request (if enabled).
-        /// </param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes after serialization is complete and
-        ///     the produce call has been forwarded to librdkafka. 
-        /// </returns>
-        public static async Task BeginProduceAsync<TKey, TValue>(
-            this Producer producer,
-            Serializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
-            string topic,
-            Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
-        )
-            => BeginProduceHelperAsync(
-                producer,
-                keySerializer(message.Key),
-                await valueSerializer.Serialize(topic, message.Value, true),
-                new TopicPartition(topic, Partition.Any),
-                message,
-                deliveryHandler);
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topic">
-        ///     The topic to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="deliveryHandler">
-        ///     A delegate that will be called with a delivery report corresponding
-        ///     to the produce request (if enabled).
-        /// </param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes after serialization is complete and
-        ///     the produce call has been forwarded to librdkafka. 
-        /// </returns>
-        public static async Task BeginProduceAsync<TKey, TValue>(
-            this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            Serializer<TValue> valueSerializer,
-            string topic,
-            Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
-        )
-            => BeginProduceHelperAsync(
-                producer,
-                await keySerializer.Serialize(topic, message.Key, true),
-                valueSerializer(message.Value),
-                new TopicPartition(topic, Partition.Any),
-                message,
-                deliveryHandler);
-
-
-        // ---
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic/partition.
-        /// </summary>
-        /// <param name="producer">
-        ///     The <see cref="Confluent.Kafka.Producer" /> instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
         /// <param name="topicPartition">
         ///     The topic/partition to produce the message to.
         /// </param>
         /// <param name="message">
         ///     The message to produce.
         /// </param>
+        /// <param name="keySerdeType">
+        ///     Which type of serializer to use to serialize keys.
+        /// </param>
+        /// <param name="valueSerdeType">
+        ///     Which type of serializer to use to serialize values.
+        /// </param>
         /// <param name="deliveryHandler">
         ///     A delegate that will be called with a delivery report corresponding
         ///     to the produce request (if enabled).
@@ -548,110 +300,21 @@ namespace Confluent.Kafka.AvroSerdes
         /// </returns>
         public static async Task BeginProduceAsync<TKey, TValue>(
             this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
+            SerdeType keySerdeType,
+            SerdeType valueSerdeType,
             Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
         )
-            => BeginProduceHelperAsync(
-                producer,
-                await keySerializer.Serialize(topicPartition.Topic, message.Key, true),
-                await valueSerializer.Serialize(topicPartition.Topic, message.Value, true),
+            => producer.BeginProduce(
                 topicPartition,
-                message,
-                deliveryHandler);
+                await CreateMessage(producer, message, topicPartition.Topic, keySerdeType, valueSerdeType),
+                (result) => deliveryHandler(
+                    new DeliveryReportResult<TKey, TValue>
+                    {
+                        TopicPartitionOffsetError = result.TopicPartitionOffsetError,
+                        Message = message
+                    }));
 
-
-         /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic/partition.
-        /// </summary>
-        /// <param name="producer">
-        ///     The producer instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topicPartition">
-        ///     The topic/partition to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="deliveryHandler">
-        ///     A delegate that will be called with a delivery report corresponding
-        ///     to the produce request (if enabled).
-        /// </param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes after serialization is complete and
-        ///     the produce call has been forwarded to librdkafka. 
-        /// </returns>
-        public static async Task BeginProduceAsync<TKey, TValue>(
-            this Producer producer,
-            Serializer<TKey> keySerializer,
-            AvroSerializer<TValue> valueSerializer,
-            TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler
-        )
-            => BeginProduceHelperAsync(
-                producer,
-                keySerializer(message.Key),
-                await valueSerializer.Serialize(topicPartition.Topic, message.Value, true),
-                topicPartition,
-                message,
-                deliveryHandler);
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic/partition.
-        /// </summary>
-        /// <param name="producer">
-        ///     The producer instance to use to produce the message.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
-        ///     instance to use to serialize the message key.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The <see cref="Confluent.Kafka.Serializer{T}" />
-        ///     instance to use to serialize the message value.
-        /// </param>
-        /// <param name="topicPartition">
-        ///     The topic/partition to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="deliveryHandler">
-        ///     A delegate that will be called with a delivery report corresponding
-        ///     to the produce request (if enabled).
-        /// </param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes after serialization is complete and
-        ///     the produce call has been forwarded to librdkafka. 
-        /// </returns>
-        public static async Task BeginProduceAsync<TKey, TValue>(
-            this Producer producer,
-            AvroSerializer<TKey> keySerializer,
-            Serializer<TValue> valueSerializer,
-            TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler
-        )
-            => BeginProduceHelperAsync(
-                producer,
-                await keySerializer.Serialize(topicPartition.Topic, message.Key, true),
-                valueSerializer(message.Value),
-                topicPartition,
-                message,
-                deliveryHandler);
     }
 }

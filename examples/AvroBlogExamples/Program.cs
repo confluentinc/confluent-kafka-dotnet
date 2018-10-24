@@ -38,8 +38,8 @@ namespace AvroBlogExample
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
-            {                
-                var valueSerializer = new AvroSerializer<GenericRecord>(schemaRegistry);
+            {   
+                producer.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
 
                 var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
@@ -55,8 +55,7 @@ namespace AvroBlogExample
                 record.Add("Message", "a test log message");
                 record.Add("Severity", new GenericEnum(logLevelSchema, "Error"));
                 await producer
-                    .ProduceAsync(Serializers.Null, valueSerializer, "log-messages",
-                        new Message<Null, GenericRecord> { Value = record })
+                    .ProduceAsync("log-messages", new Message<Null, GenericRecord> { Value = record }, SerdeType.Regular, SerdeType.Avro)
                     .ContinueWith(task => Console.WriteLine(
                         task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
@@ -71,9 +70,9 @@ namespace AvroBlogExample
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
-                var valueSerializer = new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry));
 
-                await producer.ProduceAsync(Serializers.Null, valueSerializer, "log-messages", 
+                await producer.ProduceAsync("log-messages", 
                     new Message<Null, MessageTypes.LogMessage>
                     {
                         Value = new MessageTypes.LogMessage
@@ -83,7 +82,8 @@ namespace AvroBlogExample
                             Severity = MessageTypes.LogLevel.Info,
                             Tags = new Dictionary<string, string> { { "location", "CA" } }
                         }
-                    });
+                    },
+                    SerdeType.Regular, SerdeType.Avro);
 
                 producer.Flush(TimeSpan.FromSeconds(30));
             }
@@ -107,7 +107,7 @@ namespace AvroBlogExample
             using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var consumer = new Consumer(consumerConfig))
             {
-                var valueDeserializer = new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry);
+                consumer.RegisterAvroDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry));
 
                 consumer.Subscribe("log-messages");
 
@@ -115,7 +115,7 @@ namespace AvroBlogExample
                 {
                     try
                     {
-                        var consumeResult = await consumer.ConsumeAsync(Deserializers.Null, valueDeserializer, cts.Token);
+                        var consumeResult = await consumer.ConsumeAsync<Null, MessageTypes.LogMessage>(SerdeType.Regular, SerdeType.Avro, cts.Token);
 
                         Console.WriteLine(
                             consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
