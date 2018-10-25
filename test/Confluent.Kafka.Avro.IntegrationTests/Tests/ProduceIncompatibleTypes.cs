@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             var topic = Guid.NewGuid().ToString();
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new AvroProducer(producerConfig))
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
 

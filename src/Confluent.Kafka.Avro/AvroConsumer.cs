@@ -28,53 +28,52 @@ namespace Confluent.Kafka.AvroSerdes
     ///     Avro deserialization related extension methods for
     ///     <see cref="Confluent.Kafka.Consumer" />
     /// </summary>
-    public static class AvroDeserializerExtensions
+    public class AvroConsumer : Consumer
     {
+        private Dictionary<Type, object> avroDeserializers 
+            = new Dictionary<Type, object>();
+
+
+        /// <summary>
+        ///     Creates a new AvroConsumer instance.
+        /// </summary>
+        /// <param name="config">
+        ///     A collection of librdkafka configuration properties.
+        /// </param>
+        public AvroConsumer(IEnumerable<KeyValuePair<string, string>> config)
+            : base(config) {}
+
         /// <summary>
         ///     Sets the Avro deserializer that will be used to deserialize keys or values with
         ///     the specified type.
         /// </summary>
-        /// <param name="consumer">
-        ///     The consumer instance this applies to.
-        /// </param>
         /// <param name="deserializer">
         ///     The avro deserializer.
         /// </param>
-        public static void RegisterAvroDeserializer<T>(this Consumer consumer, AvroDeserializer<T> deserializer)
+        public void RegisterAvroDeserializer<T>(AvroDeserializer<T> deserializer)
         {
-            if (!SerdeState.deserializers.ContainsKey(consumer))
-            {
-                SerdeState.deserializers.Add(consumer, new Dictionary<Type, object>());
-            }
-
-            SerdeState.deserializers[consumer].Add(typeof(T), deserializer);
+            avroDeserializers.Add(typeof(T), deserializer);
         }
 
 
         /// <summary>
         ///     Removes the avro deserializer associated with the specified type.
         /// </summary>
-        /// <param name="consumer">
-        ///     The consumer instance this applies to.
-        /// </param>
-        public static void UnregisterAvroSerializer<T>(this Consumer consumer)
+        public void UnregisterAvroSerializer<T>()
         {
-            SerdeState.deserializers[consumer].Remove(typeof(T));
+            avroDeserializers.Remove(typeof(T));
         }
 
 
         /// <summary>
         ///     Gets the avro deserializer that will be used to deserialize values of the specified type.
         /// </summary>
-        /// <param name="consumer">
-        ///     The consumer instance this applies to.
-        /// </param>
         /// <returns>
         ///     The avro deserializer corresponding to the specified type.
         /// </returns>
-        public static AvroDeserializer<T> GetAvroDeserializer<T>(this Consumer consumer)
+        public AvroDeserializer<T> GetAvroDeserializer<T>()
         {
-            return (AvroDeserializer<T>)SerdeState.deserializers[consumer][typeof(T)];
+            return (AvroDeserializer<T>)avroDeserializers[typeof(T)];
         }
 
 
@@ -83,9 +82,6 @@ namespace Confluent.Kafka.AvroSerdes
         ///     <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />
         ///     is available or the operation has been cancelled.
         /// </summary>
-        /// <param name="consumer">
-        ///     The <see cref="Confluent.Kafka.Consumer" /> instance to use to produce the message.
-        /// </param>
         /// <param name="keySerdeType">
         ///     Which type of deserializer to use to deserialize keys.
         /// </param>
@@ -98,13 +94,12 @@ namespace Confluent.Kafka.AvroSerdes
         /// <returns>
         ///     The <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />.
         /// </returns>
-        public static async Task<ConsumeResult<TKey, TValue>> ConsumeAsync<TKey, TValue>(
-            this Consumer consumer,
+        public async Task<ConsumeResult<TKey, TValue>> ConsumeAsync<TKey, TValue>(
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var result = await Task.Run(() => consumer.Consume(cancellationToken));
+            var result = await Task.Run(() => Consume(cancellationToken));
             if (result == null) { return null; }
 
             return new ConsumeResult<TKey, TValue>
@@ -115,11 +110,11 @@ namespace Confluent.Kafka.AvroSerdes
                     Timestamp = result.Timestamp,
                     Headers = result.Headers,
                     Key = keySerdeType == SerdeType.Avro
-                        ? await consumer.GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
-                        : consumer.GetDeserializer<TKey>()(result.Key, result.Key == null),
+                        ? await GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
+                        : GetDeserializer<TKey>()(result.Key, result.Key == null),
                     Value = valueSerdeType == SerdeType.Avro
-                        ? await consumer.GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
-                        : consumer.GetDeserializer<TValue>()(result.Value, result.Value == null)
+                        ? await GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
+                        : GetDeserializer<TValue>()(result.Value, result.Value == null)
                 }
             };
         }
@@ -130,9 +125,6 @@ namespace Confluent.Kafka.AvroSerdes
         ///     <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />
         ///     is available or the timeout period has elapsed.
         /// </summary>
-        /// <param name="consumer">
-        ///     The <see cref="Confluent.Kafka.Consumer" /> instance to use to produce the message.
-        /// </param>
         /// <param name="keySerdeType">
         ///     Which type of deserializer to use to deserialize keys.
         /// </param>
@@ -145,13 +137,12 @@ namespace Confluent.Kafka.AvroSerdes
         /// <returns>
         ///     The <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />.
         /// </returns>
-        public static async Task<ConsumeResult<TKey, TValue>> ConsumeAsync<TKey, TValue>(
-            this Consumer consumer,
+        public async Task<ConsumeResult<TKey, TValue>> ConsumeAsync<TKey, TValue>(
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
             TimeSpan timeout)
         {
-            var result = await Task.Run(() => consumer.Consume(timeout));
+            var result = await Task.Run(() => Consume(timeout));
             if (result == null) { return null; }
 
             return new ConsumeResult<TKey, TValue>
@@ -162,11 +153,11 @@ namespace Confluent.Kafka.AvroSerdes
                     Timestamp = result.Timestamp,
                     Headers = result.Headers,
                     Key = keySerdeType == SerdeType.Avro
-                        ? await consumer.GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
-                        : consumer.GetDeserializer<TKey>()(result.Key, result.Key == null),
+                        ? await GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
+                        : GetDeserializer<TKey>()(result.Key, result.Key == null),
                     Value = valueSerdeType == SerdeType.Avro
-                        ? await consumer.GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
-                        : consumer.GetDeserializer<TValue>()(result.Value, result.Value == null)
+                        ? await GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
+                        : GetDeserializer<TValue>()(result.Value, result.Value == null)
                 }
             };
         }

@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             DeliveryReport<Null, GenericRecord> dr2;
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new Producer(config))
+            using (var p = new AvroProducer(config))
             {
                 p.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
 
