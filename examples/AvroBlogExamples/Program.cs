@@ -37,7 +37,7 @@ namespace AvroBlogExample
         async static Task ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new AvroProducer(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {   
                 producer.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
 
@@ -68,11 +68,11 @@ namespace AvroBlogExample
         async static Task ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new AvroProducer(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry));
 
-                await producer.ProduceAsync("log-messages", 
+                await producer.ProduceAsync("log-messages",
                     new Message<Null, MessageTypes.LogMessage>
                     {
                         Value = new MessageTypes.LogMessage
@@ -105,7 +105,7 @@ namespace AvroBlogExample
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new AvroConsumer(consumerConfig))
             {
                 consumer.RegisterAvroDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry));
 

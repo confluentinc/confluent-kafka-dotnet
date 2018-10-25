@@ -56,7 +56,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 var doubleTopic = Guid.NewGuid().ToString();
                 var nullTopic = Guid.NewGuid().ToString();
 
-                using (var producer = new Producer(producerConfig))
+                using (var producer = new AvroProducer(producerConfig))
                 {
                     producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
                     producer
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
 
 
-                using (var consumer = new Consumer(consumerConfig))
+                using (var consumer = new AvroConsumer(consumerConfig))
                 {
                     consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(stringTopic, 0, 0) });

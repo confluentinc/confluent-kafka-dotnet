@@ -59,7 +59,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             var consumeTask = Task.Run(async () =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-                using (var consumer = new Consumer(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName }))
+                using (var consumer = new AvroConsumer(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName }))
                 {
                     consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
                     consumer.RegisterAvroDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry));
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new AvroProducer(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
                 producer.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));

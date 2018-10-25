@@ -56,7 +56,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             // first a quick check the value case fails.
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new AvroProducer(producerConfig))
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }));
@@ -77,7 +77,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             // the following tests all check behavior in the key case.
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new AvroProducer(producerConfig))
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }));
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
