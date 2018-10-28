@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         public static void ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-            
+
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetResetType.Earliest,
             };
-            
+
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
                 SchemaRegistryUrl = schemaRegistryServers
@@ -64,16 +64,20 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new AvroProducer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<int>(schemaRegistry);
-                var valueSerializer = new AvroSerializer<string>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
 
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer.ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" }).Wait();
+                        producer
+                            .ProduceAsync(
+                                topic, new Message<int, string> { Key = 42, Value = "world" },
+                                SerdeType.Avro, SerdeType.Avro)
+                            .Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -83,16 +87,20 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new AvroProducer(producerConfig))
             {
-                var keySerializer = new AvroSerializer<string>(schemaRegistry);
-                var valueSerializer = new AvroSerializer<int>(schemaRegistry);
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
                 
                 Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer.ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 }).Wait();
+                        producer
+                            .ProduceAsync(
+                                topic, new Message<string, int> { Key = "world", Value = 42 },
+                                SerdeType.Avro, SerdeType.Avro)
+                            .Wait();
                     }
                     catch (AggregateException e)
                     {

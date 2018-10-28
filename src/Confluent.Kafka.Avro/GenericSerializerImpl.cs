@@ -31,7 +31,6 @@ namespace Confluent.Kafka.AvroSerdes
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
         private int initialBufferSize;
-        private bool isKey;
 
         private Dictionary<global::Avro.RecordSchema, string> knownSchemas = new Dictionary<global::Avro.RecordSchema, string>();
         private HashSet<KeyValuePair<string, string>> registeredSchemas = new HashSet<KeyValuePair<string, string>>();
@@ -42,13 +41,11 @@ namespace Confluent.Kafka.AvroSerdes
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             bool autoRegisterSchema,
-            int initialBufferSize,
-            bool isKey)
+            int initialBufferSize)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.autoRegisterSchema = autoRegisterSchema;
             this.initialBufferSize = initialBufferSize;
-            this.isKey = isKey;
         }
 
         /// <summary>
@@ -63,10 +60,13 @@ namespace Confluent.Kafka.AvroSerdes
         /// <param name="data">
         ///     The object to serialize.
         /// </param>
+        /// <param name="isKey">
+        ///     whether or not the data represents a message key.
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> Serialize(string topic, GenericRecord data)
+        public async Task<byte[]> Serialize(string topic, GenericRecord data, bool isKey)
         {
             int schemaId;
             global::Avro.RecordSchema writerSchema;
@@ -108,9 +108,10 @@ namespace Confluent.Kafka.AvroSerdes
                 // slow since writerSchemaString is potentially long. It would be
                 // better to use hash functions based on the writerSchemaString 
                 // object reference, not value.
-                string subject = this.isKey
+                string subject = isKey
                     ? schemaRegistryClient.ConstructKeySubjectName(topic)
                     : schemaRegistryClient.ConstructValueSubjectName(topic);
+
                 var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                 if (!registeredSchemas.Contains(subjectSchemaPair))
                 {
