@@ -21,15 +21,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.Kafka.AvroClients;
 using Avro.Generic;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.AvroClients
 {
     /// <summary>
     ///     Extends <see cref="Confluent.Kafka.Producer" /> with functionality
-    ///     for managing <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
+    ///     for managing <see cref="Confluent.Kafka.AvroClients.AvroSerializer{T}" />
     ///     instances.
     /// </summary>
     public class AvroProducer : Producer

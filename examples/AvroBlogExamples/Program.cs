@@ -22,7 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avro.Generic;
 using Confluent.Kafka;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.Kafka.AvroClients;
 using Confluent.SchemaRegistry;
 
 

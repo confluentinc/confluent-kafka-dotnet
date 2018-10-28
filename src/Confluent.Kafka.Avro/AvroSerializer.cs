@@ -22,7 +22,7 @@ using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.AvroClients
 {
     /// <summary>
     ///     Avro serializer. Use this serializer with GenericRecord, types 
