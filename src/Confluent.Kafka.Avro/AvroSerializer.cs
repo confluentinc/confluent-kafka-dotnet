@@ -127,11 +127,11 @@ namespace Confluent.Kafka.AvroSerdes
             if (serializerImpl == null)
             {
                 serializerImpl = typeof(T) == typeof(GenericRecord)
-                    ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize, isKey)
-                    : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize, isKey);
+                    ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize)
+                    : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
             }
 
-            return serializerImpl.Serialize(topic, data);
+            return serializerImpl.Serialize(topic, data, isKey);
         }
     }
 }

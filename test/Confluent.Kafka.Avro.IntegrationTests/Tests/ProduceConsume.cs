@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.SchemaRegistry;
 using Confluent.Kafka.AvroSerdes;
@@ -72,8 +71,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     producer
                         .ProduceAsync(
                             topic, new Message<string, User> { Key = user.name, Value = user },
-                            SerdeType.Avro, SerdeType.Avro,
-                            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                            SerdeType.Avro, SerdeType.Avro)
                         .Wait();
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
@@ -98,9 +96,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 while (consuming)
                 {
                     var record = consumer
-                        .ConsumeAsync<string, User>(
-                            SerdeType.Avro, SerdeType.Avro,
-                            new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .ConsumeAsync<string, User>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
                         .Result;
 
                     if (record != null)

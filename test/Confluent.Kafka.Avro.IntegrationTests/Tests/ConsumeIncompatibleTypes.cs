@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Confluent.SchemaRegistry;
 using Confluent.Kafka.AvroSerdes;
 using Confluent.Kafka.Examples.AvroSpecific;
@@ -84,15 +83,16 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 try
                 {
                     consumer
-                        .ConsumeAsync<User, User>(SerdeType.Avro, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .ConsumeAsync<User, User>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
                         .Wait();
                 }
-                catch (ConsumeException e)
+                catch (AggregateException e)
                 {
-                    if (e.Error.Code == ErrorCode.Local_KeyDeserialization)
+                    if (e.InnerException.GetType() != typeof(global::Avro.AvroException))
                     {
-                        hadError = true;
+                        throw e.InnerException;
                     }
+                    hadError = true;
                 }
 
                 Assert.True(hadError);
@@ -109,15 +109,16 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 try
                 {
                     consumer
-                        .ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token)
+                        .ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
                         .Wait();
                 }
-                catch (ConsumeException e)
+                catch (AggregateException e)
                 {
-                    if (e.Error.Code == ErrorCode.Local_ValueDeserialization)
+                    if (e.InnerException.GetType() != typeof(global::Avro.AvroException))
                     {
-                        hadError = true;
+                        throw e.InnerException;
                     }
+                    hadError = true;
                 }
 
                 Assert.True(hadError);

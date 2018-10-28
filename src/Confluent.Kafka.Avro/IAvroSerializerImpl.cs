@@ -21,6 +21,6 @@ namespace Confluent.Kafka.AvroSerdes
 {
     internal interface IAvroSerializerImpl<T>
     {
-        Task<byte[]> Serialize(string topic, T data);
+        Task<byte[]> Serialize(string topic, T data, bool isKey);
     }
 }

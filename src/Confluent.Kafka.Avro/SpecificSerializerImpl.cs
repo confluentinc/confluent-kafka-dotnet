@@ -33,7 +33,6 @@ namespace Confluent.Kafka.AvroSerdes
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
         private int initialBufferSize;
-        private bool isKey;
 
         private string writerSchemaString;
         private global::Avro.Schema writerSchema;
@@ -41,20 +40,18 @@ namespace Confluent.Kafka.AvroSerdes
 
         private SpecificWriter<T> avroWriter;
        
-        private HashSet<string> topicsRegistered = new HashSet<string>();
+        private HashSet<string> subjectsRegistered = new HashSet<string>();
 
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             bool autoRegisterSchema,
-            int initialBufferSize,
-            bool isKey)
+            int initialBufferSize)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.autoRegisterSchema = autoRegisterSchema;
             this.initialBufferSize = initialBufferSize;
-            this.isKey = isKey;
 
             Type writerType = typeof(T);
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
@@ -112,24 +109,23 @@ namespace Confluent.Kafka.AvroSerdes
             writerSchemaString = writerSchema.ToString();
         }
 
-        public async Task<byte[]> Serialize(string topic, T data)
+        public async Task<byte[]> Serialize(string topic, T data, bool isKey)
         {
             await serializeMutex.WaitAsync();
             try
             {
-                if (!topicsRegistered.Contains(topic))
+                string subject = isKey
+                    ? schemaRegistryClient.ConstructKeySubjectName(topic)
+                    : schemaRegistryClient.ConstructValueSubjectName(topic);
+
+                if (!subjectsRegistered.Contains(subject))
                 {
-                    string subject = isKey
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic);
-
                     // first usage: register/get schema to check compatibility
-
                     writerSchemaId = autoRegisterSchema
                         ? await schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false)
                         : await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false);
 
-                    topicsRegistered.Add(topic);
+                    subjectsRegistered.Add(subject);
                 }
             }
             finally

@@ -72,13 +72,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
                     producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
                     producer
-                        .ProduceAsync(bytesTopic, new Message<int, int> { Key = 42, Value = 43 }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 }, SerdeType.Avro, SerdeType.Avro)
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
 
                     producer.RegisterAvroSerializer(new AvroSerializer<long>(schemaRegistry));
                     producer
-                        .ProduceAsync(bytesTopic, new Message<long, long> { Key = -32, Value = -33 }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 }, SerdeType.Avro, SerdeType.Avro)
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
 
