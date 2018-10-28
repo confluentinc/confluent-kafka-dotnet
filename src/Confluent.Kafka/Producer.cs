@@ -396,7 +396,7 @@ namespace Confluent.Kafka
         /// </param>
         public void RegisterSerializer<T>(Serializer<T> serializer)
         {
-            serializers.Add(typeof(T), serializer);
+            serializers[typeof(T)] = serializer;
         }
 
         /// <summary>
@@ -415,7 +415,14 @@ namespace Confluent.Kafka
         /// </returns>
         public Serializer<T> GetSerializer<T>()
         {
-            return (Serializer<T>)serializers[typeof(T)];
+            try
+            {
+                return (Serializer<T>)serializers[typeof(T)];
+            }
+            catch
+            {
+                throw new ArgumentException($"No serializer associated with type ${typeof(T).Name}");
+            }
         }
 
         internal int Poll(int millisecondsTimeout)
@@ -710,8 +717,8 @@ namespace Confluent.Kafka
             CancellationToken cancellationToken = default(CancellationToken)
         )
             => ProduceAsync(
-                ((Serializer<TKey>)serializers[typeof(TKey)]),
-                ((Serializer<TValue>)serializers[typeof(TValue)]),
+                GetSerializer<TKey>(),
+                GetSerializer<TValue>(),
                 topicPartition,
                 message,
                 cancellationToken);
@@ -896,8 +903,8 @@ namespace Confluent.Kafka
             Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
         )
             => BeginProduce(
-                ((Serializer<TKey>)serializers[typeof(TKey)]),
-                ((Serializer<TValue>)serializers[typeof(TValue)]),
+                GetSerializer<TKey>(),
+                GetSerializer<TValue>(),
                 topicPartition,
                 message,
                 deliveryHandler);

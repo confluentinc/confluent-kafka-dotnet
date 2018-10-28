@@ -276,15 +276,12 @@ namespace Confluent.Kafka
         ///     Sets the deserializer that will be used to deserialize keys or values with
         ///     the specified type.
         /// </summary>
-        /// <param name="type">
-        ///     The type this deserializer corresponds to.
-        /// </param>
         /// <param name="deserializer">
         ///     The deserializer.
         /// </param>
         public void RegisterDeserializer<T>(Deserializer<T> deserializer)
         {
-            deserializers.Add(typeof(T), deserializer);
+            deserializers[typeof(T)] = deserializer;
         }
 
 
@@ -338,8 +335,23 @@ namespace Confluent.Kafka
             Deserializer<TKey> keyDeserializer,
             Deserializer<TValue> valueDeserializer)
         {
-            if (keyDeserializer == null) { keyDeserializer = (Deserializer<TKey>)deserializers[typeof(TKey)]; }
-            if (valueDeserializer == null) { valueDeserializer = (Deserializer<TValue>)deserializers[typeof(TValue)]; }
+            try
+            {
+                if (keyDeserializer == null) { keyDeserializer = (Deserializer<TKey>)deserializers[typeof(TKey)]; }
+            }
+            catch
+            {
+                throw new ArgumentException($"No deserializer associated with type ${typeof(TKey).Name}");
+            }
+
+            try
+            {
+                if (valueDeserializer == null) { valueDeserializer = (Deserializer<TValue>)deserializers[typeof(TValue)]; }
+            }
+            catch
+            {
+                throw new ArgumentException($"No deserializer associated with type ${typeof(TValue).Name}");
+            }
 
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)

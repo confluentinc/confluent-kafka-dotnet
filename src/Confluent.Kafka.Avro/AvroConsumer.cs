@@ -22,7 +22,7 @@ using Confluent.SchemaRegistry;
 using Avro.Generic;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.AvroClients
 {
     /// <summary>
     ///     Avro deserialization related extension methods for

@@ -22,7 +22,7 @@ using System;
 using System.Linq;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.AvroClients
 {
     /// <summary>
     ///     Avro deserializer. Use this deserializer with GenericRecord, types 
