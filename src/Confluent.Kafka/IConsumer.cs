@@ -195,5 +195,10 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OffsetsForTimes(IEnumerable{TopicPartitionTimestamp}, TimeSpan, CancellationToken)" />
         /// </summary>
         List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close()" />
+        /// </summary>
+        void Close();
     }
 }
