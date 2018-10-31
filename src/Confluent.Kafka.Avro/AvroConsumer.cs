@@ -30,6 +30,8 @@ namespace Confluent.Kafka.AvroClients
     /// </summary>
     public class AvroConsumer : Consumer
     {
+        private ISchemaRegistryClient schemaRegistryClient;
+        
         private Dictionary<Type, object> avroDeserializers 
             = new Dictionary<Type, object>();
 
@@ -37,11 +39,19 @@ namespace Confluent.Kafka.AvroClients
         /// <summary>
         ///     Creates a new AvroConsumer instance.
         /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <param name="config">
         ///     A collection of librdkafka configuration properties.
         /// </param>
-        public AvroConsumer(IEnumerable<KeyValuePair<string, string>> config)
-            : base(config) {}
+        public AvroConsumer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config)
+            : base(config)
+        {
+            this.schemaRegistryClient = schemaRegistryClient;
+        }
+
 
         /// <summary>
         ///     Sets the Avro deserializer that will be used to deserialize keys or values with
@@ -73,6 +83,17 @@ namespace Confluent.Kafka.AvroClients
         /// </returns>
         public AvroDeserializer<T> GetAvroDeserializer<T>()
         {
+            return (AvroDeserializer<T>)avroDeserializers[typeof(T)];
+        }
+
+
+        private AvroDeserializer<T> GetOrCreateAvroDeserializer<T>()
+        {
+            if (!avroDeserializers.ContainsKey(typeof(T)))
+            {
+                avroDeserializers.Add(typeof(T), new AvroDeserializer<T>());
+            }
+
             return (AvroDeserializer<T>)avroDeserializers[typeof(T)];
         }
 
@@ -112,10 +133,10 @@ namespace Confluent.Kafka.AvroClients
                         Timestamp = result.Timestamp,
                         Headers = result.Headers,
                         Key = keySerdeType == SerdeType.Avro
-                            ? await (GetAvroDeserializer<TKey>()).Deserialize(result.Topic, result.Key, true)
+                            ? await (GetOrCreateAvroDeserializer<TKey>()).Deserialize(schemaRegistryClient, result.Topic, result.Key, true)
                             : GetDeserializer<TKey>()(result.Key, result.Key == null),
                         Value = valueSerdeType == SerdeType.Avro
-                            ? await (GetAvroDeserializer<TValue>()).Deserialize(result.Topic, result.Value, false)
+                            ? await (GetOrCreateAvroDeserializer<TValue>()).Deserialize(schemaRegistryClient, result.Topic, result.Value, false)
                             : GetDeserializer<TValue>()(result.Value, result.Value == null)
                     }
                 };
@@ -162,10 +183,10 @@ namespace Confluent.Kafka.AvroClients
                         Timestamp = result.Timestamp,
                         Headers = result.Headers,
                         Key = keySerdeType == SerdeType.Avro
-                            ? await GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
+                            ? await GetOrCreateAvroDeserializer<TKey>().Deserialize(schemaRegistryClient, result.Topic, result.Key, true)
                             : GetDeserializer<TKey>()(result.Key, result.Key == null),
                         Value = valueSerdeType == SerdeType.Avro
-                            ? await GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
+                            ? await GetOrCreateAvroDeserializer<TValue>().Deserialize(schemaRegistryClient, result.Topic, result.Value, false)
                             : GetDeserializer<TValue>()(result.Value, result.Value == null)
                     }
                 };

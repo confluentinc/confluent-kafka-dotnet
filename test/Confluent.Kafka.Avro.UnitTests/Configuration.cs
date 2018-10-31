@@ -53,7 +53,7 @@ namespace Confluent.Kafka.Avro.UnitTests
             };
 
             // should not throw.
-            var avroSerializer = new AvroSerializer<int>(schemaRegistryClient, config);
+            var avroSerializer = new AvroSerializer<int>(config);
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Avro.UnitTests
             var config = new Dictionary<string, string> { };
 
             // should not throw.
-            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient, config);
+            var avroDeserializer = new AvroDeserializer<int>(config);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "some.random.config.param", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient, config); });
+            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(config); });
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "some.random.config.param", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(schemaRegistryClient, config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(config); });
         }
 
         [Fact]
@@ -97,7 +97,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "avro.unknown", "70" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(schemaRegistryClient, config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(config); });
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "avro.serializer.auto.register.schemas", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient, config); });
+            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(config); });
         }
     }
 }
