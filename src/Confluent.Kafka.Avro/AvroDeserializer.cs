@@ -37,25 +37,17 @@ namespace Confluent.Kafka.AvroClients
     /// </remarks>
     public class AvroDeserializer<T>
     {
-        private ISchemaRegistryClient schemaRegistryClient;
-
         private IAvroDeserializerImpl<T> deserializerImpl;
 
 
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
-        /// <param name="schemaRegisteryClient">
-        ///     An instance of an implementation of ISchemaRegistryClient used for
-        ///     communication with Confluent Schema Registry.
-        /// </param>
         /// <param name="config">
         ///     Deserializer configuration properties.
         /// </param>
-        public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient, IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroDeserializer(IEnumerable<KeyValuePair<string, string>> config = null)
         {
-            schemaRegistryClient = schemaRegisteryClient;
-
             if (config == null) { return; }
 
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
@@ -84,10 +76,14 @@ namespace Confluent.Kafka.AvroClients
         /// <param name="isKey">
         ///     True if message key data, false otherwise.
         /// </param>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <returns>
         ///     The deserialized <typeparamref name="T"/> value.
         /// </returns>
-        public async Task<T> Deserialize(string topic, byte[] data, bool isKey)
+        public async Task<T> Deserialize(ISchemaRegistryClient schemaRegistryClient, string topic, byte[] data, bool isKey)
         {
             try
             {

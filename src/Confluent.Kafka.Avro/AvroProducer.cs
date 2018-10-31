@@ -34,17 +34,26 @@ namespace Confluent.Kafka.AvroClients
     /// </summary>
     public class AvroProducer : Producer
     {
+        private ISchemaRegistryClient schemaRegistryClient;
+
         private Dictionary<Type, object> avroSerializers
             = new Dictionary<Type, object>();
 
         /// <summary>
         ///     Creates a new AvroProducer instance.
         /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <param name="config">
         ///     A collection of librdkafka configuration parameters.
         /// </param>
-        public AvroProducer(IEnumerable<KeyValuePair<string, string>> config)
-            : base(config) {}
+        public AvroProducer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config)
+            : base(config)
+        {
+            this.schemaRegistryClient = schemaRegistryClient;
+        }
 
         /// <summary>
         ///     Sets the Avro serializer that will be used to serialize keys or values with
@@ -77,6 +86,16 @@ namespace Confluent.Kafka.AvroClients
             return (AvroSerializer<T>)avroSerializers[typeof(T)];
         }
 
+        private AvroSerializer<T> GetOrCreateAvroSerializer<T>()
+        {
+            if (!avroSerializers.ContainsKey(typeof(T)))
+            {
+                avroSerializers.Add(typeof(T), new AvroSerializer<T>());
+            }
+
+            return (AvroSerializer<T>)avroSerializers[typeof(T)];
+        }
+
         private async Task<Message> CreateMessage<TKey, TValue>(
             Message<TKey, TValue> message, string topic, SerdeType keySerdeType, SerdeType valueSerdeType)
         {
@@ -89,7 +108,7 @@ namespace Confluent.Kafka.AvroClients
                 }
                 else if (keySerdeType == SerdeType.Avro)
                 {
-                    keyBytes = await GetAvroSerializer<TKey>().Serialize(topic, message.Key, true);
+                    keyBytes = await GetOrCreateAvroSerializer<TKey>().Serialize(schemaRegistryClient, topic, message.Key, true);
                 }
 
                 byte[] valueBytes = null;
@@ -99,7 +118,7 @@ namespace Confluent.Kafka.AvroClients
                 }
                 else if (valueSerdeType == SerdeType.Avro)
                 {
-                    valueBytes = await GetAvroSerializer<TValue>().Serialize(topic, message.Value, false);
+                    valueBytes = await GetOrCreateAvroSerializer<TValue>().Serialize(schemaRegistryClient, topic, message.Value, false);
                 }
 
                 return 

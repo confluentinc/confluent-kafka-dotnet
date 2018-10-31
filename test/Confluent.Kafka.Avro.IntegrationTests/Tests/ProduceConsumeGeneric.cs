@@ -56,10 +56,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             DeliveryReport<Null, GenericRecord> dr;
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new AvroProducer(config))
+            using (var p = new AvroProducer(schemaRegistry, config))
             {
-                p.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
-
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
@@ -69,10 +67,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             // produce a specific record (to later consume back as a generic record).
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new AvroProducer(config))
+            using (var p = new AvroProducer(schemaRegistry, config))
             {
-                p.RegisterAvroSerializer(new AvroSerializer<User>(schemaRegistry));
-
                 var user = new User
                 {
                     name = "my name 3",
@@ -99,10 +95,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var cconfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(cconfig))
+            using (var consumer = new AvroConsumer(schemaRegistry, cconfig))
             {
-                consumer.RegisterAvroDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry));
-
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.ConsumeAsync<Null, GenericRecord>(
@@ -135,10 +129,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(cconfig))
+            using (var consumer = new AvroConsumer(schemaRegistry, cconfig))
             {
-                consumer.RegisterAvroDeserializer(new AvroDeserializer<User>(schemaRegistry));
-
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.ConsumeAsync<Null, User>(
                     SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;

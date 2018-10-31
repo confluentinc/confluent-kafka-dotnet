@@ -54,10 +54,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(producerConfig))
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
-
                 // implicit check that this does not fail.
                 producer.ProduceAsync(topic1, new Message<string, string> { Key = "hello", Value = "world" }, SerdeType.Regular, SerdeType.Avro).Wait();
 
@@ -77,10 +75,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(producerConfig))
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
-
                 // implicit check that this does not fail.
                 producer.ProduceAsync(topic2, new Message<string, string> { Key = "hello", Value = "world" }, SerdeType.Avro, SerdeType.Regular).Wait();
 
@@ -101,10 +97,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             // check the above can be consumed (using regular / avro serializers as appropriate)
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(consumerConfig))
+            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {
-                consumer.RegisterAvroDeserializer<string>(new AvroDeserializer<string>(schemaRegistry));
-
                 consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
                 var cr = consumer.ConsumeAsync<string, string>(SerdeType.Regular, SerdeType.Avro).Result;
                 Assert.Equal("hello", cr.Key);

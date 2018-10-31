@@ -41,10 +41,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             DeliveryReport<Null, GenericRecord> dr2;
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new AvroProducer(config))
+            using (var p = new AvroProducer(schemaRegistry, config))
             {
-                p.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
-
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);

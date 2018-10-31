@@ -37,10 +37,8 @@ namespace AvroBlogExample
         async static Task ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new AvroProducer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new AvroProducer(schemaRegistry, new ProducerConfig { BootstrapServers = bootstrapServers }))
             {   
-                producer.RegisterAvroSerializer(new AvroSerializer<GenericRecord>(schemaRegistry));
-
                 var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
 
@@ -68,10 +66,8 @@ namespace AvroBlogExample
         async static Task ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new AvroProducer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new AvroProducer(schemaRegistry, new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
-                producer.RegisterAvroSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry));
-
                 await producer.ProduceAsync("log-messages",
                     new Message<Null, MessageTypes.LogMessage>
                     {
@@ -105,10 +101,8 @@ namespace AvroBlogExample
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var consumer = new AvroConsumer(consumerConfig))
+            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {
-                consumer.RegisterAvroDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry));
-
                 consumer.Subscribe("log-messages");
 
                 while (!cts.IsCancellationRequested)

@@ -78,11 +78,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var consumeTask = Task.Run(async () =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var consumer = new AvroConsumer(consumerConfig))
+                using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
                 {
-                    consumer.RegisterAvroDeserializer(new AvroDeserializer<string>(schemaRegistry));
-                    consumer.RegisterAvroDeserializer(new AvroDeserializer<User>(schemaRegistry));
-
                     consumer.OnError += (_, e)
                         => Console.WriteLine($"Error: {e.Reason}");
 
@@ -107,10 +104,9 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(producerConfig))
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry, avroSerializerConfig));
-                producer.RegisterAvroSerializer(new AvroSerializer<User>(schemaRegistry));
+                producer.RegisterAvroSerializer(new AvroSerializer<string>(avroSerializerConfig));
 
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

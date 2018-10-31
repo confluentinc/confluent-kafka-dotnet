@@ -50,10 +50,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             var topic = Guid.NewGuid().ToString();
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(producerConfig))
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
-
                 producer
                     .ProduceAsync(
                         topic, new Message<string, string> { Key = "hello", Value = "world" },
@@ -64,11 +62,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(producerConfig))
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
-
                 Assert.Throws<SerializationException>(() =>
                 {
                     try
@@ -87,11 +82,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(producerConfig))
-            {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
-                producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
-                
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            {                
                 Assert.Throws<SerializationException>(() =>
                 {
                     try

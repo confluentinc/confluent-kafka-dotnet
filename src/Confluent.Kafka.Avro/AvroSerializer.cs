@@ -39,7 +39,6 @@ namespace Confluent.Kafka.AvroClients
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
-        private ISchemaRegistryClient schemaRegistryClient;
 
         private IAvroSerializerImpl<T> serializerImpl;
 
@@ -67,17 +66,11 @@ namespace Confluent.Kafka.AvroClients
         ///         attempt to auto-register unrecognized schemas with Confluent Schema Registry, 
         ///         false if not.
         /// </summary>
-        /// <param name="schemaRegistryClient">
-        ///	    An instance of an implementation of ISchemaRegistryClient used for
-        ///	    communication with Confluent Schema Registry.
-        /// </param>
         /// <param name="config">
         ///     Serializer configuration properties.
         /// </param>
-        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroSerializer(IEnumerable<KeyValuePair<string, string>> config = null)
         {
-            this.schemaRegistryClient = schemaRegistryClient;
-            
             if (config == null) { return; }
 
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
@@ -119,10 +112,14 @@ namespace Confluent.Kafka.AvroClients
         /// <param name="isKey">
         ///     whether or not the data represents a message key.
         /// </param>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> Serialize(string topic, T data, bool isKey)
+        public async Task<byte[]> Serialize(ISchemaRegistryClient schemaRegistryClient, string topic, T data, bool isKey)
         { 
             try
             {
