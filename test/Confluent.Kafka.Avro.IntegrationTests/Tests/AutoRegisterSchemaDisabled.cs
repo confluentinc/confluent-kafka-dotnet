@@ -61,11 +61,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }));
 
-                Assert.Throws<SchemaRegistryException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
-                        producer.ProduceAsync(new Guid().ToString(), new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro).Wait();
+                        producer
+                            .ProduceAsync(new Guid().ToString(), new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro)
+                            .Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -82,11 +84,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }));
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
 
-                Assert.Throws<SchemaRegistryException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
-                        producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro).Wait();
+                        producer
+                            .ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro)
+                            .Wait();
                     }
                     catch (AggregateException e)
                     {

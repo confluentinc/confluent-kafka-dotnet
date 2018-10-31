@@ -28,7 +28,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     {
         /// <summary>
         ///     Test that producing messages with a key or value with incompatible schema
-        ///     throws a SchemaRegistryException.
+        ///     throws a SerializationException.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
 
-                Assert.Throws<SchemaRegistryException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(schemaRegistry));
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(schemaRegistry));
                 
-                Assert.Throws<SchemaRegistryException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {

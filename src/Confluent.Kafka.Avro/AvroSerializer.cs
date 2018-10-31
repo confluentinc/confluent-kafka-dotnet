@@ -122,16 +122,27 @@ namespace Confluent.Kafka.AvroClients
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public Task<byte[]> Serialize(string topic, T data, bool isKey)
+        public async Task<byte[]> Serialize(string topic, T data, bool isKey)
         { 
-            if (serializerImpl == null)
+            try
             {
-                serializerImpl = typeof(T) == typeof(GenericRecord)
-                    ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize)
-                    : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
-            }
+                if (serializerImpl == null)
+                {
+                    serializerImpl = typeof(T) == typeof(GenericRecord)
+                        ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize)
+                        : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
+                }
 
-            return serializerImpl.Serialize(topic, data, isKey);
+                return await serializerImpl.Serialize(topic, data, isKey);
+            }
+            catch (AggregateException e)
+            {
+                throw new SerializationException("Error occured serializing avro data.", e.InnerException);
+            }
+            catch (Exception e)
+            {
+                throw new SerializationException("Error occured serializing avro data.", e);
+            }
         }
     }
 }

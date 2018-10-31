@@ -89,14 +89,25 @@ namespace Confluent.Kafka.AvroClients
         /// </returns>
         public async Task<T> Deserialize(string topic, byte[] data, bool isKey)
         {
-            if (deserializerImpl == null)
+            try
             {
-                deserializerImpl = (typeof(T) == typeof(GenericRecord))
-                    ? (IAvroDeserializerImpl<T>)new GenericDeserializerImpl(schemaRegistryClient)
-                    : new SpecificDeserializerImpl<T>(schemaRegistryClient);
-            }
+                if (deserializerImpl == null)
+                {
+                    deserializerImpl = (typeof(T) == typeof(GenericRecord))
+                        ? (IAvroDeserializerImpl<T>)new GenericDeserializerImpl(schemaRegistryClient)
+                        : new SpecificDeserializerImpl<T>(schemaRegistryClient);
+                }
 
-            return await deserializerImpl.Deserialize(topic, data.ToArray());
+                return await deserializerImpl.Deserialize(topic, data.ToArray());
+            }
+            catch (AggregateException e)
+            {
+                throw new DeserializationException("Error occured deserializing avro data.", e.InnerException);
+            }
+            catch (Exception e)
+            {
+                throw new DeserializationException("Error occured deserializing avro data.", e);
+            }
         }
 
     }

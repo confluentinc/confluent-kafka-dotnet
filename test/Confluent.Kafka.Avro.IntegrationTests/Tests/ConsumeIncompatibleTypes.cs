@@ -88,7 +88,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
                 catch (AggregateException e)
                 {
-                    if (e.InnerException.GetType() != typeof(global::Avro.AvroException))
+                    if (e.InnerException.GetType() != typeof(DeserializationException))
                     {
                         throw e.InnerException;
                     }
@@ -114,7 +114,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
                 catch (AggregateException e)
                 {
-                    if (e.InnerException.GetType() != typeof(global::Avro.AvroException))
+                    if (e.InnerException.GetType() != typeof(DeserializationException))
                     {
                         throw e.InnerException;
                     }

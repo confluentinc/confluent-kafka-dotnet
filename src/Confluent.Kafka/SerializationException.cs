@@ -24,28 +24,31 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents an error that occured during message consumption.
     /// </summary>
-    public class ConsumeException : KafkaException
+    public class SerializationException : Exception
     {
         /// <summary>
-        ///     Initialize a new instance of ConsumeException
+        ///     Initialize a new instance of SerializationException
         /// </summary>
-        /// <param name="consumerRecord">
-        ///     An object that provides information know about the consumer 
-        ///     record for which the error occured.
+        /// <param name="message">
+        ///     The exception message
         /// </param>
-        /// <param name="error">
-        ///     The error that occured.
-        /// </param>
-        public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error)
-            : base(error)
+        public SerializationException(string message)
+            : base(message)
         {
-            ConsumerRecord = consumerRecord;
         }
 
         /// <summary>
-        ///     An object that provides information known about the consumer
-        ///     record for which the error occured.
+        ///     Initialize a new instance of SerializationException
         /// </summary>
-        public ConsumeResult<byte[], byte[]> ConsumerRecord { get; private set; }
+        /// <param name="message">
+        ///     The exception message
+        /// </param>
+        /// <param name="innerException">
+        ///     The exception that caused this exception.
+        /// </param>
+        public SerializationException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
     }
 }

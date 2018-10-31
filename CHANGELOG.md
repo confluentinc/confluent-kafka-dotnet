@@ -59,7 +59,7 @@
 - The feature to block `ProduceAsync` calls on local queue full has been removed (result in `Local_QueueFull` error). This should be implemented at the application layer if required.
 - The non-serializing `Producer` and non-deserializing `Consumer` types have been removed (use generic types with `byte[]` instead), considerably reducing API surface area.
 - The `ISerializingProducer` interface has been removed - you can achieve the same functionality by sharing client handles instead.
-- The `Consumer.Poll` method and corresponding `OnMessage` event have been removed. You should use `Consumer` instead.
+- The `Consumer.Poll` method and corresponding `OnMessage` event have been removed. You should use `Consumer.Consume` instead.
 - The `Consumer.OnConsumeError` has been removed. Consume errors are now exposed via a `ConsumeException`.
 - The `Consumer.Consume` method now returns a `ConsumeResult` object, rather than a `Message` via an out parameter.
 - `CommitAsync` has been removed (use `Commit` instead).
