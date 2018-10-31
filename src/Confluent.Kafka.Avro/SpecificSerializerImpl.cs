@@ -111,38 +111,45 @@ namespace Confluent.Kafka.AvroClients
 
         public async Task<byte[]> Serialize(string topic, T data, bool isKey)
         {
-            await serializeMutex.WaitAsync();
             try
             {
-                string subject = isKey
-                    ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                    : schemaRegistryClient.ConstructValueSubjectName(topic);
-
-                if (!subjectsRegistered.Contains(subject))
+                await serializeMutex.WaitAsync();
+                try
                 {
-                    // first usage: register/get schema to check compatibility
-                    writerSchemaId = autoRegisterSchema
-                        ? await schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false)
-                        : await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false);
+                    string subject = isKey
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
+                        : schemaRegistryClient.ConstructValueSubjectName(topic);
 
-                    subjectsRegistered.Add(subject);
+                    if (!subjectsRegistered.Contains(subject))
+                    {
+                        // first usage: register/get schema to check compatibility
+                        writerSchemaId = autoRegisterSchema
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false);
+
+                        subjectsRegistered.Add(subject);
+                    }
+                }
+                finally
+                {
+                    serializeMutex.Release();
+                }
+
+                using (var stream = new MemoryStream(initialBufferSize))
+                using (var writer = new BinaryWriter(stream))
+                {
+                    stream.WriteByte(Constants.MagicByte);
+
+                    writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
+                    avroWriter.Write(data, new BinaryEncoder(stream));
+
+                    // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
+                    return stream.ToArray();
                 }
             }
-            finally
+            catch (AggregateException e)
             {
-                serializeMutex.Release();
-            }
-
-            using (var stream = new MemoryStream(initialBufferSize))
-            using (var writer = new BinaryWriter(stream))
-            {
-                stream.WriteByte(Constants.MagicByte);
-
-                writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
-                avroWriter.Write(data, new BinaryEncoder(stream));
-
-                // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
-                return stream.ToArray();
+                throw e.InnerException;
             }
         }
     }

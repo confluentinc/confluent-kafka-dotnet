@@ -99,24 +99,31 @@ namespace Confluent.Kafka.AvroClients
             SerdeType valueSerdeType,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var result = await Task.Run(() => Consume(cancellationToken));
-            if (result == null) { return null; }
-
-            return new ConsumeResult<TKey, TValue>
+            try
             {
-                TopicPartitionOffset = result.TopicPartitionOffset,
-                Message = new Message<TKey, TValue>
+                var result = await Task.Run(() => Consume(cancellationToken));
+                if (result == null) { return null; }
+
+                return new ConsumeResult<TKey, TValue>
                 {
-                    Timestamp = result.Timestamp,
-                    Headers = result.Headers,
-                    Key = keySerdeType == SerdeType.Avro
-                        ? await GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
-                        : GetDeserializer<TKey>()(result.Key, result.Key == null),
-                    Value = valueSerdeType == SerdeType.Avro
-                        ? await GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
-                        : GetDeserializer<TValue>()(result.Value, result.Value == null)
-                }
-            };
+                    TopicPartitionOffset = result.TopicPartitionOffset,
+                    Message = new Message<TKey, TValue>
+                    {
+                        Timestamp = result.Timestamp,
+                        Headers = result.Headers,
+                        Key = keySerdeType == SerdeType.Avro
+                            ? await (GetAvroDeserializer<TKey>()).Deserialize(result.Topic, result.Key, true)
+                            : GetDeserializer<TKey>()(result.Key, result.Key == null),
+                        Value = valueSerdeType == SerdeType.Avro
+                            ? await (GetAvroDeserializer<TValue>()).Deserialize(result.Topic, result.Value, false)
+                            : GetDeserializer<TValue>()(result.Value, result.Value == null)
+                    }
+                };
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerException;
+            }
         }
 
 
@@ -142,24 +149,31 @@ namespace Confluent.Kafka.AvroClients
             SerdeType valueSerdeType,
             TimeSpan timeout)
         {
-            var result = await Task.Run(() => Consume(timeout));
-            if (result == null) { return null; }
-
-            return new ConsumeResult<TKey, TValue>
+            try
             {
-                TopicPartitionOffset = result.TopicPartitionOffset,
-                Message = new Message<TKey, TValue>
+                var result = await Task.Run(() => Consume(timeout));
+                if (result == null) { return null; }
+
+                return new ConsumeResult<TKey, TValue>
                 {
-                    Timestamp = result.Timestamp,
-                    Headers = result.Headers,
-                    Key = keySerdeType == SerdeType.Avro
-                        ? await GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
-                        : GetDeserializer<TKey>()(result.Key, result.Key == null),
-                    Value = valueSerdeType == SerdeType.Avro
-                        ? await GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
-                        : GetDeserializer<TValue>()(result.Value, result.Value == null)
-                }
-            };
+                    TopicPartitionOffset = result.TopicPartitionOffset,
+                    Message = new Message<TKey, TValue>
+                    {
+                        Timestamp = result.Timestamp,
+                        Headers = result.Headers,
+                        Key = keySerdeType == SerdeType.Avro
+                            ? await GetAvroDeserializer<TKey>().Deserialize(result.Topic, result.Key, true)
+                            : GetDeserializer<TKey>()(result.Key, result.Key == null),
+                        Value = valueSerdeType == SerdeType.Avro
+                            ? await GetAvroDeserializer<TValue>().Deserialize(result.Topic, result.Value, false)
+                            : GetDeserializer<TValue>()(result.Value, result.Value == null)
+                    }
+                };
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerException;
+            }
         }
 
     }

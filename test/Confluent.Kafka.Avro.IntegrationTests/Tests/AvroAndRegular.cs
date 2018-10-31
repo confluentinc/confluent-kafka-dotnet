@@ -115,27 +115,26 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("hello", cr.Key);
                 Assert.Equal("world", cr.Value);
 
-                // TODO: review potential exceptions.
                 consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
-                Assert.ThrowsAny<Exception>(() => 
+                Assert.ThrowsAny<DeserializationException>(() => 
                     {
                         try
                         {
                             consumer.ConsumeAsync<string, string>(SerdeType.Regular, SerdeType.Avro).Wait();
                         }
-                        catch (ArgumentException e)
+                        catch (AggregateException e)
                         {
                             throw e.InnerException;
                         }
                     });
                 consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
-                Assert.ThrowsAny<Exception>(() =>
+                Assert.ThrowsAny<DeserializationException>(() =>
                     {
                         try
                         {
                             consumer.ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Regular).Wait();
                         }
-                        catch (ArgumentException e)
+                        catch (AggregateException e)
                         {
                             throw e.InnerException;
                         }

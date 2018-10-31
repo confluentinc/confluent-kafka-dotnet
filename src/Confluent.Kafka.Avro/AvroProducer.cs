@@ -58,7 +58,6 @@ namespace Confluent.Kafka.AvroClients
             avroSerializers.Add(typeof(T), serializer);
         }
 
-
         /// <summary>
         ///     Removes the avro serializer associated with the specified type.
         /// </summary>
@@ -66,7 +65,6 @@ namespace Confluent.Kafka.AvroClients
         {
             avroSerializers.Remove(typeof(T));
         }
-
 
         /// <summary>
         ///     Gets the avro serializer that will be used to serialize values of the specified type.
@@ -79,89 +77,102 @@ namespace Confluent.Kafka.AvroClients
             return (AvroSerializer<T>)avroSerializers[typeof(T)];
         }
 
-
         private async Task<Message> CreateMessage<TKey, TValue>(
             Message<TKey, TValue> message, string topic, SerdeType keySerdeType, SerdeType valueSerdeType)
         {
-            byte[] keyBytes = null;
-            if (keySerdeType == SerdeType.Regular)
+            try
             {
-                keyBytes = GetSerializer<TKey>()(message.Key);
-            }
-            else if (keySerdeType == SerdeType.Avro)
-            {
-                keyBytes = await GetAvroSerializer<TKey>().Serialize(topic, message.Key, true);
-            }
-
-            byte[] valueBytes = null;
-            if (valueSerdeType == SerdeType.Regular)
-            {
-                valueBytes = GetSerializer<TValue>()(message.Value);
-            }
-            else if (valueSerdeType == SerdeType.Avro)
-            {
-                valueBytes = await GetAvroSerializer<TValue>().Serialize(topic, message.Value, false);
-            }
-
-            return 
-                new Message
+                byte[] keyBytes = null;
+                if (keySerdeType == SerdeType.Regular)
                 {
-                    Key = keyBytes,
-                    Value = valueBytes,
-                    Timestamp = message.Timestamp,
-                    Headers = message.Headers
+                    keyBytes = GetSerializer<TKey>()(message.Key);
+                }
+                else if (keySerdeType == SerdeType.Avro)
+                {
+                    keyBytes = await GetAvroSerializer<TKey>().Serialize(topic, message.Key, true);
+                }
+
+                byte[] valueBytes = null;
+                if (valueSerdeType == SerdeType.Regular)
+                {
+                    valueBytes = GetSerializer<TValue>()(message.Value);
+                }
+                else if (valueSerdeType == SerdeType.Avro)
+                {
+                    valueBytes = await GetAvroSerializer<TValue>().Serialize(topic, message.Value, false);
+                }
+
+                return 
+                    new Message
+                    {
+                        Key = keyBytes,
+                        Value = valueBytes,
+                        Timestamp = message.Timestamp,
+                        Headers = message.Headers
+                    };
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerException;
+            }
+        }
+
+
+        /// <summary>
+        ///     Asynchronously produce a single
+        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
+        /// </summary>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="keySerdeType">
+        ///     Which type of serializer to use to serialize keys.
+        /// </param>
+        /// <param name="valueSerdeType">
+        ///     Which type of serializer to use to serialize values.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to abort this request.
+        /// </param>
+        /// <returns>
+        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
+        ///     a delivery report corresponding to the produce request, or an exception
+        ///     if an error occured.
+        /// </returns>
+        public async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+            string topic,
+            Message<TKey, TValue> message,
+            SerdeType keySerdeType,
+            SerdeType valueSerdeType,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            try
+            {
+                var dr = await ProduceAsync(
+                    new TopicPartition(topic, Partition.Any),
+                    await CreateMessage(message, topic, keySerdeType, valueSerdeType),
+                    cancellationToken
+                );
+
+                return new DeliveryReport<TKey, TValue>
+                {
+                    TopicPartitionOffset = dr.TopicPartitionOffset,
+                    Message = new Message<TKey, TValue>
+                    {
+                        Key = message.Key,
+                        Value = message.Value,
+                        Timestamp = dr.Timestamp,
+                        Headers = dr.Headers
+                    }
                 };
-        }
-
-
-        /// <summary>
-        ///     Asynchronously produce a single
-        ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
-        /// </summary>
-        /// <param name="topic">
-        ///     The topic to produce the message to.
-        /// </param>
-        /// <param name="message">
-        ///     The message to produce.
-        /// </param>
-        /// <param name="keySerdeType">
-        ///     Which type of serializer to use to serialize keys.
-        /// </param>
-        /// <param name="valueSerdeType">
-        ///     Which type of serializer to use to serialize values.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
-        /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> which will complete with 
-        ///     a delivery report corresponding to the produce request, or an exception
-        ///     if an error occured.
-        /// </returns>
-        public async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
-            string topic,
-            Message<TKey, TValue> message,
-            SerdeType keySerdeType,
-            SerdeType valueSerdeType,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var dr = await ProduceAsync(
-                new TopicPartition(topic, Partition.Any),
-                await CreateMessage(message, topic, keySerdeType, valueSerdeType),
-                cancellationToken
-            );
-
-            return new DeliveryReport<TKey, TValue>
+            }
+            catch (AggregateException e)
             {
-                TopicPartitionOffset = dr.TopicPartitionOffset,
-                Message = new Message<TKey, TValue>
-                {
-                    Key = message.Key,
-                    Value = message.Value,
-                    Timestamp = dr.Timestamp,
-                    Headers = dr.Headers
-                }
-            };
+                throw e.InnerException;
+            }
         }
 
 
@@ -196,23 +207,30 @@ namespace Confluent.Kafka.AvroClients
             SerdeType valueSerdeType,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            var dr = await ProduceAsync(
-                topicPartition,
-                await CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType),
-                cancellationToken
-            );
-
-            return new DeliveryReport<TKey, TValue>
+            try
             {
-                TopicPartitionOffset = dr.TopicPartitionOffset,
-                Message = new Message<TKey, TValue>
+                var dr = await ProduceAsync(
+                    topicPartition,
+                    await CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType),
+                    cancellationToken
+                );
+
+                return new DeliveryReport<TKey, TValue>
                 {
-                    Key = message.Key,
-                    Value = message.Value,
-                    Timestamp = dr.Timestamp,
-                    Headers = dr.Headers
-                }
-            };
+                    TopicPartitionOffset = dr.TopicPartitionOffset,
+                    Message = new Message<TKey, TValue>
+                    {
+                        Key = message.Key,
+                        Value = message.Value,
+                        Timestamp = dr.Timestamp,
+                        Headers = dr.Headers
+                    }
+                };
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerException;
+            }
         }
 
 
@@ -245,17 +263,25 @@ namespace Confluent.Kafka.AvroClients
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
-        )
-            => BeginProduce(
-                new TopicPartition(topic, Partition.Any),
-                await CreateMessage(message, topic, keySerdeType, valueSerdeType),
-                (result) => deliveryHandler(
-                    new DeliveryReportResult<TKey, TValue>
-                    {
-                        TopicPartitionOffsetError = result.TopicPartitionOffsetError,
-                        Message = message
-                    }));
+            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
+        {
+            try
+            {
+                BeginProduce(
+                    new TopicPartition(topic, Partition.Any),
+                    await CreateMessage(message, topic, keySerdeType, valueSerdeType),
+                    (result) => deliveryHandler(
+                        new DeliveryReportResult<TKey, TValue>
+                        {
+                            TopicPartitionOffsetError = result.TopicPartitionOffsetError,
+                            Message = message
+                        }));
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerException;
+            }
+        }
 
 
         /// <summary>
@@ -287,17 +313,25 @@ namespace Confluent.Kafka.AvroClients
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
-        )
-            => BeginProduce(
-                topicPartition,
-                await CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType),
-                (result) => deliveryHandler(
-                    new DeliveryReportResult<TKey, TValue>
-                    {
-                        TopicPartitionOffsetError = result.TopicPartitionOffsetError,
-                        Message = message
-                    }));
+            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
+        {
+            try
+            {
+                BeginProduce(
+                    topicPartition,
+                    await CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType),
+                    (result) => deliveryHandler(
+                        new DeliveryReportResult<TKey, TValue>
+                        {
+                            TopicPartitionOffsetError = result.TopicPartitionOffsetError,
+                            Message = message
+                        }));
+            }
+            catch (AggregateException e)
+            {
+                throw e.InnerException;
+            }
+        }
 
     }
 }
