@@ -47,7 +47,7 @@ namespace Confluent.Kafka
             }
             catch (Exception e)
             {
-                throw new DeserializationException("Error occured deserializing UTF8 string value", e);
+                throw new DeserializeException("Error occured deserializing UTF8 string value", e);
             }
         };
 
@@ -58,7 +58,7 @@ namespace Confluent.Kafka
         {
             if (!isNull)
             {
-                throw new DeserializationException("Deserializer<Null> may only be used to deserialize data that is null.");
+                throw new DeserializeException("Deserializer<Null> may only be used to deserialize data that is null.");
             }
 
             return null;
@@ -79,12 +79,12 @@ namespace Confluent.Kafka
         {
             if (isNull)
             {
-                throw new DeserializationException($"Null data encountered deserializing Int64 value.");
+                throw new DeserializeException($"Null data encountered deserializing Int64 value.");
             }
 
             if (data.Length != 8)
             {
-                throw new DeserializationException($"Deserializer<Long> encountered data of length {data.Length}. Expecting data length to be 8.");
+                throw new DeserializeException($"Deserializer<Long> encountered data of length {data.Length}. Expecting data length to be 8.");
             }
 
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -109,12 +109,12 @@ namespace Confluent.Kafka
         {
             if (isNull)
             {
-                throw new DeserializationException($"Null data encountered deserializing an Int32 value");
+                throw new DeserializeException($"Null data encountered deserializing an Int32 value");
             }
 
             if (data.Length != 4)
             {
-                throw new DeserializationException($"Deserializer<Int32> encountered data of length {data.Length}. Expecting data length to be 4.");
+                throw new DeserializeException($"Deserializer<Int32> encountered data of length {data.Length}. Expecting data length to be 4.");
             }
 
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -135,12 +135,12 @@ namespace Confluent.Kafka
         {
             if (isNull)
             {
-                throw new DeserializationException($"Null data encountered deserializing an float value.");
+                throw new DeserializeException($"Null data encountered deserializing an float value.");
             }
 
             if (data.Length != 4)
             {
-                throw new DeserializationException($"Deserializer<float> encountered data of length {data.Length}. Expecting data length to be 4.");
+                throw new DeserializeException($"Deserializer<float> encountered data of length {data.Length}. Expecting data length to be 4.");
             }
 
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -169,7 +169,7 @@ namespace Confluent.Kafka
                 }
                 catch (Exception e)
                 {
-                    throw new DeserializationException("Error occured deserializing float value.", e);
+                    throw new DeserializeException("Error occured deserializing float value.", e);
                 }
             }
         };
@@ -184,12 +184,12 @@ namespace Confluent.Kafka
         {
             if (isNull)
             {
-                throw new DeserializationException($"Null data encountered deserializing an double value.");
+                throw new DeserializeException($"Null data encountered deserializing an double value.");
             }
 
             if (data.Length != 8)
             {
-                throw new DeserializationException($"Deserializer<double> encountered data of length {data.Length}. Expecting data length to be 8.");
+                throw new DeserializeException($"Deserializer<double> encountered data of length {data.Length}. Expecting data length to be 8.");
             }
 
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -222,7 +222,7 @@ namespace Confluent.Kafka
                 }
                 catch (Exception e)
                 {
-                    throw new DeserializationException("Error occured deserializing double value.", e);
+                    throw new DeserializeException("Error occured deserializing double value.", e);
                 }
             }
         };

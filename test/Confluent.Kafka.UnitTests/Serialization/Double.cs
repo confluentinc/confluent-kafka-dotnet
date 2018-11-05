@@ -45,15 +45,15 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(null, true));
+            Assert.ThrowsAny<DeserializeException>(() => Deserializers.Double(null, true));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[0], false));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[7], false));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[9], false));
+            Assert.ThrowsAny<DeserializeException>(() => Deserializers.Double(new byte[0], false));
+            Assert.ThrowsAny<DeserializeException>(() => Deserializers.Double(new byte[7], false));
+            Assert.ThrowsAny<DeserializeException>(() => Deserializers.Double(new byte[9], false));
         }
 
         public static double[] TestData

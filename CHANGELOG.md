@@ -5,11 +5,13 @@
 - Revamped producer and consumer serialization functionality.
   - Removed generic parameters from `Producer` and `Consumer`.
   - `Producer` / `Consumer` now provide typed and un-typed `ProduceAsync`, `BeginProduce` and `Consume` method variants.
-  - Serializers and deserializers are registered with the `Producer` and `Consumer` and invocation is automatic, based on type.
-  - Serde delegate types no longer include a `topic` parameter.
+  - Invokation of serializers and deserializers is automatic, based on type.
+  - Standard serde delegate types no longer include a `topic` parameter.
   - Avro serialization/deserializtion functionality is now provided by `AvroProducer` / `AvroConsumer` which derive from `Producer` / `Consumer`.
 - Avro serdes no longer make blocking calls to `ICachedSchemaRegistryClient` - everything is `await`ed.
-- `Producer` and `Consumer` constructors that accept a `Handle` have been removed (are no longer useful).
+- `Producer` and `Consumer` constructors that accept a `Handle` have been removed.
+- References librdkafka.redist [1.0.0-RC2](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC2)
+
 
 ## Enhancements / Fixes
 
@@ -39,7 +41,7 @@
 - Added a `Handle` property to all clients classes:
   - Producers can utilize the underlying librdkafka handle from other Producers (replaces the 0.11.x `GetSerializingProducer` method on the `Producer` class).
   - `AdminClient` can utilize the underlying librdkafka handle from other `AdminClient`s, `Producer`s or `Consumer`s.
-- `IDeserializer` now exposes message data via `ReadOnlySpan<byte>`, directly referencing librdkafka allocated memory. This results in considerable (up to 2x) performance increase and reduced memory.
+- `IDeserializer` now exposes message data via `ReadOnlySpan<byte>`, directly referencing librdkafka allocated memory. This results in a considerable (up to 2x) performance increase and reduced memory.
 - Most blocking operations now accept a `CancellationToken` parameter. 
   - TODO: in some cases there is no backing implementation yet.
 - .NET Specific configuration parameters are all specified/documented in the `ConfigPropertyNames` class.
@@ -76,7 +78,7 @@
 - `manualPoll` argument has been removed from the `Producer` constructor and is now a configuration option.
 - `enableDeliveryReports` argument has been removed from the `Producer` constructor and is now a configuration option.
 - Removed methods with a `millisecondsTimeout` parameter (always preferring a `TimeSpan` parameter).
-- Added `Consume` variants without a timeout parameter (but with a `CancellationToken` parameter that is observed).
+- Added `Consumer.Consume` variants with a `CancellationToken` parameter.
 - Added A `Producer.Flush` method variant without a timeout parameter (but with a `CancellationToken` parameter that is observed).
 - Added the `SyslogLevel` enumeration, which is used by the log handler delegate.
 

@@ -26,7 +26,7 @@ using Avro.Specific;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T>
     {

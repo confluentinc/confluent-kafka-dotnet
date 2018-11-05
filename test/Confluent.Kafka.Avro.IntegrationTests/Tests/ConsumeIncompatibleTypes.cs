@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 using Confluent.Kafka.Examples.AvroSpecific;
 using Xunit;
 
@@ -83,7 +83,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
                 catch (AggregateException e)
                 {
-                    if (e.InnerException.GetType() != typeof(DeserializationException))
+                    if (e.InnerException.GetType() != typeof(DeserializeException))
                     {
                         throw e.InnerException;
                     }
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 }
                 catch (AggregateException e)
                 {
-                    if (e.InnerException.GetType() != typeof(DeserializationException))
+                    if (e.InnerException.GetType() != typeof(DeserializeException))
                     {
                         throw e.InnerException;
                     }

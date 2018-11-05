@@ -21,15 +21,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 using Avro.Generic;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
     ///     Extends <see cref="Confluent.Kafka.Producer" /> with functionality
-    ///     for managing <see cref="Confluent.Kafka.AvroClients.AvroSerializer{T}" />
+    ///     for managing <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
     ///     instances.
     /// </summary>
     public class AvroProducer : Producer
@@ -148,10 +148,10 @@ namespace Confluent.Kafka.AvroClients
         ///     The message to produce.
         /// </param>
         /// <param name="keySerdeType">
-        ///     Which type of serializer to use to serialize keys.
+        ///     The type of serializer to use to serialize keys.
         /// </param>
         /// <param name="valueSerdeType">
-        ///     Which type of serializer to use to serialize values.
+        ///     The type of serializer to use to serialize values.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token that can be used to abort this request.
@@ -206,10 +206,10 @@ namespace Confluent.Kafka.AvroClients
         ///     The message to produce.
         /// </param>
         /// <param name="keySerdeType">
-        ///     Which type of serializer to use to serialize keys.
+        ///     The type of serializer to use to serialize keys.
         /// </param>
         /// <param name="valueSerdeType">
-        ///     Which type of serializer to use to serialize values.
+        ///     The type of serializer to use to serialize values.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token that can be used to abort this request.
@@ -264,42 +264,39 @@ namespace Confluent.Kafka.AvroClients
         ///     The message to produce.
         /// </param>
         /// <param name="keySerdeType">
-        ///     Which type of serializer to use to serialize keys.
+        ///     The type of serializer to use to serialize keys.
         /// </param>
         /// <param name="valueSerdeType">
-        ///     Which type of serializer to use to serialize values.
+        ///     The type of serializer to use to serialize values.
         /// </param>
         /// <param name="deliveryHandler">
         ///     A delegate that will be called with a delivery report corresponding
         ///     to the produce request (if enabled).
         /// </param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes after serialization is complete and
-        ///     the produce call has been forwarded to librdkafka. 
-        /// </returns>
-        public async Task BeginProduceAsync<TKey, TValue>(
+        public void BeginProduce<TKey, TValue>(
             string topic,
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
             Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
         {
-            try
+            // TODO: this will cause the delivery handler to be called on an arbitrary thread,
+            // c.f. the BeginProduce method on `Producer` which will always be called on the 
+            // background thread. It would be better if this behaved in the same way as the
+            // base BeginProduce method, but leaving as a todo (not a breaking change).
+            Task.Run(() =>
             {
                 BeginProduce(
                     new TopicPartition(topic, Partition.Any),
-                    await CreateMessage(message, topic, keySerdeType, valueSerdeType),
+                    CreateMessage(message, topic, keySerdeType, valueSerdeType)
+                        .ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult(),
                     (result) => deliveryHandler(
                         new DeliveryReportResult<TKey, TValue>
                         {
                             TopicPartitionOffsetError = result.TopicPartitionOffsetError,
                             Message = message
                         }));
-            }
-            catch (AggregateException e)
-            {
-                throw e.InnerException;
-            }
+            });
         }
 
 
@@ -314,42 +311,38 @@ namespace Confluent.Kafka.AvroClients
         ///     The message to produce.
         /// </param>
         /// <param name="keySerdeType">
-        ///     Which type of serializer to use to serialize keys.
+        ///     The type of serializer to use to serialize keys.
         /// </param>
         /// <param name="valueSerdeType">
-        ///     Which type of serializer to use to serialize values.
+        ///     The type of serializer to use to serialize values.
         /// </param>
         /// <param name="deliveryHandler">
         ///     A delegate that will be called with a delivery report corresponding
         ///     to the produce request (if enabled).
         /// </param>
-        /// <returns>
-        ///     A <see cref="Task" /> that completes after serialization is complete and
-        ///     the produce call has been forwarded to librdkafka. 
-        /// </returns>
-        public async Task BeginProduceAsync<TKey, TValue>(
+        public void BeginProduce<TKey, TValue>(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
             Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
         {
-            try
-            {
+            // TODO: this will cause the delivery handler to be called on an arbitrary thread,
+            // c.f. the BeginProduce method on `Producer` which will always be called on the 
+            // background thread. It would be better if this behaved in the same way as the
+            // base BeginProduce method, but leaving as a todo (not a breaking change).
+            Task.Run(() => {
                 BeginProduce(
                     topicPartition,
-                    await CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType),
+                    CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType)
+                        .ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult(),
                     (result) => deliveryHandler(
                         new DeliveryReportResult<TKey, TValue>
                         {
                             TopicPartitionOffsetError = result.TopicPartitionOffsetError,
                             Message = message
                         }));
-            }
-            catch (AggregateException e)
-            {
-                throw e.InnerException;
-            }
+            });
         }
 
     }

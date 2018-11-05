@@ -483,36 +483,6 @@ namespace Confluent.Kafka
         /// </summary>
         public string PluginLibraryPaths { get { return Get("plugin.library.paths"); } set { this.SetObject("plugin.library.paths", value); } }
 
-        /// <summary>
-        ///     Client group id string. All clients sharing the same group.id belong to the same group.
-        /// </summary>
-        public string GroupId { get { return Get("group.id"); } set { this.SetObject("group.id", value); } }
-
-        /// <summary>
-        ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
-        /// </summary>
-        public PartitionAssignmentStrategyType? PartitionAssignmentStrategy { get { return (PartitionAssignmentStrategyType?)GetEnum(typeof(PartitionAssignmentStrategyType), "partition.assignment.strategy"); } set { this.SetObject("partition.assignment.strategy", value); } }
-
-        /// <summary>
-        ///     Client group session and failure detection timeout.
-        /// </summary>
-        public int? SessionTimeoutMs { get { return GetInt("session.timeout.ms"); } set { this.SetObject("session.timeout.ms", value); } }
-
-        /// <summary>
-        ///     Group session keepalive heartbeat interval.
-        /// </summary>
-        public int? HeartbeatIntervalMs { get { return GetInt("heartbeat.interval.ms"); } set { this.SetObject("heartbeat.interval.ms", value); } }
-
-        /// <summary>
-        ///     Group protocol type
-        /// </summary>
-        public string GroupProtocolType { get { return Get("group.protocol.type"); } set { this.SetObject("group.protocol.type", value); } }
-
-        /// <summary>
-        ///     How often to query for the current client group coordinator. If the currently assigned coordinator is down the configured query interval will be divided by ten to more quickly recover in case of coordinator reassignment.
-        /// </summary>
-        public int? CoordinatorQueryIntervalMs { get { return GetInt("coordinator.query.interval.ms"); } set { this.SetObject("coordinator.query.interval.ms", value); } }
-
     }
 
 
@@ -592,7 +562,7 @@ namespace Confluent.Kafka
         public string DeliveryReportFields { get { return Get("dotnet.producer.delivery.report.fields"); } set { this.SetObject("dotnet.producer.delivery.report.fields", value.ToString()); } }
 
         /// <summary>
-        ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.inflight.requests.per.connection=5` (must be <= 5), `retries=INT32_MAX` (must be > 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.
+        ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.inflight.requests.per.connection=5` (must be less than or equal to 5), `retries=INT32_MAX` (must be greater than 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.
         /// </summary>
         public bool? EnableIdempotence { get { return GetBool("enable.idempotence"); } set { this.SetObject("enable.idempotence", value); } }
 
@@ -703,6 +673,41 @@ namespace Confluent.Kafka
         ///     default: all
         /// </summary>
         public string ConsumeResultFields { set { this.SetObject("dotnet.consumer.consume.result.fields", value); } }
+
+        /// <summary>
+        ///     Client group id string. All clients sharing the same group.id belong to the same group.
+        /// </summary>
+        public string GroupId { get { return Get("group.id"); } set { this.SetObject("group.id", value); } }
+
+        /// <summary>
+        ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
+        /// </summary>
+        public PartitionAssignmentStrategyType? PartitionAssignmentStrategy { get { return (PartitionAssignmentStrategyType?)GetEnum(typeof(PartitionAssignmentStrategyType), "partition.assignment.strategy"); } set { this.SetObject("partition.assignment.strategy", value); } }
+
+        /// <summary>
+        ///     Client group session and failure detection timeout. The consumer sends periodic heartbeats (heartbeat.interval.ms) to indicate its liveness to the broker. If no hearts are received by the broker for a group member within the session timeout, the broker will remove the consumer from the group and trigger a rebalance. The allowed range is configured with the **broker** configuration properties `group.min.session.timeout.ms` and `group.max.session.timeout.ms`.
+        /// </summary>
+        public int? SessionTimeoutMs { get { return GetInt("session.timeout.ms"); } set { this.SetObject("session.timeout.ms", value); } }
+
+        /// <summary>
+        ///     Group session keepalive heartbeat interval.
+        /// </summary>
+        public int? HeartbeatIntervalMs { get { return GetInt("heartbeat.interval.ms"); } set { this.SetObject("heartbeat.interval.ms", value); } }
+
+        /// <summary>
+        ///     Group protocol type
+        /// </summary>
+        public string GroupProtocolType { get { return Get("group.protocol.type"); } set { this.SetObject("group.protocol.type", value); } }
+
+        /// <summary>
+        ///     How often to query for the current client group coordinator. If the currently assigned coordinator is down the configured query interval will be divided by ten to more quickly recover in case of coordinator reassignment.
+        /// </summary>
+        public int? CoordinatorQueryIntervalMs { get { return GetInt("coordinator.query.interval.ms"); } set { this.SetObject("coordinator.query.interval.ms", value); } }
+
+        /// <summary>
+        ///     Maximum allowed time between calls to consume messages (e.g., rd_kafka_consumer_poll()) for high-level consumers. If this interval is exceeded the consumer is considered failed and the group will rebalance in order to reassign the partitions to another consumer group member. Warning: Offset commits may be not possible at this point. The interval is checked two times per second. See KIP-62 for more information.
+        /// </summary>
+        public int? MaxPollIntervalMs { get { return GetInt("max.poll.interval.ms"); } set { this.SetObject("max.poll.interval.ms", value); } }
 
         /// <summary>
         ///     Automatically and periodically commit offsets in the background. Note: setting this to false does not prevent the consumer from fetching previously committed start offsets. To circumvent this behaviour set specific start offsets per partition in the call to assign().

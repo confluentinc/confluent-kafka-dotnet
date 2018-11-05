@@ -18,17 +18,17 @@ using System.Collections.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
-    ///     <see cref="Confluent.Kafka.AvroClients.AvroSerializer{T}" />
+    ///     <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class AvroSerializerConfig : Config
     {
         /// <summary>
         ///     Configuration property names specific to 
-        ///     <see cref="Confluent.Kafka.AvroClients.AvroSerializer{T}" />.
+        ///     <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />.
         /// </summary>
         public static class PropertyNames
         {

@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 
 
 namespace Confluent.Kafka.Examples.AvroSpecific
@@ -106,6 +106,10 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
+                // If you do not register an avro serializer before a call to ProduceAsync
+                // requires it, one will be created for you with default configuration properties.
+                // In this example, custom configuration properties are provided in the string case,
+                // but defaults are used for the User case.
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(avroSerializerConfig));
 
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");

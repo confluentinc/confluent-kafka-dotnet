@@ -25,7 +25,7 @@ using Avro.Generic;
 using Avro.IO;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     internal class GenericSerializerImpl : IAvroSerializerImpl<GenericRecord>
     {

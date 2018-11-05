@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 using Confluent.SchemaRegistry;
 using Xunit;
 
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
 
-                Assert.Throws<SerializationException>(() =>
+                Assert.Throws<SerializeException>(() =>
                 {
                     try
                     {
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
 
-                Assert.Throws<SerializationException>(() =>
+                Assert.Throws<SerializeException>(() =>
                 {
                     try
                     {

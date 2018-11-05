@@ -14,14 +14,14 @@
 //
 // Refer to LICENSE for more information.
 
+using Avro;
+using Avro.Generic;
+using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka.AvroClients;
-using Confluent.SchemaRegistry;
-using Avro;
-using Avro.Generic;
 
 
 namespace Confluent.Kafka.Examples.AvroGeneric
@@ -41,8 +41,8 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             string topicName = args[2];
             string groupName = "avro-generic-example-group";
 
-            // var s = (RecordSchema)Schema.Parse(File.ReadAllText("my-schema.json"));
-            var s = (RecordSchema)Avro.Schema.Parse(
+            // var s = (RecordSchema)RecordSchema.Parse(File.ReadAllText("my-schema.json"));
+            var s = (RecordSchema)RecordSchema.Parse(
                 @"{
                     ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
                     ""type"": ""record"",
