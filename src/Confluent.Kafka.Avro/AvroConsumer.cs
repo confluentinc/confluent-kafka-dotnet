@@ -22,7 +22,7 @@ using Confluent.SchemaRegistry;
 using Avro.Generic;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
     ///     Avro deserialization related extension methods for
@@ -104,10 +104,10 @@ namespace Confluent.Kafka.AvroClients
         ///     is available or the operation has been cancelled.
         /// </summary>
         /// <param name="keySerdeType">
-        ///     Which type of deserializer to use to deserialize keys.
+        ///     The deserializer type to use to deserialize keys.
         /// </param>
         /// <param name="valueSerdeType">
-        ///     Which type of deserializer to use to deserialize values.
+        ///     The deserializer type to use to deserialize values.
         /// </param>
         /// <param name="cancellationToken">
         ///     A cancellation token that can be used to cancel this operation.
@@ -154,10 +154,10 @@ namespace Confluent.Kafka.AvroClients
         ///     is available or the timeout period has elapsed.
         /// </summary>
         /// <param name="keySerdeType">
-        ///     Which type of deserializer to use to deserialize keys.
+        ///     The deserializer type to use to deserialize keys.
         /// </param>
         /// <param name="valueSerdeType">
-        ///     Which type of deserializer to use to deserialize values.
+        ///     The deserializer type to use to deserialize values.
         /// </param>
         /// <param name="timeout">
         ///     The maximum period of time the call may block.

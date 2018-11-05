@@ -22,7 +22,7 @@ using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
     ///     Avro serializer. Use this serializer with GenericRecord, types 
@@ -134,11 +134,11 @@ namespace Confluent.Kafka.AvroClients
             }
             catch (AggregateException e)
             {
-                throw new SerializationException("Error occured serializing avro data.", e.InnerException);
+                throw new SerializeException("Error occured serializing avro data.", e.InnerException);
             }
             catch (Exception e)
             {
-                throw new SerializationException("Error occured serializing avro data.", e);
+                throw new SerializeException("Error occured serializing avro data.", e);
             }
         }
     }

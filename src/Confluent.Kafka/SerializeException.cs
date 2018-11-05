@@ -24,7 +24,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents an error that occured during message consumption.
     /// </summary>
-    public class SerializationException : Exception
+    public class SerializeException : Exception
     {
         /// <summary>
         ///     Initialize a new instance of SerializationException
@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         /// <param name="message">
         ///     The exception message
         /// </param>
-        public SerializationException(string message)
+        public SerializeException(string message)
             : base(message)
         {
         }
@@ -46,7 +46,7 @@ namespace Confluent.Kafka
         /// <param name="innerException">
         ///     The exception that caused this exception.
         /// </param>
-        public SerializationException(string message, Exception innerException)
+        public SerializeException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

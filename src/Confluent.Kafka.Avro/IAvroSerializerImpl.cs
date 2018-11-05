@@ -17,7 +17,7 @@
 using System.Threading.Tasks;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     internal interface IAvroSerializerImpl<T>
     {

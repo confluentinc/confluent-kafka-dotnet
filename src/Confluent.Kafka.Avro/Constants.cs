@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     internal static class Constants
     {

@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>		
-    <PackageReference Include="librdkafka.redist" Version="1.0.0-PRE1" />
+    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC2" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.0" />
   </ItemGroup>

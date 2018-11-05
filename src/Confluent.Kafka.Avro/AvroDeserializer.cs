@@ -22,7 +22,7 @@ using System;
 using System.Linq;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
     ///     Avro deserializer. Use this deserializer with GenericRecord, types 
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.AvroClients
         ///     by <see cref="AvroSerializer{T}" />.
         /// </param>
         /// <param name="isKey">
-        ///     True if message key data, false otherwise.
+        ///     True if deserializing message key data, false otherwise.
         /// </param>
         /// <param name="schemaRegistryClient">
         ///     An implementation of ISchemaRegistryClient used for
@@ -98,11 +98,11 @@ namespace Confluent.Kafka.AvroClients
             }
             catch (AggregateException e)
             {
-                throw new DeserializationException("Error occured deserializing avro data.", e.InnerException);
+                throw new DeserializeException("Error occured deserializing avro data.", e.InnerException);
             }
             catch (Exception e)
             {
-                throw new DeserializationException("Error occured deserializing avro data.", e);
+                throw new DeserializeException("Error occured deserializing avro data.", e);
             }
         }
 

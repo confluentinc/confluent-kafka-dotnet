@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 using Confluent.Kafka.Examples.AvroSpecific;
 using Xunit;
 
@@ -110,7 +110,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("world", cr.Value);
 
                 consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
-                Assert.ThrowsAny<DeserializationException>(() => 
+                Assert.ThrowsAny<DeserializeException>(() => 
                     {
                         try
                         {
@@ -122,7 +122,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         }
                     });
                 consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
-                Assert.ThrowsAny<DeserializationException>(() =>
+                Assert.ThrowsAny<DeserializeException>(() =>
                     {
                         try
                         {

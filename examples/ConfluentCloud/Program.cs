@@ -14,10 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Confluent.Kafka;
 
 
 namespace ConfluentCloudExample

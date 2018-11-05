@@ -25,7 +25,7 @@ using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroClients
+namespace Confluent.Kafka.AvroSerdes
 {
     internal class GenericDeserializerImpl : IAvroDeserializerImpl<GenericRecord>
     {
@@ -59,7 +59,7 @@ namespace Confluent.Kafka.AvroClients
                     if (magicByte != Constants.MagicByte)
                     {
                         // may change in the future.
-                        throw new DeserializationException($"magic byte should be 0, not {magicByte}");
+                        throw new DeserializeException($"magic byte should be 0, not {magicByte}");
                     }
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 

@@ -16,12 +16,12 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Confluent.Kafka;
 
 
 namespace Confluent.Kafka.Examples.ProducerExample

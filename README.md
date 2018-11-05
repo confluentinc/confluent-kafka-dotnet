@@ -95,8 +95,8 @@ class Program
             try
             {
                 // Uses default serializers associated with Null and string (UTF8) 
-                // to serialize the message key and value. These can be overridden using
-                // the RegisterSerializer method.
+                // to serialize the message key and value. These can be specified
+                // or overridden using the RegisterSerializer method.
                 var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
@@ -179,6 +179,11 @@ class Program
             {
                 try
                 {
+                    // Uses default deserializers associated with Ignore and string (UTF8) 
+                    // to serialize the message key and value. The Ignore deserializer 
+                    // always returns null, regardless of the message key data. Deserializers
+                    // associated with types can be specified or overridden using the
+                    // RegisterSerializer method.
                     var cr = c.Consume<Ignore, string>();
                     Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
                 }

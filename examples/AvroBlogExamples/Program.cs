@@ -14,16 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
+using Avro.Generic;
+using Confluent.Kafka;
+using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Avro.Generic;
-using Confluent.Kafka;
-using Confluent.Kafka.AvroClients;
-using Confluent.SchemaRegistry;
 
 
 namespace AvroBlogExample

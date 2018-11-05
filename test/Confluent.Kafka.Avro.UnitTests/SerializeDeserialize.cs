@@ -19,7 +19,7 @@ using Xunit;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 using Confluent.Kafka.Examples.AvroSpecific;
 
 

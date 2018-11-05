@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.AvroClients;
+using Confluent.Kafka.AvroSerdes;
 using Confluent.SchemaRegistry;
 using Avro;
 using Avro.Generic;
