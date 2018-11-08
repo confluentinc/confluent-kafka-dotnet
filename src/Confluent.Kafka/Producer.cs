@@ -244,7 +244,7 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Wait until all outstanding produce requests and delievery report
+        ///     Wait until all outstanding produce requests and delivery report
         ///     callbacks are completed.
         ///    
         ///     [API-SUBJECT-TO-CHANGE] - the semantics and/or type of the return value
@@ -281,7 +281,7 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Wait until all outstanding produce requests and delievery report
+        ///     Wait until all outstanding produce requests and delivery report
         ///     callbacks are completed.
         /// </summary>
         /// <remarks>
