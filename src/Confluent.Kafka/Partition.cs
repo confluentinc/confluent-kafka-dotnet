@@ -18,7 +18,6 @@
 
 using System;
 
-
 namespace Confluent.Kafka
 {
     /// <summary>
@@ -36,7 +35,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     A special value that refers to an unspecified / unknown partition.
         /// </summary>
-        public static Partition Any { get { return new Partition(RD_KAFKA_PARTITION_UA); } }
+        public static readonly Partition Any = new Partition(RD_KAFKA_PARTITION_UA);
 
         /// <summary>
         ///     Initializes a new instance of the Partition structure.
