@@ -111,7 +111,7 @@ namespace Confluent.Kafka.AvroSerdes
                     if (magicByte != Constants.MagicByte)
                     {
                         // may change in the future.
-                        throw new DeserializationException($"magic byte should be 0, not {magicByte}");
+                        throw new DeserializationException($"magic byte should be {Constants.MagicByte}, not {magicByte}");
                     }
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
