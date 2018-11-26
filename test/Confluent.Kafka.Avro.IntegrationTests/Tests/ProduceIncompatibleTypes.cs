@@ -64,7 +64,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                Assert.Throws<SerializeException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {                
-                Assert.Throws<SerializeException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {

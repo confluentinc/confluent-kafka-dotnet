@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<int>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
 
-                Assert.Throws<SerializeException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 producer.RegisterAvroSerializer(new AvroSerializer<string>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
 
-                Assert.Throws<SerializeException>(() =>
+                Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
