@@ -67,7 +67,8 @@ namespace Confluent.Kafka.AvroSerdes
         ///         false if not.
         /// </summary>
         /// <param name="config">
-        ///     Serializer configuration properties.
+        ///     Serializer configuration properties (refer to 
+        ///     <see cref="AvroSerializerConfig" />)
         /// </param>
         public AvroSerializer(IEnumerable<KeyValuePair<string, string>> config = null)
         {
@@ -76,7 +77,7 @@ namespace Confluent.Kafka.AvroSerdes
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
             if (nonAvroConfig.Count() > 0)
             {
-                throw new ArgumentException($"AvroSerializer: unexpected configuration parameter {nonAvroConfig.First().Key}");
+                throw new ArgumentException($"AvroSerializer: unknown configuration parameter {nonAvroConfig.First().Key}");
             }
 
             var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
@@ -92,7 +93,7 @@ namespace Confluent.Kafka.AvroSerdes
             {
                 if (property.Key != AvroSerializerConfig.PropertyNames.AutoRegisterSchemas && property.Key != AvroSerializerConfig.PropertyNames.BufferBytes)
                 {
-                    throw new ArgumentException($"AvroSerializer: unexpected configuration parameter {property.Key}");
+                    throw new ArgumentException($"AvroSerializer: unknown configuration parameter {property.Key}");
                 }
             }
         }

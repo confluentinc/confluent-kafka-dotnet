@@ -22,7 +22,12 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents a message consumed from a Kafka cluster.
     /// </summary>
-    public class ConsumeResult
+    public class ConsumeResult : ConsumeResult<byte[], byte[]> {}
+
+    /// <summary>
+    ///     Represents a message consumed from a Kafka cluster.
+    /// </summary>
+    public class ConsumeResult<TKey, TValue>
     {
         /// <summary>
         ///     The topic associated with the message.
@@ -65,12 +70,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message.
         /// </summary>
-        public Message Message { get; set; }
+        public Message<TKey, TValue> Message { get; set; }
 
         /// <summary>
         ///     The Kafka message Key.
         /// </summary>
-        public byte[] Key
+        public TKey Key
         {
             get { return Message.Key; }
             set { Message.Key = value; }
@@ -79,7 +84,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message Value.
         /// </summary>
-        public byte[] Value
+        public TValue Value
         {
             get { return Message.Value; }
             set { Message.Value = value; }

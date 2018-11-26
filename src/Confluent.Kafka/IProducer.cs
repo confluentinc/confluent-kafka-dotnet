@@ -36,7 +36,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync(string, Message, CancellationToken)" />
         /// </summary>
-        Task<DeliveryReport> ProduceAsync(
+        Task<DeliveryResult> ProduceAsync(
             string topic,
             Message message,
             CancellationToken cancellationToken = default(CancellationToken));
@@ -45,7 +45,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync(TopicPartition, Message, CancellationToken)" />
         /// </summary>
-        Task<DeliveryReport> ProduceAsync(
+        Task<DeliveryResult> ProduceAsync(
             TopicPartition topicPartition,
             Message message,
             CancellationToken cancellationToken = default(CancellationToken));
@@ -54,7 +54,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync{TKey, TValue}(string, Message{TKey, TValue}, CancellationToken)" />
         /// </summary>
-        Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             string topic,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
@@ -63,40 +63,40 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync{TKey, TValue}(TopicPartition, Message{TKey, TValue}, CancellationToken)" />
         /// </summary>
-        Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce(string, Message, Action{DeliveryReportResult})" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce(string, Message, Action{DeliveryReport})" />
         /// </summary>
-        void BeginProduce(string topic, Message message, Action<DeliveryReportResult> deliveryHandler = null);
+        void BeginProduce(string topic, Message message, Action<DeliveryReport> deliveryHandler = null);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce(TopicPartition, Message, Action{DeliveryReportResult})" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce(TopicPartition, Message, Action{DeliveryReport})" />
         /// </summary>
-        void BeginProduce(TopicPartition topicPartition, Message message, Action<DeliveryReportResult> deliveryHandler = null);
+        void BeginProduce(TopicPartition topicPartition, Message message, Action<DeliveryReport> deliveryHandler = null);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce{TKey, TValue}(string, Message{TKey, TValue}, Action{DeliveryReportResult{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce{TKey, TValue}(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
         void BeginProduce<TKey, TValue>(
             string topic,
             Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null);
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce{TKey, TValue}(TopicPartition, Message{TKey, TValue}, Action{DeliveryReportResult{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce{TKey, TValue}(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
         void BeginProduce<TKey, TValue>(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null);
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
 
         /// <summary>

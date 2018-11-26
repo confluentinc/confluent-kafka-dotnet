@@ -44,7 +44,7 @@ namespace Confluent.Kafka.Benchmark
                 DeliveryReportFields = "none"
             };
 
-            DeliveryReport firstDeliveryReport = null;
+            DeliveryResult firstDeliveryReport = null;
 
             Headers headers = null;
             if (nHeaders > 0)
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.Benchmark
                     {
                         var autoEvent = new AutoResetEvent(false);
                         var msgCount = nMessages;
-                        Action<DeliveryReportResult> deliveryHandler = (DeliveryReportResult deliveryReport) => 
+                        Action<DeliveryReport> deliveryHandler = (DeliveryReport deliveryReport) => 
                         {
                             if (--msgCount == 0)
                             {

@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
             var testString = "hello world";
             var testString2 = "hello world 2";
 
-            DeliveryReport dr;
+            DeliveryResult dr;
             using (var producer = new Producer(producerConfig))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString) }).Result;

@@ -621,7 +621,7 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
-        public Task<DeliveryReport> ProduceAsync(
+        public Task<DeliveryResult> ProduceAsync(
             TopicPartition topicPartition,
             Message message,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -658,7 +658,7 @@ namespace Confluent.Kafka
                     message.Timestamp, topicPartition.Partition, message.Headers, 
                     null);
 
-                var result = new DeliveryReport
+                var result = new DeliveryResult
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
                     Message = message
@@ -688,7 +688,7 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
-        public Task<DeliveryReport> ProduceAsync(
+        public Task<DeliveryResult> ProduceAsync(
             string topic, Message message,
             CancellationToken cancellationToken = default(CancellationToken)
         )
@@ -711,7 +711,7 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
-        public Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        public Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken)
@@ -743,7 +743,7 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
-        public Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        public Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             string topic,
             Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken)
@@ -751,7 +751,7 @@ namespace Confluent.Kafka
             => ProduceAsync(new TopicPartition(topic, Partition.Any), message, cancellationToken);
 
 
-        private Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        private Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             Serializer<TKey> keySerializer,
             Serializer<TValue> valueSerializer,
             TopicPartition topicPartition,
@@ -790,7 +790,7 @@ namespace Confluent.Kafka
                     message.Timestamp, topicPartition.Partition, message.Headers, 
                     null);
 
-                var result = new DeliveryReport<TKey, TValue>
+                var result = new DeliveryResult<TKey, TValue>
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
                     Message = message
@@ -817,7 +817,7 @@ namespace Confluent.Kafka
         public void BeginProduce(
             TopicPartition topicPartition,
             Message message,
-            Action<DeliveryReportResult> deliveryHandler = null)
+            Action<DeliveryReport> deliveryHandler = null)
         {
             var keyBytes = message.Key;
             var valBytes = message.Value;
@@ -855,7 +855,7 @@ namespace Confluent.Kafka
         /// </param>
         public void BeginProduce(
             string topic, Message message,
-            Action<DeliveryReportResult> deliveryHandler = null
+            Action<DeliveryReport> deliveryHandler = null
         )
             => BeginProduce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
@@ -879,7 +879,7 @@ namespace Confluent.Kafka
         public void BeginProduce<TKey, TValue>(
             string topic,
             Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null
         )
             => BeginProduce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
@@ -900,7 +900,7 @@ namespace Confluent.Kafka
         public void BeginProduce<TKey, TValue>(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null
         )
             => BeginProduce(
                 GetSerializer<TKey>(),
@@ -915,7 +915,7 @@ namespace Confluent.Kafka
             Serializer<TValue> valueSerializer,
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             var keyBytes = keySerializer(message.Key);
             var valBytes = valueSerializer(message.Value);
@@ -994,7 +994,7 @@ namespace Confluent.Kafka
         }
 
 
-        private class TypedTaskDeliveryHandlerShim<TKey, TValue> : TaskCompletionSource<DeliveryReport<TKey, TValue>>, IDeliveryHandler
+        private class TypedTaskDeliveryHandlerShim<TKey, TValue> : TaskCompletionSource<DeliveryResult<TKey, TValue>>, IDeliveryHandler
         {
             public TypedTaskDeliveryHandlerShim(string topic, TKey key, TValue val)
 #if !NET45
@@ -1024,7 +1024,7 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                var dr = new DeliveryReport<TKey, TValue>
+                var dr = new DeliveryResult<TKey, TValue>
                 {
                     TopicPartitionOffset = deliveryReport.TopicPartitionOffset,
                     Message = new Message<TKey, TValue>
@@ -1063,7 +1063,7 @@ namespace Confluent.Kafka
 
 
 
-        private class TaskDeliveryHandlerShim : TaskCompletionSource<DeliveryReport>, IDeliveryHandler
+        private class TaskDeliveryHandlerShim : TaskCompletionSource<DeliveryResult>, IDeliveryHandler
         {
             public TaskDeliveryHandlerShim(string topic, byte[] key, byte[] val)
 #if !NET45
@@ -1093,7 +1093,7 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                var dr = new DeliveryReport
+                var dr = new DeliveryResult
                 {
                     TopicPartitionOffset = deliveryReport.TopicPartitionOffset,
                     Message = new Message
@@ -1133,7 +1133,7 @@ namespace Confluent.Kafka
 
         private class TypedDeliveryHandlerShim_Action<TKey, TValue> : IDeliveryHandler
         {
-            public TypedDeliveryHandlerShim_Action(string topic, TKey key, TValue val, Action<DeliveryReportResult<TKey, TValue>> handler)
+            public TypedDeliveryHandlerShim_Action(string topic, TKey key, TValue val, Action<DeliveryReport<TKey, TValue>> handler)
             {
                 Topic = topic;
                 Key = key;
@@ -1147,7 +1147,7 @@ namespace Confluent.Kafka
 
             public TValue Value;
 
-            public Action<DeliveryReportResult<TKey, TValue>> Handler;
+            public Action<DeliveryReport<TKey, TValue>> Handler;
 
             public void HandleDeliveryReport(UntypedDeliveryReport deliveryReport)
             {
@@ -1156,7 +1156,7 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                var dr = new DeliveryReportResult<TKey, TValue>
+                var dr = new DeliveryReport<TKey, TValue>
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
                     Message = new Message<TKey, TValue> 
@@ -1183,7 +1183,7 @@ namespace Confluent.Kafka
 
         private class DeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public DeliveryHandlerShim_Action(string topic, byte[] key, byte[] val, Action<DeliveryReportResult> handler)
+            public DeliveryHandlerShim_Action(string topic, byte[] key, byte[] val, Action<DeliveryReport> handler)
             {
                 Topic = topic;
                 Key = key;
@@ -1197,7 +1197,7 @@ namespace Confluent.Kafka
 
             public byte[] Value;
 
-            public Action<DeliveryReportResult> Handler;
+            public Action<DeliveryReport> Handler;
 
             public void HandleDeliveryReport(UntypedDeliveryReport deliveryReport)
             {
@@ -1206,7 +1206,7 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                var dr = new DeliveryReportResult
+                var dr = new DeliveryReport
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
                     Message = new Message

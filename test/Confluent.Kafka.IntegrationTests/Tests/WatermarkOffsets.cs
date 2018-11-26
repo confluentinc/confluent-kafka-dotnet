@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            DeliveryReport<Null, string> dr;
+            DeliveryResult<Null, string> dr;
             using (var producer = new Producer(producerConfig))
             using (var adminClient = new AdminClient(producer.Handle))
             {

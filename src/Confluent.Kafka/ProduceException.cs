@@ -36,7 +36,7 @@ namespace Confluent.Kafka
         /// <param name="deliveryReport">
         ///     The delivery report associated with the produce request.
         /// </param>
-        public ProduceException(Error error, DeliveryReport<TKey, TValue> deliveryReport)
+        public ProduceException(Error error, DeliveryResult<TKey, TValue> deliveryReport)
             : base(error)
         {
             DeliveryReport = deliveryReport;
@@ -45,7 +45,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The delivery report associated with the produce request.
         /// </summary>
-        public DeliveryReport<TKey, TValue> DeliveryReport { get; }
+        public DeliveryResult<TKey, TValue> DeliveryReport { get; }
     }
 
 
@@ -64,7 +64,7 @@ namespace Confluent.Kafka
         /// <param name="deliveryReport">
         ///     The delivery report associated with the produce request.
         /// </param>
-        public ProduceException(Error error, DeliveryReport deliveryReport)
+        public ProduceException(Error error, DeliveryResult deliveryReport)
             : base(error)
         {
             DeliveryReport = deliveryReport;
@@ -73,6 +73,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The delivery report associated with the produce request.
         /// </summary>
-        public DeliveryReport DeliveryReport { get; }
+        public DeliveryResult DeliveryReport { get; }
     }
 }

@@ -142,7 +142,7 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");
+                    throw new ArgumentException($"CachedSchemaRegistryClient: unknown configuration parameter {property.Key}");
                 }
             }
 

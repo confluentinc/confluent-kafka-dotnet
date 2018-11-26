@@ -44,7 +44,8 @@ namespace Confluent.Kafka.AvroSerdes
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="config">
-        ///     Deserializer configuration properties.
+        ///     Deserializer configuration properties (refer to 
+        ///     <see cref="AvroDeserializerConfig" />).
         /// </param>
         public AvroDeserializer(IEnumerable<KeyValuePair<string, string>> config = null)
         {
@@ -53,13 +54,13 @@ namespace Confluent.Kafka.AvroSerdes
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
             if (nonAvroConfig.Count() > 0)
             {
-                throw new ArgumentException($"AvroDeserializer: unexpected configuration parameter {nonAvroConfig.First().Key}");
+                throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {nonAvroConfig.First().Key}.");
             }
 
             var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
             if (avroConfig.Count() != 0)
             {
-                throw new ArgumentException($"AvroDeserializer: unexpected configuration parameter {avroConfig.First().Key}");
+                throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {avroConfig.First().Key}");
             }
         }
 

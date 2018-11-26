@@ -172,7 +172,7 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(DeliveryReportResult record)
+        public void HandleDelivery(DeliveryReport record)
         {
             var d = new Dictionary<string, object>
             {
