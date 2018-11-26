@@ -50,7 +50,7 @@ namespace Confluent.Kafka.AvroSerdes
         }
 
         /// <summary>
-        ///     Serialize GenericRecord instance to a byte array in avro format. The serialized
+        ///     Serialize GenericRecord instance to a byte array in Avro format. The serialized
         ///     data is preceeded by a "magic byte" (1 byte) and the id of the schema as registered
         ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
         ///     on first use for a particular topic during schema registration.

@@ -63,7 +63,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
 
             var avroSerializerConfig = new AvroSerializerConfig
             {
-                // optional avro serializer properties:
+                // optional Avro serializer properties:
                 BufferBytes = 100,
                 AutoRegisterSchemas = true
             };
@@ -106,7 +106,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
-                // If you do not register an avro serializer before a call to ProduceAsync
+                // If you do not register an Avro serializer before a call to ProduceAsync
                 // requires it, one will be created for you with default configuration properties.
                 // In this example, custom configuration properties are provided in the string case,
                 // but defaults are used for the User case.

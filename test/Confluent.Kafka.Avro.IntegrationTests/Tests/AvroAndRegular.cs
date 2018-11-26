@@ -27,7 +27,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test producing/consuming using both regular and avro serializers.
+        ///     Test producing/consuming using both regular and Avro serializers.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void RegularAndAvro(string bootstrapServers, string schemaRegistryServers)
@@ -95,7 +95,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 var s2 = schemaRegistry.GetLatestSchemaAsync(schemaRegistry.ConstructKeySubjectName(topic2)).Result;
             }
 
-            // check the above can be consumed (using regular / avro serializers as appropriate)
+            // check the above can be consumed (using regular / Avro serializers as appropriate)
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {

@@ -41,7 +41,7 @@ namespace Confluent.Kafka.AvroSerdes
         private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
 
         /// <summary>
-        ///     The avro schema used to read values of type <typeparamref name="T"/>
+        ///     The Avro schema used to read values of type <typeparamref name="T"/>
         /// </summary>
         public global::Avro.Schema ReaderSchema { get; private set; }
 

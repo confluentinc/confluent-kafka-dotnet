@@ -12,8 +12,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that messages produced with the avro serializer can be consumed with the
-        ///     avro deserializer.
+        ///     Test that messages produced with the Avro serializer can be consumed with the
+        ///     Avro deserializer.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceGenericMultipleTopics(string bootstrapServers, string schemaRegistryServers)
