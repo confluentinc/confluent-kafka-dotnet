@@ -100,12 +100,12 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {
                 consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
-                var cr = consumer.ConsumeAsync<string, string>(SerdeType.Regular, SerdeType.Avro).Result;
+                var cr = consumer.Consume<string, string>(SerdeType.Regular, SerdeType.Avro);
                 Assert.Equal("hello", cr.Key);
                 Assert.Equal("world", cr.Value);
 
                 consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
-                cr = consumer.ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Regular).Result;
+                cr = consumer.Consume<string, string>(SerdeType.Avro, SerdeType.Regular);
                 Assert.Equal("hello", cr.Key);
                 Assert.Equal("world", cr.Value);
 
@@ -114,7 +114,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     {
                         try
                         {
-                            consumer.ConsumeAsync<string, string>(SerdeType.Regular, SerdeType.Avro).Wait();
+                            consumer.Consume<string, string>(SerdeType.Regular, SerdeType.Avro);
                         }
                         catch (AggregateException e)
                         {
@@ -126,7 +126,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     {
                         try
                         {
-                            consumer.ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Regular).Wait();
+                            consumer.Consume<string, string>(SerdeType.Avro, SerdeType.Regular);
                         }
                         catch (AggregateException e)
                         {

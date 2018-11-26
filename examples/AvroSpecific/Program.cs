@@ -75,7 +75,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             // (available from: https://github.com/apache/avro), with the above limitation.
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            var consumeTask = Task.Run(async () =>
+            var consumeTask = Task.Run(() =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
@@ -89,7 +89,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     {
                         try
                         {
-                            var consumeResult = await consumer.ConsumeAsync<string, User>(SerdeType.Avro, SerdeType.Avro, cts.Token);
+                            var consumeResult = consumer.Consume<string, User>(SerdeType.Avro, SerdeType.Avro, cts.Token);
 
                             Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
                         }
