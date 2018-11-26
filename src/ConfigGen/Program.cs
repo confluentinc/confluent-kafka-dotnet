@@ -42,6 +42,8 @@ namespace ConfigGen
                 if (p.Name == "produce.offset.report") { return false; }
                 if (p.Name == "delivery.report.only.error") { return false; }
                 if (p.Name == "topic.metadata.refresh.fast.cnt") { return false; }
+                if (p.Name == "reconnect.backoff.jitter.ms") { return false; }
+                if (p.Name == "socket.blocking.max.ms") { return false; }
                 if (p.Name == "auto.commit.interval.ms" && !p.IsGlobal) { return false; }
                 if (p.Name == "enable.auto.commit" && !p.IsGlobal) { return false; }
                 if (p.Name == "auto.commit.enable" && !p.IsGlobal) { return false; }
@@ -159,10 +161,10 @@ namespace ConfigGen
             throw new Exception($"unknown type '{type}'");
         }
 
-        static string createFileHeader()
+        static string createFileHeader(string branch)
         {
             return
-@"// *** Auto-generated *** - do not modify manually.
+@"// *** Auto-generated from librdkafka branch " + branch + @" *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -515,7 +517,9 @@ namespace Confluent.Kafka
             }
 
             string gitBranchName = args[0];
-            var configDoc = await (await (new HttpClient()).GetAsync($"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md")).Content.ReadAsStringAsync();
+            var configDoc = await (await (new HttpClient())
+                .GetAsync($"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md"))
+                .Content.ReadAsStringAsync();
 
             var props =
                 choosePreferredNames(
@@ -525,7 +529,7 @@ namespace Confluent.Kafka
                 extractAll(configDoc)))));
 
             var codeText = "";
-            codeText += createFileHeader();
+            codeText += createFileHeader(gitBranchName);
             codeText += createEnums(props.Where(p => p.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(p.Name)).ToList());
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);

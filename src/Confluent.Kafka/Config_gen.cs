@@ -1,4 +1,4 @@
-// *** Auto-generated *** - do not modify manually.
+// *** Auto-generated from librdkafka branch v1.0.0-RC2 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -284,11 +284,6 @@ namespace Confluent.Kafka
         public int? SocketTimeoutMs { get { return GetInt("socket.timeout.ms"); } set { this.SetObject("socket.timeout.ms", value); } }
 
         /// <summary>
-        ///     **DEPRECATED** No longer used.
-        /// </summary>
-        public int? SocketBlockingMaxMs { get { return GetInt("socket.blocking.max.ms"); } set { this.SetObject("socket.blocking.max.ms", value); } }
-
-        /// <summary>
         ///     Broker socket send buffer size. System default is used if 0.
         /// </summary>
         public int? SocketSendBufferBytes { get { return GetInt("socket.send.buffer.bytes"); } set { this.SetObject("socket.send.buffer.bytes", value); } }
@@ -327,11 +322,6 @@ namespace Confluent.Kafka
         ///     When enabled the client will only connect to brokers it needs to communicate with. When disabled the client will maintain connections to all brokers in the cluster.
         /// </summary>
         public bool? EnableSparseConnections { get { return GetBool("enable.sparse.connections"); } set { this.SetObject("enable.sparse.connections", value); } }
-
-        /// <summary>
-        ///     **DEPRECATED** No longer used. See `reconnect.backoff.ms` and `reconnect.backoff.max.ms`.
-        /// </summary>
-        public int? ReconnectBackoffJitterMs { get { return GetInt("reconnect.backoff.jitter.ms"); } set { this.SetObject("reconnect.backoff.jitter.ms", value); } }
 
         /// <summary>
         ///     The initial time to wait before reconnecting to a broker after the connection has been closed. The time is increased exponentially until `reconnect.backoff.max.ms` is reached. -25% to +50% jitter is applied to each reconnect backoff. A value of 0 disables the backoff and reconnects immediately.
