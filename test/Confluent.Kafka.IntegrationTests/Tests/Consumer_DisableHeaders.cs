@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            DeliveryReport dr;
+            DeliveryResult dr;
             using (var producer = new Producer(producerConfig))
             {
                 dr = producer.ProduceAsync(

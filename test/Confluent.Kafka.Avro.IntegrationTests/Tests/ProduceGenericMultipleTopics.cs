@@ -37,8 +37,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             var topic = Guid.NewGuid().ToString();
             var topic2 = Guid.NewGuid().ToString();
 
-            DeliveryReport<Null, GenericRecord> dr;
-            DeliveryReport<Null, GenericRecord> dr2;
+            DeliveryResult<Null, GenericRecord> dr;
+            DeliveryResult<Null, GenericRecord> dr2;
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var p = new AvroProducer(schemaRegistry, config))

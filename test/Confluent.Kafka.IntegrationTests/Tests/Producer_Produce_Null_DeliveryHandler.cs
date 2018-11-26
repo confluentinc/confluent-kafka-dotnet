@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             int count = 0;
-            Action<DeliveryReportResult<Null, Null>> dh = (DeliveryReportResult<Null, Null> dr) => 
+            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);

@@ -98,11 +98,11 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   Consumer_OffsetsForTimes");
         }
 
-        private static DeliveryReport[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static DeliveryResult[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var messages = new DeliveryReport[count];
+            var messages = new DeliveryResult[count];
             using (var producer = new Producer(producerConfig))
             {
                 for (var index = 0; index < count; index++)

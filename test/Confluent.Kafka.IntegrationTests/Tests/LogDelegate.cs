@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Debug = "all"
             };
 
-            DeliveryReport dr;
+            DeliveryResult dr;
 
             using (var producer = new Producer(producerConfig))
             {

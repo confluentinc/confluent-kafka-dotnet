@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            DeliveryReport<byte[], byte[]> dr;
+            DeliveryResult<byte[], byte[]> dr;
             using (var producer = new Producer(producerConfig))
             {
                 // Assume that all these produce calls succeed.

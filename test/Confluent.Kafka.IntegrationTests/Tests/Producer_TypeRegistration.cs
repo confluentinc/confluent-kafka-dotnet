@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_TypeRegistration");
 
-            DeliveryReport<Null, string> stringDeliveryReport;
+            DeliveryResult<Null, string> stringDeliveryReport;
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             using (var producer = new Producer(producerConfig))
             {

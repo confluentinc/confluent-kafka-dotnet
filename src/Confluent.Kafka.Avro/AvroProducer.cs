@@ -161,7 +161,7 @@ namespace Confluent.Kafka.AvroSerdes
         ///     a delivery report corresponding to the produce request, or an exception
         ///     if an error occured.
         /// </returns>
-        public async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             string topic,
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
@@ -176,7 +176,7 @@ namespace Confluent.Kafka.AvroSerdes
                     cancellationToken
                 );
 
-                return new DeliveryReport<TKey, TValue>
+                return new DeliveryResult<TKey, TValue>
                 {
                     TopicPartitionOffset = dr.TopicPartitionOffset,
                     Message = new Message<TKey, TValue>
@@ -219,7 +219,7 @@ namespace Confluent.Kafka.AvroSerdes
         ///     a delivery report corresponding to the produce request, or an exception
         ///     if an error occured.
         /// </returns>
-        public async Task<DeliveryReport<TKey, TValue>> ProduceAsync<TKey, TValue>(
+        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync<TKey, TValue>(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
@@ -234,7 +234,7 @@ namespace Confluent.Kafka.AvroSerdes
                     cancellationToken
                 );
 
-                return new DeliveryReport<TKey, TValue>
+                return new DeliveryResult<TKey, TValue>
                 {
                     TopicPartitionOffset = dr.TopicPartitionOffset,
                     Message = new Message<TKey, TValue>
@@ -256,6 +256,10 @@ namespace Confluent.Kafka.AvroSerdes
         /// <summary>
         ///     Asynchronously produce a single
         ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
+        ///     Note: The delivery handler callback will be called on an arbitrary thread,
+        ///     c.f. the <see cref="Confluent.Kafka.Producer.BeginProduce(TopicPartition, Message, Action{DeliveryReport})" />
+        ///     methods on <see cref="Confluent.Kafka.Producer" /> which will always be
+        ///     called on the producer background thread.
         /// </summary>
         /// <param name="topic">
         ///     The topic to produce the message to.
@@ -278,11 +282,9 @@ namespace Confluent.Kafka.AvroSerdes
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
-            // TODO: this will cause the delivery handler to be called on an arbitrary thread,
-            // c.f. the BeginProduce method on `Producer` which will always be called on the 
-            // background thread. It would be better if this behaved in the same way as the
+            // TODO: It would be better if this behaved in the same way as the
             // base BeginProduce method, but leaving as a todo (not a breaking change).
             Task.Run(() =>
             {
@@ -291,7 +293,7 @@ namespace Confluent.Kafka.AvroSerdes
                     CreateMessage(message, topic, keySerdeType, valueSerdeType)
                         .ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult(),
                     (result) => deliveryHandler(
-                        new DeliveryReportResult<TKey, TValue>
+                        new DeliveryReport<TKey, TValue>
                         {
                             TopicPartitionOffsetError = result.TopicPartitionOffsetError,
                             Message = message
@@ -303,6 +305,10 @@ namespace Confluent.Kafka.AvroSerdes
         /// <summary>
         ///     Asynchronously produce a single
         ///     <see cref="Confluent.Kafka.Message{TKey, TValue}" /> to a Kafka topic.
+        ///     Note: The delivery handler callback will be called on an arbitrary thread,
+        ///     c.f. the <see cref="Confluent.Kafka.Producer.BeginProduce(TopicPartition, Message, Action{DeliveryReport})" />
+        ///     methods on <see cref="Confluent.Kafka.Producer" /> which will always be
+        ///     called on the producer background thread.
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition to produce the message to.
@@ -325,7 +331,7 @@ namespace Confluent.Kafka.AvroSerdes
             Message<TKey, TValue> message,
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
-            Action<DeliveryReportResult<TKey, TValue>> deliveryHandler = null)
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             // TODO: this will cause the delivery handler to be called on an arbitrary thread,
             // c.f. the BeginProduce method on `Producer` which will always be called on the 
@@ -337,7 +343,7 @@ namespace Confluent.Kafka.AvroSerdes
                     CreateMessage(message, topicPartition.Topic, keySerdeType, valueSerdeType)
                         .ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult(),
                     (result) => deliveryHandler(
-                        new DeliveryReportResult<TKey, TValue>
+                        new DeliveryReport<TKey, TValue>
                         {
                             TopicPartitionOffsetError = result.TopicPartitionOffsetError,
                             Message = message
