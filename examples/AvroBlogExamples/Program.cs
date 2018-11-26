@@ -85,7 +85,7 @@ namespace AvroBlogExample
             }
         }
 
-        async static Task ConsumeSpecific(string bootstrapServers, string schemaRegistryUrl)
+        static void ConsumeSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => {
@@ -109,7 +109,7 @@ namespace AvroBlogExample
                 {
                     try
                     {
-                        var consumeResult = await consumer.ConsumeAsync<Null, MessageTypes.LogMessage>(SerdeType.Regular, SerdeType.Avro, cts.Token);
+                        var consumeResult = consumer.Consume<Null, MessageTypes.LogMessage>(SerdeType.Regular, SerdeType.Avro, cts.Token);
 
                         Console.WriteLine(
                             consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
@@ -150,7 +150,7 @@ namespace AvroBlogExample
                     await ProduceSpecific(bootstrapServers, schemaRegistryUrl);
                     break;
                 case "consume":
-                    await ConsumeSpecific(bootstrapServers, schemaRegistryUrl);
+                    ConsumeSpecific(bootstrapServers, schemaRegistryUrl);
                     break;
                 default:
                     PrintUsage();

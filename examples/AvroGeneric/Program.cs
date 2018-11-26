@@ -56,7 +56,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             );
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            var consumeTask = Task.Run(async () =>
+            var consumeTask = Task.Run(() =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
                 using (var consumer = new AvroConsumer(schemaRegistry, new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName }))
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                     {
                         try
                         {
-                            var consumeResult = await consumer.ConsumeAsync<string, GenericRecord>(SerdeType.Avro, SerdeType.Avro, cts.Token);
+                            var consumeResult = consumer.Consume<string, GenericRecord>(SerdeType.Avro, SerdeType.Avro, cts.Token);
 
                             Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
                         }

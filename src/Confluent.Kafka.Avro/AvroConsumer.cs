@@ -115,14 +115,14 @@ namespace Confluent.Kafka.AvroSerdes
         /// <returns>
         ///     The <see cref="Confluent.Kafka.ConsumeResult{TKey, TValue}" />.
         /// </returns>
-        public async Task<ConsumeResult<TKey, TValue>> ConsumeAsync<TKey, TValue>(
+        public ConsumeResult<TKey, TValue> Consume<TKey, TValue>(
             SerdeType keySerdeType,
             SerdeType valueSerdeType,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             try
             {
-                var result = await Task.Run(() => Consume(cancellationToken));
+                var result = Consume(cancellationToken);
                 if (result == null) { return null; }
 
                 return new ConsumeResult<TKey, TValue>
@@ -133,10 +133,14 @@ namespace Confluent.Kafka.AvroSerdes
                         Timestamp = result.Timestamp,
                         Headers = result.Headers,
                         Key = keySerdeType == SerdeType.Avro
-                            ? await (GetOrCreateAvroDeserializer<TKey>()).Deserialize(schemaRegistryClient, result.Topic, result.Key, true)
+                            ? (GetOrCreateAvroDeserializer<TKey>())
+                                .Deserialize(schemaRegistryClient, result.Topic, result.Key, true)
+                                .ConfigureAwait(false).GetAwaiter().GetResult()
                             : GetDeserializer<TKey>()(result.Key, result.Key == null),
                         Value = valueSerdeType == SerdeType.Avro
-                            ? await (GetOrCreateAvroDeserializer<TValue>()).Deserialize(schemaRegistryClient, result.Topic, result.Value, false)
+                            ? (GetOrCreateAvroDeserializer<TValue>())
+                                .Deserialize(schemaRegistryClient, result.Topic, result.Value, false)
+                                .ConfigureAwait(false).GetAwaiter().GetResult()
                             : GetDeserializer<TValue>()(result.Value, result.Value == null)
                     }
                 };
@@ -172,7 +176,7 @@ namespace Confluent.Kafka.AvroSerdes
         {
             try
             {
-                var result = await Task.Run(() => Consume(timeout));
+                var result = Consume(timeout);
                 if (result == null) { return null; }
 
                 return new ConsumeResult<TKey, TValue>
@@ -183,10 +187,14 @@ namespace Confluent.Kafka.AvroSerdes
                         Timestamp = result.Timestamp,
                         Headers = result.Headers,
                         Key = keySerdeType == SerdeType.Avro
-                            ? await GetOrCreateAvroDeserializer<TKey>().Deserialize(schemaRegistryClient, result.Topic, result.Key, true)
+                            ? GetOrCreateAvroDeserializer<TKey>()
+                                .Deserialize(schemaRegistryClient, result.Topic, result.Key, true)
+                                .ConfigureAwait(false).GetAwaiter().GetResult()
                             : GetDeserializer<TKey>()(result.Key, result.Key == null),
                         Value = valueSerdeType == SerdeType.Avro
-                            ? await GetOrCreateAvroDeserializer<TValue>().Deserialize(schemaRegistryClient, result.Topic, result.Value, false)
+                            ? GetOrCreateAvroDeserializer<TValue>()
+                                .Deserialize(schemaRegistryClient, result.Topic, result.Value, false)
+                                .ConfigureAwait(false).GetAwaiter().GetResult()
                             : GetDeserializer<TValue>()(result.Value, result.Value == null)
                     }
                 };

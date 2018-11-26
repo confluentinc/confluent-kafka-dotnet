@@ -99,8 +99,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                var record = consumer.ConsumeAsync<Null, GenericRecord>(
-                    SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;
+                var record = consumer.Consume<Null, GenericRecord>(
+                    SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
                 record.Message.Value.TryGetValue("name", out object msgName);
                 record.Message.Value.TryGetValue("favorite_number", out object msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out object msgColor);
@@ -113,8 +113,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Null(msgColor);
 
                 // consume generic record produced as a specific record.
-                record = consumer.ConsumeAsync<Null, GenericRecord>(
-                    SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;
+                record = consumer.Consume<Null, GenericRecord>(
+                    SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
                 record.Message.Value.TryGetValue("name", out msgName);
                 record.Message.Value.TryGetValue("favorite_number", out msgNumber);
                 record.Message.Value.TryGetValue("favorite_color", out msgColor);
@@ -132,8 +132,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             using (var consumer = new AvroConsumer(schemaRegistry, cconfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
-                var record = consumer.ConsumeAsync<Null, User>(
-                    SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token).Result;
+                var record = consumer.Consume<Null, User>(
+                    SerdeType.Regular, SerdeType.Avro, new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
                 Assert.Equal("my name 2", record.Message.Value.name);
                 Assert.Equal(44, record.Message.Value.favorite_number);
                 Assert.Null(record.Message.Value.favorite_color);
