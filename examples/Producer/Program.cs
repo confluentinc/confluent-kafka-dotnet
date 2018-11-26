@@ -94,7 +94,8 @@ namespace Confluent.Kafka.Examples.ProducerExample
                     {
                         // Notes:
                         // 1. Awaiting the asynchronous produce request below prevents flow of execution
-                        //    from proceeding until the acknowledgement from the broker is received.
+                        //    from proceeding until the acknowledgement from the broker is received (at
+                        //    the expense of low throughput).
                         // 2. Producing a message with type arguments will use the default serializers
                         //    registered for the types (in this case, UTF8 for both key and value). To
                         //    override the default serializers or provide serializers for your custom

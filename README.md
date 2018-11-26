@@ -180,7 +180,7 @@ class Program
                 try
                 {
                     // Uses default deserializers associated with Ignore and string (UTF8) 
-                    // to serialize the message key and value. The Ignore deserializer 
+                    // to deserialize the message key and value. The Ignore deserializer 
                     // always returns null, regardless of the message key data. Deserializers
                     // associated with types can be specified or overridden using the
                     // RegisterSerializer method.

@@ -32,7 +32,7 @@ namespace Confluent.Kafka.AvroSerdes
     /// <remarks>
     ///     Serialization format:
     ///       byte 0:           Magic byte use to identify the protocol format.
-    ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
+    ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
     public class AvroDeserializer<T>
@@ -98,11 +98,11 @@ namespace Confluent.Kafka.AvroSerdes
             }
             catch (AggregateException e)
             {
-                throw new DeserializationException("Error occured deserializing avro data.", e.InnerException);
+                throw new DeserializationException("Error occured deserializing Avro data.", e.InnerException);
             }
             catch (Exception e)
             {
-                throw new DeserializationException("Error occured deserializing avro data.", e);
+                throw new DeserializationException("Error occured deserializing Avro data.", e);
             }
         }
 

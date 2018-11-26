@@ -60,7 +60,7 @@ namespace Confluent.Kafka.AvroSerdes
         ///     the specified type.
         /// </summary>
         /// <param name="serializer">
-        ///     The avro serializer.
+        ///     The Avro serializer.
         /// </param>
         public void RegisterAvroSerializer<T>(AvroSerializer<T> serializer)
         {
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.AvroSerdes
         }
 
         /// <summary>
-        ///     Removes the avro serializer associated with the specified type.
+        ///     Removes the Avro serializer associated with the specified type.
         /// </summary>
         public void UnregisterAvroSerializer<T>()
         {
@@ -76,10 +76,10 @@ namespace Confluent.Kafka.AvroSerdes
         }
 
         /// <summary>
-        ///     Gets the avro serializer that will be used to serialize values of the specified type.
+        ///     Gets the Avro serializer that will be used to serialize values of the specified type.
         /// </summary>
         /// <returns>
-        ///     The avro serializer corresponding to the specified type.
+        ///     The Avro serializer corresponding to the specified type.
         /// </returns>
         public AvroSerializer<T> GetAvroSerializer<T>()
         {
