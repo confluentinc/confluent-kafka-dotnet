@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.SchemaRegistry;
 using Confluent.Kafka.AvroSerdes;
+using Confluent.Kafka.Admin;
 using Xunit;
 
 
@@ -33,8 +34,6 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceConsume(string bootstrapServers, string schemaRegistryServers)
         {
-            string topic = Guid.NewGuid().ToString();
-
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers
@@ -52,6 +51,18 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             {
                 SchemaRegistryUrl = schemaRegistryServers
             };
+
+            var adminClientConfig = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers
+            };
+
+            string topic = Guid.NewGuid().ToString();
+            using (var adminClient = new AdminClient(adminClientConfig))
+            {
+                adminClient.CreateTopicsAsync(
+                    new List<TopicSpecification> { new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
+            }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new AvroProducer(schemaRegistry, producerConfig))

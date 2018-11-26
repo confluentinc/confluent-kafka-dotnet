@@ -194,7 +194,7 @@ namespace Confluent.Kafka
             {
                 if (timestamp != Timestamp.Default)
                 {
-                    throw new ArgumentException("Timestamp must be either Timestamp.Default, or timestamp type must equal CreateTime.");
+                    throw new ArgumentException("Timestamp must be either Timestamp.Default, or Timestamp.CreateTime.");
                 }
             }
 
@@ -328,19 +328,11 @@ namespace Confluent.Kafka
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
                                 default: throw new ArgumentException(
-                                    $"Unexpected delivery report field name '{part}' in config value '{ConfigPropertyNames.ProducerDeliveryReportFields}'.");
+                                    $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.ProducerDeliveryReportFields}'.");
                             }
                         }
                     }
                 }
-            }
-
-            // Note: changing the default value of produce.offset.report at the binding level is less than
-            // ideal since it means the librdkafka configuration docs will no longer completely match the 
-            // .NET client. The default should probably be changed in librdkafka as well.
-            if (modifiedConfig.FirstOrDefault(prop => prop.Key == "produce.offset.report").Value == null)
-            {
-                modifiedConfig = modifiedConfig.Concat(new KeyValuePair<string, string>[] { new KeyValuePair<string, string>("produce.offset.report", "true") });
             }
 
             var configHandle = SafeConfigHandle.Create();
@@ -726,7 +718,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic.
-        ///     The partition the message is sent to is determined using
+        ///     The partition the message is sent to is determined by
         ///     the partitioner defined using the 'partitioner' 
         ///     configuration property.
         /// </summary>
@@ -862,7 +854,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic.
-        ///     The partition the message is sent to is determined using
+        ///     The partition the message is sent to is determined by
         ///     the partitioner defined using the 'partitioner' 
         ///     configuration property.
         /// </summary>

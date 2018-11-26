@@ -43,7 +43,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
                 var codeBasePath = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
                 var dirPath = Path.GetDirectoryName(codeBasePath);
-                var jsonPath = Path.Combine(dirPath, "test.parameters.json");
+                var jsonPath = Path.Combine(dirPath, "testconf.json");
 
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
                 testParameters = new List<object[]>
