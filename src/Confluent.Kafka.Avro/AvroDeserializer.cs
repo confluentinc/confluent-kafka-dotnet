@@ -98,11 +98,11 @@ namespace Confluent.Kafka.AvroSerdes
             }
             catch (AggregateException e)
             {
-                throw new DeserializeException("Error occured deserializing avro data.", e.InnerException);
+                throw new DeserializationException("Error occured deserializing avro data.", e.InnerException);
             }
             catch (Exception e)
             {
-                throw new DeserializeException("Error occured deserializing avro data.", e);
+                throw new DeserializationException("Error occured deserializing avro data.", e);
             }
         }
 

@@ -110,7 +110,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 Assert.Equal("world", cr.Value);
 
                 consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
-                Assert.ThrowsAny<DeserializeException>(() => 
+                Assert.ThrowsAny<DeserializationException>(() => 
                     {
                         try
                         {
@@ -122,7 +122,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         }
                     });
                 consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
-                Assert.ThrowsAny<DeserializeException>(() =>
+                Assert.ThrowsAny<DeserializationException>(() =>
                     {
                         try
                         {

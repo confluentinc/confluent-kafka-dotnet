@@ -134,11 +134,11 @@ namespace Confluent.Kafka.AvroSerdes
             }
             catch (AggregateException e)
             {
-                throw new SerializeException("Error occured serializing avro data.", e.InnerException);
+                throw new SerializationException("Error occured serializing avro data.", e.InnerException);
             }
             catch (Exception e)
             {
-                throw new SerializeException("Error occured serializing avro data.", e);
+                throw new SerializationException("Error occured serializing avro data.", e);
             }
         }
     }
