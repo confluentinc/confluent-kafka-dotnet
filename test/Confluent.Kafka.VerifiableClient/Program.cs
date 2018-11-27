@@ -285,7 +285,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableConsumer : VerifiableClient, IDisposable
     {
-        Consumer consumer;
+        Consumer<Null, string> consumer;
         VerifiableConsumerConfig Config;
 
         private Dictionary<TopicPartition, AssignedPartition> currentAssignment;
@@ -315,7 +315,7 @@ namespace Confluent.Kafka.VerifiableClient
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
             var consumerConfig = new ConsumerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            consumer = new Consumer(consumerConfig);
+            consumer = new Consumer<Null, string>(consumerConfig);
             consumedMsgsAtLastCommit = 0;
             Dbg($"Created Consumer {consumer.Name} with AutoCommit={Config.AutoCommit}");
         }
@@ -624,7 +624,7 @@ namespace Confluent.Kafka.VerifiableClient
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    var cr = consumer.Consume<Null, string>(TimeSpan.FromMilliseconds(100));
+                    var cr = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     HandleMessage(cr);
                 }
             }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);

@@ -101,7 +101,8 @@ namespace AvroBlogExample
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
+            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(consumerConfig,
+                Deserializers.Null, new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry)))
             {
                 consumer.Subscribe("log-messages");
 
@@ -109,7 +110,7 @@ namespace AvroBlogExample
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume<Null, MessageTypes.LogMessage>(SerdeType.Regular, SerdeType.Avro, cts.Token);
+                        var consumeResult = consumer.Consume(cts.Token);
 
                         Console.WriteLine(
                             consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")

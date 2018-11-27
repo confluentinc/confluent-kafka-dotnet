@@ -35,20 +35,27 @@ namespace Confluent.Kafka.AvroSerdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroDeserializer<T>
+    public class AvroDeserializer<T> : ITaskDeserializer<T>
     {
         private IAvroDeserializerImpl<T> deserializerImpl;
 
+        private ISchemaRegistryClient schemaRegistryClient;
 
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <param name="config">
         ///     Deserializer configuration properties (refer to 
         ///     <see cref="AvroDeserializerConfig" />).
         /// </param>
-        public AvroDeserializer(IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
+            this.schemaRegistryClient = schemaRegistryClient;
+
             if (config == null) { return; }
 
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
@@ -65,26 +72,25 @@ namespace Confluent.Kafka.AvroSerdes
         }
 
         /// <summary>
-        ///     Deserialize an object of type <typeparamref name="T"/> from a byte array.
+        ///     Deserialize an object of type <typeparamref name="T"/>
+        ///     from a byte array.
         /// </summary>
         /// <param name="topic">
-        ///     The topic associated with the data (ignored by this deserializer).
+        ///     The topic associated with the message the raw data
+        ///     is associated with.
         /// </param>
         /// <param name="data">
-        ///     A byte array containing the object serialized in the format produced
-        ///     by <see cref="AvroSerializer{T}" />.
+        ///     The data to deserialize.
         /// </param>
         /// <param name="isKey">
-        ///     True if deserializing message key data, false otherwise.
-        /// </param>
-        /// <param name="schemaRegistryClient">
-        ///     An implementation of ISchemaRegistryClient used for
-        ///     communication with Confluent Schema Registry.
+        ///     True if deserializing message key data, false if
+        ///     deserializing message value data.
         /// </param>
         /// <returns>
-        ///     The deserialized <typeparamref name="T"/> value.
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
+        ///     with the deserialized value.
         /// </returns>
-        public async Task<T> Deserialize(ISchemaRegistryClient schemaRegistryClient, string topic, byte[] data, bool isKey)
+        public async Task<T> Deserialize(byte[] data, bool isKey, string topic)
         {
             try
             {

@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Avro.UnitTests
             var config = new Dictionary<string, string> { };
 
             // should not throw.
-            var avroDeserializer = new AvroDeserializer<int>(config);
+            var avroDeserializer = new AvroDeserializer<int>(null, config);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "some.random.config.param", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(config); });
+            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(null, config); });
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "avro.serializer.auto.register.schemas", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(config); });
+            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(null, config); });
         }
     }
 }

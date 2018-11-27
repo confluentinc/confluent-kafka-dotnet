@@ -86,13 +86,13 @@ namespace ConfluentCloudExample
                 AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            using (var consumer = new Consumer(cConfig))
+            using (var consumer = new Consumer<Null, string>(cConfig))
             {
                 consumer.Subscribe("dotnet-test-topic");
 
                 try
                 {
-                    var consumeResult = consumer.Consume<Null, string>();
+                    var consumeResult = consumer.Consume();
                     Console.WriteLine($"consumed: {consumeResult.Value}");
                 }
                 catch (ConsumeException e)

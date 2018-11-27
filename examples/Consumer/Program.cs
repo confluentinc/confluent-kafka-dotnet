@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
 
             const int commitPeriod = 5;
 
-            using (var consumer = new Consumer(config))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 // Note: All event handlers are called on the main .Consume thread.
                 
@@ -86,7 +86,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume<Ignore, string>(cancellationToken);
+                        var consumeResult = consumer.Consume(cancellationToken);
                         Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Value}");
 
                         if (consumeResult.Offset % commitPeriod == 0)
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 EnableAutoCommit = true
             };
 
-            using (var consumer = new Consumer(config))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
 
@@ -145,7 +145,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume<Ignore, string>(cancellationToken);
+                        var consumeResult = consumer.Consume(cancellationToken);
                         Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Value}");
                     }
                     catch (ConsumeException e)

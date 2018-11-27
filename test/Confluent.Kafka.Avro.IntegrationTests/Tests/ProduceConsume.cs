@@ -86,7 +86,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
+            using (var consumer = new Consumer<string, User>(
+                consumerConfig, new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             {
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
@@ -100,9 +101,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 int i = 0;
                 while (consuming)
                 {
-                    var record = consumer
-                        .ConsumeAsync<string, User>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
-                        .Result;
+                    var record = consumer.Consume(TimeSpan.FromSeconds(10));
 
                     if (record != null)
                     {

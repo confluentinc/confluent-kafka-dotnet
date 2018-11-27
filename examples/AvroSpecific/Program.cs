@@ -78,7 +78,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var consumeTask = Task.Run(() =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
+                using (var consumer = new Consumer<string, User>(consumerConfig,
+                    new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
                 {
                     consumer.OnError += (_, e)
                         => Console.WriteLine($"Error: {e.Reason}");
@@ -89,7 +90,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                     {
                         try
                         {
-                            var consumeResult = consumer.Consume<string, User>(SerdeType.Avro, SerdeType.Avro, cts.Token);
+                            var consumeResult = consumer.Consume(cts.Token);
 
                             Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
                         }

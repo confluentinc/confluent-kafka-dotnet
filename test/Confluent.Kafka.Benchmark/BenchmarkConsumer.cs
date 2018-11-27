@@ -33,7 +33,7 @@ namespace Confluent.Kafka.Benchmark
                 ConsumeResultFields = nHeaders == 0 ? "none" : "headers"
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Ignore, Ignore>(consumerConfig))
             {
                 for (var j=0; j<nTests; j += 1)
                 {
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Benchmark
                     consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic, 0, firstMessageOffset) });
 
                     // consume 1 message before starting the timer to avoid including potential one-off delays.
-                    var record = consumer.Consume<Ignore, Ignore>(TimeSpan.FromSeconds(1));
+                    var record = consumer.Consume(TimeSpan.FromSeconds(1));
 
                     long startTime = DateTime.Now.Ticks;
 
@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Benchmark
 
                     while (cnt < nMessages-1)
                     {
-                        record = consumer.Consume<Ignore, Ignore>(TimeSpan.FromSeconds(1));
+                        record = consumer.Consume(TimeSpan.FromSeconds(1));
                         if (record != null)
                         {
                             cnt += 1;

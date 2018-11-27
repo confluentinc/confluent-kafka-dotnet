@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
 
             using (var producer = new Producer(producerConfig))
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
@@ -63,11 +63,11 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
 
-                record = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
                 producer.ProduceAsync(topic, new Message { Value = Serializers.UTF8("test store offset value") }).Wait();
-                record = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 
                 // test doesn't throw.

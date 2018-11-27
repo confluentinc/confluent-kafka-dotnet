@@ -161,7 +161,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 // serializing async
 
@@ -212,7 +212,7 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_2[2].TopicPartitionOffset);
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 ConsumeResult<Null, string> cr;
 
@@ -221,7 +221,7 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
-                cr = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr.Message);
                 Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
                 Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
@@ -233,7 +233,7 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_1[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_1[1].TopicPartitionOffset});
-                cr = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr.Message);
                 Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
                 Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
@@ -245,7 +245,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   CustomTimestampTests");
         }
 
-        private static void assertCloseToNow(Consumer consumer, TopicPartitionOffset tpo)
+        private static void assertCloseToNow(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));

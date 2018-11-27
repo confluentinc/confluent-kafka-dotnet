@@ -70,16 +70,15 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
+            using (var consumer = new Consumer<User, User>(
+                consumerConfig, new AvroDeserializer<User>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
                 bool hadError = false;
                 try
                 {
-                    consumer
-                        .ConsumeAsync<User, User>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
-                        .Wait();
+                    consumer.Consume(TimeSpan.FromSeconds(10));
                 }
                 catch (AggregateException e)
                 {
@@ -94,16 +93,15 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
+            using (var consumer = new Consumer<string, string>(
+                consumerConfig, new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<string>(schemaRegistry)))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
                 bool hadError = false;
                 try
                 {
-                    consumer
-                        .ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
-                        .Wait();
+                    consumer.Consume(TimeSpan.FromSeconds(10));
                 }
                 catch (AggregateException e)
                 {

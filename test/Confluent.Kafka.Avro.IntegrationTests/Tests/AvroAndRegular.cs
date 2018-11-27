@@ -97,42 +97,58 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             // check the above can be consumed (using regular / Avro serializers as appropriate)
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {
-                consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
-                var cr = consumer.Consume<string, string>(SerdeType.Regular, SerdeType.Avro);
-                Assert.Equal("hello", cr.Key);
-                Assert.Equal("world", cr.Value);
+                using (var consumer = new Consumer<string, string>(
+                    consumerConfig, Deserializers.UTF8, new AvroDeserializer<string>(schemaRegistry)))
+                {
+                    consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
+                    var cr = consumer.Consume();
+                    Assert.Equal("hello", cr.Key);
+                    Assert.Equal("world", cr.Value);
+                }
 
-                consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
-                cr = consumer.Consume<string, string>(SerdeType.Avro, SerdeType.Regular);
-                Assert.Equal("hello", cr.Key);
-                Assert.Equal("world", cr.Value);
+                using (var consumer = new Consumer<string, string>(
+                    consumerConfig, new AvroDeserializer<string>(schemaRegistry), Deserializers.UTF8))
+                {
+                    consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
+                    var cr = consumer.Consume();
+                    Assert.Equal("hello", cr.Key);
+                    Assert.Equal("world", cr.Value);
+                }
 
-                consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
-                Assert.ThrowsAny<DeserializationException>(() => 
-                    {
-                        try
+                using (var consumer = new Consumer<string, string>(
+                    consumerConfig, Deserializers.UTF8, new AvroDeserializer<string>(schemaRegistry)))
+                {
+                    consumer.Assign(new TopicPartitionOffset(topic2, 0, 0));
+                    Assert.ThrowsAny<DeserializationException>(() => 
                         {
-                            consumer.Consume<string, string>(SerdeType.Regular, SerdeType.Avro);
-                        }
-                        catch (AggregateException e)
+                            try
+                            {
+                                consumer.Consume();
+                            }
+                            catch (AggregateException e)
+                            {
+                                throw e.InnerException;
+                            }
+                        });
+                }
+
+                using (var consumer = new Consumer<string, string>(
+                    consumerConfig, new AvroDeserializer<string>(schemaRegistry), Deserializers.UTF8))
+                {
+                    consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
+                    Assert.ThrowsAny<DeserializationException>(() =>
                         {
-                            throw e.InnerException;
-                        }
-                    });
-                consumer.Assign(new TopicPartitionOffset(topic1, 0, 0));
-                Assert.ThrowsAny<DeserializationException>(() =>
-                    {
-                        try
-                        {
-                            consumer.Consume<string, string>(SerdeType.Avro, SerdeType.Regular);
-                        }
-                        catch (AggregateException e)
-                        {
-                            throw e.InnerException;
-                        }
-                    });
+                            try
+                            {
+                                consumer.Consume();
+                            }
+                            catch (AggregateException e)
+                            {
+                                throw e.InnerException;
+                            }
+                        });
+                }
             }
         }
     }

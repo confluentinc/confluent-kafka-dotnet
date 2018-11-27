@@ -47,87 +47,87 @@ namespace Confluent.Kafka.Avro.UnitTests
         public void IntSerDe()
         {
             var avroSerializer = new AvroSerializer<int>();
-            var avroDeserializer = new AvroDeserializer<int>();
+            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, 123, false).Result;
-            Assert.Equal(123, avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal(123, avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void LongSerDe()
         {
             var avroSerializer = new AvroSerializer<long>();
-            var avroDeserializer = new AvroDeserializer<long>();
+            var avroDeserializer = new AvroDeserializer<long>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, 123, false).Result;
-            Assert.Equal(123, avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal(123, avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void BoolSerDe()
         {
             var avroSerializer = new AvroSerializer<bool>();
-            var avroDeserializer = new AvroDeserializer<bool>();
+            var avroDeserializer = new AvroDeserializer<bool>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, true, false).Result;
-            Assert.Equal(true, avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal(true, avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void StringSerDe()
         {
             var avroSerializer = new AvroSerializer<string>();
-            var avroDeserializer = new AvroDeserializer<string>();
+            var avroDeserializer = new AvroDeserializer<string>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, "abc", false).Result;
-            Assert.Equal("abc", avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal("abc", avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void DoubleSerDe()
         {
             var avroSerializer = new AvroSerializer<double>();
-            var avroDeserializer = new AvroDeserializer<double>();
+            var avroDeserializer = new AvroDeserializer<double>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, 123d, false).Result;
-            Assert.Equal(123d, avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal(123d, avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void FloatSerDe()
         {
             var avroSerializer = new AvroSerializer<float>();
-            var avroDeserializer = new AvroDeserializer<float>();
+            var avroDeserializer = new AvroDeserializer<float>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, 123f, false).Result;
-            Assert.Equal(123f, avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal(123f, avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void BytesSerDe()
         {
             var avroSerializer = new AvroSerializer<byte[]>();
-            var avroDeserializer = new AvroDeserializer<byte[]>();
+            var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, new byte[] { 2, 3, 4 }, false).Result;
-            Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void NullSerDe()
         {
             var avroSerializer = new AvroSerializer<Null>();
-            var avroDeserializer = new AvroDeserializer<Null>();
+            var avroDeserializer = new AvroDeserializer<Null>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, null, false).Result;
-            Assert.Null(avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Null(avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
 
         [Fact]
         public void ISpecificRecord()
         {
             var serializer = new AvroSerializer<User>();
-            var deserializer = new AvroDeserializer<User>();
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient);
 
             var user = new User
             {
@@ -137,7 +137,7 @@ namespace Confluent.Kafka.Avro.UnitTests
             };
 
             var bytes = serializer.Serialize(schemaRegistryClient, "topic", user, false).Result;
-            var result = deserializer.Deserialize(schemaRegistryClient, "topic", bytes, false).Result;
+            var result = deserializer.Deserialize(bytes, false, "topic").Result;
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -148,10 +148,10 @@ namespace Confluent.Kafka.Avro.UnitTests
         public void Incompatible()
         {
             var avroSerializer = new AvroSerializer<string>();
-            var avroDeserializer = new AvroDeserializer<int>();
+            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             byte[] bytes;
             bytes = avroSerializer.Serialize(schemaRegistryClient, testTopic, "Hello world", false).Result;
-            Assert.Throws<System.AggregateException>(() => avroDeserializer.Deserialize(schemaRegistryClient, testTopic, bytes, false).Result);
+            Assert.Throws<System.AggregateException>(() => avroDeserializer.Deserialize(bytes, false, testTopic).Result);
         }
     }
 }

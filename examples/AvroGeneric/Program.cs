@@ -59,7 +59,10 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             var consumeTask = Task.Run(() =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-                using (var consumer = new AvroConsumer(schemaRegistry, new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName }))
+                using (var consumer = new Consumer<string, GenericRecord>(
+                    new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName },
+                    new AvroDeserializer<string>(schemaRegistry),
+                    new AvroDeserializer<GenericRecord>(schemaRegistry)))
                 {
                     consumer.OnError += (_, e)
                         => Console.WriteLine($"Error: {e.Reason}");
@@ -70,7 +73,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                     {
                         try
                         {
-                            var consumeResult = consumer.Consume<string, GenericRecord>(SerdeType.Avro, SerdeType.Avro, cts.Token);
+                            var consumeResult = consumer.Consume(cts.Token);
 
                             Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
                         }

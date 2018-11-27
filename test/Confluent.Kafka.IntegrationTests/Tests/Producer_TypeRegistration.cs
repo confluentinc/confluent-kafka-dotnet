@@ -66,10 +66,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             // check register override works (part b)
             var consumerConfig = new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = Guid.NewGuid().ToString() };
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, byte[]>(consumerConfig))
             {
                 consumer.Assign(stringDeliveryReport.TopicPartitionOffset);
-                var cr = consumer.Consume<Null, byte[]>();
+                var cr = consumer.Consume();
                 var str = Encoding.UTF32.GetString(cr.Value);
                 Assert.Equal("test string", str);
                 Assert.NotEqual(cr.Value.Length, Encoding.UTF8.GetBytes("test string").Length);
