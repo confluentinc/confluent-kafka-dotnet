@@ -86,11 +86,15 @@ namespace Confluent.Kafka.AvroSerdes
         ///     True if deserializing message key data, false if
         ///     deserializing message value data.
         /// </param>
+        /// <param name="headers">
+        ///     The headers of the message associated with this
+        ///     value.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
-        public async Task<T> Deserialize(byte[] data, bool isKey, string topic)
+        public async Task<T> Deserialize(byte[] data, bool isKey, string topic, Headers headers)
         {
             try
             {

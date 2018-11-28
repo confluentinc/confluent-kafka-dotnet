@@ -105,14 +105,9 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<string, User>(
+                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {
-                // If you do not register an Avro serializer before a call to ProduceAsync
-                // requires it, one will be created for you with default configuration properties.
-                // In this example, custom configuration properties are provided in the string case,
-                // but defaults are used for the User case.
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(avroSerializerConfig));
-
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
                 int i = 0;
@@ -121,7 +116,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 {
                     User user = new User { name = text, favorite_color = "green", favorite_number = i++ };
                     await producer
-                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user}, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user})
                         .ContinueWith(task => task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
                             : $"produced to: {task.Result.TopicPartitionOffset}");

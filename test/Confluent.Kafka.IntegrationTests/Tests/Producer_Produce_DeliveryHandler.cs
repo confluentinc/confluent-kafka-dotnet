@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<string, string>(producerConfig))
             {
                 producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0), 

@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var drs_1 = new List<DeliveryReport<Null, string>>();
             List<DeliveryResult<Null, string>> drs = new List<DeliveryResult<Null, string>>();
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "testvalue" }).Result);
                 
@@ -132,7 +132,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var drs_2 = new List<DeliveryReport<byte[], byte[]>>();
             List<DeliveryResult<byte[], byte[]>> drs2 = new List<DeliveryResult<byte[], byte[]>>();
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 drs2.Add(producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
 

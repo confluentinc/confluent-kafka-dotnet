@@ -53,7 +53,7 @@ namespace Confluent.Kafka.Avro.UnitTests
             };
 
             // should not throw.
-            var avroSerializer = new AvroSerializer<int>(config);
+            var avroSerializer = new AvroSerializer<int>(null, config);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "some.random.config.param", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config); });
         }
 
         [Fact]
@@ -97,7 +97,7 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "avro.unknown", "70" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config); });
         }
 
         [Fact]

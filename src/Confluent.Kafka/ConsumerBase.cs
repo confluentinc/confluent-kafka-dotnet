@@ -29,8 +29,8 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Implements a base class from which to derive high-level
-    ///     Apache Kafka consumers.
+    ///     Implements a high-level Apache Kafka consumer, excluding
+    ///     any methods for consuming messages.
     /// </summary>
     public class ConsumerBase : IConsumerBase, IClient
     {
@@ -163,7 +163,7 @@ namespace Confluent.Kafka
         public event EventHandler<string> OnStatistics;
 
         /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer" /> instance.
+        ///     Creates a new <see cref="Confluent.Kafka.ConsumerBase" /> instance.
         /// </summary>
         /// <param name="config">
         ///     A collection of librdkafka configuration parameters 

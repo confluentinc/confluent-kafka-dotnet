@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             DeliveryResult<byte[], byte[]> dr;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 // Assume that all these produce calls succeed.
                 dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;

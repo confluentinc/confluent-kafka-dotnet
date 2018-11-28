@@ -56,45 +56,74 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 var doubleTopic = Guid.NewGuid().ToString();
                 var nullTopic = Guid.NewGuid().ToString();
 
-                using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+                using (var producer = new Producer<string, string>(
+                    producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<string>(schemaRegistry)))
                 {
                     producer
-                        .ProduceAsync(stringTopic, new Message<string, string> { Key = "hello", Value = "world" }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(stringTopic, new Message<string, string> { Key = "hello", Value = "world" })
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
-                
-                    producer
-                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} }, SerdeType.Avro, SerdeType.Avro)
-                        .Wait();
-                    Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
 
+                using (var producer = new Producer<byte[], byte[]>(
+                    producerConfig, new AvroSerializer<byte[]>(schemaRegistry), new AvroSerializer<byte[]>(schemaRegistry)))
+                {
                     producer
-                        .ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(bytesTopic, new Message<byte[], byte[]> { Key = new byte[] { 1, 4, 11 }, Value = new byte[] {} })
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
 
+                using (var producer = new Producer<int, int>(
+                    producerConfig, new AvroSerializer<int>(schemaRegistry), new AvroSerializer<int>(schemaRegistry)))
+                {
                     producer
-                        .ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(intTopic, new Message<int, int> { Key = 42, Value = 43 })
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
 
+                using (var producer = new Producer<long, long>(
+                    producerConfig, new AvroSerializer<long>(schemaRegistry), new AvroSerializer<long>(schemaRegistry)))
+                {
                     producer
-                        .ProduceAsync(boolTopic, new Message<bool, bool> { Key = true, Value = false }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(longTopic, new Message<long, long> { Key = -32, Value = -33 })
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
-                
-                    producer
-                        .ProduceAsync(floatTopic, new Message<float, float> { Key = 44.0f, Value = 45.0f }, SerdeType.Avro, SerdeType.Avro)
-                        .Wait();
-                    Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
 
+                using (var producer = new Producer<bool, bool>(
+                    producerConfig, new AvroSerializer<bool>(schemaRegistry), new AvroSerializer<bool>(schemaRegistry)))
+                {
                     producer
-                        .ProduceAsync(doubleTopic, new Message<double, double> { Key = 46.0, Value = 47.0 }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(boolTopic, new Message<bool, bool> { Key = true, Value = false })
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
 
+                using (var producer = new Producer<float, float>(
+                    producerConfig, new AvroSerializer<float>(schemaRegistry), new AvroSerializer<float>(schemaRegistry)))
+                {
                     producer
-                        .ProduceAsync(nullTopic, new Message<Null,Null>(), SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(floatTopic, new Message<float, float> { Key = 44.0f, Value = 45.0f })
+                        .Wait();
+                    Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
+
+                using (var producer = new Producer<double, double>(
+                    producerConfig, new AvroSerializer<double>(schemaRegistry), new AvroSerializer<double>(schemaRegistry)))
+                {
+                    producer
+                        .ProduceAsync(doubleTopic, new Message<double, double> { Key = 46.0, Value = 47.0 })
+                        .Wait();
+                    Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                }
+
+                using (var producer = new Producer<Null, Null>(
+                    producerConfig, new AvroSerializer<Null>(schemaRegistry), new AvroSerializer<Null>(schemaRegistry)))
+                {
+                    producer
+                        .ProduceAsync(nullTopic, new Message<Null,Null>())
                         .Wait();
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
                 }

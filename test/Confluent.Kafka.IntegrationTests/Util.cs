@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             var msg = sb.ToString();
 
             DeliveryResult<Null, string> firstDeliveryReport = null;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 for (int i=0; i<number; ++i)
                 {

@@ -35,13 +35,14 @@ namespace Confluent.Kafka.AvroSerdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T>
+    public class AvroSerializer<T> : ITaskSerializer<T>
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
 
         private IAvroSerializerImpl<T> serializerImpl;
 
+        private ISchemaRegistryClient schemaRegistryClient;
 
         /// <summary>
         ///     The default initial size (in bytes) of buffers used for message 
@@ -66,12 +67,18 @@ namespace Confluent.Kafka.AvroSerdes
         ///         attempt to auto-register unrecognized schemas with Confluent Schema Registry, 
         ///         false if not.
         /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
         /// <param name="config">
         ///     Serializer configuration properties (refer to 
         ///     <see cref="AvroSerializerConfig" />)
         /// </param>
-        public AvroSerializer(IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
+            this.schemaRegistryClient = schemaRegistryClient;
+
             if (config == null) { return; }
 
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
@@ -113,14 +120,14 @@ namespace Confluent.Kafka.AvroSerdes
         /// <param name="isKey">
         ///     whether or not the data represents a message key.
         /// </param>
-        /// <param name="schemaRegistryClient">
-        ///     An implementation of ISchemaRegistryClient used for
-        ///     communication with Confluent Schema Registry.
+        /// <param name="headers">
+        ///     The headers of the message associated with this
+        ///     value.
         /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> Serialize(ISchemaRegistryClient schemaRegistryClient, string topic, T data, bool isKey)
+        public async Task<byte[]> Serialize(T data, bool isKey, string topic, Headers headers)
         { 
             try
             {

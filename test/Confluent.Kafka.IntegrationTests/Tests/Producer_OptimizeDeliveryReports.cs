@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
                 DeliveryReportFields = "none"
             };
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic, 

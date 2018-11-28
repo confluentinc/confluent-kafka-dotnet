@@ -55,7 +55,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<string, User>(
+                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {
                 var user = new User
                 {
@@ -65,7 +66,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 };
 
                 producer
-                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user },SerdeType.Avro, SerdeType.Avro)
+                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user })
                     .Wait();
             }
 

@@ -59,7 +59,7 @@ namespace ConfluentCloudExample
                 SaslPassword = "<ccloud secret>"
             };
 
-            using (var producer = new Producer(pConfig))
+            using (var producer = new Producer<Null, string>(pConfig))
             {
                 producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Value = "test value" })
                     .ContinueWith(task => task.IsFaulted

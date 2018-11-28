@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryResult<Null, string> produceResult1;
             DeliveryResult<Null, string> produceResult2;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
@@ -75,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(r.Message.Timestamp.UnixTimestampMs, dr.Message.Timestamp.UnixTimestampMs);
         }
 
-        private static DeliveryResult<Null, string> ProduceMessage(string topic, Producer producer, string testString)
+        private static DeliveryResult<Null, string> ProduceMessage(string topic, Producer<Null, string> producer, string testString)
         {
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
             Assert.NotNull(result?.Message);

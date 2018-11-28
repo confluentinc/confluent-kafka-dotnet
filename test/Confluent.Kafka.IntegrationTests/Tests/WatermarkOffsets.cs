@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
             var testString = "hello world";
 
             DeliveryResult<Null, string> dr;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;

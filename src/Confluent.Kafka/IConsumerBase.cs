@@ -26,17 +26,15 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka consumer (with key and 
-    ///     value deserialization).
+    ///     Defines a high-level Apache Kafka consumer, excluding
+    ///     any methods for consuming messages.
     /// </summary>
     public interface IConsumerBase : IClient
     {
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.MemberId" />
         /// </summary>
-        /// <value></value>
         string MemberId { get; }
-
 
 
         /// <summary>

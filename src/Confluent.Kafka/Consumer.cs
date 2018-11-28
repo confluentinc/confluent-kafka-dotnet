@@ -82,7 +82,7 @@ namespace Confluent.Kafka
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
                     throw new ArgumentNullException(
-                        $"Key deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
+                        $"Key deserializer not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
                 this.keyDeserializer = (Deserializer<TKey>)deserializer;
             }
@@ -92,7 +92,7 @@ namespace Confluent.Kafka
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
                     throw new ArgumentNullException(
-                        $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
+                        $"Value deserializer not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
                 }
                 this.valueDeserializer = (Deserializer<TValue>)deserializer;
             }
@@ -176,14 +176,14 @@ namespace Confluent.Kafka
             var rawResult = base.Consume(100, Deserializers.ByteArray, Deserializers.ByteArray);
             TKey key = keyDeserializer != null
                 ? keyDeserializer(rawResult.Key, rawResult.Key == null)
-                : taskKeyDeserializer.Deserialize(rawResult.Key, true, rawResult.Topic)
+                : taskKeyDeserializer.Deserialize(rawResult.Key, true, rawResult.Topic, rawResult.Headers)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
                 ? valueDeserializer(rawResult.Value, rawResult.Value == null)
-                : taskValueDeserializer.Deserialize(rawResult.Value, false, rawResult.Topic)
+                : taskValueDeserializer.Deserialize(rawResult.Value, false, rawResult.Topic, rawResult.Headers)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();

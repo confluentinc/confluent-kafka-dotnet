@@ -50,28 +50,26 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             var topic = Guid.NewGuid().ToString();
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<string, string>(
+                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<string>(schemaRegistry)))
             {
                 producer
-                    .ProduceAsync(
-                        topic, new Message<string, string> { Key = "hello", Value = "world" },
-                        SerdeType.Avro, SerdeType.Avro)
+                    .ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" })
                     .Wait();
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<int, string>(
+                producerConfig, new AvroSerializer<int>(schemaRegistry), new AvroSerializer<string>(schemaRegistry)))
             {
                 Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
                         producer
-                            .ProduceAsync(
-                                topic, new Message<int, string> { Key = 42, Value = "world" },
-                                SerdeType.Avro, SerdeType.Avro)
+                            .ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" })
                             .Wait();
                     }
                     catch (AggregateException e)
@@ -82,16 +80,15 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<string, int>(
+                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<int>(schemaRegistry)))
             {                
                 Assert.Throws<SerializationException>(() =>
                 {
                     try
                     {
                         producer
-                            .ProduceAsync(
-                                topic, new Message<string, int> { Key = "world", Value = 42 },
-                                SerdeType.Avro, SerdeType.Avro)
+                            .ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 })
                             .Wait();
                     }
                     catch (AggregateException e)

@@ -56,18 +56,20 @@ namespace Confluent.Kafka.Avro.IntegrationTests
 
             DeliveryResult<Null, GenericRecord> dr;
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new AvroProducer(schemaRegistry, config))
+            using (var p = new Producer<Null, GenericRecord>(
+                config, Serializers.Null, new AvroSerializer<GenericRecord>(schemaRegistry)))
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Value = record }, SerdeType.Regular, SerdeType.Avro).Result;
+                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Value = record }).Result;
             }
 
             // produce a specific record (to later consume back as a generic record).
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new AvroProducer(schemaRegistry, config))
+            using (var p = new Producer<Null, User>(
+                config, Serializers.Null, new AvroSerializer<User>(schemaRegistry)))
             {
                 var user = new User
                 {
@@ -76,7 +78,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     favorite_color = "orange"
                 };
                 
-                p.ProduceAsync(topic, new Message<Null, User> { Value = user }, SerdeType.Regular, SerdeType.Avro).Wait();
+                p.ProduceAsync(topic, new Message<Null, User> { Value = user }).Wait();
             }
 
             Assert.Null(dr.Message.Key);

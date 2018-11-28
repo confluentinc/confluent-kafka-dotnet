@@ -88,7 +88,10 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new AvroProducer(schemaRegistry, new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new Producer<string, GenericRecord>(
+                new ProducerConfig { BootstrapServers = bootstrapServers },
+                new AvroSerializer<string>(schemaRegistry),
+                new AvroSerializer<GenericRecord>(schemaRegistry)))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
@@ -102,7 +105,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                     record.Add("favorite_color", "blue");
 
                     await producer
-                        .ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record }, SerdeType.Avro, SerdeType.Avro)
+                        .ProduceAsync(topicName, new Message<string, GenericRecord> { Key = text, Value = record })
                         .ContinueWith(task => task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
                             : $"produced to: {task.Result.TopicPartitionOffset}");

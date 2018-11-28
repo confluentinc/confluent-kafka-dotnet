@@ -41,7 +41,7 @@ namespace Confluent.Kafka.Examples.ProducerExample
 
             var config = new ProducerConfig { BootstrapServers = brokerList };
 
-            using (var producer = new Producer(config))
+            using (var producer = new Producer<string, string>(config))
             {
                 Console.WriteLine("\n-----------------------------------------------------------------------");
                 Console.WriteLine($"Producer {producer.Name} producing on topic {topicName}.");

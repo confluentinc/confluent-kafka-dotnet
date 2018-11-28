@@ -54,10 +54,11 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<string, string>(
+                producerConfig, Serializers.UTF8, new AvroSerializer<string>(schemaRegistry)))
             {
                 // implicit check that this does not fail.
-                producer.ProduceAsync(topic1, new Message<string, string> { Key = "hello", Value = "world" }, SerdeType.Regular, SerdeType.Avro).Wait();
+                producer.ProduceAsync(topic1, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
 
                 // check that the value type was registered with SR, and the key was not.
                 Assert.Throws<SchemaRegistryException>(() =>
@@ -75,10 +76,11 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var producer = new Producer<string, string>(
+                producerConfig, new AvroSerializer<string>(schemaRegistry), Serializers.UTF8))
             {
                 // implicit check that this does not fail.
-                producer.ProduceAsync(topic2, new Message<string, string> { Key = "hello", Value = "world" }, SerdeType.Avro, SerdeType.Regular).Wait();
+                producer.ProduceAsync(topic2, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
 
                 // check that the key type was registered with SR, and the value was not.
                 Assert.Throws<SchemaRegistryException>(() =>

@@ -52,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
             //   2. specifying no delivery report handlers is valid.
             //   3. tasks should complete immediately.
             int count = 0;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue }, (DeliveryReport<byte[], byte[]> dr) => count += 1);
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });

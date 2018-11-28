@@ -20,33 +20,33 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey,TValue}" />.
+    ///     A serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
     /// </summary>
-    public interface ITaskDeserializer<T>
+    public interface ITaskSerializer<T>
     {
         /// <summary>
-        ///     Deserialize an object of type <typeparamref name="T"/>
-        ///     from a byte array.
+        ///     Serialize an object of type <typeparamref name="T"/>
+        ///     to a byte array.
         /// </summary>
-        /// <param name="topic">
-        ///     The topic associated with the message the raw data
-        ///     is associated with.
-        /// </param>
         /// <param name="data">
-        ///     The data to deserialize.
+        ///     The value to serialize.
         /// </param>
         /// <param name="isKey">
-        ///     True if deserializing message key data, false if
-        ///     deserializing message value data.
+        ///     True if serializing a message key, false if
+        ///     serializing a message value.
+        /// </param>
+        /// <param name="topic">
+        ///     The topic associated with the message the value
+        ///     is associated with.
         /// </param>
         /// <param name="headers">
         ///     The headers of the message associated with this
         ///     value.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
-        ///     with the deserialized value.
+        ///     A <see cref="System.Threading.Tasks.Task" /> that
+        ///     completes with the serialized data.
         /// </returns>
-        Task<T> Deserialize(byte[] data, bool isKey, string topic, Headers headers);
+        Task<byte[]> Serialize(T data, bool isKey, string topic, Headers headers);
     }
 }

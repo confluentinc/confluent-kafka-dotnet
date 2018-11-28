@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             var drs = new List<DeliveryReport<Null, string>>();
             DeliveryResult<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
             DeliveryResult<Null, string> dr_ol1, dr_ol3;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 // single header value.
                 var headers = new Headers();
@@ -132,7 +132,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             List<DeliveryReport<byte[], byte[]>> drs_2 = new List<DeliveryReport<byte[], byte[]>>();
             DeliveryResult<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 var headers = new Headers();
                 headers.Add("hkey", new byte[] { 44 });
@@ -306,7 +306,7 @@ namespace Confluent.Kafka.IntegrationTests
             // null value
 
             DeliveryResult<Null, string> nulldr;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 var headers = new Headers();
                 headers.Add("my-header", null);
