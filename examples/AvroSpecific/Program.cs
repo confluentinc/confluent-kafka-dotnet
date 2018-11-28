@@ -105,8 +105,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<string, User>(
-                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
+            using (var producer = new Producer<string, User>(producerConfig,
+                new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

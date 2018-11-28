@@ -55,8 +55,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<string, User>(
-                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
+            using (var producer = new Producer<string, User>(producerConfig,
+                new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {
                 var user = new User
                 {
@@ -71,8 +71,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<User, User>(
-                consumerConfig, new AvroDeserializer<User>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
+            using (var consumer = new Consumer<User, User>(consumerConfig,
+                new AvroDeserializer<User>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
@@ -94,8 +94,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<string, string>(
-                consumerConfig, new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<string>(schemaRegistry)))
+            using (var consumer = new Consumer<string, string>(consumerConfig,
+                new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<string>(schemaRegistry)))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 

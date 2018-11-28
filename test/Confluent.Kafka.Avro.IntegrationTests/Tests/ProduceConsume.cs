@@ -65,8 +65,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<string, User>(
-                producerConfig, new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
+            using (var producer = new Producer<string, User>(producerConfig,
+                new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -85,8 +85,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<string, User>(
-                consumerConfig, new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
+            using (var consumer = new Consumer<string, User>(consumerConfig,
+                new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             {
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)

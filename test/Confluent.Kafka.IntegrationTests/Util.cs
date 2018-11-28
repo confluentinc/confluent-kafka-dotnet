@@ -18,6 +18,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka.IntegrationTests

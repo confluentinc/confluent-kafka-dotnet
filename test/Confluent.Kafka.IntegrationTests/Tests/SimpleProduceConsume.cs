@@ -27,7 +27,8 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that produces a message then consumes it.
+        ///     A test that produces a couple of messages then
+        ///     consumes them back.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void SimpleProduceConsume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
