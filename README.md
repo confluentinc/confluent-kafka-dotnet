@@ -36,8 +36,8 @@ client. Thanks Andreas!
 confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 
 - [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3]* - The core client library.
-- [Confluent.Kafka.Avro](https://www.nuget.org/packages/Confluent.Kafka.Avro/) *[net452, netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
-- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4]* - Confluent Schema Registry client (a dependency of Confluent.Kafka.Avro).
+- [Confluent.SchemaRegistry.KafkaClients](https://www.nuget.org/packages/Confluent.SchemaRegistry.KafkaClients/) *[net452, netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
+- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4]* - Confluent Schema Registry client (a dependency of Confluent.SchemaRegistry.KafkaClients).
 
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
@@ -202,7 +202,7 @@ class Program
 
 ### Working with Apache Avro
 
-The `Confluent.Kafka.Avro` nuget package provides an Avro serializer and deserializer that integrate with [Confluent
+The `Confluent.SchemaRegistry.KafkaClients` nuget package provides an Avro serializer and deserializer that integrate with [Confluent
 Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html). The `Confluent.SchemaRegistry` 
 nuget package provides a client for interfacing with Schema Registry's REST API.
 

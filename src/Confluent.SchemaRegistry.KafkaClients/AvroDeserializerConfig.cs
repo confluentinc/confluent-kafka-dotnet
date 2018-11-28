@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using Confluent.Kafka;
+using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
-    internal interface IAvroSerializerImpl<T>
-    {
-        Task<byte[]> Serialize(string topic, T data, bool isKey);
-    }
+    /// <summary>
+    ///     <see cref="Confluent.SchemaRegistry.KafkaClients.AvroDeserializer{T}" />
+    ///     configuration properties.
+    /// </summary>
+    public class AvroDeserializerConfig : Config {}
 }

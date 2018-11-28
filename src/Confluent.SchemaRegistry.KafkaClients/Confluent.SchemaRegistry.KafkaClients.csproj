@@ -10,9 +10,9 @@
     <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent_logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;Schema Registry;Avro</PackageTags>
-    <PackageId>Confluent.Kafka.Avro</PackageId>
-    <Title>Confluent.Kafka.Avro</Title>
-    <AssemblyName>Confluent.Kafka.Avro</AssemblyName>
+    <PackageId>Confluent.SchemaRegistry.KafkaClients</PackageId>
+    <Title>Confluent.SchemaRegistry.KafkaClients</Title>
+    <AssemblyName>Confluent.SchemaRegistry.KafkaClients</AssemblyName>
     <VersionPrefix>1.0-beta2</VersionPrefix>
     <TargetFrameworks>netstandard2.0;net452;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

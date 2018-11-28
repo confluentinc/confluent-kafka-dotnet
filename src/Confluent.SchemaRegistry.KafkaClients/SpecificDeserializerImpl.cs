@@ -18,34 +18,87 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Avro.Specific;
 using Avro.IO;
 using Avro.Generic;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
-    internal class GenericDeserializerImpl : IAvroDeserializerImpl<GenericRecord>
+    internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T>
     {
         /// <remarks>
-        ///     A datum reader cache (one corresponding to each write schema that's been seen)
+        ///     A datum reader cache (one corresponding to each write schema that's been seen) 
         ///     is maintained so that they only need to be constructed once.
         /// </remarks>
-        private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
-            = new Dictionary<int, DatumReader<GenericRecord>>();
-       
+        private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
+            = new Dictionary<int, DatumReader<T>>();
+
         private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
+
+        /// <summary>
+        ///     The Avro schema used to read values of type <typeparamref name="T"/>
+        /// </summary>
+        public global::Avro.Schema ReaderSchema { get; private set; }
 
         private ISchemaRegistryClient schemaRegistryClient;
 
-        public GenericDeserializerImpl(ISchemaRegistryClient schemaRegistryClient)
+        public SpecificDeserializerImpl(ISchemaRegistryClient schemaRegistryClient)
         {
             this.schemaRegistryClient = schemaRegistryClient;
+
+            if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
+            {
+                ReaderSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+            }
+            else if (typeof(T).Equals(typeof(int)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("int");
+            }
+            else if (typeof(T).Equals(typeof(bool)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("boolean");
+            }
+            else if (typeof(T).Equals(typeof(double)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("double");
+            }
+            else if (typeof(T).Equals(typeof(string)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("string");
+            }
+            else if (typeof(T).Equals(typeof(float)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("float");
+            }
+            else if (typeof(T).Equals(typeof(long)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("long");
+            }
+            else if (typeof(T).Equals(typeof(byte[])))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("bytes");
+            }
+            else if (typeof(T).Equals(typeof(Null)))
+            {
+                ReaderSchema = global::Avro.Schema.Parse("null");
+            }
+            else
+            {
+                throw new ArgumentException(
+                    $"{nameof(AvroDeserializer<T>)} " +
+                    "only accepts type parameters of int, bool, double, string, float, " +
+                    "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
+                );
+            }
         }
 
-        public async Task<GenericRecord> Deserialize(string topic, byte[] array)
+        public async Task<T> Deserialize(string topic, byte[] array)
         {
             try
             {
@@ -63,17 +116,13 @@ namespace Confluent.Kafka.AvroSerdes
                     }
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
-                    DatumReader<GenericRecord> datumReader;
+                    DatumReader<T> datumReader;
                     await deserializeMutex.WaitAsync();
                     try
                     {
                         datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
                         if (datumReader == null)
                         {
-                            // TODO: If any of this cache fills up, this is probably an
-                            // indication of misuse of the deserializer. Ideally we would do 
-                            // something more sophisticated than the below + not allow 
-                            // the misuse to keep happening without warning.
                             if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
                             {
                                 datumReaderBySchemaId.Clear();
@@ -82,7 +131,7 @@ namespace Confluent.Kafka.AvroSerdes
                             var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
                             var writerSchema = global::Avro.Schema.Parse(writerSchemaJson);
 
-                            datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
+                            datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
                             datumReaderBySchemaId[writerId] = datumReader;
                         }
                     }
@@ -91,7 +140,7 @@ namespace Confluent.Kafka.AvroSerdes
                         deserializeMutex.Release();
                     }
                     
-                    return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
+                    return datumReader.Read(default(T), new BinaryDecoder(stream));
                 }
             }
             catch (AggregateException e)

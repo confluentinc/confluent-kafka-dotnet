@@ -17,12 +17,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.KafkaClients;
 using Xunit;
 
 
-namespace Confluent.Kafka.Avro.IntegrationTests
+namespace Confluent.SchemaRegistry.KafkaClients.IntegrationTests
 {
     public static partial class Tests
     {

@@ -18,12 +18,13 @@ using Moq;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry.KafkaClients;
 using Confluent.Kafka.Examples.AvroSpecific;
 
 
-namespace Confluent.Kafka.Avro.UnitTests
+namespace Confluent.SchemaRegistry.KafkaClients.UnitTests
 {
     public class SerializeDeserialzeTests
     {

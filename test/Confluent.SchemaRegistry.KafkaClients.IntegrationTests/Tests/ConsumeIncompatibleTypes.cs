@@ -16,13 +16,14 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry.KafkaClients;
 using Confluent.Kafka.Examples.AvroSpecific;
 using Xunit;
 
 
-namespace Confluent.Kafka.Avro.IntegrationTests
+namespace Confluent.SchemaRegistry.KafkaClients.IntegrationTests
 {
     public static partial class Tests
     {
@@ -81,12 +82,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                catch (AggregateException e)
+                catch (DeserializationException)
                 {
-                    if (e.InnerException.GetType() != typeof(DeserializationException))
-                    {
-                        throw e.InnerException;
-                    }
                     hadError = true;
                 }
 
@@ -104,12 +101,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                catch (AggregateException e)
+                catch (DeserializationException)
                 {
-                    if (e.InnerException.GetType() != typeof(DeserializationException))
-                    {
-                        throw e.InnerException;
-                    }
                     hadError = true;
                 }
 

@@ -23,10 +23,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avro.IO;
 using Avro.Specific;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T>
     {

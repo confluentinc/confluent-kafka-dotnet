@@ -20,12 +20,13 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using Avro.Generic;
 using Avro.IO;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     internal class GenericSerializerImpl : IAvroSerializerImpl<GenericRecord>
     {

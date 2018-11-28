@@ -17,10 +17,10 @@
 using System.Threading.Tasks;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
-    internal interface IAvroDeserializerImpl<T>
+    internal interface IAvroSerializerImpl<T>
     {
-        Task<T> Deserialize(string topic, byte[] array);
+        Task<byte[]> Serialize(string topic, T data, bool isKey);
     }
 }

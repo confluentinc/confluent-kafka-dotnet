@@ -15,7 +15,7 @@
 // Refer to LICENSE for more information.
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     /// <summary>
     ///     Enumeration of serde types recognised by the 

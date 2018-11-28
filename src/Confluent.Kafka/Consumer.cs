@@ -174,6 +174,8 @@ namespace Confluent.Kafka
         private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var rawResult = base.Consume(100, Deserializers.ByteArray, Deserializers.ByteArray);
+            if (rawResult == null) { return null; }
+
             TKey key = keyDeserializer != null
                 ? keyDeserializer(rawResult.Key, rawResult.Key == null)
                 : taskKeyDeserializer.Deserialize(rawResult.Key, true, rawResult.Topic, rawResult.Headers)
@@ -190,10 +192,14 @@ namespace Confluent.Kafka
 
             return new ConsumeResult<TKey, TValue>
             {
-                Key = key,
-                Value = val,
-                Headers = rawResult.Headers,
-                Timestamp = rawResult.Timestamp
+                TopicPartitionOffset = rawResult.TopicPartitionOffset,
+                Message = new Message<TKey, TValue>
+                {
+                    Key = key,
+                    Value = val,
+                    Headers = rawResult.Headers,
+                    Timestamp = rawResult.Timestamp
+                }
             };
         }
 
@@ -215,21 +221,16 @@ namespace Confluent.Kafka
         /// </remarks>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (keyDeserializer != null && valueDeserializer != null)
+            while (true)
             {
-                while (true)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
-                        ? Consume<TKey, TValue>(100, keyDeserializer, valueDeserializer) // fast path for simple case.
-                        : Consume(100);
-            
-                    if (result == null) { continue; }
-                    return result;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
+                ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
+                    ? Consume<TKey, TValue>(100, keyDeserializer, valueDeserializer) // fast path for simple case.
+                    : Consume(100);
+        
+                if (result == null) { continue; }
+                return result;
             }
-
-            return null;
         }
 
 

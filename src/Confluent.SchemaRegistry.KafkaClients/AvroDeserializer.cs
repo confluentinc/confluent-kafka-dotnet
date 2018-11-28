@@ -17,12 +17,13 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Avro.Generic;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using System;
 using System.Linq;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     /// <summary>
     ///     Avro deserializer. Use this deserializer with GenericRecord, types 

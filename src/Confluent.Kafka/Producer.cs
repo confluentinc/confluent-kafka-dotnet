@@ -190,18 +190,18 @@ namespace Confluent.Kafka
         /// </summary>
         public Producer(
             IEnumerable<KeyValuePair<string, string>> config,
-            ITaskSerializer<TKey> taskKeySerializer,
-            ITaskSerializer<TValue> taskValueSerializer
-        ) : base(config) => Init(taskKeySerializer, taskValueSerializer);
+            ITaskSerializer<TKey> keySerializer,
+            ITaskSerializer<TValue> valueSerializer
+        ) : base(config) => Init(keySerializer, valueSerializer);
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
         /// </summary>
         public Producer(
             Handle handle,
-            ITaskSerializer<TKey> taskKeySerializer,
-            ITaskSerializer<TValue> taskValueSerializer
-        ) : base(handle) => Init(taskKeySerializer, taskValueSerializer);
+            ITaskSerializer<TKey> keySerializer,
+            ITaskSerializer<TValue> valueSerializer
+        ) : base(handle) => Init(keySerializer, valueSerializer);
 
         private void Init(ITaskSerializer<TKey> taskKeySerializer, ITaskSerializer<TValue> taskValueSerializer)
         {
@@ -213,7 +213,7 @@ namespace Confluent.Kafka
                 throw new ArgumentNullException("Key serializer must be specified.");
             }
 
-            if (this.valueSerializer == null)
+            if (this.taskValueSerializer == null)
             {
                 throw new ArgumentNullException("Value serializer must be specified.");
             }

@@ -20,10 +20,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.SchemaRegistry.KafkaClients;
 
 
-namespace Confluent.Kafka.Avro.UnitTests
+namespace Confluent.SchemaRegistry.KafkaClients.UnitTests
 {
     public class ConfigurationTests
     {

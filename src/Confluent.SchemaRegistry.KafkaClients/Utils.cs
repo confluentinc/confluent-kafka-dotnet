@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     internal static class Utils
     {

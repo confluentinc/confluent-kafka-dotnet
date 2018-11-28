@@ -15,20 +15,21 @@
 // Refer to LICENSE for more information.
 
 using System.Collections.Generic;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     /// <summary>
-    ///     <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
+    ///     <see cref="Confluent.SchemaRegistry.KafkaClients.AvroSerializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class AvroSerializerConfig : Config
     {
         /// <summary>
         ///     Configuration property names specific to 
-        ///     <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />.
+        ///     <see cref="Confluent.SchemaRegistry.KafkaClients.AvroSerializer{T}" />.
         /// </summary>
         public static class PropertyNames
         {

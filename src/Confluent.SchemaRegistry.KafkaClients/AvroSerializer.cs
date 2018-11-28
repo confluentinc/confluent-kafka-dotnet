@@ -19,10 +19,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avro.Generic;
+using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.SchemaRegistry.KafkaClients
 {
     /// <summary>
     ///     Avro serializer. Use this serializer with GenericRecord, types 
