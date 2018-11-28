@@ -45,7 +45,13 @@ namespace Confluent.Kafka
         internal readonly bool enableDeliveryReportTimestamp = true;
         internal readonly bool enableDeliveryReportHeaders = true;
 
-        private readonly SafeKafkaHandle kafkaHandle;
+        private readonly SafeKafkaHandle ownedKafkaHandle;
+        private readonly Handle borrowedHandle;
+
+        private SafeKafkaHandle KafkaHandle
+            => ownedKafkaHandle != null 
+                ? ownedKafkaHandle
+                : borrowedHandle.LibrdkafkaHandle;
 
         private readonly Task callbackTask;
         private readonly CancellationTokenSource callbackCts;
@@ -59,7 +65,7 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-                            kafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                            ownedKafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
                         }
                     }
                     catch (OperationCanceledException) {}
@@ -70,8 +76,8 @@ namespace Confluent.Kafka
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            if (kafkaHandle.IsClosed) { return; }
-            OnError?.Invoke(this, new ErrorEvent(new Error(err, reason), false));
+            if (ownedKafkaHandle.IsClosed) { return; }
+            onError?.Invoke(this, new ErrorEvent(new Error(err, reason), false));
         }
 
 
@@ -79,8 +85,8 @@ namespace Confluent.Kafka
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            if (kafkaHandle.IsClosed) { return 0; }
-            OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
+            if (ownedKafkaHandle.IsClosed) { return 0; }
+            onStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -91,8 +97,8 @@ namespace Confluent.Kafka
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             // Note: kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
-            if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
-            OnLog?.Invoke(this, new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            if (ownedKafkaHandle != null && ownedKafkaHandle.IsClosed) { return; }
+            onLog?.Invoke(this, new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -104,7 +110,7 @@ namespace Confluent.Kafka
         private void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            if (kafkaHandle.IsClosed) { return; }
+            if (ownedKafkaHandle.IsClosed) { return; }
 
             var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(rkmessage);
 
@@ -237,7 +243,7 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                var err = kafkaHandle.Produce(
+                var err = KafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
@@ -254,7 +260,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                var err = kafkaHandle.Produce(
+                var err = KafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
@@ -270,31 +276,84 @@ namespace Confluent.Kafka
             }
         }
 
+        private event EventHandler<LogMessage> onLog;
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
+        ///     Refer to <see cref="IClient.OnLog" />.
         /// </summary>
-        public event EventHandler<LogMessage> OnLog;
+        public event EventHandler<LogMessage> OnLog
+        {
+            add
+            {
+                if (ownedKafkaHandle != null) { onLog += value; }
+                else { borrowedHandle.Owner.OnLog += value; }
+            }
+            remove
+            {
+                if (ownedKafkaHandle != null) { onLog -= value; }
+                else { borrowedHandle.Owner.OnLog -= value; }
+            }
+        }
+
+
+        private event EventHandler<ErrorEvent> onError;
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
+        ///     Refer to <see cref="IClient.OnError" />.
         /// </summary>
-        public event EventHandler<ErrorEvent> OnError;
+        public event EventHandler<ErrorEvent> OnError
+        {
+            add
+            {
+                if (ownedKafkaHandle != null) { onError += value; }
+                else { borrowedHandle.Owner.OnError += value; }
+            }
+            remove
+            {
+                if (ownedKafkaHandle != null) { onError -= value; }
+                else { borrowedHandle.Owner.OnError -= value; }
+            }
+        }
+
+        private event EventHandler<string> onStatistics;
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
+        ///     Refer to <see cref="IClient.OnStatistics" />.
         /// </summary>
-        public event EventHandler<string> OnStatistics;
-
+        public event EventHandler<string> OnStatistics
+        {
+            add
+            {
+                if (ownedKafkaHandle != null) { onStatistics += value; }
+                else { borrowedHandle.Owner.OnStatistics += value; }
+            }
+            remove
+            {
+                if (ownedKafkaHandle != null) { onStatistics -= value; }
+                else { borrowedHandle.Owner.OnStatistics -= value; }
+            }
+        }
 
         /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.ProducerBase" /> instance.
+        ///     Creates a new <see cref="ProducerBase" /> instance.
+        /// </summary>
+        /// <param name="handle">
+        ///     An existing librdkafka producer handle to use for 
+        ///     communications with Kafka brokers.
+        /// </param>
+        public ProducerBase(Handle handle)
+        {
+            this.borrowedHandle = handle;
+        }
+
+        /// <summary>
+        ///     Creates a new <see cref="ProducerBase" /> instance.
         /// </summary>
         /// <param name="config">
         ///     A collection of librdkafka configuration parameters 
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
+        ///     <see cref="ConfigPropertyNames" />).
         ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </param>
         public ProducerBase(IEnumerable<KeyValuePair<string, string>> config)
@@ -389,7 +448,7 @@ namespace Confluent.Kafka
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statsCallbackDelegate);
 
-            this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
+            this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
 
             if (!manualPoll)
@@ -397,17 +456,6 @@ namespace Confluent.Kafka
                 callbackCts = new CancellationTokenSource();
                 callbackTask = StartPollTask(callbackCts.Token);
             }
-        }
-
-
-        internal int Poll(int millisecondsTimeout)
-        {
-            if (!manualPoll)
-            {
-                throw new InvalidOperationException("Poll method called, but manual polling is not enabled.");
-            }
-
-            return this.kafkaHandle.Poll((IntPtr)millisecondsTimeout);
         }
 
 
@@ -425,11 +473,14 @@ namespace Confluent.Kafka
         ///     Returns the number of events served.
         /// </returns>
         public int Poll(TimeSpan timeout)
-            => Poll(timeout.TotalMillisecondsAsInt());
+        {
+            if (!manualPoll)
+            {
+                throw new InvalidOperationException("Poll method called, but manual polling is not enabled.");
+            }
 
-
-        internal int Flush(int millisecondsTimeout)
-            => kafkaHandle.Flush(millisecondsTimeout);
+            return this.KafkaHandle.Poll((IntPtr)timeout.TotalMillisecondsAsInt());
+        }
 
 
         /// <summary>
@@ -466,7 +517,7 @@ namespace Confluent.Kafka
         ///     may block.
         /// </remarks>
         public int Flush(TimeSpan timeout)
-            => kafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+            => KafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
@@ -490,7 +541,7 @@ namespace Confluent.Kafka
         {
             while (true)
             {
-                int result = Flush(100);
+                int result = KafkaHandle.Flush(100);
                 if (result == 0)
                 {
                     return;
@@ -503,8 +554,9 @@ namespace Confluent.Kafka
             }
         }
         
+        
         /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer" />
+        ///     Releases all resources used by this <see cref="Producer" />.
         /// </summary>
         public void Dispose()
         {
@@ -514,8 +566,14 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer" />
+        ///     Releases the unmanaged resources used by the
+        ///     <see cref="ProducerBase" />
+        ///     and optionally disposes the managed resources.
         /// </summary>
+        /// <param name="disposing">
+        ///     true to release both managed and unmanaged resources;
+        ///     false to release only unmanaged resources.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             // Calling Dispose a second or subsequent time should be a no-op.
@@ -524,6 +582,9 @@ namespace Confluent.Kafka
                 if (disposeHasBeenCalled) { return; }
                 disposeHasBeenCalled = true;
             }
+
+            // do nothing if we borrowed a handle.
+            if (ownedKafkaHandle == null) { return; }
 
             if (disposing)
             {
@@ -554,89 +615,40 @@ namespace Confluent.Kafka
                 // registers with librdkafka ensure that any registered
                 // events are not called if kafkaHandle has been closed.
                 // this avoids deadlocks in common scenarios.
-                kafkaHandle.Dispose();
+                ownedKafkaHandle.Dispose();
             }
         }
 
 
         /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer" />
+        ///     <see cref="IClient.Name" />
         /// </summary>
         public string Name
-            => kafkaHandle.Name;
+            => KafkaHandle.Name;
 
 
         /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer" />
+        ///     <see cref="IClient.AddBrokers(string)" />
         /// </summary>
         public int AddBrokers(string brokers)
-            => kafkaHandle.AddBrokers(brokers);
+            => KafkaHandle.AddBrokers(brokers);
 
 
         /// <summary>
-        ///     <see cref="Confluent.Kafka.Producer" />
+        ///     <see cref="IClient.Handle" />
         /// </summary>
         public Handle Handle 
-            => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
-
-
-        // internal class UntypedDeliveryReport
-        // {
-        //     /// <summary>
-        //     ///     The topic associated with the message.
-        //     /// </summary>
-        //     public string Topic { get; set; }
-
-        //     /// <summary>
-        //     ///     The partition associated with the message.
-        //     /// </summary>
-        //     public Partition Partition { get; set; } = Confluent.Kafka.Partition.Any;
-
-        //     /// <summary>
-        //     ///     The partition offset associated with the message.
-        //     /// </summary>
-        //     public Offset Offset { get; set; } = Confluent.Kafka.Offset.Invalid;
-
-        //     /// <summary>
-        //     ///     An error (or NoError) associated with the message.
-        //     /// </summary>
-        //     public Error Error { get; set; }
-
-        //     /// <summary>
-        //     ///     The TopicPartition associated with the message.
-        //     /// </summary>
-        //     public TopicPartition TopicPartition
-        //         => new TopicPartition(Topic, Partition);
-
-        //     /// <summary>
-        //     ///     The TopicPartitionOffset associated with the message.
-        //     /// </summary>
-        //     public TopicPartitionOffset TopicPartitionOffset
-        //         => new TopicPartitionOffset(Topic, Partition, Offset);
-
-        //     /// <summary>
-        //     ///     The TopicPartitionOffsetError assoicated with the message.
-        //     /// </summary>
-        //     public TopicPartitionOffsetError TopicPartitionOffsetError
-        //     {
-        //         get
-        //         {
-        //             return new TopicPartitionOffsetError(Topic, Partition, Offset, Error);
-        //         }
-        //         set
-        //         {
-        //             Topic = value.Topic;
-        //             Partition = value.Partition;
-        //             Offset = value.Offset;
-        //             Error = value.Error;
-        //         }
-        //     }
-
-        //     /// <summary>
-        //     ///     The message that was produced.
-        //     /// </summary>
-        //     public Message Message { get; set; }
-        // }
+        {
+            get
+            {
+                if (this.ownedKafkaHandle != null)
+                {
+                    return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle };
+                }
+                
+                return borrowedHandle;
+            }
+        }
 
     }
 }

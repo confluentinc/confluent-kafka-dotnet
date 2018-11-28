@@ -47,6 +47,26 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Creates a new <see cref="Producer" /> instance.
+        /// </summary>
+        /// <param name="handle">
+        ///     An existing librdkafka producer handle to use for 
+        ///     communications with Kafka brokers.
+        /// </param>
+        /// <param name="keySerializer">
+        ///     The serializer to use to serialize keys.
+        /// </param>
+        /// <param name="valueSerializer">
+        ///     The serializer to use to serialize values.
+        /// </param>
+        public Producer(
+            Handle handle,
+            Serializer<TKey> keySerializer = null,
+            Serializer<TValue> valueSerializer = null
+        ) : base(handle) => Init(keySerializer, valueSerializer);
+
+
+        /// <summary>
         ///     Creates a new <see cref="Confluent.Kafka.Producer" /> instance.
         /// </summary>
         /// <param name="config">
@@ -66,7 +86,10 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config,
             Serializer<TKey> keySerializer = null,
             Serializer<TValue> valueSerializer = null
-        ) : base(config)
+        ) : base(config) => Init(keySerializer, valueSerializer);
+
+
+        private void Init(Serializer<TKey> keySerializer, Serializer<TValue> valueSerializer)
         {
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
@@ -99,7 +122,18 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config,
             Serializer<TKey> keySerializer,
             ITaskSerializer<TValue> taskValueSerializer
-        ) : base(config)
+        ) : base(config) => Init(keySerializer, taskValueSerializer);
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+        /// </summary>
+        public Producer(
+            Handle handle,
+            Serializer<TKey> keySerializer,
+            ITaskSerializer<TValue> taskValueSerializer
+        ) : base(handle) => Init(keySerializer, taskValueSerializer);
+
+        private void Init(Serializer<TKey> keySerializer, ITaskSerializer<TValue> taskValueSerializer)
         {
             this.keySerializer = keySerializer;
             this.taskValueSerializer = taskValueSerializer;
@@ -114,6 +148,7 @@ namespace Confluent.Kafka
                 throw new ArgumentNullException("Value serializer must be specified.");
             }
         }
+        
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
@@ -122,7 +157,19 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config,
             ITaskSerializer<TKey> taskKeySerializer,
             Serializer<TValue> valueSerializer
-        ) : base(config)
+        ) : base(config) => Init(taskKeySerializer, valueSerializer);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+        /// </summary>
+        public Producer(
+            Handle handle,
+            ITaskSerializer<TKey> taskKeySerializer,
+            Serializer<TValue> valueSerializer
+        ) : base(handle) => Init(taskKeySerializer, valueSerializer);
+
+        private void Init(ITaskSerializer<TKey> taskKeySerializer, Serializer<TValue> valueSerializer)
         {
             this.taskKeySerializer = taskKeySerializer;
             this.valueSerializer = valueSerializer;
@@ -145,7 +192,18 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config,
             ITaskSerializer<TKey> taskKeySerializer,
             ITaskSerializer<TValue> taskValueSerializer
-        ) : base(config)
+        ) : base(config) => Init(taskKeySerializer, taskValueSerializer);
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+        /// </summary>
+        public Producer(
+            Handle handle,
+            ITaskSerializer<TKey> taskKeySerializer,
+            ITaskSerializer<TValue> taskValueSerializer
+        ) : base(handle) => Init(taskKeySerializer, taskValueSerializer);
+
+        private void Init(ITaskSerializer<TKey> taskKeySerializer, ITaskSerializer<TValue> taskValueSerializer)
         {
             this.taskKeySerializer = taskKeySerializer;
             this.taskValueSerializer = taskValueSerializer;
@@ -462,6 +520,15 @@ namespace Confluent.Kafka
         ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </param>
         public Producer(IEnumerable<KeyValuePair<string, string>> config) : base(config) {}
+
+        /// <summary>
+        ///     Creates a new <see cref="Producer" /> instance.
+        /// </summary>
+        /// <param name="handle">
+        ///     An existing librdkafka producer handle to use for 
+        ///     communications with Kafka brokers.
+        /// </param>
+        public Producer(Handle handle): base(handle) {}
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic/partition.
