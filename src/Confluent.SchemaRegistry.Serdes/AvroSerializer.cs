@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T> : ITaskSerializer<T>
+    public class AvroSerializer<T> : IAsyncSerializer<T>
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
@@ -112,23 +112,25 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
         ///     on first use for a particular topic during schema registration.
         /// </summary>
-        /// <param name="topic">
-        ///     The topic associated wih the data.
+        /// <param name="value">
+        ///     The value to serialize.
         /// </param>
-        /// <param name="data">
-        ///     The object to serialize.
+        /// <param name="messageAncillary">
+        ///     Properties of the message the data is associated with in
+        ///     addition to the key or value.
+        /// </param>
+        /// <param name="destination">
+        ///     The TopicPartition to which the message is to be sent
+        ///     (partition may be Partition.Any).
         /// </param>
         /// <param name="isKey">
-        ///     whether or not the data represents a message key.
-        /// </param>
-        /// <param name="headers">
-        ///     The headers of the message associated with this
-        ///     value.
-        /// </param>
+        ///     True if deserializing the message key, false if deserializing the
+        ///     message value.
         /// <returns>
-        ///     <paramref name="data" /> serialized as a byte array.
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
+        ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> Serialize(T data, bool isKey, string topic, Headers headers)
+        public async Task<byte[]> SerializeAsync(T value, bool isKey, MessageAncillary messageAncillary, TopicPartition destination)
         { 
             try
             {
@@ -139,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
                 }
 
-                return await serializerImpl.Serialize(topic, data, isKey);
+                return await serializerImpl.Serialize(destination.Topic, value, true);
             }
             catch (AggregateException e)
             {

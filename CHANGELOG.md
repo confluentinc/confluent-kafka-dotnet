@@ -4,7 +4,7 @@
 
 - Revamped producer and consumer serialization functionality.
   - All producer functionality except the public methods used to produce messages is now provided by `ProducerBase`.
-  - There are two producer classes deriving from this: `Producer` and `Producer<TKey, TValue>`.
+  - There are two producer classes deriving from `ProducerBase`: `Producer` and `Producer<TKey, TValue>`.
     - `Producer` is specialized for the case of producing messages with `byte[]` keys and values.
     - `Producer<TKey, TValue>` provides flexible integration with serialization functionality.
   - On the consumer side, there are analogous classes: `ConsumerBase`, `Consumer` and `Consumer<TKey, TValue>`.

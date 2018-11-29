@@ -50,8 +50,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(123, false, testTopic, null).Result;
-            Assert.Equal(123, avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(123, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(123, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -60,8 +60,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<long>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<long>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(123, false, testTopic, null).Result;
-            Assert.Equal(123, avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(123, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(123, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -70,8 +70,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<bool>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<bool>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(true, false, testTopic, null).Result;
-            Assert.Equal(true, avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(true, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(true, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -80,8 +80,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<string>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<string>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize("abc", false, testTopic, null).Result;
-            Assert.Equal("abc", avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync("abc", false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal("abc", avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -90,8 +90,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<double>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<double>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(123d, false, testTopic, null).Result;
-            Assert.Equal(123d, avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(123d, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(123d, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -100,8 +100,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<float>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<float>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(123f, false, testTopic, null).Result;
-            Assert.Equal(123f, avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(123f, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(123f, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -110,8 +110,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<byte[]>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(new byte[] { 2, 3, 4 }, false, testTopic, null).Result;
-            Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -120,8 +120,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<Null>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<Null>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.Serialize(null, false, testTopic, null).Result;
-            Assert.Null(avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            bytes = avroSerializer.SerializeAsync(null, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result;
+            Assert.Equal(null, avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition(testTopic, Partition.Any)).Result);
         }
 
         [Fact]
@@ -137,8 +137,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            var bytes = serializer.Serialize(user, false, "topic", null).Result;
-            var result = deserializer.Deserialize(bytes, false, "topic", null).Result;
+            var bytes = serializer.SerializeAsync(user, false, new MessageAncillary(), new TopicPartition("topic", Partition.Any)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition("topic", Partition.Any)).Result;
 
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
@@ -150,9 +150,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             var avroSerializer = new AvroSerializer<string>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-            byte[] bytes;
-            bytes = avroSerializer.Serialize("Hello world", false, testTopic, null).Result;
-            Assert.Throws<System.AggregateException>(() => avroDeserializer.Deserialize(bytes, false, testTopic, null).Result);
+            var bytes = avroSerializer.SerializeAsync("hello world", false, new MessageAncillary(), new TopicPartition("topic", Partition.Any)).Result;
+            Assert.Throws<System.AggregateException>(() => avroDeserializer.DeserializeAsync(bytes, false, false, new MessageAncillary(), new TopicPartition("topic", Partition.Any)).Result);
         }
     }
 }

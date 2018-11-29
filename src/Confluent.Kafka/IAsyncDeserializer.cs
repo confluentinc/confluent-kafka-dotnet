@@ -22,31 +22,32 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey,TValue}" />.
     /// </summary>
-    public interface ITaskDeserializer<T>
+    public interface IAsyncDeserializer<T>
     {
         /// <summary>
-        ///     Deserialize an object of type <typeparamref name="T"/>
-        ///     from a byte array.
+        ///     Deserialize a message key or value.
         /// </summary>
-        /// <param name="topic">
-        ///     The topic associated with the message the raw data
-        ///     is associated with.
-        /// </param>
         /// <param name="data">
-        ///     The data to deserialize.
+        ///     The raw byte data to deserialize.
+        /// </param>
+        /// <param name="isNull">
+        ///     True if this is a null value.
+        /// </param>
+        /// <param name="messageAncillary">
+        ///     Properties of the message the data is associated with in
+        ///     addition to the key or value.
+        /// </param>
+        /// <param name="source">
+        ///     The TopicPartition from which the message was consumed.
         /// </param>
         /// <param name="isKey">
-        ///     True if deserializing message key data, false if
-        ///     deserializing message value data.
-        /// </param>
-        /// <param name="headers">
-        ///     The headers of the message associated with this
-        ///     value.
+        ///     True if deserializing the message key, false if deserializing the
+        ///     message value.
         /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
-        Task<T> Deserialize(byte[] data, bool isKey, string topic, Headers headers);
+        Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, bool isKey, MessageAncillary messageAncillary, TopicPartition source);
     }
 }

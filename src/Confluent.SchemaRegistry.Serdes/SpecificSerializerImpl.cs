@@ -100,8 +100,7 @@ namespace Confluent.SchemaRegistry.Serdes
             else
             {
                 throw new ArgumentException(
-                    $"{nameof(AvroSerializer<T>)} " +
-                    "only accepts type parameters of int, bool, double, string, float, " +
+                    $"AvroSerializer only accepts type parameters of int, bool, double, string, float, " +
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
                 );
             }

@@ -22,31 +22,30 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
     /// </summary>
-    public interface ITaskSerializer<T>
+    public interface IAsyncSerializer<T>
     {
         /// <summary>
-        ///     Serialize an object of type <typeparamref name="T"/>
-        ///     to a byte array.
+        ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
+        ///     instance.
         /// </summary>
-        /// <param name="data">
+        /// <param name="value">
         ///     The value to serialize.
         /// </param>
+        /// <param name="ancillary">
+        ///     The message from which to serialize the key or value.
+        /// </param>
+        /// <param name="destination">
+        ///     The TopicPartition to which the message is to be sent
+        ///     (partition may be Partition.Any).
+        /// </param>
         /// <param name="isKey">
-        ///     True if serializing a message key, false if
-        ///     serializing a message value.
-        /// </param>
-        /// <param name="topic">
-        ///     The topic associated with the message the value
-        ///     is associated with.
-        /// </param>
-        /// <param name="headers">
-        ///     The headers of the message associated with this
-        ///     value.
+        ///     True if serializing the message key, false if serializing the
+        ///     message value.
         /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that
         ///     completes with the serialized data.
         /// </returns>
-        Task<byte[]> Serialize(T data, bool isKey, string topic, Headers headers);
+        Task<byte[]> SerializeAsync(T value, bool isKey, MessageAncillary ancillary, TopicPartition destination);
     }
 }

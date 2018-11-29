@@ -36,8 +36,8 @@ namespace Confluent.Kafka
     {
         private Deserializer<TKey> keyDeserializer;
         private Deserializer<TValue> valueDeserializer;
-        private ITaskDeserializer<TKey> taskKeyDeserializer;
-        private ITaskDeserializer<TValue> taskValueDeserializer;
+        private IAsyncDeserializer<TKey> taskKeyDeserializer;
+        private IAsyncDeserializer<TValue> taskValueDeserializer;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -105,7 +105,7 @@ namespace Confluent.Kafka
         public Consumer(
             IEnumerable<KeyValuePair<string, string>> config,
             Deserializer<TKey> keyDeserializer,
-            ITaskDeserializer<TValue> taskValueDeserializer
+            IAsyncDeserializer<TValue> taskValueDeserializer
         ) : base(config)
         {
             this.keyDeserializer = keyDeserializer;
@@ -128,7 +128,7 @@ namespace Confluent.Kafka
         /// </summary>
         public Consumer(
             IEnumerable<KeyValuePair<string, string>> config,
-            ITaskDeserializer<TKey> taskKeyDeserializer,
+            IAsyncDeserializer<TKey> taskKeyDeserializer,
             Deserializer<TValue> valueDeserializer
         ) : base(config)
         {
@@ -152,8 +152,8 @@ namespace Confluent.Kafka
         /// </summary>
         public Consumer(
             IEnumerable<KeyValuePair<string, string>> config,
-            ITaskDeserializer<TKey> taskKeyDeserializer,
-            ITaskDeserializer<TValue> taskValueDeserializer
+            IAsyncDeserializer<TKey> taskKeyDeserializer,
+            IAsyncDeserializer<TValue> taskValueDeserializer
         ) : base(config)
         {
             this.taskKeyDeserializer = taskKeyDeserializer;
@@ -173,19 +173,21 @@ namespace Confluent.Kafka
 
         private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
+            // TODO: change the Consume method, or add to ConsumerBase to expose raw data, and push
+            // burden of msgPtr dispose on the caller.
             var rawResult = base.Consume(100, Deserializers.ByteArray, Deserializers.ByteArray);
             if (rawResult == null) { return null; }
-
+            
             TKey key = keyDeserializer != null
                 ? keyDeserializer(rawResult.Key, rawResult.Key == null)
-                : taskKeyDeserializer.Deserialize(rawResult.Key, true, rawResult.Topic, rawResult.Headers)
+                : taskKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
                 ? valueDeserializer(rawResult.Value, rawResult.Value == null)
-                : taskValueDeserializer.Deserialize(rawResult.Value, false, rawResult.Topic, rawResult.Headers)
+                : taskValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
@@ -299,13 +301,7 @@ namespace Confluent.Kafka
                 return new ConsumeResult
                 {
                     TopicPartitionOffset = result.TopicPartitionOffset,
-                    Message = new Message
-                    {
-                        Timestamp = result.Timestamp,
-                        Headers = result.Headers,
-                        Key = result.Key,
-                        Value = result.Value
-                    }
+                    Message = new Message(result.Message)
                 };
             }
         }
@@ -332,13 +328,7 @@ namespace Confluent.Kafka
             return new ConsumeResult
             {
                 TopicPartitionOffset = result.TopicPartitionOffset,
-                Message = new Message
-                {
-                    Timestamp = result.Timestamp,
-                    Headers = result.Headers,
-                    Key = result.Key,
-                    Value = result.Value
-                }
+                Message = new Message(result.Message)
             };
         }
     }
