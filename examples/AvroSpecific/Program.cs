@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.KafkaClients;
+using Confluent.SchemaRegistry.Serdes;
 
 
 namespace Confluent.Kafka.Examples.AvroSpecific

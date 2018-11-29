@@ -16,7 +16,7 @@
 
 using Avro;
 using Avro.Generic;
-using Confluent.SchemaRegistry.KafkaClients;
+using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using System;
 using System.Collections.Generic;

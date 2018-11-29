@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1EFCD839-072
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.KafkaClients", "src\Confluent.SchemaRegistry.KafkaClients\Confluent.SchemaRegistry.KafkaClients.csproj", "{02677E2D-06C2-43D7-A2EE-2BB8E28B18D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes", "src\Confluent.SchemaRegistry.Serdes\Confluent.SchemaRegistry.Serdes.csproj", "{02677E2D-06C2-43D7-A2EE-2BB8E28B18D3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry", "src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj", "{AA671E3D-EB85-40A2-B183-8DA037286680}"
 EndProject
@@ -21,9 +21,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.VerifiableC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.Benchmark", "test\Confluent.Kafka.Benchmark\Confluent.Kafka.Benchmark.csproj", "{557A1E5B-C898-44AE-96A8-4197786C8A62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.KafkaClients.UnitTests", "test\Confluent.SchemaRegistry.KafkaClients.UnitTests\Confluent.SchemaRegistry.KafkaClients.UnitTests.csproj", "{8DBE884D-B22E-48BB-B86C-DEC115DCC2E1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes.UnitTests", "test\Confluent.SchemaRegistry.Serdes.UnitTests\Confluent.SchemaRegistry.Serdes.UnitTests.csproj", "{8DBE884D-B22E-48BB-B86C-DEC115DCC2E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.KafkaClients.IntegrationTests", "test\Confluent.SchemaRegistry.KafkaClients.IntegrationTests\Confluent.SchemaRegistry.KafkaClients.IntegrationTests.csproj", "{EBA8D93F-2B84-44B1-A954-516DAF81B19A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes.IntegrationTests", "test\Confluent.SchemaRegistry.Serdes.IntegrationTests\Confluent.SchemaRegistry.Serdes.IntegrationTests.csproj", "{EBA8D93F-2B84-44B1-A954-516DAF81B19A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.UnitTests", "test\Confluent.SchemaRegistry.UnitTests\Confluent.SchemaRegistry.UnitTests.csproj", "{E1582DD9-7EBE-4CEC-9013-A10A572D7B0C}"
 EndProject
