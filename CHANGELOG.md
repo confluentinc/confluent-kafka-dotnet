@@ -3,15 +3,18 @@
 ## New Features
 
 - Revamped producer and consumer serialization functionality.
-  - Removed generic parameters from `Producer` and `Consumer`.
-  - `Producer` / `Consumer` now provide typed and un-typed `ProduceAsync`, `BeginProduce` and `Consume` method variants.
-  - Invokation of serializers and deserializers is automatic, based on type.
-  - Standard serde delegate types no longer include a `topic` parameter.
-  - Avro serialization/deserializtion functionality is now provided by `AvroProducer` / `AvroConsumer` which derive from `Producer` / `Consumer`.
+  - All producer functionality except the public methods used to produce messages is now provided by `ProducerBase`.
+  - There are two producer classes deriving from this: `Producer` and `Producer<TKey, TValue>`.
+    - `Producer` is specialized for the case of producing messages with `byte[]` keys and values.
+    - `Producer<TKey, TValue>` provides flexible integration with serialization functionality.
+  - On the consumer side, there are analogous classes: `ConsumerBase`, `Consumer` and `Consumer<TKey, TValue>`.
+  - There are two types of serializer and deserializer: `Serializer<T>` / `ITaskSerializer<T>` and `Deserializer<T>` / `ITaskDeserializer<T>`.
+    - `Serializer<T>`/`Deserializer<T>` are appropriate for most use cases.
+    - `ITaskSerializer<T>`/`ITaskDeserializer<T>` are more general, but less performant (they return `Task`s).
+    - The generic producer and consumer can be used with both types of serializer.
+  - Changed the name of `Confluent.Kafka.Avro` to `Confluent.SchemaRegistry.Serdes` (Schema Registry may support other serialization formats in the future).
 - Avro serdes no longer make blocking calls to `ICachedSchemaRegistryClient` - everything is `await`ed.
-- `Producer` and `Consumer` constructors that accept a `Handle` have been removed.
 - References librdkafka.redist [1.0.0-RC2](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC2)
-
 
 ## Enhancements / Fixes
 
