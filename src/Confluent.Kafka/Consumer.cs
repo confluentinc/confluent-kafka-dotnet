@@ -179,14 +179,14 @@ namespace Confluent.Kafka
             if (rawResult == null) { return null; }
             
             TKey key = keyDeserializer != null
-                ? keyDeserializer(rawResult.Key, rawResult.Key == null)
+                ? keyDeserializer(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                 : taskKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
-                ? valueDeserializer(rawResult.Value, rawResult.Value == null)
+                ? valueDeserializer(rawResult.Value, rawResult.Value == null, false, rawResult.Message, rawResult.TopicPartition)
                 : taskValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()

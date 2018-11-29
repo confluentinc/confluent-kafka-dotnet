@@ -384,7 +384,7 @@ namespace Confluent.Kafka
                     {
                         key = keyDeserializer(
                             msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
-                            msg.key == IntPtr.Zero
+                            msg.key == IntPtr.Zero, true, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition)
                         );
                     }
                 }
@@ -413,7 +413,7 @@ namespace Confluent.Kafka
                     {
                         val = valueDeserializer(
                             msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
-                            msg.val == IntPtr.Zero);
+                            msg.val == IntPtr.Zero, false, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
                     }
                 }
                 catch (Exception ex)

@@ -30,7 +30,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Deserializes a UTF8 encoded string.
         /// </summary>
-        public static Deserializer<string> UTF8 = (data, isNull) =>
+        public static Deserializer<string> UTF8 = (data, isNull, isKey, ancillary, source) =>
         {
             if (isNull)
             {
@@ -54,7 +54,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Deserializes a null value to a null value.
         /// </summary>
-        public static Deserializer<Null> Null = (data, isNull) =>
+        public static Deserializer<Null> Null = (data, isNull, isKey, ancillary, source) =>
         {
             if (!isNull)
             {
@@ -67,7 +67,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     'Deserializes' any value to a null value.
         /// </summary>
-        public static Deserializer<Ignore> Ignore = (data, isNull) => null;
+        public static Deserializer<Ignore> Ignore = (data, isNull, isKey, ancillary, source) => null;
 
         /// <summary>
         ///     Deserializes a big endian encoded (network byte ordered) <see cref="System.Int64"/> value from a byte array.
@@ -75,7 +75,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The deserialized <see cref="System.Int64"/> value.
         /// </returns>
-        public static Deserializer<long> Long = (ReadOnlySpan<byte> data, bool isNull) =>
+        public static Deserializer<long> Long = (ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary ancillary, TopicPartition source) =>
         {
             if (isNull)
             {
@@ -105,7 +105,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The deserialized <see cref="System.Int32"/> value.
         /// </returns>
-        public static Deserializer<int> Int32 = (ReadOnlySpan<byte> data, bool isNull) =>
+        public static Deserializer<int> Int32 = (ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary ancillary, TopicPartition source) =>
         {
             if (isNull)
             {
@@ -131,7 +131,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The deserialized System.Single value.
         /// </returns>
-        public static Deserializer<float> Float = (ReadOnlySpan<byte> data, bool isNull) =>
+        public static Deserializer<float> Float = (ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary ancillary, TopicPartition source) =>
         {
             if (isNull)
             {
@@ -180,7 +180,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The deserialized System.Double value.
         /// </returns>
-        public static Deserializer<double> Double = (ReadOnlySpan<byte> data, bool isNull) =>
+        public static Deserializer<double> Double = (ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary ancillary, TopicPartition source) =>
         {
             if (isNull)
             {
@@ -230,7 +230,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Deserializes a System.Byte[] value (or null).
         /// </summary>
-        public static Deserializer<byte[]> ByteArray = (data, isNull) =>
+        public static Deserializer<byte[]> ByteArray = (data, isNull, isKey, ancillary, source) =>
         {
             if (isNull) { return null; }
             return data.ToArray();

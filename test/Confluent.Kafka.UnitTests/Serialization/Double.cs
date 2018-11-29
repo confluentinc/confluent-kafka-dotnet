@@ -28,7 +28,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             foreach (var value in TestData)
             {
-                Assert.Equal(value, Deserializers.Double(Serializers.Double(value), false));
+                Assert.Equal(value, Deserializers.Double(Serializers.Double(value), false, false, null, null));
             }
         }
 
@@ -45,15 +45,15 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(null, true));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(null, true, false, null, null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[0], false));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[7], false));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[9], false));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[0], false, false, null, null));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[7], false, false, null, null));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Double(new byte[9], false, false, null, null));
         }
 
         public static double[] TestData
