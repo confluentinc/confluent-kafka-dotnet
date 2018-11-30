@@ -175,7 +175,7 @@ namespace Confluent.Kafka
         {
             // TODO: change the Consume method, or add to ConsumerBase to expose raw data, and push
             // burden of msgPtr dispose on the caller.
-            var rawResult = base.Consume(100, Deserializers.ByteArray, Deserializers.ByteArray);
+            var rawResult = base.Consume(millisecondsTimeout, Deserializers.ByteArray, Deserializers.ByteArray);
             if (rawResult == null) { return null; }
             
             TKey key = keyDeserializer != null
@@ -229,7 +229,7 @@ namespace Confluent.Kafka
                 ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
                     ? Consume<TKey, TValue>(100, keyDeserializer, valueDeserializer) // fast path for simple case.
                     : Consume(100);
-        
+
                 if (result == null) { continue; }
                 return result;
             }

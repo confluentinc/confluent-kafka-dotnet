@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         private IAsyncSerializer<TKey> taskKeySerializer;
         private IAsyncSerializer<TValue> taskValueSerializer;
 
-        private Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
+        private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
             { typeof(Null), Serializers.Null },
             { typeof(int), Serializers.Int32 },
@@ -44,7 +44,6 @@ namespace Confluent.Kafka
             { typeof(double), Serializers.Double },
             { typeof(byte[]), Serializers.ByteArray }
         };
-
 
         /// <summary>
         ///     Creates a new <see cref="Producer" /> instance.
