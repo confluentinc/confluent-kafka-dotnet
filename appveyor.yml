@@ -40,9 +40,9 @@ artifacts:
 deploy:
   - provider: S3
     access_key_id:
-      secure: 1CwAH4xAr+14pkeEBRd3CNdaWrustJaN83PEZVq407I=
+      secure: fMceNBsTvTiBtBGUQ9dxMJtt3W/VLJE18uF8JJ7QKvc=
     secret_access_key:
-      secure: vXjAddNBH6D5FqC+Y3DqYykQaASQ+HQUEiFeYy59Vk71DmS5QgTIeZIRp18D0qZa
+      secure: JAkB+rZdmz+7if0Y2wqXyujTrRQVHjslpzhzXbvye0gArblFtdzwevkqCoibk9Of
     region: us-west-1
     bucket: dotnet-ci
     artifact: docs
