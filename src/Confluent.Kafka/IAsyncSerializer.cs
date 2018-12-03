@@ -31,8 +31,9 @@ namespace Confluent.Kafka
         /// <param name="value">
         ///     The value to serialize.
         /// </param>
-        /// <param name="ancillary">
-        ///     The message from which to serialize the key or value.
+        /// <param name="messageAncillary">
+        ///     Properties of the message the data is associated with
+        ///     extra to the key or value.
         /// </param>
         /// <param name="destination">
         ///     The TopicPartition to which the message is to be sent
@@ -46,6 +47,6 @@ namespace Confluent.Kafka
         ///     A <see cref="System.Threading.Tasks.Task" /> that
         ///     completes with the serialized data.
         /// </returns>
-        Task<byte[]> SerializeAsync(T value, bool isKey, MessageAncillary ancillary, TopicPartition destination);
+        Task<byte[]> SerializeAsync(T value, bool isKey, MessageAncillary messageAncillary, TopicPartition destination);
     }
 }

@@ -53,7 +53,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             using (var consumer = new Consumer<Ignore, string>(config))
             {
                 // Note: All event handlers are called on the main .Consume thread.
-                
+
                 // Raised when the consumer has been notified of a new assignment set.
                 // You can use this event to perform actions such as retrieving offsets
                 // from an external source / manually setting start offsets using

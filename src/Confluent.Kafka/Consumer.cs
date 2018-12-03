@@ -30,7 +30,7 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer with
-    ///     deserializater capability.
+    ///     deserialization capability.
     /// </summary>
     public class Consumer<TKey, TValue> : ConsumerBase, IConsumer<TKey, TValue>
     {
@@ -173,11 +173,10 @@ namespace Confluent.Kafka
 
         private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
-            // TODO: change the Consume method, or add to ConsumerBase to expose raw data, and push
-            // burden of msgPtr dispose on the caller.
+            // TODO: add method(s) to ConsumerBase to handle the async case more optimally.
             var rawResult = base.Consume(millisecondsTimeout, Deserializers.ByteArray, Deserializers.ByteArray);
             if (rawResult == null) { return null; }
-            
+
             TKey key = keyDeserializer != null
                 ? keyDeserializer(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                 : taskKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
@@ -225,6 +224,8 @@ namespace Confluent.Kafka
         {
             while (true)
             {
+                // Note: An alternative to throwing on cancellation is to return null,
+                // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
                 ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
                     ? Consume<TKey, TValue>(100, keyDeserializer, valueDeserializer) // fast path for simple case.
@@ -295,6 +296,8 @@ namespace Confluent.Kafka
         {
             while (true)
             {
+                // Note: An alternative to throwing on cancellation is to return null,
+                // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
                 var result = Consume(100, Deserializers.ByteArray, Deserializers.ByteArray);
                 if (result == null) { continue; }

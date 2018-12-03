@@ -37,7 +37,8 @@ namespace AvroBlogExample
         async static Task ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer<Null, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers },
+            using (var producer = new Producer<Null, GenericRecord>(
+                new ProducerConfig { BootstrapServers = bootstrapServers },
                 Serializers.Null, new AvroSerializer<GenericRecord>(schemaRegistry)))
             {   
                 var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
@@ -67,7 +68,8 @@ namespace AvroBlogExample
         async static Task ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer<Null, MessageTypes.LogMessage>(new ProducerConfig { BootstrapServers = bootstrapServers },
+            using (var producer = new Producer<Null, MessageTypes.LogMessage>(
+                new ProducerConfig { BootstrapServers = bootstrapServers },
                 Serializers.Null, new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry)))
             {
                 await producer.ProduceAsync("log-messages",

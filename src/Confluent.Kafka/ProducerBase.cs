@@ -31,7 +31,7 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     A high-level Apache Kafka producer, excluding
-    ///     any methods for producing messages.
+    ///     any public methods for producing messages.
     /// </summary>
     public class ProducerBase : IProducerBase
     {        

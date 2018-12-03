@@ -24,10 +24,13 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Defines an interface for handling delivery reports.
     /// </summary>
+    /// <remarks>
+    ///     You will typically never need to implement this interface.
+    /// </remarks>
     public interface IDeliveryHandler
     {        
         /// <summary>
-        ///     This method is called when a delivery report is available
+        ///     This method to call when a delivery report is available
         /// </summary>
         /// <param name="deliveryReport">
         ///     The delivery report.

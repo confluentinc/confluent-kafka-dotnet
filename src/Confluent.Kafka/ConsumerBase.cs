@@ -30,7 +30,7 @@ namespace Confluent.Kafka
 {
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer, excluding
-    ///     any methods for consuming messages.
+    ///     any public methods for consuming messages.
     /// </summary>
     public class ConsumerBase : IConsumerBase, IClient
     {
@@ -46,8 +46,6 @@ namespace Confluent.Kafka
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
         private readonly bool enableTopicNamesMarshaling = true;
-
-        private Dictionary<Type, object> deserializers = new Dictionary<Type, object>();
 
         private readonly SafeKafkaHandle kafkaHandle;
 
@@ -384,8 +382,7 @@ namespace Confluent.Kafka
                     {
                         key = keyDeserializer(
                             msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
-                            msg.key == IntPtr.Zero, true, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition)
-                        );
+                            msg.key == IntPtr.Zero, true, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
                     }
                 }
                 catch (Exception ex)

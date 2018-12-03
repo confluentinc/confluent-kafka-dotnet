@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ namespace Confluent.Kafka
     ///     Whether or not the value is null.
     /// </param>
     /// <param name="messageAncillary">
-    ///     Properties of the message the data is associated with in
-    ///     addition to the key or value.
+    ///     Properties of the message the data is associated with
+    ///     extra to the key or value.
     /// </param>
     /// <param name="source">
     ///     The TopicPartition from which the message was consumed.

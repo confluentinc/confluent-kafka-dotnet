@@ -34,8 +34,8 @@ namespace Confluent.Kafka
         ///     True if this is a null value.
         /// </param>
         /// <param name="messageAncillary">
-        ///     Properties of the message the data is associated with in
-        ///     addition to the key or value.
+        ///     Properties of the message the data is associated with
+        ///     extra to the key or value.
         /// </param>
         /// <param name="source">
         ///     The TopicPartition from which the message was consumed.

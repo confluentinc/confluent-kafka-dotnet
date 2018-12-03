@@ -45,6 +45,7 @@ namespace Confluent.Kafka
             { typeof(byte[]), Serializers.ByteArray }
         };
 
+
         /// <summary>
         ///     Creates a new <see cref="Producer" /> instance.
         /// </summary>
@@ -114,6 +115,7 @@ namespace Confluent.Kafka
             }
         }
 
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
         /// </summary>
@@ -123,6 +125,7 @@ namespace Confluent.Kafka
             IAsyncSerializer<TValue> taskValueSerializer
         ) : base(config) => Init(keySerializer, taskValueSerializer);
 
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
         /// </summary>
@@ -131,6 +134,7 @@ namespace Confluent.Kafka
             Serializer<TKey> keySerializer,
             IAsyncSerializer<TValue> taskValueSerializer
         ) : base(handle) => Init(keySerializer, taskValueSerializer);
+
 
         private void Init(Serializer<TKey> keySerializer, IAsyncSerializer<TValue> taskValueSerializer)
         {
@@ -168,6 +172,7 @@ namespace Confluent.Kafka
             Serializer<TValue> valueSerializer
         ) : base(handle) => Init(taskKeySerializer, valueSerializer);
 
+
         private void Init(IAsyncSerializer<TKey> taskKeySerializer, Serializer<TValue> valueSerializer)
         {
             this.taskKeySerializer = taskKeySerializer;
@@ -184,6 +189,7 @@ namespace Confluent.Kafka
             }
         }
 
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
         /// </summary>
@@ -193,6 +199,7 @@ namespace Confluent.Kafka
             IAsyncSerializer<TValue> valueSerializer
         ) : base(config) => Init(keySerializer, valueSerializer);
 
+
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
         /// </summary>
@@ -201,6 +208,7 @@ namespace Confluent.Kafka
             IAsyncSerializer<TKey> keySerializer,
             IAsyncSerializer<TValue> valueSerializer
         ) : base(handle) => Init(keySerializer, valueSerializer);
+
 
         private void Init(IAsyncSerializer<TKey> taskKeySerializer, IAsyncSerializer<TValue> taskValueSerializer)
         {
@@ -217,6 +225,7 @@ namespace Confluent.Kafka
                 throw new ArgumentNullException("Value serializer must be specified.");
             }
         }
+
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic/partition.
@@ -289,6 +298,7 @@ namespace Confluent.Kafka
             }
         }
 
+
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic.
         ///     The partition the message is sent to is determined by
@@ -314,6 +324,7 @@ namespace Confluent.Kafka
             CancellationToken cancellationToken = default(CancellationToken)
         )
             => ProduceAsync(new TopicPartition(topic, Partition.Any), message, cancellationToken);
+
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic.

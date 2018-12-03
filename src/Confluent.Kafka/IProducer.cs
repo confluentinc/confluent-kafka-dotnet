@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Defines a high-level Apache Kafka producer client.
     /// </summary>
-    public interface IProducer :IProducerBase, IClient
+    public interface IProducer : IProducerBase, IClient
     {
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync(string, Message, CancellationToken)" />
