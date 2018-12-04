@@ -249,14 +249,14 @@ namespace Confluent.Kafka
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var keyBytes = (keySerializer != null)
-                ? keySerializer(message.Key)
+                ? keySerializer(message.Key, true, message, topicPartition)
                 : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             var valBytes = (valueSerializer != null)
-                ? valueSerializer(message.Value)
+                ? valueSerializer(message.Value, false, message, topicPartition)
                 : taskValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
@@ -369,14 +369,14 @@ namespace Confluent.Kafka
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             var keyBytes = (keySerializer != null)
-                ? keySerializer(message.Key)
+                ? keySerializer(message.Key, true, message, topicPartition)
                 : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             var valBytes = (valueSerializer != null)
-                ? valueSerializer(message.Value)
+                ? valueSerializer(message.Value, false, message, topicPartition)
                 : taskValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()

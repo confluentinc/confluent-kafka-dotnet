@@ -111,8 +111,8 @@ namespace Confluent.Kafka.IntegrationTests
                         new TopicPartition(topic, partition),
                         new Message
                         { 
-                            Key = Serializers.UTF8($"test key {index}"),
-                            Value = Serializers.UTF8($"test val {index}"),
+                            Key = Serializers.UTF8($"test key {index}", true, null, null),
+                            Value = Serializers.UTF8($"test val {index}", true, null, null),
                             Timestamp = Timestamp.Default, 
                             Headers = null
                         }

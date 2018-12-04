@@ -30,7 +30,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Encodes a string value into a byte array.
         /// </summary>
-        public static Serializer<string> UTF8 = (data) =>
+        public static Serializer<string> UTF8 = (data, isKey, messageAncillary, destination) =>
         {
             if (data == null)
             {
@@ -43,12 +43,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Encodes a Null value to null.
         /// </summary>
-        public static Serializer<Null> Null = (data) => null;
+        public static Serializer<Null> Null = (data, isKey, messageAncillary, destination) => null;
 
         /// <summary>
         ///     Serializes the specified <see cref="System.Int64"/> value to a byte array of length 8. Byte order is big endian (network byte order).
         /// </summary>
-        public static Serializer<long> Long = (data) =>
+        public static Serializer<long> Long = (data, isKey, messageAncillary, destination) =>
         {
             var result = new byte[8];
             result[0] = (byte)(data >> 56);
@@ -65,7 +65,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Serializes the specified <see cref="System.Int32"/> value to a byte array of length 4. Byte order is big endian (network byte order).
         /// </summary>
-        public static Serializer<int> Int32 = (data) =>
+        public static Serializer<int> Int32 = (data, isKey, messageAncillary, destination) =>
         {
             var result = new byte[4]; // int is always 32 bits on .NET.
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -85,7 +85,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The System.Single value encoded as a byte array of length 4 (network byte order).
         /// </returns>
-        public static Serializer<float> Float = (data) =>
+        public static Serializer<float> Float = (data, isKey, messageAncillary, destination) =>
         {
             if (BitConverter.IsLittleEndian)
             {
@@ -109,7 +109,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Serializes the specified System.Double value to a byte array of length 8. Byte order is big endian (network byte order).
         /// </summary>
-        public static Serializer<double> Double = (data) =>
+        public static Serializer<double> Double = (data, isKey, messageAncillary, destination) =>
         {
             if (BitConverter.IsLittleEndian)
             {
@@ -138,6 +138,6 @@ namespace Confluent.Kafka
         ///     Serializes the specified System.Byte[] value (or null) to 
         ///     a byte array. Byte order is original order. 
         /// </summary>
-        public static Serializer<byte[]> ByteArray = (data) => data;
+        public static Serializer<byte[]> ByteArray = (data, isKey, messageAncillary, destination) => data;
     }
 }

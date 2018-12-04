@@ -48,8 +48,8 @@ namespace Confluent.Kafka.IntegrationTests
             DeliveryResult dr;
             using (var producer = new Producer(producerConfig))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString) }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString2) }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString, true, null, null) }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString2, true, null, null) }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
