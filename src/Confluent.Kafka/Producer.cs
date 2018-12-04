@@ -29,8 +29,8 @@ namespace Confluent.Kafka
     /// </summary>
     public class Producer<TKey, TValue> : ProducerBase
     {
-        private Serializer<TKey> keySerializer;
-        private Serializer<TValue> valueSerializer;
+        private ISerializer<TKey> keySerializer;
+        private ISerializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> taskKeySerializer;
         private IAsyncSerializer<TValue> taskValueSerializer;
 
@@ -38,9 +38,9 @@ namespace Confluent.Kafka
         {
             { typeof(Null), Serializers.Null },
             { typeof(int), Serializers.Int32 },
-            { typeof(long), Serializers.Long },
-            { typeof(string), Serializers.UTF8 },
-            { typeof(float), Serializers.Float },
+            { typeof(long), Serializers.Int64 },
+            { typeof(string), Serializers.Utf8 },
+            { typeof(float), Serializers.Single },
             { typeof(double), Serializers.Double },
             { typeof(byte[]), Serializers.ByteArray }
         };
@@ -61,8 +61,8 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(
             Handle handle,
-            Serializer<TKey> keySerializer = null,
-            Serializer<TValue> valueSerializer = null
+            ISerializer<TKey> keySerializer = null,
+            ISerializer<TValue> valueSerializer = null
         ) : base(handle) => Init(keySerializer, valueSerializer);
 
 
@@ -84,12 +84,12 @@ namespace Confluent.Kafka
         /// </param>
         public Producer(
             IEnumerable<KeyValuePair<string, string>> config,
-            Serializer<TKey> keySerializer = null,
-            Serializer<TValue> valueSerializer = null
+            ISerializer<TKey> keySerializer = null,
+            ISerializer<TValue> valueSerializer = null
         ) : base(config) => Init(keySerializer, valueSerializer);
 
 
-        private void Init(Serializer<TKey> keySerializer, Serializer<TValue> valueSerializer)
+        private void Init(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
         {
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
@@ -101,7 +101,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey)}");
                 }
-                this.keySerializer = (Serializer<TKey>)serializer;
+                this.keySerializer = (ISerializer<TKey>)serializer;
             }
 
             if (this.valueSerializer == null)
@@ -111,7 +111,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue)}");
                 }
-                this.valueSerializer = (Serializer<TValue>)serializer;
+                this.valueSerializer = (ISerializer<TValue>)serializer;
             }
         }
 
@@ -121,7 +121,7 @@ namespace Confluent.Kafka
         /// </summary>
         public Producer(
             IEnumerable<KeyValuePair<string, string>> config,
-            Serializer<TKey> keySerializer,
+            ISerializer<TKey> keySerializer,
             IAsyncSerializer<TValue> taskValueSerializer
         ) : base(config) => Init(keySerializer, taskValueSerializer);
 
@@ -131,12 +131,12 @@ namespace Confluent.Kafka
         /// </summary>
         public Producer(
             Handle handle,
-            Serializer<TKey> keySerializer,
+            ISerializer<TKey> keySerializer,
             IAsyncSerializer<TValue> taskValueSerializer
         ) : base(handle) => Init(keySerializer, taskValueSerializer);
 
 
-        private void Init(Serializer<TKey> keySerializer, IAsyncSerializer<TValue> taskValueSerializer)
+        private void Init(ISerializer<TKey> keySerializer, IAsyncSerializer<TValue> taskValueSerializer)
         {
             this.keySerializer = keySerializer;
             this.taskValueSerializer = taskValueSerializer;
@@ -159,7 +159,7 @@ namespace Confluent.Kafka
         public Producer(
             IEnumerable<KeyValuePair<string, string>> config,
             IAsyncSerializer<TKey> taskKeySerializer,
-            Serializer<TValue> valueSerializer
+            ISerializer<TValue> valueSerializer
         ) : base(config) => Init(taskKeySerializer, valueSerializer);
 
 
@@ -169,11 +169,11 @@ namespace Confluent.Kafka
         public Producer(
             Handle handle,
             IAsyncSerializer<TKey> taskKeySerializer,
-            Serializer<TValue> valueSerializer
+            ISerializer<TValue> valueSerializer
         ) : base(handle) => Init(taskKeySerializer, valueSerializer);
 
 
-        private void Init(IAsyncSerializer<TKey> taskKeySerializer, Serializer<TValue> valueSerializer)
+        private void Init(IAsyncSerializer<TKey> taskKeySerializer, ISerializer<TValue> valueSerializer)
         {
             this.taskKeySerializer = taskKeySerializer;
             this.valueSerializer = valueSerializer;
@@ -249,14 +249,14 @@ namespace Confluent.Kafka
             CancellationToken cancellationToken = default(CancellationToken))
         {
             var keyBytes = (keySerializer != null)
-                ? keySerializer(message.Key, true, message, topicPartition)
+                ? keySerializer.Serialize(message.Key, true, message, topicPartition)
                 : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             var valBytes = (valueSerializer != null)
-                ? valueSerializer(message.Value, false, message, topicPartition)
+                ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
                 : taskValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
@@ -369,14 +369,14 @@ namespace Confluent.Kafka
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
             var keyBytes = (keySerializer != null)
-                ? keySerializer(message.Key, true, message, topicPartition)
+                ? keySerializer.Serialize(message.Key, true, message, topicPartition)
                 : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             var valBytes = (valueSerializer != null)
-                ? valueSerializer(message.Value, false, message, topicPartition)
+                ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
                 : taskValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()

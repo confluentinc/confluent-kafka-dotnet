@@ -23,37 +23,52 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
+/// <summary>
+///     An simple example demonstrating how to produce and consume protobuf serialized data.
+///     Note: Schema Registry only supports Avro currently.
+/// </summary>
 namespace Confluent.Kafka.Examples.Protobuf
 {
     /// <summary>
-    ///     An example how to produce and consume protobuf serialized data.
+    ///     protobuf serializer
     /// </summary>
-    public class Program
+    public class ProtobufSerializer<T> : ISerializer<T> where T : IMessage<T>, new()
     {
-        public static Deserializer<T> CreateProtobufDeserializer<T>() where T : IMessage<T>, new()
+        public byte[] Serialize(T data, bool isKey, MessageAncillary messageAncillary, TopicPartition destination)
+            => data.ToByteArray();
+    }
+
+    /// <summary>
+    ///     protobuf deserializer
+    /// </summary>
+    public class ProtobufDeserializer<T> : IDeserializer<T> where T : IMessage<T>, new()
+    {
+        private MessageParser<T> parser;
+
+        public ProtobufDeserializer()
         {
-            var parser = new MessageParser<T>(() => new T());
-            return (data, isNull, isKey, messageAncillary, source) => parser.ParseFrom(data.ToArray());
+            parser = new MessageParser<T>(() => new T());
         }
 
-        public static Serializer<T> CreateProtobufSerializer<T>() where T : IMessage<T>, new()
-        {
-            return (data, isKey, MessageAncillary, destination) => data.ToByteArray();
-        }
+        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary messageAncillary, TopicPartition source)
+            => parser.ParseFrom(data.ToArray());
+    }
 
-        public static async Task Main(string[] args)
+    class Program
+    {
+        static async Task Main(string[] args)
         {
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = args[0],
-                GroupId = "protobuf_example",
+                GroupId = "protobuf-example",
                 AutoOffsetReset = AutoOffsetResetType.Latest
             };
 
             var consumeTask = Task.Run(() =>
             {
                 // consume a single message then exit.
-                using (var consumer = new Consumer<int, User>(consumerConfig, Deserializers.Int32, CreateProtobufDeserializer<User>()))
+                using (var consumer = new Consumer<int, User>(consumerConfig, Deserializers.Int32, new ProtobufDeserializer<User>()))
                 {
                     consumer.Subscribe("protobuf-test-topic");
                     var cr = consumer.Consume();
@@ -61,12 +76,12 @@ namespace Confluent.Kafka.Examples.Protobuf
                 }
             });
 
-            // wait a bit so the consumer is ready to consume messages before one is produced.
+            // wait a bit so the consumer is ready to consume messages before producing one.
             await Task.Delay(TimeSpan.FromSeconds(10));
 
             var producerConfig = new ProducerConfig { BootstrapServers = args[0] };
 
-            using (var producer = new Producer<int, User>(producerConfig, Serializers.Int32, CreateProtobufSerializer<User>()))
+            using (var producer = new Producer<int, User>(producerConfig, Serializers.Int32, new ProtobufSerializer<User>()))
             {
                 await producer.ProduceAsync("protobuf-test-topic", new Message<int, User> { Key = 0, Value = new User { FavoriteColor = "green" } });
             }

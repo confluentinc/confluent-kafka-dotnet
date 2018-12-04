@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
                 {
-                    var dr = await producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test string", true, null, null) });
+                    var dr = await producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("test string", true, null, null) });
                     producer.Flush(TimeSpan.FromSeconds(10));
                 }
             };
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
             {
-                var dr = await producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test string", true, null, null) });
+                var dr = await producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("test string", true, null, null) });
             }
 
             Assert.Equal(0, Library.HandleCount);

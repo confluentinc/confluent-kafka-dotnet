@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,41 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
+//
 // Refer to LICENSE for more information.
 
 using System;
-using System.Threading.Tasks;
+
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    ///     Defines a deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey,TValue}" />.
     /// </summary>
-    public interface IAsyncSerializer<T>
+    public interface IDeserializer<T>
     {
         /// <summary>
-        ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
-        ///     instance.
+        ///     Deserialize a message key or value.
         /// </summary>
         /// <param name="data">
-        ///     The value to serialize.
+        ///     The data to deserialize.
+        /// </param>
+        /// <param name="isNull">
+        ///     Whether or not the value is null.
         /// </param>
         /// <param name="messageAncillary">
         ///     Properties of the message the data is associated with
         ///     extra to the key or value.
         /// </param>
-        /// <param name="destination">
-        ///     The TopicPartition to which the message is to be sent
-        ///     (partition may be Partition.Any).
+        /// <param name="source">
+        ///     The TopicPartition from which the message was consumed.
         /// </param>
         /// <param name="isKey">
-        ///     True if serializing the message key, false if serializing the
+        ///     True if deserializing the message key, false if deserializing the
         ///     message value.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that
-        ///     completes with the serialized data.
+        ///     The deserialized value.
         /// </returns>
-        Task<byte[]> SerializeAsync(T data, bool isKey, MessageAncillary messageAncillary, TopicPartition destination);
+        T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary messageAncillary, TopicPartition source);
     }
 }

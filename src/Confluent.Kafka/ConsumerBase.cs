@@ -295,8 +295,8 @@ namespace Confluent.Kafka
         /// </remarks>
         protected ConsumeResult<TKey, TValue> Consume<TKey, TValue>(
             int millisecondsTimeout,
-            Deserializer<TKey> keyDeserializer,
-            Deserializer<TValue> valueDeserializer)
+            IDeserializer<TKey> keyDeserializer,
+            IDeserializer<TValue> valueDeserializer)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -380,7 +380,7 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        key = keyDeserializer(
+                        key = keyDeserializer.Deserialize(
                             msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
                             msg.key == IntPtr.Zero, true, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
                     }
@@ -408,7 +408,7 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        val = valueDeserializer(
+                        val = valueDeserializer.Deserialize(
                             msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
                             msg.val == IntPtr.Zero, false, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
                     }

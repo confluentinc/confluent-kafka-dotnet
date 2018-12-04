@@ -34,8 +34,8 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : ConsumerBase, IConsumer<TKey, TValue>
     {
-        private Deserializer<TKey> keyDeserializer;
-        private Deserializer<TValue> valueDeserializer;
+        private IDeserializer<TKey> keyDeserializer;
+        private IDeserializer<TValue> valueDeserializer;
         private IAsyncDeserializer<TKey> taskKeyDeserializer;
         private IAsyncDeserializer<TValue> taskValueDeserializer;
 
@@ -44,9 +44,9 @@ namespace Confluent.Kafka
             { typeof(Null), Deserializers.Null },
             { typeof(Ignore), Deserializers.Ignore },
             { typeof(int), Deserializers.Int32 },
-            { typeof(long), Deserializers.Long },
-            { typeof(string), Deserializers.UTF8 },
-            { typeof(float), Deserializers.Float },
+            { typeof(long), Deserializers.Int64 },
+            { typeof(string), Deserializers.Utf8 },
+            { typeof(float), Deserializers.Single },
             { typeof(double), Deserializers.Double },
             { typeof(byte[]), Deserializers.ByteArray }
         };
@@ -70,8 +70,8 @@ namespace Confluent.Kafka
         /// </param>
         public Consumer(
             IEnumerable<KeyValuePair<string, string>> config,
-            Deserializer<TKey> keyDeserializer = null,
-            Deserializer<TValue> valueDeserializer = null
+            IDeserializer<TKey> keyDeserializer = null,
+            IDeserializer<TValue> valueDeserializer = null
         ) : base(config)
         {
             this.keyDeserializer = keyDeserializer;
@@ -84,7 +84,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key deserializer not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keyDeserializer = (Deserializer<TKey>)deserializer;
+                this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
 
             if (valueDeserializer == null)
@@ -94,7 +94,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value deserializer not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
                 }
-                this.valueDeserializer = (Deserializer<TValue>)deserializer;
+                this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
         }
 
@@ -104,7 +104,7 @@ namespace Confluent.Kafka
         /// </summary>
         public Consumer(
             IEnumerable<KeyValuePair<string, string>> config,
-            Deserializer<TKey> keyDeserializer,
+            IDeserializer<TKey> keyDeserializer,
             IAsyncDeserializer<TValue> taskValueDeserializer
         ) : base(config)
         {
@@ -129,7 +129,7 @@ namespace Confluent.Kafka
         public Consumer(
             IEnumerable<KeyValuePair<string, string>> config,
             IAsyncDeserializer<TKey> taskKeyDeserializer,
-            Deserializer<TValue> valueDeserializer
+            IDeserializer<TValue> valueDeserializer
         ) : base(config)
         {
             this.taskKeyDeserializer = taskKeyDeserializer;
@@ -178,14 +178,14 @@ namespace Confluent.Kafka
             if (rawResult == null) { return null; }
 
             TKey key = keyDeserializer != null
-                ? keyDeserializer(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
+                ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                 : taskKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
-                ? valueDeserializer(rawResult.Value, rawResult.Value == null, false, rawResult.Message, rawResult.TopicPartition)
+                ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, false, rawResult.Message, rawResult.TopicPartition)
                 : taskValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()

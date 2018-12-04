@@ -28,10 +28,10 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void SerializeDeserialize()
         {
-            Assert.Equal("hello world", Deserializers.UTF8(Serializers.UTF8("hello world", false, null, null), false, false, null, null));
-            Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", Deserializers.UTF8(Serializers.UTF8("ឆ្មាត្រូវបានហែលទឹក", false, null, null), false, false, null, null));
-            Assert.Equal("вы не банан", Deserializers.UTF8(Serializers.UTF8("вы не банан", false, null, null), false, false, null, null));
-            Assert.Null(Deserializers.UTF8(Serializers.UTF8(null, false, null, null), true, false, null, null));
+            Assert.Equal("hello world", Deserializers.Utf8.Deserialize(Serializers.Utf8.Serialize("hello world", false, null, null), false, false, null, null));
+            Assert.Equal("ឆ្មាត្រូវបានហែលទឹក", Deserializers.Utf8.Deserialize(Serializers.Utf8.Serialize("ឆ្មាត្រូវបានហែលទឹក", false, null, null), false, false, null, null));
+            Assert.Equal("вы не банан", Deserializers.Utf8.Deserialize(Serializers.Utf8.Serialize("вы не банан", false, null, null), false, false, null, null));
+            Assert.Null(Deserializers.Utf8.Deserialize(Serializers.Utf8.Serialize(null, false, null, null), true, false, null, null));
 
             // TODO: check some serialize / deserialize operations that are not expected to work, including some
             //       cases where Deserialize can be expected to throw an exception.

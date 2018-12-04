@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
-                producer.ProduceAsync(topic, new Message { Value = Serializers.UTF8("test store offset value", true, null, null) }).Wait();
+                producer.ProduceAsync(topic, new Message { Value = Serializers.Utf8.Serialize("test store offset value", true, null, null) }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 

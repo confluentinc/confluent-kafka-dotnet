@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Confluent Inc.
+// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
+//
 // Refer to LICENSE for more information.
 
-using System;
-using System.Threading.Tasks;
 
 namespace Confluent.Kafka
 {
     /// <summary>
     ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
     /// </summary>
-    public interface IAsyncSerializer<T>
+    public interface ISerializer<T>
     {
         /// <summary>
         ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
@@ -44,9 +44,8 @@ namespace Confluent.Kafka
         ///     message value.
         /// </param>
         /// <returns>
-        ///     A <see cref="System.Threading.Tasks.Task" /> that
-        ///     completes with the serialized data.
+        ///     The serialized value.
         /// </returns>
-        Task<byte[]> SerializeAsync(T data, bool isKey, MessageAncillary messageAncillary, TopicPartition destination);
+        byte[] Serialize(T data, bool isKey, MessageAncillary messageAncillary, TopicPartition destination);
     }
 }

@@ -45,11 +45,11 @@ namespace Confluent.Kafka.IntegrationTests
             var testString = "hello world";
             var testString2 = "hello world 2";
 
-            DeliveryResult dr;
-            using (var producer = new Producer(producerConfig))
+            DeliveryResult<Null, string> dr;
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString, true, null, null) }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString2, true, null, null) }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
