@@ -24,18 +24,20 @@ using Xunit;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via an Action callback
-    ///     (null key/value case)
+    ///     Test every <see cref="Producer{TKey,TValue}.ProduceAsync" /> method overload
+    ///     that provides delivery reports via an Action callback (null key/value case).
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_Produce_Null_DeliveryHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_BeginProduce_Null(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            LogToFile("start Producer_Produce_Null_DeliveryHandler");
+            LogToFile("start Producer_BeginProduce_Null");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
+
+            // serializer case. 
 
             int count = 0;
             Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
@@ -60,8 +62,34 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(2, count);
 
+
+            // byte[] case.
+
+            count = 0;
+            Action<DeliveryReport> dh2 = (DeliveryReport dr) =>
+            {
+                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal(singlePartitionTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                count += 1;
+            };
+
+            using (var producer = new Producer(producerConfig))
+            {
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message {}, dh2);
+                producer.BeginProduce(singlePartitionTopic, new Message {}, dh2);
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+
+            Assert.Equal(2, count);
+
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_Produce_Null_DeliveryHandler");
+            LogToFile("end   Producer_BeginProduce_Null");
         }
     }
 }

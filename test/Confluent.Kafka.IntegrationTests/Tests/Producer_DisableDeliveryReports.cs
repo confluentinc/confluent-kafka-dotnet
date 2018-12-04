@@ -54,12 +54,26 @@ namespace Confluent.Kafka.IntegrationTests
             int count = 0;
             using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue }, (DeliveryReport<byte[], byte[]> dr) => count += 1);
-                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
-                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                producer.BeginProduce(
+                    singlePartitionTopic,
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
+                    (DeliveryReport<byte[], byte[]> dr) => count += 1);
+                
+                producer.BeginProduce(
+                    new TopicPartition(singlePartitionTopic, 0),
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
 
-                var drTask = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                producer.BeginProduce(
+                    singlePartitionTopic,
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+
+                producer.BeginProduce(
+                    new TopicPartition(singlePartitionTopic, 0),
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+
+                var drTask = producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 Assert.True(drTask.IsCompleted);
                 Assert.Equal(Offset.Invalid, drTask.Result.Offset);
                 Assert.Equal(Partition.Any, drTask.Result.Partition);
@@ -67,8 +81,10 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(TestKey, drTask.Result.Message.Key);
                 Assert.Equal(TestValue, drTask.Result.Message.Value);
 
-                drTask = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
-                Assert.True(drTask.IsCompleted);
+                drTask = producer.ProduceAsync(
+                    new TopicPartition(singlePartitionTopic, 0),
+                    new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
+                Assert.True(drTask.IsCompleted); // should complete immediately.
                 Assert.Equal(Offset.Invalid, drTask.Result.Offset);
                 Assert.Equal(0, (int)drTask.Result.Partition);
                 Assert.Equal(singlePartitionTopic, drTask.Result.Topic);

@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 /// <summary>
 ///     An simple example demonstrating how to produce and consume protobuf serialized data.
-///     Note: Schema Registry only supports Avro currently.
+///     Note: Does not demonstrate integration with Schema Registry which currently only supports Avro.
 /// </summary>
 namespace Confluent.Kafka.Examples.Protobuf
 {

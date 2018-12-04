@@ -47,6 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
                 using (var producer5 = new Producer<int, int>(producer3.Handle))
                 using (var producer6 = new Producer<string, byte[]>(producer4.Handle))
                 using (var producer7 = new Producer<double, double>(producerConfig))
+                using (var producer8 = new Producer(producer7.Handle))
                 using (var adminClient = new AdminClient(producer7.Handle))
                 {
                     var r1 = producer1.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 33 } }).Result;
@@ -78,9 +79,13 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(44.0, r7.Key);
                     Assert.Equal(234.4, r7.Value);
 
+                    var r8 = producer8.ProduceAsync(topic.Name, new Message { Key = new byte[] { 40 }, Value = new byte[] { 88 } }).Result;
+                    Assert.Equal(new byte[] { 40 }, r8.Key);
+                    Assert.Equal(new byte[] { 88 }, r8.Value);
+
                     var offsets = adminClient.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), TimeSpan.FromSeconds(10));
                     Assert.Equal(0, offsets.Low);
-                    Assert.Equal(7, offsets.High);
+                    Assert.Equal(8, offsets.High);
                     
                     // implicity check this does not throw.
                 }
@@ -148,6 +153,15 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(44.0, r7.Key);
                     Assert.Equal(234.4, r7.Value);
                     Assert.Equal(6, r7.Offset);
+                }
+
+                using (var consumer = new Consumer(consumerConfig))
+                {
+                    consumer.Assign(new TopicPartitionOffset(topic.Name, 0, 7));
+                    var r8 = consumer.Consume(TimeSpan.FromSeconds(10));
+                    Assert.Equal(new byte[] { 40 }, r8.Key);
+                    Assert.Equal(new byte[] { 88 }, r8.Value);
+                    Assert.Equal(7, r8.Offset);
                 }
             }
 

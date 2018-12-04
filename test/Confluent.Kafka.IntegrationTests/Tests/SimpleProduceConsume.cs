@@ -27,7 +27,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     A test that produces a couple of messages then
+        ///     A simple test that produces a couple of messages then
         ///     consumes them back.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
@@ -35,7 +35,10 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start SimpleProduceConsume");
 
-            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers
+            };
 
             var consumerConfig = new ConsumerConfig
             {
@@ -84,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.NotEqual<long>(result.Offset, Offset.Invalid);
             Assert.Equal(TimestampType.CreateTime, result.Message.Timestamp.Type);
             Assert.True(Math.Abs((DateTime.UtcNow - result.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-            producer.Flush(TimeSpan.FromSeconds(10));
+            Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             return result;
         }
     }

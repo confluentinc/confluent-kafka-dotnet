@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     
+        ///     Tests of <see cref="Consumer.Assignment" />
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void Consumer_Assignment(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)

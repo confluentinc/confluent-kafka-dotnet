@@ -38,13 +38,16 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
+
+            // serialize case
+
             var drs = new List<Task<DeliveryResult<Null, Null>>>();
             using (var producer = new Producer<Null, Null>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));
                 drs.Add(producer.ProduceAsync(partitionedTopic, new Message<Null, Null> {}));
-                producer.Flush(TimeSpan.FromSeconds(10));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             for (int i=0; i<2; ++i)
@@ -61,6 +64,32 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal((Partition)0, drs[0].Result.Partition);
             
+
+            // byte[] case
+        
+            var drs2 = new List<Task<DeliveryResult>>();
+            using (var producer = new Producer(producerConfig))
+            {
+                drs2.Add(producer.ProduceAsync(new TopicPartition(partitionedTopic, 1), new Message {}));
+                drs2.Add(producer.ProduceAsync(partitionedTopic, new Message {}));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            for (int i=0; i<2; ++i)
+            {
+                var dr = drs2[i].Result;
+                Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.Null(dr.Message.Key);
+                Assert.Null(dr.Message.Value);
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+            }
+            
+            Assert.Equal((Partition)1, drs2[0].Result.Partition);
+            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Null_Task");
         }
