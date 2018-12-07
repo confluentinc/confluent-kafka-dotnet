@@ -22,7 +22,7 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines an interface for handling delivery reports.
+    ///     Defines an interface for handling Producer delivery reports.
     /// </summary>
     /// <remarks>
     ///     You will typically never need to implement this interface.
@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     public interface IDeliveryHandler
     {        
         /// <summary>
-        ///     This method to call when a delivery report is available
+        ///     Called when a delivery report is available.
         /// </summary>
         /// <param name="deliveryReport">
         ///     The delivery report.

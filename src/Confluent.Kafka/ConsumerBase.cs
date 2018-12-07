@@ -45,7 +45,7 @@ namespace Confluent.Kafka
 
         private readonly bool enableHeaderMarshaling = true;
         private readonly bool enableTimestampMarshaling = true;
-        private readonly bool enableTopicNamesMarshaling = true;
+        private readonly bool enableTopicNameMarshaling = true;
 
         private readonly SafeKafkaHandle kafkaHandle;
 
@@ -183,9 +183,9 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.ConsumerConsumeResultFields);
+                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields);
 
-            var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ConsumerConsumeResultFields).Value;
+            var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)
             {
                 var fields = enabledFieldsObj.ToString().Replace(" ", "");
@@ -193,7 +193,7 @@ namespace Confluent.Kafka
                 {
                     this.enableHeaderMarshaling = false;
                     this.enableTimestampMarshaling = false;
-                    this.enableTopicNamesMarshaling = false;
+                    this.enableTopicNameMarshaling = false;
                     if (fields != "none")
                     {
                         var parts = fields.Split(',');
@@ -203,9 +203,9 @@ namespace Confluent.Kafka
                             {
                                 case "headers": this.enableHeaderMarshaling = true; break;
                                 case "timestamp": this.enableTimestampMarshaling = true; break;
-                                case "topic": this.enableTopicNamesMarshaling = true; break;
+                                case "topic": this.enableTopicNameMarshaling = true; break;
                                 default: throw new ArgumentException(
-                                    $"Unexpected consume result field name '{part}' in config value '{ConfigPropertyNames.ConsumerConsumeResultFields}'.");
+                                    $"Unexpected consume result field name '{part}' in config value '{ConfigPropertyNames.Consumer.ConsumeResultFields}'.");
                             }
                         }
                     }
@@ -309,7 +309,7 @@ namespace Confluent.Kafka
                 var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(msgPtr);
 
                 string topic = null;
-                if (this.enableTopicNamesMarshaling)
+                if (this.enableTopicNameMarshaling)
                 {
                     if (msg.rkt != IntPtr.Zero)
                     {
@@ -360,10 +360,10 @@ namespace Confluent.Kafka
                 if (msg.err != ErrorCode.NoError)
                 {
                     throw new ConsumeException(
-                        new ConsumeResult<byte[], byte[]>
+                        new ConsumeResult
                         {
                             TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
-                            Message = new Message<byte[], byte[]>
+                            Message = new Message
                             {
                                 Timestamp = timestamp,
                                 Headers = headers,
@@ -388,10 +388,10 @@ namespace Confluent.Kafka
                 catch (Exception ex)
                 {
                     throw new ConsumeException(
-                        new ConsumeResult<byte[], byte[]>
+                        new ConsumeResult
                         {
                             TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
-                            Message = new Message<byte[], byte[]>
+                            Message = new Message
                             {
                                 Timestamp = timestamp,
                                 Headers = headers,
@@ -416,10 +416,10 @@ namespace Confluent.Kafka
                 catch (Exception ex)
                 {
                     throw new ConsumeException(
-                        new ConsumeResult<byte[], byte[]>
+                        new ConsumeResult
                         {
                             TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
-                            Message = new Message<byte[], byte[]>
+                            Message = new Message
                             {
                                 Timestamp = timestamp,
                                 Headers = headers,
@@ -510,14 +510,15 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Gets the current partition assignment as set by
-        ///     <see cref="Confluent.Kafka.ConsumerBase.Assign(TopicPartition)" />.
+        ///     <see cref="Confluent.Kafka.ConsumerBase.Assign(TopicPartition)" />
+        ///     or implicitly.
         /// </summary>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
 
         /// <summary>
-        ///     Gets the current partition subscription as set by
+        ///     Gets the current topic subscription as set by
         ///     <see cref="Confluent.Kafka.ConsumerBase.Subscribe(string)" />.
         /// </summary>
         public List<string> Subscription
@@ -525,22 +526,23 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Update the subscription set to topics.
+        ///     Update the topic subscription.
         ///
         ///     Any previous subscription will be unassigned and unsubscribed first.
-        ///
-        ///     The subscription set denotes the desired topics to consume and this
-        ///     set is provided to the partition assignor (one of the elected group
-        ///     members) for all clients which then uses the configured
-        ///     partition.assignment.strategy to assign the subscription sets's
-        ///     topics's partitions to the consumers, depending on their subscription.
         /// </summary>
         /// <param name="topics">
         ///     The topics to subscribe to. A regex can be specified to subscribe to 
         ///     the set of all matching topics (which is updated as topics are added
-        ///     / removed). A regex must be front anchored to be recognized as a regex.
-        ///     e.g. ^myregex
+        ///     / removed from the cluster). A regex must be front anchored to be
+        ///     recognized as a regex. e.g. ^myregex
         /// </param>
+        /// <remarks>
+        ///     The topic subscription set denotes the desired set of topics to consume
+        ///     from. This set is provided to the consumer group leader (one of the group
+        ///     members) which uses the configured partition.assignment.strategy to 
+        ///     allocate partitions of topics in the subscription set to the consumers
+        ///     in the group.
+        /// </remarks>
         public void Subscribe(IEnumerable<string> topics)
             => kafkaHandle.Subscribe(topics);
 
@@ -553,8 +555,8 @@ namespace Confluent.Kafka
         /// <param name="topic">
         ///     The topic to subscribe to. A regex can be specified to subscribe to 
         ///     the set of all matching topics (which is updated as topics are added
-        ///     / removed). A regex must be front anchored to be recognized as a regex.
-        ///     e.g. ^myregex
+        ///     / removed from the cluster). A regex must be front anchored to be 
+        ///     recognized as a regex. e.g. ^myregex
         /// </param>
         public void Subscribe(string topic)
             => Subscribe(new[] { topic });
@@ -650,8 +652,8 @@ namespace Confluent.Kafka
         ///     Store offsets for a single partition based on the topic/partition/offset
         ///     of a consume result.
         /// 
-        ///     The offset will be committed (written) to the offset store according
-        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        ///     The offset will be committed according to `auto.commit.interval.ms` or
+        ///     manual offset-less commit().
         /// </summary>
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
@@ -720,7 +722,6 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Commits an offset based on the topic/partition/offset of a ConsumeResult.
-        ///     The next message to be read will be that following <paramref name="result" />.
         /// </summary>
         /// <param name="result">
         ///     The ConsumeResult instance used to determine the committed offset.
@@ -770,10 +771,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit an explicit list of offsets.
         /// </summary>
-        /// <remarks>
-        ///     Note: A consumer which has position N has consumed messages with offsets up to N-1 
-        ///     and will next receive the message with offset N.
-        /// </remarks>
         /// <param name="offsets">
         ///     The topic/partition offsets to commit.
         /// </param>
@@ -907,9 +904,6 @@ namespace Confluent.Kafka
         ///     than or equal to the given timestamp in the corresponding partition.
         /// </summary>
         /// <remarks>
-        ///     This is a blocking call. It will block for the timeout period if the 
-        ///     partition does not exist. 
-        ///
         ///     The consumer does not need to be assigned to the requested partitions.
         /// </remarks>
         /// <param name="timestampsToSearch">

@@ -17,6 +17,7 @@
 using System;
 using System.Threading.Tasks;
 
+
 namespace Confluent.Kafka
 {
     /// <summary>

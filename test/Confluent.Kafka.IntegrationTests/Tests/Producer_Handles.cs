@@ -87,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(0, offsets.Low);
                     Assert.Equal(8, offsets.High);
                     
-                    // implicity check this does not throw.
+                    // implicitly check this does not throw.
                 }
 
                 var consumerConfig = new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = Guid.NewGuid().ToString() };

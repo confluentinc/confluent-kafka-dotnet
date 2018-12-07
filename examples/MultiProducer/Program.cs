@@ -22,9 +22,10 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Examples.MultiProducer
 {
     /// <summary>
-    ///     An example showing how to construct a Producer which
-    ///     re-uses the underlying librdkafka client instance (and
-    ///     Kafka broker connections) of another producer instance.
+    ///     An example showing how to construct a Producer which re-uses the 
+    ///     underlying librdkafka client instance (and Kafka broker connections)
+    ///     of another producer instance. This allows you to produce messages
+    ///     with different types efficiently.
     /// </summary>
     public class Program
     {

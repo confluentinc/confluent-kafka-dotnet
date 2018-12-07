@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
-//
 // Refer to LICENSE for more information.
 
 
@@ -37,7 +35,7 @@ namespace Confluent.Kafka
         /// </param>
         /// <param name="destination">
         ///     The TopicPartition to which the message is to be sent
-        ///     (partition may be Partition.Any).
+        ///     (the configured partitioner will be used if the partition is Partition.Any).
         /// </param>
         /// <param name="isKey">
         ///     True if serializing the message key, false if serializing the

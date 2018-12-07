@@ -103,10 +103,6 @@ namespace Confluent.Kafka
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
 
-        /// <remarks>
-        ///     note: this property is set to that defined in rd_kafka_conf
-        ///     (which is never used by confluent-kafka-dotnet).
-        /// </remarks>
         private void DeliveryReportCallbackImpl(IntPtr rk, IntPtr rkmessage, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
@@ -368,9 +364,9 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.ProducerEnableBackgroundPoll &&
-                    prop.Key != ConfigPropertyNames.ProducerEnableDeliveryReports &&
-                    prop.Key != ConfigPropertyNames.ProducerDeliveryReportFields);
+                    prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
+                    prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
+                    prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -381,19 +377,19 @@ namespace Confluent.Kafka
                 throw new ArgumentException("The 'delivery.report.only.error' property is not supported by this client");
             }
 
-            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ProducerEnableBackgroundPoll).Value;
+            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableBackgroundPoll).Value;
             if (enableBackgroundPollObj != null)
             {
                 this.manualPoll = !bool.Parse(enableBackgroundPollObj.ToString());
             }
 
-            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ProducerEnableDeliveryReports).Value;
+            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableDeliveryReports).Value;
             if (enableDeliveryReportsObj != null)
             {
                 this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
             }
 
-            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.ProducerDeliveryReportFields).Value;
+            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.DeliveryReportFields).Value;
             if (deliveryReportEnabledFieldsObj != null)
             {
                 var fields = deliveryReportEnabledFieldsObj.ToString().Replace(" ", "");
@@ -415,7 +411,7 @@ namespace Confluent.Kafka
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
                                 default: throw new ArgumentException(
-                                    $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.ProducerDeliveryReportFields}'.");
+                                    $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
                             }
                         }
                     }

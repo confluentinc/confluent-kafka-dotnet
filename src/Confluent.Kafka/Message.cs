@@ -20,7 +20,7 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents a (deserialized) message stored in Kafka.
+    ///     Represents a (deserialized) Kafka message.
     /// </summary>
     public class Message<TKey, TValue> : MessageAncillary
     {
@@ -36,7 +36,7 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
-    ///     Represents a message stored in Kafka.
+    ///     Represents a Kafka message.
     /// </summary>
     public class Message : Message<byte[], byte[]>
     {
