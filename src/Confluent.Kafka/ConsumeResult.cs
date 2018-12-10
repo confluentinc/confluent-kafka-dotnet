@@ -68,7 +68,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The Kafka message.
+        ///     The Kafka message, or null if this ConsumeResult
+        ///     instance represents an end of partition event.
         /// </summary>
         public Message<TKey, TValue> Message { get; set; }
 
@@ -107,5 +108,11 @@ namespace Confluent.Kafka
             get { return Message.Headers; }
             set { Message.Headers = value; }
         }
+
+        /// <summary>
+        ///     True if this instance represents an end of partition
+        ///     event, false if it represents a message in kafka.
+        /// </summary>
+        public bool IsPartitionEOF { get; set; }
     }
 }

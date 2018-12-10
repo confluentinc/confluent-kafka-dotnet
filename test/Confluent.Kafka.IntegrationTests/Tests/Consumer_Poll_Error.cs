@@ -52,7 +52,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                SessionTimeoutMs = 6000
+                SessionTimeoutMs = 6000,
+                EnablePartitionEof = true
             };
 
             // test key deserialization error behavior
@@ -61,10 +62,6 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 int errCnt = 0;
                 
-                bool done = false;
-                consumer.OnPartitionEOF += (_, tpo)
-                    => done = true;
-
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
@@ -77,15 +74,15 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (!done)
+                while (true)
                 {
                     try
                     {
                         var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        if (record != null)
-                        {
-                            msgCnt += 1;
-                        }
+                        if (record == null) { continue; }
+                        if (record.IsPartitionEOF) { break; }
+
+                        msgCnt += 1;
                     }
                     catch (ConsumeException e)
                     {
@@ -107,10 +104,6 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 int errCnt = 0;
 
-                bool done = false;
-                consumer.OnPartitionEOF += (_, tpo)
-                    => done = true;
-
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
                     Assert.Single(partitions);
@@ -123,15 +116,15 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (!done)
+                while (true)
                 {
                     try
                     {
                         var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        if (record != null)
-                        {
-                            msgCnt += 1;
-                        }
+                        if (record == null) { continue; }
+                        if (record.IsPartitionEOF) { break; }
+
+                        msgCnt += 1;
                     }
                     catch (ConsumeException e)
                     {

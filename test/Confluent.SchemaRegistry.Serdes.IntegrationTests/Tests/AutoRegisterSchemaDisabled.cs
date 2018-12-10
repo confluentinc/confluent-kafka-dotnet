@@ -60,7 +60,6 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     new AvroSerializer<string>(schemaRegistry),
                     new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false })))
                 {
-
                     Assert.Throws<SerializationException>(() =>
                     {
                         try

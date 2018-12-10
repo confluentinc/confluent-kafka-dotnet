@@ -45,7 +45,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString(),
                 SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetResetType.Earliest
+                AutoOffsetReset = AutoOffsetResetType.Earliest,
+                EnablePartitionEof = true
             };
 
             var schemaRegistryConfig = new SchemaRegistryConfig
@@ -89,28 +90,23 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer = new Consumer<string, User>(consumerConfig,
                 new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
             {
-                bool consuming = true;
-                consumer.OnPartitionEOF += (_, topicPartitionOffset)
-                    => consuming = false;
-
                 consumer.OnError += (_, e)
                     => Assert.True(false, e.Reason);
 
                 consumer.Subscribe(topic);
 
                 int i = 0;
-                while (consuming)
+                while (true)
                 {
-                    var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (record == null) { continue; }
+                    if (record.IsPartitionEOF) { break; }
 
-                    if (record != null)
-                    {
-                        Assert.Equal(i.ToString(), record.Message.Key);
-                        Assert.Equal(i.ToString(), record.Message.Value.name);
-                        Assert.Equal(i, record.Message.Value.favorite_number);
-                        Assert.Equal("blue", record.Message.Value.favorite_color);
-                        i += 1;
-                    }
+                    Assert.Equal(i.ToString(), record.Message.Key);
+                    Assert.Equal(i.ToString(), record.Message.Value.name);
+                    Assert.Equal(i, record.Message.Value.favorite_number);
+                    Assert.Equal("blue", record.Message.Value.favorite_color);
+                    i += 1;
                 }
 
                 Assert.Equal(100, i);

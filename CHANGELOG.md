@@ -15,11 +15,14 @@
   - Changed the name of `Confluent.Kafka.Avro` to `Confluent.SchemaRegistry.Serdes` (Schema Registry may support other serialization formats in the future).
   - Added a example demonstrating working with protobuf serialized data.
 - Avro serdes no longer make blocking calls to `ICachedSchemaRegistryClient` - everything is `await`ed.
-- References librdkafka.redist [1.0.0-RC2](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC2)
+- References librdkafka.redist [1.0.0-RC4](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC4)
+  - Note: End of partition notification is now disabled by default.
+- Removed `Consumer.OnPartitionEOF` in favor of `ConsumeResult.IsPartitionEOF`.
+
 
 ## Enhancements / Fixes
 
-- Added `Close` method and `OnPartitionEOF` event to `IConsumer` interface.
+- Added `Close` method to `IConsumer` interface.
 
 
 # 1.0.0-beta2

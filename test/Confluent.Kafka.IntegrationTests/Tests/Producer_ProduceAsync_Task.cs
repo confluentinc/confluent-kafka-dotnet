@@ -78,7 +78,8 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
                 drs2.Add(producer.ProduceAsync(
                     partitionedTopic,
-                    new Message { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 4") }));
+                    new Message { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             for (int i=0; i<2; ++i)

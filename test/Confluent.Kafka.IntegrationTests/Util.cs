@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <returns>
         ///     The offset of the first produced message.
         /// </returns>
-        public static TopicPartitionOffset ProduceMessages(string bootstrapServers, string topic, int size, int number)
+        public static TopicPartitionOffset ProduceNullStringMessages(string bootstrapServers, string topic, int size, int number)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             

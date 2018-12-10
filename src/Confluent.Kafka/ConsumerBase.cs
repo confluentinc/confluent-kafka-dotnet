@@ -295,9 +295,9 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and 
-        ///     OnPartitionEOF events may be invoked as a side-effect of 
-        ///     calling this method (on the same thread).
+        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     be invoked as a side-effect of calling this method (on the same
+        ///     thread).
         /// </remarks>
         protected ConsumeResult<TKey, TValue> Consume<TKey, TValue>(
             int millisecondsTimeout,
@@ -325,8 +325,12 @@ namespace Confluent.Kafka
 
                 if (msg.err == ErrorCode.Local_PartitionEOF)
                 {
-                    OnPartitionEOF?.Invoke(this, new TopicPartitionOffset(topic, msg.partition, msg.offset));
-                    return null;
+                    return new ConsumeResult<TKey, TValue>
+                    {
+                        TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
+                        Message = null,
+                        IsPartitionEOF = true
+                    };
                 }
 
                 long timestampUnix = 0;
@@ -375,7 +379,8 @@ namespace Confluent.Kafka
                                 Headers = headers,
                                 Key = KeyAsByteArray(msg),
                                 Value = ValueAsByteArray(msg)
-                            }
+                            },
+                            IsPartitionEOF = false
                         },
                         new Error(msg.err)
                     );
@@ -403,7 +408,8 @@ namespace Confluent.Kafka
                                 Headers = headers,
                                 Key = KeyAsByteArray(msg),
                                 Value = ValueAsByteArray(msg)
-                            }
+                            },
+                            IsPartitionEOF = false
                         },
                         new Error(ErrorCode.Local_KeyDeserialization, ex.ToString())
                     );
@@ -431,7 +437,8 @@ namespace Confluent.Kafka
                                 Headers = headers,
                                 Key = KeyAsByteArray(msg),
                                 Value = ValueAsByteArray(msg)
-                            }
+                            },
+                            IsPartitionEOF = false
                         },
                         new Error(ErrorCode.Local_ValueDeserialization, ex.ToString())
                     );
@@ -446,7 +453,8 @@ namespace Confluent.Kafka
                         Headers = headers,
                         Key = key,
                         Value = val
-                    }
+                    },
+                    IsPartitionEOF = false
                 };
             }
             finally
@@ -503,15 +511,6 @@ namespace Confluent.Kafka
         ///     (on the same thread).
         /// </remarks>
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
-
-
-        /// <summary>
-        ///     Raised when the consumer reaches the end of a topic/partition it is reading from.
-        /// </summary>
-        /// <remarks>
-        ///     Executes on the same thread as every other Consumer event handler.
-        /// </remarks>
-        public event EventHandler<TopicPartitionOffset> OnPartitionEOF;
 
 
         /// <summary>

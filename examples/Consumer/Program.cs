@@ -45,7 +45,8 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 EnableAutoCommit = false,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetResetType.Earliest
+                AutoOffsetReset = AutoOffsetResetType.Earliest,
+                EnablePartitionEof = true
             };
 
             const int commitPeriod = 5;
@@ -71,9 +72,6 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 consumer.OnPartitionsRevoked += (_, partitions)
                     => Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
 
-                consumer.OnPartitionEOF += (_, tpo)
-                    => Console.WriteLine($"Reached end of topic {tpo.Topic} partition {tpo.Partition}, next message will be at offset {tpo.Offset}");
-
                 consumer.OnError += (_, e)
                     => Console.WriteLine($"Error: {e.Reason}");
 
@@ -87,6 +85,16 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                     try
                     {
                         var consumeResult = consumer.Consume(cancellationToken);
+
+                        if (consumeResult.IsPartitionEOF)
+                        {
+                            Console.WriteLine(
+                                $"Reached end of topic {consumeResult.Topic}, partition {consumeResult.Partition}. " +
+                                $"Next message will be at offset {consumeResult.Offset}.");
+
+                            continue;
+                        }
+
                         Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Value}");
 
                         if (consumeResult.Offset % commitPeriod == 0)
@@ -138,14 +146,14 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 consumer.OnError += (_, e)
                     => Console.WriteLine($"Error: {e.Reason}");
 
-                consumer.OnPartitionEOF += (_, topicPartitionOffset)
-                    => Console.WriteLine($"End of partition: {topicPartitionOffset}");
-
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
                         var consumeResult = consumer.Consume(cancellationToken);
+                        // Note: End of partition notification has not been enabled, so
+                        // it is guaranteed that the ConsumeResult instance corresponds
+                        // to a Message, and not a PartitionEOF event.
                         Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Value}");
                     }
                     catch (ConsumeException e)

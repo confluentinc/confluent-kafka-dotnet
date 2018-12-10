@@ -176,6 +176,15 @@ namespace Confluent.Kafka
             // TODO: add method(s) to ConsumerBase to handle the async case more optimally.
             var rawResult = base.Consume(millisecondsTimeout, Deserializers.ByteArray, Deserializers.ByteArray);
             if (rawResult == null) { return null; }
+            if (rawResult.Message == null)
+            {
+                return new ConsumeResult<TKey, TValue>
+                {
+                    TopicPartitionOffset = rawResult.TopicPartitionOffset,
+                    Message = null,
+                    IsPartitionEOF = rawResult.IsPartitionEOF // always true
+                };
+            }
 
             TKey key = keyDeserializer != null
                 ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
@@ -194,13 +203,14 @@ namespace Confluent.Kafka
             return new ConsumeResult<TKey, TValue>
             {
                 TopicPartitionOffset = rawResult.TopicPartitionOffset,
-                Message = new Message<TKey, TValue>
+                Message = rawResult.Message == null ? null : new Message<TKey, TValue>
                 {
                     Key = key,
                     Value = val,
                     Headers = rawResult.Headers,
                     Timestamp = rawResult.Timestamp
-                }
+                },
+                IsPartitionEOF = rawResult.IsPartitionEOF
             };
         }
 
@@ -216,9 +226,9 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and
-        ///     OnPartitionEOF events may be invoked as a side-effect of
-        ///     calling this method (on the same thread).
+        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     be invoked as a side-effect of calling this method (on the same
+        ///     thread).
         /// </remarks>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -248,9 +258,9 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and 
-        ///     OnPartitionEOF events may be invoked as a side-effect of 
-        ///     calling this method (on the same thread).
+        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     be invoked as a side-effect of calling this method (on the same
+        ///     thread).
         /// </remarks>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => (keyDeserializer != null && valueDeserializer != null)
@@ -288,9 +298,9 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and
-        ///     OnPartitionEOF events may be invoked as a side-effect of
-        ///     calling this method (on the same thread).
+        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     be invoked as a side-effect of calling this method (on the same
+        ///     thread).
         /// </remarks>
         public ConsumeResult Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -304,7 +314,8 @@ namespace Confluent.Kafka
                 return new ConsumeResult
                 {
                     TopicPartitionOffset = result.TopicPartitionOffset,
-                    Message = new Message(result.Message)
+                    Message = result.Message,
+                    IsPartitionEOF = result.IsPartitionEOF
                 };
             }
         }
@@ -320,9 +331,9 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and 
-        ///     OnPartitionEOF events may be invoked as a side-effect of 
-        ///     calling this method (on the same thread).
+        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     be invoked as a side-effect of calling this method (on the same
+        ///     thread).
         /// </remarks>
         public ConsumeResult Consume(TimeSpan timeout)
         {
@@ -331,7 +342,8 @@ namespace Confluent.Kafka
             return new ConsumeResult
             {
                 TopicPartitionOffset = result.TopicPartitionOffset,
-                Message = new Message(result.Message)
+                Message = result.Message,
+                IsPartitionEOF = result.IsPartitionEOF
             };
         }
     }

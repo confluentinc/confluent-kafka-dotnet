@@ -36,12 +36,13 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Consumer_Exiting");
 
             int N = 2;
-            var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 100, N);
+            var firstProduced = Util.ProduceNullStringMessages(bootstrapServers, singlePartitionTopic, 100, N);
 
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
-                SessionTimeoutMs = 6000
+                SessionTimeoutMs = 6000,
+                Debug = "all"
             };
 
             for (int i=0; i<4; ++i)

@@ -56,12 +56,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnPartitionEOF" />
-        /// </summary>
-        event EventHandler<TopicPartitionOffset> OnPartitionEOF;
-
-
-        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.Assignment" />
         /// </summary>
         List<TopicPartition> Assignment { get; }
