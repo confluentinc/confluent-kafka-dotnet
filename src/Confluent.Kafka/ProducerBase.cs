@@ -511,6 +511,10 @@ namespace Confluent.Kafka
         ///     the maximum length of time librdkafka attempts to deliver a message 
         ///     before giving up and so also affects the maximum time a call to Flush 
         ///     may block.
+        /// 
+        ///     Where this Producer instance shares a Handle with one or more other
+        ///     producer instances, the Flush method will wait on messages produced by
+        ///     the other producer instances as well.
         /// </remarks>
         public int Flush(TimeSpan timeout)
             => KafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
@@ -529,6 +533,10 @@ namespace Confluent.Kafka
         ///     the maximum length of time librdkafka attempts to deliver a message 
         ///     before giving up and so also affects the maximum time a call to Flush 
         ///     may block.
+        /// 
+        ///     Where this Producer instance shares a Handle with one or more other
+        ///     producer instances, the Flush method will wait on messages produced by
+        ///     the other producer instances as well.
         /// </remarks>
         /// <exception cref="System.OperationCanceledException">
         ///     Thrown if the operation is cancelled.
