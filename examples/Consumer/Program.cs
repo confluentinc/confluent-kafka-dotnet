@@ -89,8 +89,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                         if (consumeResult.IsPartitionEOF)
                         {
                             Console.WriteLine(
-                                $"Reached end of topic {consumeResult.Topic}, partition {consumeResult.Partition}. " +
-                                $"Next message will be at offset {consumeResult.Offset}.");
+                                $"Reached end of topic {consumeResult.Topic}, partition {consumeResult.Partition}.");
 
                             continue;
                         }
