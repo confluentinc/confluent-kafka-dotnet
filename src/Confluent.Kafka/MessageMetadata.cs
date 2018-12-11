@@ -20,7 +20,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     All components of <see cref="Message" /> except Key and Value.
     /// </summary>
-    public class MessageAncillary
+    public class MessageMetadata
     {
         /// <summary>
         ///     The message timestamp. The timestamp type must be set to CreateTime. 

@@ -22,7 +22,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents a (deserialized) Kafka message.
     /// </summary>
-    public class Message<TKey, TValue> : MessageAncillary
+    public class Message<TKey, TValue> : MessageMetadata
     {
         /// <summary>
         ///     Gets the message key value (possibly null).

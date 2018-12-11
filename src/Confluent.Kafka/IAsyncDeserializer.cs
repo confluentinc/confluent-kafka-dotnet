@@ -49,6 +49,6 @@ namespace Confluent.Kafka
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
-        Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, bool isKey, MessageAncillary messageAncillary, TopicPartition source);
+        Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source);
     }
 }

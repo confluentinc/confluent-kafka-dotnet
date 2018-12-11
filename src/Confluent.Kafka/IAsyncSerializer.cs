@@ -48,6 +48,6 @@ namespace Confluent.Kafka
         ///     A <see cref="System.Threading.Tasks.Task" /> that
         ///     completes with the serialized data.
         /// </returns>
-        Task<byte[]> SerializeAsync(T data, bool isKey, MessageAncillary messageAncillary, TopicPartition destination);
+        Task<byte[]> SerializeAsync(T data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination);
     }
 }

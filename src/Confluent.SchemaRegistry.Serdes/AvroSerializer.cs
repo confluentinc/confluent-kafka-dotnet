@@ -130,7 +130,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, bool isKey, MessageAncillary messageAncillary, TopicPartition destination)
+        public async Task<byte[]> SerializeAsync(T value, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
         { 
             try
             {

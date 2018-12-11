@@ -47,6 +47,6 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The deserialized value.
         /// </returns>
-        T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageAncillary messageAncillary, TopicPartition source);
+        T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source);
     }
 }

@@ -97,6 +97,10 @@ namespace Confluent.Kafka
                 throw new Exception("unexpected rebalance callback on disposed kafkaHandle");
             }
 
+            // Note: The contract with librdkafka requires the application to acknowledge rebalances by calling Assign.
+            // To make the API less error prone, this is done automatically by the C# binding if required - the number
+            // of times assign is called by user code is tracked, and if this is zero, then assign is called automatically.
+
             if (err == ErrorCode.Local_AssignPartitions)
             {
                 var handler = OnPartitionsAssigned;
@@ -107,7 +111,8 @@ namespace Confluent.Kafka
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
-                        throw new InvalidOperationException($"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
+                        throw new InvalidOperationException(
+                            $"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
                     }
                 }
                 Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
@@ -122,7 +127,8 @@ namespace Confluent.Kafka
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
-                        throw new InvalidOperationException($"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
+                        throw new InvalidOperationException(
+                            $"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
                     }
                 }
                 Unassign();
@@ -382,7 +388,7 @@ namespace Confluent.Kafka
                     {
                         key = keyDeserializer.Deserialize(
                             msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
-                            msg.key == IntPtr.Zero, true, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
+                            msg.key == IntPtr.Zero, true, new MessageMetadata { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
                     }
                 }
                 catch (Exception ex)
@@ -410,7 +416,7 @@ namespace Confluent.Kafka
                     {
                         val = valueDeserializer.Deserialize(
                             msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
-                            msg.val == IntPtr.Zero, false, new MessageAncillary { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
+                            msg.val == IntPtr.Zero, false, new MessageMetadata { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
                     }
                 }
                 catch (Exception ex)
@@ -652,8 +658,8 @@ namespace Confluent.Kafka
         ///     Store offsets for a single partition based on the topic/partition/offset
         ///     of a consume result.
         /// 
-        ///     The offset will be committed according to `auto.commit.interval.ms` or
-        ///     manual offset-less commit().
+        ///     The offset will be committed according to `auto.commit.interval.ms`
+        ///     (and `enable.auto.commit`) or manual offset-less commit().
         /// </summary>
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to "false" when using this API.

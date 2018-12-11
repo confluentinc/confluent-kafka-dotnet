@@ -44,6 +44,6 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The serialized value.
         /// </returns>
-        byte[] Serialize(T data, bool isKey, MessageAncillary messageAncillary, TopicPartition destination);
+        byte[] Serialize(T data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination);
     }
 }
