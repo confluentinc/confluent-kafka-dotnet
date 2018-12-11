@@ -24,43 +24,41 @@ using Xunit;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every <see cref="Producer.BeginProduce" /> method overload (null case).
+    ///     Tests <see cref="Producer.BeginProduce" /> error cases.
     /// </summary>
     public static partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_BeginProduce_Null(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Producer_BeginProduce_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            LogToFile("start Producer_BeginProduce_Null");
+            LogToFile("start Producer_BeginProduce_Error");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
 
-            // serializer case. 
+            // serializer case.
 
             int count = 0;
-            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
+            Action<DeliveryReport<Null, String>> dh = (DeliveryReport<Null, String> dr) => 
             {
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal(ErrorCode.Local_UnknownPartition, dr.Error.Code);
                 Assert.False(dr.Error.IsFatal);
-                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal((Partition)1, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.True(dr.Offset >= 0);
+                Assert.Equal(Offset.Invalid, dr.Offset);
                 Assert.Null(dr.Message.Key);
-                Assert.Null(dr.Message.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal("test", dr.Message.Value);
+                Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
                 count += 1;
             };
 
-            using (var producer = new Producer<Null, Null>(producerConfig))
+            using (var producer = new Producer<Null, String>(producerConfig, Serializers.Null, Serializers.Utf8))
             {
-                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
-                producer.BeginProduce(singlePartitionTopic, new Message<Null, Null> {}, dh);
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 1), new Message<Null, String> { Value = "test" }, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(2, count);
+            Assert.Equal(1, count);
 
 
             // byte[] case.
@@ -68,28 +66,26 @@ namespace Confluent.Kafka.IntegrationTests
             count = 0;
             Action<DeliveryReport> dh2 = (DeliveryReport dr) =>
             {
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal((Partition)0, dr.Partition);
+                Assert.Equal(ErrorCode.Local_UnknownPartition, dr.Error.Code);
+                Assert.Equal((Partition)42, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.True(dr.Offset >= 0);
-                Assert.Null(dr.Message.Key);
+                Assert.Equal(Offset.Invalid, dr.Offset);
+                Assert.Equal(new byte[] { 11 }, dr.Message.Key);
                 Assert.Null(dr.Message.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
                 count += 1;
             };
 
             using (var producer = new Producer(producerConfig))
             {
-                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message {}, dh2);
-                producer.BeginProduce(singlePartitionTopic, new Message {}, dh2);
+                producer.BeginProduce(new TopicPartition(singlePartitionTopic, 42), new Message { Key = new byte[] { 11 }}, dh2);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            Assert.Equal(2, count);
+            Assert.Equal(1, count);
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_BeginProduce_Null");
+            LogToFile("end   Producer_BeginProduce_Error");
         }
     }
 }

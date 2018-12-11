@@ -37,13 +37,13 @@ namespace Confluent.Kafka
         public ProduceException(Error error, DeliveryResult<TKey, TValue> deliveryReport)
             : base(error)
         {
-            DeliveryReport = deliveryReport;
+            DeliveryResult = deliveryReport;
         }
 
         /// <summary>
         ///     The delivery report associated with the produce request.
         /// </summary>
-        public DeliveryResult<TKey, TValue> DeliveryReport { get; }
+        public DeliveryResult<TKey, TValue> DeliveryResult { get; }
     }
 
 

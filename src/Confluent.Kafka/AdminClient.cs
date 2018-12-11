@@ -156,7 +156,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreateTopicExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -178,7 +179,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DeleteTopicExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -201,7 +203,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreatePartitionsExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -224,7 +227,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -247,7 +251,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigsExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<AlterConfigsExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -624,7 +629,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
         /// </summary>
-        public event EventHandler<ErrorEvent> OnError
+        public event EventHandler<Error> OnError
         {
             add { handle.Owner.OnError += value; }
             remove { handle.Owner.OnError -= value; }

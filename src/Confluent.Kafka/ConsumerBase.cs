@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
@@ -57,7 +58,7 @@ namespace Confluent.Kafka
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            OnError?.Invoke(this, new ErrorEvent(new Error(err, reason), false));
+            OnError?.Invoke(this, kafkaHandle.CreatePossiblyFatalError(err, reason));
         }
 
         private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
@@ -133,6 +134,10 @@ namespace Confluent.Kafka
                 }
                 Unassign();
             }
+            else
+            {
+                throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
+            }
         }
 
         private readonly Librdkafka.CommitDelegate commitDelegate;
@@ -147,7 +152,7 @@ namespace Confluent.Kafka
 
             OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
                 SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
-                new Error(err)
+                kafkaHandle.CreatePossiblyFatalError(err, null)
             ));
         }
 
@@ -159,7 +164,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
         /// </summary>
-        public event EventHandler<ErrorEvent> OnError;
+        public event EventHandler<Error> OnError;
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
@@ -382,7 +387,7 @@ namespace Confluent.Kafka
                             },
                             IsPartitionEOF = false
                         },
-                        new Error(msg.err)
+                        kafkaHandle.CreatePossiblyFatalError(msg.err, null)
                     );
                 }
 

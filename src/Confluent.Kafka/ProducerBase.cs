@@ -21,6 +21,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
@@ -44,11 +45,12 @@ namespace Confluent.Kafka
         internal readonly bool enableDeliveryReportValue = true;
         internal readonly bool enableDeliveryReportTimestamp = true;
         internal readonly bool enableDeliveryReportHeaders = true;
+        internal readonly bool enableDeliveryReportMessageStatus = true;
 
         private readonly SafeKafkaHandle ownedKafkaHandle;
         private readonly Handle borrowedHandle;
 
-        private SafeKafkaHandle KafkaHandle
+        internal SafeKafkaHandle KafkaHandle
             => ownedKafkaHandle != null 
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
@@ -77,7 +79,7 @@ namespace Confluent.Kafka
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return; }
-            onError?.Invoke(this, new ErrorEvent(new Error(err, reason), false));
+            onError?.Invoke(this, KafkaHandle.CreatePossiblyFatalError(err, reason));
         }
 
 
@@ -157,6 +159,12 @@ namespace Confluent.Kafka
                 timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
             }
 
+            MessageStatus messageStatus = MessageStatus.PossiblyPersisted;
+            if (enableDeliveryReportMessageStatus)
+            {
+                messageStatus = Librdkafka.message_status(rkmessage);
+            }
+
             deliveryHandler.HandleDeliveryReport(
                 new DeliveryReport 
                 {
@@ -164,7 +172,7 @@ namespace Confluent.Kafka
                     // Instead, the delivery handler is expected to cache the topic string.
                     Partition = msg.partition, 
                     Offset = msg.offset, 
-                    Error = msg.err,
+                    Error = KafkaHandle.CreatePossiblyFatalError(msg.err, null),
                     Message = new Message { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
                 }
             );
@@ -251,7 +259,7 @@ namespace Confluent.Kafka
                 if (err != ErrorCode.NoError)
                 {
                     gch.Free();
-                    throw new KafkaException(err);
+                    throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
                 }
             }
             else
@@ -267,7 +275,7 @@ namespace Confluent.Kafka
 
                 if (err != ErrorCode.NoError)
                 {
-                    throw new KafkaException(err);
+                    throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
                 }
             }
         }
@@ -292,12 +300,12 @@ namespace Confluent.Kafka
         }
 
 
-        private event EventHandler<ErrorEvent> onError;
+        private event EventHandler<Error> onError;
 
         /// <summary>
         ///     Refer to <see cref="IClient.OnError" />.
         /// </summary>
-        public event EventHandler<ErrorEvent> OnError
+        public event EventHandler<Error> OnError
         {
             add
             {
@@ -399,6 +407,7 @@ namespace Confluent.Kafka
                     this.enableDeliveryReportValue = false;
                     this.enableDeliveryReportHeaders = false;
                     this.enableDeliveryReportTimestamp = false;
+                    this.enableDeliveryReportMessageStatus = false;
                     if (fields != "none")
                     {
                         var parts = fields.Split(',');
@@ -410,6 +419,7 @@ namespace Confluent.Kafka
                                 case "value": this.enableDeliveryReportValue = true; break;
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
+                                case "status": this.enableDeliveryReportMessageStatus = true; break;
                                 default: throw new ArgumentException(
                                     $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
                             }

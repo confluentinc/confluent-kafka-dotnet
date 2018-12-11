@@ -67,6 +67,11 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     The persisted status of the message
+        /// </summary>
+        public MessageStatus MessageStatus { get; set; }
+        
+        /// <summary>
         ///     The Kafka message.
         /// </summary>
         public Message<TKey, TValue> Message { get; set; }
@@ -105,6 +110,6 @@ namespace Confluent.Kafka
         {
             get { return Message.Headers; }
             set { Message.Headers = value; }
-        }   
+        }
     }
 }

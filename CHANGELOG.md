@@ -18,11 +18,14 @@
 - References librdkafka.redist [1.0.0-RC4](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC4)
   - Note: End of partition notification is now disabled by default (enable using the `EnablePartitionEof` config property).
 - Removed `Consumer.OnPartitionEOF` in favor of `ConsumeResult.IsPartitionEOF`.
+- Removed `ErrorEvent` class and added `IsFatal` to `Error` class. 
+  - The `IsFatal` flag is now set appropriately for all errors (previously it was always set to `false`).
+- Added `MessageStatus` proprety to `DeliveryResult`, which provides information on the persited status of the message.
 
-
-## Enhancements / Fixes
+## Fixes
 
 - Added `Close` method to `IConsumer` interface.
+- Changed the name of `ProduceException.DeliveryReport` to `ProduceException.DeliveryResult`.
 
 
 # 1.0.0-beta2

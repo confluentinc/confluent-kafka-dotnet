@@ -104,7 +104,7 @@ namespace Confluent.Kafka
         ///     (on the same thread) and on the Producer and AdminClient, on the
         ///     background poll thread.
         /// </remarks>
-        event EventHandler<ErrorEvent> OnError;
+        event EventHandler<Error> OnError;
 
         /// <summary>
         ///     Raised on librdkafka statistics events - a JSON

@@ -25,8 +25,8 @@ using Xunit;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via a Task.
+    ///     Test of every <see cref="Producer{TKey,TValue}.ProduceAsync" /> 
+    ///     and <see cref="Producer.ProduceAsync" /> method overload.
     ///     (null key/value case)
     /// </summary>
     public static partial class Tests

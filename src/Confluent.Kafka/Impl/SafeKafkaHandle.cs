@@ -192,6 +192,17 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
+        internal Error CreatePossiblyFatalError(ErrorCode err, string reason)
+        {
+            if (err == ErrorCode.Local_Fatal)
+            {
+                var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+                err = Librdkafka.fatal_error(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+                return new Error(err, errorStringBuilder.ToString(), true);
+            }
+            return new Error(err, reason);
+        }
+
         private string name;
         internal string Name
         {
@@ -258,7 +269,7 @@ namespace Confluent.Kafka.Impl
             if (topicHandle.IsInvalid)
             {
                 DangerousRelease();
-                throw new KafkaException(Librdkafka.last_error());
+                throw new KafkaException(CreatePossiblyFatalError(Librdkafka.last_error(), null));
             }
 
             topicHandle.kafkaHandle = this;
@@ -302,7 +313,7 @@ namespace Confluent.Kafka.Impl
                     }
                     if (err != ErrorCode.NoError)
                     {
-                        throw new KafkaException(err);
+                        throw new KafkaException(CreatePossiblyFatalError(err, null));
                     }
                 }
             }
@@ -465,7 +476,7 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -482,7 +493,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = Librdkafka.query_watermark_offsets(handle, topic, partition, out long low, out long high, (IntPtr)millisecondsTimeout);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             return new WatermarkOffsets(low,  high);
@@ -495,7 +506,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = Librdkafka.get_watermark_offsets(handle, topic, partition, out long low, out long high);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             return new WatermarkOffsets(low, high);
@@ -519,7 +530,7 @@ namespace Confluent.Kafka.Impl
                 var errorCode = Librdkafka.offsets_for_times(handle, cOffsets, (IntPtr) millisecondsTimeout);
                 if (errorCode != ErrorCode.NoError)
                 {
-                    throw new KafkaException(errorCode);
+                    throw new KafkaException(CreatePossiblyFatalError(errorCode, null));
                 }
 
                 var result = GetTopicPartitionOffsetErrorList(cOffsets);
@@ -555,7 +566,7 @@ namespace Confluent.Kafka.Impl
             Librdkafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -566,7 +577,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = Librdkafka.unsubscribe(handle);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -585,7 +596,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = Librdkafka.consumer_close(handle);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -597,7 +608,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = Librdkafka.assignment(handle, out listPtr);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             var ret = GetTopicPartitionOffsetErrorList(listPtr).Select(a => a.TopicPartition).ToList();
@@ -613,7 +624,7 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = Librdkafka.subscription(handle, out listPtr);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
             var ret = GetTopicPartitionOffsetErrorList(listPtr).Select(a => a.Topic).ToList();
             Librdkafka.topic_partition_list_destroy(listPtr);
@@ -649,7 +660,7 @@ namespace Confluent.Kafka.Impl
             }
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -665,7 +676,7 @@ namespace Confluent.Kafka.Impl
 
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             if (results.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
@@ -708,7 +719,7 @@ namespace Confluent.Kafka.Impl
             if (err != ErrorCode.NoError)
             {
                 Librdkafka.queue_destroy(cQueue);
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             // Wait for commit to finish
@@ -725,7 +736,7 @@ namespace Confluent.Kafka.Impl
             {
                 var errorString = Librdkafka.event_error_string(rkev);
                 Librdkafka.event_destroy(rkev);
-                throw new KafkaException(new Error(errorCode, errorString));
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorString));
             }
             
             var result = GetTopicPartitionOffsetErrorList(Librdkafka.event_topic_partition_list(rkev));
@@ -765,7 +776,7 @@ namespace Confluent.Kafka.Impl
             
             if (result != ErrorCode.NoError)
             {
-                throw new KafkaException(result);
+                throw new KafkaException(CreatePossiblyFatalError(result, null));
             }
         }
 
@@ -790,7 +801,7 @@ namespace Confluent.Kafka.Impl
             
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
             
             if (result.Where(tpe => tpe.Error.Code != ErrorCode.NoError).Count() > 0)
@@ -822,7 +833,7 @@ namespace Confluent.Kafka.Impl
 
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             if (result.Where(tpe => tpe.Error.Code != ErrorCode.NoError).Count() > 0)
@@ -854,7 +865,7 @@ namespace Confluent.Kafka.Impl
             
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
@@ -885,7 +896,7 @@ namespace Confluent.Kafka.Impl
             Librdkafka.topic_partition_list_destroy(list);
             if (err != ErrorCode.NoError)
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
 
             if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
@@ -1040,7 +1051,7 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw new KafkaException(err);
+                throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -1071,7 +1082,7 @@ namespace Confluent.Kafka.Impl
             var errorCode = Librdkafka.AdminOptions_set_validate_only(optionsPtr, (IntPtr)(validateOnly ? 1 : 0), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
             if (errorCode != ErrorCode.NoError)
             {
-                throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
             }
         }
 
@@ -1083,7 +1094,7 @@ namespace Confluent.Kafka.Impl
                 var errorCode = Librdkafka.AdminOptions_set_request_timeout(optionsPtr, (IntPtr)(int)(timeout.Value.TotalMilliseconds), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                 if (errorCode != ErrorCode.NoError)
                 {
-                    throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                    throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
                 }
             }
         }
@@ -1096,7 +1107,7 @@ namespace Confluent.Kafka.Impl
                 var errorCode = Librdkafka.AdminOptions_set_operation_timeout(optionsPtr, (IntPtr)(int)(timeout.Value.TotalMilliseconds), errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                 if (errorCode != ErrorCode.NoError)
                 {
-                    throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                    throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
                 }
             }
         }
@@ -1142,7 +1153,7 @@ namespace Confluent.Kafka.Impl
 
                     if (errorCode != ErrorCode.NoError)
                     {
-                        throw new KafkaException(errorCode);
+                        throw new KafkaException(CreatePossiblyFatalError(errorCode, null));
                     }
                 }
                 configPtrs[configPtrsIdx++] = resourcePtr;
@@ -1238,7 +1249,7 @@ namespace Confluent.Kafka.Impl
                             errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                         if (errorCode != ErrorCode.NoError)
                         {
-                            throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                            throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
                         }
                         assignmentsCount += 1;
                     }
@@ -1340,7 +1351,7 @@ namespace Confluent.Kafka.Impl
                                             errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                         if (errorCode != ErrorCode.NoError)
                         {
-                            throw new KafkaException(new Error(errorCode, errorStringBuilder.ToString()));
+                            throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
                         }
                     }
                 }

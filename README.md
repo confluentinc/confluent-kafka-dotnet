@@ -217,9 +217,39 @@ avrogen -s your_schema.asvc .
 For more information about working with Avro in .NET, refer to the the blog post [Decoupling Systems with Apache Kafka, Schema Registry and Avro](https://www.confluent.io/blog/decoupling-systems-with-apache-kafka-schema-registry-and-avro/)
 
 
+### Error Handling
+
+Errors raised via a client's `OnError` event should be considered informational except when the `IsFatal` flag
+is set to `true`, indicating that the client is in an un-recoverable state. Currently, this can only happen on
+the producer, and only when `enable.itempotence` has been set to `true`. In all other scenarios, clients are
+able to recover from all errors automatically.
+
+Although calling most methods on the clients will result in a fatal error if the client is in an un-recoverable
+state, you should generally only need to explicitly check for fatal errors in your `OnError` handler, and handle
+this scenario there.
+
+#### Producer
+
+When using `BeginProduce`, to determine whether a particular message has been successfully delivered to a cluster,
+check the `Error` field of the `DeliveryReport` during the delivery handler delegate callback.
+
+When using `ProduceAsync`, any delivery result other than `NoError` will cause the returned `Task` to be in the
+faulted state, with the `Task.Exception` field set to a `ProduceException` containing information about the message
+and error via the `DeliveryResult` and `Error` fields. Note: if you `await` the call, this means a `ProduceException`
+will be thrown.
+
+#### Consumer
+
+If you are using the deserializing version of the `Consumer`, any error encountered during deserialization (which
+happens during your call to `Consume`) will throw a `DeserializationException`. All other `Consume` errors will
+result in a `ConsumeException` with further information about the error and context available via the `Error` and
+`ConsumeResult` fields.
+
+
 ### Confluent Cloud
 
-The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
+The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
+[Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
 
 ## Build
