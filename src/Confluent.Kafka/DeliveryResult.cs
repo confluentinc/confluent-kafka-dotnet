@@ -69,7 +69,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The persisted status of the message
         /// </summary>
-        public MessageStatus MessageStatus { get; set; }
+        public PersistedStatus PersistedStatus { get; set; }
         
         /// <summary>
         ///     The Kafka message.

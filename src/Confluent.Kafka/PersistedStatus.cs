@@ -21,7 +21,7 @@ namespace Confluent.Kafka
     ///     Message persistance status can be used by the application to
     ///     find out if a produced message was persisted in the topic log.
     /// </summary>
-    public enum MessageStatus
+    public enum PersistedStatus
     {
         /// <summary>
         ///     Message was never transmitted to the broker, or failed with

@@ -113,7 +113,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 /* r_kafka_headers_t * */ out IntPtr hdrs);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern MessageStatus rd_kafka_message_status(
+        internal static extern PersistedStatus rd_kafka_message_status(
                 /* rd_kafka_message_t * */ IntPtr rkmessage);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

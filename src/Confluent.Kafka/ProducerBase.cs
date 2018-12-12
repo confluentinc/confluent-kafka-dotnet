@@ -45,7 +45,7 @@ namespace Confluent.Kafka
         internal readonly bool enableDeliveryReportValue = true;
         internal readonly bool enableDeliveryReportTimestamp = true;
         internal readonly bool enableDeliveryReportHeaders = true;
-        internal readonly bool enableDeliveryReportMessageStatus = true;
+        internal readonly bool enableDeliveryReportPersistedStatus = true;
 
         private readonly SafeKafkaHandle ownedKafkaHandle;
         private readonly Handle borrowedHandle;
@@ -159,8 +159,8 @@ namespace Confluent.Kafka
                 timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
             }
 
-            MessageStatus messageStatus = MessageStatus.PossiblyPersisted;
-            if (enableDeliveryReportMessageStatus)
+            PersistedStatus messageStatus = PersistedStatus.PossiblyPersisted;
+            if (enableDeliveryReportPersistedStatus)
             {
                 messageStatus = Librdkafka.message_status(rkmessage);
             }
@@ -407,7 +407,7 @@ namespace Confluent.Kafka
                     this.enableDeliveryReportValue = false;
                     this.enableDeliveryReportHeaders = false;
                     this.enableDeliveryReportTimestamp = false;
-                    this.enableDeliveryReportMessageStatus = false;
+                    this.enableDeliveryReportPersistedStatus = false;
                     if (fields != "none")
                     {
                         var parts = fields.Split(',');
@@ -419,7 +419,7 @@ namespace Confluent.Kafka
                                 case "value": this.enableDeliveryReportValue = true; break;
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
-                                case "status": this.enableDeliveryReportMessageStatus = true; break;
+                                case "status": this.enableDeliveryReportPersistedStatus = true; break;
                                 default: throw new ArgumentException(
                                     $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
                             }
