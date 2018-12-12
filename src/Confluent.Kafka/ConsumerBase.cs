@@ -55,8 +55,6 @@ namespace Confluent.Kafka
 
         private readonly SafeKafkaHandle kafkaHandle;
 
-        private static readonly byte[] EmptyBytes = new byte[0];
-
 
         private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
@@ -422,8 +420,13 @@ namespace Confluent.Kafka
                     unsafe
                     {
                         key = keyDeserializer.Deserialize(
-                            msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
-                            msg.key == IntPtr.Zero, true, new MessageMetadata { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
+                            msg.key == IntPtr.Zero
+                                ? ReadOnlySpan<byte>.Empty
+                                : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
+                            msg.key == IntPtr.Zero,
+                            true,
+                            new MessageMetadata { Timestamp = timestamp, Headers = headers },
+                            new TopicPartition(topic, msg.partition));
                     }
                 }
                 catch (Exception ex)
@@ -451,8 +454,13 @@ namespace Confluent.Kafka
                     unsafe
                     {
                         val = valueDeserializer.Deserialize(
-                            msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
-                            msg.val == IntPtr.Zero, false, new MessageMetadata { Timestamp = timestamp, Headers = headers }, new TopicPartition(topic, msg.partition));
+                            msg.val == IntPtr.Zero
+                                ? ReadOnlySpan<byte>.Empty
+                                : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
+                            msg.val == IntPtr.Zero,
+                            false,
+                            new MessageMetadata { Timestamp = timestamp, Headers = headers },
+                            new TopicPartition(topic, msg.partition));
                     }
                 }
                 catch (Exception ex)
