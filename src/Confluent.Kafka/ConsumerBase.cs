@@ -35,6 +35,11 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerBase : IConsumerBase, IClient
     {
+        /// <summary>
+        ///     value of the dotnet.consumer.max.cancellation.time.ms configuration parameter.
+        /// </summary>
+        protected int internalPollTimeMs = 50;
+
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
@@ -187,6 +192,25 @@ namespace Confluent.Kafka
         {
             Librdkafka.Initialize(null);
 
+            var maxCancellationTimeString = config
+                .Where(prop => prop.Key == ConfigPropertyNames.Consumer.MaxCancellationTimeMs)
+                .Select(a => a.Value)
+                .FirstOrDefault();
+
+            if (maxCancellationTimeString != null)
+            {
+                if (!int.TryParse(maxCancellationTimeString, out internalPollTimeMs))
+                {
+                    throw new ArgumentException(
+                        "dotnet.consumer.max.cancellation.time.ms must be a valid integer value.");
+                }
+                if (internalPollTimeMs < 1 || internalPollTimeMs > 10000)
+                {
+                    throw new ArgumentException(
+                        "dotnet.consumer.max.cancellation.time.ms must be in the range 1 <= dotnet.consumer.max.cancellation.time.ms <= 10000");
+                }
+            }
+
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
@@ -194,7 +218,8 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields);
+                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields &&
+                    prop.Key != ConfigPropertyNames.Consumer.MaxCancellationTimeMs);
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)

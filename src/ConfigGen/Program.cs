@@ -47,6 +47,7 @@ namespace ConfigGen
                 if (p.Name == "auto.commit.interval.ms" && !p.IsGlobal) { return false; }
                 if (p.Name == "enable.auto.commit" && !p.IsGlobal) { return false; }
                 if (p.Name == "auto.commit.enable" && !p.IsGlobal) { return false; }
+                if (p.Name == "queuing.strategy") { return false; }
                 if (p.Name.Contains("_")) { return false; }
                 return true;
             }).ToList();
@@ -140,6 +141,7 @@ namespace ConfigGen
         public string Name { get; set; }
         public string CPorA { get; set; }  // Consumer, Producer or All.
         public string Range { get; set; }
+        public string Importance { get; set; }
         public string Default { get; set; }
         public string Description { get; set; }
         public string Type { get; set; }
@@ -224,6 +226,9 @@ namespace Confluent.Kafka
 
                 codeText += $"        /// <summary>\n";
                 codeText += $"        ///     {prop.Description}\n";
+                codeText += $"        ///\n";
+                codeText += $"        ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n";
+                codeText += $"        ///     importance: {prop.Importance}\n";
                 codeText += $"        /// </summary>\n";
                 codeText += $"        public {nullableType} {ConfigNameToDotnetName(prop.Name)} {{ get {{ return ";
                 switch (type)
@@ -336,8 +341,21 @@ namespace Confluent.Kafka
         ///     headers, timestamp, topic, all, none
         /// 
         ///     default: all
+        ///     importance: low
         /// </summary>
         public string ConsumeResultFields { set { this.SetObject(""dotnet.consumer.consume.result.fields"", value); } }
+
+        /// <summary>
+        ///     The maximum length of time (in milliseconds) before a cancellation request to
+        ///     <see cref=""Confluent.Kafka.Consumer.Consume(System.Threading.CancellationToken)"" /> or
+        ///     <see cref=""Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.Threading.CancellationToken)"" />
+        ///     is acted on. Low values may result in measurably higher CPU usage.
+        /// 
+        ///     default: 50
+        ///     range: 1 &lt;= dotnet.consumer.max.cancellation.time.ms &lt;= 10000
+        ///     importance: low
+        /// </summary>
+        public int MaxCancellationTimeMs { set { this.SetObject(""dotnet.consumer.max.cancellation.time.ms"", value); } }
 
 ";
         }
@@ -369,6 +387,7 @@ namespace Confluent.Kafka
         ///     the Poll function manually.
         /// 
         ///     default: true
+        ///     importance: low
         /// </summary>
         public bool? EnableBackgroundPoll { get { return GetBool(""dotnet.producer.enable.background.poll""); } set { this.SetObject(""dotnet.producer.enable.background.poll"", value); } }
 
@@ -378,6 +397,7 @@ namespace Confluent.Kafka
         ///     forget"" semantics and a small boost in performance.
         /// 
         ///     default: true
+        ///     importance: low
         /// </summary>
         public bool? EnableDeliveryReports { get { return GetBool(""dotnet.producer.enable.delivery.reports""); } set { this.SetObject(""dotnet.producer.enable.delivery.reports"", value); } }
 
@@ -388,6 +408,7 @@ namespace Confluent.Kafka
         ///     key, value, timestamp, headers, all, none.
         /// 
         ///     default: all
+        ///     importance: low
         /// </summary>
         public string DeliveryReportFields { get { return Get(""dotnet.producer.delivery.report.fields""); } set { this.SetObject(""dotnet.producer.delivery.report.fields"", value.ToString()); } }
 
@@ -432,7 +453,7 @@ namespace Confluent.Kafka
                 }
 
                 var columns = line.Split('|');
-                if (columns.Length != 5) { continue; }
+                if (columns.Length != 6) { continue; }
                 if (columns[0].Contains("-----")) { continue; }
                 if (columns[0].Contains("Property")) { continue; }
 
@@ -442,8 +463,9 @@ namespace Confluent.Kafka
                 prop.CPorA = columns[1].Trim();
                 prop.Range = columns[2].Trim();
                 prop.Default = columns[3].Trim();
+                prop.Importance = columns[4].Trim();
 
-                var desc = columns[4].Trim();
+                var desc = columns[5].Trim();
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias != !desc.Contains("<br>*Type")) { throw new Exception("Inconsistent indication of alias parameter"); }
                 if (isAlias)
@@ -517,8 +539,9 @@ namespace Confluent.Kafka
             }
 
             string gitBranchName = args[0];
+            string url = $"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md";
             var configDoc = await (await (new HttpClient())
-                .GetAsync($"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md"))
+                .GetAsync(url))
                 .Content.ReadAsStringAsync();
 
             var props =
@@ -527,6 +550,14 @@ namespace Confluent.Kafka
                 removeDuplicateTopicLevel(
                 MappingConfiguration.RemoveLegacyOrNotRelevant(
                 extractAll(configDoc)))));
+
+            if (props.Count() == 0)
+            {
+                Console.WriteLine($"no properties found at url: {url}");
+                return 1;
+            }
+
+            Console.WriteLine($"property counts: [all: {props.Count()}, *: {props.Where(p => p.CPorA == "*").Count()}, C: {props.Where(p => p.CPorA == "C").Count()}, P: {props.Where(p => p.CPorA == "P").Count()}].");
 
             var codeText = "";
             codeText += createFileHeader(gitBranchName);

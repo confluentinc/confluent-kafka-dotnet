@@ -39,6 +39,28 @@ namespace Confluent.Kafka.UnitTests
             configWithNullValue.Set("sasl.password", null);
             e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(configWithNullValue); });
             Assert.Contains("sasl.password", e.Message);
+
+            // Throw an exception if dotnet.consumer.max.cancellation.time.ms is out of range.
+            e = Assert.Throws<ArgumentException>(() =>
+            {
+                var c = new Consumer(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:9092",
+                    GroupId = Guid.NewGuid().ToString(),
+                    MaxCancellationTimeMs = 0
+                });
+            });
+            Assert.Contains("range", e.Message);
+            e = Assert.Throws<ArgumentException>(() =>
+            {
+                var c = new Consumer(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:9092",
+                    GroupId = Guid.NewGuid().ToString(),
+                    MaxCancellationTimeMs = 10001
+                });
+            });
+            Assert.Contains("range", e.Message);
         }
 
         private static ConsumerConfig CreateValidConfiguration()
