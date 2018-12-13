@@ -35,7 +35,8 @@ namespace Confluent.Kafka
     ///     any public methods for producing messages.
     /// </summary>
     public class ProducerBase : IProducerBase
-    {        
+    {
+        private int cancellationDelayMaxMs;
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
@@ -58,7 +59,6 @@ namespace Confluent.Kafka
         private readonly Task callbackTask;
         private readonly CancellationTokenSource callbackCts;
 
-        private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -67,7 +67,7 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-                            ownedKafkaHandle.Poll((IntPtr)POLL_TIMEOUT_MS);
+                            ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
                         }
                     }
                     catch (OperationCanceledException) {}
@@ -365,6 +365,8 @@ namespace Confluent.Kafka
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
+
+            config = Config.GetCancellationDelayMaxMs(config, out this.cancellationDelayMaxMs);
 
             this.DeliveryReportCallback = DeliveryReportCallbackImpl;
 

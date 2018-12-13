@@ -36,9 +36,9 @@ namespace Confluent.Kafka
     public class ConsumerBase : IConsumerBase, IClient
     {
         /// <summary>
-        ///     value of the dotnet.consumer.max.cancellation.time.ms configuration parameter.
+        ///     value of the dotnet.cancellation.delay.max.ms configuration parameter.
         /// </summary>
-        protected int internalPollTimeMs = 50;
+        protected int cancellationDelayMaxMs;
 
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
@@ -185,29 +185,11 @@ namespace Confluent.Kafka
         ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
         ///     specified.
         /// </param>
-        public ConsumerBase(
-            IEnumerable<KeyValuePair<string, string>> config)
+        public ConsumerBase(IEnumerable<KeyValuePair<string, string>> config)
         {
             Librdkafka.Initialize(null);
 
-            var maxCancellationTimeString = config
-                .Where(prop => prop.Key == ConfigPropertyNames.Consumer.MaxCancellationTimeMs)
-                .Select(a => a.Value)
-                .FirstOrDefault();
-
-            if (maxCancellationTimeString != null)
-            {
-                if (!int.TryParse(maxCancellationTimeString, out internalPollTimeMs))
-                {
-                    throw new ArgumentException(
-                        "dotnet.consumer.max.cancellation.time.ms must be a valid integer value.");
-                }
-                if (internalPollTimeMs < 1 || internalPollTimeMs > 10000)
-                {
-                    throw new ArgumentException(
-                        "dotnet.consumer.max.cancellation.time.ms must be in the range 1 <= dotnet.consumer.max.cancellation.time.ms <= 10000");
-                }
-            }
+            config = Config.GetCancellationDelayMaxMs(config, out this.cancellationDelayMaxMs);
 
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
@@ -215,9 +197,7 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = config
-                .Where(prop => 
-                    prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields &&
-                    prop.Key != ConfigPropertyNames.Consumer.MaxCancellationTimeMs);
+                .Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields);
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)

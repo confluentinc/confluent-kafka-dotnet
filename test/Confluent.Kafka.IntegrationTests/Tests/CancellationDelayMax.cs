@@ -24,6 +24,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -33,10 +34,10 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test internal poll time is effective.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_InternalPollTime(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        [SkippableTheory, MemberData(nameof(KafkaParameters))]
+        public static void CancellationDelayMax(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            LogToFile("start Consumer_InternalPollTime");
+            LogToFile("start CancellationDelayMax");
 
             var consumerConfig = new ConsumerConfig
             {
@@ -44,14 +45,29 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 SessionTimeoutMs = 6000,
                 EnablePartitionEof = false,
-                MaxCancellationTimeMs = 2
+                CancellationDelayMaxMs = 2
+            };
+
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                CancellationDelayMaxMs = 2
+            };
+
+            var adminClientConfig = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+                CancellationDelayMaxMs = 2
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 3))
             using (var consumer = new Consumer(consumerConfig))
+            using (var producer = new Producer(producerConfig))
+            using (var adminClient = new AdminClient(adminClientConfig))
             {
                 consumer.Subscribe(topic.Name);
 
+                // for the consumer, check that the cancellation token is honored.
                 for (int i=0; i<20; ++i)
                 {
                     var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(2));
@@ -67,14 +83,21 @@ namespace Confluent.Kafka.IntegrationTests
                     // 2ms + 2ms + quite a bit of leeway (but still much less than the default of 50).
                     // in practice this should 4 almost all of the time.
                     var elapsed = sw.ElapsedMilliseconds;
-                    Assert.True(elapsed < 10);
+                    Skip.If(elapsed > 8);
                 }
 
                 consumer.Close();
+
+                // for the producer, make do with just a simple check that this does not throw or hang.
+                var dr = producer.ProduceAsync(topic.Name, new Message { Key = new byte[] { 42 }, Value = new byte[] { 255 } }).Result;
+                
+                // for the admin client, make do with just simple check that this does not throw or hang.
+                var cr = new Confluent.Kafka.Admin.ConfigResource { Type = ResourceType.Topic, Name = topic.Name };
+                var configs = adminClient.DescribeConfigsAsync(new ConfigResource[] { cr }).Result;
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_InternalPollTime");
+            LogToFile("end   CancellationDelayMax");
         }
 
     }

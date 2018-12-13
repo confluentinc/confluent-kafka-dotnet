@@ -345,18 +345,6 @@ namespace Confluent.Kafka
         /// </summary>
         public string ConsumeResultFields { set { this.SetObject(""dotnet.consumer.consume.result.fields"", value); } }
 
-        /// <summary>
-        ///     The maximum length of time (in milliseconds) before a cancellation request to
-        ///     <see cref=""Confluent.Kafka.Consumer.Consume(System.Threading.CancellationToken)"" /> or
-        ///     <see cref=""Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.Threading.CancellationToken)"" />
-        ///     is acted on. Low values may result in measurably higher CPU usage.
-        /// 
-        ///     default: 50
-        ///     range: 1 &lt;= dotnet.consumer.max.cancellation.time.ms &lt;= 10000
-        ///     importance: low
-        /// </summary>
-        public int MaxCancellationTimeMs { set { this.SetObject(""dotnet.consumer.max.cancellation.time.ms"", value); } }
-
 ";
         }
 

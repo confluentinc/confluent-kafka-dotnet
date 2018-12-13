@@ -238,8 +238,8 @@ namespace Confluent.Kafka
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
                 ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
-                    ? Consume<TKey, TValue>(internalPollTimeMs, keyDeserializer, valueDeserializer) // fast path for simple case.
-                    : Consume(internalPollTimeMs);
+                    ? Consume<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer) // fast path for simple case.
+                    : Consume(cancellationDelayMaxMs);
 
                 if (result == null) { continue; }
                 return result;
@@ -309,7 +309,7 @@ namespace Confluent.Kafka
                 // Note: An alternative to throwing on cancellation is to return null,
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
-                var result = Consume(internalPollTimeMs, Deserializers.ByteArray, Deserializers.ByteArray);
+                var result = Consume(cancellationDelayMaxMs, Deserializers.ByteArray, Deserializers.ByteArray);
                 if (result == null) { continue; }
                 return new ConsumeResult
                 {
