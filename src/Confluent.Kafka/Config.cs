@@ -131,7 +131,7 @@ namespace Confluent.Kafka
         {
             var result = Get(key);
             if (result == null) { return null; }
-            return Enum.Parse(type, result);
+            return Enum.Parse(type, result, ignoreCase: true);
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace Confluent.Kafka
 
             if (val is Enum)
             {
-                this.properties[name] = val.ToString().ToLower();
+                this.properties[name] = val.ToString().ToLowerInvariant();
             }
             else
             {
