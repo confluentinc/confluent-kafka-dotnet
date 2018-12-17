@@ -290,7 +290,7 @@ namespace Confluent.Kafka
         {
             var result = Get(key);
             if (result == null) { return null; }
-            return Enum.Parse(type, result);
+            return Enum.Parse(type, result, true);
         }
 
         /// <summary>
