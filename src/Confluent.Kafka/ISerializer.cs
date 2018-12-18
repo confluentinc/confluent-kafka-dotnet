@@ -29,7 +29,7 @@ namespace Confluent.Kafka
         /// <param name="data">
         ///     The value to serialize.
         /// </param>
-        /// <param name="messageAncillary">
+        /// <param name="messageMetadata">
         ///     Properties of the message the data is associated with
         ///     extra to the key or value.
         /// </param>
@@ -44,6 +44,6 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The serialized value.
         /// </returns>
-        byte[] Serialize(T data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination);
+        byte[] Serialize(T data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination);
     }
 }

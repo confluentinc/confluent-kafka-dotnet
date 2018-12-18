@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         
         private class Utf8Serializer : ISerializer<string>
         {
-            public byte[] Serialize(string data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(string data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
             {
                 if (data == null)
                 {
@@ -51,7 +51,7 @@ namespace Confluent.Kafka
 
         private class NullSerializer : ISerializer<Null>
         {
-            public byte[] Serialize(Null data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(Null data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
                 => null;
         }
 
@@ -63,7 +63,7 @@ namespace Confluent.Kafka
 
         private class Int64Serializer : ISerializer<long>
         {
-            public byte[] Serialize(long data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(long data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
             {
                 var result = new byte[8];
                 result[0] = (byte)(data >> 56);
@@ -86,7 +86,7 @@ namespace Confluent.Kafka
 
         private class Int32Serializer : ISerializer<int>
         {
-            public byte[] Serialize(int data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(int data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
             {
                 var result = new byte[4]; // int is always 32 bits on .NET.
                 // network byte order -> big endian -> most significant byte in the smallest address.
@@ -109,7 +109,7 @@ namespace Confluent.Kafka
 
         private class SingleSerializer : ISerializer<float>
         {
-            public byte[] Serialize(float data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(float data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
             {
                 if (BitConverter.IsLittleEndian)
                 {
@@ -139,7 +139,7 @@ namespace Confluent.Kafka
 
         private class DoubleSerializer : ISerializer<double>
         {
-            public byte[] Serialize(double data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(double data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
             {
                 if (BitConverter.IsLittleEndian)
                 {
@@ -176,7 +176,7 @@ namespace Confluent.Kafka
         
         private class ByteArraySerializer : ISerializer<byte[]>
         {
-            public byte[] Serialize(byte[] data, bool isKey, MessageMetadata messageAncillary, TopicPartition destination)
+            public byte[] Serialize(byte[] data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
                 => data;
         }
     }

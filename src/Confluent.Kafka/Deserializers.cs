@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         
         private class Utf8Deserializer : IDeserializer<string>
         {
-            public string Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public string Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (isNull)
                 {
@@ -65,7 +65,7 @@ namespace Confluent.Kafka
 
         private class NullDeserializer : IDeserializer<Null>
         {
-            public Null Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public Null Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (!isNull)
                 {
@@ -83,7 +83,7 @@ namespace Confluent.Kafka
 
         private class IgnoreDeserializer : IDeserializer<Ignore>
         {
-            public Ignore Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public Ignore Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
                 => null;
         }
 
@@ -94,7 +94,7 @@ namespace Confluent.Kafka
 
         private class Int64Deserializer : IDeserializer<long>
         {
-            public long Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public long Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (isNull)
                 {
@@ -126,7 +126,7 @@ namespace Confluent.Kafka
 
         private class Int32Deserializer : IDeserializer<int>
         {
-            public int Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public int Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (isNull)
                 {
@@ -154,7 +154,7 @@ namespace Confluent.Kafka
 
         private class SingleDeserializer : IDeserializer<float>
         {
-            public float Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public float Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (isNull)
                 {
@@ -205,7 +205,7 @@ namespace Confluent.Kafka
 
         private class DoubleDeserializer : IDeserializer<double>
         {
-            public double Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public double Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (isNull)
                 {
@@ -263,7 +263,7 @@ namespace Confluent.Kafka
 
         private class ByteArrayDeserializer : IDeserializer<byte[]>
         {
-            public byte[] Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+            public byte[] Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
             {
                 if (isNull) { return null; }
                 return data.ToArray();

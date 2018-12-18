@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="isNull">
         ///     True if this is a null value.
         /// </param>
-        /// <param name="messageAncillary">
+        /// <param name="messageMetadata">
         ///     Properties of the message the data is associated with in
         ///     addition to the key or value.
         /// </param>
@@ -97,7 +97,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
-        public async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source)
+        public async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
         {
             try
             {

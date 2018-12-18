@@ -33,7 +33,7 @@ namespace Confluent.Kafka
         /// <param name="isNull">
         ///     Whether or not the value is null.
         /// </param>
-        /// <param name="messageAncillary">
+        /// <param name="messageMetadata">
         ///     Properties of the message the data is associated with
         ///     extra to the key or value.
         /// </param>
@@ -47,6 +47,6 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The deserialized value.
         /// </returns>
-        T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageAncillary, TopicPartition source);
+        T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source);
     }
 }
