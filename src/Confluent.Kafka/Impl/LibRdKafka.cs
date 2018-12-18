@@ -156,7 +156,7 @@ namespace Confluent.Kafka.Impl
             _header_get_all = (headerGetAllDelegate)methods.Single(m => m.Name == "rd_kafka_header_get_all").CreateDelegate(typeof(headerGetAllDelegate));
             _message_timestamp = (messageTimestampDelegate)methods.Single(m => m.Name == "rd_kafka_message_timestamp").CreateDelegate(typeof(messageTimestampDelegate));
             _message_headers = (messageHeadersDelegate)methods.Single(m => m.Name == "rd_kafka_message_headers").CreateDelegate(typeof(messageHeadersDelegate));
-            _message_status = (Func<IntPtr, PersistedStatus>)methods.Single(m => m.Name == "rd_kafka_message_status").CreateDelegate(typeof(Func<IntPtr, PersistedStatus>));
+            _message_status = (Func<IntPtr, PersistenceStatus>)methods.Single(m => m.Name == "rd_kafka_message_status").CreateDelegate(typeof(Func<IntPtr, PersistenceStatus>));
             _message_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_message_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _conf_new = (Func<SafeConfigHandle>)methods.Single(m => m.Name == "rd_kafka_conf_new").CreateDelegate(typeof(Func<SafeConfigHandle>));
             _conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -577,8 +577,8 @@ namespace Confluent.Kafka.Impl
         private static messageTimestampDelegate _message_timestamp;
         internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
 
-        private static Func<IntPtr, PersistedStatus> _message_status;
-        internal static PersistedStatus message_status(IntPtr rkmessage) => _message_status(rkmessage);
+        private static Func<IntPtr, PersistenceStatus> _message_status;
+        internal static PersistenceStatus message_status(IntPtr rkmessage) => _message_status(rkmessage);
 
         internal delegate ErrorCode messageHeadersDelegate(IntPtr rkmessage, out IntPtr hdrsType);
         private static messageHeadersDelegate _message_headers;

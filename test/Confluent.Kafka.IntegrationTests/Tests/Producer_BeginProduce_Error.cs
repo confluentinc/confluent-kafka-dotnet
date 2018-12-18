@@ -48,6 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(Offset.Invalid, dr.Offset);
                 Assert.Null(dr.Message.Key);
                 Assert.Equal("test", dr.Message.Value);
+                Assert.Equal(PersistenceStatus.Persisted, dr.PersistenceStatus);
                 Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
                 count += 1;
             };

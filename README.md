@@ -231,7 +231,7 @@ this scenario there.
 #### Producer
 
 When using `BeginProduce`, to determine whether a particular message has been successfully delivered to a cluster,
-check the `Error` field of the `DeliveryReport` during the delivery handler delegate callback.
+check the `Error` field of the `DeliveryReport` during the delivery handler callback.
 
 When using `ProduceAsync`, any delivery result other than `NoError` will cause the returned `Task` to be in the
 faulted state, with the `Task.Exception` field set to a `ProduceException` containing information about the message

@@ -159,7 +159,7 @@ namespace Confluent.Kafka
                 timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
             }
 
-            PersistedStatus messageStatus = PersistedStatus.PossiblyPersisted;
+            PersistenceStatus messageStatus = PersistenceStatus.PossiblyPersisted;
             if (enableDeliveryReportPersistedStatus)
             {
                 messageStatus = Librdkafka.message_status(rkmessage);

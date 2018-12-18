@@ -20,7 +20,7 @@
 - Removed `Consumer.OnPartitionEOF` in favor of `ConsumeResult.IsPartitionEOF`.
 - Removed `ErrorEvent` class and added `IsFatal` to `Error` class. 
   - The `IsFatal` flag is now set appropriately for all errors (previously it was always set to `false`).
-- Added `PersistedStatus` property to `DeliveryResult`, which provides information on the persited status of the message.
+- Added `PersistenceStatus` property to `DeliveryResult`, which provides information on the persitence status of the message.
 
 ## Fixes
 
