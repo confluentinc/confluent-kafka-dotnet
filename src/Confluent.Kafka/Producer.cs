@@ -366,6 +366,11 @@ namespace Confluent.Kafka
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
         {
+            if (deliveryHandler != null && !enableDeliveryReports)
+            {
+                throw new ArgumentException("A delivery handler was specified, but delivery reports are disabled.");
+            }
+
             var keyBytes = (keySerializer != null)
                 ? keySerializer.Serialize(message.Key, true, message, topicPartition)
                 : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
@@ -644,6 +649,11 @@ namespace Confluent.Kafka
             Message message,
             Action<DeliveryReport> deliveryHandler = null)
         {
+            if (deliveryHandler != null && !enableDeliveryReports)
+            {
+                throw new ArgumentException("A delivery handler was specified, but delivery reports are disabled.");
+            }
+
             var keyBytes = message.Key;
             var valBytes = message.Value;
 
