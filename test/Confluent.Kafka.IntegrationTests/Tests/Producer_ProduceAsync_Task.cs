@@ -18,16 +18,16 @@
 
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Xunit;
-using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every Producer&lt;TKey,TValue&gt;.ProduceAsync method overload
-    ///     that provides delivery reports via a Task.
+    ///     Test of every <see cref="Producer{TKey,TValue}.ProduceAsync" /> 
+    ///     and <see cref="Producer.ProduceAsync" /> method overload.
     /// </summary>
     public static partial class Tests
     {
@@ -38,14 +38,19 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var drs = new List<Task<DeliveryReport<string, string>>>();
+
+            // serialize case
+
+            var drs = new List<Task<DeliveryResult<string, string>>>();
             using (var producer = new Producer<string, string>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
                     new Message<string, string> { Key = "test key 0", Value = "test val 0" }));
-                drs.Add(producer.ProduceAsync(partitionedTopic, new Message<string, string> { Key = "test key 1", Value = "test val 1" }));
-                producer.Flush(TimeSpan.FromSeconds(10));
+                drs.Add(producer.ProduceAsync(
+                    partitionedTopic,
+                    new Message<string, string> { Key = "test key 1", Value = "test val 1" }));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
             for (int i=0; i<2; ++i)
@@ -61,7 +66,36 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal((Partition)1, drs[0].Result.Partition);
-            
+
+
+            // byte[] case
+
+            var drs2 = new List<Task<DeliveryResult>>();
+            using (var producer = new Producer(producerConfig))
+            {
+                drs2.Add(producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 1),
+                    new Message { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
+                drs2.Add(producer.ProduceAsync(
+                    partitionedTopic,
+                    new Message { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            for (int i=0; i<2; ++i)
+            {
+                var dr = drs2[i].Result;
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.True(dr.Offset >= 0);
+                Assert.True(dr.Partition == 0 || dr.Partition == 1);
+                Assert.Equal($"test key {i+2}", Encoding.UTF8.GetString(dr.Message.Key));
+                Assert.Equal($"test val {i+2}", Encoding.UTF8.GetString(dr.Message.Value));
+                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+            }
+
+            Assert.Equal((Partition)1, drs2[0].Result.Partition);
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Task");
         }

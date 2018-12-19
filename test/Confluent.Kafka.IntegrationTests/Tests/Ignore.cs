@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            DeliveryReport<byte[], byte[]> dr;
+            DeliveryResult<byte[], byte[]> dr;
             using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 // Assume that all these produce calls succeed.
@@ -51,17 +51,17 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
-                ConsumeResult<Ignore, Ignore> record = consumer.Consume(TimeSpan.FromMinutes(1));
+                ConsumeResult<Ignore, Ignore> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
 
-                record = consumer.Consume(TimeSpan.FromMinutes(1));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
 
-                record = consumer.Consume(TimeSpan.FromMinutes(1));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Key);
                 Assert.Null(record.Message.Value);
@@ -71,7 +71,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
 
-                ConsumeResult<Ignore, byte[]> record = consumer.Consume(TimeSpan.FromMinutes(1));
+                ConsumeResult<Ignore, byte[]> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Key);
                 Assert.NotNull(record.Value);

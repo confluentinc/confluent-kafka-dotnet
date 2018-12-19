@@ -100,11 +100,11 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     On the Consumer, executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
+        ///     <see cref="Confluent.Kafka.Consumer.Consume(System.Threading.CancellationToken)" />
         ///     (on the same thread) and on the Producer and AdminClient, on the
         ///     background poll thread.
         /// </remarks>
-        event EventHandler<ErrorEvent> OnError;
+        event EventHandler<Error> OnError;
 
         /// <summary>
         ///     Raised on librdkafka statistics events - a JSON
@@ -117,7 +117,7 @@ namespace Confluent.Kafka
         ///     (disabled by default).
         ///
         ///     On the Consumer, executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.Threading.CancellationToken)" />
+        ///     <see cref="Confluent.Kafka.Consumer.Consume(System.Threading.CancellationToken)" />
         ///     (on the same thread) and on the Producer and AdminClient, on the
         ///     background poll thread.
         /// </remarks>

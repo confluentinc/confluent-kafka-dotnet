@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Consumer_Subscription");
             
             int N = 2;
-            var firstProduced = Util.ProduceMessages(bootstrapServers, singlePartitionTopic, 1, N);
+            var firstProduced = Util.ProduceNullStringMessages(bootstrapServers, singlePartitionTopic, 1, N);
 
             var consumerConfig = new ConsumerConfig
             {
@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 // Test empty case.
                 Assert.Empty(consumer.Subscription);
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                var r = consumer.Consume(TimeSpan.FromSeconds(20));
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
 
                 consumer.Close();
             }

@@ -22,8 +22,10 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Examples.MultiProducer
 {
     /// <summary>
-    ///     An example showing how to wrap a single Producer to produce messages using
-    ///     different serializers.
+    ///     An example showing how to construct a Producer which re-uses the 
+    ///     underlying librdkafka client instance (and Kafka broker connections)
+    ///     of another producer instance. This allows you to produce messages
+    ///     with different types efficiently.
     /// </summary>
     public class Program
     {
@@ -32,22 +34,19 @@ namespace Confluent.Kafka.Examples.MultiProducer
             var config = new ProducerConfig { BootstrapServers = args[0] };
 
             using (var producer = new Producer<string, string>(config))
+            using (var producer2 = new Producer<Null, int>(producer.Handle))
             {
-                // create a producer of different type that reuses producer's Handle.
-                var producer2 = new Producer<Null, int>(producer.Handle, null, Serializers.Int32);
-
-                // write (string, string) data to topic "first-topic", statically type checked.
+                // write (string, string) data to topic "first-topic".
                 producer.ProduceAsync("first-topic", new Message<string, string> { Key = "my-key-value", Value = "my-value" });
 
-                // write (null, int) data to topic "second-data". statically type checked, using
-                // the same underlying client as producer.
+                // write (null, int) data to topic "second-data" using the same underlying broker connections.
                 producer2.ProduceAsync("second-topic", new Message<Null, int> { Value = 42 });
 
                 // producers are not tied to topics. Although it's unusual that you might want to
                 // do so, you can use different producers to write to the same topic.
                 producer2.ProduceAsync("first-topic", new Message<Null, int> { Value = 107 });
 
-                // As the ProducerAsync tasks are not waited on there will still be messages in flight.
+                // As the Tasks returned by ProducerAsync are not waited on there will still be messages in flight.
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
         }

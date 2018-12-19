@@ -33,7 +33,7 @@ namespace Confluent.SchemaRegistry
         private readonly Dictionary<int, string> schemaById = new Dictionary<int, string>();
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
-        private readonly object cacheLock = new object();
+        private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
@@ -142,7 +142,7 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");
+                    throw new ArgumentException($"CachedSchemaRegistryClient: unknown configuration parameter {property.Key}");
                 }
             }
 
@@ -175,10 +175,11 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaIdAsync(string, string)" />
         /// </summary>
-        public Task<int> GetSchemaIdAsync(string subject, string schema)
+        public async Task<int> GetSchemaIdAsync(string subject, string schema)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync();
+            try
+            {
                 if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
                 {
                     idBySchema = new Dictionary<string, int>();
@@ -193,12 +194,16 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    schemaId = restService.CheckSchemaAsync(subject, schema, true).Result.Id;
+                    schemaId = (await restService.CheckSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false)).Id;
                     idBySchema[schema] = schemaId;
                     schemaById[schemaId] = schema;
                 }
 
-                return Task.FromResult(schemaId);
+                return schemaId;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
@@ -206,10 +211,11 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.RegisterSchemaAsync(string, string)" />
         /// </summary>
-        public Task<int> RegisterSchemaAsync(string subject, string schema)
+        public async Task<int> RegisterSchemaAsync(string subject, string schema)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync();
+            try
+            {
                 if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
                 {
                     idBySchema = new Dictionary<string, int>();
@@ -224,12 +230,16 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    schemaId = restService.RegisterSchemaAsync(subject, schema).Result;
+                    schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema] = schemaId;
                     schemaById[schemaId] = schema;
                 }
 
-                return Task.FromResult(schemaId);
+                return schemaId;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
@@ -237,19 +247,24 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaAsync(int)" />
         /// </summary>
-        public Task<string> GetSchemaAsync(int id)
+        public async Task<string> GetSchemaAsync(int id)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync();
+            try
+            {
                 if (!this.schemaById.TryGetValue(id, out string schema))
                 {
                     CleanCacheIfFull();
 
-                    schema = restService.GetSchemaAsync(id).Result;
+                    schema = await restService.GetSchemaAsync(id).ConfigureAwait(continueOnCapturedContext: false);
                     schemaById[id] = schema;
                 }
 
-                return Task.FromResult(schema);
+                return schema;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
@@ -257,10 +272,11 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaAsync(string, int)" />
         /// </summary>
-        public Task<string> GetSchemaAsync(string subject, int version)
+        public async Task<string> GetSchemaAsync(string subject, int version)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync();
+            try
+            {
                 CleanCacheIfFull();
 
                 if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
@@ -271,13 +287,17 @@ namespace Confluent.SchemaRegistry
 
                 if (!schemaByVersion.TryGetValue(version, out string schemaString))
                 {
-                    var schema = restService.GetSchemaAsync(subject, version).Result;
+                    var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
                     schemaString = schema.SchemaString;
                     schemaByVersion[version] = schemaString;
                     schemaById[schema.Id] = schemaString;
                 }
 
-                return Task.FromResult(schemaString);
+                return schemaString;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 

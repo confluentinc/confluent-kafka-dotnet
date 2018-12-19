@@ -58,6 +58,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ErrorCode rd_kafka_last_error();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_fatal_error(
+                IntPtr rk,
+                StringBuilder errstr,
+                UIntPtr errstr_size);
+                
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_topic_partition_list_t * */ IntPtr
         rd_kafka_topic_partition_list_new(IntPtr size);
 
@@ -105,6 +111,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ErrorCode rd_kafka_message_headers(
                 /* rd_kafka_message_t * */ IntPtr rkmessage,
                 /* r_kafka_headers_t * */ out IntPtr hdrs);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern PersistenceStatus rd_kafka_message_status(
+                /* rd_kafka_message_t * */ IntPtr rkmessage);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_message_destroy(

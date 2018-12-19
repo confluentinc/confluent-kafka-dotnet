@@ -30,29 +30,37 @@ namespace Confluent.Kafka.UnitTests
             // Throw exception if 'group.id' is not set in config and ensure that exception
             // mentions 'group.id'.
             var config = new ConsumerConfig();
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(config); });
-            Assert.Contains("group.id", e.Message);
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<Null, string>(config); });
+            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
             Assert.Contains("group.id", e.Message);
 
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.
             var configWithNullValue = CreateValidConfiguration();
             configWithNullValue.Set("sasl.password", null);
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer<byte[], byte[]>(configWithNullValue); });
+            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(configWithNullValue); });
             Assert.Contains("sasl.password", e.Message);
 
-            // Throw exception when serializer and deserializer are equal and ensure that exception
-            // message indicates the issue.
-            e = Assert.Throws<ArgumentException>(() => 
+            // Throw an exception if dotnet.cancellation.delay.max.ms is out of range.
+            e = Assert.Throws<ArgumentException>(() =>
             {
-                var validConfig = CreateValidConfiguration();
-                var deserializer = Deserializers.UTF8;
-                var c = new Consumer<string, string>(validConfig, deserializer, deserializer); 
+                var c = new Consumer(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:9092",
+                    GroupId = Guid.NewGuid().ToString(),
+                    CancellationDelayMaxMs = 0
+                });
             });
-            Assert.Contains("must not be the same object", e.Message);
-
-            // positve case covered by integration tests. here, avoiding creating a rd_kafka_t instance.
+            Assert.Contains("range", e.Message);
+            e = Assert.Throws<ArgumentException>(() =>
+            {
+                var c = new Consumer(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:9092",
+                    GroupId = Guid.NewGuid().ToString(),
+                    CancellationDelayMaxMs = 10001
+                });
+            });
+            Assert.Contains("range", e.Message);
         }
 
         private static ConsumerConfig CreateValidConfiguration()

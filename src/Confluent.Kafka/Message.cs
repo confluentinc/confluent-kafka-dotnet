@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2018 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,38 +16,48 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents a message stored in Kafka.
+    ///     Represents a (deserialized) Kafka message.
     /// </summary>
-    public class Message
+    public class Message<TKey, TValue> : MessageMetadata
     {
-        /// <summary>
-        ///     Gets the message value (possibly null).
-        /// </summary>
-        public byte[] Value { get; set; }
-
         /// <summary>
         ///     Gets the message key value (possibly null).
         /// </summary>
-        public byte[] Key { get; set; }
+        public TKey Key { get; set; }
 
         /// <summary>
-        ///     The message timestamp. The timestamp type must be set to CreateTime. 
-        ///     Specify Timestamp.Default to set the message timestamp to the time
-        ///     of this function call.
+        ///     Gets the message value (possibly null).
         /// </summary>
-        public Timestamp Timestamp { get; set; }
+        public TValue Value { get; set; }
+    }
+
+    /// <summary>
+    ///     Represents a Kafka message.
+    /// </summary>
+    public class Message : Message<byte[], byte[]>
+    {
+        /// <summary>
+        ///     Create a new instance with default property values.
+        /// </summary>
+        public Message() {}
 
         /// <summary>
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
-        ///     duplicate header keys are allowed.
+        ///     Create a new instance that exactly mirrors the state of
+        ///     a <see cref="Message{TKey, TValue}" /> instance.
         /// </summary>
-        public Headers Headers { get; set; }
+        /// <param name="message">
+        ///     The <see cref="Message{TKey, TValue}" /> instance to copy.
+        /// </param>
+        public Message(Message<byte[], byte[]> message)
+        {
+            Timestamp = message.Timestamp;
+            Headers = message.Headers;
+            Key = message.Key;
+            Value = message.Value;
+        }
     }
 }

@@ -4,11 +4,12 @@
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka.Avro" Version="1.0-beta2" /> -->
-    <ProjectReference Include="../../src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj" />
+    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes" Version="1.0-beta2" /> -->
+    <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj" />
   </ItemGroup>
 
 </Project>

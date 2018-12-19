@@ -19,8 +19,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using System.Text;
 using Xunit;
 
 
@@ -44,28 +44,32 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var producer = new Producer(producerConfig))
             using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.OnError += (_, e)
                     => Assert.True(false, e.Reason);
 
                 const string checkValue = "check value";
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = checkValue }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "second value" }).Result;
-                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "third value" }).Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize(checkValue, true, null, null) }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("second value", true, null, null) }).Result;
+                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("third value", true, null, null) }).Result;
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromSeconds(30));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
-                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
-                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 consumer.Seek(dr.TopicPartitionOffset);
 
-                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                // position is that of the last consumed offset. it shouldn't be equal to the seek position.
+                var pos = consumer.Position(new List<TopicPartition> { dr.TopicPartition }).First();
+                Assert.NotEqual(dr.Offset, pos.Offset);
+
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(checkValue, record.Message.Value);
             }

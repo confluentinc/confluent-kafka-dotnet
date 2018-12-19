@@ -258,6 +258,41 @@ namespace Confluent.Kafka
         /// </summary>
         Local_InvalidType = -154,
 
+        /// <summary>
+        ///     Retry operation.
+        /// </summary>
+        Local_Retry = -153,
+
+        /// <summary>
+        ///     Purged in queue
+        /// </summary>
+        Local_PurgeQueue = -152,
+
+        /// <summary>
+        ///     Purged in flight
+        /// </summary>
+        Local_PurgeInflight = -151,
+
+        /// <summary>
+        ///     Fatal error: see rd_kafka_fatal_error() 
+        /// </summary>
+        Local_Fatal = -150,
+
+        /// <summary>
+        ///     Inconsistent state
+        /// </summary>
+        Local_Inconsistent = -149,
+
+        /// <summary>
+        ///     Gap-less ordering would not be guaranteed if proceeding
+        /// </summary>
+        Local_GaplessGuarantee = -148,
+
+        /// <summary>
+        ///     Maximum poll interval exceeded 
+        /// </summary>
+        Local_MaxPollExceeded = -147,
+
 
         /// <summary>
         ///     Unknown broker error
@@ -543,6 +578,101 @@ namespace Confluent.Kafka
         ///     Operation not attempted
         /// </summary>
         OperationNotAttempted = 55,
+
+        /// <summary>
+        ///     Disk error when trying to access log file on the disk.
+        /// </summary>
+        KafkaStorageError = 56,
+
+        /// <summary>
+        ///     The user-specified log directory is not found in the broker config.
+        /// </summary>
+        LogDirNotFound = 57,
+
+        /// <summary>
+        ///     SASL Authentication failed.
+        /// </summary>
+        SaslAuthenticationFailed = 58,
+
+        /// <summary>
+        ///     Unknown Producer Id.
+        /// </summary>
+        UnknownProducerId = 59,
+
+        /// <summary>
+        ///     Partition reassignment is in progress.
+        /// </summary>
+        ReassignmentInProgress = 60,
+
+        /// <summary>
+        ///     Delegation Token feature is not enabled.
+        /// </summary>
+        DelegationTokenAuthDisabled = 61,
+
+        /// <summary>
+        ///     Delegation Token is not found on server.
+        /// </summary>
+        DelegationTokenNotFound = 62,
+
+        /// <summary>
+        ///     Specified Principal is not valid Owner/Renewer.
+        /// </summary>
+        DelegationTokenOwnerMismatch = 63, 
+        
+        /// <summary>
+        ///     Delegation Token requests are not allowed on this connection.
+        /// </summary>
+        DelegationTokenRequestNotAllowed = 64,
+
+        /// <summary>
+        ///     Delegation Token authorization failed.
+        /// </summary>
+        DelegationTokenAuthorizationFailed = 65,
+
+        /// <summary>
+        ///     Delegation Token is expired.
+        /// </summary>
+        DelegationTokenExpired = 66,
+
+        /// <summary>
+        ///     Supplied principalType is not supported.
+        /// </summary>
+        InvalidPrincipalType = 67,
+
+        /// <summary>
+        ///     The group is not empty.
+        /// </summary>
+        NonEmptyGroup = 68,
+
+        /// <summary>
+        ///     The group id does not exist.
+        /// </summary>
+        GroupIdNotFound = 69,
+
+        /// <summary>
+        ///     The fetch session ID was not found.
+        /// </summary>
+        FetchSessionIdNotFound = 70,
+
+        /// <summary>
+        ///     The fetch session epoch is invalid.
+        /// </summary>
+        InvalidFetchSessionEpoch = 71,
+
+        /// <summary>
+        ///     No matching listener.
+        /// </summary>
+        ListenerNotFound = 72,
+
+        /// <summary>
+        ///     Topic deletion is disabled.
+        /// </summary>
+        TopicDeletionDisabled = 73,
+
+        /// <summary>
+        ///     Unsupported compression type.
+        /// </summary>
+        UnsupportedCompressionType = 74
     };
 
     /// <summary>

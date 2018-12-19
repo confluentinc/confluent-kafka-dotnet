@@ -16,15 +16,15 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Confluent.Kafka;
 
 
-namespace Confluent.Kafka.Examples.Producer
+namespace Confluent.Kafka.Examples.ProducerExample
 {
     public class Program
     {
@@ -92,9 +92,17 @@ namespace Confluent.Kafka.Examples.Producer
 
                     try
                     {
-                        // Awaiting the asynchronous produce request below prevents flow of execution
-                        // from proceeding until the acknowledgement from the broker is received.
-                        var deliveryReport = await producer.ProduceAsync(topicName, new Message<string, string> { Key = key, Value = val });
+                        // Notes:
+                        // 1. Awaiting the asynchronous produce request below prevents flow of execution
+                        //    from proceeding until the acknowledgement from the broker is received (at
+                        //    the expense of low throughput).
+                        // 2. Producing a message with type arguments will use the default serializers
+                        //    registered for the types (in this case, UTF8 for both key and value). To
+                        //    override the default serializers or provide serializers for your custom
+                        //    types, you can use the RegisterSerializer method.
+                        var deliveryReport = await producer.ProduceAsync(
+                            topicName, new Message<string, string> { Key = key, Value = val });
+
                         Console.WriteLine($"delivered to: {deliveryReport.TopicPartitionOffset}");
                     }
                     catch (KafkaException e)

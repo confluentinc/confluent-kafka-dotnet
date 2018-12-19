@@ -19,8 +19,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using System.Text;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var firstMessage = messages[0];
             var lastMessage = messages[N - 1];
-            using (var consumer = new Consumer<string, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 var timeout = TimeSpan.FromSeconds(10);
 
@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Getting the offset for the first produced message timestamp
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Message.Timestamp) },
+                        new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
                         timeout)
                     .ToList();
 
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Getting the offset for the last produced message timestamp
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Message.Timestamp) },
+                        new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Timestamp) },
                         timeout)
                     .ToList();
 
@@ -98,20 +98,21 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   Consumer_OffsetsForTimes");
         }
 
-        private static DeliveryReport<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static DeliveryResult[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var messages = new DeliveryReport<string, string>[count];
-            using (var producer = new Producer<string, string>(producerConfig))
+            var messages = new DeliveryResult[count];
+            using (var producer = new Producer(producerConfig))
             {
                 for (var index = 0; index < count; index++)
                 {
                     var message = producer.ProduceAsync(
                         new TopicPartition(topic, partition),
-                        new Message<string, string> 
+                        new Message
                         { 
-                            Key = $"test key {index}", Value = $"test val {index}", 
+                            Key = Serializers.Utf8.Serialize($"test key {index}", true, null, null),
+                            Value = Serializers.Utf8.Serialize($"test val {index}", true, null, null),
                             Timestamp = Timestamp.Default, 
                             Headers = null
                         }

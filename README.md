@@ -36,8 +36,8 @@ client. Thanks Andreas!
 confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 
 - [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3]* - The core client library.
-- [Confluent.Kafka.Avro](https://www.nuget.org/packages/Confluent.Kafka.Avro/) *[net452, netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
-- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4]* - Confluent Schema Registry client (a dependency of Confluent.Kafka.Avro).
+- [Confluent.SchemaRegistry.Serdes](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes/) *[net452, netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
+- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4]* - Confluent Schema Registry client (a dependency of Confluent.SchemaRegistry.Serdes).
 
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
@@ -90,7 +90,9 @@ class Program
     {
         var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
-        // A Producer for sending messages with null keys and UTF-8 encoded values.
+        // If serializers are not specified as constructor arguments, default
+        // serializers from `Confluent.Kafka.Serializers` will be automatically
+        // used where available. Note: by default strings are encoded as UTF8.
         using (var p = new Producer<Null, string>(config))
         {
             try
@@ -195,7 +197,7 @@ class Program
 
 ### Working with Apache Avro
 
-The `Confluent.Kafka.Avro` nuget package provides an Avro serializer and deserializer that integrate with [Confluent
+The `Confluent.SchemaRegistry.Serdes` nuget package provides an Avro serializer and deserializer that integrate with [Confluent
 Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html). The `Confluent.SchemaRegistry` 
 nuget package provides a client for interfacing with Schema Registry's REST API.
 
@@ -215,9 +217,39 @@ avrogen -s your_schema.asvc .
 For more information about working with Avro in .NET, refer to the the blog post [Decoupling Systems with Apache Kafka, Schema Registry and Avro](https://www.confluent.io/blog/decoupling-systems-with-apache-kafka-schema-registry-and-avro/)
 
 
+### Error Handling
+
+Errors raised via a client's `OnError` event should be considered informational except when the `IsFatal` flag
+is set to `true`, indicating that the client is in an un-recoverable state. Currently, this can only happen on
+the producer, and only when `enable.itempotence` has been set to `true`. In all other scenarios, clients are
+able to recover from all errors automatically.
+
+Although calling most methods on the clients will result in a fatal error if the client is in an un-recoverable
+state, you should generally only need to explicitly check for fatal errors in your `OnError` handler, and handle
+this scenario there.
+
+#### Producer
+
+When using `BeginProduce`, to determine whether a particular message has been successfully delivered to a cluster,
+check the `Error` field of the `DeliveryReport` during the delivery handler callback.
+
+When using `ProduceAsync`, any delivery result other than `NoError` will cause the returned `Task` to be in the
+faulted state, with the `Task.Exception` field set to a `ProduceException` containing information about the message
+and error via the `DeliveryResult` and `Error` fields. Note: if you `await` the call, this means a `ProduceException`
+will be thrown.
+
+#### Consumer
+
+If you are using the deserializing version of the `Consumer`, any error encountered during deserialization (which
+happens during your call to `Consume`) will throw a `DeserializationException`. All other `Consume` errors will
+result in a `ConsumeException` with further information about the error and context available via the `Error` and
+`ConsumeResult` fields.
+
+
 ### Confluent Cloud
 
-The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
+The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
+[Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
 
 ## Build

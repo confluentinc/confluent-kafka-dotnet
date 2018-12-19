@@ -32,6 +32,8 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClient : IAdminClient
     {
+        private int cancellationDelayMaxMs;
+
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
 
@@ -110,7 +112,6 @@ namespace Confluent.Kafka
             return result;
         }
 
-        private const int POLL_TIMEOUT_MS = 100;
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -122,7 +123,7 @@ namespace Confluent.Kafka
 
                             try
                             {
-                                var eventPtr = kafkaHandle.QueuePoll(resultQueue, POLL_TIMEOUT_MS);
+                                var eventPtr = kafkaHandle.QueuePoll(resultQueue, this.cancellationDelayMaxMs);
                                 if (eventPtr == IntPtr.Zero)
                                 {
                                     continue;
@@ -156,7 +157,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreateTopicExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -178,7 +180,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DeleteTopicExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -201,7 +204,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<CreatePartitionsExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -224,7 +228,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -247,7 +252,8 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigsExceptionResult>>)adminClientResult).TrySetException(new KafkaException(new Error(errorCode, errorStr)));
+                                                ((TaskCompletionSource<List<AlterConfigsExceptionResult>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
                                                 return;
                                             }
 
@@ -465,8 +471,9 @@ namespace Confluent.Kafka
         /// </param>
         public AdminClient(IEnumerable<KeyValuePair<string, string>> config)
         {
-            if (
-                config.Where(prop => prop.Key.StartsWith("dotnet.producer.")).Count() > 0 ||
+            config = Config.GetCancellationDelayMaxMs(config, out this.cancellationDelayMaxMs);
+
+            if (config.Where(prop => prop.Key.StartsWith("dotnet.producer.")).Count() > 0 ||
                 config.Where(prop => prop.Key.StartsWith("dotnet.consumer.")).Count() > 0)
             {
                 throw new ArgumentException("AdminClient configuration must not include producer or consumer specific configuration properties.");
@@ -624,7 +631,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
         /// </summary>
-        public event EventHandler<ErrorEvent> OnError
+        public event EventHandler<Error> OnError
         {
             add { handle.Owner.OnError += value; }
             remove { handle.Owner.OnError -= value; }

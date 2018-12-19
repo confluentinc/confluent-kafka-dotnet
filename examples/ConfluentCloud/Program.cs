@@ -14,10 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Confluent.Kafka;
 
 
 namespace ConfluentCloudExample
@@ -61,7 +61,7 @@ namespace ConfluentCloudExample
 
             using (var producer = new Producer<Null, string>(pConfig))
             {
-                producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Key = null, Value = "test value" })
+                producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Value = "test value" })
                     .ContinueWith(task => task.IsFaulted
                         ? $"error producing message: {task.Exception.Message}"
                         : $"produced to: {task.Result.TopicPartitionOffset}");
@@ -87,7 +87,7 @@ namespace ConfluentCloudExample
             };
 
             using (var consumer = new Consumer<Null, string>(cConfig))
-            { 
+            {
                 consumer.Subscribe("dotnet-test-topic");
 
                 try
@@ -102,7 +102,6 @@ namespace ConfluentCloudExample
 
                 consumer.Close();
             }
-
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2017-2018 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,11 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents a message consumed from a Kafka cluster.
+    /// </summary>
+    public class ConsumeResult : ConsumeResult<byte[], byte[]> {}
+
     /// <summary>
     ///     Represents a message consumed from a Kafka cluster.
     /// </summary>
@@ -63,7 +68,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     The Kafka message.
+        ///     The Kafka message, or null if this ConsumeResult
+        ///     instance represents an end of partition event.
         /// </summary>
         public Message<TKey, TValue> Message { get; set; }
 
@@ -102,5 +108,11 @@ namespace Confluent.Kafka
             get { return Message.Headers; }
             set { Message.Headers = value; }
         }
+
+        /// <summary>
+        ///     True if this instance represents an end of partition
+        ///     event, false if it represents a message in kafka.
+        /// </summary>
+        public bool IsPartitionEOF { get; set; }
     }
 }

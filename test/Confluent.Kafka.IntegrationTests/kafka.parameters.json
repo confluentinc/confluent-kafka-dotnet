@@ -1,5 +1,0 @@
-{
-  "bootstrapServers": "10.200.7.144:9092",
-  "singlePartitionTopic": "test-topic-1",
-  "partitionedTopic": "test-topic-2"
-}

@@ -146,6 +146,7 @@ namespace Confluent.Kafka.Impl
             _get_debug_contexts = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_get_debug_contexts").CreateDelegate(typeof(Func<IntPtr>));
             _err2str = (Func<ErrorCode, IntPtr>)methods.Single(m => m.Name == "rd_kafka_err2str").CreateDelegate(typeof(Func<ErrorCode, IntPtr>));
             _last_error = (Func<ErrorCode>)methods.Single(m => m.Name == "rd_kafka_last_error").CreateDelegate(typeof(Func<ErrorCode>));
+            _fatal_error = (Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_fatal_error").CreateDelegate(typeof(Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _topic_partition_list_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_partition_list_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_partition_list_add = (Func<IntPtr, string, int, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_add").CreateDelegate(typeof(Func<IntPtr, string, int, IntPtr>));
@@ -155,6 +156,7 @@ namespace Confluent.Kafka.Impl
             _header_get_all = (headerGetAllDelegate)methods.Single(m => m.Name == "rd_kafka_header_get_all").CreateDelegate(typeof(headerGetAllDelegate));
             _message_timestamp = (messageTimestampDelegate)methods.Single(m => m.Name == "rd_kafka_message_timestamp").CreateDelegate(typeof(messageTimestampDelegate));
             _message_headers = (messageHeadersDelegate)methods.Single(m => m.Name == "rd_kafka_message_headers").CreateDelegate(typeof(messageHeadersDelegate));
+            _message_status = (Func<IntPtr, PersistenceStatus>)methods.Single(m => m.Name == "rd_kafka_message_status").CreateDelegate(typeof(Func<IntPtr, PersistenceStatus>));
             _message_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_message_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _conf_new = (Func<SafeConfigHandle>)methods.Single(m => m.Name == "rd_kafka_conf_new").CreateDelegate(typeof(Func<SafeConfigHandle>));
             _conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -568,9 +570,15 @@ namespace Confluent.Kafka.Impl
         private static Func<ErrorCode> _last_error;
         internal static ErrorCode last_error() => _last_error();
 
+        private static Func<IntPtr, StringBuilder, UIntPtr, ErrorCode> _fatal_error;
+        internal static ErrorCode fatal_error(IntPtr rk, StringBuilder sb, UIntPtr len) => _fatal_error(rk, sb, len);
+
         internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
         private static messageTimestampDelegate _message_timestamp;
         internal static long message_timestamp(IntPtr rkmessage, out IntPtr tstype) => _message_timestamp(rkmessage, out tstype);
+
+        private static Func<IntPtr, PersistenceStatus> _message_status;
+        internal static PersistenceStatus message_status(IntPtr rkmessage) => _message_status(rkmessage);
 
         internal delegate ErrorCode messageHeadersDelegate(IntPtr rkmessage, out IntPtr hdrsType);
         private static messageHeadersDelegate _message_headers;
