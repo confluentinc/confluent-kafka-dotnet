@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2016-2018 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,11 +29,8 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey, TValue}" />
+    ///     A deserializer for use with <see cref="Confluent.Kafka.Consumer" />
     /// </summary>
-    /// <param name="topic">
-    ///     The topic the data originated from.
-    /// </param>
     /// <param name="data">
     ///     The data to deserialize.
     /// </param>
@@ -43,23 +40,12 @@ namespace Confluent.Kafka
     /// <returns>
     ///     The deserialized value.
     /// </returns>
-    public delegate T Deserializer<T>(string topic, ReadOnlySpan<byte> data, bool isNull);
-
-    /// <summary>
-    ///     A generator for <see cref="Confluent.Kafka.Deserializer{T}" /> instances.
-    /// </summary>
-    /// <param name="forKey">
-    ///     Whether or not the deserializer is for use with key data.
-    /// </param>
-    /// <returns>
-    ///     The deserializer.
-    /// </returns>
-    public delegate Deserializer<T> DeserializerGenerator<T>(bool forKey);
+    public delegate T Deserializer<T>(ReadOnlySpan<byte> data, bool isNull);
 
     /// <summary>
     ///     Implements a high-level Apache Kafka consumer.
     /// </summary>
-    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
+    public class Consumer : IConsumer
     {
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
@@ -74,8 +60,7 @@ namespace Confluent.Kafka
         private readonly bool enableTimestampMarshaling = true;
         private readonly bool enableTopicNamesMarshaling = true;
 
-        private Deserializer<TKey> KeyDeserializer { get; }
-        private Deserializer<TValue> ValueDeserializer { get; }
+        private Dictionary<Type, object> deserializers = new Dictionary<Type, object>();
 
         private readonly SafeKafkaHandle kafkaHandle;
 
@@ -191,7 +176,7 @@ namespace Confluent.Kafka
         public event EventHandler<string> OnStatistics;
 
         /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer{TKey, TValue}" /> instance.
+        ///     Creates a new <see cref="Confluent.Kafka.Consumer" /> instance.
         /// </summary>
         /// <param name="config">
         ///     A collection of librdkafka configuration parameters 
@@ -201,102 +186,10 @@ namespace Confluent.Kafka
         ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
         ///     specified.
         /// </param>
-        /// <param name="keyDeserializer">
-        ///     A delegate to use for deserializing keys.
-        /// </param>
-        /// <param name="valueDeserializer">
-        ///     A delegate to use for deserializing values.
-        /// </param>
         public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            Deserializer<TKey> keyDeserializer = null,
-            Deserializer<TValue> valueDeserializer = null
-        ) : this(config, (isKey) => keyDeserializer, (isKey) => valueDeserializer) {}
-
-        /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer{TKey, TValue}" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
-        /// </param>
-        /// <param name="keyDeserializerGenerator">
-        ///     A delegate to use to create a delegate for deserializing keys.
-        /// </param>
-        /// <param name="valueDeserializerGenerator">
-        ///     A delegate to use to create a delegate for deserializing values.
-        /// </param>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            DeserializerGenerator<TKey> keyDeserializerGenerator,
-            DeserializerGenerator<TValue> valueDeserializerGenerator)
+            IEnumerable<KeyValuePair<string, string>> config)
         {
             Librdkafka.Initialize(null);
-
-            KeyDeserializer = keyDeserializerGenerator == null 
-                ? null
-                : keyDeserializerGenerator(true);
-                
-            ValueDeserializer = valueDeserializerGenerator == null
-                ? null
-                : valueDeserializerGenerator(false);
-
-            if (KeyDeserializer != null && (object)KeyDeserializer == (object)ValueDeserializer)
-            {
-                throw new ArgumentException("Key and value deserializers must not be the same object.");
-            }
-
-            if (KeyDeserializer == null)
-            {
-                if (typeof(TKey) == typeof(Null))
-                {
-                    KeyDeserializer = Deserializers.Null as Deserializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(Ignore))
-                {
-                    KeyDeserializer = Deserializers.Ignore as Deserializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(byte[]))
-                {
-                    KeyDeserializer = Deserializers.ByteArray as Deserializer<TKey>;
-                }
-                else if (typeof(TKey) == typeof(string))
-                {
-                    KeyDeserializer = Deserializers.UTF8 as Deserializer<TKey>;
-                }
-                else
-                {
-                    throw new ArgumentNullException("Key deserializer must be specified.");
-                }
-            }
-
-            if (ValueDeserializer == null)
-            {
-                if (typeof(TValue) == typeof(Null))
-                {
-                    ValueDeserializer = Deserializers.Null as Deserializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(Ignore))
-                {
-                    ValueDeserializer = Deserializers.Ignore as Deserializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(byte[]))
-                {
-                    ValueDeserializer = Deserializers.ByteArray as Deserializer<TValue>;
-                }
-                else if (typeof(TValue) == typeof(string))
-                {
-                    ValueDeserializer = Deserializers.UTF8 as Deserializer<TValue>;
-                }
-                else
-                {
-                    throw new ArgumentNullException("Value deserializer must be specified.");
-                }
-            }
 
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
@@ -367,6 +260,49 @@ namespace Confluent.Kafka
                 throw new KafkaException(new Error(pollSetConsumerError,
                     $"Failed to redirect the poll queue to consumer_poll queue: {ErrorCodeExtensions.GetReason(pollSetConsumerError)}"));
             }
+
+            deserializers.Add(typeof(string), Deserializers.UTF8);
+            deserializers.Add(typeof(int), Deserializers.Int32);
+            deserializers.Add(typeof(long), Deserializers.Long);
+            deserializers.Add(typeof(float), Deserializers.Float);
+            deserializers.Add(typeof(double), Deserializers.Double);
+            deserializers.Add(typeof(Null), Deserializers.Null);
+            deserializers.Add(typeof(Ignore), Deserializers.Ignore);
+            deserializers.Add(typeof(byte[]), Deserializers.ByteArray);
+        }
+
+
+        /// <summary>
+        ///     Sets the deserializer that will be used to deserialize keys or values with
+        ///     the specified type.
+        /// </summary>
+        /// <param name="deserializer">
+        ///     The deserializer.
+        /// </param>
+        public void RegisterDeserializer<T>(Deserializer<T> deserializer)
+        {
+            deserializers[typeof(T)] = deserializer;
+        }
+
+
+        /// <summary>
+        ///     Removes the deserializer associated with the specified type.
+        /// </summary>
+        public void UnregisterDeserilizer<T>()
+        {
+            deserializers.Remove(typeof(T));
+        }
+
+
+        /// <summary>
+        ///     Gets the deserializer that will be used to deserialize values of the specified type.
+        /// </summary>
+        /// <returns>
+        ///     The deserializer corresponding to the specified type.
+        /// </returns>
+        public Deserializer<T> GetDeserializer<T>()
+        {
+            return (Deserializer<T>)deserializers[typeof(T)];
         }
 
 
@@ -378,7 +314,7 @@ namespace Confluent.Kafka
                 keyAsByteArray = new byte[(int) msg.key_len];
                 Marshal.Copy(msg.key, keyAsByteArray, 0, (int) msg.key_len);
             }
-            return keyAsByteArray;       
+            return keyAsByteArray;
         }
 
 
@@ -394,8 +330,29 @@ namespace Confluent.Kafka
         }
 
 
-        internal ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
+        internal ConsumeResult<TKey, TValue> Consume<TKey, TValue>(
+            int millisecondsTimeout,
+            Deserializer<TKey> keyDeserializer,
+            Deserializer<TValue> valueDeserializer)
         {
+            try
+            {
+                if (keyDeserializer == null) { keyDeserializer = (Deserializer<TKey>)deserializers[typeof(TKey)]; }
+            }
+            catch
+            {
+                throw new ArgumentException($"No deserializer associated with type ${typeof(TKey).Name}");
+            }
+
+            try
+            {
+                if (valueDeserializer == null) { valueDeserializer = (Deserializer<TValue>)deserializers[typeof(TValue)]; }
+            }
+            catch
+            {
+                throw new ArgumentException($"No deserializer associated with type ${typeof(TValue).Name}");
+            }
+
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
             {
@@ -478,8 +435,7 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        key = this.KeyDeserializer(
-                            topic,
+                        key = keyDeserializer(
                             msg.key == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
                             msg.key == IntPtr.Zero
                         );
@@ -508,8 +464,7 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        val = this.ValueDeserializer(
-                            topic, 
+                        val = valueDeserializer(
                             msg.val == IntPtr.Zero ? EmptyBytes : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
                             msg.val == IntPtr.Zero);
                     }
@@ -553,6 +508,43 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Poll for new messages / events. Blocks until a consume result
+        ///     is available or the operation has been cancelled.
+        /// </summary>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to cancel this operation.
+        /// </param>
+        /// <returns>
+        ///     The consume result.
+        /// </returns>
+        /// <remarks>
+        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and
+        ///     OnPartitionEOF events may be invoked as a side-effect of
+        ///     calling this method (on the same thread).
+        /// </remarks>
+        public ConsumeResult Consume(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var result = Consume(100, Deserializers.ByteArray, Deserializers.ByteArray);
+                if (result == null) { continue; }
+                return new ConsumeResult
+                {
+                    TopicPartitionOffset = result.TopicPartitionOffset,
+                    Message = new Message
+                    {
+                        Timestamp = result.Timestamp,
+                        Headers = result.Headers,
+                        Key = result.Key,
+                        Value = result.Value
+                    }
+                };
+            }
+        }
+
+
+        /// <summary>
+        ///     Poll for new messages / events. Blocks until a consume result
         ///     is available or the timeout period has elapsed.
         /// </summary>
         /// <param name="timeout">
@@ -566,9 +558,22 @@ namespace Confluent.Kafka
         ///     OnPartitionEOF events may be invoked as a side-effect of 
         ///     calling this method (on the same thread).
         /// </remarks>
-        public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
-            => Consume(timeout.TotalMillisecondsAsInt());
-
+        public ConsumeResult Consume(TimeSpan timeout)
+        {
+            var result = Consume(timeout.TotalMillisecondsAsInt(), Deserializers.ByteArray, Deserializers.ByteArray);
+            if (result == null) { return null; }
+            return new ConsumeResult
+            {
+                TopicPartitionOffset = result.TopicPartitionOffset,
+                Message = new Message
+                {
+                    Timestamp = result.Timestamp,
+                    Headers = result.Headers,
+                    Key = result.Key,
+                    Value = result.Value
+                }
+            };
+        }
 
 
         /// <summary>
@@ -586,12 +591,12 @@ namespace Confluent.Kafka
         ///     OnPartitionEOF events may be invoked as a side-effect of
         ///     calling this method (on the same thread).
         /// </remarks>
-        public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
+        public ConsumeResult<TKey, TValue> Consume<TKey, TValue>(CancellationToken cancellationToken = default(CancellationToken))
         {
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var result = Consume(100);
+                var result = Consume<TKey, TValue>(100, null, null);
                 if (result == null) { continue; }
                 return result;
             }
@@ -599,9 +604,29 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Poll for new messages / events. Blocks until a consume result
+        ///     is available or the timeout period has elapsed.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call may block.
+        /// </param>
+        /// <returns>
+        ///     The consume result.
+        /// </returns>
+        /// <remarks>
+        ///     OnPartitionsAssigned/Revoked, OnOffsetsCommitted and 
+        ///     OnPartitionEOF events may be invoked as a side-effect of 
+        ///     calling this method (on the same thread).
+        /// </remarks>
+        public ConsumeResult<TKey, TValue> Consume<TKey, TValue>(TimeSpan timeout)
+            => Consume<TKey, TValue>(timeout.TotalMillisecondsAsInt(), null, null);
+
+
+
+        /// <summary>
         ///     Raised when a new partition assignment is received.
         /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartition})" />
+        ///     If you do not call the <see cref="Confluent.Kafka.Consumer.Assign(IEnumerable{TopicPartition})" />
         ///     method (or another overload of this method) in a handler added to this event, following execution of your handler(s),
         ///     the consumer will be automatically assigned to the set of partitions as specified in the event data and 
         ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset, in
@@ -611,7 +636,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
+        ///     <see cref="Confluent.Kafka.Consumer.Consume(CancellationToken)" />
         ///     (on the same thread).
         /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
@@ -620,16 +645,16 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Raised when a partition assignment is revoked.
         /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unassign" /> or 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(IEnumerable{TopicPartition})" />
+        ///     If you do not call the <see cref="Confluent.Kafka.Consumer.Unassign" /> or 
+        ///     <see cref="Confluent.Kafka.Consumer.Assign(IEnumerable{TopicPartition})" />
         ///     (or other overload) method in a handler added to this event, all partitions will be 
         ///     automatically unassigned following execution of your handler(s). This default behavior 
         ///     will not occur if you call Unassign (or Assign) yourself in a handler added to this event.
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
-        ///     and <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close()" />
+        ///     <see cref="Confluent.Kafka.Consumer.Consume(CancellationToken)" />
+        ///     and <see cref="Confluent.Kafka.Consumer.Close()" />
         ///     (on the same thread).
         /// </remarks>
         public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
@@ -641,7 +666,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
+        ///     <see cref="Confluent.Kafka.Consumer.Consume(CancellationToken)" />
         ///     (on the same thread).
         /// </remarks>
         public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
@@ -658,7 +683,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Gets the current partition assignment as set by
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(TopicPartition)" />.
+        ///     <see cref="Confluent.Kafka.Consumer.Assign(TopicPartition)" />.
         /// </summary>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
@@ -666,7 +691,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Gets the current partition subscription as set by
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Subscribe(string)" />.
+        ///     <see cref="Confluent.Kafka.Consumer.Subscribe(string)" />.
         /// </summary>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
@@ -816,7 +841,7 @@ namespace Confluent.Kafka
         /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
         ///     Thrown if result is in error.
         /// </exception>
-        public void StoreOffset(ConsumeResult<TKey, TValue> result)
+        public void StoreOffset<TKey, TValue>(ConsumeResult<TKey, TValue> result)
             => StoreOffsets(new[] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
 
 
@@ -888,8 +913,23 @@ namespace Confluent.Kafka
         /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
         ///     Thrown if the result is in error.
         /// </exception>
-        public TopicPartitionOffset Commit(
+        public TopicPartitionOffset Commit<TKey, TValue>(
             ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (result.Message == null)
+            {
+                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
+            }
+
+            return kafkaHandle.Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) })[0];
+        }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer.Commit{TKey, TValue}(ConsumeResult{TKey, TValue}, CancellationToken)" />
+        /// </summary>
+        public TopicPartitionOffset Commit(
+            ConsumeResult result, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (result.Message == null)
             {
@@ -933,7 +973,7 @@ namespace Confluent.Kafka
         ///     an absolute or logical offset. This must only be done for partitions that are 
         ///     currently being consumed (i.e., have been Assign()ed). To set the start offset for 
         ///     not-yet-consumed partitions you should use the 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Assign(TopicPartitionOffset)" /> 
+        ///     <see cref="Confluent.Kafka.Consumer.Assign(TopicPartitionOffset)" /> 
         ///     method (or other overload) instead.
         /// </summary>
         /// <param name="tpo">
@@ -1109,16 +1149,16 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commits offsets, alerts the group coodinator that the consumer is
         ///     exiting the group then releases all resources used by this consumer.
-        ///     You should call <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />
-        ///     instead of <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Dispose()" />
+        ///     You should call <see cref="Confluent.Kafka.Consumer.Close" />
+        ///     instead of <see cref="Confluent.Kafka.Consumer.Dispose()" />
         ///     (or just before) to ensure a timely consumer-group rebalance. If you
-        ///     do not call <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" />
-        ///     or <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unsubscribe" />,
+        ///     do not call <see cref="Confluent.Kafka.Consumer.Close" />
+        ///     or <see cref="Confluent.Kafka.Consumer.Unsubscribe" />,
         ///     the group will rebalance after a timeout specified by the group's 
         ///     `session.timeout.ms`. Note: the
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnPartitionsRevoked" />
+        ///     <see cref="Confluent.Kafka.Consumer.OnPartitionsRevoked" />
         ///     and 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.OnOffsetsCommitted" />
+        ///     <see cref="Confluent.Kafka.Consumer.OnOffsetsCommitted" />
         ///     events may be called as a side-effect of calling this method.
         /// </summary>
         /// <exception cref="Confluent.Kafka.KafkaException">
@@ -1138,13 +1178,13 @@ namespace Confluent.Kafka
         ///     Releases all resources used by this Consumer without
         ///     committing offsets and without alerting the group coordinator
         ///     that the consumer is exiting the group. If you do not call 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close" /> or
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Unsubscribe" />
+        ///     <see cref="Confluent.Kafka.Consumer.Close" /> or
+        ///     <see cref="Confluent.Kafka.Consumer.Unsubscribe" />
         ///     prior to Dispose, the group will rebalance after a timeout 
         ///     specified by group's `session.timeout.ms`.
         ///     You should commit offsets / unsubscribe from the group before 
         ///     calling this method (typically by calling 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Close()" />).
+        ///     <see cref="Confluent.Kafka.Consumer.Close()" />).
         /// </summary>
         public void Dispose()
         {
@@ -1155,7 +1195,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Releases the unmanaged resources used by the
-        ///     <see cref="Confluent.Kafka.Consumer{TKey, TValue}" />
+        ///     <see cref="Confluent.Kafka.Consumer" />
         ///     and optionally disposes the managed resources.
         /// </summary>
         /// <param name="disposing">

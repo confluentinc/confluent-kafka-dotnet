@@ -45,27 +45,27 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            DeliveryReport<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            DeliveryResult dr;
+            using (var producer = new Producer(producerConfig))
             {
                 dr = producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<Null, string>
+                    new Message
                     {
-                        Value = "my-value", 
+                        Value = Serializers.UTF8("my-value"),
                         Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
                     }
                 ).Result;
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.OnError += (_, e)
                     => Assert.True(false, e.Reason);
                     
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
-                var record = consumer.Consume(TimeSpan.FromSeconds(30));
+                var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Headers);
                 Assert.NotEqual(TimestampType.NotAvailable, record.Timestamp.Type);

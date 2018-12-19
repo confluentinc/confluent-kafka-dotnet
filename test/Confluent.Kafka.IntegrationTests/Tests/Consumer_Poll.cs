@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 int msgCnt = 0;
 
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (!done)
                 {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    var record = consumer.Consume(TimeSpan.FromSeconds(10));
                     if (record != null)
                     {
                         Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);

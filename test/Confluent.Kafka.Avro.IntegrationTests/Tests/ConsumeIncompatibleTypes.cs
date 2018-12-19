@@ -16,8 +16,9 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.SchemaRegistry;
+using Confluent.Kafka.AvroSerdes;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
@@ -35,7 +36,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         {
             string topic = Guid.NewGuid().ToString();
 
-            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers
+            };
 
             var consumerConfig = new ConsumerConfig
             {
@@ -45,10 +49,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 AutoOffsetReset = AutoOffsetResetType.Earliest
             };
             
-            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var schemaRegistryConfig = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = schemaRegistryServers
+            };
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
             {
                 var user = new User
                 {
@@ -56,47 +63,55 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                     favorite_number = 107,
                     favorite_color = "orange"
                 };
-                producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
-                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+
+                producer
+                    .ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user },SerdeType.Avro, SerdeType.Avro)
+                    .Wait();
             }
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<User, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<User>(), serdeProvider.GetDeserializerGenerator<User>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
                 bool hadError = false;
                 try
                 {
-                    consumer.Consume(TimeSpan.FromSeconds(10));
+                    consumer
+                        .ConsumeAsync<User, User>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
+                        .Wait();
                 }
-                catch (ConsumeException e)
+                catch (AggregateException e)
                 {
-                    if (e.Error.Code == ErrorCode.Local_KeyDeserialization)
+                    if (e.InnerException.GetType() != typeof(DeserializationException))
                     {
-                        hadError = true;
+                        throw e.InnerException;
                     }
+                    hadError = true;
                 }
 
                 Assert.True(hadError);
             }
 
-            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
-            using (var consumer = new Consumer<string, string>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<string>()))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
 
                 bool hadError = false;
                 try
                 {
-                    consumer.Consume(TimeSpan.FromSeconds(10));
+                    consumer
+                        .ConsumeAsync<string, string>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
+                        .Wait();
                 }
-                catch (ConsumeException e)
+                catch (AggregateException e)
                 {
-                    if (e.Error.Code == ErrorCode.Local_ValueDeserialization)
+                    if (e.InnerException.GetType() != typeof(DeserializationException))
                     {
-                        hadError = true;
+                        throw e.InnerException;
                     }
+                    hadError = true;
                 }
 
                 Assert.True(hadError);

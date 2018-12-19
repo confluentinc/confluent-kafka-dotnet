@@ -46,15 +46,15 @@ namespace Confluent.Kafka.IntegrationTests
             string testString1 = "hello world";
             string testString2 = null;
 
-            DeliveryReport<Null, string> produceResult1;
-            DeliveryReport<Null, string> produceResult2;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            DeliveryResult<Null, string> produceResult1;
+            DeliveryResult<Null, string> produceResult2;
+            using (var producer = new Producer(producerConfig))
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
@@ -64,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   SimpleProduceConsume");
         }
 
-        private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryReport<Null, string> dr, string testString)
+        private static void ConsumeMessage(Consumer consumer, DeliveryResult<Null, string> dr, string testString)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
             var r = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -75,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(r.Message.Timestamp.UnixTimestampMs, dr.Message.Timestamp.UnixTimestampMs);
         }
 
-        private static DeliveryReport<Null, string> ProduceMessage(string topic, Producer<Null, string> producer, string testString)
+        private static DeliveryResult<Null, string> ProduceMessage(string topic, Producer producer, string testString)
         {
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
             Assert.NotNull(result?.Message);

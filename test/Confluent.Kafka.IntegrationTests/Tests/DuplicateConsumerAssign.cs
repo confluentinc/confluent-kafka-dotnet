@@ -48,20 +48,20 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            DeliveryReport<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            DeliveryResult dr;
+            using (var producer = new Producer(producerConfig))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString) }).Result;
                 Assert.NotNull(dr);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer1 = new Consumer<byte[], byte[]>(consumerConfig))
-            using (var consumer2 = new Consumer<byte[], byte[]>(consumerConfig))
+            using (var consumer1 = new Consumer(consumerConfig))
+            using (var consumer2 = new Consumer(consumerConfig))
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                ConsumeResult<byte[], byte[]> record;
+                ConsumeResult record;
                 record = consumer1.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record);
                 Assert.NotNull(record.Message);

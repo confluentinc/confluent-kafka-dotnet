@@ -42,6 +42,8 @@ namespace ConfigGen
                 if (p.Name == "produce.offset.report") { return false; }
                 if (p.Name == "delivery.report.only.error") { return false; }
                 if (p.Name == "topic.metadata.refresh.fast.cnt") { return false; }
+                if (p.Name == "reconnect.backoff.jitter.ms") { return false; }
+                if (p.Name == "socket.blocking.max.ms") { return false; }
                 if (p.Name == "auto.commit.interval.ms" && !p.IsGlobal) { return false; }
                 if (p.Name == "enable.auto.commit" && !p.IsGlobal) { return false; }
                 if (p.Name == "auto.commit.enable" && !p.IsGlobal) { return false; }
@@ -159,10 +161,10 @@ namespace ConfigGen
             throw new Exception($"unknown type '{type}'");
         }
 
-        static string createFileHeader()
+        static string createFileHeader(string branch)
         {
             return
-@"// *** Auto-generated *** - do not modify manually.
+@"// *** Auto-generated from librdkafka branch " + branch + @" *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -299,170 +301,9 @@ namespace Confluent.Kafka
             codeText += $"    /// <summary>\n";
             codeText += $"    ///     {docs}\n";
             codeText += $"    /// </summary>\n";
-            codeText += $"    public class {name}{(derive ? " : ClientConfig" : " : IEnumerable<KeyValuePair<string, string>>")}\n";
+            codeText += $"    public class {name}{(derive ? " : ClientConfig" : " : Config")}\n";
             codeText += $"    {{\n";
             return codeText;
-        }
-
-        static string createCommon()
-        {
-            return
-@"        
-";
-        }
-
-        static string createClientSpecific()
-        {
-            return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ClientConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ClientConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ClientConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Set a configuration property using a string key / value pair.
-        /// </summary>
-        /// <remarks>
-        ///     Two scenarios where this is useful: 1. For setting librdkafka
-        ///     plugin config properties. 2. You are using a different version of 
-        ///     librdkafka to the one provided as a dependency of the Confluent.Kafka
-        ///     package and the configuration properties have evolved.
-        /// </remarks>
-        /// <param name=""key"">
-        ///     The configuration property name.
-        /// </param>
-        /// <param name=""val"">
-        ///     The property value.
-        /// </param>
-        public void Set(string key, string val)
-        {
-            this.properties[key] = val;
-        }
-
-        /// <summary>
-        ///     Gets a configuration property value given a key. Returns null if 
-        ///     the property has not been set.
-        /// </summary>
-        /// <param name=""key"">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        public string Get(string key)
-        {
-            if (this.properties.TryGetValue(key, out string val))
-            {
-                return val;
-            }
-            return null;
-        }
-
-        /// <summary>
-        ///     Gets a configuration property int? value given a key.
-        /// </summary>
-        /// <param name=""key"">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        protected int? GetInt(string key)
-        {
-            var result = Get(key);
-            if (result == null) { return null; }
-            return int.Parse(result);
-        }
-        
-        /// <summary>
-        ///     Gets a configuration property bool? value given a key.
-        /// </summary>
-        /// <param name=""key"">
-        ///     The configuration property to get.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        protected bool? GetBool(string key)
-        {
-            var result = Get(key);
-            if (result == null) { return null; }
-            return bool.Parse(result);
-        }
-
-        /// <summary>
-        ///     Gets a configuration property enum value given a key.
-        /// </summary>
-        /// <param name=""key"">
-        ///     The configuration property to get.
-        /// </param>
-        /// <param name=""type"">
-        ///     The enum type of the configuration property.
-        /// </param>
-        /// <returns>
-        ///     The configuration property value.
-        /// </returns>
-        protected object GetEnum(Type type, string key)
-        {
-            var result = Get(key);
-            if (result == null) { return null; }
-            return Enum.Parse(type, result);
-        }
-
-        /// <summary>
-        ///     Set a configuration property using a key / value pair (null checked).
-        /// </summary>
-        protected void SetObject(string name, object val)
-        {
-            if (val == null)
-            {
-                this.properties.Remove(name);
-                return;
-            }
-
-            if (val is Enum)
-            {
-                this.properties[name] = val.ToString().ToLower();
-            }
-            else
-            {
-                this.properties[name] = val.ToString();
-            }
-        }
-
-        /// <summary>
-        ///     The configuration properties.
-        /// </summary>
-        protected Dictionary<string, string> properties = new Dictionary<string, string>();
-
-        /// <summary>
-        ///     	Returns an enumerator that iterates through the property collection.
-        /// </summary>
-        /// <returns>
-        ///         An enumerator that iterates through the property collection.
-        /// </returns>
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => this.properties.GetEnumerator();
-
-        /// <summary>
-        ///     	Returns an enumerator that iterates through the property collection.
-        /// </summary>
-        /// <returns>
-        ///         An enumerator that iterates through the property collection.
-        /// </returns>
-        IEnumerator IEnumerable.GetEnumerator() => this.properties.GetEnumerator();
-";
         }
 
         static string createConsumerSpecific()
@@ -489,7 +330,7 @@ namespace Confluent.Kafka
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey, TValue}"" />
         ///     objects returned by the
-        ///     <see cref=""Confluent.Kafka.Consumer{TKey, TValue}.Consume(System.TimeSpan)"" />
+        ///     <see cref=""Confluent.Kafka.Consumer.Consume(System.TimeSpan)"" />
         ///     method. Disabling fields that you do not require will improve 
         ///     throughput and reduce memory consumption. Allowed values:
         ///     headers, timestamp, topic, all, none
@@ -676,7 +517,9 @@ namespace Confluent.Kafka
             }
 
             string gitBranchName = args[0];
-            var configDoc = await (await (new HttpClient()).GetAsync($"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md")).Content.ReadAsStringAsync();
+            var configDoc = await (await (new HttpClient())
+                .GetAsync($"https://raw.githubusercontent.com/edenhill/librdkafka/{gitBranchName}/CONFIGURATION.md"))
+                .Content.ReadAsStringAsync();
 
             var props =
                 choosePreferredNames(
@@ -686,14 +529,12 @@ namespace Confluent.Kafka
                 extractAll(configDoc)))));
 
             var codeText = "";
-            codeText += createFileHeader();
+            codeText += createFileHeader(gitBranchName);
             codeText += createEnums(props.Where(p => p.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(p.Name)).ToList());
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
-            codeText += createClientSpecific();
             codeText += MappingConfiguration.SaslMechanismGetSetString;
             codeText += createProperties(props.Where(p => p.CPorA == "*"));
-            codeText += createCommon();
             codeText += createClassFooter();
             codeText += createClassHeader("AdminClientConfig", "AdminClient configuration properties", true);
             codeText += createAdminClientSpecific();
@@ -709,7 +550,7 @@ namespace Confluent.Kafka
             codeText += createFileFooter();
 
             if (!Directory.Exists("out")) { Directory.CreateDirectory("out"); }
-            File.WriteAllText("out/Config.cs", codeText);
+            File.WriteAllText("out/Config_gen.cs", codeText);
 
             return 0;
         }

@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // Test in which both receive and revoke events are specified.
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 Assert.Empty(consumer.Assignment);
 
@@ -71,13 +71,13 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                var r = consumer.Consume(TimeSpan.FromSeconds(20));
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
 
                 consumer.Close();
             }
 
             // test in which only the revoked event handler is specified.
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
 
@@ -89,13 +89,13 @@ namespace Confluent.Kafka.IntegrationTests
                 };
 
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(5));
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Single(consumer.Assignment);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(5));
+                r = consumer.Consume(TimeSpan.FromSeconds(10));
 
                 Assert.Empty(consumer.Assignment);
 
@@ -103,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which only the receive event handler is specified.
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
 
@@ -115,13 +115,13 @@ namespace Confluent.Kafka.IntegrationTests
                 };
 
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(5));
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Single(consumer.Assignment);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(5));
+                r = consumer.Consume(TimeSpan.FromSeconds(10));
 
                 Assert.Empty(consumer.Assignment);
 
@@ -129,18 +129,18 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which neither the receive or revoke handler is specified.
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
 
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(5));
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Single(consumer.Assignment);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(5));
+                r = consumer.Consume(TimeSpan.FromSeconds(10));
 
                 Assert.Empty(consumer.Assignment);
 

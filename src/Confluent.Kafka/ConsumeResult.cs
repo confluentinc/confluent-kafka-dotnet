@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
+// Copyright 2017-2018 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,11 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Represents a message consumed from a Kafka cluster.
+    /// </summary>
+    public class ConsumeResult : ConsumeResult<byte[], byte[]> {}
+
     /// <summary>
     ///     Represents a message consumed from a Kafka cluster.
     /// </summary>

@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             int count = 0;
-            Action<DeliveryReportResult<Null, Null>> dh = (DeliveryReportResult<Null, Null> dr) => 
+            Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer<Null, Null>(producerConfig))
+            using (var producer = new Producer(producerConfig))
             {
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
                 producer.BeginProduce(singlePartitionTopic, new Message<Null, Null> {}, dh);

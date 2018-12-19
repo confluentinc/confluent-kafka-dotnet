@@ -43,9 +43,9 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            var drs_1 = new List<DeliveryReportResult<Null, string>>();
-            List<DeliveryReport<Null, string>> drs = new List<DeliveryReport<Null, string>>();
-            using (var producer = new Producer<Null, string>(producerConfig))
+            var drs_1 = new List<DeliveryReport<Null, string>>();
+            List<DeliveryResult<Null, string>> drs = new List<DeliveryResult<Null, string>>();
+            using (var producer = new Producer(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "testvalue" }).Result);
                 
@@ -84,8 +84,8 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                 ).Result);
 
-                Action<DeliveryReportResult<Null, string>> dh 
-                    = (DeliveryReportResult<Null, string> dr) => drs_1.Add(dr);
+                Action<DeliveryReport<Null, string>> dh 
+                    = (DeliveryReport<Null, string> dr) => drs_1.Add(dr);
 
                 producer.BeginProduce(singlePartitionTopic, new Message<Null, string> { Value = "testvalue" }, dh);
 
@@ -130,9 +130,9 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            var drs_2 = new List<DeliveryReportResult<byte[], byte[]>>();
-            List<DeliveryReport<byte[], byte[]>> drs2 = new List<DeliveryReport<byte[], byte[]>>();
-            using (var producer = new Producer<byte[], byte[]>(producerConfig))
+            var drs_2 = new List<DeliveryReport<byte[], byte[]>>();
+            List<DeliveryResult<byte[], byte[]>> drs2 = new List<DeliveryResult<byte[], byte[]>>();
+            using (var producer = new Producer(producerConfig))
             {
                 drs2.Add(producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
 
@@ -145,7 +145,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() => producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }).Result);
 
-                Action<DeliveryReportResult<byte[], byte[]>> dh = (DeliveryReportResult<byte[], byte[]> dr) => drs_2.Add(dr);
+                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
 
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 
@@ -161,7 +161,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 // serializing async
 
@@ -212,49 +212,40 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_2[2].TopicPartitionOffset);
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 ConsumeResult<Null, string> cr;
 
                 // serializing async
 
-                assertCloseToNowTyped(consumer, drs[0].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs[1].TopicPartitionOffset});
-                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                cr = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr.Message);
                 Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
                 Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
                 
-                assertCloseToNowTyped(consumer, drs[2].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs[2].TopicPartitionOffset);
 
                 // serializing deliveryhandler
 
-                assertCloseToNowTyped(consumer, drs_1[0].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[0].TopicPartitionOffset);
 
                 consumer.Assign(new List<TopicPartitionOffset>() {drs_1[1].TopicPartitionOffset});
-                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                cr = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr.Message);
                 Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
                 Assert.Equal(cr.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
-                assertCloseToNowTyped(consumer, drs_1[2].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_1[2].TopicPartitionOffset);
             }
             
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   CustomTimestampTests");
         }
 
-        private static void assertCloseToNowTyped(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
-        {
-            consumer.Assign(new List<TopicPartitionOffset>() {tpo});
-            var cr = consumer.Consume(TimeSpan.FromSeconds(10));
-            Assert.NotNull(cr.Message);
-            Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
-            Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
-        }
-
-        private static void assertCloseToNow(Consumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
+        private static void assertCloseToNow(Consumer consumer, TopicPartitionOffset tpo)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));

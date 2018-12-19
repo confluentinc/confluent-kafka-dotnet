@@ -17,8 +17,8 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Threading;
 using System.Collections.Generic;
+using System.Threading;
 using Xunit;
 
 
@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 EnableBackgroundPoll = false
             };
-            var producer = new Producer<byte[], byte[]>(producerConfig);
+            var producer = new Producer(producerConfig);
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));
@@ -59,10 +59,10 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start Consumer_ClosedHandle");
 
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
-            var consumer = new Consumer<byte[], byte[]>(consumerConfig);
-            consumer.Consume(TimeSpan.FromMilliseconds(10));
+            var consumer = new Consumer(consumerConfig);
+            consumer.Consume(TimeSpan.FromSeconds(10));
             consumer.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
+            Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromSeconds(10)));
             
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_ClosedHandle");
@@ -78,7 +78,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start TypedProducer_ClosedHandle");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var producer = new Producer<Null, Null>(producerConfig);
+            var producer = new Producer(producerConfig);
             producer.Flush(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Thread.Sleep(TimeSpan.FromMilliseconds(500)); // kafka handle destroy is done on the poll thread, is not immediate.
@@ -98,10 +98,10 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("start TypedConsumer_ClosedHandle");
 
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
-            var consumer = new Consumer<Null, Null>(consumerConfig);
-            consumer.Consume(TimeSpan.FromMilliseconds(10));
+            var consumer = new Consumer(consumerConfig);
+            consumer.Consume(TimeSpan.FromSeconds(10));
             consumer.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromMilliseconds(10)));
+            Assert.Throws<ObjectDisposedException>(() => consumer.Consume(TimeSpan.FromSeconds(10)));
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   TypedConsumer_ClosedHandle");

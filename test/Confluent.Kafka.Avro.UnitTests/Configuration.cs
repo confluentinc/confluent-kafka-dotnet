@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.SchemaRegistry;
-using Confluent.Kafka.Serialization;
+using Confluent.Kafka.AvroSerdes;
 
 
 namespace Confluent.Kafka.Avro.UnitTests
@@ -46,66 +46,50 @@ namespace Confluent.Kafka.Avro.UnitTests
         [Fact]
         public void SerializerConfigure()
         {
-            var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
-
             var config = new Dictionary<string, string>
             {
                 { "avro.serializer.buffer.bytes", "42" },
                 { "avro.serializer.auto.register.schemas", "false" }
             };
 
-            var modifiedConfig = avroSerializer.Configure(config, true);
-
-            Assert.Equal(0, modifiedConfig.Count());
+            // should not throw.
+            var avroSerializer = new AvroSerializer<int>(config);
         }
 
         [Fact]
         public void DeserializerConfigure()
         {
-            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-
             var config = new Dictionary<string, string> { };
 
-            var modifiedConfig = avroDeserializer.Configure(config, true);
-
-            Assert.Equal(0, modifiedConfig.Count());
+            // should not throw.
+            var avroDeserializer = new AvroDeserializer<int>(config);
         }
 
         [Fact]
-        public void DeserializerIgnoresUnrelated()
+        public void DeserializerThrowsOnUnrelated()
         {
-            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-
             var config = new Dictionary<string, string>
             {
                 { "some.random.config.param", "false" }
             };
 
-            var modifiedConfig = avroDeserializer.Configure(config, true);
-
-            Assert.Equal(1, modifiedConfig.Count());
+            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(config); });
         }
 
         [Fact]
-        public void SerializerIgnoresUnrelated()
+        public void SerializerThrowsOnUnrelated()
         {
-            var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
-
             var config = new Dictionary<string, string>
             {
                 { "some.random.config.param", "false" }
             };
 
-            var modifiedConfig = avroSerializer.Configure(config, true);
-
-            Assert.Equal(1, modifiedConfig.Count());
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(config); });
         }
 
         [Fact]
-        public void SerializerUnexpectedConfigParam()
+        public void SerializerUnexpectedAvroConfigParam()
         {
-            var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
-
             var config = new Dictionary<string, string>
             {
                 { "avro.serializer.buffer.bytes", "42" },
@@ -113,20 +97,18 @@ namespace Confluent.Kafka.Avro.UnitTests
                 { "avro.unknown", "70" }
             };
 
-            Assert.Throws<ArgumentException>(() => { avroSerializer.Configure(config, true); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(config); });
         }
 
         [Fact]
-        public void DeserializerUnexpectedConfigParam()
+        public void DeserializerUnexpectedAvroConfigParam()
         {
-            var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-
             var config = new Dictionary<string, string>
             {
                 { "avro.serializer.auto.register.schemas", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { avroDeserializer.Configure(config, true); });
+            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(config); });
         }
     }
 }

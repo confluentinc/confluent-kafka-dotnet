@@ -19,8 +19,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using System.Text;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
@@ -44,11 +44,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer<Null, string>(producerConfig))
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var producer = new Producer(producerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 IEnumerable<TopicPartition> assignedPartitions = null;
-                ConsumeResult<Null, string> record;
+                ConsumeResult record;
 
                 consumer.OnPartitionsAssigned += (_, partitions) =>
                 {
@@ -60,18 +60,18 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (assignedPartitions == null)
                 {
-                    consumer.Consume(TimeSpan.FromSeconds(1));
+                    consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                record = consumer.Consume(TimeSpan.FromSeconds(1));
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Wait();
-                record = consumer.Consume(TimeSpan.FromSeconds(30));
+                producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test value") }).Wait();
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 
                 consumer.Pause(assignedPartitions);
-                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value 2" }).Wait();
-                record = consumer.Consume(TimeSpan.FromSeconds(2));
+                producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test value 2") }).Wait();
+                record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
                 consumer.Resume(assignedPartitions);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));

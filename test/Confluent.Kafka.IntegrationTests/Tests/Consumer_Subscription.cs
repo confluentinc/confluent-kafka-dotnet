@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 // Test empty case.
                 Assert.Empty(consumer.Subscription);
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                var r = consumer.Consume(TimeSpan.FromSeconds(20));
+                var r = consumer.Consume(TimeSpan.FromSeconds(10));
 
                 consumer.Close();
             }

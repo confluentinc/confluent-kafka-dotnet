@@ -18,17 +18,19 @@ using System.Collections.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     /// <summary>
-    ///     AvroSerdeProvider configuration properties.
+    ///     <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />
+    ///     configuration properties.
     /// </summary>
-    public class AvroSerdeProviderConfig : SchemaRegistryConfig
+    public class AvroSerializerConfig : Config
     {
         /// <summary>
-        ///     Configuration property names specific the avro serde provider.
+        ///     Configuration property names specific to 
+        ///     <see cref="Confluent.Kafka.AvroSerdes.AvroSerializer{T}" />.
         /// </summary>
-        public new static class PropertyNames
+        public static class PropertyNames
         {
             /// <summary>
             ///     Specifies the initial size (in bytes) of the buffer used for Avro message
@@ -39,7 +41,7 @@ namespace Confluent.Kafka.Serialization
             ///
             ///     default: 1024
             /// </summary>
-            public const string AvroSerializerBufferBytes = "avro.serializer.buffer.bytes";
+            public const string BufferBytes = "avro.serializer.buffer.bytes";
 
             /// <summary>
             ///     Specifies whether or not the Avro serializer should attempt to auto-register
@@ -47,7 +49,7 @@ namespace Confluent.Kafka.Serialization
             ///
             ///     default: true
             /// </summary>
-            public const string AvroSerializerAutoRegisterSchemas = "avro.serializer.auto.register.schemas";
+            public const string AutoRegisterSchemas = "avro.serializer.auto.register.schemas";
         }
 
         /// <summary>
@@ -59,10 +61,10 @@ namespace Confluent.Kafka.Serialization
         /// 
         ///     default: 1024
         /// </summary>
-        public int? AvroSerializerBufferBytes
+        public int? BufferBytes
         {
-            get { return GetInt(PropertyNames.AvroSerializerBufferBytes); }
-            set { SetObject(PropertyNames.AvroSerializerBufferBytes, value); }
+            get { return GetInt(PropertyNames.BufferBytes); }
+            set { SetObject(PropertyNames.BufferBytes, value); }
         }
 
         /// <summary>
@@ -71,10 +73,10 @@ namespace Confluent.Kafka.Serialization
         ///
         ///     default: true
         /// </summary>
-        public bool? AvroSerializerAutoRegisterSchemas
+        public bool? AutoRegisterSchemas
         {
-            get { return GetBool(PropertyNames.AvroSerializerAutoRegisterSchemas); }
-            set { SetObject(PropertyNames.AvroSerializerAutoRegisterSchemas, value); }
+            get { return GetBool(PropertyNames.AutoRegisterSchemas); }
+            set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
     }
 }

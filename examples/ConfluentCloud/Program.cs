@@ -14,10 +14,10 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Confluent.Kafka;
 
 
 namespace ConfluentCloudExample
@@ -59,9 +59,9 @@ namespace ConfluentCloudExample
                 SaslPassword = "<ccloud secret>"
             };
 
-            using (var producer = new Producer<Null, string>(pConfig))
+            using (var producer = new Producer(pConfig))
             {
-                producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Key = null, Value = "test value" })
+                producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Value = "test value" })
                     .ContinueWith(task => task.IsFaulted
                         ? $"error producing message: {task.Exception.Message}"
                         : $"produced to: {task.Result.TopicPartitionOffset}");
@@ -86,13 +86,13 @@ namespace ConfluentCloudExample
                 AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            using (var consumer = new Consumer<Null, string>(cConfig))
-            { 
+            using (var consumer = new Consumer(cConfig))
+            {
                 consumer.Subscribe("dotnet-test-topic");
 
                 try
                 {
-                    var consumeResult = consumer.Consume();
+                    var consumeResult = consumer.Consume<Null, string>();
                     Console.WriteLine($"consumed: {consumeResult.Value}");
                 }
                 catch (ConsumeException e)
@@ -102,7 +102,6 @@ namespace ConfluentCloudExample
 
                 consumer.Close();
             }
-
         }
     }
 }

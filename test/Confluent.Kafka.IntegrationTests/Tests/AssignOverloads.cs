@@ -45,24 +45,24 @@ namespace Confluent.Kafka.IntegrationTests
             var testString = "hello world";
             var testString2 = "hello world 2";
 
-            DeliveryReport<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            DeliveryResult dr;
+            using (var producer = new Producer(producerConfig))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString) }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8(testString2) }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 // Explicitly specify partition offset.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });
-                ConsumeResult<Null, string> cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                var cr = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
                 Assert.Equal(cr.Value, testString);
 
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
-                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                cr = consumer.Consume<Null, string>(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr.Message);
                 Assert.Equal(cr.Message.Value, testString2);
             }

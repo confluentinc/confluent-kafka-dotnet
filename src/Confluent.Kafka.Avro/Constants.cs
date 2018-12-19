@@ -15,12 +15,12 @@
 // Refer to LICENSE for more information.
 
 
-namespace Confluent.Kafka.Serialization
+namespace Confluent.Kafka.AvroSerdes
 {
     internal static class Constants
     {
         /// <summary>
-        ///     Magic byte that identifies an avro serialized message with Confluent Platform framing.
+        ///     Magic byte that identifies an Avro serialized message with Confluent Platform framing.
         /// </summary>
         public const byte MagicByte = 0;
     }

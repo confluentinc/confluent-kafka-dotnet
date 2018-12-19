@@ -47,33 +47,41 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            var drs = new List<DeliveryReportResult<Null, string>>();
-            DeliveryReport<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
-            DeliveryReport<Null, string> dr_ol1, dr_ol3;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            var drs = new List<DeliveryReport<Null, string>>();
+            DeliveryResult<Null, string> dr_single, dr_empty, dr_null, dr_multiple, dr_duplicate;
+            DeliveryResult<Null, string> dr_ol1, dr_ol3;
+            using (var producer = new Producer(producerConfig))
             {
                 // single header value.
                 var headers = new Headers();
                 headers.Add("test-header", new byte[] { 142 } );
-                dr_single = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "the value", Headers = headers }).Result;
+                dr_single = producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<Null, string> { Value = "the value", Headers = headers }).Result;
                 Assert.Single(dr_single.Message.Headers);
                 Assert.Equal("test-header", dr_single.Message.Headers[0].Key);
                 Assert.Equal(new byte[] { 142 }, dr_single.Message.Headers[0].Value);
 
                 // empty header values
                 var headers0 = new Headers();
-                dr_empty = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "the value", Headers = headers0 }).Result;
+                dr_empty = producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<Null, string> { Value = "the value", Headers = headers0 }).Result;
                 Assert.Empty(dr_empty.Message.Headers);
 
                 // null header value
-                dr_null = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "the value" }).Result;
+                dr_null = producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<Null, string> { Value = "the value" }).Result;
                 Assert.Empty(dr_null.Message.Headers);
 
                 // multiple header values (also Headers no Dictionary, since order is tested).
                 var headers2 = new Headers();
                 headers2.Add("test-header-a", new byte[] { 111 } );
                 headers2.Add("test-header-b", new byte[] { 112 } );
-                dr_multiple = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "the value", Headers = headers2 }).Result;
+                dr_multiple = producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<Null, string> { Value = "the value", Headers = headers2 }).Result;
                 Assert.Equal(2, dr_multiple.Message.Headers.Count);
                 Assert.Equal("test-header-a", dr_multiple.Message.Headers[0].Key);
                 Assert.Equal(new byte[] { 111 }, dr_multiple.Message.Headers[0].Value);
@@ -106,7 +114,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("test-header", dr_ol3.Message.Headers[0].Key);
                 Assert.Equal(new byte[] { 142 }, dr_ol3.Message.Headers[0].Value);
 
-                Action<DeliveryReportResult<Null, string>> dh = (DeliveryReportResult<Null, string> dr) => drs.Add(dr);
+                Action<DeliveryReport<Null, string>> dh = (DeliveryReport<Null, string> dr) => drs.Add(dr);
 
                 // Test headers work as expected with all serializing Produce variants. 
 
@@ -122,9 +130,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, drs[1].Message.Headers.Count);
             }
 
-            List<DeliveryReportResult<byte[], byte[]>> drs_2 = new List<DeliveryReportResult<byte[], byte[]>>();
-            DeliveryReport<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig))
+            List<DeliveryReport<byte[], byte[]>> drs_2 = new List<DeliveryReport<byte[], byte[]>>();
+            DeliveryResult<byte[], byte[]> dr_ol4, dr_ol5, dr_ol6, dr_ol7;
+            using (var producer = new Producer(producerConfig))
             {
                 var headers = new Headers();
                 headers.Add("hkey", new byte[] { 44 });
@@ -142,7 +150,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Test headers work as expected with all non-serializing BeginProduce variants.
 
-                Action<DeliveryReportResult<byte[], byte[]>> dh = (DeliveryReportResult<byte[], byte[]> dr) => drs_2.Add(dr);
+                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
 
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
                 producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }, dh);
@@ -157,7 +165,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(drs_2[3].Message.Headers);
             }
 
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_single.TopicPartitionOffset});
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -274,7 +282,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // null key
-            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var producer = new Producer(producerConfig))
             {
                 var headers = new Headers();
                 var threw = false;
@@ -297,8 +305,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             // null value
 
-            DeliveryReport<Null, string> nulldr;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            DeliveryResult<Null, string> nulldr;
+            using (var producer = new Producer(producerConfig))
             {
                 var headers = new Headers();
                 headers.Add("my-header", null);
@@ -306,10 +314,10 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(nulldr.Headers);
                 Assert.Null(nulldr.Headers[0].Value);
             }
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, nulldr.Offset));
-                var cr = consumer.Consume(TimeSpan.FromSeconds(20));
+                var cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr?.Message);
                 Assert.Single(cr.Headers);
                 Assert.Equal("my-header", cr.Message.Headers[0].Key);

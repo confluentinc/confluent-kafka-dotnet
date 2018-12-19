@@ -46,14 +46,14 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             // Producing onto the topic to make sure it exists.
-            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var producer = new Producer(producerConfig))
             {
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" }).Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test string") }).Result;
                 Assert.NotEqual(Offset.Invalid, dr.Offset);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new Consumer(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
                 Assert.Empty(consumer.Assignment);
