@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc., 2015-2016 Andreas Heider
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,7 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     The result of a produce request.
-    /// </summary>
-    public class DeliveryReport : DeliveryReport<byte[], byte[]> { }
-
-    /// <summary>
-    ///     The result of a produce request.
+    ///     Encapsulates the result of a successful produce request.
     /// </summary>
     public class DeliveryReport<TKey, TValue>
     {
@@ -45,37 +40,26 @@ namespace Confluent.Kafka
         public Offset Offset { get; set; }
 
         /// <summary>
-        ///     An error (or NoError) associated with the message.
-        /// </summary>
-        public Error Error { get; set; }
-
-        /// <summary>
         ///     The TopicPartition associated with the message.
         /// </summary>
         public TopicPartition TopicPartition
             => new TopicPartition(Topic, Partition);
 
-        /// <summary>
-        ///     The TopicPartitionOffset associated with the message.
-        /// </summary>
-        public TopicPartitionOffset TopicPartitionOffset
-            => new TopicPartitionOffset(Topic, Partition, Offset);
 
         /// <summary>
-        ///     The TopicPartitionOffsetError assoicated with the message.
+        ///     The TopicPartitionOffset assoicated with the message.
         /// </summary>
-        public TopicPartitionOffsetError TopicPartitionOffsetError
+        public TopicPartitionOffset TopicPartitionOffset
         {
             get
             {
-                return new TopicPartitionOffsetError(Topic, Partition, Offset, Error);
+                return new TopicPartitionOffset(Topic, Partition, Offset);
             }
             set
             {
                 Topic = value.Topic;
                 Partition = value.Partition;
                 Offset = value.Offset;
-                Error = value.Error;
             }
         }
 

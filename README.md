@@ -90,13 +90,11 @@ class Program
     {
         var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
-        using (var p = new Producer(config))
+        // A Producer for sending messages with null keys and UTF-8 encoded values.
+        using (var p = new Producer<Null, string>(config))
         {
             try
             {
-                // Uses default serializers associated with Null and string (UTF8) 
-                // to serialize the message key and value. These can be specified
-                // or overridden using the RegisterSerializer method.
                 var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
@@ -130,7 +128,7 @@ class Program
                 ? $"Delivered message to {r.TopicPartitionOffset}"
                 : $"Delivery Error: {r.Error.Reason}");
 
-        using (var p = new Producer(conf))
+        using (var p = new Producer<Null, string>(conf))
         {
             for (int i=0; i<100; ++i)
             {
@@ -166,7 +164,7 @@ class Program
             AutoOffsetReset = AutoOffsetResetType.Earliest
         };
 
-        using (var c = new Consumer(conf))
+        using (var c = new Consumer<Ignore, string>(conf))
         {
             c.Subscribe("my-topic");
 
@@ -179,12 +177,7 @@ class Program
             {
                 try
                 {
-                    // Uses default deserializers associated with Ignore and string (UTF8) 
-                    // to deserialize the message key and value. The Ignore deserializer 
-                    // always returns null, regardless of the message key data. Deserializers
-                    // associated with types can be specified or overridden using the
-                    // RegisterSerializer method.
-                    var cr = c.Consume<Ignore, string>();
+                    var cr = c.Consume();
                     Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
                 }
                 catch (ConsumeException e)

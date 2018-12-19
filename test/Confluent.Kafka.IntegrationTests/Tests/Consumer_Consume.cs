@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 bool done = false;
                 consumer.OnPartitionEOF += (_, tpo)
@@ -58,13 +58,15 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                 };
 
+                consumer.OnPartitionsRevoked += (_, partitions)
+                    => consumer.Unassign();
+
                 consumer.Subscribe(singlePartitionTopic);
 
                 int msgCnt = 0;
                 while (!done)
                 {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                        
+                    ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     if (record != null)
                     {
                         Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);

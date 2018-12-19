@@ -16,8 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.Kafka.Serialization;
 using Confluent.SchemaRegistry;
 using Xunit;
 
@@ -28,13 +27,12 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     {
         /// <summary>
         ///     Test that producing messages with a key or value with incompatible schema
-        ///     throws a SerializationException.
+        ///     throws a SchemaRegistryException.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceIncompatibleTypes(string bootstrapServers, string schemaRegistryServers)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
@@ -42,37 +40,24 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetResetType.Earliest,
             };
-
-            var schemaRegistryConfig = new SchemaRegistryConfig
-            {
-                SchemaRegistryUrl = schemaRegistryServers
-            };
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, string>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<string>()))
             {
-                producer
-                    .ProduceAsync(
-                        topic, new Message<string, string> { Key = "hello", Value = "world" },
-                        SerdeType.Avro, SerdeType.Avro)
-                    .Wait();
-
+                producer.ProduceAsync(topic, new Message<string, string> { Key = "hello", Value = "world" });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<int, string>(producerConfig, serdeProvider.GetSerializerGenerator<int>(), serdeProvider.GetSerializerGenerator<string>()))
             {
-                Assert.Throws<SerializationException>(() =>
+                Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer
-                            .ProduceAsync(
-                                topic, new Message<int, string> { Key = 42, Value = "world" },
-                                SerdeType.Avro, SerdeType.Avro)
-                            .Wait();
+                        producer.ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" }).Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -81,18 +66,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 });
             }
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
-            {                
-                Assert.Throws<SerializationException>(() =>
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<int>()))
+            {
+                Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer
-                            .ProduceAsync(
-                                topic, new Message<string, int> { Key = "world", Value = 42 },
-                                SerdeType.Avro, SerdeType.Avro)
-                            .Wait();
+                        producer.ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 }).Wait();
                     }
                     catch (AggregateException e)
                     {

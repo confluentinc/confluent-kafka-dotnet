@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka;
-using Confluent.Kafka.AvroSerdes;
+using Confluent.Kafka.Serialization;
 using Confluent.SchemaRegistry;
 using Xunit;
 
@@ -34,10 +34,8 @@ namespace Confluent.Kafka.Avro.IntegrationTests
         {
             string topic = Guid.NewGuid().ToString();
 
-            var producerConfig = new ProducerConfig
-            {
-                BootstrapServers = bootstrapServers
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var avroConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers, AvroSerializerAutoRegisterSchemas = false };
 
             var consumerConfig = new ConsumerConfig
             {
@@ -47,26 +45,14 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            var schemaRegistryConfig = new SchemaRegistryConfig
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig))
+            using (var producer = new Producer<string, int>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<int>()))
             {
-                SchemaRegistryUrl = schemaRegistryServers
-            };
-
-
-            // first a quick check the value case fails.
-
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
-            {
-                producer.RegisterAvroSerializer(new AvroSerializer<int>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
-
-                Assert.Throws<SerializationException>(() =>
+                Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
-                        producer
-                            .ProduceAsync(new Guid().ToString(), new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro)
-                            .Wait();
+                        producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
                     }
                     catch (AggregateException e)
                     {
@@ -75,41 +61,22 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 });
             }
 
-            // the following tests all check behavior in the key case.
+            var producerConfig2 = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var avroConfig2 = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
-            {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
-
-                Assert.Throws<SerializationException>(() =>
-                {
-                    try
-                    {
-                        producer
-                            .ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }, SerdeType.Avro, SerdeType.Avro)
-                            .Wait();
-                    }
-                    catch (AggregateException e)
-                    {
-                        throw e.InnerException;
-                    }
-                });
-            }
-
-            // allow auto register..
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer(producerConfig))
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig2))
+            using (var producer = new Producer<string, int>(producerConfig2, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<int>()))
             {
                 producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
 
-            // config with avro.serializer.auto.register.schemas == false should work now.
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers }))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
-            {
-                producer.RegisterAvroSerializer(new AvroSerializer<string>(new AvroSerializerConfig { AutoRegisterSchemas = false }));
+            var producerConfig3 = new ProducerConfig { BootstrapServers = bootstrapServers };
+            var avroConfig3 = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers, AvroSerializerAutoRegisterSchemas = false };
 
+            // config with avro.serializer.auto.register.schemas == false should work now.
+            using (var serdeProvider = new AvroSerdeProvider(avroConfig3))
+            using (var producer = new Producer<string, int>(producerConfig3, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<int>()))
+            {
                 producer.ProduceAsync(topic, new Message<string, int> { Key = "test", Value = 112 }).Wait();
             }
         }

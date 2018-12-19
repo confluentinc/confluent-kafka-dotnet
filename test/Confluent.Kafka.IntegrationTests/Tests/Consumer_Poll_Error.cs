@@ -39,12 +39,12 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             TopicPartitionOffset firstProduced = null;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<byte[], byte[]>(producerConfig))
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
-                firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message { Key = keyData }).Result.TopicPartitionOffset;
+                firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Key = keyData }).Result.TopicPartitionOffset;
                 var valData = Encoding.UTF8.GetBytes("val");
-                producer.ProduceAsync(singlePartitionTopic, new Message { Value = valData });
+                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = valData });
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // test key deserialization error behavior
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 int msgCnt = 0;
                 int errCnt = 0;
@@ -81,7 +81,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     try
                     {
-                        var record = consumer.Consume<Null, string>(TimeSpan.FromMilliseconds(100));
+                        var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
                         if (record != null)
                         {
                             msgCnt += 1;
@@ -102,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test value deserialization error behavior
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<string, Null>(consumerConfig))
             {
                 int msgCnt = 0;
                 int errCnt = 0;
@@ -127,7 +127,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     try
                     {
-                        var record = consumer.Consume<string, Null>(TimeSpan.FromMilliseconds(100));
+                        var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
                         if (record != null)
                         {
                             msgCnt += 1;

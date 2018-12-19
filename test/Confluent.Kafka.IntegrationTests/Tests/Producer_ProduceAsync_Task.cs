@@ -18,9 +18,9 @@
 
 using System;
 using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Xunit;
+using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -38,8 +38,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var drs = new List<Task<DeliveryResult<string, string>>>();
-            using (var producer = new Producer(producerConfig))
+            var drs = new List<Task<DeliveryReport<string, string>>>();
+            using (var producer = new Producer<string, string>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),

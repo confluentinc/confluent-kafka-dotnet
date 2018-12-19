@@ -19,15 +19,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Avro.Specific;
 using Avro.IO;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.Serialization
 {
     internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T>
     {
@@ -38,12 +36,12 @@ namespace Confluent.Kafka.AvroSerdes
         private readonly Dictionary<int, DatumReader<T>> datumReaderBySchemaId 
             = new Dictionary<int, DatumReader<T>>();
 
-        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
+        private object deserializeLockObj = new object();
 
         /// <summary>
-        ///     The Avro schema used to read values of type <typeparamref name="T"/>
+        ///     The avro schema used to read values of type <typeparamref name="T"/>
         /// </summary>
-        public global::Avro.Schema ReaderSchema { get; private set; }
+        public Avro.Schema ReaderSchema { get; private set; }
 
         private ISchemaRegistryClient schemaRegistryClient;
 
@@ -53,39 +51,39 @@ namespace Confluent.Kafka.AvroSerdes
 
             if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
             {
-                ReaderSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                ReaderSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
             }
             else if (typeof(T).Equals(typeof(int)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("int");
+                ReaderSchema = Avro.Schema.Parse("int");
             }
             else if (typeof(T).Equals(typeof(bool)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("boolean");
+                ReaderSchema = Avro.Schema.Parse("boolean");
             }
             else if (typeof(T).Equals(typeof(double)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("double");
+                ReaderSchema = Avro.Schema.Parse("double");
             }
             else if (typeof(T).Equals(typeof(string)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("string");
+                ReaderSchema = Avro.Schema.Parse("string");
             }
             else if (typeof(T).Equals(typeof(float)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("float");
+                ReaderSchema = Avro.Schema.Parse("float");
             }
             else if (typeof(T).Equals(typeof(long)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("long");
+                ReaderSchema = Avro.Schema.Parse("long");
             }
             else if (typeof(T).Equals(typeof(byte[])))
             {
-                ReaderSchema = global::Avro.Schema.Parse("bytes");
+                ReaderSchema = Avro.Schema.Parse("bytes");
             }
             else if (typeof(T).Equals(typeof(Null)))
             {
-                ReaderSchema = global::Avro.Schema.Parse("null");
+                ReaderSchema = Avro.Schema.Parse("null");
             }
             else
             {
@@ -97,54 +95,41 @@ namespace Confluent.Kafka.AvroSerdes
             }
         }
 
-        public async Task<T> Deserialize(string topic, byte[] array)
+        public T Deserialize(string topic, byte[] array)
         {
-            try
-            {
-                // Note: topic is not necessary for deserialization (or knowing if it's a key 
-                // or value) only the schema id is needed.
+            // Note: topic is not necessary for deserialization (or knowing if it's a key 
+            // or value) only the schema id is needed.
 
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+            using (var stream = new MemoryStream(array))
+            using (var reader = new BinaryReader(stream))
+            {
+                var magicByte = reader.ReadByte();
+                if (magicByte != Constants.MagicByte)
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        // may change in the future.
-                        throw new DeserializationException($"magic byte should be {Constants.MagicByte}, not {magicByte}");
-                    }
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
-                    DatumReader<T> datumReader;
-                    await deserializeMutex.WaitAsync();
-                    try
-                    {
-                        datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
-                        if (datumReader == null)
-                        {
-                            if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
-                            {
-                                datumReaderBySchemaId.Clear();
-                            }
-
-                            var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
-                            var writerSchema = global::Avro.Schema.Parse(writerSchemaJson);
-
-                            datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
-                            datumReaderBySchemaId[writerId] = datumReader;
-                        }
-                    }
-                    finally
-                    {
-                        deserializeMutex.Release();
-                    }
-                    
-                    return datumReader.Read(default(T), new BinaryDecoder(stream));
+                    // may change in the future.
+                    throw new InvalidDataException($"magic byte should be 0, not {magicByte}");
                 }
-            }
-            catch (AggregateException e)
-            {
-                throw e.InnerException;
+                var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
+
+                DatumReader<T> datumReader;
+                lock (deserializeLockObj)
+                {
+                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
+                    if (datumReader == null)
+                    {
+                        if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
+                        {
+                            datumReaderBySchemaId.Clear();
+                        }
+
+                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
+                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+
+                        datumReader = new SpecificReader<T>(writerSchema, ReaderSchema);
+                        datumReaderBySchemaId[writerId] = datumReader;
+                    }
+                }
+                return datumReader.Read(default(T), new BinaryDecoder(stream));
             }
         }
 

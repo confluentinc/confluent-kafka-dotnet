@@ -18,8 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Xunit;
+using System.Threading.Tasks;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -38,8 +38,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var drs = new List<Task<DeliveryResult<Null, Null>>>();
-            using (var producer = new Producer(producerConfig))
+            var drs = new List<Task<DeliveryReport<Null, Null>>>();
+            using (var producer = new Producer<Null, Null>(producerConfig))
             {
                 drs.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 0), new Message<Null, Null> {}));
@@ -57,6 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(dr.Message.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+
             }
 
             Assert.Equal((Partition)0, drs[0].Result.Partition);

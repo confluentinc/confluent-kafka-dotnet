@@ -124,8 +124,7 @@ namespace Confluent.SchemaRegistry
                         try
                         {
                             JObject errorObject = null;
-                            errorObject = JObject.Parse(
-                                await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false));
+                            errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false));
                             message = errorObject.Value<string>("message");
                             errorCode = errorObject.Value<int>("error_code");
                         }
@@ -149,8 +148,7 @@ namespace Confluent.SchemaRegistry
 
                     try
                     {
-                        var errorObject = JObject.Parse(
-                            await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false));
+                        var errorObject = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false));
                         message = errorObject.Value<string>("message");
                         errorCode = errorObject.Value<int>("error_code");
                     }
@@ -198,10 +196,8 @@ namespace Confluent.SchemaRegistry
         private async Task<List<T>> RequestListOfAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
             var request = CreateRequest(endPoint, method, jsonBody);
-            var response = await ExecuteOnOneInstanceAsync(request)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-            return JArray.Parse(
-                await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false)).ToObject<List<T>>();
+            var response = await ExecuteOnOneInstanceAsync(request).ConfigureAwait(continueOnCapturedContext: false);
+            return JArray.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false)).ToObject<List<T>>();
         }
 
         private HttpRequestMessage CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
@@ -221,73 +217,59 @@ namespace Confluent.SchemaRegistry
         #region Schemas
 
         public async Task<string> GetSchemaAsync(int id)
-            => (await RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).Schema;
+            => (await RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get).ConfigureAwait(continueOnCapturedContext: false)).Schema;
 
         #endregion Schemas
 
         #region Subjects
 
-        public async Task<List<string>> GetSubjectsAsync()
-            => await RequestListOfAsync<string>("/subjects", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<List<string>> GetSubjectsAsync()
+            => RequestListOfAsync<string>("/subjects", HttpMethod.Get);
 
-        public async Task<List<string>> GetSubjectVersionsAsync(string subject)
-            => await RequestListOfAsync<string>($"/subjects/{subject}/versions", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<List<string>> GetSubjectVersionsAsync(string subject)
+            => RequestListOfAsync<string>($"/subjects/{subject}/versions", HttpMethod.Get);
 
-        public async Task<Schema> GetSchemaAsync(string subject, int version)
-            => await RequestAsync<Schema>($"/subjects/{subject}/versions/{version}", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<Schema> GetSchemaAsync(string subject, int version)
+            => RequestAsync<Schema>($"/subjects/{subject}/versions/{version}", HttpMethod.Get);
 
-        public async Task<Schema> GetLatestSchemaAsync(string subject)
-            => await RequestAsync<Schema>($"/subjects/{subject}/versions/latest", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<Schema> GetLatestSchemaAsync(string subject)
+            => RequestAsync<Schema>($"/subjects/{subject}/versions/latest", HttpMethod.Get);
 
         public async Task<int> RegisterSchemaAsync(string subject, string schema)
-            => (await RequestAsync<SchemaId>($"/subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false)).Id;
+            => (await RequestAsync<SchemaId>($"/subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema)).ConfigureAwait(continueOnCapturedContext: false)).Id;
 
-        public async Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas)
-            => await RequestAsync<Schema>($"/subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas)
+            => RequestAsync<Schema>($"/subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema));
 
-        public async Task<Schema> CheckSchemaAsync(string subject, string schema)
-            => await RequestAsync<Schema>($"/subjects/{subject}", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<Schema> CheckSchemaAsync(string subject, string schema)
+            => RequestAsync<Schema>($"/subjects/{subject}", HttpMethod.Post, new SchemaString(schema));
 
         #endregion Subjects
 
         #region Compatibility
 
         public async Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema)
-            => (await RequestAsync<CompatibilityCheck>($"/compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
+            => (await RequestAsync<CompatibilityCheck>($"/compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema)).ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
         public async Task<bool> TestLatestCompatibilityAsync(string subject, string schema)
-            => (await RequestAsync<CompatibilityCheck>($"/compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
+            => (await RequestAsync<CompatibilityCheck>($"/compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema)).ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
         #endregion Compatibility
 
         #region Config
 
         public async Task<Compatibility> GetGlobalCompatibilityAsync()
-            => (await RequestAsync<Config>("/config", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
+            => (await RequestAsync<Config>("/config", HttpMethod.Get).ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
-            => (await RequestAsync<Config>($"/config/{subject}", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
+            => (await RequestAsync<Config>($"/config/{subject}", HttpMethod.Get).ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
-        public async Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
-            => await RequestAsync<Config>("/config", HttpMethod.Put, new Config(compatibility))
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
+            => RequestAsync<Config>("/config", HttpMethod.Put, new Config(compatibility));
 
-        public async Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
-            => await RequestAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility))
-                        .ConfigureAwait(continueOnCapturedContext: false);
-        
+        public Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
+            => RequestAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility));
+            
         #endregion Config
 
         public void Dispose()
@@ -306,6 +288,5 @@ namespace Confluent.SchemaRegistry
                 }
             }
         }
-
     }
 }

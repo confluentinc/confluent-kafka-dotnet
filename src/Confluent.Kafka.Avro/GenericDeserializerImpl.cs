@@ -14,18 +14,15 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Avro.IO;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.Serialization
 {
     internal class GenericDeserializerImpl : IAvroDeserializerImpl<GenericRecord>
     {
@@ -36,7 +33,7 @@ namespace Confluent.Kafka.AvroSerdes
         private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
             = new Dictionary<int, DatumReader<GenericRecord>>();
        
-        private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
+        private object deserializeLockObj = new object();
 
         private ISchemaRegistryClient schemaRegistryClient;
 
@@ -45,58 +42,45 @@ namespace Confluent.Kafka.AvroSerdes
             this.schemaRegistryClient = schemaRegistryClient;
         }
 
-        public async Task<GenericRecord> Deserialize(string topic, byte[] array)
+        public GenericRecord Deserialize(string topic, byte[] array)
         {
-            try
-            {
-                // Note: topic is not necessary for deserialization (or knowing if it's a key 
-                // or value) only the schema id is needed.
+            // Note: topic is not necessary for deserialization (or knowing if it's a key 
+            // or value) only the schema id is needed.
 
-                using (var stream = new MemoryStream(array))
-                using (var reader = new BinaryReader(stream))
+            using (var stream = new MemoryStream(array))
+            using (var reader = new BinaryReader(stream))
+            {
+                var magicByte = reader.ReadByte();
+                if (magicByte != Constants.MagicByte)
                 {
-                    var magicByte = reader.ReadByte();
-                    if (magicByte != Constants.MagicByte)
-                    {
-                        // may change in the future.
-                        throw new DeserializationException($"magic byte should be {Constants.MagicByte}, not {magicByte}");
-                    }
-                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-
-                    DatumReader<GenericRecord> datumReader;
-                    await deserializeMutex.WaitAsync();
-                    try
-                    {
-                        datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
-                        if (datumReader == null)
-                        {
-                            // TODO: If any of this cache fills up, this is probably an
-                            // indication of misuse of the deserializer. Ideally we would do 
-                            // something more sophisticated than the below + not allow 
-                            // the misuse to keep happening without warning.
-                            if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
-                            {
-                                datumReaderBySchemaId.Clear();
-                            }
-
-                            var writerSchemaJson = await schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false);
-                            var writerSchema = global::Avro.Schema.Parse(writerSchemaJson);
-
-                            datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
-                            datumReaderBySchemaId[writerId] = datumReader;
-                        }
-                    }
-                    finally
-                    {
-                        deserializeMutex.Release();
-                    }
-                    
-                    return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
+                    // may change in the future.
+                    throw new InvalidDataException($"magic byte should be 0, not {magicByte}");
                 }
-            }
-            catch (AggregateException e)
-            {
-                throw e.InnerException;
+                var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
+
+                DatumReader<GenericRecord> datumReader;
+                lock (deserializeLockObj)
+                {
+                    datumReaderBySchemaId.TryGetValue(writerId, out datumReader);
+                    if (datumReader == null)
+                    {
+                        // TODO: If any of this cache fills up, this is probably an
+                        // indication of misuse of the deserializer. Ideally we would do 
+                        // something more sophisticated than the below + not allow 
+                        // the misuse to keep happening without warning.
+                        if (datumReaderBySchemaId.Count > schemaRegistryClient.MaxCachedSchemas)
+                        {
+                            datumReaderBySchemaId.Clear();
+                        }
+
+                        var writerSchemaJson = schemaRegistryClient.GetSchemaAsync(writerId).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
+                        var writerSchema = Avro.Schema.Parse(writerSchemaJson);
+
+                        datumReader = new GenericReader<GenericRecord>(writerSchema, writerSchema);
+                        datumReaderBySchemaId[writerId] = datumReader;
+                    }
+                }
+                return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
             }
         }
 

@@ -144,7 +144,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableProducer : VerifiableClient, IDisposable
     {
-        Producer Handle; // Client Handle
+        Producer<Null, string> Handle; // Client Handle
 
         long DeliveryCnt; // Successfully delivered messages
         long ErrCnt; // Failed deliveries
@@ -158,7 +158,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Config = clientConfig;
             var producerConfig = new ProducerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            Handle = new Producer(producerConfig);
+            Handle = new Producer<Null, string>(producerConfig);
             ProduceLock = new object();
             Dbg("Created producer " + Handle.Name);
         }
@@ -172,12 +172,14 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(DeliveryReport record)
+        public void HandleDelivery(DeliveryReportResult<Null, string> record)
         {
             var d = new Dictionary<string, object>
             {
                 { "topic", record.Topic },
-                { "partition", record.TopicPartition.Partition.ToString() }
+                { "partition", record.TopicPartition.Partition.ToString() },
+                { "key", $"{record.Message.Key}" }, // always Null
+                { "value", $"{record.Message.Value}" }
             };
 
             if (record.Error.IsError)
@@ -209,7 +211,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             try
             {
-                Handle.BeginProduce(topic, new Message { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
+                Handle.BeginProduce(topic, new Message<Null, string> { Value = value }, record => HandleDelivery(record));
             }
             catch (KafkaException e)
             {
@@ -285,7 +287,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableConsumer : VerifiableClient, IDisposable
     {
-        Consumer consumer;
+        Consumer<Null, string> consumer;
         VerifiableConsumerConfig Config;
 
         private Dictionary<TopicPartition, AssignedPartition> currentAssignment;
@@ -315,7 +317,7 @@ namespace Confluent.Kafka.VerifiableClient
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
             var consumerConfig = new ConsumerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            consumer = new Consumer(consumerConfig);
+            consumer = new Consumer<Null, string>(consumerConfig);
             consumedMsgsAtLastCommit = 0;
             Dbg($"Created Consumer {consumer.Name} with AutoCommit={Config.AutoCommit}");
         }
@@ -624,7 +626,7 @@ namespace Confluent.Kafka.VerifiableClient
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    var cr = consumer.Consume<Null, string>(TimeSpan.FromMilliseconds(100));
+                    var cr = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     HandleMessage(cr);
                 }
             }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);

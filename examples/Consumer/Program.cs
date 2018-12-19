@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 /// <summary>
 ///     Demonstrates use of the Consumer client.
 /// </summary>
-namespace Confluent.Kafka.Examples.ConsumerExample
+namespace Confluent.Kafka.Examples.Consumer
 {
     public class Program
     {
@@ -50,7 +50,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
 
             const int commitPeriod = 5;
 
-            using (var consumer = new Consumer(config))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 // Note: All event handlers are called on the main .Consume thread.
                 
@@ -86,8 +86,8 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume<Ignore, string>(cancellationToken);
-                        Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Value}");
+                        var consumeResult = consumer.Consume(cancellationToken);
+                        Console.WriteLine($"Topic: {consumeResult.Topic} Partition: {consumeResult.Partition} Offset: {consumeResult.Offset} {consumeResult.Value}");
 
                         if (consumeResult.Offset % commitPeriod == 0)
                         {
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 EnableAutoCommit = true
             };
 
-            using (var consumer = new Consumer(config))
+            using (var consumer = new Consumer<Ignore, string>(config))
             {
                 consumer.Assign(topics.Select(topic => new TopicPartitionOffset(topic, 0, Offset.Beginning)).ToList());
 
@@ -145,8 +145,8 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     try
                     {
-                        var consumeResult = consumer.Consume<Ignore, string>(cancellationToken);
-                        Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Value}");
+                        var consumeResult = consumer.Consume(cancellationToken);
+                        Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Message}");
                     }
                     catch (ConsumeException e)
                     {

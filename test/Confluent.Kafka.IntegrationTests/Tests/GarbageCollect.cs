@@ -17,8 +17,9 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Collections.Generic;
 using Xunit;
 
 
@@ -40,15 +41,15 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var consumerConfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
-                producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test string") }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test string" }).Wait();
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.Subscribe(singlePartitionTopic);
-                consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Consume(TimeSpan.FromMilliseconds(1000));
                 consumer.Close();
             }
 

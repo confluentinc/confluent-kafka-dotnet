@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="testconf.json" />
+    <None Remove="test.parameters.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="testconf.json">
+    <Content Include="test.parameters.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

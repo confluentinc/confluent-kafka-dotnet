@@ -49,27 +49,27 @@ namespace Confluent.Kafka.IntegrationTests
                 Debug = "all"
             };
 
-            DeliveryResult dr;
+            DeliveryReport<Null, string> dr;
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new Producer<Null, string>(producerConfig))
             {
                 producer.OnLog += (_, m)
                     => logCount += 1;
 
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.UTF8("test value") }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test value" }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
             logCount = 0;
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 consumer.OnLog += (_, m)
                     => logCount += 1;
 
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
                 
-                consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Consume(TimeSpan.FromMilliseconds(100));
             }
             Assert.True(logCount > 0);
 

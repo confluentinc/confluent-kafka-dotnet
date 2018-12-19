@@ -18,8 +18,8 @@
 
 using System;
 using System.Linq;
-using System.Text;
 using System.Threading;
+using System.Text;
 using System.Collections.Generic;
 using Xunit;
 
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 EnableAutoCommit = false
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<Null, string>(consumerConfig))
             {
                 bool done = false;
                 consumer.OnPartitionEOF += (_, tpo)
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 while (!done)
                 {
-                    var record = consumer.Consume<Null, string>(TimeSpan.FromMilliseconds(100));
+                    ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     if (record != null)
                     {
                         msgCnt += 1;

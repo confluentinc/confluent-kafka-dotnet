@@ -14,13 +14,11 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Threading.Tasks;
 
-
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.Serialization
 {
     internal interface IAvroSerializerImpl<T>
     {
-        Task<byte[]> Serialize(string topic, T data, bool isKey);
+        byte[] Serialize(string topic, T data);
     }
 }

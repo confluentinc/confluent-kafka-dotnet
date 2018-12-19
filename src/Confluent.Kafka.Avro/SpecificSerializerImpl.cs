@@ -16,85 +16,86 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Avro.IO;
 using Avro.Specific;
 using Confluent.SchemaRegistry;
+using System.Net;
+using System.IO;
+using System.Reflection;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.Serialization
 {
     internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T>
     {
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
         private int initialBufferSize;
+        private bool isKey;
 
         private string writerSchemaString;
-        private global::Avro.Schema writerSchema;
+        private Avro.Schema writerSchema;
         private int? writerSchemaId;
 
         private SpecificWriter<T> avroWriter;
        
-        private HashSet<string> subjectsRegistered = new HashSet<string>();
+        private HashSet<string> topicsRegistered = new HashSet<string>();
 
-        private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
+        private object serializeLockObj = new object();
 
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             bool autoRegisterSchema,
-            int initialBufferSize)
+            int initialBufferSize,
+            bool isKey)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.autoRegisterSchema = autoRegisterSchema;
             this.initialBufferSize = initialBufferSize;
+            this.isKey = isKey;
 
             Type writerType = typeof(T);
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
             {
-                writerSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                writerSchema = (Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
             }
             else if (writerType.Equals(typeof(int)))
             {
-                writerSchema = global::Avro.Schema.Parse("int");
+                writerSchema = Avro.Schema.Parse("int");
             }
             else if (writerType.Equals(typeof(bool)))
             {
-                writerSchema = global::Avro.Schema.Parse("boolean");
+                writerSchema = Avro.Schema.Parse("boolean");
             }
             else if (writerType.Equals(typeof(double)))
             {
-                writerSchema = global::Avro.Schema.Parse("double");
+                writerSchema = Avro.Schema.Parse("double");
             }
             else if (writerType.Equals(typeof(string)))
             {
                 // Note: It would arguably be better to make this a union with null, to
                 // exactly match the .NET string type, however we don't for consistency
-                // with the Java Avro serializer.
-                writerSchema = global::Avro.Schema.Parse("string");
+                // with the Java avro serializer.
+                writerSchema = Avro.Schema.Parse("string");
             }
             else if (writerType.Equals(typeof(float)))
             {
-                writerSchema = global::Avro.Schema.Parse("float");
+                writerSchema = Avro.Schema.Parse("float");
             }
             else if (writerType.Equals(typeof(long)))
             {
-                writerSchema = global::Avro.Schema.Parse("long");
+                writerSchema = Avro.Schema.Parse("long");
             }
             else if (writerType.Equals(typeof(byte[])))
             {
                 // Note: It would arguably be better to make this a union with null, to
                 // exactly match the .NET byte[] type, however we don't for consistency
-                // with the Java Avro serializer.
-                writerSchema = global::Avro.Schema.Parse("bytes");
+                // with the Java avro serializer.
+                writerSchema = Avro.Schema.Parse("bytes");
             }
             else if (writerType.Equals(typeof(Null)))
             {
-                writerSchema = global::Avro.Schema.Parse("null");
+                writerSchema = Avro.Schema.Parse("null");
             }
             else
             {
@@ -109,47 +110,36 @@ namespace Confluent.Kafka.AvroSerdes
             writerSchemaString = writerSchema.ToString();
         }
 
-        public async Task<byte[]> Serialize(string topic, T data, bool isKey)
+        public byte[] Serialize(string topic, T data)
         {
-            try
+            lock (serializeLockObj)
             {
-                await serializeMutex.WaitAsync();
-                try
+                if (!topicsRegistered.Contains(topic))
                 {
                     string subject = isKey
                         ? schemaRegistryClient.ConstructKeySubjectName(topic)
                         : schemaRegistryClient.ConstructValueSubjectName(topic);
 
-                    if (!subjectsRegistered.Contains(subject))
-                    {
-                        // first usage: register/get schema to check compatibility
-                        writerSchemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false);
+                    // first usage: register/get schema to check compatibility
 
-                        subjectsRegistered.Add(subject);
-                    }
-                }
-                finally
-                {
-                    serializeMutex.Release();
-                }
+                    writerSchemaId = autoRegisterSchema
+                        ? schemaRegistryClient.RegisterSchemaAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult()
+                        : schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString).ConfigureAwait(continueOnCapturedContext: false).GetAwaiter().GetResult();
 
-                using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
-                {
-                    stream.WriteByte(Constants.MagicByte);
-
-                    writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
-                    avroWriter.Write(data, new BinaryEncoder(stream));
-
-                    // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
-                    return stream.ToArray();
+                    topicsRegistered.Add(topic);
                 }
             }
-            catch (AggregateException e)
+
+            using (var stream = new MemoryStream(initialBufferSize))
+            using (var writer = new BinaryWriter(stream))
             {
-                throw e.InnerException;
+                stream.WriteByte(Constants.MagicByte);
+
+                writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
+                avroWriter.Write(data, new BinaryEncoder(stream));
+
+                // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
+                return stream.ToArray();
             }
         }
     }

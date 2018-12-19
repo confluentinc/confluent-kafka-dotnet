@@ -17,9 +17,7 @@
 using System;
 using System.Collections.Generic;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.SchemaRegistry;
-using Confluent.Kafka.AvroSerdes;
-using Confluent.Kafka.Admin;
+using Confluent.Kafka.Serialization;
 using Xunit;
 
 
@@ -28,16 +26,15 @@ namespace Confluent.Kafka.Avro.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test that messages produced with the Avro serializer can be consumed with the
-        ///     Avro deserializer.
+        ///     Test that messages produced with the avro serializer can be consumed with the
+        ///     avro deserializer.
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void ProduceConsume(string bootstrapServers, string schemaRegistryServers)
         {
-            var producerConfig = new ProducerConfig
-            {
-                BootstrapServers = bootstrapServers
-            };
+            string topic = Guid.NewGuid().ToString();
+
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var consumerConfig = new ConsumerConfig
             {
@@ -47,25 +44,10 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 AutoOffsetReset = AutoOffsetResetType.Earliest
             };
 
-            var schemaRegistryConfig = new SchemaRegistryConfig
-            {
-                SchemaRegistryUrl = schemaRegistryServers
-            };
+            var serdeProviderConfig = new AvroSerdeProviderConfig { SchemaRegistryUrl = schemaRegistryServers };
 
-            var adminClientConfig = new AdminClientConfig
-            {
-                BootstrapServers = bootstrapServers
-            };
-
-            string topic = Guid.NewGuid().ToString();
-            using (var adminClient = new AdminClient(adminClientConfig))
-            {
-                adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
-            }
-
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new AvroProducer(schemaRegistry, producerConfig))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var producer = new Producer<string, User>(producerConfig, serdeProvider.GetSerializerGenerator<string>(), serdeProvider.GetSerializerGenerator<User>()))
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -75,18 +57,13 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                         favorite_number = i,
                         favorite_color = "blue"
                     };
-                    
-                    producer
-                        .ProduceAsync(
-                            topic, new Message<string, User> { Key = user.name, Value = user },
-                            SerdeType.Avro, SerdeType.Avro)
-                        .Wait();
+                    producer.ProduceAsync(topic, new Message<string, User> { Key = user.name, Value = user });
                 }
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new AvroConsumer(schemaRegistry, consumerConfig))
+            using (var serdeProvider = new AvroSerdeProvider(serdeProviderConfig))
+            using (var consumer = new Consumer<string, User>(consumerConfig, serdeProvider.GetDeserializerGenerator<string>(), serdeProvider.GetDeserializerGenerator<User>()))
             {
                 bool consuming = true;
                 consumer.OnPartitionEOF += (_, topicPartitionOffset)
@@ -100,10 +77,7 @@ namespace Confluent.Kafka.Avro.IntegrationTests
                 int i = 0;
                 while (consuming)
                 {
-                    var record = consumer
-                        .ConsumeAsync<string, User>(SerdeType.Avro, SerdeType.Avro, TimeSpan.FromSeconds(10))
-                        .Result;
-
+                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     if (record != null)
                     {
                         Assert.Equal(i.ToString(), record.Message.Key);

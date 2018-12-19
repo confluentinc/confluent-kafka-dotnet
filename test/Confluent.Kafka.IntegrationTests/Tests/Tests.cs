@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
                 var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
-                var jsonPath = Path.Combine(assemblyDirectory, "testconf.json");
+                var jsonPath = Path.Combine(assemblyDirectory, "kafka.parameters.json");
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
                 kafkaParameters = new List<object[]>
                 {

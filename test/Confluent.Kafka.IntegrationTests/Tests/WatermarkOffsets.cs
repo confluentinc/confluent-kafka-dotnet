@@ -39,8 +39,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            DeliveryResult<Null, string> dr;
-            using (var producer = new Producer(producerConfig))
+            DeliveryReport<Null, string> dr;
+            using (var producer = new Producer<Null, string>(producerConfig))
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
@@ -65,7 +65,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
             using (var adminClient = new AdminClient(consumer.Handle))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });

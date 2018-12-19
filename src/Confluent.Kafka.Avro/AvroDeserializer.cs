@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Avro.Generic;
 using Confluent.SchemaRegistry;
@@ -22,7 +21,7 @@ using System;
 using System.Linq;
 
 
-namespace Confluent.Kafka.AvroSerdes
+namespace Confluent.Kafka.Serialization
 {
     /// <summary>
     ///     Avro deserializer. Use this deserializer with GenericRecord, types 
@@ -32,36 +31,26 @@ namespace Confluent.Kafka.AvroSerdes
     /// <remarks>
     ///     Serialization format:
     ///       byte 0:           Magic byte use to identify the protocol format.
-    ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
+    ///       bytes 1-4:        Unique global id of the avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
     public class AvroDeserializer<T>
     {
+        private ISchemaRegistryClient schemaRegistryClient;
+
         private IAvroDeserializerImpl<T> deserializerImpl;
 
 
         /// <summary>
         ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
-        /// <param name="config">
-        ///     Deserializer configuration properties (refer to 
-        ///     <see cref="AvroDeserializerConfig" />).
+        /// <param name="schemaRegisteryClient">
+        ///     An instance of an implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
         /// </param>
-        public AvroDeserializer(IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegisteryClient)
         {
-            if (config == null) { return; }
-
-            var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
-            if (nonAvroConfig.Count() > 0)
-            {
-                throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {nonAvroConfig.First().Key}.");
-            }
-
-            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
-            if (avroConfig.Count() != 0)
-            {
-                throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {avroConfig.First().Key}");
-            }
+            schemaRegistryClient = schemaRegisteryClient;
         }
 
         /// <summary>
@@ -74,37 +63,38 @@ namespace Confluent.Kafka.AvroSerdes
         ///     A byte array containing the object serialized in the format produced
         ///     by <see cref="AvroSerializer{T}" />.
         /// </param>
-        /// <param name="isKey">
-        ///     True if deserializing message key data, false otherwise.
-        /// </param>
-        /// <param name="schemaRegistryClient">
-        ///     An implementation of ISchemaRegistryClient used for
-        ///     communication with Confluent Schema Registry.
+        /// <param name="isNull">
+        ///     True if the data is null, false otherwise.
         /// </param>
         /// <returns>
         ///     The deserialized <typeparamref name="T"/> value.
         /// </returns>
-        public async Task<T> Deserialize(ISchemaRegistryClient schemaRegistryClient, string topic, byte[] data, bool isKey)
+        public T Deserialize(string topic, ReadOnlySpan<byte> data, bool isNull)
         {
-            try
+            if (deserializerImpl == null)
             {
-                if (deserializerImpl == null)
-                {
-                    deserializerImpl = (typeof(T) == typeof(GenericRecord))
-                        ? (IAvroDeserializerImpl<T>)new GenericDeserializerImpl(schemaRegistryClient)
-                        : new SpecificDeserializerImpl<T>(schemaRegistryClient);
-                }
+                deserializerImpl = (typeof(T) == typeof(GenericRecord))
+                    ? (IAvroDeserializerImpl<T>)new GenericDeserializerImpl(schemaRegistryClient)
+                    : new SpecificDeserializerImpl<T>(schemaRegistryClient);
+            }
 
-                return await deserializerImpl.Deserialize(topic, data.ToArray());
-            }
-            catch (AggregateException e)
+            return deserializerImpl.Deserialize(topic, data.ToArray());
+        }
+
+        /// <summary>
+        ///     Configure the deserializer.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Configure(IEnumerable<KeyValuePair<string, string>> config, bool isKey)
+        {
+            var keyOrValue = isKey ? "Key" : "Value";
+            var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
+
+            if (avroConfig.Count() != 0)
             {
-                throw new DeserializationException("Error occured deserializing Avro data.", e.InnerException);
+                throw new ArgumentException($"{keyOrValue} AvroDeserializer: unexpected configuration parameter {avroConfig.First().Key}");
             }
-            catch (Exception e)
-            {
-                throw new DeserializationException("Error occured deserializing Avro data.", e);
-            }
+
+            return config;
         }
 
     }
