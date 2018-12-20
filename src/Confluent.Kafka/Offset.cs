@@ -18,7 +18,6 @@
 
 using System;
 
-
 namespace Confluent.Kafka
 {
     /// <summary>
@@ -40,24 +39,24 @@ namespace Confluent.Kafka
         ///     A special value that refers to the beginning of a partition.
         /// </summary>
         /// <returns></returns>
-        public static Offset Beginning { get { return new Offset(RD_KAFKA_OFFSET_BEGINNING); } }
+        public static readonly Offset Beginning = new Offset(RD_KAFKA_OFFSET_BEGINNING);
 
         /// <summary>
         ///     A special value that refers to the end of a partition.
         /// </summary>
         /// <returns></returns>
-        public static Offset End { get { return new Offset(RD_KAFKA_OFFSET_END); } }
+        public static readonly Offset End = new Offset(RD_KAFKA_OFFSET_END);
 
         /// <summary>
         ///     A special value thet refers to the stored offset for a partition.
         /// </summary>
         /// <returns></returns>
-        public static Offset Stored { get { return new Offset(RD_KAFKA_OFFSET_STORED); } }
+        public static readonly Offset Stored = new Offset(RD_KAFKA_OFFSET_STORED);
 
         /// <summary>
         ///     A special value that refers to an invalid, unassigned or default partition offset.
         /// </summary>
-        public static Offset Invalid { get { return new Offset(RD_KAFKA_OFFSET_INVALID); } }
+        public static readonly Offset Invalid = new Offset(RD_KAFKA_OFFSET_INVALID);
 
         /// <summary>
         ///     Initializes a new instance of the Offset structure.
