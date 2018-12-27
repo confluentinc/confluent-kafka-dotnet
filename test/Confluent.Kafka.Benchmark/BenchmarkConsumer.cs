@@ -33,7 +33,7 @@ namespace Confluent.Kafka.Benchmark
                 ConsumeResultFields = nHeaders == 0 ? "none" : "headers"
             };
 
-            using (var consumer = new Consumer<Ignore, Ignore>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Ignore, Ignore>(consumerConfig).Build())
             {
                 for (var j=0; j<nTests; j += 1)
                 {

@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka.Serdes;
 using Xunit;
 using System.Text;
 using System.Collections.Generic;

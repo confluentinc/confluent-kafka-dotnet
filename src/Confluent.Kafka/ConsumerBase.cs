@@ -35,6 +35,18 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerBase : IConsumerBase, IClient
     {
+        internal class Config
+        {
+            internal IEnumerable<KeyValuePair<string, string>> config;
+            internal Action<Error> errorHandler;
+            internal Action<LogMessage> logHandler;
+            internal Action<string> statsHandler;
+            internal Action<List<TopicPartition>> partitionAssignmentHandler;
+            internal Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
+            internal Action<CommittedOffsets> offsetsCommittedHandler;
+        }
+
+
         /// <summary>
         ///     value of the dotnet.cancellation.delay.max.ms configuration parameter.
         /// </summary>
@@ -49,41 +61,46 @@ namespace Confluent.Kafka
         /// </summary>
         private int assignCallCount = 0;
 
-        private readonly bool enableHeaderMarshaling = true;
-        private readonly bool enableTimestampMarshaling = true;
-        private readonly bool enableTopicNameMarshaling = true;
+        private bool enableHeaderMarshaling = true;
+        private bool enableTimestampMarshaling = true;
+        private bool enableTopicNameMarshaling = true;
 
-        private readonly SafeKafkaHandle kafkaHandle;
+        private SafeKafkaHandle kafkaHandle;
 
 
-        private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
+        private Action<Error> errorHandler;
+        private Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            OnError?.Invoke(this, kafkaHandle.CreatePossiblyFatalError(err, reason));
+            errorHandler?.Invoke(kafkaHandle.CreatePossiblyFatalError(err, reason));
         }
 
-        private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
+        private Action<string> statsHandler;
+        private Librdkafka.StatsDelegate statsCallbackDelegate;
         private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-            OnStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
+            statsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
+        private Action<LogMessage> logHandler;
         private object loggerLockObj = new object();
-        private readonly Librdkafka.LogDelegate logCallbackDelegate;
+        private Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
-            OnLog?.Invoke(this, new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private readonly Librdkafka.RebalanceDelegate rebalanceDelegate;
+        private Action<List<TopicPartition>> partitionAssignmentHandler;
+        private Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
+        private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
@@ -107,11 +124,10 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                var handler = OnPartitionsAssigned;
-                if (handler != null && handler.GetInvocationList().Length > 0)
+                if (partitionAssignmentHandler != null)
                 {
                     assignCallCount = 0;
-                    handler(this, partitionList);
+                    partitionAssignmentHandler(partitionList);
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
@@ -123,11 +139,10 @@ namespace Confluent.Kafka
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                var handler = OnPartitionsRevoked;
-                if (handler != null && handler.GetInvocationList().Length > 0)
+                if (partitionAssignmentRevokedHandler != null)
                 {
                     assignCallCount = 0;
-                    handler(this, partitionList);
+                    partitionAssignmentRevokedHandler(partitionList);
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
@@ -143,7 +158,8 @@ namespace Confluent.Kafka
             }
         }
 
-        private readonly Librdkafka.CommitDelegate commitDelegate;
+        private Action<CommittedOffsets> offsetsCommittedHandler;
+        private Librdkafka.CommitDelegate commitDelegate;
         private void CommitCallback(
             IntPtr rk,
             ErrorCode err,
@@ -153,43 +169,24 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
 
-            OnOffsetsCommitted?.Invoke(this, new CommittedOffsets(
+            offsetsCommittedHandler?.Invoke(new CommittedOffsets(
                 SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
                 kafkaHandle.CreatePossiblyFatalError(err, null)
             ));
         }
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
-        /// </summary>
-        public event EventHandler<LogMessage> OnLog;
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
-        /// </summary>
-        public event EventHandler<Error> OnError;
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
-        /// </summary>
-        public event EventHandler<string> OnStatistics;
-
-        /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.ConsumerBase" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
-        /// </param>
-        public ConsumerBase(IEnumerable<KeyValuePair<string, string>> config)
+        internal void Initialize(Config baseConfig)
         {
+            this.statsHandler = baseConfig.statsHandler;
+            this.logHandler = baseConfig.logHandler;
+            this.errorHandler = baseConfig.errorHandler;
+            this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
+            this.partitionAssignmentHandler = baseConfig.partitionAssignmentHandler;
+            this.partitionAssignmentRevokedHandler = baseConfig.partitionAssignmentRevokedHandler;
+
             Librdkafka.Initialize(null);
 
-            config = Config.GetCancellationDelayMaxMs(config, out this.cancellationDelayMaxMs);
+            var config = Confluent.Kafka.Config.ExtractCancellationDelayMaxMs(baseConfig.config, out this.cancellationDelayMaxMs);
 
             if (config.FirstOrDefault(prop => string.Equals(prop.Key, "group.id", StringComparison.Ordinal)).Value == null)
             {
@@ -261,6 +258,11 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <remarks>
+        ///     If there's demand, we may allow instantiation of the <see cref="ConsumerBase" /> class from
+        ///     external code in the future. For now, dissallow this so it's considered an internal detail.
+        /// </remarks>
+        internal ConsumerBase() {}
 
         private static byte[] KeyAsByteArray(rd_kafka_message msg)
         {
@@ -284,7 +286,6 @@ namespace Confluent.Kafka
             }
             return valAsByteArray;
         }
-
 
         /// <summary>
         ///     Poll for new messages / events. Blocks until a consume result
@@ -480,55 +481,6 @@ namespace Confluent.Kafka
                 Librdkafka.message_destroy(msgPtr);
             }
         }
-
-
-        /// <summary>
-        ///     Raised when a new partition assignment is received.
-        /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
-        ///     method (or another overload of this method) in a handler added to this event, following execution of your handler(s),
-        ///     the consumer will be automatically assigned to the set of partitions as specified in the event data and 
-        ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset, in
-        ///     accordance with the `auto.offset.reset` configuration property. This default behavior will not occur if you call Assign
-        ///     yourself in a handler added to this event. The set of partitions you assign to is not required to match the
-        ///     assignment given to you, but typically will.
-        /// </summary>
-        /// <remarks>
-        ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer.Consume(CancellationToken)" />
-        ///     (on the same thread).
-        /// </remarks>
-        public event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
-
-
-        /// <summary>
-        ///     Raised when a partition assignment is revoked.
-        /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Unassign" /> or 
-        ///     <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
-        ///     (or other overload) method in a handler added to this event, all partitions will be 
-        ///     automatically unassigned following execution of your handler(s). This default behavior 
-        ///     will not occur if you call Unassign (or Assign) yourself in a handler added to this event.
-        /// </summary>
-        /// <remarks>
-        ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer.Consume(CancellationToken)" />
-        ///     and <see cref="Confluent.Kafka.ConsumerBase.Close()" />
-        ///     (on the same thread).
-        /// </remarks>
-        public event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
-
-
-        /// <summary>
-        ///     Raised to report the result of (automatic) offset commits.
-        ///     Not raised as a result of the use of the Commit method.
-        /// </summary>
-        /// <remarks>
-        ///     Executes as a side-effect of
-        ///     <see cref="Confluent.Kafka.Consumer.Consume(CancellationToken)" />
-        ///     (on the same thread).
-        /// </remarks>
-        public event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
 
         /// <summary>
@@ -999,11 +951,9 @@ namespace Confluent.Kafka
         ///     do not call <see cref="Confluent.Kafka.ConsumerBase.Close" />
         ///     or <see cref="Confluent.Kafka.ConsumerBase.Unsubscribe" />,
         ///     the group will rebalance after a timeout specified by the group's 
-        ///     `session.timeout.ms`. Note: the
-        ///     <see cref="Confluent.Kafka.ConsumerBase.OnPartitionsRevoked" />
-        ///     and 
-        ///     <see cref="Confluent.Kafka.ConsumerBase.OnOffsetsCommitted" />
-        ///     events may be called as a side-effect of calling this method.
+        ///     `session.timeout.ms`. Note: the partition asignment and partition
+        ///     assignment revoked handlers may be called as a side-effect of
+        ///     calling this method.
         /// </summary>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the operation fails.

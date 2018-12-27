@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
+using Confluent.Kafka.Serdes;
 
 
 namespace Confluent.Kafka
@@ -36,8 +37,8 @@ namespace Confluent.Kafka
     {
         private IDeserializer<TKey> keyDeserializer;
         private IDeserializer<TValue> valueDeserializer;
-        private IAsyncDeserializer<TKey> taskKeyDeserializer;
-        private IAsyncDeserializer<TValue> taskValueDeserializer;
+        private IAsyncDeserializer<TKey> asyncKeyDeserializer;
+        private IAsyncDeserializer<TValue> asyncValueDeserializer;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -51,33 +52,12 @@ namespace Confluent.Kafka
             { typeof(byte[]), Deserializers.ByteArray }
         };
 
-        /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
-        /// </param>
-        /// <param name="keyDeserializer">
-        ///     The deserializer to use to deserialize keys.
-        /// </param>
-        /// <param name="valueDeserializer">
-        ///     The deserializer to use to deserialize values.
-        /// </param>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IDeserializer<TKey> keyDeserializer = null,
-            IDeserializer<TValue> valueDeserializer = null
-        ) : base(config)
+        internal Consumer(ConsumerBuilder<TKey, TValue> builder)
         {
-            this.keyDeserializer = keyDeserializer;
-            this.valueDeserializer = valueDeserializer;
+            base.Initialize(builder.ConstructBaseConfig(this));
 
-            if (keyDeserializer == null)
+            // setup key deserializer.
+            if (builder.keyDeserializer == null && builder.asyncKeyDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
@@ -86,90 +66,42 @@ namespace Confluent.Kafka
                 }
                 this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
+            else if (builder.keyDeserializer == null && builder.asyncKeyDeserializer != null)
+            {
+                this.asyncKeyDeserializer = builder.asyncKeyDeserializer;
+            }
+            else if (builder.keyDeserializer != null && builder.asyncKeyDeserializer == null)
+            {
+                this.keyDeserializer = builder.keyDeserializer;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid key deserializer configuration.");
+            }
 
-            if (valueDeserializer == null)
+            // setup value deserializer.
+            if (builder.valueDeserializer == null && builder.asyncValueDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
                     throw new ArgumentNullException(
-                        $"Value deserializer not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
+                        $"Key deserializer not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
-        }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer" />
-        /// </summary>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IDeserializer<TKey> keyDeserializer,
-            IAsyncDeserializer<TValue> taskValueDeserializer
-        ) : base(config)
-        {
-            this.keyDeserializer = keyDeserializer;
-            this.taskValueDeserializer = taskValueDeserializer;
-
-            if (keyDeserializer == null)
+            else if (builder.valueDeserializer == null && builder.asyncValueDeserializer != null)
             {
-                throw new ArgumentNullException("Key deserializer must be specified.");
+                this.asyncValueDeserializer = builder.asyncValueDeserializer;
             }
-
-            if (taskValueDeserializer == null)
+            else if (builder.valueDeserializer != null && builder.asyncValueDeserializer == null)
             {
-                throw new ArgumentNullException("Value deserializer must be specified.");
+                this.valueDeserializer = builder.valueDeserializer;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid value deserializer configuration.");
             }
         }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer" />
-        /// </summary>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IAsyncDeserializer<TKey> taskKeyDeserializer,
-            IDeserializer<TValue> valueDeserializer
-        ) : base(config)
-        {
-            this.taskKeyDeserializer = taskKeyDeserializer;
-            this.valueDeserializer = valueDeserializer;
-
-            if (this.taskKeyDeserializer == null)
-            {
-                throw new ArgumentNullException("Key deserializer must be specified.");
-            }
-
-            if (this.valueDeserializer == null)
-            {
-                throw new ArgumentNullException("Value deserializer must be specified.");
-            }
-        }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer" />
-        /// </summary>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IAsyncDeserializer<TKey> taskKeyDeserializer,
-            IAsyncDeserializer<TValue> taskValueDeserializer
-        ) : base(config)
-        {
-            this.taskKeyDeserializer = taskKeyDeserializer;
-            this.taskValueDeserializer = taskValueDeserializer;
-
-            if (this.taskKeyDeserializer == null)
-            {
-                throw new ArgumentNullException("Key deserializer must be specified.");
-            }
-
-            if (this.taskValueDeserializer == null)
-            {
-                throw new ArgumentNullException("Value deserializer must be specified.");
-            }
-        }
-
 
         private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
@@ -188,14 +120,14 @@ namespace Confluent.Kafka
 
             TKey key = keyDeserializer != null
                 ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
-                : taskKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
+                : asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
                 ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, false, rawResult.Message, rawResult.TopicPartition)
-                : taskValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
+                : asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
@@ -273,19 +205,11 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer.
     /// </summary>
     public class Consumer : ConsumerBase, IConsumer
-    {
-        /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
-        /// </param>
-        public Consumer(IEnumerable<KeyValuePair<string, string>> config) : base(config) {}
+    {        
+        internal Consumer(ConsumerBuilder builder)
+        {
+            base.Initialize(builder.ConstructBaseConfig(this));
+        }
 
         /// <summary>
         ///     Poll for new messages / events. Blocks until a consume result

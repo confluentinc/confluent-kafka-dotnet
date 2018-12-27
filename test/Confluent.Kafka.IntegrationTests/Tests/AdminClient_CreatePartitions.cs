@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             var topicName6 = Guid.NewGuid().ToString();
 
             // test creating a new partition works.
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // check validate only works.
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // check valid Assignments property value works.
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
@@ -102,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // check invalid Assignments property value works.
-            using (var producer = new Producer(new ProducerConfig { BootstrapServers = bootstrapServers }))
+            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
@@ -128,7 +128,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // more than one.
-            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] 
                     { 

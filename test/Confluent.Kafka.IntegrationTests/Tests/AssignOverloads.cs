@@ -46,14 +46,14 @@ namespace Confluent.Kafka.IntegrationTests
             var testString2 = "hello world 2";
 
             DeliveryResult<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 // Explicitly specify partition offset.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });

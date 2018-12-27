@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.Kafka;
+using Confluent.Kafka.Serdes;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.Kafka.Examples.AvroSpecific;
@@ -47,7 +48,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<Null, User>(producerConfig, Serializers.Null, new AvroSerializer<User>(schemaRegistry)))
+            using (var producer =
+                new ProducerBuilder<Null, User>(producerConfig)
+                    .SetKeySerializer(Serializers.Null)
+                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .Build())
             {
                 producer.ProduceAsync(topic.Name, new Message<Null, User> { Value = new User { name = "test" } });
 
@@ -60,11 +65,15 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     EnablePartitionEof = true
                 };
 
-                using (var consumer = new Consumer<Null, User>(consumerConfig, Deserializers.Null, new AvroDeserializer<User>(schemaRegistry)))
+                using (var consumer =
+                    new ConsumerBuilder<Null, User>(consumerConfig)
+                        .SetKeyDeserializer(Deserializers.Null)
+                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                        .SetPartitionAssignmentHandler((c, tps) => {
+                            c.Assign(tps.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
+                        })
+                        .Build())
                 {
-                    consumer.OnPartitionsAssigned += (_, tps)
-                        => consumer.Assign(tps.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
-
                     consumer.Subscribe(topic.Name);
 
                     var cr1 = consumer.Consume();
@@ -86,11 +95,15 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     EnablePartitionEof = false
                 };
 
-                using (var consumer = new Consumer<Null, User>(consumerConfig, Deserializers.Null, new AvroDeserializer<User>(schemaRegistry)))
+                using (var consumer =
+                    new ConsumerBuilder<Null, User>(consumerConfig)
+                        .SetKeyDeserializer(Deserializers.Null)
+                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                        .SetPartitionAssignmentHandler((c, tps) => {
+                            c.Assign(tps.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
+                        })
+                        .Build())
                 {
-                    consumer.OnPartitionsAssigned += (_, tps)
-                        => consumer.Assign(tps.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
-
                     consumer.Subscribe(topic.Name);
 
                     var cr1 = consumer.Consume();

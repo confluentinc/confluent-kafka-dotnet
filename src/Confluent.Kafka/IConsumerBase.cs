@@ -38,24 +38,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnPartitionsAssigned" />
-        /// </summary>
-        event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnPartitionsRevoked" />
-        /// </summary>
-        event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnOffsetsCommitted" />
-        /// </summary>
-        event EventHandler<CommittedOffsets> OnOffsetsCommitted;
-
-
-        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.Assignment" />
         /// </summary>
         List<TopicPartition> Assignment { get; }

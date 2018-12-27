@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -44,17 +45,17 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer(producerConfig))
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
-            {
-                IEnumerable<TopicPartition> assignedPartitions = null;
-                ConsumeResult<Null, string> record;
+            IEnumerable<TopicPartition> assignedPartitions = null;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    consumer.Assign(partitions);
-                    assignedPartitions = partitions;
-                };
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig)
+                .SetPartitionAssignmentHandler((c, tps) => {
+                    c.Assign(tps);
+                    assignedPartitions = tps;
+                })
+                .Build())
+            {
+                ConsumeResult<Null, string> record;
 
                 consumer.Subscribe(topic);
 

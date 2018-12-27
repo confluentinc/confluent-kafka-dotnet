@@ -38,12 +38,10 @@ namespace Confluent.Kafka
         /// </summary>
         int Poll(TimeSpan timeout);
 
-
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.ProducerBase.Flush(TimeSpan)" />
         /// </summary>
         int Flush(TimeSpan timeout);
-
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.ProducerBase.Flush(CancellationToken)" />

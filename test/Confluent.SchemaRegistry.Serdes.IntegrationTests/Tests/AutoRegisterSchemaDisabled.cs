@@ -55,10 +55,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 // first a quick check the value case fails.
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var producer = new Producer<string, int>(
-                    producerConfig,
-                    new AvroSerializer<string>(schemaRegistry),
-                    new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false })))
+                using (var producer =
+                    new ProducerBuilder<string, int>(producerConfig)
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                        .SetValueSerializer(new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }))
+                        .Build())
                 {
                     Assert.Throws<SerializationException>(() =>
                     {
@@ -78,10 +79,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 // the following tests all check behavior in the key case.
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var producer = new Producer<string, int>(
-                    producerConfig,
-                    new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }),
-                    new AvroSerializer<int>(schemaRegistry)))
+                using (var producer =
+                    new ProducerBuilder<string, int>(producerConfig)
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }))
+                        .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
+                        .Build())
                 {
                     Assert.Throws<SerializationException>(() =>
                     {
@@ -98,18 +100,22 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 // allow auto register..
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var producer = new Producer<string, int>(producerConfig,
-                    new AvroSerializer<string>(schemaRegistry), new AvroSerializer<int>(schemaRegistry)))
+                using (var producer =
+                    new ProducerBuilder<string, int>(producerConfig)
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                        .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
+                        .Build())
                 {
                     producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
                 }
 
                 // config with avro.serializer.auto.register.schemas == false should work now.
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers }))
-                using (var producer = new Producer<string, int>(
-                    producerConfig,
-                    new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }),
-                    new AvroSerializer<int>(schemaRegistry)))
+                using (var producer =
+                    new ProducerBuilder<string, int>(producerConfig)
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }))
+                        .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
+                        .Build())
                 {
                     producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
                 }

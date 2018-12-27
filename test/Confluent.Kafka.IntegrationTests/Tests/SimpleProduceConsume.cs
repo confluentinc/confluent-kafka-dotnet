@@ -52,13 +52,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryResult<Null, string> produceResult1;
             DeliveryResult<Null, string> produceResult2;
-            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);

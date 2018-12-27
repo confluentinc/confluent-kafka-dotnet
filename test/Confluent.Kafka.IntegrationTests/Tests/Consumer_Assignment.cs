@@ -46,47 +46,39 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // Test in which both receive and revoke events are specified.
-            using (var consumer = new Consumer(consumerConfig))
-            {
-                Assert.Empty(consumer.Assignment);
-
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
+            using (var consumer = new ConsumerBuilder(consumerConfig)
+                .SetPartitionsAssignedHandler((c, partitions) => {
                     Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-
+                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                     // test non-empty case.
-                    Assert.Single(consumer.Assignment);
-                    Assert.Equal(singlePartitionTopic, consumer.Assignment[0].Topic);
-                    Assert.Equal(0, (int)consumer.Assignment[0].Partition);
-                };
-
-                consumer.OnPartitionsRevoked += (_, partitions) =>
-                {
-                    Assert.Single(consumer.Assignment);
-                    consumer.Unassign();
-                    Assert.Empty(consumer.Assignment);
-                };
-
+                    Assert.Single(c.Assignment);
+                    Assert.Equal(singlePartitionTopic, c.Assignment[0].Topic);
+                    Assert.Equal(0, (int)c.Assignment[0].Partition);
+                })
+                .SetPartitionsRevokedHandler((c, partitions) => {
+                    Assert.Single(c.Assignment);
+                    c.Unassign();
+                    Assert.Empty(c.Assignment);
+                })
+                .Build())
+            {
+                Assert.Empty(consumer.Assignment);
                 consumer.Subscribe(singlePartitionTopic);
-
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-
                 consumer.Close();
             }
 
             // test in which only the revoked event handler is specified.
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig)
+                .SetPartitionsRevokedHandler((c, partitions) => {
+                    Assert.Single(c.Assignment);
+                    c.Unassign();
+                    Assert.Empty(c.Assignment);
+                })
+                .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
-
-                consumer.OnPartitionsRevoked += (_, partitions) =>
-                {
-                    Assert.Single(consumer.Assignment);
-                    consumer.Unassign();
-                    Assert.Empty(consumer.Assignment);
-                };
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -103,16 +95,15 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which only the receive event handler is specified.
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig)
+                .SetPartitionsAssignedHandler((c, partitions) => {
+                    Assert.Empty(c.Assignment);
+                    c.Assign(partitions);
+                    Assert.Single(c.Assignment);
+                })
+                .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
-
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    Assert.Empty(consumer.Assignment);
-                    consumer.Assign(partitions);
-                    Assert.Single(consumer.Assignment);
-                };
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -129,7 +120,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which neither the receive or revoke handler is specified.
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
 

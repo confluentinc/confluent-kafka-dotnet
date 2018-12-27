@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             var topicName3 = Guid.NewGuid().ToString();
             
             // test single delete topic.
-            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test
             //  - delete two topics, one that doesn't exist.
             //  - check that explicitly giving options doesn't obviously not work.
-            using (var adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers }))
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();

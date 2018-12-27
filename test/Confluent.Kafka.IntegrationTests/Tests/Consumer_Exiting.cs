@@ -49,14 +49,12 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumerConfig.Set("group.id", Guid.NewGuid().ToString());
 
-                using (var consumer = new Consumer(consumerConfig))
+                using (var consumer = new ConsumerBuilder(consumerConfig)
+                    .SetPartitionsAssignedHandler((c, partitions) 
+                        => c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset))))
+                    .SetPartitionsRevokedHandler((c, partitions) => c.Unassign())
+                    .Build())
                 {
-                    consumer.OnPartitionsAssigned += (_, partitions)
-                        => consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-
-                    consumer.OnPartitionsRevoked += (_, partitions)
-                        => consumer.Unassign();
-
                     consumer.Subscribe(singlePartitionTopic);
 
                     int tryCount = 10;

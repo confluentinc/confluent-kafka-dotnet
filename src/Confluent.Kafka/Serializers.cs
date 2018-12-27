@@ -18,7 +18,7 @@ using System;
 using System.Text;
 
 
-namespace Confluent.Kafka
+namespace Confluent.Kafka.Serdes
 {
     /// <summary>
     ///     Serializers for use with <see cref="Producer{TKey,TValue}" />.

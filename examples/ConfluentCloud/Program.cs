@@ -59,7 +59,7 @@ namespace ConfluentCloudExample
                 SaslPassword = "<ccloud secret>"
             };
 
-            using (var producer = new Producer<Null, string>(pConfig))
+            using (var producer = new ProducerBuilder<Null, string>(pConfig).Build())
             {
                 producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Value = "test value" })
                     .ContinueWith(task => task.IsFaulted
@@ -86,7 +86,7 @@ namespace ConfluentCloudExample
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var consumer = new Consumer<Null, string>(cConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(cConfig).Build())
             {
                 consumer.Subscribe("dotnet-test-topic");
 
