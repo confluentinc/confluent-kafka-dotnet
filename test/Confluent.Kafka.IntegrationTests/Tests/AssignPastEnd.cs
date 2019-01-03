@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            consumerConfig.AutoOffsetReset = AutoOffsetResetType.Latest;
+            consumerConfig.AutoOffsetReset = AutoOffsetReset.Latest;
             using (var consumer = new Consumer(consumerConfig))
             {
                 ConsumeResult record;
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(record);
             }
 
-            consumerConfig.AutoOffsetReset = AutoOffsetResetType.Earliest;
+            consumerConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
             using (var consumer = new Consumer(consumerConfig))
             {
                 ConsumeResult record;

@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                AutoOffsetReset = AutoOffsetResetType.Latest
+                AutoOffsetReset = AutoOffsetReset.Latest
             };
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };

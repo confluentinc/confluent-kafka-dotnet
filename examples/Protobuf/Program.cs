@@ -62,7 +62,7 @@ namespace Confluent.Kafka.Examples.Protobuf
             {
                 BootstrapServers = args[0],
                 GroupId = "protobuf-example",
-                AutoOffsetReset = AutoOffsetResetType.Latest
+                AutoOffsetReset = AutoOffsetReset.Latest
             };
 
             var consumeTask = Task.Run(() =>

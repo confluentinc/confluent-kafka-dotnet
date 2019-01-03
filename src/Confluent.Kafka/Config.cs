@@ -27,6 +27,14 @@ namespace Confluent.Kafka
     /// </summary>
     public class Config : IEnumerable<KeyValuePair<string, string>>
     {
+        private static Dictionary<string, string> EnumNameToConfigValueSubstitutes = new Dictionary<string, string>
+        {
+            { "saslplaintext", "sasl_plaintext" },
+            { "saslssl", "sasl_ssl" },
+            { "consistentrandom", "consistent_random"},
+            { "murmur2random", "murmur2_random"}
+        };
+
         /// <summary>
         ///     Initialize a new empty <see cref="Config" /> instance.
         /// </summary>
@@ -131,6 +139,10 @@ namespace Confluent.Kafka
         {
             var result = Get(key);
             if (result == null) { return null; }
+            if (EnumNameToConfigValueSubstitutes.Values.Count(v => v == result) > 0)
+            {
+                return Enum.Parse(type, EnumNameToConfigValueSubstitutes.First(v => v.Value == result).Key, ignoreCase: true);
+            }
             return Enum.Parse(type, result, ignoreCase: true);
         }
 
@@ -147,7 +159,15 @@ namespace Confluent.Kafka
 
             if (val is Enum)
             {
-                this.properties[name] = val.ToString().ToLowerInvariant();
+                var stringVal = val.ToString().ToLowerInvariant();
+                if (EnumNameToConfigValueSubstitutes.TryGetValue(stringVal, out string substitute))
+                {
+                    this.properties[name] = substitute;
+                }
+                else
+                {
+                    this.properties[name] = stringVal;
+                }
             }
             else
             {
