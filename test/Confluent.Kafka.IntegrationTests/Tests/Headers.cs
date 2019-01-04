@@ -126,7 +126,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 producer.Flush(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(drs[0].Message.Headers);
+                Assert.Empty(drs[0].Message.Headers); // TODO: this is intermittently not working.
                 Assert.Equal(2, drs[1].Message.Headers.Count);
             }
 
