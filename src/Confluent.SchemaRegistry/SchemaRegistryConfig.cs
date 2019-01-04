@@ -53,6 +53,8 @@ namespace Confluent.SchemaRegistry
 
             /// <summary>
             ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
+            ///     USER_INFO: credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
+            ///     SASL_INHERIT: credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
             /// </summary>
             public const string SchemaRegistryBasicAuthCredentialsSource = "schema.registry.basic.auth.credentials.source";
 
@@ -60,6 +62,17 @@ namespace Confluent.SchemaRegistry
             ///     Basic auth credentials in the form {username}:{password}.
             /// </summary>
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
+        }
+
+        /// <summary>
+        ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
+        ///     USER_INFO: credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
+        ///     SASL_INHERIT: credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
+        /// </summary>
+        public string SchemaRegistryBasicAuthCredentialsSource
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource, value.ToString()); }
         }
 
         /// <summary>
