@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig
             {
                 BootstrapServers = bootstrapServers,
-                MaxInFlight = 1
+                EnableIdempotence = true
             };
 
             var consumerConfig = new ConsumerConfig
