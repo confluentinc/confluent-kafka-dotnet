@@ -25,9 +25,24 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClientBuilder
     {
+        /// <summary>
+        ///     The config dictionary.
+        /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+
+        /// <summary>
+        ///     The configured error handler.
+        /// </summary>
         public Action<AdminClient, Error> ErrorHandler { get; set; }
+        
+        /// <summary>
+        ///     The configured log handler.
+        /// </summary>
         public Action<AdminClient, LogMessage> LogHandler { get; set; }
+
+        /// <summary>
+        ///     The configured statistics handler.
+        /// </summary>
         public Action<AdminClient, string> StatisticsHandler { get; set; }
 
         /// <summary>
