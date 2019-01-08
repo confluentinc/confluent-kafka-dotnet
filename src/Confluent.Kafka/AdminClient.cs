@@ -476,7 +476,7 @@ namespace Confluent.Kafka
 
         internal AdminClient(AdminClientBuilder builder)
         {
-            var config = Config.ExtractCancellationDelayMaxMs(builder.config, out this.cancellationDelayMaxMs);
+            var config = Config.ExtractCancellationDelayMaxMs(builder.Config, out this.cancellationDelayMaxMs);
 
             if (config.Where(prop => prop.Key.StartsWith("dotnet.producer.")).Count() > 0 ||
                 config.Where(prop => prop.Key.StartsWith("dotnet.consumer.")).Count() > 0)
@@ -486,9 +486,9 @@ namespace Confluent.Kafka
 
             // build a producer instance to use as the underlying client.
             var producerBuilder = new ProducerBuilder(config);
-            if (builder.logHandler != null) { producerBuilder.SetLogHandler((_, logMessage) => builder.logHandler(this, logMessage)); }
-            if (builder.errorHandler != null) { producerBuilder.SetErrorHandler((_, error) => builder.errorHandler(this, error)); }
-            if (builder.statsHandler != null) { producerBuilder.SetStatisticsHandler((_, stats) => builder.statsHandler(this, stats)); }
+            if (builder.LogHandler != null) { producerBuilder.SetLogHandler((_, logMessage) => builder.LogHandler(this, logMessage)); }
+            if (builder.ErrorHandler != null) { producerBuilder.SetErrorHandler((_, error) => builder.ErrorHandler(this, error)); }
+            if (builder.StatisticsHandler != null) { producerBuilder.SetStatisticsHandler((_, stats) => builder.StatisticsHandler(this, stats)); }
             this.ownedClient = producerBuilder.Build();
             
             this.handle = new Handle

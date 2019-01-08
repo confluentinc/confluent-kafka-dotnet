@@ -41,7 +41,7 @@ namespace Confluent.Kafka
             internal IEnumerable<KeyValuePair<string, string>> config;
             internal Action<Error> errorHandler;
             internal Action<LogMessage> logHandler;
-            internal Action<string> statsHandler;
+            internal Action<string> statisticsHandler;
         }
         
         private int cancellationDelayMaxMs;
@@ -92,13 +92,13 @@ namespace Confluent.Kafka
         }
 
 
-        private Action<string> statsHandler;
-        private Librdkafka.StatsDelegate statsCallbackDelegate;
-        private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
+        private Action<string> statisticsHandler;
+        private Librdkafka.StatsDelegate statisticsCallbackDelegate;
+        private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return 0; }
-            statsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -307,7 +307,7 @@ namespace Confluent.Kafka
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
 
-            this.statsHandler = baseConfig.statsHandler;
+            this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
 
@@ -393,13 +393,13 @@ namespace Confluent.Kafka
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
-            statsCallbackDelegate = StatsCallback;
+            statisticsCallbackDelegate = StatisticsCallback;
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
             Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statsCallbackDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.

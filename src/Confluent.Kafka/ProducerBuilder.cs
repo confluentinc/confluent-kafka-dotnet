@@ -56,7 +56,7 @@ namespace Confluent.Kafka
                 logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
                     : logMessage => this.LogHandler(producer, logMessage),
-                statsHandler = this.StatisticsHandler == null
+                statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats)
             };
@@ -67,8 +67,7 @@ namespace Confluent.Kafka
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
         ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
+        ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </summary>
         public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
@@ -169,7 +168,7 @@ namespace Confluent.Kafka
                 logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
                     : logMessage => this.LogHandler(producer, logMessage),
-                statsHandler = this.StatisticsHandler == null
+                statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats)
             };
@@ -180,8 +179,7 @@ namespace Confluent.Kafka
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
         ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
+        ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </summary>
         public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {

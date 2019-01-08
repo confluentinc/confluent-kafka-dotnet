@@ -78,7 +78,7 @@ namespace Confluent.Kafka
                 logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
                     : logMessage => this.LogHandler(consumer, logMessage),
-                statsHandler = this.StatisticsHandler == null
+                statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(consumer, stats),
                 partitionAssignmentRevokedHandler = this.PartitionAssignmentRevokedHandler == null
@@ -240,7 +240,7 @@ namespace Confluent.Kafka
                 logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
                     : logMessage => this.LogHandler(consumer, logMessage),
-                statsHandler = this.StatisticsHandler == null
+                statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(consumer, stats),
                 partitionAssignmentRevokedHandler = this.PartitionAssignmentRevokedHandler == null

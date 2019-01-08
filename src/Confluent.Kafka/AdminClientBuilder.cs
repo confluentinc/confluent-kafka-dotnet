@@ -25,10 +25,10 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClientBuilder
     {
-        internal IEnumerable<KeyValuePair<string, string>> config;
-        internal Action<AdminClient, Error> errorHandler;
-        internal Action<AdminClient, LogMessage> logHandler;
-        internal Action<AdminClient, string> statsHandler;
+        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+        public Action<AdminClient, Error> ErrorHandler { get; set; }
+        public Action<AdminClient, LogMessage> LogHandler { get; set; }
+        public Action<AdminClient, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     Initialize a new <see cref="AdminClientBuilder" /> instance.
@@ -42,7 +42,7 @@ namespace Confluent.Kafka
         /// </param>
         public AdminClientBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.config = config;
+            this.Config = config;
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public AdminClientBuilder SetStatisticsHandler(Action<AdminClient, string> statisticsHandler)
         {
-            this.statsHandler = statisticsHandler;
+            this.StatisticsHandler = statisticsHandler;
             return this;
         }
 
@@ -75,7 +75,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public AdminClientBuilder SetErrorHandler(Action<AdminClient, Error> errorHandler)
         {
-            this.errorHandler = errorHandler;
+            this.ErrorHandler = errorHandler;
             return this;
         }
 
@@ -100,14 +100,14 @@ namespace Confluent.Kafka
         /// </remarks>
         public AdminClientBuilder SetLogHandler(Action<AdminClient, LogMessage> logHandler)
         {
-            this.logHandler = logHandler;
+            this.LogHandler = logHandler;
             return this;
         }
 
         /// <summary>
         ///     Build the <see cref="AdminClient" /> instance.
         /// </summary>
-        public AdminClient Build()
+        public virtual AdminClient Build()
         {
             return new AdminClient(this);
         }

@@ -40,7 +40,7 @@ namespace Confluent.Kafka
             internal IEnumerable<KeyValuePair<string, string>> config;
             internal Action<Error> errorHandler;
             internal Action<LogMessage> logHandler;
-            internal Action<string> statsHandler;
+            internal Action<string> statisticsHandler;
             internal Action<List<TopicPartition>> partitionAssignmentHandler;
             internal Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
@@ -77,13 +77,13 @@ namespace Confluent.Kafka
             errorHandler?.Invoke(kafkaHandle.CreatePossiblyFatalError(err, reason));
         }
 
-        private Action<string> statsHandler;
-        private Librdkafka.StatsDelegate statsCallbackDelegate;
-        private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
+        private Action<string> statisticsHandler;
+        private Librdkafka.StatsDelegate statisticsCallbackDelegate;
+        private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-            statsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -177,7 +177,7 @@ namespace Confluent.Kafka
 
         internal void Initialize(Config baseConfig)
         {
-            this.statsHandler = baseConfig.statsHandler;
+            this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
@@ -236,7 +236,7 @@ namespace Confluent.Kafka
             commitDelegate = CommitCallback;
             errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
-            statsCallbackDelegate = StatsCallback;
+            statisticsCallbackDelegate = StatisticsCallback;
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
@@ -245,7 +245,7 @@ namespace Confluent.Kafka
 
             Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statsCallbackDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.

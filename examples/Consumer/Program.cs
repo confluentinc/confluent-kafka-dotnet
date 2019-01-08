@@ -52,33 +52,32 @@ namespace Confluent.Kafka.Examples.ConsumerExample
 
             const int commitPeriod = 5;
 
-            using (var consumer =
-                new ConsumerBuilder<Ignore, string>(config)
-                    // Note: If a key or value deserializer is not specified, the deserializer
-                    //  corresponding to the appropriate type from Confluent.Kafka.Serdes will
-                    //  be used automatically (where available). The default deserializer for
-                    //  string is UTF8. The default deserializer for Ignore returns null for
-                    //  all input data (including non-null data).
-                    // Note: All handlers are called on the main .Consume thread.
-                    .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
-                    .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
-                    // The partition assignment handler is called when the consumer has been
-                    // notified of a new assignment set. You can use this callback to perform
-                    // actions such as retrieving offsets from an external source and manually
-                    // setting start offsets using the Assign method. You can even call Assign
-                    // with a different set of partitions than those in the assignment. If
-                    // you do not call Assign, the consumer will be automatically assigned to
-                    // the partitions of the assignment set and consumption will start from
-                    // last committed offsets or in accordance with the auto.offset.reset
-                    // configuration parameter for partitions where there is no committed offset.
-                    .SetPartitionAssignmentHandler((c, tps) => {
-                        Console.WriteLine($"Assigned partitions: [{string.Join(", ", tps)}], member id: {c.MemberId}");
-                    })
-                    // Called when the consumer's current assignment set has been revoked.
-                    .SetPartitionAssignmentRevokedHandler((_, tps) => {
-                        Console.WriteLine($"Revoked partitions: [{string.Join(", ", tps)}]");
-                    })
-                    .Build())
+            // Note: If a key or value deserializer is not set (as is the case below), the 
+            // deserializer corresponding to the appropriate type from Confluent.Kafka.Serdes
+            // will be used automatically (where available). The default deserializer for string
+            // is UTF8. The default deserializer for Ignore returns null for all input data
+            // (including non-null data).
+            using (var consumer = new ConsumerBuilder<Ignore, string>(config)
+                // Note: All handlers are called on the main .Consume thread.
+                .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
+                .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
+                // The partition assignment handler is called when the consumer has been
+                // notified of a new assignment set. You can use this callback to perform
+                // actions such as retrieving offsets from an external source and manually
+                // setting start offsets using the Assign method. You can even call Assign
+                // with a different set of partitions than those in the assignment. If
+                // you do not call Assign, the consumer will be automatically assigned to
+                // the partitions of the assignment set and consumption will start from
+                // last committed offsets or in accordance with the auto.offset.reset
+                // configuration parameter for partitions where there is no committed offset.
+                .SetPartitionAssignmentHandler((c, tps) => {
+                    Console.WriteLine($"Assigned partitions: [{string.Join(", ", tps)}], member id: {c.MemberId}");
+                })
+                // Called when the consumer's current assignment set has been revoked.
+                .SetPartitionAssignmentRevokedHandler((_, tps) => {
+                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", tps)}]");
+                })
+                .Build())
             {
                 consumer.Subscribe(topics);
 
