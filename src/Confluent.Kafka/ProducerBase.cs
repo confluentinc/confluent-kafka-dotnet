@@ -31,8 +31,8 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A high-level Apache Kafka producer, excluding
-    ///     any public methods for producing messages.
+    ///     A high-level Apache Kafka producer, excluding any public methods
+    ///     for producing messages.
     /// </summary>
     public class ProducerBase : IProducerBase
     {

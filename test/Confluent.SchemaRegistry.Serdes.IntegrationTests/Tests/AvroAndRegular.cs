@@ -56,10 +56,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 };
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var producer = new ProducerBuilder<string, string>(producerConfig)
-                    .SetKeySerializer(Serializers.Utf8)
-                    .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
-                    .Build())
+                using (var producer =
+                    new ProducerBuilder<string, string>(producerConfig)
+                        .SetKeySerializer(Serializers.Utf8)
+                        .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
+                        .Build())
                 {
                     // implicit check that this does not fail.
                     producer.ProduceAsync(topic1.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();

@@ -45,17 +45,18 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new ConsumerBuilder(consumerConfig)
-                .SetPartitionsAssignedHandler((c, partitions) => {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    // test non-empty case.
-                    Assert.Single(c.Subscription);
-                    Assert.Equal(singlePartitionTopic, c.Subscription[0]);
-                })
-                .SetPartitionsRevokedHandler((c, partitions) => c.Unassign())
-                .Build())
+            using (var consumer =
+                new ConsumerBuilder(consumerConfig)
+                    .SetPartitionsAssignedHandler((c, partitions) => {
+                        Assert.Single(partitions);
+                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        // test non-empty case.
+                        Assert.Single(c.Subscription);
+                        Assert.Equal(singlePartitionTopic, c.Subscription[0]);
+                    })
+                    .SetPartitionsRevokedHandler((c, partitions) => c.Unassign())
+                    .Build())
             {
                 // Test empty case.
                 Assert.Empty(consumer.Subscription);

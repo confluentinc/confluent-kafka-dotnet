@@ -48,12 +48,13 @@ namespace Confluent.Kafka.IntegrationTests
             IEnumerable<TopicPartition> assignedPartitions = null;
 
             using (var producer = new ProducerBuilder(producerConfig).Build())
-            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig)
-                .SetPartitionAssignmentHandler((c, tps) => {
-                    c.Assign(tps);
-                    assignedPartitions = tps;
-                })
-                .Build())
+            using (var consumer =
+                new ConsumerBuilder<Null, string>(consumerConfig)
+                    .SetPartitionAssignmentHandler((c, tps) => {
+                        c.Assign(tps);
+                        assignedPartitions = tps;
+                    })
+                    .Build())
             {
                 ConsumeResult<Null, string> record;
 

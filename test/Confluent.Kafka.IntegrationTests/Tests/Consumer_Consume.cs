@@ -46,13 +46,14 @@ namespace Confluent.Kafka.IntegrationTests
                 EnablePartitionEof = true
             };
 
-            using (var consumer = new ConsumerBuilder(consumerConfig)
-                .SetPartitionsAssignedHandler((c, partitions) => {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                })
-                .Build())
+            using (var consumer =
+                new ConsumerBuilder(consumerConfig)
+                    .SetPartitionsAssignedHandler((c, partitions) => {
+                        Assert.Single(partitions);
+                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                    })
+                    .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
 

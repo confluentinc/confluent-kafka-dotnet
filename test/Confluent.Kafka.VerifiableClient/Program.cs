@@ -314,11 +314,12 @@ namespace Confluent.Kafka.VerifiableClient
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
             var consumerConfig = new ConsumerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            consumer = new ConsumerBuilder<Null, string>(consumerConfig)
-                .SetPartitionAssignmentHandler((_, partitions) => HandleAssign(partitions))
-                .SetPartitionAssignmentRevokedHandler((_, partitions) => HandleRevoke(partitions))
-                .SetOffsetsCommittedHandler((_, offsets) => SendOffsetsCommitted(offsets))
-                .Build();
+            consumer =
+                new ConsumerBuilder<Null, string>(consumerConfig)
+                    .SetPartitionAssignmentHandler((_, partitions) => HandleAssign(partitions))
+                    .SetPartitionAssignmentRevokedHandler((_, partitions) => HandleRevoke(partitions))
+                    .SetOffsetsCommittedHandler((_, offsets) => SendOffsetsCommitted(offsets))
+                    .Build();
             consumedMsgsAtLastCommit = 0;
             Dbg($"Created Consumer {consumer.Name} with AutoCommit={Config.AutoCommit}");
         }

@@ -25,12 +25,30 @@ namespace Confluent.Kafka
     /// </summary>
     public class DependentProducerBuilder<TKey, TValue>
     {
-        internal Handle handle;
+        /// <summary>
+        ///     The configured client handle.
+        /// </summary>
+        public Handle handle { get; set; }
         
-        internal ISerializer<TKey> keySerializer;
-        internal ISerializer<TValue> valueSerializer;
-        internal IAsyncSerializer<TKey> asyncKeySerializer;
-        internal IAsyncSerializer<TValue> asyncValueSerializer;
+        /// <summary>
+        ///     The configured key serializer.
+        /// </summary>
+        public ISerializer<TKey> KeySerializer { get; set; }
+
+        /// <summary>
+        ///     The configured value serializer.
+        /// </summary>
+        public ISerializer<TValue> ValueSerializer { get; set; }
+
+        /// <summary>
+        ///     The configured async key serializer.
+        /// </summary>
+        public IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+
+        /// <summary>
+        ///     The configured async value serializer.
+        /// </summary>
+        public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
 
         /// <summary>
@@ -48,7 +66,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
-            this.keySerializer = serializer;
+            this.KeySerializer = serializer;
             return this;
         }
 
@@ -57,32 +75,32 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
-            this.valueSerializer = serializer;
+            this.ValueSerializer = serializer;
             return this;
         }
 
         /// <summary>
-        ///     The serializer to use to serialize keys.
+        ///     The async serializer to use to serialize keys.
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
-            this.asyncKeySerializer = serializer;
+            this.AsyncKeySerializer = serializer;
             return this;
         }
 
         /// <summary>
-        ///     The serializer to use to serialize values.
+        ///     The async serializer to use to serialize values.
         /// </summary>
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
-            this.asyncValueSerializer = serializer;
+            this.AsyncValueSerializer = serializer;
             return this;
         }
 
         /// <summary>
         ///     Build a new Producer instance.
         /// </summary>
-        public Producer<TKey, TValue> Build()
+        public virtual Producer<TKey, TValue> Build()
         {
             return new Producer<TKey, TValue>(this);
         }

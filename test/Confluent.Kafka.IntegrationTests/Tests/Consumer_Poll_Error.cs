@@ -98,16 +98,17 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test value deserialization error behavior.
-            using (var consumer = new ConsumerBuilder<string, Null>(consumerConfig)
-                .SetPartitionAssignmentHandler((c, tps) => {
-                    Assert.Single(tps);
-                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                })
-                .SetPartitionAssignmentRevokedHandler((c, _) => {
-                    c.Unassign();
-                })
-                .Build())
+            using (var consumer =
+                new ConsumerBuilder<string, Null>(consumerConfig)
+                    .SetPartitionAssignmentHandler((c, tps) => {
+                        Assert.Single(tps);
+                        Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                        c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                    })
+                    .SetPartitionAssignmentRevokedHandler((c, _) => {
+                        c.Unassign();
+                    })
+                    .Build())
             {
                 int msgCnt = 0;
                 int errCnt = 0;

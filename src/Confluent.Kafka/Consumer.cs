@@ -57,7 +57,7 @@ namespace Confluent.Kafka
             base.Initialize(builder.ConstructBaseConfig(this));
 
             // setup key deserializer.
-            if (builder.keyDeserializer == null && builder.asyncKeyDeserializer == null)
+            if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
@@ -66,13 +66,13 @@ namespace Confluent.Kafka
                 }
                 this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
-            else if (builder.keyDeserializer == null && builder.asyncKeyDeserializer != null)
+            else if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer != null)
             {
-                this.asyncKeyDeserializer = builder.asyncKeyDeserializer;
+                this.asyncKeyDeserializer = builder.AsyncKeyDeserializer;
             }
-            else if (builder.keyDeserializer != null && builder.asyncKeyDeserializer == null)
+            else if (builder.KeyDeserializer != null && builder.AsyncKeyDeserializer == null)
             {
-                this.keyDeserializer = builder.keyDeserializer;
+                this.keyDeserializer = builder.KeyDeserializer;
             }
             else
             {
@@ -80,7 +80,7 @@ namespace Confluent.Kafka
             }
 
             // setup value deserializer.
-            if (builder.valueDeserializer == null && builder.asyncValueDeserializer == null)
+            if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
@@ -89,13 +89,13 @@ namespace Confluent.Kafka
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
-            else if (builder.valueDeserializer == null && builder.asyncValueDeserializer != null)
+            else if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer != null)
             {
-                this.asyncValueDeserializer = builder.asyncValueDeserializer;
+                this.asyncValueDeserializer = builder.AsyncValueDeserializer;
             }
-            else if (builder.valueDeserializer != null && builder.asyncValueDeserializer == null)
+            else if (builder.ValueDeserializer != null && builder.AsyncValueDeserializer == null)
             {
-                this.valueDeserializer = builder.valueDeserializer;
+                this.valueDeserializer = builder.ValueDeserializer;
             }
             else
             {

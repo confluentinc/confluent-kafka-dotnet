@@ -25,7 +25,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer with serialization capability.
     /// </summary>
-    public class Producer<TKey, TValue> : ProducerBase
+    public class Producer<TKey, TValue> : ProducerBase, IProducer<TKey, TValue>
     {
         private ISerializer<TKey> keySerializer;
         private ISerializer<TValue> valueSerializer;
@@ -100,16 +100,16 @@ namespace Confluent.Kafka
         {
             base.Initialize(builder.handle);
             InitializeSerializers(
-                builder.keySerializer, builder.valueSerializer,
-                builder.asyncKeySerializer, builder.asyncValueSerializer);
+                builder.KeySerializer, builder.ValueSerializer,
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
 
         internal Producer(ProducerBuilder<TKey, TValue> builder)
         {
             base.Initialize(builder.ConstructBaseConfig(this));
             InitializeSerializers(
-                builder.keySerializer, builder.valueSerializer,
-                builder.asyncKeySerializer, builder.asyncValueSerializer);
+                builder.KeySerializer, builder.ValueSerializer,
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
 
         /// <summary>
@@ -407,7 +407,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer.
     /// </summary>
-    public class Producer : ProducerBase
+    public class Producer : ProducerBase, IProducer
     {
         internal Producer(ProducerBuilder builder)
         {

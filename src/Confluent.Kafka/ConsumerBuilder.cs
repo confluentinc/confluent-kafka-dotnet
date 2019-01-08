@@ -31,37 +31,65 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerBuilder
     {
-        internal IEnumerable<KeyValuePair<string, string>> config;
-        internal Action<Consumer, Error> errorHandler;
-        internal Action<Consumer, LogMessage> logHandler;
-        internal Action<Consumer, string> statsHandler;
-        internal Action<Consumer, List<TopicPartition>> partitionAssignmentHandler;
-        internal Action<Consumer, List<TopicPartition>> partitionAssignmentRevokedHandler;
-        internal Action<Consumer, CommittedOffsets> offsetsCommittedHandler;
+        /// <summary>
+        ///     The config dictionary.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+
+        /// <summary>
+        ///     The configured error handler.
+        /// </summary>
+        public Action<Consumer, Error> ErrorHandler { get; set; }
+
+        /// <summary>
+        ///     The configured log handler.
+        /// </summary>
+        public Action<Consumer, LogMessage> LogHandler { get; set; }
+
+        /// <summary>
+        ///     The configured statistics handler.
+        /// </summary>
+        public Action<Consumer, string> StatisticsHandler { get; set; }
+
+        /// <summary>
+        ///     The configured partition assignment handler.
+        /// </summary>
+        public Action<Consumer, List<TopicPartition>> PartitionAssignmentHandler { get; set; }
+
+        /// <summary>
+        ///     The configured partition assignment revoked handler.
+        /// </summary>
+        public Action<Consumer, List<TopicPartition>> PartitionAssignmentRevokedHandler { get; set; }
+
+        /// <summary>
+        ///     The configured offsets committed handler.
+        /// </summary>
+        public Action<Consumer, CommittedOffsets> OffsetsCommittedHandler { get; set; }
+
 
         internal ConsumerBase.Config ConstructBaseConfig(Consumer consumer)
         {
             return new ConsumerBase.Config
             {
-                config = config,
-                errorHandler = this.errorHandler == null
+                config = Config,
+                errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
-                    : error => this.errorHandler(consumer, error),
-                logHandler = this.logHandler == null
+                    : error => this.ErrorHandler(consumer, error),
+                logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
-                    : logMessage => this.logHandler(consumer, logMessage),
-                statsHandler = this.statsHandler == null
+                    : logMessage => this.LogHandler(consumer, logMessage),
+                statsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.statsHandler(consumer, stats),
-                partitionAssignmentRevokedHandler = this.partitionAssignmentRevokedHandler == null
+                    : stats => this.StatisticsHandler(consumer, stats),
+                partitionAssignmentRevokedHandler = this.PartitionAssignmentRevokedHandler == null
                     ? default(Action<List<TopicPartition>>)
-                    : partitions => this.partitionAssignmentRevokedHandler(consumer, partitions),
-                partitionAssignmentHandler = this.partitionAssignmentHandler == null
+                    : partitions => this.PartitionAssignmentRevokedHandler(consumer, partitions),
+                partitionAssignmentHandler = this.PartitionAssignmentHandler == null
                     ? default(Action<List<TopicPartition>>)
-                    : partitions => this.partitionAssignmentHandler(consumer, partitions),
-                offsetsCommittedHandler = this.offsetsCommittedHandler == null
+                    : partitions => this.PartitionAssignmentHandler(consumer, partitions),
+                offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
-                    : offsets => this.offsetsCommittedHandler(consumer, offsets)
+                    : offsets => this.OffsetsCommittedHandler(consumer, offsets)
             };
         }
 
@@ -70,7 +98,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.config = config;
+            this.Config = config;
         }
 
         /// <summary>
@@ -79,7 +107,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder SetOffsetsCommittedHandler(
             Action<Consumer, CommittedOffsets> offsetsCommittedHandler)
         {
-            this.offsetsCommittedHandler = offsetsCommittedHandler;
+            this.OffsetsCommittedHandler = offsetsCommittedHandler;
             return this;
         }
 
@@ -89,7 +117,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder SetPartitionsRevokedHandler(
             Action<Consumer, List<TopicPartition>> partitionsRevokedHandler)
         {
-            this.partitionAssignmentRevokedHandler = partitionsRevokedHandler;
+            this.PartitionAssignmentRevokedHandler = partitionsRevokedHandler;
             return this;
         }
 
@@ -99,7 +127,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder SetPartitionsAssignedHandler(
             Action<Consumer, List<TopicPartition>> partitionsAssignedHandler)
         {
-            this.partitionAssignmentHandler = partitionsAssignedHandler;
+            this.PartitionAssignmentHandler = partitionsAssignedHandler;
             return this;
         }
 
@@ -108,7 +136,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder SetStatisticsHandler(Action<Consumer, string> statisticsHandler)
         {
-            this.statsHandler = statisticsHandler;
+            this.StatisticsHandler = statisticsHandler;
             return this;
         }
 
@@ -117,7 +145,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder SetErrorHandler(Action<Consumer, Error> errorHandler)
         {
-            this.errorHandler = errorHandler;
+            this.ErrorHandler = errorHandler;
             return this;
         }
 
@@ -126,14 +154,14 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder SetLogHandler(Action<Consumer, LogMessage> logHandler)
         {
-            this.logHandler = logHandler;
+            this.LogHandler = logHandler;
             return this;
         }
 
         /// <summary>
         ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.Build" />.
         /// </summary>
-        public Consumer Build()
+        public virtual Consumer Build()
         {
             return new Consumer(this);
         }
@@ -145,42 +173,85 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerBuilder<TKey, TValue>
     {
-        internal IEnumerable<KeyValuePair<string, string>> config;
-        internal Action<Consumer<TKey, TValue>, Error> errorHandler;
-        internal Action<Consumer<TKey, TValue>, LogMessage> logHandler;
-        internal Action<Consumer<TKey, TValue>, string> statisticsHandler;
-        internal Action<Consumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler;
-        internal Action<Consumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentRevokedHandler;
-        internal Action<Consumer<TKey, TValue>, CommittedOffsets> offsetsCommittedHandler;
+        /// <summary>
+        ///     The config dictionary.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
 
-        internal IDeserializer<TKey> keyDeserializer;
-        internal IDeserializer<TValue> valueDeserializer;
-        internal IAsyncDeserializer<TKey> asyncKeyDeserializer;
-        internal IAsyncDeserializer<TValue> asyncValueDeserializer;
+        /// <summary>
+        ///     The configured error handler.
+        /// </summary>
+        public Action<Consumer<TKey, TValue>, Error> ErrorHandler { get; set; }
+
+        /// <summary>
+        ///     The configured log handler.
+        /// </summary>
+        public Action<Consumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+
+        /// <summary>
+        ///     The configured statistics handler.
+        /// </summary>
+        public Action<Consumer<TKey, TValue>, string> StatisticsHandler { get; set; }
+
+        /// <summary>
+        ///     The configured partition assignment handler.
+        /// </summary>
+        public Action<Consumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentHandler { get; set; }
+
+        /// <summary>
+        ///     The configured partition assignment revoked handler.
+        /// </summary>
+        public Action<Consumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentRevokedHandler { get; set; }
+
+        /// <summary>
+        ///     The configured offsets committed handler.
+        /// </summary>
+        public Action<Consumer<TKey, TValue>, CommittedOffsets> OffsetsCommittedHandler { get; set; }
+
+
+        /// <summary>
+        ///     The configured key deserializer.
+        /// </summary>
+        public IDeserializer<TKey> KeyDeserializer { get; set; }
+
+        /// <summary>
+        ///     The configured value deserializer.
+        /// </summary>
+        public IDeserializer<TValue> ValueDeserializer { get; set; }
+
+        /// <summary>
+        ///     The configured async key deserializer.
+        /// </summary>
+        public IAsyncDeserializer<TKey> AsyncKeyDeserializer { get; set; }
+
+        /// <summary>
+        ///     The configured async value deserializer.
+        /// </summary>
+        public IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
         internal ConsumerBase.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
         {
             return new ConsumerBase.Config
             {
-                config = config,
-                errorHandler = this.errorHandler == null
+                config = Config,
+                errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
-                    : error => this.errorHandler(consumer, error),
-                logHandler = this.logHandler == null
+                    : error => this.ErrorHandler(consumer, error),
+                logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
-                    : logMessage => this.logHandler(consumer, logMessage),
-                statsHandler = this.statisticsHandler == null
+                    : logMessage => this.LogHandler(consumer, logMessage),
+                statsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.statisticsHandler(consumer, stats),
-                partitionAssignmentRevokedHandler = this.partitionAssignmentRevokedHandler == null
+                    : stats => this.StatisticsHandler(consumer, stats),
+                partitionAssignmentRevokedHandler = this.PartitionAssignmentRevokedHandler == null
                     ? default(Action<List<TopicPartition>>)
-                    : partitions => this.partitionAssignmentRevokedHandler(consumer, partitions),
-                partitionAssignmentHandler = this.partitionAssignmentHandler == null
+                    : partitions => this.PartitionAssignmentRevokedHandler(consumer, partitions),
+                partitionAssignmentHandler = this.PartitionAssignmentHandler == null
                     ? default(Action<List<TopicPartition>>)
-                    : partitions => this.partitionAssignmentHandler(consumer, partitions),
-                offsetsCommittedHandler = this.offsetsCommittedHandler == null
+                    : partitions => this.PartitionAssignmentHandler(consumer, partitions),
+                offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
-                    : offsets => this.offsetsCommittedHandler(consumer, offsets)
+                    : offsets => this.OffsetsCommittedHandler(consumer, offsets)
             };
         }
 
@@ -197,7 +268,7 @@ namespace Confluent.Kafka
         /// </param>
         public ConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.config = config;
+            this.Config = config;
         }
 
         /// <summary>
@@ -211,7 +282,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetOffsetsCommittedHandler(
             Action<Consumer<TKey, TValue>, CommittedOffsets> offsetsCommittedHandler)
         {
-            this.offsetsCommittedHandler = offsetsCommittedHandler;
+            this.OffsetsCommittedHandler = offsetsCommittedHandler;
             return this;
         }
 
@@ -231,7 +302,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentRevokedHandler(
             Action<Consumer<TKey,TValue>, List<TopicPartition>> partitionAssignmentRevokedHandler)
         {
-            this.partitionAssignmentRevokedHandler = partitionAssignmentRevokedHandler;
+            this.PartitionAssignmentRevokedHandler = partitionAssignmentRevokedHandler;
             return this;
         }
 
@@ -253,7 +324,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentHandler(
             Action<Consumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
         {
-            this.partitionAssignmentHandler = partitionAssignmentHandler;
+            this.PartitionAssignmentHandler = partitionAssignmentHandler;
             return this;
         }
 
@@ -271,7 +342,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetStatisticsHandler(
             Action<Consumer<TKey, TValue>, string> statisticsHandler)
         {
-            this.statisticsHandler = statisticsHandler;
+            this.StatisticsHandler = statisticsHandler;
             return this;
         }
 
@@ -287,7 +358,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetErrorHandler(
             Action<Consumer<TKey, TValue>, Error> errorHandler)
         {
-            this.errorHandler = errorHandler;
+            this.ErrorHandler = errorHandler;
             return this;
         }
 
@@ -313,7 +384,7 @@ namespace Confluent.Kafka
         public ConsumerBuilder<TKey, TValue> SetLogHandler(
             Action<Consumer<TKey, TValue>, LogMessage> logHandler)
         {
-            this.logHandler = logHandler;
+            this.LogHandler = logHandler;
             return this;
         }
 
@@ -322,7 +393,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IDeserializer<TKey> deserializer)
         {
-            this.keyDeserializer = deserializer;
+            this.KeyDeserializer = deserializer;
             return this;
         }
 
@@ -331,32 +402,32 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IDeserializer<TValue> deserializer)
         {
-            this.valueDeserializer = deserializer;
+            this.ValueDeserializer = deserializer;
             return this;
         }
 
         /// <summary>
-        ///     Set the deserializer to use to deserialize keys.
+        ///     Set the async deserializer to use to deserialize keys.
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IAsyncDeserializer<TKey> deserializer)
         {
-            this.asyncKeyDeserializer = deserializer;
+            this.AsyncKeyDeserializer = deserializer;
             return this;
         }
 
         /// <summary>
-        ///     Set the deserializer to use to deserialize values.
+        ///     Set the async deserializer to use to deserialize values.
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IAsyncDeserializer<TValue> deserializer)
         {
-            this.asyncValueDeserializer = deserializer;
+            this.AsyncValueDeserializer = deserializer;
             return this;
         }
 
         /// <summary>
         ///     Build a new Consumer instance.
         /// </summary>
-        public Consumer<TKey, TValue> Build()
+        public virtual Consumer<TKey, TValue> Build()
         {
             return new Consumer<TKey, TValue>(this);
         }

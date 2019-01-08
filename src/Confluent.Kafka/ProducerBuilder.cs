@@ -25,25 +25,40 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerBuilder
     {
-        internal IEnumerable<KeyValuePair<string, string>> config;
-        internal Action<Producer, Error> errorHandler;
-        internal Action<Producer, LogMessage> logHandler;
-        internal Action<Producer, string> statisticsHandler;
+        /// <summary>
+        ///     The config dictionary.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+
+        /// <summary>
+        ///     The configured error handler.
+        /// </summary>
+        public Action<Producer, Error> ErrorHandler { get; set; }
+
+        /// <summary>
+        ///     The configured log handler.
+        /// </summary>
+        public Action<Producer, LogMessage> LogHandler { get; set; }
+
+        /// <summary>
+        ///     The configured statistics handler.
+        /// </summary>
+        public Action<Producer, string> StatisticsHandler { get; set; }
 
         internal ProducerBase.Config ConstructBaseConfig(Producer producer)
         {
             return new ProducerBase.Config
             {
-                config = config,
-                errorHandler = this.errorHandler == null
+                config = Config,
+                errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
-                    : error => this.errorHandler(producer, error),
-                logHandler = this.logHandler == null
+                    : error => this.ErrorHandler(producer, error),
+                logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
-                    : logMessage => this.logHandler(producer, logMessage),
-                statsHandler = this.statisticsHandler == null
+                    : logMessage => this.LogHandler(producer, logMessage),
+                statsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.statisticsHandler(producer, stats)
+                    : stats => this.StatisticsHandler(producer, stats)
             };
         }
 
@@ -57,7 +72,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.config = config;
+            this.Config = config;
         }
 
         /// <summary>
@@ -65,7 +80,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder SetStatisticsHandler(Action<Producer, string> statisticsHandler)
         {
-            this.statisticsHandler = statisticsHandler;
+            this.StatisticsHandler = statisticsHandler;
             return this;
         }
 
@@ -74,7 +89,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder SetErrorHandler(Action<Producer, Error> errorHandler)
         {
-            this.errorHandler = errorHandler;
+            this.ErrorHandler = errorHandler;
             return this;
         }
 
@@ -83,14 +98,14 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder SetLogHandler(Action<Producer, LogMessage> logHandler)
         {
-            this.logHandler = logHandler;
+            this.LogHandler = logHandler;
             return this;
         }
 
         /// <summary>
         ///     Refer to <see cref="ProducerBuilder{TKey,TValue}.Build()" />.
         /// </summary>
-        public Producer Build()
+        public virtual Producer Build()
         {
             return new Producer(this);
         }
@@ -102,30 +117,61 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerBuilder<TKey, TValue>
     {
-        internal IEnumerable<KeyValuePair<string, string>> config;
-        internal Action<Producer<TKey, TValue>, Error> errorHandler;
-        internal Action<Producer<TKey, TValue>, LogMessage> logHandler;
-        internal Action<Producer<TKey, TValue>, string> statisticsHandler;
+        /// <summary>
+        ///     The config dictionary.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+
+        /// <summary>
+        ///     The configured error handler.
+        /// </summary>
+        public Action<Producer<TKey, TValue>, Error> ErrorHandler { get; set; }
+
+        /// <summary>
+        ///     The configured log handler.
+        /// </summary>
+        public Action<Producer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+
+        /// <summary>
+        ///     The configured statistics handler.
+        /// </summary>
+        public Action<Producer<TKey, TValue>, string> StatisticsHandler { get; set; }
         
-        internal ISerializer<TKey> keySerializer;
-        internal ISerializer<TValue> valueSerializer;
-        internal IAsyncSerializer<TKey> asyncKeySerializer;
-        internal IAsyncSerializer<TValue> asyncValueSerializer;
+
+        /// <summary>
+        ///     The configured key serializer.
+        /// </summary>
+        public ISerializer<TKey> KeySerializer { get; set; }
+
+        /// <summary>
+        ///     The configured value serializer.
+        /// </summary>
+        public ISerializer<TValue> ValueSerializer { get; set; }
+
+        /// <summary>
+        ///     The configured async key serializer.
+        /// </summary>
+        public IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+
+        /// <summary>
+        ///     The configured async value serializer.
+        /// </summary>
+        public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
         internal ProducerBase.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
             return new ProducerBase.Config
             {
-                config = config,
-                errorHandler = this.errorHandler == null
+                config = Config,
+                errorHandler = this.ErrorHandler == null
                     ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
-                    : error => this.errorHandler(producer, error),
-                logHandler = this.logHandler == null
+                    : error => this.ErrorHandler(producer, error),
+                logHandler = this.LogHandler == null
                     ? default(Action<LogMessage>)
-                    : logMessage => this.logHandler(producer, logMessage),
-                statsHandler = this.statisticsHandler == null
+                    : logMessage => this.LogHandler(producer, logMessage),
+                statsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.statisticsHandler(producer, stats)
+                    : stats => this.StatisticsHandler(producer, stats)
             };
         }
 
@@ -139,7 +185,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
-            this.config = config;
+            this.Config = config;
         }
 
         /// <summary>
@@ -156,7 +202,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<Producer<TKey, TValue>, string> statisticsHandler)
         {
-            this.statisticsHandler = statisticsHandler;
+            this.StatisticsHandler = statisticsHandler;
             return this;
         }
 
@@ -172,7 +218,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<Producer<TKey, TValue>, Error> errorHandler)
         {
-            this.errorHandler = errorHandler;
+            this.ErrorHandler = errorHandler;
             return this;
         }
 
@@ -197,7 +243,7 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetLogHandler(Action<Producer<TKey, TValue>, LogMessage> logHandler)
         {
-            this.logHandler = logHandler;
+            this.LogHandler = logHandler;
             return this;
         }
 
@@ -206,7 +252,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
-            this.keySerializer = serializer;
+            this.KeySerializer = serializer;
             return this;
         }
 
@@ -215,7 +261,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
-            this.valueSerializer = serializer;
+            this.ValueSerializer = serializer;
             return this;
         }
 
@@ -224,7 +270,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
-            this.asyncKeySerializer = serializer;
+            this.AsyncKeySerializer = serializer;
             return this;
         }
 
@@ -233,14 +279,14 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
-            this.asyncValueSerializer = serializer;
+            this.AsyncValueSerializer = serializer;
             return this;
         }
 
         /// <summary>
         ///     Build a new Producer instance.
         /// </summary>
-        public Producer<TKey, TValue> Build()
+        public virtual Producer<TKey, TValue> Build()
         {
             return new Producer<TKey, TValue>(this);
         }

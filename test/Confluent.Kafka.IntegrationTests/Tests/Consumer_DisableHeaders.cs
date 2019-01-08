@@ -59,9 +59,10 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Result;
             }
 
-            using (var consumer = new ConsumerBuilder(consumerConfig)
-                .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
-                .Build())
+            using (var consumer =
+                new ConsumerBuilder(consumerConfig)
+                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .Build())
             {                    
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
