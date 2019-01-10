@@ -32,8 +32,8 @@ namespace Confluent.Kafka.UnitTests
         public void AcksProperty()
         {
             // standard values
-            var config1 = new ProducerConfig { Acks = Acks.Zero };
-            var config2 = new ProducerConfig { Acks = Acks.One };
+            var config1 = new ProducerConfig { Acks = Acks.None };
+            var config2 = new ProducerConfig { Acks = Acks.Leader };
             var config3 = new ProducerConfig { Acks = Acks.All };
 
             // any numerical value is also ok but needs to be cast.
@@ -50,10 +50,10 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal("2", config5.Get("acks"));
             Assert.Equal("-1", config6.Get("acks"));
 
-            Assert.Equal(Acks.Zero, config1.Acks);
-            Assert.Equal(Acks.One, config2.Acks);
+            Assert.Equal(Acks.None, config1.Acks);
+            Assert.Equal(Acks.Leader, config2.Acks);
             Assert.Equal(Acks.All, config3.Acks);
-            Assert.Equal(Acks.One, config4.Acks);
+            Assert.Equal(Acks.Leader, config4.Acks);
             Assert.Equal((Acks)2, config5.Acks);
             Assert.Equal(Acks.All, config6.Acks);
         }

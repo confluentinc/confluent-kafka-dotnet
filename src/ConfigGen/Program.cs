@@ -149,14 +149,14 @@ namespace ConfigGen
     public enum Acks : int
     {
         /// <summary>
-        ///     Zero
+        ///     None
         /// </summary>
-        Zero = 0,
+        None = 0,
 
         /// <summary>
-        ///     One
+        ///     Leader
         /// </summary>
-        One = 1,
+        Leader = 1,
 
         /// <summary>
         ///     All
@@ -184,16 +184,16 @@ namespace ConfigGen
             {
                 var r = Get(""acks"");
                 if (r == null) { return null; }
-                if (r == ""0"") { return Confluent.Kafka.Acks.Zero; }
-                if (r == ""1"") { return Confluent.Kafka.Acks.One; }
+                if (r == ""0"") { return Confluent.Kafka.Acks.None; }
+                if (r == ""1"") { return Confluent.Kafka.Acks.Leader; }
                 if (r == ""-1"" || r == ""all"") { return Confluent.Kafka.Acks.All; }
                 return (Acks)(int.Parse(r));
             }
             set
             {
                 if (value == null) { this.properties.Remove(""acks""); }
-                else if (value == Confluent.Kafka.Acks.Zero) { this.properties[""acks""] = ""0""; }
-                else if (value == Confluent.Kafka.Acks.One) { this.properties[""acks""] = ""1""; }
+                else if (value == Confluent.Kafka.Acks.None) { this.properties[""acks""] = ""0""; }
+                else if (value == Confluent.Kafka.Acks.Leader) { this.properties[""acks""] = ""1""; }
                 else if (value == Confluent.Kafka.Acks.All) { this.properties[""acks""] = ""-1""; }
                 else { this.properties[""acks""] = ((int)value.Value).ToString(); }
             }
