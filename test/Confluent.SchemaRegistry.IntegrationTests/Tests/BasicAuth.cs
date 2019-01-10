@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             var conf = new SchemaRegistryConfig
             {
                 SchemaRegistryUrl = config.ServerWithAuth,
-                SchemaRegistryBasicAuthCredentialsSource = "USER_INFO",
+                SchemaRegistryBasicAuthCredentialsSource = AuthCredentialsSource.UserInfo,
                 SchemaRegistryBasicAuthUserInfo = $"{config.Username}:{config.Password}"
             };
 
@@ -91,7 +91,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             // 1.4. credentials specified as SASL_INHERIT via strongly typed config.
             var conf3 = new SchemaRegistryConfig { SchemaRegistryUrl = config.ServerWithAuth };
-            conf3.SchemaRegistryBasicAuthCredentialsSource = "SASL_INHERIT";
+            conf3.SchemaRegistryBasicAuthCredentialsSource = AuthCredentialsSource.SaslInherit;
             conf3.Set("sasl.username", config.Username);
             conf3.Set("sasl.password", config.Password);
             using (var sr = new CachedSchemaRegistryClient(conf3))
@@ -112,6 +112,25 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 { 
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "SASL_INHERIT" },
+                    { "schema.registry.basic.auth.user.info", $"{config.Username:config.Password}" }
+                }); 
+            });
+
+            Assert.Throws<ArgumentException>(() =>
+            {
+                var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
+                { 
+                    { "schema.registry.url", config.ServerWithAuth },
+                    { "schema.registry.basic.auth.credentials.source", "UBUTE_SOURCE" }
+                }); 
+            });
+
+            Assert.Throws<ArgumentException>(() =>
+            {
+                var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
+                { 
+                    { "schema.registry.url", config.ServerWithAuth },
+                    { "schema.registry.basic.auth.credentials.source", "NONE" },
                     { "schema.registry.basic.auth.user.info", $"{config.Username:config.Password}" }
                 }); 
             });
