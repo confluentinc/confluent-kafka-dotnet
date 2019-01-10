@@ -85,7 +85,7 @@ namespace Confluent.SchemaRegistry
             string username = null;
             string password = null;
 
-            if (basicAuthSource == "USER_INFO")
+            if (basicAuthSource == "USER_INFO" || basicAuthSource == "")
             {
                 if (basicAuthInfo != "")
                 {

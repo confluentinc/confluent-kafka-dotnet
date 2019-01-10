@@ -135,17 +135,6 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 }); 
             });
 
-            Assert.Throws<ArgumentException>(() => 
-            {   
-                var sr = new CachedSchemaRegistryClient(new Dictionary<string, string>
-                { 
-                    { "schema.registry.url", config.ServerWithAuth },
-                    { "schema.registry.basic.auth.credentials.source", "USER_INFO" },
-                    { "sasl.username", config.Username },
-                    { "sasl.password", config.Password }
-                });
-            });
-
             // connect to authenticating without credentials. shouldn't work.
             Assert.Throws<HttpRequestException>(() => 
             { 
