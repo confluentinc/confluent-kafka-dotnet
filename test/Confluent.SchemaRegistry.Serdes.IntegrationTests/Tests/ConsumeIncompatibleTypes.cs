@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString(),
                 SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetResetType.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest
             };
             
             var schemaRegistryConfig = new SchemaRegistryConfig

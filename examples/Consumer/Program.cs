@@ -45,7 +45,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 EnableAutoCommit = false,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
-                AutoOffsetReset = AutoOffsetResetType.Earliest,
+                AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnablePartitionEof = true
             };
 
