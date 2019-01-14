@@ -98,7 +98,7 @@ namespace Confluent.Kafka
 
         internal Producer(DependentProducerBuilder<TKey, TValue> builder)
         {
-            base.Initialize(builder.handle);
+            base.Initialize(builder.Handle);
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
                 builder.AsyncKeySerializer, builder.AsyncValueSerializer);

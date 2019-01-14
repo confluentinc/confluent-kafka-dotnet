@@ -29,7 +29,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured client handle.
         /// </summary>
-        public Handle handle { get; set; }
+        public Handle Handle { get; set; }
         
         /// <summary>
         ///     The configured key serializer.
@@ -59,7 +59,7 @@ namespace Confluent.Kafka
         /// </summary>
         public DependentProducerBuilder(Handle handle)
         {
-            this.handle = handle;
+            this.Handle = handle;
         }
 
         /// <summary>
