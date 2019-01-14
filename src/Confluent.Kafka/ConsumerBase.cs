@@ -41,8 +41,8 @@ namespace Confluent.Kafka
             internal Action<Error> errorHandler;
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
-            internal Action<List<TopicPartition>> partitionAssignmentHandler;
-            internal Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
+            internal Action<List<TopicPartition>> partitionsAssignedHandler;
+            internal Action<List<TopicPartition>> partitionsRevokedHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
         }
 
@@ -98,8 +98,8 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Action<List<TopicPartition>> partitionAssignmentHandler;
-        private Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
+        private Action<List<TopicPartition>> partitionsAssignedHandler;
+        private Action<List<TopicPartition>> partitionsRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -124,10 +124,10 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (partitionAssignmentHandler != null)
+                if (partitionsAssignedHandler != null)
                 {
                     assignCallCount = 0;
-                    partitionAssignmentHandler(partitionList);
+                    partitionsAssignedHandler(partitionList);
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
@@ -139,10 +139,10 @@ namespace Confluent.Kafka
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (partitionAssignmentRevokedHandler != null)
+                if (partitionsRevokedHandler != null)
                 {
                     assignCallCount = 0;
-                    partitionAssignmentRevokedHandler(partitionList);
+                    partitionsRevokedHandler(partitionList);
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
@@ -181,8 +181,8 @@ namespace Confluent.Kafka
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
-            this.partitionAssignmentHandler = baseConfig.partitionAssignmentHandler;
-            this.partitionAssignmentRevokedHandler = baseConfig.partitionAssignmentRevokedHandler;
+            this.partitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
+            this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
 
             Librdkafka.Initialize(null);
 
@@ -951,8 +951,8 @@ namespace Confluent.Kafka
         ///     do not call <see cref="Confluent.Kafka.ConsumerBase.Close" />
         ///     or <see cref="Confluent.Kafka.ConsumerBase.Unsubscribe" />,
         ///     the group will rebalance after a timeout specified by the group's 
-        ///     `session.timeout.ms`. Note: the partition asignment and partition
-        ///     assignment revoked handlers may be called as a side-effect of
+        ///     `session.timeout.ms`. Note: the partition asignment and partitions
+        ///     revoked handlers may be called as a side-effect of
         ///     calling this method.
         /// </summary>
         /// <exception cref="Confluent.Kafka.KafkaException">

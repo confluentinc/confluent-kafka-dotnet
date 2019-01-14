@@ -316,8 +316,8 @@ namespace Confluent.Kafka.VerifiableClient
             var consumerConfig = new ConsumerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
             consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((_, partitions) => HandleAssign(partitions))
-                    .SetPartitionAssignmentRevokedHandler((_, partitions) => HandleRevoke(partitions))
+                    .SetPartitionsAssignedHandler((_, partitions) => HandleAssign(partitions))
+                    .SetPartitionsRevokedHandler((_, partitions) => HandleRevoke(partitions))
                     .SetOffsetsCommittedHandler((_, offsets) => SendOffsetsCommitted(offsets))
                     .Build();
             consumedMsgsAtLastCommit = 0;

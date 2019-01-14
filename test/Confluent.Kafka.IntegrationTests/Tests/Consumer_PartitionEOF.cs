@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
             // no eof, generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, tps) => {
+                    .SetPartitionsAssignedHandler((c, tps) => {
                         Assert.Single(tps);
                         Assert.Equal(firstProduced.TopicPartition, tps[0]);
                         c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
@@ -131,7 +131,7 @@ namespace Confluent.Kafka.IntegrationTests
             // eof, generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, tps) => {
+                    .SetPartitionsAssignedHandler((c, tps) => {
                         Assert.Single(tps);
                         Assert.Equal(firstProduced.TopicPartition, tps[0]);
                         c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));

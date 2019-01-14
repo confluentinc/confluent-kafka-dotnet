@@ -61,7 +61,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // Note: All handlers are called on the main .Consume thread.
                 .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
-                // The partition assignment handler is called when the consumer has been
+                // The partitions assigned handler is called when the consumer has been
                 // notified of a new assignment set. You can use this callback to perform
                 // actions such as retrieving offsets from an external source and manually
                 // setting start offsets using the Assign method. You can even call Assign
@@ -70,11 +70,11 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // the partitions of the assignment set and consumption will start from
                 // last committed offsets or in accordance with the auto.offset.reset
                 // configuration parameter for partitions where there is no committed offset.
-                .SetPartitionAssignmentHandler((c, tps) => {
+                .SetPartitionsAssignedHandler((c, tps) => {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", tps)}], member id: {c.MemberId}");
                 })
                 // Called when the consumer's current assignment set has been revoked.
-                .SetPartitionAssignmentRevokedHandler((_, tps) => {
+                .SetPartitionsRevokedHandler((_, tps) => {
                     Console.WriteLine($"Revoked partitions: [{string.Join(", ", tps)}]");
                 })
                 .Build())

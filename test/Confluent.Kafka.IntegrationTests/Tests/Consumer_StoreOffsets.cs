@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new ProducerBuilder(producerConfig).Build())
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, tps) => {
+                    .SetPartitionsAssignedHandler((c, tps) => {
                         c.Assign(tps);
                         assignedPartitions = tps;
                     })
