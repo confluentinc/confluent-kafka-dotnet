@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="librdkafka.redist" Version="1.0.0-PRE1">
-        <PrivateAssets Condition="$(DefineConstants.Contains('NETFRAMEWORK'))">None</PrivateAssets>
+        <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.0" />
