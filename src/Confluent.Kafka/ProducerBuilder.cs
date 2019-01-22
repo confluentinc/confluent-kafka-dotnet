@@ -28,22 +28,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The config dictionary.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
 
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        public Action<Producer, Error> ErrorHandler { get; set; }
+        internal protected Action<Producer, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        public Action<Producer, LogMessage> LogHandler { get; set; }
+        internal protected Action<Producer, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        public Action<Producer, string> StatisticsHandler { get; set; }
+        internal protected Action<Producer, string> StatisticsHandler { get; set; }
 
         internal ProducerBase.Config ConstructBaseConfig(Producer producer)
         {
@@ -119,43 +119,43 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The config dictionary.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
 
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        public Action<Producer<TKey, TValue>, Error> ErrorHandler { get; set; }
+        internal protected Action<Producer<TKey, TValue>, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        public Action<Producer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+        internal protected Action<Producer<TKey, TValue>, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        public Action<Producer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        internal protected Action<Producer<TKey, TValue>, string> StatisticsHandler { get; set; }
         
 
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
-        public ISerializer<TKey> KeySerializer { get; set; }
+        internal protected ISerializer<TKey> KeySerializer { get; set; }
 
         /// <summary>
         ///     The configured value serializer.
         /// </summary>
-        public ISerializer<TValue> ValueSerializer { get; set; }
+        internal protected ISerializer<TValue> ValueSerializer { get; set; }
 
         /// <summary>
         ///     The configured async key serializer.
         /// </summary>
-        public IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+        internal protected IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
 
         /// <summary>
         ///     The configured async value serializer.
         /// </summary>
-        public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+        internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
         internal ProducerBase.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {

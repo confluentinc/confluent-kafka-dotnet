@@ -41,9 +41,6 @@ namespace Confluent.Kafka
             internal Action<Error> errorHandler;
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
-            internal Action<List<TopicPartition>> partitionsAssignedHandler;
-            internal Action<List<TopicPartition>> partitionsRevokedHandler;
-            internal Action<CommittedOffsets> offsetsCommittedHandler;
         }
 
 
@@ -98,8 +95,15 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Action<List<TopicPartition>> partitionsAssignedHandler;
-        private Action<List<TopicPartition>> partitionsRevokedHandler;
+        /// <summary>
+        ///     partitionsAssignedHandler.
+        /// </summary>
+        protected Action<List<TopicPartition>> partitionsAssignedHandler;
+
+        /// <summary>
+        ///     partitionsRevokedHandler.
+        /// </summary>
+        protected Action<List<TopicPartition>> partitionsRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -158,7 +162,10 @@ namespace Confluent.Kafka
             }
         }
 
-        private Action<CommittedOffsets> offsetsCommittedHandler;
+        /// <summary>
+        ///     offsetsCommittedHandler.
+        /// </summary>
+        protected Action<CommittedOffsets> offsetsCommittedHandler;
         private Librdkafka.CommitDelegate commitDelegate;
         private void CommitCallback(
             IntPtr rk,
@@ -180,9 +187,6 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
-            this.partitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
-            this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
 
             Librdkafka.Initialize(null);
 

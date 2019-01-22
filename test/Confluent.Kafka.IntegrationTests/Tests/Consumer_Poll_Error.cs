@@ -57,21 +57,21 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // test key deserialization error behavior
-            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig)
-                .SetPartitionsAssignedHandler((c, tps) => {
-                    Assert.Single(tps);
-                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                })
-                .SetPartitionsRevokedHandler((c, _) => {
-                    c.Unassign();
-                })
-                .Build())
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 int msgCnt = 0;
                 int errCnt = 0;
                 
                 consumer.Subscribe(singlePartitionTopic);
+
+                consumer.SetPartitionsAssignedHandler((c, tps) => {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
+                consumer.SetPartitionsRevokedHandler((c, _)
+                    => { c.Unassign(); });
 
                 while (true)
                 {
@@ -98,20 +98,20 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test value deserialization error behavior.
-            using (var consumer =
-                new ConsumerBuilder<string, Null>(consumerConfig)
-                    .SetPartitionsAssignedHandler((c, tps) => {
-                        Assert.Single(tps);
-                        Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                        c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                    .SetPartitionsRevokedHandler((c, _) => {
-                        c.Unassign();
-                    })
-                    .Build())
+            using (var consumer = new ConsumerBuilder<string, Null>(consumerConfig).Build())
             {
                 int msgCnt = 0;
                 int errCnt = 0;
+
+                consumer.SetPartitionsAssignedHandler((c, tps) => 
+                {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
+                consumer.SetPartitionsRevokedHandler((c, _)
+                    => { c.Unassign(); });
 
                 consumer.Subscribe(singlePartitionTopic);
 

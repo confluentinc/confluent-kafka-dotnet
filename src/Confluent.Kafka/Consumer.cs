@@ -35,6 +35,72 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : ConsumerBase, IConsumer<TKey, TValue>
     {
+        /// <summary>
+        ///     Set the partitions assiged handler.
+        /// 
+        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
+        ///     method (or another overload of this method) in this handler, or do not specify a partitions assigned handler,
+        ///     the consumer will be automatically assigned to the partition assignment set provided by the consumer group and
+        ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset,
+        ///     in accordance with the `auto.offset.reset` configuration property. This default behavior will not occur if
+        ///     you call Assign yourself in the handler. The set of partitions you assign to is not required to match the
+        ///     assignment provided by the consumer group, but typically will.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public void SetPartitionsAssignedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsAssignedHandler = null;
+                return;
+            }
+            base.partitionsAssignedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     Set the partitions revoked handler.
+        /// 
+        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Unassign" /> or 
+        ///     <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
+        ///     (or other overload) method in your handler, all partitions will be  automatically
+        ///     unassigned. This default behavior will not occur if you call Unassign (or Assign)
+        ///     yourself.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public void SetPartitionsRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsRevokedHandler = null;
+                return;
+            }
+            base.partitionsRevokedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     A handler that is called to report the result of (automatic) offset 
+        ///     commits. It is not called as a result of the use of the Commit method.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public void SetOffsetsCommittedHandler(Action<IConsumer<TKey, TValue>, CommittedOffsets> value)
+        {
+            if (value == null)
+            {
+                base.offsetsCommittedHandler = null;
+                return;
+            }
+            base.offsetsCommittedHandler = offsets => value(this, offsets);
+        }
+
+
         private IDeserializer<TKey> keyDeserializer;
         private IDeserializer<TValue> valueDeserializer;
         private IAsyncDeserializer<TKey> asyncKeyDeserializer;
@@ -198,6 +264,7 @@ namespace Confluent.Kafka
             => (keyDeserializer != null && valueDeserializer != null)
                 ? Consume<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
                 : Consume(timeout.TotalMillisecondsAsInt());
+
     }
 
 
@@ -205,7 +272,49 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer.
     /// </summary>
     public class Consumer : ConsumerBase, IConsumer
-    {        
+    {
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetPartitionsAssignedHandler(Action{IConsumer{TKey,TValue},List{TopicPartition}})" />.
+        /// </summary>
+        public void SetPartitionsAssignedHandler(Action<IConsumer, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsAssignedHandler = null;
+                return;
+            }
+            base.partitionsAssignedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetPartitionsRevokedHandler(Action{IConsumer{TKey,TValue},List{TopicPartition}})" />.
+        /// </summary>
+        public void SetPartitionsRevokedHandler(Action<IConsumer, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsRevokedHandler = null;
+                return;
+            }
+            base.partitionsRevokedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetOffsetsCommittedHandler(Action{IConsumer{TKey,TValue},CommittedOffsets})" />.
+        /// </summary>
+        public void SetOffsetsCommittedHandler(Action<IConsumer, CommittedOffsets> value)
+        {
+            if (value == null)
+            {
+                base.offsetsCommittedHandler = null;
+                return;
+            }
+            base.offsetsCommittedHandler = offsets => value(this, offsets);
+        }
+
+
         internal Consumer(ConsumerBuilder builder)
         {
             base.Initialize(builder.ConstructBaseConfig(this));

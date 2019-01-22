@@ -47,15 +47,15 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // no eof, non generic consumer case.
-            using (var consumer =
-                new ConsumerBuilder(consumerConfig)
-                    .SetPartitionsAssignedHandler((c, partitions) => {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                    .Build())
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
+                consumer.SetPartitionsAssignedHandler((c, partitions) =>
+                {
+                    Assert.Single(partitions);
+                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
                 consumer.Subscribe(singlePartitionTopic);
 
                 var cr1 = consumer.Consume();
@@ -71,15 +71,14 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // no eof, generic consumer case.
-            using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionsAssignedHandler((c, tps) => {
-                        Assert.Single(tps);
-                        Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                        c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                    .Build())
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
+                consumer.SetPartitionsAssignedHandler((c, tps) => {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
                 consumer.Subscribe(singlePartitionTopic);
 
                 var cr1 = consumer.Consume();
@@ -102,15 +101,14 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // eof, non-generic consumer case.
-            using (var consumer =
-                new ConsumerBuilder(consumerConfig)
-                    .SetPartitionsAssignedHandler((c, partitions) => {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                    .Build())
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
+                consumer.SetPartitionsAssignedHandler((c, partitions) => {
+                    Assert.Single(partitions);
+                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
                 consumer.Subscribe(singlePartitionTopic);
 
                 var cr1 = consumer.Consume();
@@ -129,15 +127,14 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // eof, generic consumer case.
-            using (var consumer =
-                new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionsAssignedHandler((c, tps) => {
-                        Assert.Single(tps);
-                        Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                        c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                    .Build())
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
+                consumer.SetPartitionsAssignedHandler((c, tps) => {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
                 consumer.Subscribe(singlePartitionTopic);
 
                 var cr1 = consumer.Consume();

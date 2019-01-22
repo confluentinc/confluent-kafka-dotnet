@@ -34,37 +34,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The config dictionary.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
 
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        public Action<Consumer, Error> ErrorHandler { get; set; }
+        internal protected Action<Consumer, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        public Action<Consumer, LogMessage> LogHandler { get; set; }
+        internal protected Action<Consumer, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        public Action<Consumer, string> StatisticsHandler { get; set; }
-
-        /// <summary>
-        ///     The configured partitions assigned handler.
-        /// </summary>
-        public Action<Consumer, List<TopicPartition>> PartitionsAssignedHandler { get; set; }
-
-        /// <summary>
-        ///     The configured partitions revoked handler.
-        /// </summary>
-        public Action<Consumer, List<TopicPartition>> PartitionsRevokedHandler { get; set; }
-
-        /// <summary>
-        ///     The configured offsets committed handler.
-        /// </summary>
-        public Action<Consumer, CommittedOffsets> OffsetsCommittedHandler { get; set; }
+        internal protected Action<Consumer, string> StatisticsHandler { get; set; }
 
 
         internal ConsumerBase.Config ConstructBaseConfig(Consumer consumer)
@@ -80,16 +65,7 @@ namespace Confluent.Kafka
                     : logMessage => this.LogHandler(consumer, logMessage),
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.StatisticsHandler(consumer, stats),
-                partitionsRevokedHandler = this.PartitionsRevokedHandler == null
-                    ? default(Action<List<TopicPartition>>)
-                    : partitions => this.PartitionsRevokedHandler(consumer, partitions),
-                partitionsAssignedHandler = this.PartitionsAssignedHandler == null
-                    ? default(Action<List<TopicPartition>>)
-                    : partitions => this.PartitionsAssignedHandler(consumer, partitions),
-                offsetsCommittedHandler = this.OffsetsCommittedHandler == null
-                    ? default(Action<CommittedOffsets>)
-                    : offsets => this.OffsetsCommittedHandler(consumer, offsets)
+                    : stats => this.StatisticsHandler(consumer, stats)
             };
         }
 
@@ -99,36 +75,6 @@ namespace Confluent.Kafka
         public ConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
             this.Config = config;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.SetOffsetsCommittedHandler(Action{Consumer{TKey,TValue}, CommittedOffsets})" />.
-        /// </summary>
-        public ConsumerBuilder SetOffsetsCommittedHandler(
-            Action<Consumer, CommittedOffsets> offsetsCommittedHandler)
-        {
-            this.OffsetsCommittedHandler = offsetsCommittedHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.SetPartitionsRevokedHandler(Action{Consumer{TKey,TValue}, List{TopicPartition}})" />.
-        /// </summary>
-        public ConsumerBuilder SetPartitionsRevokedHandler(
-            Action<Consumer, List<TopicPartition>> partitionsRevokedHandler)
-        {
-            this.PartitionsRevokedHandler = partitionsRevokedHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.SetPartitionsAssignedHandler(Action{Consumer{TKey,TValue}, List{TopicPartition}})" />.
-        /// </summary>
-        public ConsumerBuilder SetPartitionsAssignedHandler(
-            Action<Consumer, List<TopicPartition>> partitionsAssignedHandler)
-        {
-            this.PartitionsAssignedHandler = partitionsAssignedHandler;
-            return this;
         }
 
         /// <summary>
@@ -176,58 +122,42 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The config dictionary.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
 
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        public Action<Consumer<TKey, TValue>, Error> ErrorHandler { get; set; }
+        internal protected Action<Consumer<TKey, TValue>, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        public Action<Consumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+        internal protected Action<Consumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        public Action<Consumer<TKey, TValue>, string> StatisticsHandler { get; set; }
-
-        /// <summary>
-        ///     The configured partitions assigned handler.
-        /// </summary>
-        public Action<Consumer<TKey, TValue>, List<TopicPartition>> PartitionsAssignedHandler { get; set; }
-
-        /// <summary>
-        ///     The configured partitions revoked handler.
-        /// </summary>
-        public Action<Consumer<TKey, TValue>, List<TopicPartition>> PartitionsRevokedHandler { get; set; }
-
-        /// <summary>
-        ///     The configured offsets committed handler.
-        /// </summary>
-        public Action<Consumer<TKey, TValue>, CommittedOffsets> OffsetsCommittedHandler { get; set; }
-
+        internal protected Action<Consumer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     The configured key deserializer.
         /// </summary>
-        public IDeserializer<TKey> KeyDeserializer { get; set; }
+        internal protected IDeserializer<TKey> KeyDeserializer { get; set; }
 
         /// <summary>
         ///     The configured value deserializer.
         /// </summary>
-        public IDeserializer<TValue> ValueDeserializer { get; set; }
+        internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
 
         /// <summary>
         ///     The configured async key deserializer.
         /// </summary>
-        public IAsyncDeserializer<TKey> AsyncKeyDeserializer { get; set; }
+        internal protected IAsyncDeserializer<TKey> AsyncKeyDeserializer { get; set; }
 
         /// <summary>
         ///     The configured async value deserializer.
         /// </summary>
-        public IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
+        internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
         internal ConsumerBase.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
         {
@@ -242,16 +172,7 @@ namespace Confluent.Kafka
                     : logMessage => this.LogHandler(consumer, logMessage),
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.StatisticsHandler(consumer, stats),
-                partitionsRevokedHandler = this.PartitionsRevokedHandler == null
-                    ? default(Action<List<TopicPartition>>)
-                    : partitions => this.PartitionsRevokedHandler(consumer, partitions),
-                partitionsAssignedHandler = this.PartitionsAssignedHandler == null
-                    ? default(Action<List<TopicPartition>>)
-                    : partitions => this.PartitionsAssignedHandler(consumer, partitions),
-                offsetsCommittedHandler = this.OffsetsCommittedHandler == null
-                    ? default(Action<CommittedOffsets>)
-                    : offsets => this.OffsetsCommittedHandler(consumer, offsets)
+                    : stats => this.StatisticsHandler(consumer, stats)
             };
         }
 
@@ -269,63 +190,6 @@ namespace Confluent.Kafka
         public ConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config)
         {
             this.Config = config;
-        }
-
-        /// <summary>
-        ///     A handler that is called to report the result of (automatic) offset 
-        ///     commits. It is not called as a result of the use of the Commit method.
-        /// </summary>
-        /// <remarks>
-        ///     <paramref name="offsetsCommittedHandler" /> executes as a side-effect of
-        ///     the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetOffsetsCommittedHandler(
-            Action<Consumer<TKey, TValue>, CommittedOffsets> offsetsCommittedHandler)
-        {
-            this.OffsetsCommittedHandler = offsetsCommittedHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the partitions revoked handler.
-        /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Unassign" /> or 
-        ///     <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
-        ///     (or other overload) method in your handler, all partitions will be  automatically
-        ///     unassigned. This default behavior will not occur if you call Unassign (or Assign)
-        ///     yourself.
-        /// </summary>
-        /// <remarks>
-        ///     <paramref name="partitionsRevokedHandler" /> executes as a side-effect of
-        ///     the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
-            Action<Consumer<TKey,TValue>, List<TopicPartition>> partitionsRevokedHandler)
-        {
-            this.PartitionsRevokedHandler = partitionsRevokedHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the partitions assiged handler.
-        /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
-        ///     method (or another overload of this method) in this handler, or do not specify a partitions assigned handler,
-        ///     the consumer will be automatically assigned to the partition assignment set provided by the consumer group and
-        ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset,
-        ///     in accordance with the `auto.offset.reset` configuration property. This default behavior will not occur if
-        ///     you call Assign yourself in the handler. The set of partitions you assign to is not required to match the
-        ///     assignment provided by the consumer group, but typically will.
-        /// </summary>
-        /// <remarks>
-        ///     <paramref name="partitionsAssignedHandler" /> executes as a side-effect of
-        ///     the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
-            Action<Consumer<TKey, TValue>, List<TopicPartition>> partitionsAssignedHandler)
-        {
-            this.PartitionsAssignedHandler = partitionsAssignedHandler;
-            return this;
         }
 
         /// <summary>

@@ -49,15 +49,14 @@ namespace Confluent.Kafka.IntegrationTests
             IEnumerable<TopicPartition> assignedPartitions = null;
 
             using (var producer = new ProducerBuilder(producerConfig).Build())
-            using (var consumer =
-                new ConsumerBuilder(consumerConfig)
-                    .SetPartitionsAssignedHandler((c, partitions) => {
-                        c.Assign(partitions);
-                        assignedPartitions = partitions;
-                    })
-                    .Build())
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 ConsumeResult record;
+
+                consumer.SetPartitionsAssignedHandler((c, partitions) => {
+                    c.Assign(partitions);
+                    assignedPartitions = partitions;
+                });
 
                 consumer.Subscribe(singlePartitionTopic);
 

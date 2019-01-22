@@ -28,12 +28,12 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic DeserializingConsumer test (consume mode).
+        ///     Basic test of OffsetsCommittedHandler.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Consume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_OffsetsCommittedHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            LogToFile("start Consumer_Consume");
+            LogToFile("start Consumer_OffsetsCommittedHandler");
 
             int N = 2;
             var firstProduced = Util.ProduceNullStringMessages(bootstrapServers, singlePartitionTopic, 100, N);
@@ -43,39 +43,43 @@ namespace Confluent.Kafka.IntegrationTests
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
                 SessionTimeoutMs = 6000,
-                EnablePartitionEof = true
+                EnableAutoCommit = true,
+                AutoCommitIntervalMs = 2000,
+                AutoOffsetReset = AutoOffsetReset.Earliest,
             };
 
             using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
-                consumer.SetPartitionsAssignedHandler((_, partitions) =>
+                var committedCount = 0;
+                consumer.SetOffsetsCommittedHandler((_, o) =>
                 {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                    Assert.Equal(ErrorCode.NoError, o.Error.Code);
+                    Assert.Single(o.Offsets);
+                    Assert.Equal(0, o.Offsets[0].Partition.Value);
+                    Assert.Equal(singlePartitionTopic, o.Offsets[0].Topic);
+                    Assert.Equal(new TopicPartition(singlePartitionTopic, 0), o.Offsets[0].TopicPartition);
+                    Assert.Equal(new TopicPartition(singlePartitionTopic, 0), o.Offsets[0].TopicPartitionOffset.TopicPartition);
+                    Assert.True(o.Offsets[0].Offset >= 0);
+                    committedCount += 1;
                 });
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                int msgCnt = 0;
-                while (true)
+                var startTime = DateTime.MinValue;
+                while (startTime == DateTime.MinValue || DateTime.Now - startTime < TimeSpan.FromSeconds(6))
                 {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                    if (record == null) { continue; }
-                    if (record.IsPartitionEOF) { break; }
-
-                    Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                    Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 10.0);
-                    msgCnt += 1;
+                    var cr = consumer.Consume(TimeSpan.FromMilliseconds(100));
+                    if (cr == null) { continue; }
+                    if (startTime == DateTime.MinValue) { startTime = DateTime.Now; }
                 }
 
-                Assert.Equal(msgCnt, N);
+                Assert.True(committedCount > 0);
 
                 consumer.Close();
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_Consume");
+            LogToFile("end   Consumer_OffsetsCommittedHandler");
         }
 
     }
