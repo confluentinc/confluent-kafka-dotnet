@@ -20,7 +20,94 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a successful produce request.
     /// </summary>
-    public class DeliveryResult : DeliveryResult<byte[], byte[]> { }
+    public class DeliveryResult
+    {
+        /// <summary>
+        ///     The topic associated with the message.
+        /// </summary>
+        public string Topic { get; set; }
+
+        /// <summary>
+        ///     The partition associated with the message.
+        /// </summary>
+        public Partition Partition { get; set; }
+
+        /// <summary>
+        ///     The partition offset associated with the message.
+        /// </summary>
+        public Offset Offset { get; set; }
+
+        /// <summary>
+        ///     The TopicPartition associated with the message.
+        /// </summary>
+        public TopicPartition TopicPartition
+            => new TopicPartition(Topic, Partition);
+
+
+        /// <summary>
+        ///     The TopicPartitionOffset assoicated with the message.
+        /// </summary>
+        public TopicPartitionOffset TopicPartitionOffset
+        {
+            get
+            {
+                return new TopicPartitionOffset(Topic, Partition, Offset);
+            }
+            set
+            {
+                Topic = value.Topic;
+                Partition = value.Partition;
+                Offset = value.Offset;
+            }
+        }
+
+        /// <summary>
+        ///     The persistence status of the message
+        /// </summary>
+        public PersistenceStatus PersistenceStatus { get; set; }
+        
+        /// <summary>
+        ///     The Kafka message.
+        /// </summary>
+        public Message Message { get; set; }
+
+        /// <summary>
+        ///     The Kafka message Key.
+        /// </summary>
+        public byte[] Key
+        {
+            get { return Message.Key; }
+            set { Message.Key = value; }
+        }
+
+        /// <summary>
+        ///     The Kafka message Value.
+        /// </summary>
+        public byte[] Value
+        {
+            get { return Message.Value; }
+            set { Message.Value = value; }
+        }
+
+        /// <summary>
+        ///     The Kafka message timestamp.
+        /// </summary>
+        public Timestamp Timestamp
+        {
+            get { return Message.Timestamp; }
+            set { Message.Timestamp = value; }
+        }
+
+        /// <summary>
+        ///     The Kafka message headers.
+        /// </summary>
+        public Headers Headers
+        {
+            get { return Message.Headers; }
+            set { Message.Headers = value; }
+        }
+    }
+
 
     /// <summary>
     ///     Encapsulates the result of a successful produce request.

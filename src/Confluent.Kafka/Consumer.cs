@@ -314,7 +314,7 @@ namespace Confluent.Kafka
                 return new ConsumeResult
                 {
                     TopicPartitionOffset = result.TopicPartitionOffset,
-                    Message = result.Message,
+                    Message = result.Message == null ? null : new Message(result.Message),
                     IsPartitionEOF = result.IsPartitionEOF
                 };
             }
@@ -342,7 +342,7 @@ namespace Confluent.Kafka
             return new ConsumeResult
             {
                 TopicPartitionOffset = result.TopicPartitionOffset,
-                Message = result.Message,
+                Message = result.Message == null ? null : new Message(result.Message),
                 IsPartitionEOF = result.IsPartitionEOF
             };
         }

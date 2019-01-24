@@ -23,6 +23,24 @@ namespace Confluent.Kafka
     public class MessageMetadata
     {
         /// <summary>
+        ///     Create a new MessageMetadata instance with default values.
+        /// </summary>
+        public MessageMetadata() {}
+
+        /// <summary>
+        ///     Create a new MessageMetadata instance that is a copy
+        ///     of <paramref name="messageMetadata" />.
+        /// </summary>
+        /// <param name="messageMetadata">
+        ///     The MessageMetadata instance to create a copy of.
+        /// </param>
+        public MessageMetadata(MessageMetadata messageMetadata)
+        {
+            Timestamp = messageMetadata.Timestamp;
+            Headers = messageMetadata.Headers;
+        }
+
+        /// <summary>
         ///     The message timestamp. The timestamp type must be set to CreateTime. 
         ///     Specify Timestamp.Default to set the message timestamp to the time
         ///     of this function call.
