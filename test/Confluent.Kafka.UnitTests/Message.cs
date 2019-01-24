@@ -39,7 +39,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(testValue, copy.Value);
             Assert.Equal(testKey, copy.Key);
             Assert.Equal(testTimestamp, copy.Timestamp);
-            Assert.Equal(testHeaders, copy.Headers);
+            Assert.Single(copy.Headers);
         }
     }
 }
