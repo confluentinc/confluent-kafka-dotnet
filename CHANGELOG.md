@@ -11,9 +11,14 @@
   - There are two types of serializer and deserializer: `ISerializer<T>` / `IAsyncSerializer<T>` and `IDeserializer<T>` / `IAsyncDeserializer<T>`.
     - `ISerializer<T>`/`IDeserializer<T>` are appropriate for most use cases.
     - `IAsyncSerializer<T>`/`IAsyncDeserializer<T>` are more general, but less performant (they return `Task`s).
-    - The generic producer and consumer can be used with both types of serializer.
   - Changed the name of `Confluent.Kafka.Avro` to `Confluent.SchemaRegistry.Serdes` (Schema Registry may support other serialization formats in the future).
   - Added a example demonstrating working with protobuf serialized data.
+- All `event`s on the client classes have been replaced with corresponding `Set...Handler` methods.
+  - One problem this fixes is that `event`s allow for more flexible usage than is ideal (e.g. registering more than one handler for `OnPartitionsAssigned`).
+  - Another is that events don't allow for good behavior for async methods.
+- `Consumer`s, `Producer`s and `AdminClient`s are now constructed using builder classes.
+  - Importantly, error, log and statistics callbacks can now be (must be) specified prior to creating the librdkafka client.
+  - It also allows for a more flexible and future proof API for specifying serdes and other configuration information.
 - Avro serdes no longer make blocking calls to `ICachedSchemaRegistryClient` - everything is `await`ed.
 - References librdkafka.redist [1.0.0-RC5](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC5)
   - Note: End of partition notification is now disabled by default (enable using the `EnablePartitionEof` config property).
