@@ -700,54 +700,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Commits an offset based on the topic/partition/offset of a ConsumeResult.
-        /// </summary>
-        /// <param name="result">
-        ///     The ConsumeResult instance used to determine the committed offset.
-        /// </param>
-        /// <remarks>
-        ///     A consumer which has position N has consumed messages with offsets up to N-1 
-        ///     and will next receive the message with offset N. Hence, this method commits an 
-        ///     offset of <paramref name="result" />.Offset + 1.
-        /// </remarks>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to cancel this operation
-        ///     (currently ignored).
-        /// </param>
-        /// <exception cref="Confluent.Kafka.KafkaException">
-        ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if the result is in error.
-        /// </exception>
-        public TopicPartitionOffset Commit<TKey, TValue>(
-            ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (result.Message == null)
-            {
-                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
-            }
-
-            return kafkaHandle.Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) })[0];
-        }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.Commit{TKey, TValue}(ConsumeResult{TKey, TValue}, CancellationToken)" />
-        /// </summary>
-        public TopicPartitionOffset Commit(
-            ConsumeResult result, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (result.Message == null)
-            {
-                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
-            }
-
-            return kafkaHandle.Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) })[0];
-        }
-
-
-        /// <summary>
         ///     Commit an explicit list of offsets.
         /// </summary>
         /// <param name="offsets">

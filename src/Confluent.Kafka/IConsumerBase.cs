@@ -119,18 +119,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.Commit{TKey, TValue}(ConsumeResult{TKey, TValue}, CancellationToken)" />
-        /// </summary>
-        TopicPartitionOffset Commit<TKey, TValue>(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken));
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.Commit(ConsumeResult, CancellationToken)" />
-        /// </summary>
-        TopicPartitionOffset Commit(ConsumeResult result, CancellationToken cancellationToken = default(CancellationToken));
-
-
-        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.Commit(IEnumerable{TopicPartitionOffset}, CancellationToken)" />
         /// </summary>
         void Commit(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken));

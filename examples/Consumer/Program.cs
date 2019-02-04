@@ -110,8 +110,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                             // consuming messages. A high performance application will typically
                             // commit offsets relatively infrequently and be designed handle
                             // duplicate messages in the event of failure.
-                            var committedOffsets = consumer.Commit(consumeResult);
-                            Console.WriteLine($"Committed offset: {committedOffsets}");
+                            consumer.Commit(consumeResult);
                         }
                     }
                     catch (ConsumeException e)

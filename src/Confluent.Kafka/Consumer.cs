@@ -265,6 +265,37 @@ namespace Confluent.Kafka
                 ? Consume<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
                 : Consume(timeout.TotalMillisecondsAsInt());
 
+
+        /// <summary>
+        ///     Commits an offset based on the topic/partition/offset of a ConsumeResult.
+        /// </summary>
+        /// <param name="result">
+        ///     The ConsumeResult instance used to determine the committed offset.
+        /// </param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used to cancel this operation
+        ///     (currently ignored).
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
+        ///     Thrown if the result is in error.
+        /// </exception>
+        /// <remarks>
+        ///     A consumer which has position N has consumed messages with offsets up to N-1 
+        ///     and will next receive the message with offset N. Hence, this method commits an 
+        ///     offset of <paramref name="result" />.Offset + 1.
+        /// </remarks>
+        public void Commit(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (result.Message == null)
+            {
+                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
+            }
+
+            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
+        }
     }
 
 
@@ -320,6 +351,7 @@ namespace Confluent.Kafka
             base.Initialize(builder.ConstructBaseConfig(this));
         }
 
+
         /// <summary>
         ///     Poll for new messages / events. Blocks until a consume result
         ///     is available or the operation has been cancelled.
@@ -353,6 +385,7 @@ namespace Confluent.Kafka
             }
         }
 
+
         /// <summary>
         ///     Poll for new messages / events. Blocks until a consume result
         ///     is available or the timeout period has elapsed.
@@ -379,5 +412,20 @@ namespace Confluent.Kafka
                 IsPartitionEOF = result.IsPartitionEOF
             };
         }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Commit(ConsumeResult{TKey, TValue}, CancellationToken)" />
+        /// </summary>
+        public void Commit(ConsumeResult result, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (result.Message == null)
+            {
+                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
+            }
+
+            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
+        }
+
     }
 }

@@ -53,6 +53,11 @@ namespace Confluent.Kafka
         /// </summary>
         ConsumeResult Consume(TimeSpan timeout);
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer.Commit(ConsumeResult, CancellationToken)" />
+        /// </summary>
+        void Commit(ConsumeResult result, CancellationToken cancellationToken = default(CancellationToken));
     }
 
 
@@ -87,5 +92,11 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(TimeSpan)" />
         /// </summary>
         ConsumeResult<TKey, TValue> Consume(TimeSpan timeout);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Commit(ConsumeResult{TKey, TValue}, CancellationToken)" />
+        /// </summary>
+        void Commit(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken));
     }
 }
