@@ -42,18 +42,18 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            DeliveryResult dr;
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            DeliveryResult<byte[], byte[]> dr;
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 // Assume that all these produce calls succeed.
-                dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message { Key = null, Value = null }).Result;
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message { Key = null, Value = new byte[0] {} }).Wait();
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message { Key = new byte[0] {}, Value = null }).Wait();
-                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message { Key = new byte[0] {}, Value = new byte[0] {} }).Wait();
+                dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = new byte[0] {} }).Wait();
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = null }).Wait();
+                producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = new byte[0] {}, Value = new byte[0] {} }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 

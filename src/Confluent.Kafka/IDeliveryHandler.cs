@@ -35,6 +35,6 @@ namespace Confluent.Kafka
         /// <param name="deliveryReport">
         ///     The delivery report.
         /// </param>
-        void HandleDeliveryReport(DeliveryReport deliveryReport);
+        void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport);
     }
 }

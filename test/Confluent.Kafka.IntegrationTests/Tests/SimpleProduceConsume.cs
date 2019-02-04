@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);
             }
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 ConsumeMessage(consumer, produceResult1, testString1);
                 ConsumeMessage(consumer, produceResult2, testString2);
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   SimpleProduceConsume");
         }
 
-        private static void ConsumeMessage(Consumer consumer, DeliveryResult<Null, string> dr, string testString)
+        private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryResult<Null, string> dr, string testString)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
             var r = consumer.Consume(TimeSpan.FromSeconds(10));

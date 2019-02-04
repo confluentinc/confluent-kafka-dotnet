@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
                 EnablePartitionEof = true
             };
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.SetPartitionsAssignedHandler((_, partitions) =>
                 {

@@ -74,12 +74,12 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte[] case
 
-            Task<DeliveryResult> drt2;
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            Task<DeliveryResult<byte[], byte[]>> drt2;
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 drt2 = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
-                    new Message { Key = new byte[] { 100 }, Value = new byte[] { 101 } });
+                    new Message<byte[], byte[]> { Key = new byte[] { 100 }, Value = new byte[] { 101 } });
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
@@ -92,9 +92,9 @@ namespace Confluent.Kafka.IntegrationTests
             catch (AggregateException e)
             {
                 var inner = e.InnerException;
-                Assert.IsType<ProduceException>(inner);
-                var dr = ((ProduceException)inner).DeliveryReport;
-                var err = ((ProduceException)inner).Error;
+                Assert.IsType<ProduceException<byte[], byte[]>>(inner);
+                var dr = ((ProduceException<byte[], byte[]>)inner).DeliveryResult;
+                var err = ((ProduceException<byte[], byte[]>)inner).Error;
                 
                 Assert.True(err.IsError);
                 Assert.False(err.IsFatal);

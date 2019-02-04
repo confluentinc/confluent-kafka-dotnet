@@ -46,15 +46,15 @@ namespace Confluent.Kafka.UnitTests
                 SslCaLocation = "invalid"
             };
 
-            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder(cConfig).Build());
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder<byte[], byte[]>(cConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
             // note: if this test fails, it may be because another error is thrown
             // in a new librdkafka version, adapt test in this case
 
-            e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder(cConfig).Build());
+            e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder<byte[], byte[]>(cConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
 
-            e = Assert.Throws<InvalidOperationException>(() => new ProducerBuilder(pConfig).Build());
+            e = Assert.Throws<InvalidOperationException>(() => new ProducerBuilder<byte[], byte[]>(pConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
         }
     }

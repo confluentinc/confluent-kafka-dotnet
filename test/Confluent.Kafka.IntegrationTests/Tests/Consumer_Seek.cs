@@ -45,16 +45,16 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {
                 const string checkValue = "check value";
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize(checkValue, true, null, null) }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("second value", true, null, null) }).Result;
-                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("third value", true, null, null) }).Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(checkValue, true, null, null) }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("second value", true, null, null) }).Result;
+                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("third value", true, null, null) }).Result;
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 

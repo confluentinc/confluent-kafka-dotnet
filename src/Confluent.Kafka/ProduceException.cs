@@ -45,32 +45,4 @@ namespace Confluent.Kafka
         /// </summary>
         public DeliveryResult<TKey, TValue> DeliveryResult { get; }
     }
-
-
-    /// <summary>
-    ///     Represents an error that occured whilst producing a message.
-    /// </summary>
-    public class ProduceException : KafkaException
-    {
-        /// <summary>
-        ///     Initialize a new instance of ProduceException based on 
-        ///     an existing Error value.
-        /// </summary>
-        /// <param name="error"> 
-        ///     The error associated with the delivery report.
-        /// </param>
-        /// <param name="deliveryReport">
-        ///     The delivery report associated with the produce request.
-        /// </param>
-        public ProduceException(Error error, DeliveryResult deliveryReport)
-            : base(error)
-        {
-            DeliveryReport = deliveryReport;
-        }
-
-        /// <summary>
-        ///     The delivery report associated with the produce request.
-        /// </summary>
-        public DeliveryResult DeliveryReport { get; }
-    }
 }

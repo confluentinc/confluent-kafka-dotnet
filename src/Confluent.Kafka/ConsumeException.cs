@@ -36,7 +36,7 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     The error that occured.
         /// </param>
-        public ConsumeException(ConsumeResult consumerRecord, Error error)
+        public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error)
             : base(error)
         {
             ConsumerRecord = consumerRecord;
@@ -46,6 +46,6 @@ namespace Confluent.Kafka
         ///     An object that provides information known about the consumer
         ///     record for which the error occured.
         /// </summary>
-        public ConsumeResult ConsumerRecord { get; private set; }
+        public ConsumeResult<byte[], byte[]> ConsumerRecord { get; private set; }
     }
 }

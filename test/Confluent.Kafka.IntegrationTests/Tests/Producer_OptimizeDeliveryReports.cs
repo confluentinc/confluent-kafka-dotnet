@@ -66,11 +66,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte[] case. 
 
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic, 
-                    new Message
+                    new Message<byte[], byte[]>
                     { 
                         Key = TestKey, 
                         Value = TestValue, 

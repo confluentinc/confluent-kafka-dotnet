@@ -128,7 +128,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("123", cr.Value);
             }
 
-            using (var c = new ConsumerBuilder(consumerConfig).Build())
+            using (var c = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 c.Assign(dr.TopicPartitionOffset);
                 var cr = c.Consume(TimeSpan.FromSeconds(10));

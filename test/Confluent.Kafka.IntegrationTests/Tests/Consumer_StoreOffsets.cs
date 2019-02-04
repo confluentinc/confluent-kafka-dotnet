@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             IEnumerable<TopicPartition> assignedPartitions = null;
 
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 ConsumeResult<Null, string> record;
@@ -68,7 +68,7 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
-                producer.ProduceAsync(topic, new Message { Value = Serializers.Utf8.Serialize("test store offset value", true, null, null) }).Wait();
+                producer.ProduceAsync(topic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test store offset value", true, null, null) }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 

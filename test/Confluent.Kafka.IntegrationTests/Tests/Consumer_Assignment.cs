@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // Test in which both receive and revoke events are specified.
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.SetPartitionsAssignedHandler((_, partitions) =>
                 {
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which only the revoked event handler is specified.
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.SetPartitionsRevokedHandler((c, partitions) =>
                 {
@@ -99,7 +99,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which only the receive event handler is specified.
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.SetPartitionsAssignedHandler((c, partitions) =>
                 {
@@ -125,7 +125,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // test in which neither the receive or revoke handler is specified.
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
 

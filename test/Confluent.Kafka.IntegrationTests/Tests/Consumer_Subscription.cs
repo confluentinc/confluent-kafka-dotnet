@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 // Test empty case.
                 Assert.Empty(consumer.Subscription);

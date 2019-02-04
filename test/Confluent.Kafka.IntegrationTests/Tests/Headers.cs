@@ -165,7 +165,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(drs_2[3].Message.Headers);
             }
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_single.TopicPartitionOffset});
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -282,7 +282,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // null key
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var headers = new Headers();
                 var threw = false;
@@ -314,7 +314,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(nulldr.Headers);
                 Assert.Null(nulldr.Headers[0].Value);
             }
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, nulldr.Offset));
                 var cr = consumer.Consume(TimeSpan.FromSeconds(10));

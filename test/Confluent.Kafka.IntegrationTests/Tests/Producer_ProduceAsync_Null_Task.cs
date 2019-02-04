@@ -67,11 +67,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte[] case
         
-            var drs2 = new List<Task<DeliveryResult>>();
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            var drs2 = new List<Task<DeliveryResult<byte[], byte[]>>>();
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                drs2.Add(producer.ProduceAsync(new TopicPartition(partitionedTopic, 1), new Message {}));
-                drs2.Add(producer.ProduceAsync(partitionedTopic, new Message {}));
+                drs2.Add(producer.ProduceAsync(new TopicPartition(partitionedTopic, 1), new Message<byte[], byte[]> {}));
+                drs2.Add(producer.ProduceAsync(partitionedTopic, new Message<byte[], byte[]> {}));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 

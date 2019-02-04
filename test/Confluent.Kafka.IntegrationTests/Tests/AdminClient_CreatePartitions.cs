@@ -46,18 +46,18 @@ namespace Confluent.Kafka.IntegrationTests
             var topicName6 = Guid.NewGuid().ToString();
 
             // test creating a new partition works.
-            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName1, IncreaseTo = 2 } }).Wait();
 
-                var dr1 = producer.ProduceAsync(new TopicPartition(topicName1, 0), new Message()).Result;
-                var dr2 = producer.ProduceAsync(new TopicPartition(topicName1, 1), new Message()).Result;
+                var dr1 = producer.ProduceAsync(new TopicPartition(topicName1, 0), new Message<Null, Null>()).Result;
+                var dr2 = producer.ProduceAsync(new TopicPartition(topicName1, 1), new Message<Null, Null>()).Result;
                 
                 try
                 {
-                    producer.ProduceAsync(new TopicPartition(topicName1, 2), new Message()).Wait();
+                    producer.ProduceAsync(new TopicPartition(topicName1, 2), new Message<Null, Null>()).Wait();
                     Assert.True(false, "expecting exception");
                 }
                 catch (KafkaException ex)
@@ -67,18 +67,18 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // check validate only works.
-            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName2, IncreaseTo = 10 } }, new CreatePartitionsOptions { ValidateOnly = true }).Wait();
 
                 // forces a metadata request.
-                var dr1 = producer.ProduceAsync(new TopicPartition(topicName2, 0), new Message()).Result;
+                var dr1 = producer.ProduceAsync(new TopicPartition(topicName2, 0), new Message<Null, Null>()).Result;
                 try
                 {
                     // since we have metadata, this throws immediately (i.e. not wrapped in AggregateException)
-                    var dr2 = producer.ProduceAsync(new TopicPartition(topicName2, 1), new Message()).Result;
+                    var dr2 = producer.ProduceAsync(new TopicPartition(topicName2, 1), new Message<Null, Null>()).Result;
                     Assert.True(false, "expecting exception");
                 }
                 catch (KafkaException ex)
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // check valid Assignments property value works.
-            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
@@ -102,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             // check invalid Assignments property value works.
-            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new AdminClient(producer.Handle))
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();

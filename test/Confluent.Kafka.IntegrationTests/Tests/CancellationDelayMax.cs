@@ -61,8 +61,8 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 3))
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var adminClient = new AdminClientBuilder(adminClientConfig).Build())
             {
                 consumer.Subscribe(topic.Name);
@@ -89,7 +89,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
 
                 // for the producer, make do with just a simple check that this does not throw or hang.
-                var dr = producer.ProduceAsync(topic.Name, new Message { Key = new byte[] { 42 }, Value = new byte[] { 255 } }).Result;
+                var dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 255 } }).Result;
                 
                 // for the admin client, make do with just simple check that this does not throw or hang.
                 var cr = new Confluent.Kafka.Admin.ConfigResource { Type = ResourceType.Topic, Name = topic.Name };
