@@ -60,9 +60,6 @@ namespace Confluent.Kafka
             { typeof(byte[]), Deserializers.ByteArray }
         };
 
-        /// <summary>
-        ///     value of the dotnet.cancellation.delay.max.ms configuration parameter.
-        /// </summary>
         private int cancellationDelayMaxMs;
 
         private bool disposeHasBeenCalled = false;
@@ -110,14 +107,7 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        /// <summary>
-        ///     partitionsAssignedHandler.
-        /// </summary>
         private Action<List<TopicPartition>> partitionsAssignedHandler;
-
-        /// <summary>
-        ///     partitionsRevokedHandler.
-        /// </summary>
         private Action<List<TopicPartition>> partitionsRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
@@ -177,9 +167,6 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <summary>
-        ///     offsetsCommittedHandler.
-        /// </summary>
         private Action<CommittedOffsets> offsetsCommittedHandler;
         private Librdkafka.CommitDelegate commitDelegate;
         private void CommitCallback(
