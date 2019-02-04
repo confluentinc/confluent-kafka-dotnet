@@ -33,7 +33,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer with
     ///     deserialization capability.
     /// </summary>
-    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>
+    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IClient
     {
         internal class Config
         {
