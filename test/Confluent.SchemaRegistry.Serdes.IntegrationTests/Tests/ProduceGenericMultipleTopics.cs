@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
+using Confluent.Kafka.Serdes;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using Avro;
@@ -42,8 +43,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             DeliveryResult<Null, GenericRecord> dr2;
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new Producer<Null, GenericRecord>(
-                config, Serializers.Null, new AvroSerializer<GenericRecord>(schemaRegistry)))
+            using (var p =
+                new ProducerBuilder<Null, GenericRecord>(config)
+                    .SetKeySerializer(Serializers.Null)
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .Build())
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");

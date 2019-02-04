@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
+using Confluent.Kafka.Serdes;
 using Google.Protobuf;
 using System;
 using System.Threading;
@@ -68,7 +69,10 @@ namespace Confluent.Kafka.Examples.Protobuf
             var consumeTask = Task.Run(() =>
             {
                 // consume a single message then exit.
-                using (var consumer = new Consumer<int, User>(consumerConfig, Deserializers.Int32, new ProtobufDeserializer<User>()))
+                using (var consumer =
+                    new ConsumerBuilder<int, User>(consumerConfig)
+                        .SetValueDeserializer(new ProtobufDeserializer<User>())
+                        .Build())
                 {
                     consumer.Subscribe("protobuf-test-topic");
                     var cr = consumer.Consume();
@@ -81,7 +85,10 @@ namespace Confluent.Kafka.Examples.Protobuf
 
             var producerConfig = new ProducerConfig { BootstrapServers = args[0] };
 
-            using (var producer = new Producer<int, User>(producerConfig, Serializers.Int32, new ProtobufSerializer<User>()))
+            using (var producer =
+                new ProducerBuilder<int, User>(producerConfig)
+                    .SetValueSerializer(new ProtobufSerializer<User>())
+                    .Build())
             {
                 await producer.ProduceAsync("protobuf-test-topic", new Message<int, User> { Key = 0, Value = new User { FavoriteColor = "green" } });
             }

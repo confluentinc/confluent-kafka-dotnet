@@ -462,16 +462,21 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new AdminClient instance.
         /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />). Only
-        ///     the bootstrap.servers property is required.
+        /// <param name="handle">
+        ///     An underlying librdkafka client handle that the AdminClient will use to 
+        ///     make broker requests. It is valid to provide either a Consumer, Producer
+        ///     or AdminClient handle.
         /// </param>
-        public AdminClient(IEnumerable<KeyValuePair<string, string>> config)
+        public AdminClient(Handle handle)
+        {                            
+            this.ownedClient = null;
+            this.handle = handle;
+            Init();
+        }
+
+        internal AdminClient(AdminClientBuilder builder)
         {
-            config = Config.GetCancellationDelayMaxMs(config, out this.cancellationDelayMaxMs);
+            var config = Config.ExtractCancellationDelayMaxMs(builder.Config, out this.cancellationDelayMaxMs);
 
             if (config.Where(prop => prop.Key.StartsWith("dotnet.producer.")).Count() > 0 ||
                 config.Where(prop => prop.Key.StartsWith("dotnet.consumer.")).Count() > 0)
@@ -479,28 +484,19 @@ namespace Confluent.Kafka
                 throw new ArgumentException("AdminClient configuration must not include producer or consumer specific configuration properties.");
             }
 
-            this.ownedClient = new Producer(new ProducerConfig(config));
+            // build a producer instance to use as the underlying client.
+            var producerBuilder = new ProducerBuilder(config);
+            if (builder.LogHandler != null) { producerBuilder.SetLogHandler((_, logMessage) => builder.LogHandler(this, logMessage)); }
+            if (builder.ErrorHandler != null) { producerBuilder.SetErrorHandler((_, error) => builder.ErrorHandler(this, error)); }
+            if (builder.StatisticsHandler != null) { producerBuilder.SetStatisticsHandler((_, stats) => builder.StatisticsHandler(this, stats)); }
+            this.ownedClient = producerBuilder.Build();
+            
             this.handle = new Handle
             { 
                 Owner = this,
                 LibrdkafkaHandle = ownedClient.Handle.LibrdkafkaHandle
             };
 
-            Init();
-        }
-
-
-        /// <summary>
-        ///     Initialize a new AdminClient instance.
-        /// </summary>
-        /// <param name="handle">
-        ///     An underlying librdkafka client handle to use to make broker requests.
-        ///     It is valid to provide either a Consumer or Producer handle.
-        /// </param>
-        public AdminClient(Handle handle)
-        {
-            this.ownedClient = null;
-            this.handle = handle;
             Init();
         }
 
@@ -609,33 +605,6 @@ namespace Confluent.Kafka
         public Metadata GetMetadata(string topic, TimeSpan timeout)
             => kafkaHandle.GetMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
 
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnLog" />.
-        /// </summary>
-        public event EventHandler<LogMessage> OnLog
-        {
-            add { handle.Owner.OnLog += value; }
-            remove { handle.Owner.OnLog -= value; }
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnStatistics" />.
-        /// </summary>
-        public event EventHandler<string> OnStatistics
-        {
-            add { handle.Owner.OnStatistics += value; }
-            remove { handle.Owner.OnStatistics -= value; }
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OnError" />.
-        /// </summary>
-        public event EventHandler<Error> OnError
-        {
-            add { handle.Owner.OnError += value; }
-            remove { handle.Owner.OnError -= value; }
-        }
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />

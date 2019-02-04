@@ -14,12 +14,13 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Collections.Generic;
 using Confluent.Kafka;
+using Confluent.Kafka.Serdes;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.Kafka.Examples.AvroSpecific;
+using System;
+using System.Collections.Generic;
 using Xunit;
 
 
@@ -55,8 +56,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 };
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var producer = new Producer<string, string>(producerConfig,
-                    Serializers.Utf8, new AvroSerializer<string>(schemaRegistry)))
+                using (var producer =
+                    new ProducerBuilder<string, string>(producerConfig)
+                        .SetKeySerializer(Serializers.Utf8)
+                        .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
+                        .Build())
                 {
                     // implicit check that this does not fail.
                     producer.ProduceAsync(topic1.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
@@ -77,8 +81,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 }
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var producer = new Producer<string, string>(producerConfig,
-                    new AvroSerializer<string>(schemaRegistry), Serializers.Utf8))
+                using (var producer =
+                    new ProducerBuilder<string, string>(producerConfig)
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                        .SetValueSerializer(Serializers.Utf8)
+                        .Build())
                 {
                     // implicit check that this does not fail.
                     producer.ProduceAsync(topic2.Name, new Message<string, string> { Key = "hello", Value = "world" }).Wait();
@@ -101,8 +108,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 // check the above can be consumed (using regular / Avro serializers as appropriate)
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 {
-                    using (var consumer = new Consumer<string, string>(consumerConfig,
-                        Deserializers.Utf8, new AvroDeserializer<string>(schemaRegistry)))
+                    using (var consumer =
+                        new ConsumerBuilder<string, string>(consumerConfig)
+                            .SetKeyDeserializer(Deserializers.Utf8)
+                            .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
                         var cr = consumer.Consume();
@@ -110,8 +120,10 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         Assert.Equal("world", cr.Value);
                     }
 
-                    using (var consumer = new Consumer<string, string>(consumerConfig,
-                        new AvroDeserializer<string>(schemaRegistry), Deserializers.Utf8))
+                    using (var consumer =
+                        new ConsumerBuilder<string, string>(consumerConfig)
+                            .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .SetValueDeserializer(Deserializers.Utf8).Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
                         var cr = consumer.Consume();
@@ -119,8 +131,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         Assert.Equal("world", cr.Value);
                     }
 
-                    using (var consumer = new Consumer<string, string>(consumerConfig,
-                        Deserializers.Utf8, new AvroDeserializer<string>(schemaRegistry)))
+                    using (var consumer =
+                        new ConsumerBuilder<string, string>(consumerConfig)
+                            .SetKeyDeserializer(Deserializers.Utf8)
+                            .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
                         Assert.ThrowsAny<DeserializationException>(() => 
@@ -136,8 +151,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             });
                     }
 
-                    using (var consumer = new Consumer<string, string>(consumerConfig,
-                        new AvroDeserializer<string>(schemaRegistry), Deserializers.Utf8))
+                    using (var consumer =
+                        new ConsumerBuilder<string, string>(consumerConfig)
+                            .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .SetValueDeserializer(Deserializers.Utf8)
+                            .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
                         Assert.ThrowsAny<DeserializationException>(() =>

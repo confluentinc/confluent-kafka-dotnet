@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Authors>Confluent Inc.;Andreas Heider</Authors>
@@ -18,8 +18,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <ItemGroup>		
-    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC5" />
+  <ItemGroup>
+    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC5">
+        <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.0" />
   </ItemGroup>

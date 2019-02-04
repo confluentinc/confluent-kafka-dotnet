@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var config = new AdminClientConfig { BootstrapServers = bootstrapServers };
 
-            using (var adminClient = new AdminClient(config))
+            using (var adminClient = new AdminClientBuilder(config).Build())
             {
                 var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
                 Assert.NotNull(metadata.Brokers);

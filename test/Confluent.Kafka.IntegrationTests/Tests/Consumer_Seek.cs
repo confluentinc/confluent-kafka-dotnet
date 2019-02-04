@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,12 +45,12 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer(producerConfig))
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var consumer =
+                new ConsumerBuilder<Null, string>(consumerConfig)
+                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .Build())
             {
-                consumer.OnError += (_, e)
-                    => Assert.True(false, e.Reason);
-
                 const string checkValue = "check value";
                 var dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize(checkValue, true, null, null) }).Result;
                 var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("second value", true, null, null) }).Result;

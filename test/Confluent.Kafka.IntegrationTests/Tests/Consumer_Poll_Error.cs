@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             TopicPartitionOffset firstProduced = null;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 var keyData = Encoding.UTF8.GetBytes("key");
                 firstProduced = producer.ProduceAsync(singlePartitionTopic, new Message { Key = keyData }).Result.TopicPartitionOffset;
@@ -57,22 +57,21 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // test key deserialization error behavior
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 int msgCnt = 0;
                 int errCnt = 0;
                 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                };
-
-                consumer.OnPartitionsRevoked += (_, partitions)
-                    => consumer.Unassign();
-
                 consumer.Subscribe(singlePartitionTopic);
+
+                consumer.SetPartitionsAssignedHandler((c, tps) => {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
+
+                consumer.SetPartitionsRevokedHandler((c, _)
+                    => { c.Unassign(); });
 
                 while (true)
                 {
@@ -98,21 +97,21 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
             }
 
-            // test value deserialization error behavior
-            using (var consumer = new Consumer<string, Null>(consumerConfig))
+            // test value deserialization error behavior.
+            using (var consumer = new ConsumerBuilder<string, Null>(consumerConfig).Build())
             {
                 int msgCnt = 0;
                 int errCnt = 0;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.SetPartitionsAssignedHandler((c, tps) => 
                 {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                };
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
 
-                consumer.OnPartitionsRevoked += (_, partitions)
-                    => consumer.Unassign();
+                consumer.SetPartitionsRevokedHandler((c, _)
+                    => { c.Unassign(); });
 
                 consumer.Subscribe(singlePartitionTopic);
 

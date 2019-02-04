@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             DeliveryResult<byte[], byte[]> dr;
-            using (var producer = new Producer<byte[], byte[]>(producerConfig))
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 // Assume that all these produce calls succeed.
                 dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;
@@ -47,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer<Ignore, Ignore>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Ignore, Ignore>(consumerConfig).Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
 
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(record.Message.Value);
             }
 
-            using (var consumer = new Consumer<Ignore, byte[]>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Ignore, byte[]>(consumerConfig).Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset.Value + 3) });
 

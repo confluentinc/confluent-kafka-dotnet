@@ -126,6 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="isKey">
         ///     True if deserializing the message key, false if deserializing the
         ///     message value.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.

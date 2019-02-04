@@ -158,7 +158,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Config = clientConfig;
             var producerConfig = new ProducerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            Handle = new Producer(producerConfig);
+            Handle = new ProducerBuilder(producerConfig).Build();
             ProduceLock = new object();
             Dbg("Created producer " + Handle.Name);
         }
@@ -309,13 +309,16 @@ namespace Confluent.Kafka.VerifiableClient
             }
         };
 
-
         public VerifiableConsumer(VerifiableConsumerConfig clientConfig)
         {
             Config = clientConfig;
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
             var consumerConfig = new ConsumerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            consumer = new Consumer<Null, string>(consumerConfig);
+            consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build();
+            consumer.SetPartitionsAssignedHandler((_, partitions) => HandleAssign(partitions));
+            consumer.SetPartitionsRevokedHandler((_, partitions) => HandleRevoke(partitions));
+            consumer.SetOffsetsCommittedHandler((_, offsets) => SendOffsetsCommitted(offsets));
+
             consumedMsgsAtLastCommit = 0;
             Dbg($"Created Consumer {consumer.Name} with AutoCommit={Config.AutoCommit}");
         }
@@ -605,16 +608,6 @@ namespace Confluent.Kafka.VerifiableClient
         public override void Run()
         {
             Send("startup_complete", new Dictionary<string, object>());
-
-            consumer.OnPartitionsAssigned += (_, partitions)
-                => HandleAssign(partitions);
-
-            consumer.OnPartitionsRevoked += (_, partitions)
-                => HandleRevoke(partitions);
-
-            // Only used when auto-commits enabled
-            consumer.OnOffsetsCommitted += (_, offsets)
-                => SendOffsetsCommitted(offsets);
 
             consumer.Subscribe(Config.Topic);
 

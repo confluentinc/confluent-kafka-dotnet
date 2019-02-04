@@ -18,19 +18,19 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Confluent.Kafka.Serdes;
 
 namespace Confluent.Kafka
 {
     /// <summary>
     ///     A high level producer with serialization capability.
     /// </summary>
-    public class Producer<TKey, TValue> : ProducerBase
+    public class Producer<TKey, TValue> : ProducerBase, IProducer<TKey, TValue>
     {
         private ISerializer<TKey> keySerializer;
         private ISerializer<TValue> valueSerializer;
-        private IAsyncSerializer<TKey> taskKeySerializer;
-        private IAsyncSerializer<TValue> taskValueSerializer;
+        private IAsyncSerializer<TKey> asyncKeySerializer;
+        private IAsyncSerializer<TValue> asyncValueSerializer;
 
         private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
@@ -43,187 +43,74 @@ namespace Confluent.Kafka
             { typeof(byte[]), Serializers.ByteArray }
         };
 
-
-        /// <summary>
-        ///     Creates a new <see cref="Producer" /> instance.
-        /// </summary>
-        /// <param name="handle">
-        ///     An existing librdkafka producer handle to use for 
-        ///     communications with Kafka brokers.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The serializer to use to serialize keys.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The serializer to use to serialize values.
-        /// </param>
-        public Producer(
-            Handle handle,
-            ISerializer<TKey> keySerializer = null,
-            ISerializer<TValue> valueSerializer = null
-        ) : base(handle) => Init(keySerializer, valueSerializer);
-
-
-        /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Producer" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' must be specified.
-        /// </param>
-        /// <param name="keySerializer">
-        ///     The serializer to use to serialize keys.
-        /// </param>
-        /// <param name="valueSerializer">
-        ///     The serializer to use to serialize values.
-        /// </param>
-        public Producer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            ISerializer<TKey> keySerializer = null,
-            ISerializer<TValue> valueSerializer = null
-        ) : base(config) => Init(keySerializer, valueSerializer);
-
-
-        private void Init(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer)
+        private void InitializeSerializers(
+            ISerializer<TKey> keySerializer,
+            ISerializer<TValue> valueSerializer,
+            IAsyncSerializer<TKey> asyncKeySerializer,
+            IAsyncSerializer<TValue> asyncValueSerializer)
         {
-            this.keySerializer = keySerializer;
-            this.valueSerializer = valueSerializer;
-
-            if (this.keySerializer == null)
+            // setup key serializer.
+            if (keySerializer == null && asyncKeySerializer == null)
             {
                 if (!defaultSerializers.TryGetValue(typeof(TKey), out object serializer))
                 {
                     throw new ArgumentNullException(
-                        $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey)}");
+                        $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
                 this.keySerializer = (ISerializer<TKey>)serializer;
             }
+            else if (keySerializer == null && asyncKeySerializer != null)
+            {
+                this.asyncKeySerializer = asyncKeySerializer;
+            }
+            else if (keySerializer != null && asyncKeySerializer == null)
+            {
+                this.keySerializer = keySerializer;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid key serializer configuration.");
+            }
 
-            if (this.valueSerializer == null)
+            // setup value serializer.
+            if (valueSerializer == null && asyncValueSerializer == null)
             {
                 if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
                 {
                     throw new ArgumentNullException(
-                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue)}");
+                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
                 this.valueSerializer = (ISerializer<TValue>)serializer;
             }
+            else if (valueSerializer == null && asyncValueSerializer != null)
+            {
+                this.asyncValueSerializer = asyncValueSerializer;
+            }
+            else if (valueSerializer != null && asyncValueSerializer == null)
+            {
+                this.valueSerializer = valueSerializer;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid value serializer configuration.");
+            }
         }
 
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
-        /// </summary>
-        public Producer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            ISerializer<TKey> keySerializer,
-            IAsyncSerializer<TValue> taskValueSerializer
-        ) : base(config) => Init(keySerializer, taskValueSerializer);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
-        /// </summary>
-        public Producer(
-            Handle handle,
-            ISerializer<TKey> keySerializer,
-            IAsyncSerializer<TValue> taskValueSerializer
-        ) : base(handle) => Init(keySerializer, taskValueSerializer);
-
-
-        private void Init(ISerializer<TKey> keySerializer, IAsyncSerializer<TValue> taskValueSerializer)
+        internal Producer(DependentProducerBuilder<TKey, TValue> builder)
         {
-            this.keySerializer = keySerializer;
-            this.taskValueSerializer = taskValueSerializer;
-
-            if (this.keySerializer == null)
-            {
-                throw new ArgumentNullException("Key serializer must be specified.");
-            }
-
-            if (this.taskValueSerializer == null)
-            {
-                throw new ArgumentNullException("Value serializer must be specified.");
-            }
+            base.Initialize(builder.Handle);
+            InitializeSerializers(
+                builder.KeySerializer, builder.ValueSerializer,
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
-        
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
-        /// </summary>
-        public Producer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IAsyncSerializer<TKey> taskKeySerializer,
-            ISerializer<TValue> valueSerializer
-        ) : base(config) => Init(taskKeySerializer, valueSerializer);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
-        /// </summary>
-        public Producer(
-            Handle handle,
-            IAsyncSerializer<TKey> taskKeySerializer,
-            ISerializer<TValue> valueSerializer
-        ) : base(handle) => Init(taskKeySerializer, valueSerializer);
-
-
-        private void Init(IAsyncSerializer<TKey> taskKeySerializer, ISerializer<TValue> valueSerializer)
+        internal Producer(ProducerBuilder<TKey, TValue> builder)
         {
-            this.taskKeySerializer = taskKeySerializer;
-            this.valueSerializer = valueSerializer;
-
-            if (this.taskKeySerializer == null)
-            {
-                throw new ArgumentNullException("Key serializer must be specified.");
-            }
-
-            if (this.valueSerializer == null)
-            {
-                throw new ArgumentNullException("Value serializer must be specified.");
-            }
+            base.Initialize(builder.ConstructBaseConfig(this));
+            InitializeSerializers(
+                builder.KeySerializer, builder.ValueSerializer,
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
-        /// </summary>
-        public Producer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IAsyncSerializer<TKey> keySerializer,
-            IAsyncSerializer<TValue> valueSerializer
-        ) : base(config) => Init(keySerializer, valueSerializer);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
-        /// </summary>
-        public Producer(
-            Handle handle,
-            IAsyncSerializer<TKey> keySerializer,
-            IAsyncSerializer<TValue> valueSerializer
-        ) : base(handle) => Init(keySerializer, valueSerializer);
-
-
-        private void Init(IAsyncSerializer<TKey> taskKeySerializer, IAsyncSerializer<TValue> taskValueSerializer)
-        {
-            this.taskKeySerializer = taskKeySerializer;
-            this.taskValueSerializer = taskValueSerializer;
-
-            if (this.taskKeySerializer == null)
-            {
-                throw new ArgumentNullException("Key serializer must be specified.");
-            }
-
-            if (this.taskValueSerializer == null)
-            {
-                throw new ArgumentNullException("Value serializer must be specified.");
-            }
-        }
-
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic/partition.
@@ -248,14 +135,14 @@ namespace Confluent.Kafka
         {
             var keyBytes = (keySerializer != null)
                 ? keySerializer.Serialize(message.Key, true, message, topicPartition)
-                : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
+                : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             var valBytes = (valueSerializer != null)
                 ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
-                : taskValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
+                : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
@@ -373,14 +260,14 @@ namespace Confluent.Kafka
 
             var keyBytes = (keySerializer != null)
                 ? keySerializer.Serialize(message.Key, true, message, topicPartition)
-                : taskKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
+                : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             var valBytes = (valueSerializer != null)
                 ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
-                : taskValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
+                : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
@@ -520,28 +407,12 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer.
     /// </summary>
-    public class Producer : ProducerBase
+    public class Producer : ProducerBase, IProducer
     {
-        /// <summary>
-        ///     Creates a new Producer instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' must be specified.
-        /// </param>
-        public Producer(IEnumerable<KeyValuePair<string, string>> config) : base(config) {}
-
-        /// <summary>
-        ///     Creates a new <see cref="Producer" /> instance.
-        /// </summary>
-        /// <param name="handle">
-        ///     An existing librdkafka producer handle to use for 
-        ///     communications with Kafka brokers.
-        /// </param>
-        public Producer(Handle handle): base(handle) {}
+        internal Producer(ProducerBuilder builder)
+        {
+            base.Initialize(builder.ConstructBaseConfig(this));
+        }
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic/partition.

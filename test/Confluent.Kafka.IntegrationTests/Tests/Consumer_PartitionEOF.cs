@@ -47,49 +47,50 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // no eof, non generic consumer case.
-            using (var c = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
-                c.OnPartitionsAssigned += (_, partitions) =>
+                consumer.SetPartitionsAssignedHandler((c, partitions) =>
                 {
                     Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                };
-                c.Subscribe(singlePartitionTopic);
+                });
 
-                var cr1 = c.Consume();
+                consumer.Subscribe(singlePartitionTopic);
+
+                var cr1 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr2 = c.Consume();
+                var cr2 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr3 = c.Consume(TimeSpan.FromSeconds(1));
+                var cr3 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr3);
 
-                c.Close();
+                consumer.Close();
             }
 
             // no eof, generic consumer case.
-            using (var c = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
-                c.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                };
-                c.Subscribe(singlePartitionTopic);
+                consumer.SetPartitionsAssignedHandler((c, tps) => {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
 
-                var cr1 = c.Consume();
+                consumer.Subscribe(singlePartitionTopic);
+
+                var cr1 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr2 = c.Consume();
+                var cr2 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr3 = c.Consume(TimeSpan.FromSeconds(1));
+                var cr3 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr3);
 
-                c.Close();
+                consumer.Close();
             }
 
             consumerConfig = new ConsumerConfig
@@ -100,55 +101,55 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             // eof, non-generic consumer case.
-            using (var c = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
-                c.OnPartitionsAssigned += (_, partitions) =>
-                {
+                consumer.SetPartitionsAssignedHandler((c, partitions) => {
                     Assert.Single(partitions);
                     Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                     c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                };
-                c.Subscribe(singlePartitionTopic);
+                });
 
-                var cr1 = c.Consume();
+                consumer.Subscribe(singlePartitionTopic);
+
+                var cr1 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr2 = c.Consume();
+                var cr2 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr3 = c.Consume();
+                var cr3 = consumer.Consume();
                 Assert.Null(cr3.Message);
                 Assert.True(cr3.IsPartitionEOF);
-                var cr4 = c.Consume(TimeSpan.FromSeconds(1));
+                var cr4 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr4);
 
-                c.Close();
+                consumer.Close();
             }
 
             // eof, generic consumer case.
-            using (var c = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
-                c.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                };
-                c.Subscribe(singlePartitionTopic);
+                consumer.SetPartitionsAssignedHandler((c, tps) => {
+                    Assert.Single(tps);
+                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
+                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                });
 
-                var cr1 = c.Consume();
+                consumer.Subscribe(singlePartitionTopic);
+
+                var cr1 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr2 = c.Consume();
+                var cr2 = consumer.Consume();
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
-                var cr3 = c.Consume();
+                var cr3 = consumer.Consume();
                 Assert.Null(cr3.Message);
                 Assert.True(cr3.IsPartitionEOF);
-                var cr4 = c.Consume(TimeSpan.FromSeconds(1));
+                var cr4 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr4);
 
-                c.Close();
+                consumer.Close();
             }
 
             Assert.Equal(0, Library.HandleCount);

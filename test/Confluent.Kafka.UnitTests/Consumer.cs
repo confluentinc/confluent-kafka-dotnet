@@ -30,35 +30,35 @@ namespace Confluent.Kafka.UnitTests
             // Throw exception if 'group.id' is not set in config and ensure that exception
             // mentions 'group.id'.
             var config = new ConsumerConfig();
-            var e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(config); });
+            var e = Assert.Throws<ArgumentException>(() => { var c = new ConsumerBuilder(config).Build(); });
             Assert.Contains("group.id", e.Message);
 
             // Throw exception if a config value is null and ensure that exception mentions the
             // respective config key.
             var configWithNullValue = CreateValidConfiguration();
             configWithNullValue.Set("sasl.password", null);
-            e = Assert.Throws<ArgumentException>(() => { var c = new Consumer(configWithNullValue); });
+            e = Assert.Throws<ArgumentException>(() => { var c = new ConsumerBuilder(configWithNullValue).Build(); });
             Assert.Contains("sasl.password", e.Message);
 
             // Throw an exception if dotnet.cancellation.delay.max.ms is out of range.
             e = Assert.Throws<ArgumentException>(() =>
             {
-                var c = new Consumer(new ConsumerConfig
+                var c = new ConsumerBuilder(new ConsumerConfig
                 {
                     BootstrapServers = "localhost:9092",
                     GroupId = Guid.NewGuid().ToString(),
                     CancellationDelayMaxMs = 0
-                });
+                }).Build();
             });
             Assert.Contains("range", e.Message);
             e = Assert.Throws<ArgumentException>(() =>
             {
-                var c = new Consumer(new ConsumerConfig
+                var c = new ConsumerBuilder(new ConsumerConfig
                 {
                     BootstrapServers = "localhost:9092",
                     GroupId = Guid.NewGuid().ToString(),
                     CancellationDelayMaxMs = 10001
-                });
+                }).Build();
             });
             Assert.Contains("range", e.Message);
         }
