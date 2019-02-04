@@ -66,9 +66,9 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
-        internal ProducerBase.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
+        internal ProducerCore.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
-            return new ProducerBase.Config
+            return new ProducerCore.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null

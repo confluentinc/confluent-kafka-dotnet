@@ -70,19 +70,19 @@ namespace Confluent.Kafka
 
         
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ProducerBase.Poll(TimeSpan)" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Poll(TimeSpan)" />
         /// </summary>
         int Poll(TimeSpan timeout);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ProducerBase.Flush(TimeSpan)" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Flush(TimeSpan)" />
         /// </summary>
         int Flush(TimeSpan timeout);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ProducerBase.Flush(CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Flush(CancellationToken)" />
         /// </summary>
         void Flush(CancellationToken cancellationToken = default(CancellationToken));
     }

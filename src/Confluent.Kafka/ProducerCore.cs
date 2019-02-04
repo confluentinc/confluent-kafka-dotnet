@@ -34,7 +34,7 @@ namespace Confluent.Kafka
     ///     A high-level Apache Kafka producer, excluding any public methods
     ///     for producing messages.
     /// </summary>
-    internal class ProducerBase : IClient
+    internal class ProducerCore : IClient
     {
         internal class Config
         {
@@ -250,7 +250,7 @@ namespace Confluent.Kafka
             }
         }
 
-        public void Initialize(Handle handle)
+        public ProducerCore(Handle handle)
         {
             if (!handle.Owner.GetType().Name.Contains("Producer")) // much simpler than checking actual types.
             {
@@ -260,7 +260,7 @@ namespace Confluent.Kafka
             this.borrowedHandle = handle;
         }
 
-        public void Initialize(ProducerBase.Config baseConfig)
+        public ProducerCore(ProducerCore.Config baseConfig)
         {
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
@@ -369,8 +369,6 @@ namespace Confluent.Kafka
                 callbackTask = StartPollTask(callbackCts.Token);
             }
         }
-        
-        internal ProducerBase() {}
 
         public int Poll(TimeSpan timeout)
         {
