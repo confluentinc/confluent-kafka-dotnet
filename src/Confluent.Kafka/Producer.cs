@@ -40,6 +40,11 @@ namespace Confluent.Kafka
             internal Action<string> statisticsHandler;
         }
 
+        private interface IDeliveryHandler
+        {
+            void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport);
+        }
+
         private ISerializer<TKey> keySerializer;
         private ISerializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
