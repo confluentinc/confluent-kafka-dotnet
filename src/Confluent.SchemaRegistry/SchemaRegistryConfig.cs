@@ -14,12 +14,30 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
 
 namespace Confluent.SchemaRegistry
 {
+    /// <summary>
+    ///     Auth credentials source.
+    /// </summary>
+    public enum AuthCredentialsSource
+    {
+        /// <summary>
+        ///     Credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
+        ///     If `schema.registry.basic.auth.user.info` is not set, authentication is disabled.
+        /// </summary>
+        UserInfo,
+
+        /// <summary>
+        ///     Credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
+        /// </summary>
+        SaslInherit
+    }
+
     /// <summary>
     ///     <see cref="CachedSchemaRegistryClient" /> configuration properties.
     /// </summary>
@@ -53,13 +71,42 @@ namespace Confluent.SchemaRegistry
 
             /// <summary>
             ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
+            ///     USER_INFO: Credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
+            ///                If `schema.registry.basic.auth.user.info` is not set, authentication is disabled.
+            ///     SASL_INHERIT: Credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
+            /// 
+            ///     default: USER_INFO
             /// </summary>
             public const string SchemaRegistryBasicAuthCredentialsSource = "schema.registry.basic.auth.credentials.source";
 
             /// <summary>
             ///     Basic auth credentials in the form {username}:{password}.
+            /// 
+            ///     default: "" (no authentication).
             /// </summary>
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
+        }
+
+        /// <summary>
+        ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
+        /// </summary>
+        public AuthCredentialsSource? SchemaRegistryBasicAuthCredentialsSource
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaRegistryBasicAuthCredentialsSource);
+                if (r == null) { return null; }
+                if (r == "USER_INFO") { return AuthCredentialsSource.UserInfo; }
+                if (r == "SASL_INHERIT") { return AuthCredentialsSource.SaslInherit; }
+                throw new ArgumentException($"Unknown ${PropertyNames.SchemaRegistryBasicAuthCredentialsSource} value: {r}.");
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaRegistryBasicAuthCredentialsSource); }
+                else if (value == AuthCredentialsSource.UserInfo) { this.properties[PropertyNames.SchemaRegistryBasicAuthCredentialsSource] = "USER_INFO"; }
+                else if (value == AuthCredentialsSource.SaslInherit) { this.properties[PropertyNames.SchemaRegistryBasicAuthCredentialsSource] = "SASL_INHERIT"; }
+                else { throw new NotImplementedException($"Unknown ${PropertyNames.SchemaRegistryBasicAuthCredentialsSource} value: {value}."); }
+            }
         }
 
         /// <summary>
