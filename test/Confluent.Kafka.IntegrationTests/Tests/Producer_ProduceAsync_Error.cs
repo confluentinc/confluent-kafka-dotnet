@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             // serialize case
 
             Task<DeliveryResult<string, string>> drt;
-            using (var producer = new Producer<string, string>(producerConfig))
+            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
             {
                 drt = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),
@@ -75,7 +75,7 @@ namespace Confluent.Kafka.IntegrationTests
             // byte[] case
 
             Task<DeliveryResult> drt2;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 drt2 = producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 42),

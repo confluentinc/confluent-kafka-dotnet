@@ -61,9 +61,9 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 3))
-            using (var consumer = new Consumer(consumerConfig))
-            using (var producer = new Producer(producerConfig))
-            using (var adminClient = new AdminClient(adminClientConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var adminClient = new AdminClientBuilder(adminClientConfig).Build())
             {
                 consumer.Subscribe(topic.Name);
 

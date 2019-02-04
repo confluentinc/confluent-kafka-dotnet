@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,24 +38,25 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                AutoOffsetReset = AutoOffsetResetType.Latest,
+                AutoOffsetReset = AutoOffsetReset.Latest,
                 EnableAutoCommit = true,
                 EnableAutoOffsetStore = false
             };
 
             var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer(producerConfig))
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            IEnumerable<TopicPartition> assignedPartitions = null;
+
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
-                IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult<Null, string> record;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
+                consumer.SetPartitionsAssignedHandler((c, tps) =>
                 {
-                    consumer.Assign(partitions);
-                    assignedPartitions = partitions;
-                };
+                    c.Assign(tps);
+                    assignedPartitions = tps;
+                });
 
                 consumer.Subscribe(topic);
 

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
+using Confluent.Kafka.Serdes;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using Avro;
@@ -57,8 +58,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             DeliveryResult<Null, GenericRecord> dr;
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new Producer<Null, GenericRecord>(
-                config, Serializers.Null, new AvroSerializer<GenericRecord>(schemaRegistry)))
+            using (var p =
+                new ProducerBuilder<Null, GenericRecord>(config)
+                    .SetKeySerializer(Serializers.Null)
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .Build())
             {
                 var record = new GenericRecord(s);
                 record.Add("name", "my name 2");
@@ -69,8 +73,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             // produce a specific record (to later consume back as a generic record).
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var p = new Producer<Null, User>(
-                config, Serializers.Null, new AvroSerializer<User>(schemaRegistry)))
+            using (var p =
+                new ProducerBuilder<Null, User>(config)
+                    .SetKeySerializer(Serializers.Null)
+                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .Build())
             {
                 var user = new User
                 {
@@ -98,8 +105,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var cconfig = new ConsumerConfig { GroupId = Guid.NewGuid().ToString(), BootstrapServers = bootstrapServers };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<Null, GenericRecord>(
-                cconfig, Deserializers.Null, new AvroDeserializer<GenericRecord>(schemaRegistry)))
+            using (var consumer =
+                new ConsumerBuilder<Null, GenericRecord>(cconfig)
+                    .SetKeyDeserializer(Deserializers.Null)
+                    .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry))
+                    .Build())
             {
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
@@ -131,7 +141,11 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<Null, User>(cconfig, Deserializers.Null, new AvroDeserializer<User>(schemaRegistry)))
+            using (var consumer =
+                new ConsumerBuilder<Null, User>(cconfig)
+                    .SetKeyDeserializer(Deserializers.Null)
+                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.Consume(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);

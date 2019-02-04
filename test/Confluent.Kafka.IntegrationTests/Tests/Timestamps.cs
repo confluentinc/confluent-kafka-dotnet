@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var drs_beginProduce = new List<DeliveryReport<Null, string>>();
             var drs_task = new List<DeliveryResult<Null, string>>();
-            using (var producer = new Producer<Null, string>(producerConfig))
+            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
                 // --- ProduceAsync, serializer case.
 
@@ -141,7 +141,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var drs2_beginProduce = new List<DeliveryReport>();
             var drs2_task = new List<DeliveryResult>();
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 // --- ProduceAsync, byte[] case.
 
@@ -204,7 +204,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 // serializing async
 
@@ -231,7 +231,7 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_beginProduce[2].TopicPartitionOffset);
             }
 
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 ConsumeResult record;
 

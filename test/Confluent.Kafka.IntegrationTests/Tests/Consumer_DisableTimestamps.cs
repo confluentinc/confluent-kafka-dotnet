@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             DeliveryResult dr;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 dr = producer.ProduceAsync(
                     singlePartitionTopic,
@@ -58,11 +59,11 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Result;
             }
 
-            using (var consumer = new Consumer(consumerConfig))
-            {
-                consumer.OnError += (_, e)
-                    => Assert.True(false, e.Reason);
-                    
+            using (var consumer =
+                new ConsumerBuilder(consumerConfig)
+                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .Build())
+            {                    
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));

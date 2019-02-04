@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry
 
         #region Base Requests
 
-        private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(HttpRequestMessage request)
+        private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(Func<HttpRequestMessage> createRequest)
         {
             // There may be many base urls - roll until one is found that works.
             //
@@ -101,7 +101,7 @@ namespace Confluent.SchemaRegistry
                 try
                 {
                     response = await clients[clientIndex]
-                            .SendAsync(request)
+                            .SendAsync(createRequest())
                             .ConfigureAwait(continueOnCapturedContext: false);
 
                     if (response.StatusCode == HttpStatusCode.OK ||
@@ -185,8 +185,7 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         private async Task<T> RequestAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
-            var request = CreateRequest(endPoint, method, jsonBody);
-            var response = await ExecuteOnOneInstanceAsync(request).ConfigureAwait(continueOnCapturedContext: false);
+            var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody)).ConfigureAwait(continueOnCapturedContext: false);
             string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false);
             T t = JObject.Parse(responseJson).ToObject<T>();
             return t;
@@ -197,8 +196,7 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         private async Task<List<T>> RequestListOfAsync<T>(string endPoint, HttpMethod method, params object[] jsonBody)
         {
-            var request = CreateRequest(endPoint, method, jsonBody);
-            var response = await ExecuteOnOneInstanceAsync(request)
+            var response = await ExecuteOnOneInstanceAsync(() => CreateRequest(endPoint, method, jsonBody))
                                     .ConfigureAwait(continueOnCapturedContext: false);
             return JArray.Parse(
                 await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false)).ToObject<List<T>>();

@@ -28,7 +28,7 @@ namespace Confluent.Kafka
         public TemporaryTopic(string bootstrapServers, int numPartitions)
         {
             Name = Guid.NewGuid().ToString();
-            adminClient = new AdminClient(new AdminClientConfig { BootstrapServers = bootstrapServers });
+            adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
             adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = Name, NumPartitions = numPartitions, ReplicationFactor = 1 } }).Wait();
         }

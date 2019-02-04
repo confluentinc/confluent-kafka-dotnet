@@ -45,8 +45,8 @@ namespace ConfluentCloudExample
                 BootstrapServers = "<ccloud bootstrap servers>",
                 BrokerVersionFallback = "0.10.0.0",
                 ApiVersionFallbackMs = 0,
-                SaslMechanism = SaslMechanismType.Plain,
-                SecurityProtocol = SecurityProtocolType.Sasl_Ssl,
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.SaslSsl,
                 // On Windows, default trusted root CA certificates are stored in the Windows Registry.
                 // They are not automatically discovered by Confluent.Kafka and it's not possible to
                 // reference them using the `ssl.ca.location` property. You will need to obtain these
@@ -59,7 +59,7 @@ namespace ConfluentCloudExample
                 SaslPassword = "<ccloud secret>"
             };
 
-            using (var producer = new Producer<Null, string>(pConfig))
+            using (var producer = new ProducerBuilder<Null, string>(pConfig).Build())
             {
                 producer.ProduceAsync("dotnet-test-topic", new Message<Null, string> { Value = "test value" })
                     .ContinueWith(task => task.IsFaulted
@@ -76,17 +76,17 @@ namespace ConfluentCloudExample
                 BootstrapServers = "<confluent cloud bootstrap servers>",
                 BrokerVersionFallback = "0.10.0.0",
                 ApiVersionFallbackMs = 0,
-                SaslMechanism = SaslMechanismType.Plain,
-                SecurityProtocol = SecurityProtocolType.Sasl_Ssl,
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.SaslSsl,
                 SslCaLocation = "/usr/local/etc/openssl/cert.pem", // suitable configuration for linux, osx.
                 // SslCaLocation = "c:\\path\\to\\cacert.pem",     // windows
                 SaslUsername = "<confluent cloud key>",
                 SaslPassword = "<confluent cloud secret>",
                 GroupId = Guid.NewGuid().ToString(),
-                AutoOffsetReset = AutoOffsetResetType.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var consumer = new Consumer<Null, string>(cConfig))
+            using (var consumer = new ConsumerBuilder<Null, string>(cConfig).Build())
             {
                 consumer.Subscribe("dotnet-test-topic");
 

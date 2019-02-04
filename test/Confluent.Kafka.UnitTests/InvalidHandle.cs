@@ -34,27 +34,27 @@ namespace Confluent.Kafka.UnitTests
             var cConfig = new ConsumerConfig
             {
                 GroupId = "test",
-                SaslMechanism = SaslMechanismType.Plain,
-                SecurityProtocol = SecurityProtocolType.Ssl,
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.Ssl,
                 SslCaLocation = "invalid"
             };
             
             var pConfig = new ProducerConfig
             {
-                SaslMechanism = SaslMechanismType.Plain,
-                SecurityProtocol = SecurityProtocolType.Ssl,
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.Ssl,
                 SslCaLocation = "invalid"
             };
 
-            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new Consumer(cConfig));
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder(cConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
             // note: if this test fails, it may be because another error is thrown
             // in a new librdkafka version, adapt test in this case
 
-            e = Assert.Throws<InvalidOperationException>(() => new Consumer(cConfig));
+            e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder(cConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
 
-            e = Assert.Throws<InvalidOperationException>(() => new Producer(pConfig));
+            e = Assert.Throws<InvalidOperationException>(() => new ProducerBuilder(pConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
         }
     }

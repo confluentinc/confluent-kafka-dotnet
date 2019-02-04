@@ -24,17 +24,21 @@ namespace ConfigGen
         internal static Dictionary<string, List<string>> AdditionalEnums => new Dictionary<string, List<string>>
         {
             { "partition.assignment.strategy", new List<string> { "range", "roundrobin" } },
-            { "partitioner", new List<string> { "random", "consistent", "consistent_random", "murmur2", "murmur2_random" } } 
+            { "partitioner", new List<string> { "random", "consistent", "consistent_random", "murmur2", "murmur2_random" } }
         };
 
         /// <summary>
         ///     A function that filters out properties from the librdkafka list that should
-        ///     not be privided in the 
+        ///     not be automatically extracted.
         /// </summary>
         internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props) 
             => props.Where(p => {
-                if (p.Name == "sasl.mechanisms") { return false; } // handled as a special case.
-                if (p.Name == "sasl.mechanism") { return false; } // handled as a special case.
+                // handled as a special case.
+                if (p.Name == "sasl.mechanisms") { return false; }
+                if (p.Name == "sasl.mechanism") { return false; }
+                if (p.Name == "acks") { return false; }
+                if (p.Name == "request.required.acks") { return false; }
+                // legacy
                 if (p.Name == "consume.callback.max.messages") { return false; }
                 if (p.Name == "offset.store.path") { return false; }
                 if (p.Name == "offset.store.sync.interval.ms") { return false; }
@@ -48,6 +52,7 @@ namespace ConfigGen
                 if (p.Name == "enable.auto.commit" && !p.IsGlobal) { return false; }
                 if (p.Name == "auto.commit.enable" && !p.IsGlobal) { return false; }
                 if (p.Name == "queuing.strategy") { return false; }
+                // other
                 if (p.Name.Contains("_")) { return false; }
                 return true;
             }).ToList();
@@ -64,19 +69,18 @@ namespace ConfigGen
                 { "max.partition.fetch.bytes", "fetch.message.max.bytes" },
                 { "linger.ms", "queue.buffering.max.ms" },
                 { "message.send.max.retries", "retries" },
-                { "compression.type", "compression.codec" },
-                { "acks", "request.required.acks" }
+                { "compression.type", "compression.codec" }
             };
 
         /// <summary>
-        ///     SaslMechanismType definition
+        ///     SaslMechanism definition
         /// </summary>
         internal static string SaslMechanismEnumString =>
 @"
     /// <summary>
     ///     SaslMechanism enum values
     /// </summary>
-    public enum SaslMechanismType
+    public enum SaslMechanism
     {
         /// <summary>
         ///     GSSAPI
@@ -108,35 +112,115 @@ namespace ConfigGen
         /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
         /// </summary>
-        public SaslMechanismType? SaslMechanism
+        public SaslMechanism? SaslMechanism
         {
             get
             {
                 var r = Get(""sasl.mechanism"");
                 if (r == null) { return null; }
-                if (r == ""GSSAPI"") { return  SaslMechanismType.Gssapi; }
-                if (r == ""PLAIN"") { return SaslMechanismType.Plain; }
-                if (r == ""SCRAM-SHA-256"") { return SaslMechanismType.ScramSha256; }
-                if (r == ""SCRAM-SHA-512"") { return SaslMechanismType.ScramSha512; }
+                if (r == ""GSSAPI"") { return Confluent.Kafka.SaslMechanism.Gssapi; }
+                if (r == ""PLAIN"") { return Confluent.Kafka.SaslMechanism.Plain; }
+                if (r == ""SCRAM-SHA-256"") { return Confluent.Kafka.SaslMechanism.ScramSha256; }
+                if (r == ""SCRAM-SHA-512"") { return Confluent.Kafka.SaslMechanism.ScramSha512; }
                 throw new ArgumentException($""Unknown sasl.mechanism value {r}"");
             }
             set
             {
                 if (value == null) { this.properties.Remove(""sasl.mechanism""); }
-                else if (value == SaslMechanismType.Gssapi) { this.properties[""sasl.mechanism""] = ""GSSAPI""; }
-                else if (value == SaslMechanismType.Plain) { this.properties[""sasl.mechanism""] = ""PLAIN""; }
-                else if (value == SaslMechanismType.ScramSha256) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-256""; }
-                else if (value == SaslMechanismType.ScramSha512) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-512""; }
+                else if (value == Confluent.Kafka.SaslMechanism.Gssapi) { this.properties[""sasl.mechanism""] = ""GSSAPI""; }
+                else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties[""sasl.mechanism""] = ""PLAIN""; }
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-256""; }
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-512""; }
                 else throw new NotImplementedException($""Unknown sasl.mechanism value {value}"");
             }
         }
 
 ";
+
+
+        /// <summary>
+        ///     SaslMechanism definition
+        /// </summary>
+        internal static string AcksEnumString =>
+@"
+    /// <summary>
+    ///     Acks enum values
+    /// </summary>
+    public enum Acks : int
+    {
+        /// <summary>
+        ///     None
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        ///     Leader
+        /// </summary>
+        Leader = 1,
+
+        /// <summary>
+        ///     All
+        /// </summary>
+        All = -1
+    }
+";
+
+        /// <summary>
+        ///     get/set for Acks.
+        /// </summary>
+        internal static string AcksGetSetString =>
+@"
+        /// <summary>
+        ///     This field indicates the number of acknowledgements the leader broker must receive from ISR brokers
+        ///     before responding to the request: Zero=Broker does not send any response/ack to client, One=The
+        ///     leader will write the record to its local log but will respond without awaiting full acknowledgement
+        ///     from all followers. All=Broker will block until message is committed by all in sync replicas (ISRs).
+        ///     If there are less than min.insync.replicas (broker configuration) in the ISR set the produce request
+        ///     will fail.
+        /// </summary>
+        public Acks? Acks
+        {
+            get
+            {
+                var r = Get(""acks"");
+                if (r == null) { return null; }
+                if (r == ""0"") { return Confluent.Kafka.Acks.None; }
+                if (r == ""1"") { return Confluent.Kafka.Acks.Leader; }
+                if (r == ""-1"" || r == ""all"") { return Confluent.Kafka.Acks.All; }
+                return (Acks)(int.Parse(r));
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(""acks""); }
+                else if (value == Confluent.Kafka.Acks.None) { this.properties[""acks""] = ""0""; }
+                else if (value == Confluent.Kafka.Acks.Leader) { this.properties[""acks""] = ""1""; }
+                else if (value == Confluent.Kafka.Acks.All) { this.properties[""acks""] = ""-1""; }
+                else { this.properties[""acks""] = ((int)value.Value).ToString(); }
+            }
+        }
+
+";
+
     }
 
     
     class PropertySpecification
     {
+        public PropertySpecification() {}
+
+        public PropertySpecification(PropertySpecification other)
+        {
+            IsGlobal = other.IsGlobal;
+            Name = other.Name;
+            CPorA = other.CPorA;
+            Range = other.Range;
+            Importance = other.Importance;
+            Default = other.Default;
+            Description = other.Description;
+            Type = other.Type;
+            AliasFor = other.AliasFor;
+        }
+
         public bool IsGlobal { get; set; }
         public string Name { get; set; }
         public string CPorA { get; set; }  // Consumer, Producer or All.
@@ -209,11 +293,30 @@ namespace Confluent.Kafka
                 "_[a-z]",
                 m => "_" + m.Value.Substring(1).ToUpper());
 
+        private static Dictionary<string, string> ConfigValueToEnumNameSubstitutes = new Dictionary<string, string>
+        {
+            { "sasl_plaintext", "SaslPlaintext" },
+            { "sasl_ssl", "SaslSsl" },
+            { "consistent_random", "ConsistentRandom" },
+            { "murmur2_random", "Murmur2Random"},
+            { "roundrobin", "RoundRobin" }
+        };
+
         static string EnumNameToDotnetName(string enumName)
-            => Regex.Replace(
-                enumName[0].ToString().ToUpper() + enumName.Substring(1),
-                "_[a-z]",
-                m => "_" + m.Value.Substring(1).ToUpper());
+        {
+            if (ConfigValueToEnumNameSubstitutes.TryGetValue(enumName, out string substitute))
+            {
+                return substitute;
+            }
+
+            var result = enumName[0].ToString().ToUpper() + enumName.Substring(1);
+            if (result.Contains('_'))
+            {
+                Console.WriteLine($"warning: enum value contains underscore (is not consistent with .net naming standards): {enumName}");
+            }
+
+            return result;
+        }
 
         static string createProperties(IEnumerable<PropertySpecification> props)
         {
@@ -221,7 +324,7 @@ namespace Confluent.Kafka
             foreach (var prop in props)
             {
                 if (prop.Type == "pointer") { continue; }
-                var type = (prop.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(prop.Name)) ? ConfigNameToDotnetName(prop.Name) + "Type" : prop.Type;
+                var type = (prop.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(prop.Name)) ? ConfigNameToDotnetName(prop.Name) : prop.Type;
                 var nullableType = type == "string" ? "string" : type + "?";
 
                 codeText += $"        /// <summary>\n";
@@ -284,7 +387,7 @@ namespace Confluent.Kafka
                 codeText += $"    /// <summary>\n";
                 codeText += $"    ///     {ConfigNameToDotnetName(prop.Name)} enum values\n";
                 codeText += $"    /// </summary>\n";
-                codeText += $"    public enum {ConfigNameToDotnetName(prop.Name)}Type\n";
+                codeText += $"    public enum {ConfigNameToDotnetName(prop.Name)}\n";
                 codeText += $"    {{\n";
                 for (int i=0; i<vs.Count; ++i)
                 {
@@ -551,8 +654,10 @@ namespace Confluent.Kafka
             codeText += createFileHeader(gitBranchName);
             codeText += createEnums(props.Where(p => p.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(p.Name)).ToList());
             codeText += MappingConfiguration.SaslMechanismEnumString;
+            codeText += MappingConfiguration.AcksEnumString;
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
             codeText += MappingConfiguration.SaslMechanismGetSetString;
+            codeText += MappingConfiguration.AcksGetSetString;
             codeText += createProperties(props.Where(p => p.CPorA == "*"));
             codeText += createClassFooter();
             codeText += createClassHeader("AdminClientConfig", "AdminClient configuration properties", true);

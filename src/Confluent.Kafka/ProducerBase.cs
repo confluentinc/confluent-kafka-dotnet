@@ -31,33 +31,41 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A high-level Apache Kafka producer, excluding
-    ///     any public methods for producing messages.
+    ///     A high-level Apache Kafka producer, excluding any public methods
+    ///     for producing messages.
     /// </summary>
     public class ProducerBase : IProducerBase
     {
+        internal class Config
+        {
+            internal IEnumerable<KeyValuePair<string, string>> config;
+            internal Action<Error> errorHandler;
+            internal Action<LogMessage> logHandler;
+            internal Action<string> statisticsHandler;
+        }
+        
         private int cancellationDelayMaxMs;
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
-        private readonly bool manualPoll = false;
-        internal readonly bool enableDeliveryReports = true;
-        internal readonly bool enableDeliveryReportKey = true;
-        internal readonly bool enableDeliveryReportValue = true;
-        internal readonly bool enableDeliveryReportTimestamp = true;
-        internal readonly bool enableDeliveryReportHeaders = true;
-        internal readonly bool enableDeliveryReportPersistedStatus = true;
+        private bool manualPoll = false;
+        internal bool enableDeliveryReports = true;
+        internal bool enableDeliveryReportKey = true;
+        internal bool enableDeliveryReportValue = true;
+        internal bool enableDeliveryReportTimestamp = true;
+        internal bool enableDeliveryReportHeaders = true;
+        internal bool enableDeliveryReportPersistedStatus = true;
 
-        private readonly SafeKafkaHandle ownedKafkaHandle;
-        private readonly Handle borrowedHandle;
+        private SafeKafkaHandle ownedKafkaHandle;
+        private Handle borrowedHandle;
 
         internal SafeKafkaHandle KafkaHandle
             => ownedKafkaHandle != null 
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
 
-        private readonly Task callbackTask;
-        private readonly CancellationTokenSource callbackCts;
+        private Task callbackTask;
+        private CancellationTokenSource callbackCts;
 
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
@@ -74,33 +82,36 @@ namespace Confluent.Kafka
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
-        private readonly Librdkafka.ErrorDelegate errorCallbackDelegate;
+        private Action<Error> errorHandler;
+        private Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return; }
-            onError?.Invoke(this, KafkaHandle.CreatePossiblyFatalError(err, reason));
+            errorHandler?.Invoke(KafkaHandle.CreatePossiblyFatalError(err, reason));
         }
 
 
-        private readonly Librdkafka.StatsDelegate statsCallbackDelegate;
-        private int StatsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
+        private Action<string> statisticsHandler;
+        private Librdkafka.StatsDelegate statisticsCallbackDelegate;
+        private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return 0; }
-            onStatistics?.Invoke(this, Util.Marshal.PtrToStringUTF8(json));
+            statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
 
+        private Action<LogMessage> logHandler;
         private object loggerLockObj = new object();
-        private readonly Librdkafka.LogDelegate logCallbackDelegate;
+        private Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             // Note: kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
             if (ownedKafkaHandle != null && ownedKafkaHandle.IsClosed) { return; }
-            onLog?.Invoke(this, new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -280,93 +291,27 @@ namespace Confluent.Kafka
             }
         }
 
-        private event EventHandler<LogMessage> onLog;
-
-        /// <summary>
-        ///     Refer to <see cref="IClient.OnLog" />.
-        /// </summary>
-        public event EventHandler<LogMessage> OnLog
+        internal void Initialize(Handle handle)
         {
-            add
+            if (!handle.Owner.GetType().Name.Contains("Producer")) // much simpler than checking actual types.
             {
-                if (ownedKafkaHandle != null) { onLog += value; }
-                else { borrowedHandle.Owner.OnLog += value; }
+                throw new Exception("A Producer instance may only be constructed using the handle of another Producer instance.");
             }
-            remove
-            {
-                if (ownedKafkaHandle != null) { onLog -= value; }
-                else { borrowedHandle.Owner.OnLog -= value; }
-            }
-        }
 
-
-        private event EventHandler<Error> onError;
-
-        /// <summary>
-        ///     Refer to <see cref="IClient.OnError" />.
-        /// </summary>
-        public event EventHandler<Error> OnError
-        {
-            add
-            {
-                if (ownedKafkaHandle != null) { onError += value; }
-                else { borrowedHandle.Owner.OnError += value; }
-            }
-            remove
-            {
-                if (ownedKafkaHandle != null) { onError -= value; }
-                else { borrowedHandle.Owner.OnError -= value; }
-            }
-        }
-
-        private event EventHandler<string> onStatistics;
-
-        /// <summary>
-        ///     Refer to <see cref="IClient.OnStatistics" />.
-        /// </summary>
-        public event EventHandler<string> OnStatistics
-        {
-            add
-            {
-                if (ownedKafkaHandle != null) { onStatistics += value; }
-                else { borrowedHandle.Owner.OnStatistics += value; }
-            }
-            remove
-            {
-                if (ownedKafkaHandle != null) { onStatistics -= value; }
-                else { borrowedHandle.Owner.OnStatistics -= value; }
-            }
-        }
-
-        /// <summary>
-        ///     Creates a new <see cref="ProducerBase" /> instance.
-        /// </summary>
-        /// <param name="handle">
-        ///     An existing librdkafka producer handle to use for 
-        ///     communications with Kafka brokers.
-        /// </param>
-        public ProducerBase(Handle handle)
-        {
             this.borrowedHandle = handle;
         }
 
-        /// <summary>
-        ///     Creates a new <see cref="ProducerBase" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' must be specified.
-        /// </param>
-        public ProducerBase(IEnumerable<KeyValuePair<string, string>> config)
+        internal void Initialize(ProducerBase.Config baseConfig)
         {
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
             //       that never complete are never created when this is set to true.
 
-            config = Config.GetCancellationDelayMaxMs(config, out this.cancellationDelayMaxMs);
+            this.statisticsHandler = baseConfig.statisticsHandler;
+            this.logHandler = baseConfig.logHandler;
+            this.errorHandler = baseConfig.errorHandler;
+
+            var config = Confluent.Kafka.Config.ExtractCancellationDelayMaxMs(baseConfig.config, out this.cancellationDelayMaxMs);
 
             this.DeliveryReportCallback = DeliveryReportCallbackImpl;
 
@@ -448,13 +393,13 @@ namespace Confluent.Kafka
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
             errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
-            statsCallbackDelegate = StatsCallback;
+            statisticsCallbackDelegate = StatisticsCallback;
 
             // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
             //       such time as event handlers have had a chance to be registered.
             Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statsCallbackDelegate);
+            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
@@ -465,6 +410,8 @@ namespace Confluent.Kafka
                 callbackTask = StartPollTask(callbackCts.Token);
             }
         }
+        
+        internal ProducerBase() {}
 
 
         /// <summary>

@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // serializing case. 
 
-            using (var producer = new Producer<byte[], byte[]>(producerConfig))
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic, 
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte[] case. 
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic, 

@@ -22,6 +22,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using Xunit;
+using Confluent.Kafka.Serdes;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -39,22 +41,22 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                AutoOffsetReset = AutoOffsetResetType.Latest
+                AutoOffsetReset = AutoOffsetReset.Latest
             };
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            using (var producer = new Producer(producerConfig))
-            using (var consumer = new Consumer(consumerConfig))
+            IEnumerable<TopicPartition> assignedPartitions = null;
+
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
-                IEnumerable<TopicPartition> assignedPartitions = null;
                 ConsumeResult record;
 
-                consumer.OnPartitionsAssigned += (_, partitions) =>
-                {
-                    consumer.Assign(partitions);
+                consumer.SetPartitionsAssignedHandler((c, partitions) => {
+                    c.Assign(partitions);
                     assignedPartitions = partitions;
-                };
+                });
 
                 consumer.Subscribe(singlePartitionTopic);
 

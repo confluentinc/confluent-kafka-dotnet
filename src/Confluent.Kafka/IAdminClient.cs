@@ -93,6 +93,7 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.AdminClient.DescribeConfigsAsync(IEnumerable{ConfigResource}, DescribeConfigsOptions)" />
         /// </summary>
         Task<List<DescribeConfigsResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null);
+
     }
 
 }

@@ -59,14 +59,13 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             var consumeTask = Task.Run(() =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-                using (var consumer = new Consumer<string, GenericRecord>(
-                    new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName },
-                    new AvroDeserializer<string>(schemaRegistry),
-                    new AvroDeserializer<GenericRecord>(schemaRegistry)))
+                using (var consumer =
+                    new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
+                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry))
+                        .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
+                        .Build())
                 {
-                    consumer.OnError += (_, e)
-                        => Console.WriteLine($"Error: {e.Reason}");
-
                     consumer.Subscribe(topicName);
 
                     while (!cts.Token.IsCancellationRequested)
@@ -88,10 +87,11 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
-            using (var producer = new Producer<string, GenericRecord>(
-                new ProducerConfig { BootstrapServers = bootstrapServers },
-                new AvroSerializer<string>(schemaRegistry),
-                new AvroSerializer<GenericRecord>(schemaRegistry)))
+            using (var producer =
+                new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
+                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

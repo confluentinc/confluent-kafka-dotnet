@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka branch v1.0.0-RC4 *** - do not modify manually.
+// *** Auto-generated from librdkafka branch v1.0.0-RC5 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -27,7 +27,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     BrokerAddressFamily enum values
     /// </summary>
-    public enum BrokerAddressFamilyType
+    public enum BrokerAddressFamily
     {
         /// <summary>
         ///     Any
@@ -48,7 +48,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     SecurityProtocol enum values
     /// </summary>
-    public enum SecurityProtocolType
+    public enum SecurityProtocol
     {
         /// <summary>
         ///     Plaintext
@@ -61,20 +61,20 @@ namespace Confluent.Kafka
         Ssl,
 
         /// <summary>
-        ///     Sasl_Plaintext
+        ///     SaslPlaintext
         /// </summary>
-        Sasl_Plaintext,
+        SaslPlaintext,
 
         /// <summary>
-        ///     Sasl_Ssl
+        ///     SaslSsl
         /// </summary>
-        Sasl_Ssl
+        SaslSsl
     }
 
     /// <summary>
     ///     PartitionAssignmentStrategy enum values
     /// </summary>
-    public enum PartitionAssignmentStrategyType
+    public enum PartitionAssignmentStrategy
     {
         /// <summary>
         ///     Range
@@ -82,15 +82,15 @@ namespace Confluent.Kafka
         Range,
 
         /// <summary>
-        ///     Roundrobin
+        ///     RoundRobin
         /// </summary>
-        Roundrobin
+        RoundRobin
     }
 
     /// <summary>
     ///     Partitioner enum values
     /// </summary>
-    public enum PartitionerType
+    public enum Partitioner
     {
         /// <summary>
         ///     Random
@@ -103,9 +103,9 @@ namespace Confluent.Kafka
         Consistent,
 
         /// <summary>
-        ///     Consistent_Random
+        ///     ConsistentRandom
         /// </summary>
-        Consistent_Random,
+        ConsistentRandom,
 
         /// <summary>
         ///     Murmur2
@@ -113,15 +113,15 @@ namespace Confluent.Kafka
         Murmur2,
 
         /// <summary>
-        ///     Murmur2_Random
+        ///     Murmur2Random
         /// </summary>
-        Murmur2_Random
+        Murmur2Random
     }
 
     /// <summary>
     ///     AutoOffsetReset enum values
     /// </summary>
-    public enum AutoOffsetResetType
+    public enum AutoOffsetReset
     {
         /// <summary>
         ///     Latest
@@ -142,7 +142,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     SaslMechanism enum values
     /// </summary>
-    public enum SaslMechanismType
+    public enum SaslMechanism
     {
         /// <summary>
         ///     GSSAPI
@@ -166,6 +166,27 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
+    ///     Acks enum values
+    /// </summary>
+    public enum Acks : int
+    {
+        /// <summary>
+        ///     None
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        ///     Leader
+        /// </summary>
+        Leader = 1,
+
+        /// <summary>
+        ///     All
+        /// </summary>
+        All = -1
+    }
+
+    /// <summary>
     ///     Configuration common to all clients
     /// </summary>
     public class ClientConfig : Config
@@ -174,26 +195,56 @@ namespace Confluent.Kafka
         /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
         /// </summary>
-        public SaslMechanismType? SaslMechanism
+        public SaslMechanism? SaslMechanism
         {
             get
             {
                 var r = Get("sasl.mechanism");
                 if (r == null) { return null; }
-                if (r == "GSSAPI") { return  SaslMechanismType.Gssapi; }
-                if (r == "PLAIN") { return SaslMechanismType.Plain; }
-                if (r == "SCRAM-SHA-256") { return SaslMechanismType.ScramSha256; }
-                if (r == "SCRAM-SHA-512") { return SaslMechanismType.ScramSha512; }
+                if (r == "GSSAPI") { return Confluent.Kafka.SaslMechanism.Gssapi; }
+                if (r == "PLAIN") { return Confluent.Kafka.SaslMechanism.Plain; }
+                if (r == "SCRAM-SHA-256") { return Confluent.Kafka.SaslMechanism.ScramSha256; }
+                if (r == "SCRAM-SHA-512") { return Confluent.Kafka.SaslMechanism.ScramSha512; }
                 throw new ArgumentException($"Unknown sasl.mechanism value {r}");
             }
             set
             {
                 if (value == null) { this.properties.Remove("sasl.mechanism"); }
-                else if (value == SaslMechanismType.Gssapi) { this.properties["sasl.mechanism"] = "GSSAPI"; }
-                else if (value == SaslMechanismType.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
-                else if (value == SaslMechanismType.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
-                else if (value == SaslMechanismType.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
+                else if (value == Confluent.Kafka.SaslMechanism.Gssapi) { this.properties["sasl.mechanism"] = "GSSAPI"; }
+                else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
                 else throw new NotImplementedException($"Unknown sasl.mechanism value {value}");
+            }
+        }
+
+
+        /// <summary>
+        ///     This field indicates the number of acknowledgements the leader broker must receive from ISR brokers
+        ///     before responding to the request: Zero=Broker does not send any response/ack to client, One=The
+        ///     leader will write the record to its local log but will respond without awaiting full acknowledgement
+        ///     from all followers. All=Broker will block until message is committed by all in sync replicas (ISRs).
+        ///     If there are less than min.insync.replicas (broker configuration) in the ISR set the produce request
+        ///     will fail.
+        /// </summary>
+        public Acks? Acks
+        {
+            get
+            {
+                var r = Get("acks");
+                if (r == null) { return null; }
+                if (r == "0") { return Confluent.Kafka.Acks.None; }
+                if (r == "1") { return Confluent.Kafka.Acks.Leader; }
+                if (r == "-1" || r == "all") { return Confluent.Kafka.Acks.All; }
+                return (Acks)(int.Parse(r));
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove("acks"); }
+                else if (value == Confluent.Kafka.Acks.None) { this.properties["acks"] = "0"; }
+                else if (value == Confluent.Kafka.Acks.Leader) { this.properties["acks"] = "1"; }
+                else if (value == Confluent.Kafka.Acks.All) { this.properties["acks"] = "-1"; }
+                else { this.properties["acks"] = ((int)value.Value).ToString(); }
             }
         }
 
@@ -363,7 +414,7 @@ namespace Confluent.Kafka
         ///     default: any
         ///     importance: low
         /// </summary>
-        public BrokerAddressFamilyType? BrokerAddressFamily { get { return (BrokerAddressFamilyType?)GetEnum(typeof(BrokerAddressFamilyType), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
+        public BrokerAddressFamily? BrokerAddressFamily { get { return (BrokerAddressFamily?)GetEnum(typeof(BrokerAddressFamily), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
 
         /// <summary>
         ///     When enabled the client will only connect to brokers it needs to communicate with. When disabled the client will maintain connections to all brokers in the cluster.
@@ -448,13 +499,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Dictates how long the `broker.version.fallback` fallback is used in the case the ApiVersionRequest fails. **NOTE**: The ApiVersionRequest is only issued when a new connection to the broker is made (such as after an upgrade).
         ///
-        ///     default: 1200000
+        ///     default: 0
         ///     importance: medium
         /// </summary>
         public int? ApiVersionFallbackMs { get { return GetInt("api.version.fallback.ms"); } set { this.SetObject("api.version.fallback.ms", value); } }
 
         /// <summary>
-        ///     Older broker versions (before 0.10.0) provide no way for a client to query for supported protocol features (ApiVersionRequest, see `api.version.request`) making it impossible for the client to know what features it may use. As a workaround a user may set this property to the expected broker version and the client will automatically adjust its feature set accordingly if the ApiVersionRequest fails (or is disabled). The fallback broker version will be used for `api.version.fallback.ms`. Valid values are: 0.9.0, 0.8.2, 0.8.1, 0.8.0. Any other value, such as 0.10.2.1, enables ApiVersionRequests.
+        ///     Older broker versions (before 0.10.0) provide no way for a client to query for supported protocol features (ApiVersionRequest, see `api.version.request`) making it impossible for the client to know what features it may use. As a workaround a user may set this property to the expected broker version and the client will automatically adjust its feature set accordingly if the ApiVersionRequest fails (or is disabled). The fallback broker version will be used for `api.version.fallback.ms`. Valid values are: 0.9.0, 0.8.2, 0.8.1, 0.8.0. Any other value >= 0.10, such as 0.10.2.1, enables ApiVersionRequests.
         ///
         ///     default: 0.10.0
         ///     importance: medium
@@ -467,7 +518,7 @@ namespace Confluent.Kafka
         ///     default: plaintext
         ///     importance: high
         /// </summary>
-        public SecurityProtocolType? SecurityProtocol { get { return (SecurityProtocolType?)GetEnum(typeof(SecurityProtocolType), "security.protocol"); } set { this.SetObject("security.protocol", value); } }
+        public SecurityProtocol? SecurityProtocol { get { return (SecurityProtocol?)GetEnum(typeof(SecurityProtocol), "security.protocol"); } set { this.SetObject("security.protocol", value); } }
 
         /// <summary>
         ///     A cipher suite is a named combination of authentication, encryption, MAC and key exchange algorithm used to negotiate the security settings for a network connection using TLS or SSL network protocol. See manual page for `ciphers(1)` and `SSL_CTX_set_cipher_list(3).
@@ -767,14 +818,6 @@ namespace Confluent.Kafka
         public int? BatchNumMessages { get { return GetInt("batch.num.messages"); } set { this.SetObject("batch.num.messages", value); } }
 
         /// <summary>
-        ///     This field indicates how many acknowledgements the leader broker must receive from ISR brokers before responding to the request: *0*=Broker does not send any response/ack to client, *1*=Only the leader broker will need to ack the message, *-1* or *all*=broker will block until message is committed by all in sync replicas (ISRs) or broker's `min.insync.replicas` setting before sending response.
-        ///
-        ///     default: 1
-        ///     importance: high
-        /// </summary>
-        public int? Acks { get { return GetInt("acks"); } set { this.SetObject("acks", value); } }
-
-        /// <summary>
         ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
         ///
         ///     default: 5000
@@ -796,7 +839,7 @@ namespace Confluent.Kafka
         ///     default: consistent_random
         ///     importance: high
         /// </summary>
-        public PartitionerType? Partitioner { get { return (PartitionerType?)GetEnum(typeof(PartitionerType), "partitioner"); } set { this.SetObject("partitioner", value); } }
+        public Partitioner? Partitioner { get { return (Partitioner?)GetEnum(typeof(Partitioner), "partitioner"); } set { this.SetObject("partitioner", value); } }
 
         /// <summary>
         ///     Compression level parameter for algorithm selected by configuration property `compression.codec`. Higher values will result in better compression at the cost of more CPU usage. Usable range is algorithm-dependent: [0-9] for gzip; [0-12] for lz4; only 0 for snappy; -1 = codec-dependent default compression level.
@@ -859,7 +902,7 @@ namespace Confluent.Kafka
         ///     default: range,roundrobin
         ///     importance: medium
         /// </summary>
-        public PartitionAssignmentStrategyType? PartitionAssignmentStrategy { get { return (PartitionAssignmentStrategyType?)GetEnum(typeof(PartitionAssignmentStrategyType), "partition.assignment.strategy"); } set { this.SetObject("partition.assignment.strategy", value); } }
+        public PartitionAssignmentStrategy? PartitionAssignmentStrategy { get { return (PartitionAssignmentStrategy?)GetEnum(typeof(PartitionAssignmentStrategy), "partition.assignment.strategy"); } set { this.SetObject("partition.assignment.strategy", value); } }
 
         /// <summary>
         ///     Client group session and failure detection timeout. The consumer sends periodic heartbeats (heartbeat.interval.ms) to indicate its liveness to the broker. If no hearts are received by the broker for a group member within the session timeout, the broker will remove the consumer from the group and trigger a rebalance. The allowed range is configured with the **broker** configuration properties `group.min.session.timeout.ms` and `group.max.session.timeout.ms`. Also see `max.poll.interval.ms`.
@@ -1003,7 +1046,7 @@ namespace Confluent.Kafka
         ///     default: largest
         ///     importance: high
         /// </summary>
-        public AutoOffsetResetType? AutoOffsetReset { get { return (AutoOffsetResetType?)GetEnum(typeof(AutoOffsetResetType), "auto.offset.reset"); } set { this.SetObject("auto.offset.reset", value); } }
+        public AutoOffsetReset? AutoOffsetReset { get { return (AutoOffsetReset?)GetEnum(typeof(AutoOffsetReset), "auto.offset.reset"); } set { this.SetObject("auto.offset.reset", value); } }
 
     }
 

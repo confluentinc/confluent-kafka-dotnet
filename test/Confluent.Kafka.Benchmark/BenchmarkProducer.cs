@@ -56,7 +56,7 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
 
-            using (var producer = new Producer(config))
+            using (var producer = new ProducerBuilder(config).Build())
             {
                 for (var j=0; j<nTests; j += 1)
                 {
