@@ -36,7 +36,7 @@ namespace Confluent.Kafka
     public class Consumer<TKey, TValue> : ConsumerBase, IConsumer<TKey, TValue>
     {
         /// <summary>
-        ///     Set the partitions assiged handler.
+        ///     Set the partitions assigned handler.
         /// 
         ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
         ///     method (or another overload of this method) in this handler, or do not specify a partitions assigned handler,

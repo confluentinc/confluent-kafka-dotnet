@@ -187,8 +187,9 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Set the handler to call on librdkafka statistics events. Statistics are provided as a JSON formatted string as defined here:
-        ///     https://github.com/edenhill/librdkafka/wiki/Statistics
+        ///     Set the handler to call on statistics events. Statistics are provided as
+        ///     a JSON formatted string as defined here:
+        ///     https://github.com/edenhill/librdkafka/blob/master/STATISTICS.md
         /// </summary>
         /// <remarks>
         ///     You can enable statistics and set the statistics interval
@@ -200,6 +201,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<Producer<TKey, TValue>, string> statisticsHandler)
         {
+            if (this.StatisticsHandler != null)
+            {
+                throw new ArgumentException("Statistics handler may not be specified more than once.");
+            }
             this.StatisticsHandler = statisticsHandler;
             return this;
         }
@@ -207,7 +212,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Set the handler to call on error events e.g. connection failures or all
         ///     brokers down. Note that the client will try to automatically recover from
-        ///     errors that are not marked as fatal - such errors should be interpreted
+        ///     errors that are not marked as fatal. Non-fatal errors should be interpreted
         ///     as informational rather than catastrophic.
         /// </summary>
         /// <remarks>
@@ -216,6 +221,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<Producer<TKey, TValue>, Error> errorHandler)
         {
+            if (this.ErrorHandler != null)
+            {
+                throw new ArgumentException("Error handler may not be specified more than once.");
+            }
             this.ErrorHandler = errorHandler;
             return this;
         }
@@ -229,10 +238,7 @@ namespace Confluent.Kafka
         ///     By default not many log messages are generated.
         ///
         ///     For more verbose logging, specify one or more debug contexts
-        ///     using the 'debug' configuration property. The 'log_level'
-        ///     configuration property is also relevant, however logging is
-        ///     verbose by default given a debug context has been specified,
-        ///     so you typically shouldn't adjust this value.
+        ///     using the 'debug' configuration property.
         ///
         ///     Warning: Log handlers are called spontaneously from internal
         ///     librdkafka threads and the application must not call any
@@ -241,6 +247,10 @@ namespace Confluent.Kafka
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetLogHandler(Action<Producer<TKey, TValue>, LogMessage> logHandler)
         {
+            if (this.LogHandler != null)
+            {
+                throw new ArgumentException("Log handler may not be specified more than once.");
+            }
             this.LogHandler = logHandler;
             return this;
         }
@@ -250,6 +260,10 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null)
+            {
+                throw new ArgumentException("Key serializer may not be specified more than once.");
+            }
             this.KeySerializer = serializer;
             return this;
         }
@@ -259,6 +273,10 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            {
+                throw new ArgumentException("Value serializer may not be specified more than once.");
+            }
             this.ValueSerializer = serializer;
             return this;
         }
@@ -268,6 +286,10 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
+            if (this.KeySerializer != null || this.AsyncKeySerializer != null)
+            {
+                throw new ArgumentException("Key serializer may not be specified more than once.");
+            }
             this.AsyncKeySerializer = serializer;
             return this;
         }
@@ -277,6 +299,10 @@ namespace Confluent.Kafka
         /// </summary>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
+            if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
+            {
+                throw new ArgumentException("Value serializer may not be specified more than once.");
+            }
             this.AsyncValueSerializer = serializer;
             return this;
         }

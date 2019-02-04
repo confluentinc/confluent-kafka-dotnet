@@ -264,7 +264,7 @@ namespace Confluent.Kafka
 
         /// <remarks>
         ///     If there's demand, we may allow instantiation of the <see cref="ConsumerBase" /> class from
-        ///     external code in the future. For now, dissallow this so it's considered an internal detail.
+        ///     external code in the future. For now, disallow this so it's considered an internal detail.
         /// </remarks>
         internal ConsumerBase() {}
 
