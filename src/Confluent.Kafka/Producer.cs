@@ -34,10 +34,10 @@ namespace Confluent.Kafka
     {
         internal class Config
         {
-            internal IEnumerable<KeyValuePair<string, string>> config;
-            internal Action<Error> errorHandler;
-            internal Action<LogMessage> logHandler;
-            internal Action<string> statisticsHandler;
+            public IEnumerable<KeyValuePair<string, string>> config;
+            public Action<Error> errorHandler;
+            public Action<LogMessage> logHandler;
+            public Action<string> statisticsHandler;
         }
 
         private interface IDeliveryHandler
@@ -66,17 +66,17 @@ namespace Confluent.Kafka
         private object disposeHasBeenCalledLockObj = new object();
 
         private bool manualPoll = false;
-        internal bool enableDeliveryReports = true;
-        internal bool enableDeliveryReportKey = true;
-        internal bool enableDeliveryReportValue = true;
-        internal bool enableDeliveryReportTimestamp = true;
-        internal bool enableDeliveryReportHeaders = true;
-        internal bool enableDeliveryReportPersistedStatus = true;
+        private bool enableDeliveryReports = true;
+        private bool enableDeliveryReportKey = true;
+        private bool enableDeliveryReportValue = true;
+        private bool enableDeliveryReportTimestamp = true;
+        private bool enableDeliveryReportHeaders = true;
+        private bool enableDeliveryReportPersistedStatus = true;
 
         private SafeKafkaHandle ownedKafkaHandle;
         private Handle borrowedHandle;
 
-        internal SafeKafkaHandle KafkaHandle
+        private SafeKafkaHandle KafkaHandle
             => ownedKafkaHandle != null 
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
@@ -435,6 +435,7 @@ namespace Confluent.Kafka
                 ownedKafkaHandle.Dispose();
             }
         }
+        
 
         /// <summary>
         ///     <see cref="IClient.Name" />
