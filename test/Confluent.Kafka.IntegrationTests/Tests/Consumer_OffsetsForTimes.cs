@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var firstMessage = messages[0];
             var lastMessage = messages[N - 1];
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 var timeout = TimeSpan.FromSeconds(10);
 
@@ -103,7 +104,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var messages = new DeliveryResult[count];
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 for (var index = 0; index < count; index++)
                 {

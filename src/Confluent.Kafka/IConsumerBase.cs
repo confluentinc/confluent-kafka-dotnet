@@ -26,8 +26,8 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka consumer, excluding
-    ///     any methods for consuming messages.
+    ///     Defines a high-level Apache Kafka consumer, excluding any methods
+    ///     for consuming messages.
     /// </summary>
     public interface IConsumerBase : IClient
     {
@@ -35,24 +35,6 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.MemberId" />
         /// </summary>
         string MemberId { get; }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnPartitionsAssigned" />
-        /// </summary>
-        event EventHandler<List<TopicPartition>> OnPartitionsAssigned;
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnPartitionsRevoked" />
-        /// </summary>
-        event EventHandler<List<TopicPartition>> OnPartitionsRevoked;
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.ConsumerBase.OnOffsetsCommitted" />
-        /// </summary>
-        event EventHandler<CommittedOffsets> OnOffsetsCommitted;
 
 
         /// <summary>

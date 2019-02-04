@@ -33,8 +33,8 @@ namespace Confluent.Kafka.Examples.MultiProducer
         {
             var config = new ProducerConfig { BootstrapServers = args[0] };
 
-            using (var producer = new Producer<string, string>(config))
-            using (var producer2 = new Producer<Null, int>(producer.Handle))
+            using (var producer = new ProducerBuilder<string, string>(config).Build())
+            using (var producer2 = new DependentProducerBuilder<Null, int>(producer.Handle).Build())
             {
                 // write (string, string) data to topic "first-topic".
                 producer.ProduceAsync("first-topic", new Message<string, string> { Key = "my-key-value", Value = "my-value" });
@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Examples.MultiProducer
                 // do so, you can use different producers to write to the same topic.
                 producer2.ProduceAsync("first-topic", new Message<Null, int> { Value = 107 });
 
-                // As the Tasks returned by ProducerAsync are not waited on there will still be messages in flight.
+                // As the Tasks returned by ProduceAsync are not waited on there will still be messages in flight.
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
         }

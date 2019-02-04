@@ -20,6 +20,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Xunit;
+using Confluent.Kafka.Serdes;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -46,7 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             var testString = "hello world";
 
             DeliveryResult dr;
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize(testString, true, null, null) }).Result;
                 Assert.True(dr.Offset >= 0);
@@ -54,7 +55,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             consumerConfig.AutoOffsetReset = AutoOffsetReset.Latest;
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 ConsumeResult record;
 
@@ -68,7 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             consumerConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
             {
                 ConsumeResult record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });

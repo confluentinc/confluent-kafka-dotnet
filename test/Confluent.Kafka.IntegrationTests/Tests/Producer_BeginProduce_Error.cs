@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -48,12 +49,16 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(Offset.Invalid, dr.Offset);
                 Assert.Null(dr.Message.Key);
                 Assert.Equal("test", dr.Message.Value);
-                Assert.Equal(PersistenceStatus.Persisted, dr.PersistenceStatus);
+                Assert.Equal(PersistenceStatus.NotPersisted, dr.PersistenceStatus);
                 Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
                 count += 1;
             };
 
-            using (var producer = new Producer<Null, String>(producerConfig, Serializers.Null, Serializers.Utf8))
+            using (var producer =
+                new ProducerBuilder<Null, String>(producerConfig)
+                    .SetKeySerializer(Serializers.Null)
+                    .SetValueSerializer(Serializers.Utf8)
+                    .Build())
             {
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 1), new Message<Null, String> { Value = "test" }, dh);
                 producer.Flush(TimeSpan.FromSeconds(10));
@@ -77,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 42), new Message { Key = new byte[] { 11 }}, dh2);
                 producer.Flush(TimeSpan.FromSeconds(10));

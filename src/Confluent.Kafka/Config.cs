@@ -208,7 +208,7 @@ namespace Confluent.Kafka
 
         private const int DefaultCancellationDelayMaxMs = 100;
 
-        internal static IEnumerable<KeyValuePair<string, string>> GetCancellationDelayMaxMs(
+        internal static IEnumerable<KeyValuePair<string, string>> ExtractCancellationDelayMaxMs(
             IEnumerable<KeyValuePair<string, string>> config, out int cancellationDelayMaxMs)
         {
             var cancellationDelayMaxString = config

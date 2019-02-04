@@ -78,12 +78,13 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var consumeTask = Task.Run(() =>
             {
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-                using (var consumer = new Consumer<string, User>(consumerConfig,
-                    new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
+                using (var consumer =
+                    new ConsumerBuilder<string, User>(consumerConfig)
+                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                        .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
+                        .Build())
                 {
-                    consumer.OnError += (_, e)
-                        => Console.WriteLine($"Error: {e.Reason}");
-
                     consumer.Subscribe(topicName);
 
                     while (!cts.Token.IsCancellationRequested)
@@ -105,8 +106,11 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             }, cts.Token);
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<string, User>(producerConfig,
-                new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
+            using (var producer =
+                new ProducerBuilder<string, User>(producerConfig)
+                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 

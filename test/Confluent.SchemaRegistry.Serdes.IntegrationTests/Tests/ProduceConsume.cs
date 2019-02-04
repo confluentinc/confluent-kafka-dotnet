@@ -60,15 +60,18 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             };
 
             string topic = Guid.NewGuid().ToString();
-            using (var adminClient = new AdminClient(adminClientConfig))
+            using (var adminClient = new AdminClientBuilder(adminClientConfig).Build())
             {
                 adminClient.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var producer = new Producer<string, User>(producerConfig,
-                new AvroSerializer<string>(schemaRegistry), new AvroSerializer<User>(schemaRegistry)))
+            using (var producer =
+                new ProducerBuilder<string, User>(producerConfig)
+                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .Build())
             {
                 for (int i = 0; i < 100; ++i)
                 {
@@ -87,12 +90,13 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             }
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
-            using (var consumer = new Consumer<string, User>(consumerConfig,
-                new AvroDeserializer<string>(schemaRegistry), new AvroDeserializer<User>(schemaRegistry)))
+            using (var consumer =
+                new ConsumerBuilder<string, User>(consumerConfig)
+                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
+                    .Build())
             {
-                consumer.OnError += (_, e)
-                    => Assert.True(false, e.Reason);
-
                 consumer.Subscribe(topic);
 
                 int i = 0;

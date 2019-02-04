@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer<Null, Null>(producerConfig))
+            using (var producer = new ProducerBuilder<Null, Null>(producerConfig).Build())
             {
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message<Null, Null> {}, dh);
                 producer.BeginProduce(singlePartitionTopic, new Message<Null, Null> {}, dh);
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer = new ProducerBuilder(producerConfig).Build())
             {
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 0), new Message {}, dh2);
                 producer.BeginProduce(singlePartitionTopic, new Message {}, dh2);

@@ -16,6 +16,7 @@
 
 #pragma warning disable xUnit1026
 
+using Confluent.Kafka.Serdes;
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -49,27 +50,42 @@ namespace Confluent.Kafka.IntegrationTests
                 Debug = "all"
             };
 
+            var adminConfig = new AdminClientConfig
+            {
+                BootstrapServers = bootstrapServers,
+                Debug = "all"
+            };
+
             DeliveryResult dr;
 
-            using (var producer = new Producer(producerConfig))
+            using (var producer =
+                new ProducerBuilder(producerConfig)
+                    .SetLogHandler((_, m) => logCount += 1)
+                    .Build())
             {
-                producer.OnLog += (_, m)
-                    => logCount += 1;
-
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize("test value", true, null, null) }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);
 
             logCount = 0;
-            using (var consumer = new Consumer(consumerConfig))
+            using (var consumer =
+                new ConsumerBuilder(consumerConfig)
+                    .SetLogHandler((_, m) => logCount += 1)
+                    .Build())
             {
-                consumer.OnLog += (_, m)
-                    => logCount += 1;
-
                 consumer.Assign(new TopicPartition(singlePartitionTopic, 0));
-                
                 consumer.Consume(TimeSpan.FromSeconds(10));
+            }
+            Assert.True(logCount > 0);
+
+            logCount = 0;
+            using (var adminClient =
+                new AdminClientBuilder(adminConfig)
+                    .SetLogHandler((_, m) => logCount += 1)
+                    .Build())
+            {
+                adminClient.GetMetadata(TimeSpan.FromSeconds(1));
             }
             Assert.True(logCount > 0);
 

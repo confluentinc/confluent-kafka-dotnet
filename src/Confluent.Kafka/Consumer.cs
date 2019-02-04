@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
+using Confluent.Kafka.Serdes;
 
 
 namespace Confluent.Kafka
@@ -34,10 +35,76 @@ namespace Confluent.Kafka
     /// </summary>
     public class Consumer<TKey, TValue> : ConsumerBase, IConsumer<TKey, TValue>
     {
+        /// <summary>
+        ///     Set the partitions assigned handler.
+        /// 
+        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
+        ///     method (or another overload of this method) in this handler, or do not specify a partitions assigned handler,
+        ///     the consumer will be automatically assigned to the partition assignment set provided by the consumer group and
+        ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset,
+        ///     in accordance with the `auto.offset.reset` configuration property. This default behavior will not occur if
+        ///     you call Assign yourself in the handler. The set of partitions you assign to is not required to match the
+        ///     assignment provided by the consumer group, but typically will.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public void SetPartitionsAssignedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsAssignedHandler = null;
+                return;
+            }
+            base.partitionsAssignedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     Set the partitions revoked handler.
+        /// 
+        ///     If you do not call the <see cref="Confluent.Kafka.ConsumerBase.Unassign" /> or 
+        ///     <see cref="Confluent.Kafka.ConsumerBase.Assign(IEnumerable{TopicPartition})" />
+        ///     (or other overload) method in your handler, all partitions will be  automatically
+        ///     unassigned. This default behavior will not occur if you call Unassign (or Assign)
+        ///     yourself.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public void SetPartitionsRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsRevokedHandler = null;
+                return;
+            }
+            base.partitionsRevokedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     A handler that is called to report the result of (automatic) offset 
+        ///     commits. It is not called as a result of the use of the Commit method.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public void SetOffsetsCommittedHandler(Action<IConsumer<TKey, TValue>, CommittedOffsets> value)
+        {
+            if (value == null)
+            {
+                base.offsetsCommittedHandler = null;
+                return;
+            }
+            base.offsetsCommittedHandler = offsets => value(this, offsets);
+        }
+
+
         private IDeserializer<TKey> keyDeserializer;
         private IDeserializer<TValue> valueDeserializer;
-        private IAsyncDeserializer<TKey> taskKeyDeserializer;
-        private IAsyncDeserializer<TValue> taskValueDeserializer;
+        private IAsyncDeserializer<TKey> asyncKeyDeserializer;
+        private IAsyncDeserializer<TValue> asyncValueDeserializer;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -51,33 +118,12 @@ namespace Confluent.Kafka
             { typeof(byte[]), Deserializers.ByteArray }
         };
 
-        /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer{TKey,TValue}" /> instance.
-        /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
-        /// </param>
-        /// <param name="keyDeserializer">
-        ///     The deserializer to use to deserialize keys.
-        /// </param>
-        /// <param name="valueDeserializer">
-        ///     The deserializer to use to deserialize values.
-        /// </param>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IDeserializer<TKey> keyDeserializer = null,
-            IDeserializer<TValue> valueDeserializer = null
-        ) : base(config)
+        internal Consumer(ConsumerBuilder<TKey, TValue> builder)
         {
-            this.keyDeserializer = keyDeserializer;
-            this.valueDeserializer = valueDeserializer;
+            base.Initialize(builder.ConstructBaseConfig(this));
 
-            if (keyDeserializer == null)
+            // setup key deserializer.
+            if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
@@ -86,90 +132,42 @@ namespace Confluent.Kafka
                 }
                 this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
+            else if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer != null)
+            {
+                this.asyncKeyDeserializer = builder.AsyncKeyDeserializer;
+            }
+            else if (builder.KeyDeserializer != null && builder.AsyncKeyDeserializer == null)
+            {
+                this.keyDeserializer = builder.KeyDeserializer;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid key deserializer configuration.");
+            }
 
-            if (valueDeserializer == null)
+            // setup value deserializer.
+            if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
                     throw new ArgumentNullException(
-                        $"Value deserializer not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
+                        $"Key deserializer not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
-        }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer" />
-        /// </summary>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IDeserializer<TKey> keyDeserializer,
-            IAsyncDeserializer<TValue> taskValueDeserializer
-        ) : base(config)
-        {
-            this.keyDeserializer = keyDeserializer;
-            this.taskValueDeserializer = taskValueDeserializer;
-
-            if (keyDeserializer == null)
+            else if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer != null)
             {
-                throw new ArgumentNullException("Key deserializer must be specified.");
+                this.asyncValueDeserializer = builder.AsyncValueDeserializer;
             }
-
-            if (taskValueDeserializer == null)
+            else if (builder.ValueDeserializer != null && builder.AsyncValueDeserializer == null)
             {
-                throw new ArgumentNullException("Value deserializer must be specified.");
+                this.valueDeserializer = builder.ValueDeserializer;
+            }
+            else
+            {
+                throw new ArgumentException("Invalid value deserializer configuration.");
             }
         }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer" />
-        /// </summary>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IAsyncDeserializer<TKey> taskKeyDeserializer,
-            IDeserializer<TValue> valueDeserializer
-        ) : base(config)
-        {
-            this.taskKeyDeserializer = taskKeyDeserializer;
-            this.valueDeserializer = valueDeserializer;
-
-            if (this.taskKeyDeserializer == null)
-            {
-                throw new ArgumentNullException("Key deserializer must be specified.");
-            }
-
-            if (this.valueDeserializer == null)
-            {
-                throw new ArgumentNullException("Value deserializer must be specified.");
-            }
-        }
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer" />
-        /// </summary>
-        public Consumer(
-            IEnumerable<KeyValuePair<string, string>> config,
-            IAsyncDeserializer<TKey> taskKeyDeserializer,
-            IAsyncDeserializer<TValue> taskValueDeserializer
-        ) : base(config)
-        {
-            this.taskKeyDeserializer = taskKeyDeserializer;
-            this.taskValueDeserializer = taskValueDeserializer;
-
-            if (this.taskKeyDeserializer == null)
-            {
-                throw new ArgumentNullException("Key deserializer must be specified.");
-            }
-
-            if (this.taskValueDeserializer == null)
-            {
-                throw new ArgumentNullException("Value deserializer must be specified.");
-            }
-        }
-
 
         private ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
@@ -188,14 +186,14 @@ namespace Confluent.Kafka
 
             TKey key = keyDeserializer != null
                 ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
-                : taskKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
+                : asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
                 ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, false, rawResult.Message, rawResult.TopicPartition)
-                : taskValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
+                : asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
@@ -266,6 +264,7 @@ namespace Confluent.Kafka
             => (keyDeserializer != null && valueDeserializer != null)
                 ? Consume<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
                 : Consume(timeout.TotalMillisecondsAsInt());
+
     }
 
 
@@ -275,17 +274,51 @@ namespace Confluent.Kafka
     public class Consumer : ConsumerBase, IConsumer
     {
         /// <summary>
-        ///     Creates a new <see cref="Confluent.Kafka.Consumer" /> instance.
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetPartitionsAssignedHandler(Action{IConsumer{TKey,TValue},List{TopicPartition}})" />.
         /// </summary>
-        /// <param name="config">
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' and 'group.id' must be
-        ///     specified.
-        /// </param>
-        public Consumer(IEnumerable<KeyValuePair<string, string>> config) : base(config) {}
+        public void SetPartitionsAssignedHandler(Action<IConsumer, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsAssignedHandler = null;
+                return;
+            }
+            base.partitionsAssignedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetPartitionsRevokedHandler(Action{IConsumer{TKey,TValue},List{TopicPartition}})" />.
+        /// </summary>
+        public void SetPartitionsRevokedHandler(Action<IConsumer, List<TopicPartition>> value)
+        {
+            if (value == null)
+            {
+                base.partitionsRevokedHandler = null;
+                return;
+            }
+            base.partitionsRevokedHandler = partitions => value(this, partitions);
+        }
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetOffsetsCommittedHandler(Action{IConsumer{TKey,TValue},CommittedOffsets})" />.
+        /// </summary>
+        public void SetOffsetsCommittedHandler(Action<IConsumer, CommittedOffsets> value)
+        {
+            if (value == null)
+            {
+                base.offsetsCommittedHandler = null;
+                return;
+            }
+            base.offsetsCommittedHandler = offsets => value(this, offsets);
+        }
+
+
+        internal Consumer(ConsumerBuilder builder)
+        {
+            base.Initialize(builder.ConstructBaseConfig(this));
+        }
 
         /// <summary>
         ///     Poll for new messages / events. Blocks until a consume result
