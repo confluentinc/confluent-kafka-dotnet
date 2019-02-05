@@ -18,7 +18,7 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     All components of <see cref="Message" /> except Key and Value.
+    ///     All components of <see cref="Message{TKey,TValue}" /> except Key and Value.
     /// </summary>
     public class MessageMetadata
     {

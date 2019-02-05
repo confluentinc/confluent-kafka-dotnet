@@ -20,11 +20,6 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a successful produce request.
     /// </summary>
-    public class DeliveryResult : DeliveryResult<byte[], byte[]> { }
-
-    /// <summary>
-    ///     Encapsulates the result of a successful produce request.
-    /// </summary>
     public class DeliveryResult<TKey, TValue>
     {
         /// <summary>

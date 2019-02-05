@@ -21,97 +21,6 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Producer" /> instances.
-    /// </summary>
-    public class ProducerBuilder
-    {
-        /// <summary>
-        ///     The config dictionary.
-        /// </summary>
-        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
-
-        /// <summary>
-        ///     The configured error handler.
-        /// </summary>
-        internal protected Action<Producer, Error> ErrorHandler { get; set; }
-
-        /// <summary>
-        ///     The configured log handler.
-        /// </summary>
-        internal protected Action<Producer, LogMessage> LogHandler { get; set; }
-
-        /// <summary>
-        ///     The configured statistics handler.
-        /// </summary>
-        internal protected Action<Producer, string> StatisticsHandler { get; set; }
-
-        internal ProducerBase.Config ConstructBaseConfig(Producer producer)
-        {
-            return new ProducerBase.Config
-            {
-                config = Config,
-                errorHandler = this.ErrorHandler == null
-                    ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
-                    : error => this.ErrorHandler(producer, error),
-                logHandler = this.LogHandler == null
-                    ? default(Action<LogMessage>)
-                    : logMessage => this.LogHandler(producer, logMessage),
-                statisticsHandler = this.StatisticsHandler == null
-                    ? default(Action<string>)
-                    : stats => this.StatisticsHandler(producer, stats)
-            };
-        }
-
-        /// <summary>
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' must be specified.
-        /// </summary>
-        public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
-        {
-            this.Config = config;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ProducerBuilder{TKey,TValue}.SetStatisticsHandler(Action{Producer{TKey, TValue}, string})" />.
-        /// </summary>
-        public ProducerBuilder SetStatisticsHandler(Action<Producer, string> statisticsHandler)
-        {
-            this.StatisticsHandler = statisticsHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ProducerBuilder{TKey,TValue}.SetErrorHandler(Action{Producer{TKey, TValue}, Error})" />.
-        /// </summary>
-        public ProducerBuilder SetErrorHandler(Action<Producer, Error> errorHandler)
-        {
-            this.ErrorHandler = errorHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ProducerBuilder{TKey,TValue}.SetLogHandler(Action{Producer{TKey, TValue}, LogMessage})" />.
-        /// </summary>
-        public ProducerBuilder SetLogHandler(Action<Producer, LogMessage> logHandler)
-        {
-            this.LogHandler = logHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ProducerBuilder{TKey,TValue}.Build()" />.
-        /// </summary>
-        public virtual Producer Build()
-        {
-            return new Producer(this);
-        }
-    }
-
-
-    /// <summary>
     ///     A builder class for <see cref="Producer{TKey, TValue}" /> instances.
     /// </summary>
     public class ProducerBuilder<TKey, TValue>
@@ -157,9 +66,9 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
-        internal ProducerBase.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
+        internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
-            return new ProducerBase.Config
+            return new Producer<TKey,TValue>.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null

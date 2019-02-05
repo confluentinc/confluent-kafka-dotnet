@@ -70,15 +70,15 @@ namespace Confluent.Kafka.IntegrationTests
 
             // byte[] case
 
-            var drs2 = new List<Task<DeliveryResult>>();
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            var drs2 = new List<Task<DeliveryResult<byte[], byte[]>>>();
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 drs2.Add(producer.ProduceAsync(
                     new TopicPartition(partitionedTopic, 1),
-                    new Message { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
+                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 2"), Value = Encoding.UTF8.GetBytes("test val 2") }));
                 drs2.Add(producer.ProduceAsync(
                     partitionedTopic,
-                    new Message { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
+                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 3"), Value = Encoding.UTF8.GetBytes("test val 3") }));
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 

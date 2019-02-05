@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
             // byte[] case.
 
             count = 0;
-            Action<DeliveryReport> dh2 = (DeliveryReport dr) =>
+            Action<DeliveryReport<byte[], byte[]>> dh2 = (DeliveryReport<byte[], byte[]> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
                 Assert.Equal((Partition)0, dr.Partition);
@@ -89,15 +89,15 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0), 
-                    new Message { Key = Encoding.UTF8.GetBytes("test key 42"), Value = Encoding.UTF8.GetBytes("test val 42") }, dh2);
+                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 42"), Value = Encoding.UTF8.GetBytes("test val 42") }, dh2);
 
                 producer.BeginProduce(
                     singlePartitionTopic, 
-                    new Message { Key = Encoding.UTF8.GetBytes("test key 43"), Value = Encoding.UTF8.GetBytes("test val 43") }, dh2);
+                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 43"), Value = Encoding.UTF8.GetBytes("test val 43") }, dh2);
 
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

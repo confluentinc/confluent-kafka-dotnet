@@ -46,18 +46,18 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            DeliveryResult dr;
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            DeliveryResult<Null, byte[]> dr;
+            using (var producer = new ProducerBuilder<Null, byte[]>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize(testString, true, null, null) }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, byte[]> { Value = Serializers.Utf8.Serialize(testString, true, null, null) }).Result;
                 Assert.True(dr.Offset >= 0);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             consumerConfig.AutoOffsetReset = AutoOffsetReset.Latest;
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<Null, byte[]>(consumerConfig).Build())
             {
-                ConsumeResult record;
+                ConsumeResult<Null, byte[]> record;
 
                 // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
@@ -69,9 +69,9 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             consumerConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<Null, byte[]>(consumerConfig).Build())
             {
-                ConsumeResult record;
+                ConsumeResult<Null, byte[]> record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);

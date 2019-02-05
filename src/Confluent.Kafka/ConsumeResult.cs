@@ -22,11 +22,6 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents a message consumed from a Kafka cluster.
     /// </summary>
-    public class ConsumeResult : ConsumeResult<byte[], byte[]> {}
-
-    /// <summary>
-    ///     Represents a message consumed from a Kafka cluster.
-    /// </summary>
     public class ConsumeResult<TKey, TValue>
     {
         /// <summary>

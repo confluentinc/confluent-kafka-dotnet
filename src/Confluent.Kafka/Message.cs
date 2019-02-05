@@ -34,30 +34,4 @@ namespace Confluent.Kafka
         /// </summary>
         public TValue Value { get; set; }
     }
-
-    /// <summary>
-    ///     Represents a Kafka message.
-    /// </summary>
-    public class Message : Message<byte[], byte[]>
-    {
-        /// <summary>
-        ///     Create a new instance with default property values.
-        /// </summary>
-        public Message() {}
-
-        /// <summary>
-        ///     Create a new instance that exactly mirrors the state of
-        ///     a <see cref="Message{TKey, TValue}" /> instance.
-        /// </summary>
-        /// <param name="message">
-        ///     The <see cref="Message{TKey, TValue}" /> instance to copy.
-        /// </param>
-        public Message(Message<byte[], byte[]> message)
-        {
-            Timestamp = message.Timestamp;
-            Headers = message.Headers;
-            Key = message.Key;
-            Value = message.Value;
-        }
-    }
 }

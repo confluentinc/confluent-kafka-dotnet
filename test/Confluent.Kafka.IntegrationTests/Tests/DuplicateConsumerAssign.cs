@@ -49,20 +49,20 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            DeliveryResult dr;
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            DeliveryResult<byte[], byte[]> dr;
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message { Value = Serializers.Utf8.Serialize(testString, true, null, null) }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, true, null, null) }).Result;
                 Assert.NotNull(dr);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer1 = new ConsumerBuilder(consumerConfig).Build())
-            using (var consumer2 = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                ConsumeResult record;
+                ConsumeResult<byte[], byte[]> record;
                 record = consumer1.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record);
                 Assert.NotNull(record.Message);

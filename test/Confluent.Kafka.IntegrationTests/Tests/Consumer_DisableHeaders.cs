@@ -46,12 +46,12 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            DeliveryResult dr;
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            DeliveryResult<byte[], byte[]> dr;
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 dr = producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message
+                    new Message<byte[], byte[]>
                     {
                         Value = Serializers.Utf8.Serialize("my-value", true, null, null),
                         Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             using (var consumer =
-                new ConsumerBuilder(consumerConfig)
+                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {                    

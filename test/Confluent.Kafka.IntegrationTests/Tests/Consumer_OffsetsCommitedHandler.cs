@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 AutoOffsetReset = AutoOffsetReset.Earliest,
             };
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 var committedCount = 0;
                 consumer.SetOffsetsCommittedHandler((_, o) =>

@@ -144,7 +144,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableProducer : VerifiableClient, IDisposable
     {
-        Producer Handle; // Client Handle
+        Producer<byte[], byte[]> Handle; // Client Handle
 
         long DeliveryCnt; // Successfully delivered messages
         long ErrCnt; // Failed deliveries
@@ -158,7 +158,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             Config = clientConfig;
             var producerConfig = new ProducerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
-            Handle = new ProducerBuilder(producerConfig).Build();
+            Handle = new ProducerBuilder<byte[], byte[]>(producerConfig).Build();
             ProduceLock = new object();
             Dbg("Created producer " + Handle.Name);
         }
@@ -172,7 +172,7 @@ namespace Confluent.Kafka.VerifiableClient
             }
         }
 
-        public void HandleDelivery(DeliveryReport record)
+        public void HandleDelivery(DeliveryReport<byte[], byte[]> record)
         {
             var d = new Dictionary<string, object>
             {
@@ -209,7 +209,7 @@ namespace Confluent.Kafka.VerifiableClient
         {
             try
             {
-                Handle.BeginProduce(topic, new Message { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
+                Handle.BeginProduce(topic, new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
             }
             catch (KafkaException e)
             {

@@ -63,11 +63,11 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await_NonSerializing");
 
-            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message { Value = Encoding.UTF8.GetBytes("test string") });
+                    new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
                 Assert.True(dr.Offset > 0);
             }
 
@@ -85,14 +85,14 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFile("start Producer_ProduceAsync_Await_Throws");
 
-            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                await Assert.ThrowsAsync<ProduceException>(
+                await Assert.ThrowsAsync<ProduceException<byte[], byte[]>>(
                     async () => 
                     {
                         await producer.ProduceAsync(
                             new TopicPartition(singlePartitionTopic, 42),
-                            new Message { Value = Encoding.UTF8.GetBytes("test string") });
+                            new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
                         throw new Exception("unexpected exception");
                     });
             }
@@ -101,11 +101,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             Func<Task> mthd = async () =>
             {
-                using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
                 {
                     var dr = await producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 1001),
-                        new Message { Value = Encoding.UTF8.GetBytes("test string") });
+                        new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
                     throw new Exception("unexpected exception.");
                 }
             };

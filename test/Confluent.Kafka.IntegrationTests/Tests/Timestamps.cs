@@ -139,67 +139,67 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            var drs2_beginProduce = new List<DeliveryReport>();
-            var drs2_task = new List<DeliveryResult>();
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            var drs2_beginProduce = new List<DeliveryReport<byte[], byte[]>>();
+            var drs2_task = new List<DeliveryResult<byte[], byte[]>>();
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 // --- ProduceAsync, byte[] case.
 
                 drs2_task.Add(producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message { Timestamp = Timestamp.Default }).Result);
+                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
 
                 // TimestampType: CreateTime
                 drs2_task.Add(producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }).Result);
+                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }).Result);
 
                 // TimestampType: CreateTime (default)
                 drs2_task.Add(producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message { Timestamp = Timestamp.Default }).Result);
+                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
 
                 // TimestampType: LogAppendTime
                 Assert.Throws<ArgumentException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }).Result);
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }).Result);
 
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }).Result);
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }).Result);
 
 
                 // --- begin produce, byte[] case.
 
-                Action<DeliveryReport> dh = (DeliveryReport dr) => drs2_beginProduce.Add(dr);
+                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs2_beginProduce.Add(dr);
 
                 producer.BeginProduce(
-                    singlePartitionTopic, new Message { Timestamp = Timestamp.Default }, dh);
+                    singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 
                 // TimestampType: CreateTime
                 producer.BeginProduce(
                     singlePartitionTopic,
-                    new Message { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) },
+                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) },
                     dh);
 
                 // TimestampType: CreateTime (default)
                 producer.BeginProduce(
                     singlePartitionTopic,
-                    new Message { Timestamp = Timestamp.Default }, dh);
+                    new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 
                 // TimestampType: LogAppendTime
                 Assert.Throws<ArgumentException>(() =>
                     producer.BeginProduce(
                         singlePartitionTopic,
-                        new Message { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, dh));
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, dh));
 
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() =>
                     producer.BeginProduce(singlePartitionTopic,
-                    new Message { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }, dh));
+                    new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }, dh));
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
@@ -231,9 +231,9 @@ namespace Confluent.Kafka.IntegrationTests
                 assertCloseToNow(consumer, drs_beginProduce[2].TopicPartitionOffset);
             }
 
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                ConsumeResult record;
+                ConsumeResult<byte[], byte[]> record;
 
                 // non-serializing async
 
@@ -273,7 +273,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
         }
 
-        private static void assertCloseToNow_byte(Consumer consumer, TopicPartitionOffset tpo)
+        private static void assertCloseToNow_byte(Consumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));

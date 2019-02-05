@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var firstMessage = messages[0];
             var lastMessage = messages[N - 1];
-            using (var consumer = new ConsumerBuilder(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 var timeout = TimeSpan.FromSeconds(10);
 
@@ -99,18 +99,18 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   Consumer_OffsetsForTimes");
         }
 
-        private static DeliveryResult[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static DeliveryResult<byte[], byte[]>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var messages = new DeliveryResult[count];
-            using (var producer = new ProducerBuilder(producerConfig).Build())
+            var messages = new DeliveryResult<byte[], byte[]>[count];
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 for (var index = 0; index < count; index++)
                 {
                     var message = producer.ProduceAsync(
                         new TopicPartition(topic, partition),
-                        new Message
+                        new Message<byte[], byte[]>
                         { 
                             Key = Serializers.Utf8.Serialize($"test key {index}", true, null, null),
                             Value = Serializers.Utf8.Serialize($"test val {index}", true, null, null),

@@ -28,46 +28,10 @@ using System.Collections.Concurrent;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka producer client.
-    /// </summary>
-    public interface IProducer : IProducerBase, IClient
-    {
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync(string, Message, CancellationToken)" />
-        /// </summary>
-        Task<DeliveryResult> ProduceAsync(
-            string topic,
-            Message message,
-            CancellationToken cancellationToken = default(CancellationToken));
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.ProduceAsync(TopicPartition, Message, CancellationToken)" />
-        /// </summary>
-        Task<DeliveryResult> ProduceAsync(
-            TopicPartition topicPartition,
-            Message message,
-            CancellationToken cancellationToken = default(CancellationToken));
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce(string, Message, Action{DeliveryReport})" />
-        /// </summary>
-        void BeginProduce(string topic, Message message, Action<DeliveryReport> deliveryHandler = null);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer.BeginProduce(TopicPartition, Message, Action{DeliveryReport})" />
-        /// </summary>
-        void BeginProduce(TopicPartition topicPartition, Message message, Action<DeliveryReport> deliveryHandler = null);
-    }
-
-
-    /// <summary>
     ///     Defines a high-level Apache Kafka producer client that provides key
     ///     and value serialization.
     /// </summary>
-    public interface IProducer<TKey, TValue> : IProducerBase, IClient
+    public interface IProducer<TKey, TValue> : IClient
     {
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(string, Message{TKey, TValue}, CancellationToken)" />
@@ -103,5 +67,23 @@ namespace Confluent.Kafka
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
+
+        
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Poll(TimeSpan)" />
+        /// </summary>
+        int Poll(TimeSpan timeout);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Flush(TimeSpan)" />
+        /// </summary>
+        int Flush(TimeSpan timeout);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Flush(CancellationToken)" />
+        /// </summary>
+        void Flush(CancellationToken cancellationToken = default(CancellationToken));
     }
 }

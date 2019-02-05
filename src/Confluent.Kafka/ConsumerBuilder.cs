@@ -27,94 +27,6 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Consumer" /> instances.
-    /// </summary>
-    public class ConsumerBuilder
-    {
-        /// <summary>
-        ///     The config dictionary.
-        /// </summary>
-        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
-
-        /// <summary>
-        ///     The configured error handler.
-        /// </summary>
-        internal protected Action<Consumer, Error> ErrorHandler { get; set; }
-
-        /// <summary>
-        ///     The configured log handler.
-        /// </summary>
-        internal protected Action<Consumer, LogMessage> LogHandler { get; set; }
-
-        /// <summary>
-        ///     The configured statistics handler.
-        /// </summary>
-        internal protected Action<Consumer, string> StatisticsHandler { get; set; }
-
-
-        internal ConsumerBase.Config ConstructBaseConfig(Consumer consumer)
-        {
-            return new ConsumerBase.Config
-            {
-                config = Config,
-                errorHandler = this.ErrorHandler == null
-                    ? default(Action<Error>) // using default(...) rather than null (== default(...)) so types can be inferred.
-                    : error => this.ErrorHandler(consumer, error),
-                logHandler = this.LogHandler == null
-                    ? default(Action<LogMessage>)
-                    : logMessage => this.LogHandler(consumer, logMessage),
-                statisticsHandler = this.StatisticsHandler == null
-                    ? default(Action<string>)
-                    : stats => this.StatisticsHandler(consumer, stats)
-            };
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.ConsumerBuilder(IEnumerable{KeyValuePair{string, string}})" />.
-        /// </summary>
-        public ConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config)
-        {
-            this.Config = config;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.SetStatisticsHandler(Action{Consumer{TKey,TValue}, string})" />.
-        /// </summary>
-        public ConsumerBuilder SetStatisticsHandler(Action<Consumer, string> statisticsHandler)
-        {
-            this.StatisticsHandler = statisticsHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.SetErrorHandler(Action{Consumer{TKey,TValue}, Error})" />.
-        /// </summary>
-        public ConsumerBuilder SetErrorHandler(Action<Consumer, Error> errorHandler)
-        {
-            this.ErrorHandler = errorHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.SetLogHandler(Action{Consumer{TKey,TValue}, LogMessage})" />.
-        /// </summary>
-        public ConsumerBuilder SetLogHandler(Action<Consumer, LogMessage> logHandler)
-        {
-            this.LogHandler = logHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     Refer to <see cref="ConsumerBuilder{TKey,TValue}.Build" />.
-        /// </summary>
-        public virtual Consumer Build()
-        {
-            return new Consumer(this);
-        }
-    }
-
-
-    /// <summary>
     ///     A builder class for <see cref="Consumer{TKey,TValue}" /> instances.
     /// </summary>
     public class ConsumerBuilder<TKey, TValue>
@@ -159,9 +71,9 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
-        internal ConsumerBase.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
+        internal Consumer<TKey,TValue>.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
         {
-            return new ConsumerBase.Config
+            return new Consumer<TKey,TValue>.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null
