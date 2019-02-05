@@ -52,10 +52,13 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 ConsumeResult<Null, string> record;
 
-                consumer.SetPartitionsAssignedHandler((c, tps) =>
+                consumer.SetRebalanceHandler((c, e) =>
                 {
-                    c.Assign(tps);
-                    assignedPartitions = tps;
+                    if (e.IsAssignment)
+                    {
+                        c.Assign(e.Partitions);
+                        assignedPartitions = e.Partitions;
+                    }
                 });
 
                 consumer.Subscribe(topic);

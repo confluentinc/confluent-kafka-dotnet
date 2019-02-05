@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ namespace Confluent.Kafka.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Basic DeserializingConsumer test (consume mode).
+        ///     Test the RebalanceEvent parameter variant of the Assign method.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Consume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public static void Consumer_EventAssign(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
         {
-            LogToFile("start Consumer_Consume");
+            LogToFile("start Consumer_EventAssign");
 
             int N = 2;
             var firstProduced = Util.ProduceNullStringMessages(bootstrapServers, singlePartitionTopic, 100, N);
@@ -48,38 +48,33 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
+                int rebalanceCalledCount = 0;
                 consumer.SetRebalanceHandler((_, e) =>
                 {
-                    if (e.IsAssignment)
-                    {
-                        Assert.Single(e.Partitions);
-                        Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
-                        consumer.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    }
+                    Assert.Single(e.Partitions);
+                    consumer.Assign(e);
+                    rebalanceCalledCount += 1;
                 });
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                int msgCnt = 0;
-                while (true)
-                {
-                    var record = consumer.Consume(TimeSpan.FromMilliseconds(100));
-                    if (record == null) { continue; }
-                    if (record.IsPartitionEOF) { break; }
+                DateTime startTime = DateTime.Now;
+                while (rebalanceCalledCount < 1 && DateTime.Now - startTime < TimeSpan.FromSeconds(20))
+                    consumer.Consume(TimeSpan.FromMilliseconds(100));
+                Assert.Equal(1, rebalanceCalledCount);
 
-                    Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                    Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 10.0);
-                    msgCnt += 1;
-                }
+                consumer.Unsubscribe();
 
-                Assert.Equal(msgCnt, N);
+                startTime = DateTime.Now;
+                while (rebalanceCalledCount < 2 && DateTime.Now - startTime < TimeSpan.FromSeconds(20))
+                    consumer.Consume(TimeSpan.FromMilliseconds(100));
+                Assert.Equal(2, rebalanceCalledCount);
 
                 consumer.Close();
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_Consume");
+            LogToFile("end   Consumer_EventAssign");
         }
-
     }
 }

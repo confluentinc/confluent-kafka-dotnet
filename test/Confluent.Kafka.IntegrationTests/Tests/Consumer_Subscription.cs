@@ -50,18 +50,22 @@ namespace Confluent.Kafka.IntegrationTests
                 // Test empty case.
                 Assert.Empty(consumer.Subscription);
 
-                consumer.SetPartitionsAssignedHandler((_, partitions) =>
+                consumer.SetRebalanceHandler((_, e) =>
                 {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    // test non-empty case.
-                    Assert.Single(consumer.Subscription);
-                    Assert.Equal(singlePartitionTopic, consumer.Subscription[0]);
+                    if (e.IsAssignment)
+                    {
+                        Assert.Single(e.Partitions);
+                        Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
+                        consumer.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        // test non-empty case.
+                        Assert.Single(consumer.Subscription);
+                        Assert.Equal(singlePartitionTopic, consumer.Subscription[0]);
+                    }
+                    else
+                    {
+                        consumer.Unassign();
+                    }
                 });
-
-                consumer.SetPartitionsRevokedHandler((_, partitions)
-                    => consumer.Unassign());
 
                 consumer.Subscribe(singlePartitionTopic);
 

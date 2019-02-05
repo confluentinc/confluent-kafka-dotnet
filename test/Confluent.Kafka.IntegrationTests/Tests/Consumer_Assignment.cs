@@ -48,25 +48,27 @@ namespace Confluent.Kafka.IntegrationTests
             // Test in which both receive and revoke events are specified.
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                consumer.SetPartitionsAssignedHandler((_, partitions) =>
+                consumer.SetRebalanceHandler((_, e) =>
                 {
-                    Assert.Single(partitions);
-                    Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                    consumer.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    // test non-empty case.
-                    Assert.Single(consumer.Assignment);
-                    Assert.Equal(singlePartitionTopic, consumer.Assignment[0].Topic);
-                    Assert.Equal(0, (int)consumer.Assignment[0].Partition);
+                    if (e.IsAssignment)
+                    {
+                        Assert.Single(e.Partitions);
+                        Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
+                        consumer.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        // test non-empty case.
+                        Assert.Single(consumer.AssignedPartitions);
+                        Assert.Equal(singlePartitionTopic, consumer.AssignedPartitions[0].Topic);
+                        Assert.Equal(0, (int)consumer.AssignedPartitions[0].Partition);
+                    }
+                    else
+                    {
+                        Assert.Single(consumer.AssignedPartitions);
+                        consumer.Unassign();
+                        Assert.Empty(consumer.AssignedPartitions);
+                    }
                 });
 
-                consumer.SetPartitionsRevokedHandler((_, partitions) =>
-                {
-                    Assert.Single(consumer.Assignment);
-                    consumer.Unassign();
-                    Assert.Empty(consumer.Assignment);
-                });
-
-                Assert.Empty(consumer.Assignment);
+                Assert.Empty(consumer.AssignedPartitions);
                 consumer.Subscribe(singlePartitionTopic);
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
                 consumer.Close();
@@ -75,25 +77,28 @@ namespace Confluent.Kafka.IntegrationTests
             // test in which only the revoked event handler is specified.
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                consumer.SetPartitionsRevokedHandler((c, partitions) =>
+                consumer.SetRebalanceHandler((c, e) =>
                 {
-                    Assert.Single(c.Assignment);
-                    c.Unassign();
-                    Assert.Empty(c.Assignment);
+                    if (e.IsRevocation)
+                    {
+                        Assert.Single(c.AssignedPartitions);
+                        c.Unassign();
+                        Assert.Empty(c.AssignedPartitions);
+                    }
                 });
 
                 consumer.Subscribe(singlePartitionTopic);
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.Assignment);
+                Assert.Single(consumer.AssignedPartitions);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
                 r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(consumer.Assignment);
+                Assert.Empty(consumer.AssignedPartitions);
 
                 consumer.Close();
             }
@@ -101,25 +106,28 @@ namespace Confluent.Kafka.IntegrationTests
             // test in which only the receive event handler is specified.
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                consumer.SetPartitionsAssignedHandler((c, partitions) =>
+                consumer.SetRebalanceHandler((c, e) =>
                 {
-                    Assert.Empty(c.Assignment);
-                    c.Assign(partitions);
-                    Assert.Single(c.Assignment);
+                    if (e.IsAssignment)
+                    {
+                        Assert.Empty(c.AssignedPartitions);
+                        c.Assign(e.Partitions);
+                        Assert.Single(c.AssignedPartitions);
+                    }
                 });
 
                 consumer.Subscribe(singlePartitionTopic);
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.Assignment);
+                Assert.Single(consumer.AssignedPartitions);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
                 r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(consumer.Assignment);
+                Assert.Empty(consumer.AssignedPartitions);
 
                 consumer.Close();
             }
@@ -131,14 +139,14 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.Assignment);
+                Assert.Single(consumer.AssignedPartitions);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
                 r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(consumer.Assignment);
+                Assert.Empty(consumer.AssignedPartitions);
 
                 consumer.Close();
             }

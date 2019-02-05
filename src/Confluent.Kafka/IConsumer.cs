@@ -28,15 +28,9 @@ namespace Confluent.Kafka
     public interface IConsumer<TKey, TValue> : IClient
     {
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetPartitionsAssignedHandler(Action{IConsumer{TKey,TValue},List{TopicPartition}})" />.
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetRebalanceHandler(Action{IConsumer{TKey,TValue},RebalanceEvent})" />.
         /// </summary>
-        void SetPartitionsAssignedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetPartitionsRevokedHandler(Action{IConsumer{TKey,TValue},List{TopicPartition}})" />.
-        /// </summary>
-        void SetPartitionsRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value);
+        void SetRebalanceHandler(Action<IConsumer<TKey, TValue>, RebalanceEvent> value);
 
 
         /// <summary>
@@ -70,9 +64,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assignment" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.AssignedPartitions" />
         /// </summary>
-        List<TopicPartition> Assignment { get; }
+        List<TopicPartition> AssignedPartitions { get; }
 
 
         /// <summary>
@@ -101,16 +95,20 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(RebalanceEvent)" />
+        /// </summary>
+        void Assign(RebalanceEvent rebalanceEvent);
+
+
+        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartition)" />
         /// </summary>
-        /// <param name="partition"></param>
         void Assign(TopicPartition partition);
 
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartitionOffset)" />
         /// </summary>
-        /// <param name="partition"></param>
         void Assign(TopicPartitionOffset partition);
 
 

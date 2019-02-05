@@ -62,16 +62,21 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 int errCnt = 0;
                 
-                consumer.Subscribe(singlePartitionTopic);
-
-                consumer.SetPartitionsAssignedHandler((c, tps) => {
-                    Assert.Single(tps);
-                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                consumer.SetRebalanceHandler((c, e) =>
+                {
+                    if (e.IsAssignment)
+                    {
+                        Assert.Single(e.Partitions);
+                        Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
+                        c.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                    }
+                    else
+                    {
+                        c.Unassign();
+                    }
                 });
 
-                consumer.SetPartitionsRevokedHandler((c, _)
-                    => { c.Unassign(); });
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (true)
                 {
@@ -103,15 +108,19 @@ namespace Confluent.Kafka.IntegrationTests
                 int msgCnt = 0;
                 int errCnt = 0;
 
-                consumer.SetPartitionsAssignedHandler((c, tps) => 
+                consumer.SetRebalanceHandler((c, e) =>
                 {
-                    Assert.Single(tps);
-                    Assert.Equal(firstProduced.TopicPartition, tps[0]);
-                    c.Assign(tps.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                    if (e.IsAssignment)
+                    {
+                        Assert.Single(e.Partitions);
+                        Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
+                        c.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                    }
+                    else
+                    {
+                        c.Unassign();
+                    }
                 });
-
-                consumer.SetPartitionsRevokedHandler((c, _)
-                    => { c.Unassign(); });
 
                 consumer.Subscribe(singlePartitionTopic);
 

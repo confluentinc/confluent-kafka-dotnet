@@ -62,6 +62,7 @@ namespace Confluent.Kafka
 
         private int cancellationDelayMaxMs;
 
+        private bool subscribeHasBeenCalled = false;
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
@@ -107,8 +108,7 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Action<List<TopicPartition>> partitionsAssignedHandler;
-        private Action<List<TopicPartition>> partitionsRevokedHandler;
+        private Action<RebalanceEvent> rebalanceHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -116,7 +116,7 @@ namespace Confluent.Kafka
             IntPtr partitions,
             IntPtr opaque)
         {
-            var partitionList = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
+            var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
 
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed)
@@ -133,30 +133,30 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (partitionsAssignedHandler != null)
+                if (rebalanceHandler != null)
                 {
                     assignCallCount = 0;
-                    partitionsAssignedHandler(partitionList);
+                    rebalanceHandler(new RebalanceEvent(partitionAssignment, true));
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
                         throw new InvalidOperationException(
-                            $"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
+                            $"Assign/Unassign was called {assignCallCount} times during execution of the rebalance handler. It must be called at most once.");
                     }
                 }
-                Assign(partitionList.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (partitionsRevokedHandler != null)
+                if (rebalanceHandler != null)
                 {
                     assignCallCount = 0;
-                    partitionsRevokedHandler(partitionList);
+                    rebalanceHandler(new RebalanceEvent(partitionAssignment, false));
                     if (assignCallCount == 1) { return; }
                     if (assignCallCount > 1)
                     {
                         throw new InvalidOperationException(
-                            $"Assign/Unassign was called {assignCallCount} times after OnPartitionsAssigned was raised. It must be called at most once.");
+                            $"Assign/Unassign was called {assignCallCount} times during execution of the rebalance handler. It must be called at most once.");
                     }
                 }
                 Unassign();
@@ -212,7 +212,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartition)" />
         ///     or implicitly.
         /// </summary>
-        public List<TopicPartition> Assignment
+        public List<TopicPartition> AssignedPartitions
             => kafkaHandle.GetAssignment();
 
 
@@ -243,7 +243,10 @@ namespace Confluent.Kafka
         ///     in the group.
         /// </remarks>
         public void Subscribe(IEnumerable<string> topics)
-            => kafkaHandle.Subscribe(topics);
+        {
+            this.subscribeHasBeenCalled = true;
+            kafkaHandle.Subscribe(topics);
+        }
 
 
         /// <summary>
@@ -269,10 +272,38 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Update the assignment set to a single <paramref name="partition" />.
+        ///     Update the set of assigned partitions (the set of partitions the
+        ///     consumer will consume from) to reflect a <paramref name="rebalanceEvent" />.
+        /// 
+        ///     Note: The newly specified set is the complete set of partitions to
+        ///     consume from. If the consumer is already assigned to a set of partitions,
+        ///     the previous set will be replaced.
+        /// </summary>
+        /// <param name="rebalanceEvent">
+        ///     The rebalance event to use to determine which partitions to assign
+        ///     to. If this is an assignment event, the consumer will be assigned to
+        ///     all partitions in the assignment. If this is a revocation event, the
+        ///     consumer will be unassigned from all partitions.
+        /// </param>
+        public void Assign(RebalanceEvent rebalanceEvent)
+        {
+            if (rebalanceEvent.IsAssignment)
+            {
+                Assign(rebalanceEvent.Partitions);
+            }
+            else
+            {
+                Unassign();
+            }
+        }
+
+        /// <summary>
+        ///     Update the set of assigned partitions (the set of partitions the
+        ///     consumer will consume from) to a single <paramref name="partition" />. 
         ///
-        ///     The assignment set is the complete set of partitions to consume
-        ///     from and will replace any previous assignment.
+        ///     Note: The newly specified set is the complete set of partitions to
+        ///     consume from. If the consumer is already assigned to a set of partitions,
+        ///     the previous set will be replaced.
         /// </summary>
         /// <param name="partition">
         ///     The partition to consume from. Consumption will resume from the last
@@ -284,10 +315,12 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Update the assignment set to a single <paramref name="partition" />.
+        ///     Update the set of assigned partitions (the set of partitions the
+        ///     consumer will consume from) to a single <paramref name="partition" />. 
         ///
-        ///     The assignment set is the complete set of partitions to consume
-        ///     from and will replace any previous assignment.
+        ///     Note: The newly specified set is the complete set of partitions to
+        ///     consume from. If the consumer is already assigned to a set of partitions,
+        ///     the previous set will be replaced.
         /// </summary>
         /// <param name="partition">
         ///     The partition to consume from. If an offset value of Offset.Invalid
@@ -300,10 +333,12 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Update the assignment set to <paramref name="partitions" />.
+        ///     Update the set of assigned partitions (the set of partitions the
+        ///     consumer will consume from) to <paramref name="partitions" />. 
         ///
-        ///     The assignment set is the complete set of partitions to consume
-        ///     from and will replace any previous assignment.
+        ///     Note: The newly specified set is the complete set of partitions to
+        ///     consume from. If the consumer is already assigned to a set of partitions,
+        ///     the previous set will be replaced.
         /// </summary>
         /// <param name="partitions">
         ///     The set of partitions to consume from. If an offset value of
@@ -320,10 +355,12 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Update the assignment set to <paramref name="partitions" />.
+        ///     Update the set of assigned partitions (the set of partitions the
+        ///     consumer will consume from) to <paramref name="partitions" />. 
         ///
-        ///     The assignment set is the complete set of partitions to consume
-        ///     from and will replace any previous assignment.
+        ///     Note: The newly specified set is the complete set of partitions to
+        ///     consume from. If the consumer is already assigned to a set of partitions,
+        ///     the previous set will be replaced.
         /// </summary>
         /// <param name="partitions">
         ///     The set of partitions to consume from. Consumption will resume
@@ -339,13 +376,14 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Stop consumption and remove the current assignment.
+        ///     Remove the current set of assigned partitions and stop consumption.
         /// </summary>
         public void Unassign()
         {
             assignCallCount += 1;
             kafkaHandle.Assign(null);
         }
+
 
         /// <summary>
         ///     Store offsets for a single partition based on the topic/partition/offset
@@ -695,50 +733,42 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Set the partitions assigned handler.
+        ///     Set the consumer group rebalance handler. Except for the initial partition assignment
+        ///     and final assignment revocation, a group rebalance will cause this handler to be
+        ///     called twice. The first time to advise that the current assignment has been revoked
+        ///     and the second time to advise of the new assignment.
         /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(IEnumerable{TopicPartition})" />
-        ///     method (or another overload of this method) in this handler, or do not specify a partitions assigned handler,
-        ///     the consumer will be automatically assigned to the partition assignment set provided by the consumer group and
-        ///     consumption will resume from the last committed offset for each partition, or if there is no committed offset,
-        ///     in accordance with the `auto.offset.reset` configuration property. This default behavior will not occur if
-        ///     you call Assign yourself in the handler. The set of partitions you assign to is not required to match the
-        ///     assignment provided by the consumer group, but typically will.
+        ///     If you do not call an Assign or Unassign method in this handler, or do not specify
+        ///     a handler, partitions will be assigned (or unassigned) automatically, matching the
+        ///     assignment dictated by the consumer group. This default behavior will not occur if
+        ///     you call Assign yourself in the handler. The set of partitions you assign to is not
+        ///     required to match the assignment provided by the consumer group, but typically will.
+        /// 
+        ///     Consumption will resume from the last committed offset for each partition (unless an
+        ///     offset is manually specified in a call to Assign), or if there is no committed
+        ///     offset, in accordance with the `auto.offset.reset` configuration property.
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public void SetPartitionsAssignedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value)
+        public void SetRebalanceHandler(Action<IConsumer<TKey, TValue>, RebalanceEvent> value)
         {
             if (value == null)
             {
-                partitionsAssignedHandler = null;
-                return;
+                throw new ArgumentNullException("Rebalance handler cannot be null.");
             }
-            partitionsAssignedHandler = partitions => value(this, partitions);
-        }
 
-
-        /// <summary>
-        ///     Set the partitions revoked handler.
-        /// 
-        ///     If you do not call the <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Unassign" /> or 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(IEnumerable{TopicPartition})" />
-        ///     (or other overload) method in your handler, all partitions will be  automatically
-        ///     unassigned. This default behavior will not occur if you call Unassign (or Assign)
-        ///     yourself.
-        /// </summary>
-        /// <remarks>
-        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public void SetPartitionsRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> value)
-        {
-            if (value == null)
+            if (this.rebalanceHandler != null)
             {
-                partitionsRevokedHandler = null;
-                return;
+                throw new InvalidOperationException("Rebalance handler may only be specified once.");
             }
-            partitionsRevokedHandler = partitions => value(this, partitions);
+
+            if (this.subscribeHasBeenCalled)
+            {
+                throw new InvalidOperationException("Rebalance handler may not be set after Subscribe has been called.");
+            }
+
+            rebalanceHandler = rebalanceEvent => value(this, rebalanceEvent);
         }
 
 
