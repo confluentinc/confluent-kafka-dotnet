@@ -435,7 +435,7 @@ namespace Confluent.Kafka
                 ownedKafkaHandle.Dispose();
             }
         }
-        
+
 
         /// <summary>
         ///     <see cref="IClient.Name" />
@@ -630,8 +630,6 @@ namespace Confluent.Kafka
             logCallbackDelegate = LogCallback;
             statisticsCallbackDelegate = StatisticsCallback;
 
-            // TODO: provide some mechanism whereby calls to the error and log callbacks are cached until
-            //       such time as event handlers have had a chance to be registered.
             Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
             Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
             Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
