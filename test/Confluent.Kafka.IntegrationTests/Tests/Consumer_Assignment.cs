@@ -56,19 +56,19 @@ namespace Confluent.Kafka.IntegrationTests
                         Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
                         consumer.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                         // test non-empty case.
-                        Assert.Single(consumer.AssignedPartitions);
-                        Assert.Equal(singlePartitionTopic, consumer.AssignedPartitions[0].Topic);
-                        Assert.Equal(0, (int)consumer.AssignedPartitions[0].Partition);
+                        Assert.Single(consumer.Assignment);
+                        Assert.Equal(singlePartitionTopic, consumer.Assignment[0].Topic);
+                        Assert.Equal(0, (int)consumer.Assignment[0].Partition);
                     }
                     else
                     {
-                        Assert.Single(consumer.AssignedPartitions);
+                        Assert.Single(consumer.Assignment);
                         consumer.Unassign();
-                        Assert.Empty(consumer.AssignedPartitions);
+                        Assert.Empty(consumer.Assignment);
                     }
                 });
 
-                Assert.Empty(consumer.AssignedPartitions);
+                Assert.Empty(consumer.Assignment);
                 consumer.Subscribe(singlePartitionTopic);
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
                 consumer.Close();
@@ -81,9 +81,9 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (e.IsRevocation)
                     {
-                        Assert.Single(c.AssignedPartitions);
+                        Assert.Single(c.Assignment);
                         c.Unassign();
-                        Assert.Empty(c.AssignedPartitions);
+                        Assert.Empty(c.Assignment);
                     }
                 });
 
@@ -91,14 +91,14 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.AssignedPartitions);
+                Assert.Single(consumer.Assignment);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
                 r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(consumer.AssignedPartitions);
+                Assert.Empty(consumer.Assignment);
 
                 consumer.Close();
             }
@@ -110,9 +110,9 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (e.IsAssignment)
                     {
-                        Assert.Empty(c.AssignedPartitions);
+                        Assert.Empty(c.Assignment);
                         c.Assign(e.Partitions);
-                        Assert.Single(c.AssignedPartitions);
+                        Assert.Single(c.Assignment);
                     }
                 });
 
@@ -120,14 +120,14 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.AssignedPartitions);
+                Assert.Single(consumer.Assignment);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
                 r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(consumer.AssignedPartitions);
+                Assert.Empty(consumer.Assignment);
 
                 consumer.Close();
             }
@@ -139,14 +139,14 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // assignment will happen as a side effect of this:
                 var r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.AssignedPartitions);
+                Assert.Single(consumer.Assignment);
 
                 consumer.Unsubscribe();
 
                 // revoke will happen as side effect of this:
                 r = consumer.Consume(TimeSpan.FromSeconds(10));
 
-                Assert.Empty(consumer.AssignedPartitions);
+                Assert.Empty(consumer.Assignment);
 
                 consumer.Close();
             }

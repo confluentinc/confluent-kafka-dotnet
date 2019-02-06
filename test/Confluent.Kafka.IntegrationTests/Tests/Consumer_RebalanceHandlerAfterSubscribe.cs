@@ -48,6 +48,13 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Close();
             }
 
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            {
+                consumer.SetRebalanceHandler((_, e) => {});
+                Assert.Throws<InvalidOperationException>(() => consumer.SetRebalanceHandler((_, e) => {}));
+                consumer.Close();
+            }
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_RebalanceHandlerAfterSubscribe");
         }

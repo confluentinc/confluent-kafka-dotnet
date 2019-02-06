@@ -63,22 +63,19 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
                 .Build())
             {
-                // Set the handler to call when the consumer group that this consumer is a
-                // part of rebalances. Except for the initial partition assignment and final 
-                // assignment revocation, a group rebalance will cause this handler to be
-                // called twice. The first time to advise that the current assignment has been
-                // revoked and the second time to advise of the new assignment. You can
-                // use this callback to perform actions such as retrieving offsets from an
-                // external source and manually setting start offsets using the Assign method.
-                // You can even call Assign with a different set of partitions than those in
-                // the consumer group assignment set. If you do not call Assign, the consumer
-                // will be automatically assigned to (will consume from) the partitions of the
-                // consumer group assignment set and consumption will start from last committed
-                // offsets or in accordance with the auto.offset.reset configuration parameter
-                // for partitions where there is no committed offset.
                 consumer.SetRebalanceHandler((_, e) =>
                 {
-                    Console.WriteLine($"{(e.IsAssignment ? "Assigned" : "Revoked")} partitions: [{string.Join(", ", e.Partitions)}]");
+                    if (e.IsAssignment)
+                    {
+                        Console.WriteLine($"Assigned partitions: [{string.Join(", ", e.Partitions)}]");
+                        // possibly override the default partition assignment behavior:
+                        // consumer.Assign(...) 
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Revoked partitions: [{string.Join(", ", e.Partitions)}]");
+                        // consumer.Unassign()
+                    }
                 });
 
                 consumer.Subscribe(topics);

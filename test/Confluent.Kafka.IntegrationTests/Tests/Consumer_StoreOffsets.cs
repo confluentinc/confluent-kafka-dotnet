@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
 
-            IEnumerable<TopicPartition> assignedPartitions = null;
+            IEnumerable<TopicPartition> assignment = null;
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
@@ -57,13 +57,13 @@ namespace Confluent.Kafka.IntegrationTests
                     if (e.IsAssignment)
                     {
                         c.Assign(e.Partitions);
-                        assignedPartitions = e.Partitions;
+                        assignment = e.Partitions;
                     }
                 });
 
                 consumer.Subscribe(topic);
 
-                while (assignedPartitions == null)
+                while (assignment == null)
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }

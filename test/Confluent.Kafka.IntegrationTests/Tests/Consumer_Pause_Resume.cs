@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            IEnumerable<TopicPartition> assignedPartitions = null;
+            IEnumerable<TopicPartition> assignment = null;
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
@@ -58,13 +58,13 @@ namespace Confluent.Kafka.IntegrationTests
                     if (e.IsAssignment)
                     {
                         c.Assign(e.Partitions);
-                        assignedPartitions = e.Partitions;
+                        assignment = e.Partitions;
                     }
                 });
 
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (assignedPartitions == null)
+                while (assignment == null)
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
@@ -75,11 +75,11 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 
-                consumer.Pause(assignedPartitions);
+                consumer.Pause(assignment);
                 producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value 2", true, null, null) }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
-                consumer.Resume(assignedPartitions);
+                consumer.Resume(assignment);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 

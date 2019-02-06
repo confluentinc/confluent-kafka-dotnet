@@ -28,7 +28,7 @@ namespace Confluent.Kafka
         ///     Initializes a new RebalanceEvent instance.
         /// </summary>
         /// <param name="partitions">
-        ///     The partition assignment. In the case of a revoked event,
+        ///     The partition assignment. In the case of a revocation event,
         ///     this is the assignment that will be revoked.
         /// </param>
         /// <param name="isAssignment">
@@ -44,7 +44,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     The partition assignment. In the case of a
-        ///     revoked event, this is the current assignment
+        ///     revocation event, this is the current assignment
         ///     set that is being revoked.
         /// </summary>
         public IList<TopicPartition> Partitions { get; private set; }
