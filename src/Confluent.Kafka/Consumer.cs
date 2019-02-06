@@ -41,6 +41,8 @@ namespace Confluent.Kafka
             internal Action<Error> errorHandler;
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
+            internal Action<CommittedOffsets> offsetsCommittedHandler;
+            internal Action<RebalanceEvent> rebalanceHandler;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -62,8 +64,6 @@ namespace Confluent.Kafka
 
         private int cancellationDelayMaxMs;
 
-        private bool subscribeHasBeenCalled = false;
-        private object subscribeHasBeenCalledLockObj = new object();
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
@@ -111,7 +111,6 @@ namespace Confluent.Kafka
         }
 
         private Action<RebalanceEvent> rebalanceHandler;
-        private object rebalanceHandlerLockObj = new object();
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -134,31 +133,28 @@ namespace Confluent.Kafka
             // To make the API less error prone, this is done automatically by the C# binding if required - the number
             // of times assign is called by user code is tracked, and if this is zero, then assign is called automatically.
 
-            bool haveRebalanceHandler;
-            lock (rebalanceHandlerLockObj) { haveRebalanceHandler = rebalanceHandler != null; }
-
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (haveRebalanceHandler)
+                if (rebalanceHandler != null)
                 {
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
                     rebalanceHandler(new RebalanceEvent(partitionAssignment, true));
                     lock (assignCallCountLockObj)
                     {
-                        if (assignCallCount > 1) { return; }
+                        if (assignCallCount > 0) { return; }
                     }
                 }
                 Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (haveRebalanceHandler)
+                if (rebalanceHandler != null)
                 {
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
                     rebalanceHandler(new RebalanceEvent(partitionAssignment, false));
                     lock (assignCallCountLockObj)
                     {
-                        if (assignCallCount > 1) { return; }
+                        if (assignCallCount > 0) { return; }
                     }
                 }
                 Unassign();
@@ -246,7 +242,6 @@ namespace Confluent.Kafka
         /// </remarks>
         public void Subscribe(IEnumerable<string> topics)
         {
-            lock (this.subscribeHasBeenCalledLockObj) { this.subscribeHasBeenCalled = true; }
             kafkaHandle.Subscribe(topics);
         }
 
@@ -708,70 +703,6 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Set the consumer group rebalance handler. Except for the initial partition assignment
-        ///     and final assignment revocation, a group rebalance will cause this handler to be
-        ///     called twice. The first time to advise that the current assignment has been revoked
-        ///     and the second time to advise of the new assignment.
-        /// 
-        ///     If you do not call an Assign or Unassign method in this handler, or do not specify
-        ///     a handler, partitions will be assigned (or unassigned) automatically, matching the
-        ///     assignment dictated by the consumer group. This default behavior will not occur if
-        ///     you call Assign yourself in the handler. The set of partitions you assign to is not
-        ///     required to match the assignment provided by the consumer group, but typically will.
-        ///     Note: you may call Assign or Unassign at most once in your rebalance handler.
-        /// 
-        ///     Consumption will resume from the last committed offset for each partition (unless an
-        ///     offset is manually specified in a call to Assign), or if there is no committed
-        ///     offset, in accordance with the `auto.offset.reset` configuration property.
-        /// </summary>
-        /// <remarks>
-        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public void SetRebalanceHandler(Action<IConsumer<TKey, TValue>, RebalanceEvent> value)
-        {
-            if (value == null)
-            {
-                throw new ArgumentNullException("Rebalance handler cannot be null.");
-            }
-
-            lock (this.subscribeHasBeenCalledLockObj)
-            {
-                if (this.subscribeHasBeenCalled)
-                {
-                    throw new InvalidOperationException("Rebalance handler may not be set after Subscribe has been called.");
-                }
-            }
-
-            lock (this.rebalanceHandlerLockObj)
-            {            
-                if (this.rebalanceHandler != null)
-                {
-                    throw new InvalidOperationException("Rebalance handler may only be specified once.");
-                }
-                rebalanceHandler = rebalanceEvent => value(this, rebalanceEvent);
-            }
-        }
-
-
-        /// <summary>
-        ///     A handler that is called to report the result of (automatic) offset 
-        ///     commits. It is not called as a result of the use of the Commit method.
-        /// </summary>
-        /// <remarks>
-        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public void SetOffsetsCommittedHandler(Action<IConsumer<TKey, TValue>, CommittedOffsets> value)
-        {
-            if (value == null)
-            {
-                offsetsCommittedHandler = null;
-                return;
-            }
-            offsetsCommittedHandler = offsets => value(this, offsets);
-        }
-
-
         internal Consumer(ConsumerBuilder<TKey, TValue> builder)
         {
             var baseConfig = builder.ConstructBaseConfig(this);
@@ -779,6 +710,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
+            this.rebalanceHandler = baseConfig.rebalanceHandler;
+            this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);
 

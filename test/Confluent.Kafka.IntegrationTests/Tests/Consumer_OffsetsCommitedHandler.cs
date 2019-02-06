@@ -48,21 +48,23 @@ namespace Confluent.Kafka.IntegrationTests
                 AutoOffsetReset = AutoOffsetReset.Earliest,
             };
 
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            var committedCount = 0;
+            
+            using (var consumer =
+                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                    .SetOffsetsCommittedHandler((_, o) =>
+                    {
+                        Assert.Equal(ErrorCode.NoError, o.Error.Code);
+                        Assert.Single(o.Offsets);
+                        Assert.Equal(0, o.Offsets[0].Partition.Value);
+                        Assert.Equal(singlePartitionTopic, o.Offsets[0].Topic);
+                        Assert.Equal(new TopicPartition(singlePartitionTopic, 0), o.Offsets[0].TopicPartition);
+                        Assert.Equal(new TopicPartition(singlePartitionTopic, 0), o.Offsets[0].TopicPartitionOffset.TopicPartition);
+                        Assert.True(o.Offsets[0].Offset >= 0);
+                        committedCount += 1;
+                    })
+                    .Build())
             {
-                var committedCount = 0;
-                consumer.SetOffsetsCommittedHandler((_, o) =>
-                {
-                    Assert.Equal(ErrorCode.NoError, o.Error.Code);
-                    Assert.Single(o.Offsets);
-                    Assert.Equal(0, o.Offsets[0].Partition.Value);
-                    Assert.Equal(singlePartitionTopic, o.Offsets[0].Topic);
-                    Assert.Equal(new TopicPartition(singlePartitionTopic, 0), o.Offsets[0].TopicPartition);
-                    Assert.Equal(new TopicPartition(singlePartitionTopic, 0), o.Offsets[0].TopicPartitionOffset.TopicPartition);
-                    Assert.True(o.Offsets[0].Offset >= 0);
-                    committedCount += 1;
-                });
-
                 consumer.Subscribe(singlePartitionTopic);
 
                 var startTime = DateTime.MinValue;

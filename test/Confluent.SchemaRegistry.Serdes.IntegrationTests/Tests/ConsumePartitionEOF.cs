@@ -69,16 +69,15 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     new ConsumerBuilder<Null, User>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Null)
                         .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                        .SetRebalanceHandler((c, e) =>
+                        {
+                            if (e.IsAssignment)
+                            {
+                                c.Assign(e.Partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
+                            }
+                        })
                         .Build())
                 {
-                    consumer.SetRebalanceHandler((c, e) =>
-                    {
-                        if (e.IsAssignment)
-                        {
-                            c.Assign(e.Partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
-                        }
-                    });
-
                     consumer.Subscribe(topic.Name);
 
                     var cr1 = consumer.Consume();
@@ -104,16 +103,15 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     new ConsumerBuilder<Null, User>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Null)
                         .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                        .SetRebalanceHandler((c, e) =>
+                        {
+                            if (e.IsAssignment)
+                            {
+                                c.Assign(e.Partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
+                            }
+                        })
                         .Build())
                 {
-                    consumer.SetRebalanceHandler((c, e) =>
-                    {
-                        if (e.IsAssignment)
-                        {
-                            c.Assign(e.Partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)));
-                        }
-                    });
-
                     consumer.Subscribe(topic.Name);
 
                     var cr1 = consumer.Consume();

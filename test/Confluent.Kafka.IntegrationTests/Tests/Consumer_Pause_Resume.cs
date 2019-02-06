@@ -49,26 +49,26 @@ namespace Confluent.Kafka.IntegrationTests
             IEnumerable<TopicPartition> assignment = null;
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            {
-                ConsumeResult<byte[], byte[]> record;
-
-                consumer.SetRebalanceHandler((c, e) =>
-                {
-                    if (e.IsAssignment)
+            using (var consumer =
+                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                    .SetRebalanceHandler((c, e) =>
                     {
-                        c.Assign(e.Partitions);
-                        assignment = e.Partitions;
-                    }
-                });
-
+                        if (e.IsAssignment)
+                        {
+                            c.Assign(e.Partitions);
+                            assignment = e.Partitions;
+                        }
+                    })
+                    .Build())
+            {
                 consumer.Subscribe(singlePartitionTopic);
 
                 while (assignment == null)
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                record = consumer.Consume(TimeSpan.FromSeconds(10));
+
+                ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
                 producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", true, null, null) }).Wait();

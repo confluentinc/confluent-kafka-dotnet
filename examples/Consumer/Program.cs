@@ -61,9 +61,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // Note: All handlers are called on the main .Consume thread.
                 .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
-                .Build())
-            {
-                consumer.SetRebalanceHandler((_, e) =>
+                .SetRebalanceHandler((_, e) =>
                 {
                     if (e.IsAssignment)
                     {
@@ -76,8 +74,9 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                         Console.WriteLine($"Revoked partitions: [{string.Join(", ", e.Partitions)}]");
                         // consumer.Unassign()
                     }
-                });
-
+                })
+                .Build())
+            {
                 consumer.Subscribe(topics);
 
                 while (!cancellationToken.IsCancellationRequested)

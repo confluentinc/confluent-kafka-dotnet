@@ -28,18 +28,6 @@ namespace Confluent.Kafka
     public interface IConsumer<TKey, TValue> : IClient
     {
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetRebalanceHandler(Action{IConsumer{TKey,TValue},RebalanceEvent})" />.
-        /// </summary>
-        void SetRebalanceHandler(Action<IConsumer<TKey, TValue>, RebalanceEvent> value);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.SetOffsetsCommittedHandler(Action{IConsumer{TKey,TValue},CommittedOffsets})" />.
-        /// </summary>
-        void SetOffsetsCommittedHandler(Action<IConsumer<TKey, TValue>, CommittedOffsets> value);
-
-
-        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey, TValue}.Consume(CancellationToken)" />
         /// </summary>
         ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken));
