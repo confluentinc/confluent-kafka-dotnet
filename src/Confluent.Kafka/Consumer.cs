@@ -145,12 +145,7 @@ namespace Confluent.Kafka
                     rebalanceHandler(new RebalanceEvent(partitionAssignment, true));
                     lock (assignCallCountLockObj)
                     {
-                        if (assignCallCount == 1) { return; }
-                        if (assignCallCount > 1)
-                        {
-                            throw new InvalidOperationException(
-                                $"Assign/Unassign was called {assignCallCount} times during execution of the rebalance handler. It must be called at most once.");
-                        }
+                        if (assignCallCount > 1) { return; }
                     }
                 }
                 Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
@@ -163,12 +158,7 @@ namespace Confluent.Kafka
                     rebalanceHandler(new RebalanceEvent(partitionAssignment, false));
                     lock (assignCallCountLockObj)
                     {
-                        if (assignCallCount == 1) { return; }
-                        if (assignCallCount > 1)
-                        {
-                            throw new InvalidOperationException(
-                                $"Assign/Unassign was called {assignCallCount} times during execution of the rebalance handler. It must be called at most once.");
-                        }
+                        if (assignCallCount > 1) { return; }
                     }
                 }
                 Unassign();
