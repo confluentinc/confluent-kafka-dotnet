@@ -688,7 +688,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern void rd_kafka_event_destroy(IntPtr rkev);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int rd_kafka_event_type(IntPtr rkev);
+        internal static extern Librdkafka.EventType rd_kafka_event_type(IntPtr rkev);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_event_opaque(IntPtr rkev);
