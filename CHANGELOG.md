@@ -3,21 +3,23 @@
 ## New Features
 
 - Revamped producer and consumer serialization functionality.
-  - All producer functionality except the public methods used to produce messages is now provided by `ProducerBase`.
-  - There are two producer classes deriving from `ProducerBase`: `Producer` and `Producer<TKey, TValue>`.
-    - `Producer` is specialized for the case of producing messages with `byte[]` keys and values.
-    - `Producer<TKey, TValue>` provides flexible integration with serialization functionality.
-  - On the consumer side, there are analogous classes: `ConsumerBase`, `Consumer` and `Consumer<TKey, TValue>`.
-  - There are two types of serializer and deserializer: `ISerializer<T>` / `IAsyncSerializer<T>` and `IDeserializer<T>` / `IAsyncDeserializer<T>`.
+  - There are now two types of serializer and deserializer: `ISerializer<T>` / `IAsyncSerializer<T>` and `IDeserializer<T>` / `IAsyncDeserializer<T>`.
     - `ISerializer<T>`/`IDeserializer<T>` are appropriate for most use cases.
-    - `IAsyncSerializer<T>`/`IAsyncDeserializer<T>` are more general, but less performant (they return `Task`s).
-    - The generic producer and consumer can be used with both types of serializer.
+    - `IAsyncSerializer<T>`/`IAsyncDeserializer<T>` are async friendly, but less performant (they return `Task`s).
   - Changed the name of `Confluent.Kafka.Avro` to `Confluent.SchemaRegistry.Serdes` (Schema Registry may support other serialization formats in the future).
-  - Added a example demonstrating working with protobuf serialized data.
+  - Added an example demonstrating working with protobuf serialized data.
+- `Consumer`s, `Producer`s and `AdminClient`s are now constructed using builder classes.
+  - This is more verbose, but provides a sufficiently flexible and future proof API for specifying serdes and other configuration information.
+  - All `event`s on the client classes have been replaced with corresponding `Set...Handler` methods on the builder classes.
+    - This allows (enforces) handlers are set on librdkafka initialization (which is important for some handlers, particularly the log handler).
+    - `event`s allow for more than one handler to be set, but this is often not appropriate (e.g. `OnPartitionsAssigned`), and never necessary. This is no longer possible.
+    - `event`s are also not async friendly (handlers can't return `Task`). The Set...Handler appropach can be extend in such a way that it is.
 - Avro serdes no longer make blocking calls to `ICachedSchemaRegistryClient` - everything is `await`ed.
-- References librdkafka.redist [1.0.0-RC5](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC5)
+  - Note: The `Consumer` implementation still calls async deserializers synchronously because the `Consumer` API is still otherwise fully synchronous.
+- Reference librdkafka.redist [1.0.0-RC7](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC7)
+  - Notable features: idempotent producer, sparse connections, KIP-62 (max.poll.interval.ms).
   - Note: End of partition notification is now disabled by default (enable using the `EnablePartitionEof` config property).
-- Removed `Consumer.OnPartitionEOF` in favor of `ConsumeResult.IsPartitionEOF`.
+- Removed the `Consumer.OnPartitionEOF` event in favor notifying of partition eof via `ConsumeResult.IsPartitionEOF`.
 - Removed `ErrorEvent` class and added `IsFatal` to `Error` class. 
   - The `IsFatal` flag is now set appropriately for all errors (previously it was always set to `false`).
 - Added `PersistenceStatus` property to `DeliveryResult`, which provides information on the persitence status of the message.
@@ -26,6 +28,10 @@
 
 - Added `Close` method to `IConsumer` interface.
 - Changed the name of `ProduceException.DeliveryReport` to `ProduceException.DeliveryResult`.
+- Fixed bug where enum config property couldn't be read after setting it.
+- Added `SchemaRegistryBasicAuthCredentialsSource` back into `SchemaRegistryConfig` (#679).
+- Fixed schema registry client failover connection issue (#737).
+- Improvements to librdkafka dependnecy discovery (#743).
 
 
 # 1.0.0-beta2

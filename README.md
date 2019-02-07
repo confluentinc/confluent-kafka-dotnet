@@ -42,16 +42,16 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.0-beta2
+Install-Package Confluent.Kafka -Version 1.0.0-beta3
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.0-beta2 Confluent.Kafka
+dotnet add package -v 1.0.0-beta3 Confluent.Kafka
 ```
 
-**Note:** We recommend using the `1.0-beta2` version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.5).
+**Note:** We recommend using the `1.0.0-beta3` version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.6).
 The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases. In choosing the label 'beta',
 we are signaling that we do not anticipate making any high impact changes to the API before the 1.0 release, however be warned that some 
 breaking changes are still planned. You can track progress and provide feedback on the new 1.0 API
@@ -90,10 +90,10 @@ class Program
     {
         var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
-        // If serializers are not specified as constructor arguments, default
-        // serializers from `Confluent.Kafka.Serializers` will be automatically
-        // used where available. Note: by default strings are encoded as UTF8.
-        using (var p = new Producer<Null, string>(config))
+        // If serializers are not specified, default serializers from
+        // `Confluent.Kafka.Serializers` will be automatically used where
+        // available. Note: by default strings are encoded as UTF8.
+        using (var p = new ProducerBuilder<Null, string>(config).Build())
         {
             try
             {
@@ -125,12 +125,12 @@ class Program
     {
         var conf = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
-        Action<DeliveryReportResult<Null, string>> handler = r => 
+        Action<DeliveryReport<Null, string>> handler = r => 
             Console.WriteLine(!r.Error.IsError
                 ? $"Delivered message to {r.TopicPartitionOffset}"
                 : $"Delivery Error: {r.Error.Reason}");
 
-        using (var p = new Producer<Null, string>(conf))
+        using (var p = new ProducerBuilder<Null, string>(conf).Build())
         {
             for (int i=0; i<100; ++i)
             {
@@ -148,6 +148,7 @@ class Program
 
 ```csharp
 using System;
+using System.Threading;
 using Confluent.Kafka;
 
 class Program
@@ -163,28 +164,33 @@ class Program
             // topic/partitions of interest. By default, offsets are committed
             // automatically, so in this example, consumption will only start from the
             // earliest message in the topic 'my-topic' the first time you run the program.
-            AutoOffsetReset = AutoOffsetResetType.Earliest
+            AutoOffsetReset = AutoOffsetReset.Earliest
         };
 
-        using (var c = new Consumer<Ignore, string>(conf))
+        using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
         {
             c.Subscribe("my-topic");
 
-            bool consuming = true;
-            // The client will automatically recover from non-fatal errors. You typically
-            // don't need to take any action unless an error is marked as fatal.
-            c.OnError += (_, e) => consuming = !e.IsFatal;
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
+            };
 
-            while (consuming)
+            while (!cts.IsCancellationRequested)
             {
                 try
                 {
-                    var cr = c.Consume();
+                    var cr = c.Consume(cts.Token);
                     Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
                 }
                 catch (ConsumeException e)
                 {
                     Console.WriteLine($"Error occured: {e.Error.Reason}");
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
             }
             
@@ -219,7 +225,7 @@ For more information about working with Avro in .NET, refer to the the blog post
 
 ### Error Handling
 
-Errors raised via a client's `OnError` event should be considered informational except when the `IsFatal` flag
+Errors delivered to a client's error handler should be considered informational except when the `IsFatal` flag
 is set to `true`, indicating that the client is in an un-recoverable state. Currently, this can only happen on
 the producer, and only when `enable.itempotence` has been set to `true`. In all other scenarios, clients are
 able to recover from all errors automatically.
