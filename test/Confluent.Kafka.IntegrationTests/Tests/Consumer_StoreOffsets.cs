@@ -45,27 +45,29 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
 
-            IEnumerable<TopicPartition> assignedPartitions = null;
+            IEnumerable<TopicPartition> assignment = null;
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
-            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
+            using (var consumer =
+                new ConsumerBuilder<Null, string>(consumerConfig)
+                    .SetRebalanceHandler((c, e) =>
+                    {
+                        if (e.IsAssignment)
+                        {
+                            c.Assign(e.Partitions);
+                            assignment = e.Partitions;
+                        }
+                    })
+                    .Build())
             {
-                ConsumeResult<Null, string> record;
-
-                consumer.SetPartitionsAssignedHandler((c, tps) =>
-                {
-                    c.Assign(tps);
-                    assignedPartitions = tps;
-                });
-
                 consumer.Subscribe(topic);
 
-                while (assignedPartitions == null)
+                while (assignment == null)
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
 
-                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
                 producer.ProduceAsync(topic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test store offset value", true, null, null) }).Wait();

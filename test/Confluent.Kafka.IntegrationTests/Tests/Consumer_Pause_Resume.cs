@@ -46,36 +46,40 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            IEnumerable<TopicPartition> assignedPartitions = null;
+            IEnumerable<TopicPartition> assignment = null;
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer =
+                new ConsumerBuilder<byte[], byte[]>(consumerConfig)
+                    .SetRebalanceHandler((c, e) =>
+                    {
+                        if (e.IsAssignment)
+                        {
+                            c.Assign(e.Partitions);
+                            assignment = e.Partitions;
+                        }
+                    })
+                    .Build())
             {
-                ConsumeResult<byte[], byte[]> record;
-
-                consumer.SetPartitionsAssignedHandler((c, partitions) => {
-                    c.Assign(partitions);
-                    assignedPartitions = partitions;
-                });
-
                 consumer.Subscribe(singlePartitionTopic);
 
-                while (assignedPartitions == null)
+                while (assignment == null)
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                record = consumer.Consume(TimeSpan.FromSeconds(10));
+
+                ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
                 producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", true, null, null) }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 
-                consumer.Pause(assignedPartitions);
+                consumer.Pause(assignment);
                 producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value 2", true, null, null) }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
-                consumer.Resume(assignedPartitions);
+                consumer.Resume(assignment);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 

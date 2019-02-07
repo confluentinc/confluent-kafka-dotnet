@@ -71,6 +71,16 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
+        /// <summary>
+        ///     The configured rebalance handler.
+        /// </summary>
+        internal protected Action<IConsumer<TKey, TValue>, RebalanceEvent> RebalanceHandler { get; set; }
+
+        /// <summary>
+        ///     The configured offsets committed handler.
+        /// </summary>
+        internal protected Action<IConsumer<TKey, TValue>, CommittedOffsets> OffsetsCommittedHandler { get; set; }
+
         internal Consumer<TKey,TValue>.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
         {
             return new Consumer<TKey,TValue>.Config
@@ -84,7 +94,13 @@ namespace Confluent.Kafka
                     : logMessage => this.LogHandler(consumer, logMessage),
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.StatisticsHandler(consumer, stats)
+                    : stats => this.StatisticsHandler(consumer, stats),
+                offsetsCommittedHandler = this.OffsetsCommittedHandler == null
+                    ? default(Action<CommittedOffsets>)
+                    : offsets => this.OffsetsCommittedHandler(consumer, offsets),
+                rebalanceHandler = this.RebalanceHandler == null
+                    ? default(Action<RebalanceEvent>)
+                    : rebalanceEvent => this.RebalanceHandler(consumer, rebalanceEvent)
             };
         }
 
@@ -223,6 +239,53 @@ namespace Confluent.Kafka
                 throw new ArgumentException("Value deserializer may not be specified more than once.");
             }
             this.AsyncValueDeserializer = deserializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the consumer group rebalance handler. Except for the initial partition assignment
+        ///     and final assignment revocation, a group rebalance will cause this handler to be
+        ///     called twice. The first time to advise that the current assignment has been revoked
+        ///     and the second time to advise of the new assignment.
+        /// 
+        ///     If you do not call an Assign or Unassign method in this handler, or do not specify
+        ///     a handler, partitions will be assigned (or unassigned) automatically, matching the
+        ///     assignment dictated by the consumer group. This default behavior will not occur if
+        ///     you call Assign yourself in the handler. The set of partitions you assign to is not
+        ///     required to match the assignment provided by the consumer group, but typically will.
+        ///     Note: you may call Assign or Unassign at most once in your rebalance handler.
+        /// 
+        ///     Consumption will resume from the last committed offset for each partition (unless an
+        ///     offset is manually specified in a call to Assign), or if there is no committed
+        ///     offset, in accordance with the `auto.offset.reset` configuration property.
+        /// </summary>
+        /// <remarks>
+        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetRebalanceHandler(Action<IConsumer<TKey, TValue>, RebalanceEvent> rebalanceHandler)
+        {
+            if (this.RebalanceHandler != null)
+            {
+                throw new ArgumentException("Rebalance handler may not be specified more than once.");
+            }
+            this.RebalanceHandler = rebalanceHandler;
+            return this;
+        }
+
+        /// <summary>
+        ///     A handler that is called to report the result of (automatic) offset 
+        ///     commits. It is not called as a result of the use of the Commit method.
+        /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetOffsetsCommittedHandler(Action<IConsumer<TKey, TValue>, CommittedOffsets> offsetsCommittedHandler)
+        {
+            if (this.OffsetsCommittedHandler != null)
+            {
+                throw new ArgumentException("Offsets committed handler may not be specified more than once.");
+            }
+            this.OffsetsCommittedHandler = offsetsCommittedHandler;
             return this;
         }
 
