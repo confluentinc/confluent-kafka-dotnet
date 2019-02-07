@@ -4,7 +4,7 @@
 
 - Revamped producer and consumer serialization functionality.
   - There are now two types of serializer and deserializer: `ISerializer<T>` / `IAsyncSerializer<T>` and `IDeserializer<T>` / `IAsyncDeserializer<T>`.
-    - `ISerializer<T>`/`IDeserializer<T>` are appropriate for most use cases.
+    - `ISerializer<T>`/`IDeserializer<T>` are appropriate for most use cases. 
     - `IAsyncSerializer<T>`/`IAsyncDeserializer<T>` are async friendly, but less performant (they return `Task`s).
   - Changed the name of `Confluent.Kafka.Avro` to `Confluent.SchemaRegistry.Serdes` (Schema Registry may support other serialization formats in the future).
   - Added an example demonstrating working with protobuf serialized data.
