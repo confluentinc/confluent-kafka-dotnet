@@ -90,9 +90,9 @@ class Program
     {
         var config = new ProducerConfig { BootstrapServers = "localhost:9092" };
 
-        // If serializers are not specified as constructor arguments, default
-        // serializers from `Confluent.Kafka.Serializers` will be automatically
-        // used where available. Note: by default strings are encoded as UTF8.
+        // If serializers are not specified, default serializers from
+        // `Confluent.Kafka.Serializers` will be automatically used where
+        // available. Note: by default strings are encoded as UTF8.
         using (var p = new ProducerBuilder<Null, string>(config).Build())
         {
             try
@@ -225,7 +225,7 @@ For more information about working with Avro in .NET, refer to the the blog post
 
 ### Error Handling
 
-Errors raised via a client's `OnError` event should be considered informational except when the `IsFatal` flag
+Errors delivered to a client's error handler should be considered informational except when the `IsFatal` flag
 is set to `true`, indicating that the client is in an un-recoverable state. Currently, this can only happen on
 the producer, and only when `enable.itempotence` has been set to `true`. In all other scenarios, clients are
 able to recover from all errors automatically.
