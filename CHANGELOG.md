@@ -17,7 +17,7 @@
 - Avro serdes no longer make blocking calls to `ICachedSchemaRegistryClient` - everything is `await`ed.
   - Note: The `Consumer` implementation still calls async deserializers synchronously because the `Consumer` API is still otherwise fully synchronous.
 - Reference librdkafka.redist [1.0.0-RC7](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC7)
-  - Notable features: idempotent producer, sparse connections.
+  - Notable features: idempotent producer, sparse connections, KIP-62 (max.poll.interval.ms).
   - Note: End of partition notification is now disabled by default (enable using the `EnablePartitionEof` config property).
 - Removed the `Consumer.OnPartitionEOF` event in favor notifying of partition eof via `ConsumeResult.IsPartitionEOF`.
 - Removed `ErrorEvent` class and added `IsFatal` to `Error` class. 
