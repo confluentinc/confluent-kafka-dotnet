@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC5" />
+    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC7" />
   </ItemGroup>
 
   <ItemGroup>
