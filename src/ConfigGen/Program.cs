@@ -131,7 +131,7 @@ namespace ConfigGen
                 else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties[""sasl.mechanism""] = ""PLAIN""; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-256""; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-512""; }
-                else throw new NotImplementedException($""Unknown sasl.mechanism value {value}"");
+                else throw new ArgumentException($""Unknown sasl.mechanism value {value}"");
             }
         }
 
@@ -558,10 +558,10 @@ namespace Confluent.Kafka
 
                 var desc = columns[5].Trim();
                 bool isAlias = desc.StartsWith("Alias");
-                if (isAlias != !desc.Contains("<br>*Type")) { throw new Exception("Inconsistent indication of alias parameter"); }
                 if (isAlias)
                 {
-                    prop.AliasFor = desc.Substring(desc.IndexOf('`')+1, desc.LastIndexOf('`') - desc.IndexOf('`') - 1);
+                    var firstIdx = desc.IndexOf('`')+1;
+                    prop.AliasFor = desc.Substring(firstIdx, desc.IndexOf('`', firstIdx) - desc.IndexOf('`') - 1);
                 }
                 else
                 {

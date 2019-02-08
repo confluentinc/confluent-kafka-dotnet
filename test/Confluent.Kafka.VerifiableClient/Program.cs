@@ -207,14 +207,7 @@ namespace Confluent.Kafka.VerifiableClient
 
         private void Produce(string topic, string value)
         {
-            try
-            {
-                Handle.BeginProduce(topic, new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
-            }
-            catch (KafkaException e)
-            {
-                Fatal($"Produce({topic}, {value}) failed: {e}");
-            }
+            Handle.BeginProduce(topic, new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
         }
 
         private void TimedProduce(object ignore)

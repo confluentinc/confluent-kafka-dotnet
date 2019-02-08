@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -116,7 +117,7 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw new Exception("Unknown error while setting configuration property");
+                Trace.Fail("Unexpected error setting librdkafka configuration property");
             }
         }
 

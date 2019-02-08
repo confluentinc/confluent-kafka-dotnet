@@ -1,3 +1,15 @@
+# 1.0.x (unreleased)
+
+## New Features
+
+- Added GET subject versions to the cached schema registry client.
+
+## Fixes
+
+- Corrected an error in the `rd_kafka_event_type` method signature which was causing incompatibility with mono.
+- Audited exception use across the library and made changes in various places where appropriate.
+
+
 # 1.0.0-beta3
 
 ## New Features

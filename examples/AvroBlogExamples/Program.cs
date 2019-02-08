@@ -114,24 +114,29 @@ namespace AvroBlogExample
             {
                 consumer.Subscribe("log-messages");
 
-                while (!cts.IsCancellationRequested)
+                try
                 {
-                    try
+                    while (true)
                     {
-                        var consumeResult = consumer.Consume(cts.Token);
+                        try
+                        {
+                            var consumeResult = consumer.Consume(cts.Token);
 
-                        Console.WriteLine(
-                            consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
-                            + $": [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
-                    }
-                    catch (ConsumeException e)
-                    {
-                        Console.WriteLine($"an error occured: {e.Error.Reason}");
+                            Console.WriteLine(
+                                consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                                + $": [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
+                        }
+                        catch (ConsumeException e)
+                        {
+                            Console.WriteLine($"an error occured: {e.Error.Reason}");
+                        }
                     }
                 }
-
-                // commit final offsets and leave the group.
-                consumer.Close();
+                catch (OperationCanceledException)
+                {
+                    // commit final offsets and leave the group.
+                    consumer.Close();
+                }
             }
         }
 

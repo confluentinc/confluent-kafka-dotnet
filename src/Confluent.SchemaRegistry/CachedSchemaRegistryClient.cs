@@ -72,11 +72,11 @@ namespace Confluent.SchemaRegistry
             var timeoutMsMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs);
             int timeoutMs;
             try { timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : Convert.ToInt32(timeoutMsMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"CachedSchemaRegistryClient: configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer."); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer."); }
 
             var identityMapCapacityMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
             try { this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"CachedSchemaRegistryClient: configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer."); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer."); }
 
             // Convert.ToString returns "" in the null case here.
             var basicAuthSource = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource).Value);
@@ -92,7 +92,7 @@ namespace Confluent.SchemaRegistry
                     var userPass = (basicAuthInfo).Split(':');
                     if (userPass.Length != 2)
                     {
-                        throw new ArgumentException($"CachedSchemaRegistryClient: Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
+                        throw new ArgumentException($"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
                     }
                     username = userPass[0];
                     password = userPass[1];
@@ -102,24 +102,24 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo != "")
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
+                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
                 }
                 var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
                 var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
                 if (saslUsername.Value == null)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
+                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
                 }
                 if (saslPassword.Value == null)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
+                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
                 }
                 username = Convert.ToString(saslUsername.Value);
                 password = Convert.ToString(saslPassword.Value);
             }
             else
             {
-                throw new ArgumentException($"CachedSchemaRegistryClient: Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
+                throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
             foreach (var property in config)
@@ -135,7 +135,7 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: unknown configuration parameter {property.Key}");
+                    throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 

@@ -563,7 +563,7 @@ namespace Confluent.Kafka
         {
             if (!Handle.Owner.GetType().Name.Contains("Consumer"))
             {
-                throw new InvalidCastException(
+                throw new InvalidOperationException(
                     "GetWatermarkOffsets is only available on AdminClient instances constructed from a Consumer handle.");
             }
             return kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);

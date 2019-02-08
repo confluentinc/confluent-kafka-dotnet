@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -340,7 +341,7 @@ namespace Confluent.Kafka.Impl
             {
                 if (valOffset != 0 || valLength != 0)
                 {
-                    throw new ArgumentException("valOffset and valLength parameters must be 0 when producing null values.");
+                    throw new InvalidOperationException("valOffset and valLength parameters must be 0 when producing null values.");
                 }
             }
             else
@@ -353,7 +354,7 @@ namespace Confluent.Kafka.Impl
             {
                 if (keyOffset != 0 || keyLength != 0)
                 {
-                    throw new ArgumentException("keyOffset and keyLength parameters must be 0 when producing null key values.");
+                    throw new InvalidOperationException("keyOffset and keyLength parameters must be 0 when producing null key values.");
                 }
             }
             else
@@ -929,7 +930,7 @@ namespace Confluent.Kafka.Impl
         {
             if (listPtr == IntPtr.Zero)
             {
-                throw new ArgumentException("Internal error: cannot marshal from a NULL ptr.");
+                Trace.Fail("Cannot marshal from a NULL ptr.");
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
@@ -944,7 +945,7 @@ namespace Confluent.Kafka.Impl
         {
             if (listPtr == IntPtr.Zero)
             {
-                throw new ArgumentException("Internal error: cannot marshal from a NULL ptr.");
+                Trace.Fail("Cannot marshal from a NULL ptr.");
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);

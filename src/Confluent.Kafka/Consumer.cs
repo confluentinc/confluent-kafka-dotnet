@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -756,7 +757,7 @@ namespace Confluent.Kafka
             modifiedConfig
                 .ToList()
                 .ForEach((kvp) => {
-                    if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
+                    if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
                     configHandle.Set(kvp.Key, kvp.Value.ToString());
                 });
 
@@ -791,8 +792,8 @@ namespace Confluent.Kafka
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
-                    throw new ArgumentNullException(
-                        $"Key deserializer not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
+                    throw new InvalidOperationException(
+                        $"Key deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
                 this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
@@ -806,7 +807,8 @@ namespace Confluent.Kafka
             }
             else
             {
-                throw new ArgumentException("Invalid key deserializer configuration.");
+                // enforced by the builder class.
+                Trace.Fail("Both async and sync key deserializers were set.");
             }
 
             // setup value deserializer.
@@ -814,8 +816,8 @@ namespace Confluent.Kafka
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
-                    throw new ArgumentNullException(
-                        $"Key deserializer not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
+                    throw new InvalidOperationException(
+                        $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
@@ -829,7 +831,8 @@ namespace Confluent.Kafka
             }
             else
             {
-                throw new ArgumentException("Invalid value deserializer configuration.");
+                // enforced by the builder class.
+                Trace.Fail("Both async and sync value deserializers were set.");
             }
         }
 
@@ -917,8 +920,7 @@ namespace Confluent.Kafka
                             },
                             IsPartitionEOF = false
                         },
-                        kafkaHandle.CreatePossiblyFatalError(msg.err, null)
-                    );
+                        kafkaHandle.CreatePossiblyFatalError(msg.err, null));
                 }
 
                 K key;
@@ -936,7 +938,7 @@ namespace Confluent.Kafka
                             new TopicPartition(topic, msg.partition));
                     }
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
@@ -951,8 +953,8 @@ namespace Confluent.Kafka
                             },
                             IsPartitionEOF = false
                         },
-                        new Error(ErrorCode.Local_KeyDeserialization, ex.ToString())
-                    );
+                        new Error(ErrorCode.Local_KeyDeserialization),
+                        exception);
                 }
 
                 V val;
@@ -970,7 +972,7 @@ namespace Confluent.Kafka
                             new TopicPartition(topic, msg.partition));
                     }
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
@@ -985,12 +987,12 @@ namespace Confluent.Kafka
                             },
                             IsPartitionEOF = false
                         },
-                        new Error(ErrorCode.Local_ValueDeserialization, ex.ToString())
-                    );
+                        new Error(ErrorCode.Local_ValueDeserialization),
+                        exception);
                 }
 
                 return new ConsumeResult<K, V> 
-                { 
+                {
                     TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                     Message = new Message<K, V>
                     {
