@@ -311,6 +311,13 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSubjectVersionsAsync(string)" />
+        /// </summary>
+        public async Task<List<int>> GetSubjectVersionsAsync(string subject)
+            => await restService.GetSubjectVersionsAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.IsCompatibleAsync(string, string)" />
         /// </summary>
         public async Task<bool> IsCompatibleAsync(string subject, string schema)

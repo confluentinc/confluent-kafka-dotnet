@@ -116,6 +116,18 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Gets a list of versions registered under the specified <paramref name="subject" />.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to get versions registered under.
+        /// </param>
+        /// <returns>
+        ///     A list of versions registered under the specified <paramref name="subject" />.
+        /// </returns>
+        Task<List<int>> GetSubjectVersionsAsync(string subject);
+
+
+        /// <summary>
         ///     Check if a schema is compatible with latest version registered against a 
         ///     specified subject.
         /// </summary>
