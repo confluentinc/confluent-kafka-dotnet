@@ -481,16 +481,16 @@ namespace Confluent.Kafka.VerifiableClient
             {
                 results = consumer.Commit().Select(r => new TopicPartitionOffsetError(r, new Error(ErrorCode.NoError))).ToList();
             }
+            catch (TopicPartitionOffsetException ex)
+            {
+                results = ex.Results;
+            }
             catch (KafkaException ex)
             {
                 results = null;
                 error = ex.Error;
             }
-            catch (TopicPartitionOffsetException ex)
-            {
-                results = ex.Results;
-            }
-
+            
             SendOffsetsCommitted(new CommittedOffsets(results, error));
         }
 

@@ -24,9 +24,9 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of a create partitions request for a specific topic.
+    ///     The result of a request to delete a specific topic.
     /// </summary>
-    public class CreatePartitionsExceptionResult
+    public class DeleteTopicReport 
     {
         /// <summary>
         ///     The topic.
@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         public string Topic { get; set; }
 
         /// <summary>
-        ///     The error (or success) of the create partitions request.
+        ///     The error (or success) of the delete topic request.
         /// </summary>
         public Error Error { get; set; }
     }

@@ -24,17 +24,17 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of an alter config request for a specific resource.
+    ///     The result of a create partitions request for a specific topic.
     /// </summary>
-    public class AlterConfigsExceptionResult
+    public class CreatePartitionsReport
     {
         /// <summary>
-        ///     The resource the result corresponds to.
+        ///     The topic.
         /// </summary>
-        public ConfigResource ConfigResource;
+        public string Topic { get; set; }
 
         /// <summary>
-        ///     The error (or success) of the alter config request.
+        ///     The error (or success) of the create partitions request.
         /// </summary>
         public Error Error { get; set; }
     }

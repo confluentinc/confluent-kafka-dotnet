@@ -757,6 +757,7 @@ namespace Confluent.Kafka
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
                     });
             }
+            // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
 
@@ -900,6 +901,7 @@ namespace Confluent.Kafka
                     });
                 return;
             }
+            // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
         private class TypedTaskDeliveryHandlerShim<K, V> : TaskCompletionSource<DeliveryResult<K, V>>, IDeliveryHandler

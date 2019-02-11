@@ -31,7 +31,7 @@ namespace Confluent.Kafka.UnitTests
             // respective config key.
             var configWithNullValue = new ProducerConfig();
             configWithNullValue.Set("sasl.password", null);
-            var e = Assert.Throws<ArgumentException>(() => { var c = new ProducerBuilder<byte[], byte[]>(configWithNullValue).Build(); });
+            var e = Assert.Throws<ArgumentNullException>(() => { var c = new ProducerBuilder<byte[], byte[]>(configWithNullValue).Build(); });
             Assert.Contains("sasl.password", e.Message);
         }
     }
