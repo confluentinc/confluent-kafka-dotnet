@@ -808,7 +808,7 @@ namespace Confluent.Kafka
             else
             {
                 // enforced by the builder class.
-                Trace.Fail("Both async and sync key deserializers were set.");
+                throw new Exception("FATAL: Both async and sync key deserializers were set.");
             }
 
             // setup value deserializer.
@@ -832,7 +832,7 @@ namespace Confluent.Kafka
             else
             {
                 // enforced by the builder class.
-                Trace.Fail("Both async and sync value deserializers were set.");
+                throw new Exception("FATAL: Both async and sync value deserializers were set.");
             }
         }
 

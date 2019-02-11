@@ -489,7 +489,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                Trace.Fail("Both async and sync key serializers were set.");
+                throw new Exception("FATAL: Both async and sync key serializers were set.");
             }
 
             // setup value serializer.
@@ -512,7 +512,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                Trace.Fail("Both async and sync value serializers were set.");
+                throw new Exception("FATAL: Both async and sync value serializers were set.");
             }
         }
 
