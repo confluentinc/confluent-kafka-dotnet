@@ -49,6 +49,7 @@ namespace Confluent.Kafka
         private IDeserializer<TValue> valueDeserializer;
         private IAsyncDeserializer<TKey> asyncKeyDeserializer;
         private IAsyncDeserializer<TValue> asyncValueDeserializer;
+        private Dictionary<string, object> headerDeserializers;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -839,6 +840,8 @@ namespace Confluent.Kafka
                 // enforced by the builder class.
                 throw new InvalidOperationException("FATAL: Both async and sync value deserializers were set.");
             }
+
+            this.headerDeserializers = builder.HeaderDeserializers;
         }
 
 
@@ -905,7 +908,28 @@ namespace Confluent.Kafka
                                 headerValue = new byte[(int)sizep];
                                 Marshal.Copy(valuep, headerValue, 0, (int)sizep);
                             }
-                            headers.Add(new Header(headerName, headerValue));
+
+//                             if (headerDeserializers.ContainsKey(header.Key))
+//                             {
+//                                 if (headerDeserializers[header.Key] is Type)
+//                                 {
+//                                     if (!defaultDeserializers.ContainsKey((Type)headerDeserializers[header.Key]))
+//                                     {
+//                                         throw new Exception("Sdf");
+//                                     }
+//                                     // use the default deserializer for this type.
+//                                 }
+//                                 else
+//                                 {
+// #if NET45
+// #else
+// #endif
+//                                 }
+//                             }
+//                             else
+//                             {
+//                                 headers.Add(new Header<byte[]>(headerName, headerValue));
+//                             }
                         }
                     }
                 }
@@ -938,9 +962,7 @@ namespace Confluent.Kafka
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
                             msg.key == IntPtr.Zero,
-                            true,
-                            new MessageMetadata { Timestamp = timestamp, Headers = headers },
-                            new TopicPartition(topic, msg.partition));
+                            new SerializationContext(MessageComponentType.Key, null, topic));
                     }
                 }
                 catch (Exception exception)
@@ -972,9 +994,7 @@ namespace Confluent.Kafka
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
                             msg.val == IntPtr.Zero,
-                            false,
-                            new MessageMetadata { Timestamp = timestamp, Headers = headers },
-                            new TopicPartition(topic, msg.partition));
+                            new SerializationContext(MessageComponentType.Value, null, topic));
                     }
                 }
                 catch (Exception exception)
@@ -1032,15 +1052,15 @@ namespace Confluent.Kafka
             }
 
             TKey key = keyDeserializer != null
-                ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
-                : asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, true, rawResult.Message, rawResult.TopicPartition)
+                ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, null, rawResult.Topic))
+                : asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, null, rawResult.Topic))
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
-                ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, false, rawResult.Message, rawResult.TopicPartition)
-                : asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, false, rawResult.Message, rawResult.TopicPartition)
+                ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, null, rawResult.Topic))
+                : asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, null, rawResult.Topic))
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();

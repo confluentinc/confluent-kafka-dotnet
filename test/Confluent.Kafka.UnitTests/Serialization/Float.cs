@@ -29,7 +29,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             foreach (var value in TestData)
             {
-                Assert.Equal(value, Deserializers.Single.Deserialize(Serializers.Single.Serialize(value, false, null, null), false, false, null, null));
+                Assert.Equal(value, Deserializers.Single.Deserialize(Serializers.Single.Serialize(value, null), false, null));
             }
         }
 
@@ -38,7 +38,7 @@ namespace Confluent.Kafka.UnitTests.Serialization
         {
             var buffer = new byte[] { 23, 0, 0, 0 };
             var value = BitConverter.ToSingle(buffer, 0);
-            var data = Serializers.Single.Serialize(value, false, null, null);
+            var data = Serializers.Single.Serialize(value, null);
             Assert.Equal(23, data[3]);
             Assert.Equal(0, data[0]);
         }
@@ -46,15 +46,15 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNullThrow()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(null, true, false, null, null));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(null, true, null));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual4Throw()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(new byte[0], false, false, null, null));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(new byte[3], false, false, null, null));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(new byte[5], false, false, null, null));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(new byte[0], false, null));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(new byte[3], false, null));
+            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Single.Deserialize(new byte[5], false, null));
         }
 
         public static float[] TestData

@@ -131,7 +131,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
+        public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
         { 
             try
             {
@@ -142,7 +142,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
                 }
 
-                return await serializerImpl.Serialize(destination.Topic, value, isKey);
+                return await serializerImpl.Serialize(context.Topic, value, context.Type == MessageComponentType.Key);
             }
             catch (AggregateException e)
             {

@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<Null, string> { Value = "the value", Headers = headers }).Result;
                 Assert.Single(dr_single.Message.Headers);
                 Assert.Equal("test-header", dr_single.Message.Headers[0].Key);
-                Assert.Equal(new byte[] { 142 }, dr_single.Message.Headers[0].Value);
+                Assert.Equal(new byte[] { 142 }, dr_single.Message.Headers[0].GetValue<byte[]>());
 
                 // empty header values
                 var headers0 = new Headers();
@@ -84,23 +84,23 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<Null, string> { Value = "the value", Headers = headers2 }).Result;
                 Assert.Equal(2, dr_multiple.Message.Headers.Count);
                 Assert.Equal("test-header-a", dr_multiple.Message.Headers[0].Key);
-                Assert.Equal(new byte[] { 111 }, dr_multiple.Message.Headers[0].Value);
+                Assert.Equal(new byte[] { 111 }, dr_multiple.Message.Headers[0].GetValue<byte[]>());
                 Assert.Equal("test-header-b", dr_multiple.Message.Headers[1].Key);
-                Assert.Equal(new byte[] { 112 }, dr_multiple.Message.Headers[1].Value);
+                Assert.Equal(new byte[] { 112 }, dr_multiple.Message.Headers[1].GetValue<byte[]>());
 
                 // duplicate header values (also List not Dictionary)
                 var headers3 = new Headers();
-                headers3.Add(new Header("test-header-a", new byte[] { 111 } ));
-                headers3.Add(new Header("test-header-b", new byte[] { 112 } ));
-                headers3.Add(new Header("test-header-a", new byte[] { 113 } ));
-                headers3.Add(new Header("test-header-b", new byte[] { 114 } ));
-                headers3.Add(new Header("test-header-c", new byte[] { 115 } ));
+                headers3.Add(new Header<byte[]>("test-header-a", new byte[] { 111 } ));
+                headers3.Add(new Header<byte[]>("test-header-b", new byte[] { 112 } ));
+                headers3.Add(new Header<byte[]>("test-header-a", new byte[] { 113 } ));
+                headers3.Add(new Header<byte[]>("test-header-b", new byte[] { 114 } ));
+                headers3.Add(new Header<byte[]>("test-header-c", new byte[] { 115 } ));
                 dr_duplicate = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "the value", Headers = headers3 }).Result;
                 Assert.Equal(5, dr_duplicate.Message.Headers.Count);
                 Assert.Equal("test-header-a", dr_duplicate.Message.Headers[0].Key);
-                Assert.Equal(new byte[] { 111 }, dr_duplicate.Message.Headers[0].Value);
+                Assert.Equal(new byte[] { 111 }, dr_duplicate.Message.Headers[0].GetValue<byte[]>());
                 Assert.Equal("test-header-a", dr_duplicate.Message.Headers[2].Key);
-                Assert.Equal(new byte[] { 113 }, dr_duplicate.Message.Headers[2].Value);
+                Assert.Equal(new byte[] { 113 }, dr_duplicate.Message.Headers[2].GetValue<byte[]>());
 
                 // Test headers work as expected with all serializing ProduceAsync variants.
 
@@ -112,7 +112,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ).Result;
                 Assert.Single(dr_ol3.Message.Headers);
                 Assert.Equal("test-header", dr_ol3.Message.Headers[0].Key);
-                Assert.Equal(new byte[] { 142 }, dr_ol3.Message.Headers[0].Value);
+                Assert.Equal(new byte[] { 142 }, dr_ol3.Message.Headers[0].GetValue<byte[]>());
 
                 Action<DeliveryReport<Null, string>> dh = (DeliveryReport<Null, string> dr) => drs.Add(dr);
 
@@ -172,7 +172,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Message);
                 Assert.Single(record.Message.Headers);
                 Assert.Equal("test-header", record.Message.Headers[0].Key);
-                Assert.Equal(new byte[] { 142 }, record.Message.Headers[0].Value);
+                Assert.Equal(new byte[] { 142 }, record.Message.Headers[0].GetValue<byte[]>());
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_empty.TopicPartitionOffset});
                 var record2 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -193,8 +193,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, record4.Message.Headers.Count);
                 Assert.Equal("test-header-a", record4.Message.Headers[0].Key);
                 Assert.Equal("test-header-b", record4.Message.Headers[1].Key);
-                Assert.Equal(new byte[] { 111 }, record4.Message.Headers[0].Value);
-                Assert.Equal(new byte[] { 112 }, record4.Message.Headers[1].Value);
+                Assert.Equal(new byte[] { 111 }, record4.Message.Headers[0].GetValue<byte[]>());
+                Assert.Equal(new byte[] { 112 }, record4.Message.Headers[1].GetValue<byte[]>());
 
                 consumer.Assign(new List<TopicPartitionOffset>() {dr_duplicate.TopicPartitionOffset});
                 var record5 = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -205,14 +205,14 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal("test-header-a", record5.Message.Headers[2].Key);
                 Assert.Equal("test-header-b", record5.Message.Headers[3].Key);
                 Assert.Equal("test-header-c", record5.Message.Headers[4].Key);
-                Assert.Equal(new byte[] { 111 }, record5.Message.Headers[0].Value);
-                Assert.Equal(new byte[] { 112 }, record5.Message.Headers[1].Value);
-                Assert.Equal(new byte[] { 113 }, record5.Message.Headers[2].Value);
-                Assert.Equal(new byte[] { 114 }, record5.Message.Headers[3].Value);
-                Assert.Equal(new byte[] { 115 }, record5.Message.Headers[4].Value);
-                Assert.Equal(new byte[] { 113 }, record5.Message.Headers.GetLast("test-header-a"));
-                Assert.Equal(new byte[] { 114 }, record5.Message.Headers.GetLast("test-header-b"));
-                Assert.Equal(new byte[] { 115 }, record5.Message.Headers.GetLast("test-header-c"));
+                Assert.Equal(new byte[] { 111 }, record5.Message.Headers[0].GetValue<byte[]>());
+                Assert.Equal(new byte[] { 112 }, record5.Message.Headers[1].GetValue<byte[]>());
+                Assert.Equal(new byte[] { 113 }, record5.Message.Headers[2].GetValue<byte[]>());
+                Assert.Equal(new byte[] { 114 }, record5.Message.Headers[3].GetValue<byte[]>());
+                Assert.Equal(new byte[] { 115 }, record5.Message.Headers[4].GetValue<byte[]>());
+                Assert.Equal(new byte[] { 113 }, record5.Message.Headers.GetLast<byte[]>("test-header-a"));
+                Assert.Equal(new byte[] { 114 }, record5.Message.Headers.GetLast<byte[]>("test-header-b"));
+                Assert.Equal(new byte[] { 115 }, record5.Message.Headers.GetLast<byte[]>("test-header-c"));
 
                 // Test headers work with all produce method variants.
 
@@ -299,8 +299,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.True(threw);
                 }
 
-                var headers2 = new List<Header>();
-                Assert.Throws<ArgumentNullException>(() => headers2.Add(new Header(null, new byte[] { 42 })));
+                var headers2 = new List<Header<byte[]>>();
+                Assert.Throws<ArgumentNullException>(() => headers2.Add(new Header<byte[]>(null, new byte[] { 42 })));
             }
 
             // null value
@@ -309,10 +309,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
                 var headers = new Headers();
-                headers.Add("my-header", null);
+                headers.Add<byte[]>("my-header", null);
                 nulldr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = "test-value", Headers = headers }).Result;
                 Assert.Single(nulldr.Headers);
-                Assert.Null(nulldr.Headers[0].Value);
+                Assert.Null(nulldr.Headers[0].GetValue<byte[]>());
             }
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
@@ -321,7 +321,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(cr?.Message);
                 Assert.Single(cr.Headers);
                 Assert.Equal("my-header", cr.Message.Headers[0].Key);
-                Assert.Null(cr.Message.Headers[0].Value);
+                Assert.Null(cr.Message.Headers[0].GetValue<byte[]>());
             }
 
             Assert.Equal(0, Library.HandleCount);

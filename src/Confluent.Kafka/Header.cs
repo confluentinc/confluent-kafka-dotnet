@@ -25,17 +25,22 @@ namespace Confluent.Kafka
     /// <remarks>
     ///     Message headers are supported by v0.11 brokers and above.
     /// </remarks>
-    public class Header
+    public class Header<T> : IHeader
     {
+        private T val;
+
         /// <summary>
         ///     The header key.
         /// </summary>
         public string Key { get; private set; }
 
         /// <summary>
-        ///     The header value.
+        ///     Gets the header value cast to the specified type.
         /// </summary>
-        public byte[] Value { get; private set; }
+        public U GetValue<U>()
+        {
+            return (U)(object)val;
+        }
 
         /// <summary>
         ///     Create a new Header instance.
@@ -46,7 +51,7 @@ namespace Confluent.Kafka
         /// <param name="value">
         ///     The header value (may be null).
         /// </param>
-        public Header(string key, byte[] value)
+        public Header(string key, T value)
         {
             if (key == null) 
             {
@@ -54,7 +59,7 @@ namespace Confluent.Kafka
             }
 
             Key = key;
-            Value = value;
+            val = value;
         }
     }
 }

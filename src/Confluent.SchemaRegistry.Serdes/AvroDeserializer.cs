@@ -97,7 +97,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
-        public async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
+        public async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
         {
             try
             {
@@ -109,7 +109,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 // TODO: change this interface such that it takes ReadOnlyMemory<byte>, not byte[].
-                return await deserializerImpl.Deserialize(source.Topic, isNull ? null : data.ToArray());
+                return await deserializerImpl.Deserialize(context.Topic, isNull ? null : data.ToArray());
             }
             catch (AggregateException e)
             {

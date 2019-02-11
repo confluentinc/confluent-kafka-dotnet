@@ -276,7 +276,7 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        private IntPtr marshalHeaders(IEnumerable<Header> headers)
+        private IntPtr marshalHeaders(IEnumerable<IHeader> headers)
         {
             var headersPtr = IntPtr.Zero;
 
@@ -288,34 +288,34 @@ namespace Confluent.Kafka.Impl
                     throw new Exception("Failed to create headers list.");
                 }
 
-                foreach (var header in headers)
-                {
-                    if (header.Key == null)
-                    {
-                        throw new ArgumentNullException("Message header keys must not be null.");
-                    }
-                    byte[] keyBytes = System.Text.UTF8Encoding.UTF8.GetBytes(header.Key);
-                    GCHandle pinnedKey = GCHandle.Alloc(keyBytes, GCHandleType.Pinned);
-                    IntPtr keyPtr = pinnedKey.AddrOfPinnedObject();
-                    IntPtr valuePtr = IntPtr.Zero;
-                    GCHandle pinnedValue = default(GCHandle);
-                    if (header.Value != null)
-                    {
-                        pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
-                        valuePtr = pinnedValue.AddrOfPinnedObject();
-                    }
-                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(header.Value == null ? 0 : header.Value.Length));
-                    // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
-                    pinnedKey.Free();
-                    if (header.Value != null)
-                    {
-                        pinnedValue.Free();
-                    }
-                    if (err != ErrorCode.NoError)
-                    {
-                        throw new KafkaException(CreatePossiblyFatalError(err, null));
-                    }
-                }
+                // foreach (var header in headers)
+                // {
+                //     if (header.Key == null)
+                //     {
+                //         throw new ArgumentNullException("Message header keys must not be null.");
+                //     }
+                //     byte[] keyBytes = System.Text.UTF8Encoding.UTF8.GetBytes(header.Key);
+                //     GCHandle pinnedKey = GCHandle.Alloc(keyBytes, GCHandleType.Pinned);
+                //     IntPtr keyPtr = pinnedKey.AddrOfPinnedObject();
+                //     IntPtr valuePtr = IntPtr.Zero;
+                //     GCHandle pinnedValue = default(GCHandle);
+                //     if (header.Value != null)
+                //     {
+                //         pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
+                //         valuePtr = pinnedValue.AddrOfPinnedObject();
+                //     }
+                //     ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(header.Value == null ? 0 : header.Value.Length));
+                //     // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
+                //     pinnedKey.Free();
+                //     if (header.Value != null)
+                //     {
+                //         pinnedValue.Free();
+                //     }
+                //     if (err != ErrorCode.NoError)
+                //     {
+                //         throw new KafkaException(CreatePossiblyFatalError(err, null));
+                //     }
+                // }
             }
 
             return headersPtr;
@@ -327,7 +327,7 @@ namespace Confluent.Kafka.Impl
             byte[] key, int keyOffset, int keyLength,
             int partition,
             long timestamp,
-            IEnumerable<Header> headers,
+            IEnumerable<IHeader> headers,
             IntPtr opaque)
         {
             var pValue = IntPtr.Zero;

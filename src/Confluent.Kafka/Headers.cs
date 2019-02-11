@@ -27,9 +27,9 @@ namespace Confluent.Kafka
     /// <remarks>
     ///     Message headers are supported by v0.11 brokers and above.
     /// </remarks>
-    public class Headers : IEnumerable<Header>
+    public class Headers : IEnumerable<IHeader>
     {
-        private readonly List<Header> headers = new List<Header>();
+        private readonly List<IHeader> headers = new List<IHeader>();
 
         /// <summary>
         ///     Append a new header to the collection.
@@ -42,14 +42,14 @@ namespace Confluent.Kafka
         ///     header value is distinct from an empty header
         ///     value (array of length 0).
         /// </param>
-        public void Add(string key, byte[] val)
+        public void Add<T>(string key, T val)
         {
             if (key == null) 
             {
                 throw new ArgumentNullException("Kafka message header key cannot be null.");
             }
 
-            headers.Add(new Header(key, val));
+            headers.Add(new Header<T>(key, val));
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Confluent.Kafka
         /// <param name="header">
         ///     The header to add to the collection.
         /// </param>
-        public void Add(Header header)
+        public void Add<T>(Header<T> header)
         {
             headers.Add(header);
         }
@@ -75,11 +75,11 @@ namespace Confluent.Kafka
         /// <exception cref="KeyNotFoundException">
         ///     The key <paramref name="key" /> was not present in the collection.
         /// </exception>
-        public byte[] GetLast(string key)
+        public T GetLast<T>(string key)
         {
-            if (TryGetLast(key, out byte[] result))
+            if (TryGetLast(key, out object result))
             {
-                return result;
+                return (T)result;
             }
 
             throw new KeyNotFoundException($"The key {key} was not present in the headers collection.");
@@ -100,18 +100,18 @@ namespace Confluent.Kafka
         ///     true if the a value with the specified key was present in 
         ///     the collection, false otherwise.
         /// </returns>
-        public bool TryGetLast(string key, out byte[] lastHeader)
+        public bool TryGetLast<T>(string key, out T lastHeader)
         {
             for (int i=headers.Count-1; i>=0; --i)
             {
                 if (headers[i].Key == key)
                 {
-                    lastHeader = headers[i].Value;
+                    lastHeader = headers[i].GetValue<T>();
                     return true;
                 }
             }
 
-            lastHeader = null;
+            lastHeader = default(T);
             return false;
         }
 
@@ -124,7 +124,7 @@ namespace Confluent.Kafka
         public void Remove(string key)
             => headers.RemoveAll(a => a.Key == key);
 
-        internal class HeadersEnumerator : IEnumerator<Header>
+        internal class HeadersEnumerator : IEnumerator<IHeader>
         {
             private Headers headers;
 
@@ -136,10 +136,10 @@ namespace Confluent.Kafka
             }
 
             public object Current 
-                => ((IEnumerator<Header>)this).Current;
+                => ((IEnumerator<IHeader>)this).Current;
 
-            Header IEnumerator<Header>.Current
-                => new Header(headers.headers[location].Key, headers.headers[location].Value);
+            IHeader IEnumerator<IHeader>.Current
+                => headers.headers[location];
 
             public void Dispose() {}
 
@@ -166,7 +166,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     An enumerator object that can be used to iterate through the headers collection.
         /// </returns>
-        public IEnumerator<Header> GetEnumerator()
+        public IEnumerator<IHeader> GetEnumerator()
             => new HeadersEnumerator(this);
 
         /// <summary>
@@ -184,7 +184,7 @@ namespace Confluent.Kafka
         /// <param key="index">
         ///     The zero-based index of the element to get.
         /// </param>
-        public Header this[int index]
+        public IHeader this[int index]
             => headers[index];
 
         /// <summary>
