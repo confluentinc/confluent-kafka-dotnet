@@ -230,8 +230,8 @@ namespace Confluent.SchemaRegistry
             => await RequestListOfAsync<string>("/subjects", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
-        public async Task<List<string>> GetSubjectVersionsAsync(string subject)
-            => await RequestListOfAsync<string>($"/subjects/{subject}/versions", HttpMethod.Get)
+        public async Task<List<int>> GetSubjectVersionsAsync(string subject)
+            => await RequestListOfAsync<int>($"/subjects/{subject}/versions", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<Schema> GetSchemaAsync(string subject, int version)
