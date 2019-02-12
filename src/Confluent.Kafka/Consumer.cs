@@ -410,10 +410,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Commit all offsets for the current assignment.
         /// </summary>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to cancel this operation
-        ///     (currently ignored).
-        /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
         /// </exception>
@@ -423,7 +419,7 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public List<TopicPartitionOffset> Commit(CancellationToken cancellationToken = default(CancellationToken))
+        public List<TopicPartitionOffset> Commit()
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(null);
 
@@ -434,10 +430,6 @@ namespace Confluent.Kafka
         /// <param name="offsets">
         ///     The topic/partition offsets to commit.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to cancel this operation
-        ///     (currently ignored).
-        /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
         /// </exception>
@@ -447,11 +439,39 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public void Commit(IEnumerable<TopicPartitionOffset> offsets, CancellationToken cancellationToken = default(CancellationToken))
+        public void Commit(IEnumerable<TopicPartitionOffset> offsets)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(offsets);
 
 
+        /// <summary>
+        ///     Commits an offset based on the topic/partition/offset of a ConsumeResult.
+        /// </summary>
+        /// <param name="result">
+        ///     The ConsumeResult instance used to determine the committed offset.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
+        ///     Thrown if the result is in error.
+        /// </exception>
+        /// <remarks>
+        ///     A consumer which has position N has consumed messages with offsets up to N-1 
+        ///     and will next receive the message with offset N. Hence, this method commits an 
+        ///     offset of <paramref name="result" />.Offset + 1.
+        /// </remarks>
+        public void Commit(ConsumeResult<TKey, TValue> result)
+        {
+            if (result.Message == null)
+            {
+                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
+            }
+
+            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
+        }
+
+        
         /// <summary>
         ///     Seek to <parmref name="offset"/> on the specified topic/partition which is either
         ///     an absolute or logical offset. This must only be done for partitions that are 
@@ -516,10 +536,6 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum period of time the call may block.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to cancel this operation
-        ///     (currently ignored).
-        /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
         /// </exception>
@@ -529,10 +545,7 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public List<TopicPartitionOffset> Committed(
-            IEnumerable<TopicPartition> partitions, TimeSpan timeout,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
+        public List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Committed(partitions, (IntPtr)timeout.TotalMillisecondsAsInt());
 
@@ -572,10 +585,6 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum period of time the call may block.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to cancel this operation
-        ///     (currently ignored).
-        /// </param>
         /// <returns>
         ///     A mapping from partition to the timestamp and offset of the first message with
         ///     timestamp greater than or equal to the target timestamp.
@@ -589,10 +598,7 @@ namespace Confluent.Kafka
         ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
         ///     property of the exception.
         /// </exception>
-        public List<TopicPartitionOffset> OffsetsForTimes(
-            IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout,
-            CancellationToken cancellationToken = default(CancellationToken)
-        )
+        public List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 
@@ -1105,37 +1111,5 @@ namespace Confluent.Kafka
             => (keyDeserializer != null && valueDeserializer != null)
                 ? ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
                 : ConsumeViaBytes(timeout.TotalMillisecondsAsInt());
-
-
-        /// <summary>
-        ///     Commits an offset based on the topic/partition/offset of a ConsumeResult.
-        /// </summary>
-        /// <param name="result">
-        ///     The ConsumeResult instance used to determine the committed offset.
-        /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to cancel this operation
-        ///     (currently ignored).
-        /// </param>
-        /// <exception cref="Confluent.Kafka.KafkaException">
-        ///     Thrown if the request failed.
-        /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if the result is in error.
-        /// </exception>
-        /// <remarks>
-        ///     A consumer which has position N has consumed messages with offsets up to N-1 
-        ///     and will next receive the message with offset N. Hence, this method commits an 
-        ///     offset of <paramref name="result" />.Offset + 1.
-        /// </remarks>
-        public void Commit(ConsumeResult<TKey, TValue> result, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (result.Message == null)
-            {
-                throw new InvalidOperationException("Attempt was made to commit offset corresponding to an empty consume result");
-            }
-
-            Commit(new [] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
-        }
     }
 }

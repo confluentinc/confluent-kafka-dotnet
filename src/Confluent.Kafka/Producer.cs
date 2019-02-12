@@ -653,17 +653,13 @@ namespace Confluent.Kafka
         /// <param name="message">
         ///     The message to produce.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
         /// <returns>
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken))
+            Message<TKey, TValue> message)
         {
             byte[] keyBytes;
             try
@@ -716,8 +712,6 @@ namespace Confluent.Kafka
                     var handler = new TypedTaskDeliveryHandlerShim<TKey, TValue>(topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
-
-                    cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
 
                     ProduceImpl(
                         topicPartition.Topic,
@@ -772,19 +766,15 @@ namespace Confluent.Kafka
         /// <param name="message">
         ///     The message to produce.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
         /// <returns>
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
+            Message<TKey, TValue> message
         )
-            => ProduceAsync(new TopicPartition(topic, Partition.Any), message, cancellationToken);
+            => ProduceAsync(new TopicPartition(topic, Partition.Any), message);
 
 
         /// <summary>

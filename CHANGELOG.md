@@ -8,6 +8,7 @@
 
 - Corrected an error in the `rd_kafka_event_type` method signature which was causing incompatibility with mono.
 - Audited exception use across the library and made changes in various places where appropriate.
+- Removed unused CancellationToken parameters (we will add them back when implemented).
 
 
 # 1.0.0-beta3
