@@ -20,7 +20,7 @@ all:
 
 build:
 	# Assuming .NET Core on Linux (net451 will not work).
-	@(if [ "$(OS)" = "Linux" ]] ; then \
+	@(if [[ "$(OS)" == "Linux" ]] ; then \
 		for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
 		for d in $(TEST_DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
 	else \
@@ -29,7 +29,7 @@ build:
 	fi)
 
 test:
-	@(if [ "$(OS)" = "Linux" ]] ; then \
+	@(if [[ "$(OS)" == "Linux" ]] ; then \
 		dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
 	else \
 		dotnet test -f $(DEFAULT_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
