@@ -24,7 +24,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Represents an error that occured during a Consumer.Position request.
     /// </summary>
-    public class TopicPartitionException : Exception
+    public class TopicPartitionException : KafkaException
     {
         /// <summary>
         ///     Initializes a new instance of OffsetsRequestExceptoion.
@@ -35,10 +35,10 @@ namespace Confluent.Kafka
         ///     results will be in error.
         /// </param>
         public TopicPartitionException(List<TopicPartitionError> results)
-            : base(
+            : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred for topic partitions: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.TopicPartition)) +
-                "].")
+                "]."))
         {
             Results = results;
         }
