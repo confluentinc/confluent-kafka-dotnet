@@ -90,7 +90,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                             if (consumeResult.IsPartitionEOF)
                             {
                                 Console.WriteLine(
-                                    $"Reached end of topic {consumeResult.Topic}, partition {consumeResult.Partition}.");
+                                    $"Reached end of topic {consumeResult.Topic}, partition {consumeResult.Partition}, offset {consumeResult.Offset}.");
 
                                 continue;
                             }

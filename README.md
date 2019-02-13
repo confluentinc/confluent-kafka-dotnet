@@ -228,8 +228,8 @@ For more information about working with Avro in .NET, refer to the the blog post
 
 Errors delivered to a client's error handler should be considered informational except when the `IsFatal` flag
 is set to `true`, indicating that the client is in an un-recoverable state. Currently, this can only happen on
-the producer, and only when `enable.idempotence` has been set to `true`. In all other scenarios, clients are
-able to recover from all errors automatically.
+the producer, and only when `enable.idempotence` has been set to `true`. In all other scenarios, clients will
+attempt to recover from all errors automatically.
 
 Although calling most methods on the clients will result in a fatal error if the client is in an un-recoverable
 state, you should generally only need to explicitly check for fatal errors in your error handler, and handle

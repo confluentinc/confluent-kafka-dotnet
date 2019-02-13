@@ -457,7 +457,7 @@ namespace Confluent.Kafka
         ///     Thrown if the result is in error.
         /// </exception>
         /// <remarks>
-        ///     A consumer which has position N has consumed messages with offsets up to N-1 
+        ///     A consumer at position N has consumed messages with offsets up to N-1 
         ///     and will next receive the message with offset N. Hence, this method commits an 
         ///     offset of <paramref name="result" />.Offset + 1.
         /// </remarks>
