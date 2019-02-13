@@ -292,7 +292,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Build a new Consumer instance.
         /// </summary>
-        public virtual Consumer<TKey, TValue> Build()
+        public virtual IConsumer<TKey, TValue> Build()
         {
             return new Consumer<TKey, TValue>(this);
         }

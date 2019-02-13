@@ -23,7 +23,7 @@ namespace Confluent.Kafka
 {
     public class TemporaryTopic : IDisposable
     {
-        AdminClient adminClient;
+        IAdminClient adminClient;
 
         public TemporaryTopic(string bootstrapServers, int numPartitions)
         {

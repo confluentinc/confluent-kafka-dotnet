@@ -219,7 +219,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Build a new Producer instance.
         /// </summary>
-        public virtual Producer<TKey, TValue> Build()
+        public virtual IProducer<TKey, TValue> Build()
         {
             return new Producer<TKey, TValue>(this);
         }
