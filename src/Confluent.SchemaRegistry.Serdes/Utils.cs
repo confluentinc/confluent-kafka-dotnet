@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         return int.Parse(properties.First().Value);
                     }
-                    throw new NotImplementedException($"cannot parse property of type {type.ToString()}");
+                    throw new InvalidOperationException($"cannot parse property of type {type.ToString()}");
                 }
                 catch (Exception e)
                 {

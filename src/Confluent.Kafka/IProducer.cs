@@ -34,21 +34,19 @@ namespace Confluent.Kafka
     public interface IProducer<TKey, TValue> : IClient
     {
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(string, Message{TKey, TValue}, CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(string, Message{TKey, TValue})" />
         /// </summary>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken));
+            Message<TKey, TValue> message);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(TopicPartition, Message{TKey, TValue}, CancellationToken)" />
+        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(TopicPartition, Message{TKey, TValue})" />
         /// </summary>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken));
+            Message<TKey, TValue> message);
 
 
         /// <summary>

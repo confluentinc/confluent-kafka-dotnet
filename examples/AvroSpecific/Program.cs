@@ -87,23 +87,28 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 {
                     consumer.Subscribe(topicName);
 
-                    while (!cts.Token.IsCancellationRequested)
+                    try
                     {
-                        try
+                        while (true)
                         {
-                            var consumeResult = consumer.Consume(cts.Token);
+                            try
+                            {
+                                var consumeResult = consumer.Consume(cts.Token);
 
-                            Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
-                        }
-                        catch (ConsumeException e)
-                        {
-                            Console.WriteLine("Consume error: " + e.Error.Reason);
+                                Console.WriteLine($"user key name: {consumeResult.Message.Key}, user value favorite color: {consumeResult.Value.favorite_color}");
+                            }
+                            catch (ConsumeException e)
+                            {
+                                Console.WriteLine($"Consume error: {e.Error.Reason}");
+                            }
                         }
                     }
-
-                    consumer.Close();
+                    catch (OperationCanceledException)
+                    {
+                        consumer.Close();
+                    }
                 }
-            }, cts.Token);
+            });
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =

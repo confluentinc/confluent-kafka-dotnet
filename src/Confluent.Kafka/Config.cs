@@ -225,7 +225,7 @@ namespace Confluent.Kafka
                 }
                 if (cancellationDelayMaxMs < 1 || cancellationDelayMaxMs > 10000)
                 {
-                    throw new ArgumentException(
+                    throw new ArgumentOutOfRangeException(
                         $"{ConfigPropertyNames.CancellationDelayMaxMs} must be in the range 1 <= {ConfigPropertyNames.CancellationDelayMaxMs} <= 10000");
                 }
             }

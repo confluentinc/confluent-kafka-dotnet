@@ -929,7 +929,7 @@ namespace Confluent.Kafka.Impl
         {
             if (listPtr == IntPtr.Zero)
             {
-                throw new ArgumentException("Internal error: cannot marshal from a NULL ptr.");
+                throw new InvalidOperationException("FATAL: Cannot marshal from a NULL ptr.");
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
@@ -944,7 +944,7 @@ namespace Confluent.Kafka.Impl
         {
             if (listPtr == IntPtr.Zero)
             {
-                throw new ArgumentException("Internal error: cannot marshal from a NULL ptr.");
+                throw new InvalidOperationException("FATAL: Cannot marshal from a NULL ptr.");
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
@@ -977,7 +977,7 @@ namespace Confluent.Kafka.Impl
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr)offsets.Count());
             if (list == IntPtr.Zero)
             {
-                throw new OutOfMemoryException("Failed to create topic partition list");
+                throw new Exception("Failed to create topic partition list");
             }
 
             foreach (var p in offsets)

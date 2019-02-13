@@ -68,23 +68,29 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                 {
                     consumer.Subscribe(topicName);
 
-                    while (!cts.Token.IsCancellationRequested)
+                    try
                     {
-                        try
+                        while (true)
                         {
-                            var consumeResult = consumer.Consume(cts.Token);
+                            try
+                            {
+                                var consumeResult = consumer.Consume(cts.Token);
 
-                            Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
-                        }
-                        catch (ConsumeException e)
-                        {
-                            Console.WriteLine("Consume error: " + e.Error.Reason);
+                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
+                            }
+                            catch (ConsumeException e)
+                            {
+                                Console.WriteLine($"Consume error: {e.Error.Reason}");
+                            }
                         }
                     }
-
-                    consumer.Close();
+                    catch (OperationCanceledException)
+                    {
+                        // commit final offsets and leave the group.
+                        consumer.Close();
+                    }
                 }
-            }, cts.Token);
+            });
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer =

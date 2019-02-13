@@ -29,19 +29,38 @@ namespace Confluent.Kafka
         ///     an existing Error value.
         /// </summary>
         /// <param name="error"> 
-        ///     The error associated with the delivery report.
+        ///     The error associated with the delivery result.
         /// </param>
-        /// <param name="deliveryReport">
-        ///     The delivery report associated with the produce request.
+        /// <param name="deliveryResult">
+        ///     The delivery result associated with the produce request.
         /// </param>
-        public ProduceException(Error error, DeliveryResult<TKey, TValue> deliveryReport)
-            : base(error)
+        /// <param name="innerException">
+        ///     The exception instance that caused this exception.
+        /// </param>
+        public ProduceException(Error error, DeliveryResult<TKey, TValue> deliveryResult, Exception innerException)
+            : base(error, innerException)
         {
-            DeliveryResult = deliveryReport;
+            DeliveryResult = deliveryResult;
         }
 
         /// <summary>
-        ///     The delivery report associated with the produce request.
+        ///     Initialize a new instance of ProduceException based on 
+        ///     an existing Error value.
+        /// </summary>
+        /// <param name="error"> 
+        ///     The error associated with the delivery report.
+        /// </param>
+        /// <param name="deliveryResult">
+        ///     The delivery result associated with the produce request.
+        /// </param>
+        public ProduceException(Error error, DeliveryResult<TKey, TValue> deliveryResult)
+            : base(error)
+        {
+            DeliveryResult = deliveryResult;
+        }
+
+        /// <summary>
+        ///     The delivery result associated with the produce request.
         /// </summary>
         public DeliveryResult<TKey, TValue> DeliveryResult { get; }
     }

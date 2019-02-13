@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public CreateTopicsException(List<CreateTopicExceptionResult> results)
+        public CreateTopicsException(List<CreateTopicReport> results)
             : base(
                 "An error occurred creating topics: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
@@ -49,6 +49,6 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<CreateTopicExceptionResult> Results { get; }
+        public List<CreateTopicReport> Results { get; }
     }
 }

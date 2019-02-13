@@ -100,7 +100,7 @@ class Program
                 var dr = await p.ProduceAsync("test-topic", new Message<Null, string> { Value="test" });
                 Console.WriteLine($"Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
             }
-            catch (KafkaException e)
+            catch (ProduceException<Null, string> e)
             {
                 Console.WriteLine($"Delivery failed: {e.Error.Reason}");
             }
@@ -177,25 +177,26 @@ class Program
                 cts.Cancel();
             };
 
-            while (!cts.IsCancellationRequested)
+            try
             {
-                try
+                while (true)
                 {
-                    var cr = c.Consume(cts.Token);
-                    Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
-                }
-                catch (ConsumeException e)
-                {
-                    Console.WriteLine($"Error occured: {e.Error.Reason}");
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
+                    try
+                    {
+                        var cr = c.Consume(cts.Token);
+                        Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
+                    }
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"Error occured: {e.Error.Reason}");
+                    }
                 }
             }
-            
-            // Ensure the consumer leaves the group cleanly and final offsets are committed.
-            c.Close();
+            catch (OperationCanceledException)
+            {
+                // Ensure the consumer leaves the group cleanly and final offsets are committed.
+                c.Close();
+            }
         }
     }
 }
@@ -227,11 +228,11 @@ For more information about working with Avro in .NET, refer to the the blog post
 
 Errors delivered to a client's error handler should be considered informational except when the `IsFatal` flag
 is set to `true`, indicating that the client is in an un-recoverable state. Currently, this can only happen on
-the producer, and only when `enable.itempotence` has been set to `true`. In all other scenarios, clients are
-able to recover from all errors automatically.
+the producer, and only when `enable.idempotence` has been set to `true`. In all other scenarios, clients will
+attempt to recover from all errors automatically.
 
 Although calling most methods on the clients will result in a fatal error if the client is in an un-recoverable
-state, you should generally only need to explicitly check for fatal errors in your `OnError` handler, and handle
+state, you should generally only need to explicitly check for fatal errors in your error handler, and handle
 this scenario there.
 
 #### Producer
@@ -246,10 +247,8 @@ will be thrown.
 
 #### Consumer
 
-If you are using the deserializing version of the `Consumer`, any error encountered during deserialization (which
-happens during your call to `Consume`) will throw a `DeserializationException`. All other `Consume` errors will
-result in a `ConsumeException` with further information about the error and context available via the `Error` and
-`ConsumeResult` fields.
+All `Consume` errors will result in a `ConsumeException` with further information about the error and context
+available via the `Error` and `ConsumeResult` fields.
 
 
 ### Confluent Cloud

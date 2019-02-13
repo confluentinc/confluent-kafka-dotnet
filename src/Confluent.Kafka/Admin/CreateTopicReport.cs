@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     The result of a request to create a specific topic.
     /// </summary>
-    public class CreateTopicExceptionResult
+    public class CreateTopicReport
     {
         /// <summary>
         ///     The topic name.
