@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     The result of a request to describe the configs of a specific resource.
     /// </summary>
-    public class DescribeConfigsExceptionResult
+    public class DescribeConfigsReport
     {
         /// <summary>
         ///     The resource associated with the describe configs request.

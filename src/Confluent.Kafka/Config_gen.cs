@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka branch v1.0.0-RC5 *** - do not modify manually.
+// *** Auto-generated from librdkafka branch v1.0.0-RC7 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -214,7 +214,7 @@ namespace Confluent.Kafka
                 else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
-                else throw new NotImplementedException($"Unknown sasl.mechanism value {value}");
+                else throw new ArgumentException($"Unknown sasl.mechanism value {value}");
             }
         }
 
@@ -754,10 +754,10 @@ namespace Confluent.Kafka
         public bool? EnableIdempotence { get { return GetBool("enable.idempotence"); } set { this.SetObject("enable.idempotence", value); } }
 
         /// <summary>
-        ///     When set to `true`, any error that could result in a gap in the produced message series when a batch of messages fails, will raise a fatal error (ERR__GAPLESS_GUARANTEE) and stop the producer. Requires `enable.idempotence=true`.
+        ///     **EXPERIMENTAL**: subject to change or removal. When set to `true`, any error that could result in a gap in the produced message series when a batch of messages fails, will raise a fatal error (ERR__GAPLESS_GUARANTEE) and stop the producer. Messages failing due to `message.timeout.ms` are not covered by this guarantee. Requires `enable.idempotence=true`.
         ///
-        ///     default: true
-        ///     importance: high
+        ///     default: false
+        ///     importance: low
         /// </summary>
         public bool? EnableGaplessGuarantee { get { return GetBool("enable.gapless.guarantee"); } set { this.SetObject("enable.gapless.guarantee", value); } }
 

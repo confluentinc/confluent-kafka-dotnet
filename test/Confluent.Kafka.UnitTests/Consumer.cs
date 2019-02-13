@@ -37,11 +37,11 @@ namespace Confluent.Kafka.UnitTests
             // respective config key.
             var configWithNullValue = CreateValidConfiguration();
             configWithNullValue.Set("sasl.password", null);
-            e = Assert.Throws<ArgumentException>(() => { var c = new ConsumerBuilder<byte[], byte[]>(configWithNullValue).Build(); });
+            e = Assert.Throws<ArgumentNullException>(() => { var c = new ConsumerBuilder<byte[], byte[]>(configWithNullValue).Build(); });
             Assert.Contains("sasl.password", e.Message);
 
             // Throw an exception if dotnet.cancellation.delay.max.ms is out of range.
-            e = Assert.Throws<ArgumentException>(() =>
+            e = Assert.Throws<ArgumentOutOfRangeException>(() =>
             {
                 var c = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
                 {
@@ -51,7 +51,7 @@ namespace Confluent.Kafka.UnitTests
                 }).Build();
             });
             Assert.Contains("range", e.Message);
-            e = Assert.Throws<ArgumentException>(() =>
+            e = Assert.Throws<ArgumentOutOfRangeException>(() =>
             {
                 var c = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
                 {

@@ -116,7 +116,7 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                throw new Exception("Unknown error while setting configuration property");
+                throw new InvalidOperationException("FATAL: Unexpected error setting librdkafka configuration property");
             }
         }
 

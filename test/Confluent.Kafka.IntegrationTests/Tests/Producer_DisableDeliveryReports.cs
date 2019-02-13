@@ -52,12 +52,12 @@ namespace Confluent.Kafka.IntegrationTests
             //   2. tasks should complete immediately.
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                Assert.Throws<ArgumentException>(() => producer.BeginProduce(
+                Assert.Throws<InvalidOperationException>(() => producer.BeginProduce(
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
                     (DeliveryReport<byte[], byte[]> dr) => Console.WriteLine("should not print")));
 
-                Assert.Throws<ArgumentException>(() => producer.BeginProduce(
+                Assert.Throws<InvalidOperationException>(() => producer.BeginProduce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<byte[], byte[]> { Key = TestKey, Value = TestValue },
                     (DeliveryReport<byte[], byte[]> dr) => Console.WriteLine("should not print")));

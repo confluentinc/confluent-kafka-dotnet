@@ -488,7 +488,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                throw new ArgumentException("Invalid key serializer configuration.");
+                throw new InvalidOperationException("FATAL: Both async and sync key serializers were set.");
             }
 
             // setup value serializer.
@@ -511,7 +511,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                throw new ArgumentException("Invalid value serializer configuration.");
+                throw new InvalidOperationException("FATAL: Both async and sync value serializers were set.");
             }
         }
 
@@ -608,7 +608,7 @@ namespace Confluent.Kafka
             var configHandle = SafeConfigHandle.Create();
 
             modifiedConfig.ToList().ForEach((kvp) => {
-                if (kvp.Value == null) throw new ArgumentException($"'{kvp.Key}' configuration parameter must not be null.");
+                if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
                 configHandle.Set(kvp.Key, kvp.Value.ToString());
             });
 
@@ -653,66 +653,105 @@ namespace Confluent.Kafka
         /// <param name="message">
         ///     The message to produce.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
         /// <returns>
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken))
+            Message<TKey, TValue> message)
         {
-            var keyBytes = (keySerializer != null)
-                ? keySerializer.Serialize(message.Key, true, message, topicPartition)
-                : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
-
-            var valBytes = (valueSerializer != null)
-                ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
-                : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
-
-            if (enableDeliveryReports)
+            byte[] keyBytes;
+            try
             {
-                var handler = new TypedTaskDeliveryHandlerShim<TKey, TValue>(topicPartition.Topic,
-                    enableDeliveryReportKey ? message.Key : default(TKey),
-                    enableDeliveryReportValue ? message.Value : default(TValue));
-
-                cancellationToken.Register(() => handler.TrySetException(new TaskCanceledException()));
-
-                ProduceImpl(
-                    topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                    message.Timestamp, topicPartition.Partition, message.Headers,
-                    handler);
-
-                return handler.Task;
+                keyBytes = (keySerializer != null)
+                    ? keySerializer.Serialize(message.Key, true, message, topicPartition)
+                    : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                        .GetAwaiter()
+                        .GetResult();
             }
-            else
+            catch (Exception exception)
             {
-                ProduceImpl(
-                    topicPartition.Topic, 
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                    message.Timestamp, topicPartition.Partition, message.Headers, 
-                    null);
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_KeySerialization),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                    },
+                    exception);
+            }
 
-                var result = new DeliveryResult<TKey, TValue>
+            byte[] valBytes;
+            try
+            {
+                valBytes = (valueSerializer != null)
+                    ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
+                    : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                        .GetAwaiter()
+                        .GetResult();
+            }
+            catch (Exception exception)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_ValueSerialization),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                    },
+                    exception);
+            }
+
+            try
+            {
+                if (enableDeliveryReports)
                 {
-                    TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
-                    Message = message
-                };
+                    var handler = new TypedTaskDeliveryHandlerShim<TKey, TValue>(topicPartition.Topic,
+                        enableDeliveryReportKey ? message.Key : default(TKey),
+                        enableDeliveryReportValue ? message.Value : default(TValue));
 
-                return Task.FromResult(result);
+                    ProduceImpl(
+                        topicPartition.Topic,
+                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        message.Timestamp, topicPartition.Partition, message.Headers,
+                        handler);
+
+                    return handler.Task;
+                }
+                else
+                {
+                    ProduceImpl(
+                        topicPartition.Topic, 
+                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                        message.Timestamp, topicPartition.Partition, message.Headers, 
+                        null);
+
+                    var result = new DeliveryResult<TKey, TValue>
+                    {
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
+                        Message = message
+                    };
+
+                    return Task.FromResult(result);
+                }
             }
+            catch (KafkaException ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    ex.Error,
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                    });
+            }
+
+            // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
 
@@ -728,19 +767,15 @@ namespace Confluent.Kafka
         /// <param name="message">
         ///     The message to produce.
         /// </param>
-        /// <param name="cancellationToken">
-        ///     A cancellation token that can be used to abort this request.
-        /// </param>
         /// <returns>
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            Message<TKey, TValue> message,
-            CancellationToken cancellationToken = default(CancellationToken)
+            Message<TKey, TValue> message
         )
-            => ProduceAsync(new TopicPartition(topic, Partition.Any), message, cancellationToken);
+            => ProduceAsync(new TopicPartition(topic, Partition.Any), message);
 
 
         /// <summary>
@@ -787,35 +822,79 @@ namespace Confluent.Kafka
         {
             if (deliveryHandler != null && !enableDeliveryReports)
             {
-                throw new ArgumentException("A delivery handler was specified, but delivery reports are disabled.");
+                throw new InvalidOperationException("A delivery handler was specified, but delivery reports are disabled.");
             }
 
-            var keyBytes = (keySerializer != null)
-                ? keySerializer.Serialize(message.Key, true, message, topicPartition)
-                : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
+            byte[] keyBytes;
+            try
+            {
+                keyBytes = (keySerializer != null)
+                    ? keySerializer.Serialize(message.Key, true, message, topicPartition)
+                    : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                        .GetAwaiter()
+                        .GetResult();
+            }
+            catch (Exception ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_KeySerialization, ex.ToString()),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
+                    }
+                );
+            }
 
-            var valBytes = (valueSerializer != null)
-                ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
-                : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
+            byte[] valBytes;
+            try
+            {
+                valBytes = (valueSerializer != null)
+                    ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
+                    : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                        .GetAwaiter()
+                        .GetResult();
+            }
+            catch (Exception ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_ValueSerialization, ex.ToString()),
+                    new DeliveryResult<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
+                    }
+                );
+            }
 
-            ProduceImpl(
-                topicPartition.Topic,
-                valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                message.Timestamp, topicPartition.Partition, 
-                message.Headers, 
-                new TypedDeliveryHandlerShim_Action<TKey, TValue>(
+            try
+            {
+                ProduceImpl(
                     topicPartition.Topic,
-                    enableDeliveryReportKey ? message.Key : default(TKey),
-                    enableDeliveryReportValue ? message.Value : default(TValue),
-                    deliveryHandler)
-            );
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                    message.Timestamp, topicPartition.Partition, 
+                    message.Headers, 
+                    new TypedDeliveryHandlerShim_Action<TKey, TValue>(
+                        topicPartition.Topic,
+                        enableDeliveryReportKey ? message.Key : default(TKey),
+                        enableDeliveryReportValue ? message.Value : default(TValue),
+                        deliveryHandler));
+            }
+            catch (KafkaException ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    ex.Error,
+                    new DeliveryReport<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                        });
+            }
+
+            // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
         private class TypedTaskDeliveryHandlerShim<K, V> : TaskCompletionSource<DeliveryResult<K, V>>, IDeliveryHandler

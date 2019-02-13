@@ -112,7 +112,7 @@ namespace Confluent.Kafka
         {
             if (this.StatisticsHandler != null)
             {
-                throw new ArgumentException("Statistics handler may not be specified more than once.");
+                throw new InvalidOperationException("Statistics handler may not be specified more than once.");
             }
             this.StatisticsHandler = statisticsHandler;
             return this;
@@ -132,7 +132,7 @@ namespace Confluent.Kafka
         {
             if (this.ErrorHandler != null)
             {
-                throw new ArgumentException("Error handler may not be specified more than once.");
+                throw new InvalidOperationException("Error handler may not be specified more than once.");
             }
             this.ErrorHandler = errorHandler;
             return this;
@@ -158,7 +158,7 @@ namespace Confluent.Kafka
         {
             if (this.LogHandler != null)
             {
-                throw new ArgumentException("Log handler may not be specified more than once.");
+                throw new InvalidOperationException("Log handler may not be specified more than once.");
             }
             this.LogHandler = logHandler;
             return this;
@@ -171,7 +171,7 @@ namespace Confluent.Kafka
         {
             if (this.KeySerializer != null || this.AsyncKeySerializer != null)
             {
-                throw new ArgumentException("Key serializer may not be specified more than once.");
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
             }
             this.KeySerializer = serializer;
             return this;
@@ -184,7 +184,7 @@ namespace Confluent.Kafka
         {
             if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
             {
-                throw new ArgumentException("Value serializer may not be specified more than once.");
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
             this.ValueSerializer = serializer;
             return this;
@@ -197,7 +197,7 @@ namespace Confluent.Kafka
         {
             if (this.KeySerializer != null || this.AsyncKeySerializer != null)
             {
-                throw new ArgumentException("Key serializer may not be specified more than once.");
+                throw new InvalidOperationException("Key serializer may not be specified more than once.");
             }
             this.AsyncKeySerializer = serializer;
             return this;
@@ -210,7 +210,7 @@ namespace Confluent.Kafka
         {
             if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
             {
-                throw new ArgumentException("Value serializer may not be specified more than once.");
+                throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
             this.AsyncValueSerializer = serializer;
             return this;
@@ -219,7 +219,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Build a new Producer instance.
         /// </summary>
-        public virtual Producer<TKey, TValue> Build()
+        public virtual IProducer<TKey, TValue> Build()
         {
             return new Producer<TKey, TValue>(this);
         }

@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             public MyProducerBuilder(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
-            public override Producer<K, V> Build()
+            public override IProducer<K, V> Build()
             {
                 if (typeof(K) == typeof(string))
                 {
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             public MyConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
-            public override Consumer<K, V> Build()
+            public override IConsumer<K, V> Build()
             {
                 if (typeof(K) == typeof(string))
                 {

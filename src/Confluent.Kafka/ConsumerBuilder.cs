@@ -137,7 +137,7 @@ namespace Confluent.Kafka
         {
             if (this.StatisticsHandler != null)
             {
-                throw new ArgumentException("Statistics handler may not be specified more than once.");
+                throw new InvalidOperationException("Statistics handler may not be specified more than once.");
             }
             this.StatisticsHandler = statisticsHandler;
             return this;
@@ -157,7 +157,7 @@ namespace Confluent.Kafka
         {
             if (this.ErrorHandler != null)
             {
-                throw new ArgumentException("Error handler may not be specified more than once.");
+                throw new InvalidOperationException("Error handler may not be specified more than once.");
             }
             this.ErrorHandler = errorHandler;
             return this;
@@ -184,7 +184,7 @@ namespace Confluent.Kafka
         {
             if (this.LogHandler != null)
             {
-                throw new ArgumentException("Log handler may not be specified more than once.");
+                throw new InvalidOperationException("Log handler may not be specified more than once.");
             }
             this.LogHandler = logHandler;
             return this;
@@ -197,7 +197,7 @@ namespace Confluent.Kafka
         {
             if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
             {
-                throw new ArgumentException("Key deserializer may not be specified more than once.");
+                throw new InvalidOperationException("Key deserializer may not be specified more than once.");
             }
             this.KeyDeserializer = deserializer;
             return this;
@@ -210,7 +210,7 @@ namespace Confluent.Kafka
         {
             if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
             {
-                throw new ArgumentException("Value deserializer may not be specified more than once.");
+                throw new InvalidOperationException("Value deserializer may not be specified more than once.");
             }
             this.ValueDeserializer = deserializer;
             return this;
@@ -223,7 +223,7 @@ namespace Confluent.Kafka
         {
             if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
             {
-                throw new ArgumentException("Key deserializer may not be specified more than once.");
+                throw new InvalidOperationException("Key deserializer may not be specified more than once.");
             }
             this.AsyncKeyDeserializer = deserializer;
             return this;
@@ -236,7 +236,7 @@ namespace Confluent.Kafka
         {
             if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
             {
-                throw new ArgumentException("Value deserializer may not be specified more than once.");
+                throw new InvalidOperationException("Value deserializer may not be specified more than once.");
             }
             this.AsyncValueDeserializer = deserializer;
             return this;
@@ -266,7 +266,7 @@ namespace Confluent.Kafka
         {
             if (this.RebalanceHandler != null)
             {
-                throw new ArgumentException("Rebalance handler may not be specified more than once.");
+                throw new InvalidOperationException("Rebalance handler may not be specified more than once.");
             }
             this.RebalanceHandler = rebalanceHandler;
             return this;
@@ -283,7 +283,7 @@ namespace Confluent.Kafka
         {
             if (this.OffsetsCommittedHandler != null)
             {
-                throw new ArgumentException("Offsets committed handler may not be specified more than once.");
+                throw new InvalidOperationException("Offsets committed handler may not be specified more than once.");
             }
             this.OffsetsCommittedHandler = offsetsCommittedHandler;
             return this;
@@ -292,7 +292,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Build a new Consumer instance.
         /// </summary>
-        public virtual Consumer<TKey, TValue> Build()
+        public virtual IConsumer<TKey, TValue> Build()
         {
             return new Consumer<TKey, TValue>(this);
         }

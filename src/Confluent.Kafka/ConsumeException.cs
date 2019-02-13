@@ -36,6 +36,25 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     The error that occured.
         /// </param>
+        /// <param name="innerException">
+        ///     The exception instance that caused this exception.
+        /// </param>
+        public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error, Exception innerException)
+            : base(error, innerException)
+        {
+            ConsumerRecord = consumerRecord;
+        }
+
+        /// <summary>
+        ///     Initialize a new instance of ConsumeException
+        /// </summary>
+        /// <param name="consumerRecord">
+        ///     An object that provides information know about the consumer 
+        ///     record for which the error occured.
+        /// </param>
+        /// <param name="error">
+        ///     The error that occured.
+        /// </param>
         public ConsumeException(ConsumeResult<byte[], byte[]> consumerRecord, Error error)
             : base(error)
         {

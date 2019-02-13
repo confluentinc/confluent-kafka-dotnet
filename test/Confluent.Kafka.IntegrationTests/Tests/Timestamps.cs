@@ -264,7 +264,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   Timestamps");
         }
 
-        private static void assertCloseToNow(Consumer<Null, string> consumer, TopicPartitionOffset tpo)
+        private static void assertCloseToNow(IConsumer<Null, string> consumer, TopicPartitionOffset tpo)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -273,7 +273,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
         }
 
-        private static void assertCloseToNow_byte(Consumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
+        private static void assertCloseToNow_byte(IConsumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {tpo});
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));

@@ -144,7 +144,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableProducer : VerifiableClient, IDisposable
     {
-        Producer<byte[], byte[]> Handle; // Client Handle
+        IProducer<byte[], byte[]> Handle; // Client Handle
 
         long DeliveryCnt; // Successfully delivered messages
         long ErrCnt; // Failed deliveries
@@ -207,14 +207,7 @@ namespace Confluent.Kafka.VerifiableClient
 
         private void Produce(string topic, string value)
         {
-            try
-            {
-                Handle.BeginProduce(topic, new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
-            }
-            catch (KafkaException e)
-            {
-                Fatal($"Produce({topic}, {value}) failed: {e}");
-            }
+            Handle.BeginProduce(topic, new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes(value) }, record => HandleDelivery(record));
         }
 
         private void TimedProduce(object ignore)
@@ -285,7 +278,7 @@ namespace Confluent.Kafka.VerifiableClient
 
     public class VerifiableConsumer : VerifiableClient, IDisposable
     {
-        Consumer<Null, string> consumer;
+        IConsumer<Null, string> consumer;
         VerifiableConsumerConfig Config;
 
         private Dictionary<TopicPartition, AssignedPartition> currentAssignment;
@@ -488,16 +481,16 @@ namespace Confluent.Kafka.VerifiableClient
             {
                 results = consumer.Commit().Select(r => new TopicPartitionOffsetError(r, new Error(ErrorCode.NoError))).ToList();
             }
+            catch (TopicPartitionOffsetException ex)
+            {
+                results = ex.Results;
+            }
             catch (KafkaException ex)
             {
                 results = null;
                 error = ex.Error;
             }
-            catch (TopicPartitionOffsetException ex)
-            {
-                results = ex.Results;
-            }
-
+            
             SendOffsetsCommitted(new CommittedOffsets(results, error));
         }
 
