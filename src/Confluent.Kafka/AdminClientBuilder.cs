@@ -132,7 +132,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Build the <see cref="AdminClient" /> instance.
         /// </summary>
-        public virtual AdminClient Build()
+        public virtual IAdminClient Build()
         {
             return new AdminClient(this);
         }

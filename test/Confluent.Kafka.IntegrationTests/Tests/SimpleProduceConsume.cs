@@ -68,7 +68,7 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFile("end   SimpleProduceConsume");
         }
 
-        private static void ConsumeMessage(Consumer<byte[], byte[]> consumer, DeliveryResult<Null, string> dr, string testString)
+        private static void ConsumeMessage(IConsumer<byte[], byte[]> consumer, DeliveryResult<Null, string> dr, string testString)
         {
             consumer.Assign(new List<TopicPartitionOffset>() {dr.TopicPartitionOffset});
             var r = consumer.Consume(TimeSpan.FromSeconds(10));
@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(r.Message.Timestamp.UnixTimestampMs, dr.Message.Timestamp.UnixTimestampMs);
         }
 
-        private static DeliveryResult<Null, string> ProduceMessage(string topic, Producer<Null, string> producer, string testString)
+        private static DeliveryResult<Null, string> ProduceMessage(string topic, IProducer<Null, string> producer, string testString)
         {
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
             Assert.NotNull(result?.Message);
