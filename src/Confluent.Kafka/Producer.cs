@@ -488,7 +488,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                throw new Exception("FATAL: Both async and sync key serializers were set.");
+                throw new InvalidOperationException("FATAL: Both async and sync key serializers were set.");
             }
 
             // setup value serializer.
@@ -511,7 +511,7 @@ namespace Confluent.Kafka
             }
             else
             {
-                throw new Exception("FATAL: Both async and sync value serializers were set.");
+                throw new InvalidOperationException("FATAL: Both async and sync value serializers were set.");
             }
         }
 
@@ -750,6 +750,7 @@ namespace Confluent.Kafka
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
                     });
             }
+
             // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
@@ -836,13 +837,14 @@ namespace Confluent.Kafka
             }
             catch (Exception ex)
             {
-                deliveryHandler?.Invoke(new DeliveryReport<TKey, TValue>
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_KeySerialization, ex.ToString()),
+                    new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
-                        Error = new Error(ErrorCode.Local_KeySerialization, ex.ToString())
-                    });
-                return;
+                    }
+                );
             }
 
             byte[] valBytes;
@@ -857,13 +859,14 @@ namespace Confluent.Kafka
             }
             catch (Exception ex)
             {
-                deliveryHandler?.Invoke(new DeliveryReport<TKey, TValue>
+                throw new ProduceException<TKey, TValue>(
+                    new Error(ErrorCode.Local_ValueSerialization, ex.ToString()),
+                    new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
-                        Error = new Error(ErrorCode.Local_ValueSerialization, ex.ToString())
-                    });
-                return;
+                    }
+                );
             }
 
             try
@@ -882,14 +885,15 @@ namespace Confluent.Kafka
             }
             catch (KafkaException ex)
             {
-                deliveryHandler?.Invoke(new DeliveryReport<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
-                        Error = ex.Error
-                    });
-                return;
+                throw new ProduceException<TKey, TValue>(
+                    ex.Error,
+                    new DeliveryReport<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                        });
             }
+
             // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 

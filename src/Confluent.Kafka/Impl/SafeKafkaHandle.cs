@@ -929,7 +929,7 @@ namespace Confluent.Kafka.Impl
         {
             if (listPtr == IntPtr.Zero)
             {
-                throw new Exception("FATAL: Cannot marshal from a NULL ptr.");
+                throw new InvalidOperationException("FATAL: Cannot marshal from a NULL ptr.");
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
@@ -944,7 +944,7 @@ namespace Confluent.Kafka.Impl
         {
             if (listPtr == IntPtr.Zero)
             {
-                throw new Exception("FATAL: Cannot marshal from a NULL ptr.");
+                throw new InvalidOperationException("FATAL: Cannot marshal from a NULL ptr.");
             }
 
             var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);

@@ -813,7 +813,7 @@ namespace Confluent.Kafka
             else
             {
                 // enforced by the builder class.
-                throw new Exception("FATAL: Both async and sync key deserializers were set.");
+                throw new InvalidOperationException("FATAL: Both async and sync key deserializers were set.");
             }
 
             // setup value deserializer.
@@ -837,7 +837,7 @@ namespace Confluent.Kafka
             else
             {
                 // enforced by the builder class.
-                throw new Exception("FATAL: Both async and sync value deserializers were set.");
+                throw new InvalidOperationException("FATAL: Both async and sync value deserializers were set.");
             }
         }
 

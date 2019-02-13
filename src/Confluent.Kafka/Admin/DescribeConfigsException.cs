@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents an error that occured during a describe configs request.
     /// </summary>
-    public class DescribeConfigsException : KafkaException
+    public class DescribeConfigsException : Exception
     {
         /// <summary>
         ///     Initializes a new instance of DescribeConfigsException.
@@ -35,11 +35,11 @@ namespace Confluent.Kafka.Admin
         ///     results will be in error.
         /// </param>
         public DescribeConfigsException(List<DescribeConfigsReport> results)
-            : base(new Error(ErrorCode.Unknown,
+            : base(
                 "An error occurred describing the following resources: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.ConfigResource)) +
                 "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) + 
-                "]."))
+                "].")
         {
             Results = results;
         }

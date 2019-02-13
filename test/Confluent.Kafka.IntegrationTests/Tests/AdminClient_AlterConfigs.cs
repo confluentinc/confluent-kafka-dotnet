@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var toUpdate = new Dictionary<ConfigResource, List<ConfigEntry>>
                 {
                     {
-                        configResource, 
+                        configResource,
                         new List<ConfigEntry> {
                             new ConfigEntry { Name = "flush.ms", Value="10001" },
                             new ConfigEntry { Name = "ubute.invalid.config", Value="42" }
