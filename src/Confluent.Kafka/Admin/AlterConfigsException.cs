@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents an error that occured during an alter configs request.
     /// </summary>
-    public class AlterConfigsException : Exception
+    public class AlterConfigsException : KafkaException
     {
         /// <summary>
         ///     Initializes a new instance of AlterConfigsException.
@@ -35,11 +35,11 @@ namespace Confluent.Kafka.Admin
         ///     results will be in error.
         /// </param>
         public AlterConfigsException(List<AlterConfigsReport> results)
-            : base(
+            : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred altering the following resources: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.ConfigResource)) +
                 "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) + 
-                "].")
+                "]."))
         {
             Results = results;
         }

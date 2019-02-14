@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents an error that occured during a delete topics request.
     /// </summary>
-    public class DeleteTopicsException : Exception
+    public class DeleteTopicsException : KafkaException
     {
         /// <summary>
         ///     Initializes a new DeleteTopicsException.
@@ -35,11 +35,11 @@ namespace Confluent.Kafka.Admin
         ///     results will be in error.
         /// </param>
         public DeleteTopicsException(List<DeleteTopicReport> results)
-            : base(
+            : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred deleting topics: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
                 "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
-                "].")
+                "]."))
         {
             Results = results;
         }

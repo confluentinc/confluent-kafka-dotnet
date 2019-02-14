@@ -24,7 +24,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents an error that occured during a create partitions request.
     /// </summary>
-    public class CreatePartitionsException : Exception
+    public class CreatePartitionsException : KafkaException
     {
         /// <summary>
         ///     Initialize a new instance of CreatePartitionsException.
@@ -35,11 +35,11 @@ namespace Confluent.Kafka.Admin
         ///     results will be in error.
         /// </param>
         public CreatePartitionsException(List<CreatePartitionsReport> results)
-            : base(
+            : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred creating partitions for topics: [" +
                 String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
                 "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
-                "].")
+                "]."))
         {
             Results = results;
         }
