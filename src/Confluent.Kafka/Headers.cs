@@ -42,14 +42,14 @@ namespace Confluent.Kafka
         ///     header value is distinct from an empty header
         ///     value (array of length 0).
         /// </param>
-        public void Add<T>(string key, T val)
+        public void Add(string key, byte[] val)
         {
             if (key == null) 
             {
                 throw new ArgumentNullException("Kafka message header key cannot be null.");
             }
 
-            headers.Add(new Header<T>(key, val));
+            headers.Add(new Header(key, val));
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Confluent.Kafka
         /// <param name="header">
         ///     The header to add to the collection.
         /// </param>
-        public void Add<T>(Header<T> header)
+        public void Add(Header header)
         {
             headers.Add(header);
         }
@@ -75,21 +75,11 @@ namespace Confluent.Kafka
         /// <exception cref="KeyNotFoundException">
         ///     The key <paramref name="key" /> was not present in the collection.
         /// </exception>
-        public T GetLast<T>(string key)
+        public byte[] GetLastBytes(string key)
         {
-            if (TryGetLast(key, out object result))
+            if (TryGetLastBytes(key, out byte[] result))
             {
-                return (T)result;
-            }
-
-            throw new KeyNotFoundException($"The key {key} was not present in the headers collection.");
-        }
-
-        public byte[] GetLast(string key)
-        {
-            if (TryGetLast(key, out object result))
-            {
-                return (byte[])result;
+                return result;
             }
 
             throw new KeyNotFoundException($"The key {key} was not present in the headers collection.");
@@ -110,18 +100,18 @@ namespace Confluent.Kafka
         ///     true if the a value with the specified key was present in 
         ///     the collection, false otherwise.
         /// </returns>
-        public bool TryGetLast<T>(string key, out T lastHeader)
+        public bool TryGetLastBytes(string key, out byte[] lastHeader)
         {
             for (int i=headers.Count-1; i>=0; --i)
             {
                 if (headers[i].Key == key)
                 {
-                    lastHeader = headers[i].GetValue<T>();
+                    lastHeader = headers[i].GetValueBytes();
                     return true;
                 }
             }
 
-            lastHeader = default(T);
+            lastHeader = default(byte[]);
             return false;
         }
 

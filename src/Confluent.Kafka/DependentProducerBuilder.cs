@@ -51,11 +51,6 @@ namespace Confluent.Kafka
         /// </summary>
         public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
-        /// <summary>
-        ///     The configured header serializers.
-        /// </summary>
-        internal protected Dictionary<string, object> HeaderSerializers { get; set; }
-
 
         /// <summary>
         ///     An underlying librdkafka client handle that the Producer will use to 
@@ -100,36 +95,6 @@ namespace Confluent.Kafka
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
             this.AsyncValueSerializer = serializer;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the serializer to use to sserialize headers with the specified key.
-        ///     If no serializer is specified corresponding to a given header key, the default
-        ///     serializer for the header value type will be used where available.
-        /// </summary>
-        public DependentProducerBuilder<TKey, TValue> SetHeaderSerializer<T>(string headerName, ISerializer<T> serializer)
-        {
-            if (this.HeaderSerializers.ContainsKey(headerName))
-            {
-                throw new InvalidOperationException("Only one serializer may be set corresponding to a given header name");
-            }
-            this.HeaderSerializers.Add(headerName, serializer);
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the (async) serializer to use to sserialize headers with the specified key.
-        ///     If no serializer is specified corresponding to a given header key, the default
-        ///     serializer for the header value type will be used where available.
-        /// </summary>
-        public DependentProducerBuilder<TKey, TValue> SetHeaderSerializer<T>(string headerName, IAsyncSerializer<T> serializer)
-        {
-            if (this.HeaderSerializers.ContainsKey(headerName))
-            {
-                throw new InvalidOperationException("Only one serializer may be set corresponding to a given header name");
-            }
-            this.HeaderSerializers.Add(headerName, serializer);
             return this;
         }
 

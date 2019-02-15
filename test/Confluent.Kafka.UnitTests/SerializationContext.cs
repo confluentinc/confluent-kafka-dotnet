@@ -14,22 +14,20 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using Xunit;
 
-namespace Confluent.Kafka
+
+namespace Confluent.Kafka.UnitTests
 {
-    /// <summary>
-    ///     Defines a Kafka message header.
-    /// </summary>
-    public interface IHeader
+    public class SerializationContextTests
     {
-        /// <summary>
-        ///     The message key.
-        /// </summary>
-        string Key { get; }
-        
-        /// <summary>
-        ///     The message value serialized data.
-        /// </summary>
-        byte[] GetValueBytes();
+        [Fact]
+        public void Constuctor()
+        {
+            var sc = new SerializationContext(MessageComponentType.Value, "my-topic");
+            Assert.Equal(MessageComponentType.Value, sc.MessageComponent);
+            Assert.Equal("my-topic", sc.Topic);
+        }
     }
 }

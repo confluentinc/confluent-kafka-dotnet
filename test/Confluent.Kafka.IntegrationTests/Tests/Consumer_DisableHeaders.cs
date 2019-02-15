@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<byte[], byte[]>
                     {
                         Value = Serializers.Utf8.Serialize("my-value", null),
-                        Headers = new Headers() { new Header<byte[]>("my-header", new byte[] { 42 }) }
+                        Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
                     }
                 ).Result;
             }

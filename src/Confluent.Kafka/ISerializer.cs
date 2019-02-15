@@ -29,6 +29,9 @@ namespace Confluent.Kafka
         /// <param name="data">
         ///     The value to serialize.
         /// </param>
+        /// <param name="context">
+        ///     Context relevant to the serialize operation.
+        /// </param>
         /// <returns>
         ///     The serialized value.
         /// </returns>

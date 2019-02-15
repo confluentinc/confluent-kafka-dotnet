@@ -32,6 +32,9 @@ namespace Confluent.Kafka
         /// <param name="data">
         ///     The value to serialize.
         /// </param>
+        /// <param name="context">
+        ///     Context relevant to the serialize operation.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that
         ///     completes with the serialized data.

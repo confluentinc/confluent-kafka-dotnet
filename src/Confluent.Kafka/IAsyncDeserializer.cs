@@ -34,16 +34,8 @@ namespace Confluent.Kafka
         /// <param name="isNull">
         ///     True if this is a null value.
         /// </param>
-        /// <param name="messageMetadata">
-        ///     Properties of the message the data is associated with
-        ///     extra to the key or value.
-        /// </param>
-        /// <param name="source">
-        ///     The TopicPartition from which the message was consumed.
-        /// </param>
-        /// <param name="isKey">
-        ///     True if deserializing the message key, false if deserializing the
-        ///     message value.
+        /// <param name="context">
+        ///     Context relevant to the deserialize operation.
         /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes

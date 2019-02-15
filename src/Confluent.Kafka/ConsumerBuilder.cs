@@ -72,11 +72,6 @@ namespace Confluent.Kafka
         internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
         /// <summary>
-        ///     The configured header deserializers.
-        /// </summary>
-        internal protected Dictionary<string, object> HeaderDeserializers { get; set; }
-
-        /// <summary>
         ///     The configured rebalance handler.
         /// </summary>
         internal protected Action<IConsumer<TKey, TValue>, RebalanceEvent> RebalanceHandler { get; set; }
@@ -244,46 +239,6 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Value deserializer may not be specified more than once.");
             }
             this.AsyncValueDeserializer = deserializer;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the deserializer to use to deserialize headers to be the default deserializer
-        ///     for the specified type.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetHeaderDeserializer<T>(string headerKey)
-        {
-            if (this.HeaderDeserializers.ContainsKey(headerKey))
-            {
-                throw new InvalidOperationException("Only one deserializer may be set corresponding to a given header name");
-            }
-            this.HeaderDeserializers.Add(headerKey, typeof(T));
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the deserializer to use to deserialize headers with the specified key.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetHeaderDeserializer<T>(string headerKey, IDeserializer<T> deserializer)
-        {
-            if (this.HeaderDeserializers.ContainsKey(headerKey))
-            {
-                throw new InvalidOperationException("Only one deserializer may be set corresponding to a given header name");
-            }
-            this.HeaderDeserializers.Add(headerKey, deserializer);
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the (async) deserializer to use to deserialize headers with the specified key.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetHeaderDeserializer<T>(string headerKey, IAsyncDeserializer<T> deserializer)
-        {
-            if (this.HeaderDeserializers.ContainsKey(headerKey))
-            {
-                throw new InvalidOperationException("Only one deserializer may be set corresponding to a given header name");
-            }
-            this.HeaderDeserializers.Add(headerKey, deserializer);
             return this;
         }
 

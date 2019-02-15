@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,7 +44,6 @@ namespace Confluent.Kafka
         private ISerializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
         private IAsyncSerializer<TValue> asyncValueSerializer;
-        private Dictionary<string, object> headerSerializers;
 
         private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
@@ -208,8 +206,8 @@ namespace Confluent.Kafka
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
             Timestamp timestamp,
-            Partition partition, 
-            IEnumerable<Header<byte[]>> headers,
+            Partition partition,
+            IEnumerable<IHeader> headers,
             IDeliveryHandler deliveryHandler)
         {
             if (timestamp.Type != TimestampType.CreateTime)
@@ -468,8 +466,7 @@ namespace Confluent.Kafka
             ISerializer<TKey> keySerializer,
             ISerializer<TValue> valueSerializer,
             IAsyncSerializer<TKey> asyncKeySerializer,
-            IAsyncSerializer<TValue> asyncValueSerializer,
-            Dictionary<string, object> HeaderSerializers)
+            IAsyncSerializer<TValue> asyncValueSerializer)
         {
             // setup key serializer.
             if (keySerializer == null && asyncKeySerializer == null)
@@ -516,8 +513,6 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("FATAL: Both async and sync value serializers were set.");
             }
-
-            this.headerSerializers = HeaderSerializers;
         }
 
         internal Producer(DependentProducerBuilder<TKey, TValue> builder)
@@ -531,8 +526,7 @@ namespace Confluent.Kafka
 
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
-                builder.AsyncKeySerializer, builder.AsyncValueSerializer,
-                builder.HeaderSerializers);
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
 
         internal Producer(ProducerBuilder<TKey, TValue> builder)
@@ -646,58 +640,9 @@ namespace Confluent.Kafka
 
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
-                builder.AsyncKeySerializer, builder.AsyncValueSerializer,
-                builder.HeaderSerializers);
+                builder.AsyncKeySerializer, builder.AsyncValueSerializer);
         }
 
-
-        private List<Header<byte[]>> MakeHeaders(Headers headers, string topic)
-        {
-            if (headers == null)
-            {
-                return null;
-            }
-
-            var result = new List<Header<byte[]>>();
-            foreach (var h in headers)
-            {
-                Type requiredSerdeType = null;
-#if NET45
-#else
-                var typeParam = h.GetType().GetTypeInfo().GetGenericArguments()[0];
-                requiredSerdeType = typeof(ISerializer<>).MakeGenericType(typeParam);
-#endif
-                if (headerSerializers.ContainsKey(h.Key))
-                {
-                    if (headerSerializers[h.Key].GetType() != requiredSerdeType)
-                    {
-                        throw new InvalidOperationException("sdf");
-                    }
-                    var methodInfo = requiredSerdeType.GetMethod("Serialize");
-                    result.Add(new Header<byte[]>(
-                        h.Key,
-                        (byte[])methodInfo.Invoke(
-                            headerSerializers[h.Key],
-                            new object[] { new SerializationContext(MessageComponentType.Header, h.Key, topic) })));
-
-                }
-                else if (defaultSerializers.ContainsKey(typeParam))
-                {
-                    var methodInfo = requiredSerdeType.GetMethod("Serialize");
-                    result.Add(new Header<byte[]>(
-                        h.Key,
-                        (byte[])methodInfo.Invoke(
-                            defaultSerializers[typeParam],
-                            new object[] { new SerializationContext(MessageComponentType.Header, h.Key, topic) })));
-                }
-                else
-                {
-                    throw new InvalidOperationException("sdf");
-                }
-            }
-
-            return result;
-        }
 
         /// <summary>
         ///     Asynchronously send a single message to a Kafka topic/partition.
@@ -720,8 +665,8 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, null, topicPartition.Topic))
-                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, null, topicPartition.Topic))
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -742,8 +687,8 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, null, topicPartition.Topic))
-                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, null, topicPartition.Topic))
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -752,23 +697,6 @@ namespace Confluent.Kafka
             {
                 throw new ProduceException<TKey, TValue>(
                     new Error(ErrorCode.Local_ValueSerialization),
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
-                    },
-                    exception);
-            }
-
-            List<Header<byte[]>> headers = null;
-            try
-            {
-                headers = MakeHeaders(message.Headers, topicPartition.Topic);
-            }
-            catch (Exception exception)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Unknown),  // ErrorCode.Local_HeaderSerialization
                     new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
@@ -790,7 +718,7 @@ namespace Confluent.Kafka
                         topicPartition.Topic,
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                        message.Timestamp, topicPartition.Partition, headers,
+                        message.Timestamp, topicPartition.Partition, message.Headers,
                         handler);
 
                     return handler.Task;
@@ -801,7 +729,7 @@ namespace Confluent.Kafka
                         topicPartition.Topic, 
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers, 
+                        message.Timestamp, topicPartition.Partition, message.Headers, 
                         null);
 
                     var result = new DeliveryResult<TKey, TValue>
@@ -902,8 +830,8 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, null, topicPartition.Topic))
-                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, null, topicPartition.Topic))
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -924,8 +852,8 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, null, topicPartition.Topic))
-                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, null, topicPartition.Topic))
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -942,23 +870,6 @@ namespace Confluent.Kafka
                 );
             }
 
-            List<Header<byte[]>> headers = null;
-            try
-            {
-                headers = MakeHeaders(message.Headers, topicPartition.Topic);
-            }
-            catch (Exception exception)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Unknown),  // ErrorCode.Local_HeaderSerialization
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
-                    },
-                    exception);
-            }
-
             try
             {
                 ProduceImpl(
@@ -966,7 +877,7 @@ namespace Confluent.Kafka
                     valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                     keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                     message.Timestamp, topicPartition.Partition, 
-                    headers,
+                    message.Headers,
                     new TypedDeliveryHandlerShim_Action<TKey, TValue>(
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
