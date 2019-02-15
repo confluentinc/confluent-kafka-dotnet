@@ -4,6 +4,8 @@ namespace Confluent.Kafka
     {
         string Key { get; }
         
+        byte[] GetValue();
+        
         T GetValue<T>();
     }
 }

@@ -42,6 +42,11 @@ namespace Confluent.Kafka
             return (U)(object)val;
         }
 
+        public byte[] GetValue()
+        {
+            return (byte[])(object)val;
+        }
+        
         /// <summary>
         ///     Create a new Header instance.
         /// </summary>

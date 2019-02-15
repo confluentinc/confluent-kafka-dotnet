@@ -251,7 +251,7 @@ namespace Confluent.Kafka
         ///     Set the deserializer to use to deserialize headers to be the default deserializer
         ///     for the specified type.
         /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetHeaderType<T>(string headerKey)
+        public ConsumerBuilder<TKey, TValue> SetHeaderDeserializer<T>(string headerKey)
         {
             if (this.HeaderDeserializers.ContainsKey(headerKey))
             {

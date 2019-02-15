@@ -85,6 +85,16 @@ namespace Confluent.Kafka
             throw new KeyNotFoundException($"The key {key} was not present in the headers collection.");
         }
 
+        public byte[] GetLast(string key)
+        {
+            if (TryGetLast(key, out object result))
+            {
+                return (byte[])result;
+            }
+
+            throw new KeyNotFoundException($"The key {key} was not present in the headers collection.");
+        }
+
         /// <summary>
         ///     Try to get the value of the latest header with the specified key.
         /// </summary>
@@ -114,6 +124,7 @@ namespace Confluent.Kafka
             lastHeader = default(T);
             return false;
         }
+
 
         /// <summary>
         ///     Removes all headers for the given key.
