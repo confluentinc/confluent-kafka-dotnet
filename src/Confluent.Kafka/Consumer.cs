@@ -42,7 +42,8 @@ namespace Confluent.Kafka
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
-            internal Action<RebalanceEvent> rebalanceHandler;
+            internal Action<List<TopicPartition>> partitionAssignmentHandler;
+            internal Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -110,7 +111,8 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Action<RebalanceEvent> rebalanceHandler;
+        private Action<List<TopicPartition>> partitionAssignmentHandler;
+        private Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -135,10 +137,10 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (rebalanceHandler != null)
+                if (partitionAssignmentHandler != null)
                 {
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    rebalanceHandler(new RebalanceEvent(partitionAssignment, true));
+                    partitionAssignmentHandler(partitionAssignment);
                     lock (assignCallCountLockObj)
                     {
                         if (assignCallCount > 0) { return; }
@@ -148,10 +150,10 @@ namespace Confluent.Kafka
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (rebalanceHandler != null)
+                if (partitionAssignmentRevokedHandler != null)
                 {
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    rebalanceHandler(new RebalanceEvent(partitionAssignment, false));
+                    partitionAssignmentRevokedHandler(partitionAssignment);
                     lock (assignCallCountLockObj)
                     {
                         if (assignCallCount > 0) { return; }
@@ -210,7 +212,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartition)" />
         ///     or implicitly.
         /// </summary>
-        public List<TopicPartition> Assignment
+        public List<TopicPartition> AssignedPartitions
             => kafkaHandle.GetAssignment();
 
 
@@ -716,7 +718,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.rebalanceHandler = baseConfig.rebalanceHandler;
+            this.partitionAssignmentHandler = baseConfig.partitionAssignmentHandler;
+            this.partitionAssignmentRevokedHandler = baseConfig.partitionAssignmentRevokedHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);

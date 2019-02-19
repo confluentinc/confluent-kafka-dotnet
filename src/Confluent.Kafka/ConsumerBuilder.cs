@@ -72,9 +72,14 @@ namespace Confluent.Kafka
         internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
         /// <summary>
-        ///     The configured rebalance handler.
+        ///     The configured partition assignment handler
         /// </summary>
-        internal protected Action<IConsumer<TKey, TValue>, RebalanceEvent> RebalanceHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentHandler { get; set; }
+
+        /// <summary>
+        ///     The configured partition revocation handler
+        /// </summary>
+        internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentRevokedHandler { get; set; }
 
         /// <summary>
         ///     The configured offsets committed handler.
@@ -98,9 +103,12 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                rebalanceHandler = this.RebalanceHandler == null
-                    ? default(Action<RebalanceEvent>)
-                    : rebalanceEvent => this.RebalanceHandler(consumer, rebalanceEvent)
+                partitionAssignmentHandler = this.PartitionAssignmentHandler == null
+                    ? default(Action<List<TopicPartition>>)
+                    : partitions => this.PartitionAssignmentHandler(consumer, partitions),
+                partitionAssignmentRevokedHandler = this.PartitionAssignmentRevokedHandler == null
+                    ? default(Action<List<TopicPartition>>)
+                    : partitions => this.PartitionAssignmentRevokedHandler(consumer, partitions)
             };
         }
 
@@ -243,17 +251,16 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Set the consumer group rebalance handler. Except for the initial partition assignment
-        ///     and final assignment revocation, a group rebalance will cause this handler to be
-        ///     called twice. The first time to advise that the current assignment has been revoked
-        ///     and the second time to advise of the new assignment.
+        ///     This handler is called when a new consumer group partition assignment has been received
+        ///     by this consumer. Note: corresponding to every call to this handler, there will be a
+        ///     corresponding call to the PartitionAssignmentRevoked handler, if set using
+        ///     <see cref="SetPartitionAssignmentRevokedHandler" />.
         /// 
-        ///     If you do not call an Assign or Unassign method in this handler, or do not specify
-        ///     a handler, partitions will be assigned (or unassigned) automatically, matching the
-        ///     assignment dictated by the consumer group. This default behavior will not occur if
-        ///     you call Assign yourself in the handler. The set of partitions you assign to is not
-        ///     required to match the assignment provided by the consumer group, but typically will.
-        ///     Note: you may call Assign or Unassign at most once in your rebalance handler.
+        ///     If you do not call the Assign method in this handler, or do not specify a handler,
+        ///     partitions will be assigned to be read from automatically, matching the assignment 
+        ///     dictated by the consumer group. This default behavior will not occur if you call Assign
+        ///     yourself in the handler. The set of partitions you assign to is not required to match
+        ///     the assignment provided by the consumer group, but typically will.
         /// 
         ///     Consumption will resume from the last committed offset for each partition (unless an
         ///     offset is manually specified in a call to Assign), or if there is no committed
@@ -262,13 +269,34 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetRebalanceHandler(Action<IConsumer<TKey, TValue>, RebalanceEvent> rebalanceHandler)
+        public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
         {
-            if (this.RebalanceHandler != null)
+            if (this.PartitionAssignmentHandler != null)
             {
-                throw new InvalidOperationException("Rebalance handler may not be specified more than once.");
+                throw new InvalidOperationException("Partition assigment handler may not be specified more than once.");
             }
-            this.RebalanceHandler = rebalanceHandler;
+            this.PartitionAssignmentHandler = partitionAssignmentHandler;
+            return this;
+        }
+
+        /// <summary>
+        ///     This handler is called immediately prior to a partition assignment being revoked.
+        ///     
+        ///     If you do not call the Unassign method in this handler, or do not specify a handler,
+        ///     the consumer will be unassigned from all partitions automatically. This default
+        ///     behavior will not occur if you call Consumer.Unassign or Consumer.Assign in your
+        ///     handler.
+        /// </summary>
+        /// <remarks>
+        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmnetRevokedHandler)
+        {
+            if (this.PartitionAssignmentRevokedHandler != null)
+            {
+                throw new InvalidOperationException("Partition revocation handler may not be specified more than once.");
+            }
+            this.PartitionAssignmentRevokedHandler = partitionAssignmnetRevokedHandler;
             return this;
         }
 
