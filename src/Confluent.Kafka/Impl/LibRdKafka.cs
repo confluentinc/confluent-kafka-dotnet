@@ -34,6 +34,8 @@ namespace Confluent.Kafka.Impl
 {
     internal static class LibRdKafka
     {
+        const int RTLD_NOW = 2;
+
         // min librdkafka version, to change when binding to new function are added
         const long minVersion = 0x000903ff;
 
@@ -216,117 +218,46 @@ namespace Confluent.Kafka.Impl
                 isInitialized = false;
 
 #if NET45 || NET46 || NET47
-
-                string path = userSpecifiedPath;
-                if (path == null)
+                if (MonoSupport.IsMonoRuntime)
                 {
-                    // in net45, librdkafka.dll is not in the process directory, we have to load it manually
-                    // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
-                    var is64 = IntPtr.Size == 8;
-                    var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
-                    var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-                    var dllDirectory = Path.Combine(
-                        baseDirectory, 
-                        is64 
-                            ? Path.Combine("librdkafka", "x64")
-                            : Path.Combine("librdkafka", "x86"));
-                    path = Path.Combine(dllDirectory, "librdkafka.dll");
-
-                    if (!File.Exists(path))
+                    if (MonoSupport.IsPlatform(PlatformID.Unix))
                     {
-                        dllDirectory = Path.Combine(
-                            baseDirectory, 
-                            is64 
-                                ? @"runtimes\win7-x64\native"
-                                : @"runtimes\win7-x86\native");
-                        path = Path.Combine(dllDirectory, "librdkafka.dll");
+                        isInitialized = LoadLinuxDelegates(userSpecifiedPath);
                     }
-
-                    if (!File.Exists(path))
+                    else if (MonoSupport.IsPlatform(PlatformID.MacOSX))
                     {
-                        path = Path.Combine(baseDirectory, "librdkafka.dll");
+                        isInitialized = LoadOSXDelegates(userSpecifiedPath);
+                    }
+                    else if (MonoSupport.IsPlatform(PlatformID.Win32NT, PlatformID.Win32S, PlatformID.Win32Windows, PlatformID.WinCE))
+                    {
+                        isInitialized = LoadNetFrameworkDelegates(userSpecifiedPath);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Unsupported platform: {Environment.OSVersion.Platform}");
                     }
                 }
-
-                if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                else
                 {
-                    // catch the last win32 error by default and keep the associated default message
-                    var win32Exception = new Win32Exception();
-                    var additionalMessage =
-                        $"Error while loading librdkafka.dll or its dependencies from {path}. " +
-                        $"Check the directory exists, if not check your deployment process. " +
-                        $"You can also load the library and its dependencies by yourself " +
-                        $"before any call to Confluent.Kafka";
-
-                    throw new InvalidOperationException(additionalMessage, win32Exception);
+                    isInitialized = LoadNetFrameworkDelegates(userSpecifiedPath);
                 }
-
-                isInitialized = SetDelegates(typeof(NativeMethods.NativeMethods));
-
 #else
-
-                const int RTLD_NOW = 2;
-
-                var nativeMethodTypes = new List<Type>();
-
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
-                        {
-                            // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
-                            // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
-                        }
-                    }
-
-                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                    isInitialized = LoadNetStandardDelegates(userSpecifiedPath);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                        }
-                    }
-
-                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                    isInitialized = LoadOSXDelegates(userSpecifiedPath);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                        }
-                    
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
-                    }
-                    else 
-                    {
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Centos7));
-                    }
+                    isInitialized = LoadLinuxDelegates(userSpecifiedPath);
                 }
                 else
                 {
                     throw new InvalidOperationException($"Unsupported platform: {RuntimeInformation.OSDescription}");
                 }
-
-                foreach (var t in nativeMethodTypes)
-                {
-                    isInitialized = SetDelegates(t);
-                    if (isInitialized)
-                    {
-                        break;
-                    }
-                }
-
 #endif
 
                 if (!isInitialized)
@@ -351,6 +282,104 @@ namespace Confluent.Kafka.Impl
 
                 return isInitialized;
             }
+        }
+
+#if NET45 || NET46 || NET47
+
+        private static bool LoadNetFrameworkDelegates(string userSpecifiedPath)
+        {
+            string path = userSpecifiedPath;
+            if (path == null)
+            {
+                // in net45, librdkafka.dll is not in the process directory, we have to load it manually
+                // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
+                var is64 = Environment.Is64BitProcess;
+                var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
+                var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+                var dllDirectory = Path.Combine(
+                    baseDirectory,
+                    is64
+                        ? Path.Combine("librdkafka", "x64")
+                        : Path.Combine("librdkafka", "x86"));
+                path = Path.Combine(dllDirectory, "librdkafka.dll");
+
+                if (!File.Exists(path))
+                {
+                    dllDirectory = Path.Combine(
+                        baseDirectory,
+                        is64
+                            ? @"runtimes\win7-x64\native"
+                            : @"runtimes\win7-x86\native");
+                    path = Path.Combine(dllDirectory, "librdkafka.dll");
+                }
+
+                if (!File.Exists(path))
+                {
+                    path = Path.Combine(baseDirectory, "librdkafka.dll");
+                }
+            }
+
+            if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            {
+                // catch the last win32 error by default and keep the associated default message
+                var win32Exception = new Win32Exception();
+                var additionalMessage =
+                    $"Error while loading librdkafka.dll or its dependencies from {path}. " +
+                    $"Check the directory exists, if not check your deployment process. " +
+                    $"You can also load the library and its dependencies by yourself " +
+                    $"before any call to Confluent.Kafka";
+
+                throw new InvalidOperationException(additionalMessage, win32Exception);
+            }
+
+            return SetDelegates(typeof(NativeMethods.NativeMethods));
+        }
+
+#endif
+
+        private static bool LoadNetStandardDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                {
+                    // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
+                    // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
+                }
+            }
+
+            return SetDelegates(typeof(NativeMethods.NativeMethods));
+        }
+
+        private static bool LoadOSXDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                }
+            }
+
+            return SetDelegates(typeof(NativeMethods.NativeMethods));
+        }
+
+        private static bool LoadLinuxDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                }
+
+                return SetDelegates(typeof(NativeMethods.NativeMethods));
+            }
+
+            return SetDelegates(typeof(NativeMethods.NativeMethods))
+                   || SetDelegates(typeof(NativeMethods.NativeMethods_Debian9))
+                   || SetDelegates(typeof(NativeMethods.NativeMethods_Centos7));
         }
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
