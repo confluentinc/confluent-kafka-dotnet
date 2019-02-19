@@ -113,9 +113,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.StoreOffsets(IEnumerable{TopicPartitionOffset})" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.StoreOffset(TopicPartitionOffset)" />
         /// </summary>
-        void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets);
+        void StoreOffset(TopicPartitionOffset offset);
 
 
         /// <summary>
@@ -161,9 +161,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Position(IEnumerable{TopicPartition})" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Position(TopicPartition)" />
         /// </summary>
-        List<TopicPartitionOffset> Position(IEnumerable<TopicPartition> partitions);
+        Offset Position(TopicPartition partition);
 
 
         /// <summary>

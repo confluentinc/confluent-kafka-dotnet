@@ -679,7 +679,7 @@ namespace Confluent.Kafka
                     new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     },
                     exception);
             }
@@ -701,7 +701,7 @@ namespace Confluent.Kafka
                     new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     },
                     exception);
             }
@@ -735,7 +735,7 @@ namespace Confluent.Kafka
 
                     var result = new DeliveryResult<TKey, TValue>
                     {
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
                         Message = message
                     };
 
@@ -749,7 +749,7 @@ namespace Confluent.Kafka
                     new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     });
             }
 
@@ -844,7 +844,7 @@ namespace Confluent.Kafka
                     new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
                     }
                 );
             }
@@ -866,7 +866,7 @@ namespace Confluent.Kafka
                     new DeliveryResult<TKey, TValue>
                     {
                         Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid),
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
                     }
                 );
             }
@@ -892,7 +892,7 @@ namespace Confluent.Kafka
                     new DeliveryReport<TKey, TValue>
                         {
                             Message = message,
-                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Invalid)
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                         });
             }
 
