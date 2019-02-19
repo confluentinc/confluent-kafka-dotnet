@@ -42,7 +42,8 @@ namespace Confluent.Kafka
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
-            internal Action<RebalanceEvent> rebalanceHandler;
+            internal Action<List<TopicPartition>> partitionsAssignedHandler;
+            internal Action<List<TopicPartition>> partitionsRevokedHandler;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -67,12 +68,9 @@ namespace Confluent.Kafka
         private bool disposeHasBeenCalled = false;
         private object disposeHasBeenCalledLockObj = new object();
 
-        /// <summary>
-        ///     keeps track of whether or not assign has been called during
-        ///     invocation of a rebalance callback event.
-        /// </summary>
-        private int assignCallCount = 0;
-        private object assignCallCountLockObj = new object();
+        private List<TopicPartitionOffset> assignCallSeekOffsets = null;
+        private bool inRebalance = false;
+        private object assignCallLockObj = new object();
 
         private bool enableHeaderMarshaling = true;
         private bool enableTimestampMarshaling = true;
@@ -110,15 +108,16 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Action<RebalanceEvent> rebalanceHandler;
+        private Action<List<TopicPartition>> partitionsAssignedHandler;
+        private Action<List<TopicPartition>> partitionsRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
-            IntPtr partitions,
+            IntPtr partitionsPtr,
             IntPtr opaque)
         {
-            var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
+            var partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr).Select(p => p.TopicPartition).ToList();
 
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed)
@@ -135,26 +134,45 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (rebalanceHandler != null)
+                if (partitionsAssignedHandler != null)
                 {
-                    lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    rebalanceHandler(new RebalanceEvent(partitionAssignment, true));
-                    lock (assignCallCountLockObj)
+                    lock (assignCallLockObj)
                     {
-                        if (assignCallCount > 0) { return; }
+                        inRebalance = true;
+                    }
+                    partitionsAssignedHandler(partitions);
+                    lock (assignCallLockObj)
+                    {
+                        inRebalance = false;
+                        var offsets = partitions.ToDictionary(p => p, p => Offset.Invalid);
+                        foreach (var seekOffset in assignCallSeekOffsets)
+                        {
+                            if (offsets.ContainsKey(seekOffset.TopicPartition))
+                            {
+                                throw new InvalidOperationException("Can only assign to ");
+                            }
+                            offsets[seekOffset.TopicPartition] = seekOffset.Offset;
+                        }
+                        Assign(offsets.Select(o => new TopicPartitionOffset(o.Key, o.Value)));
                     }
                 }
-                Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                else
+                {
+                    Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                }
             }
             else if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (rebalanceHandler != null)
+                if (partitionsRevokedHandler != null)
                 {
-                    lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    rebalanceHandler(new RebalanceEvent(partitionAssignment, false));
-                    lock (assignCallCountLockObj)
+                    lock (assignCallLockObj)
                     {
-                        if (assignCallCount > 0) { return; }
+                        inRebalance = true;
+                    }
+                    partitionsRevokedHandler(partitions);
+                    lock (assignCallLockObj)
+                    {
+                        inRebalance = false;
                     }
                 }
                 Unassign();
@@ -320,8 +338,14 @@ namespace Confluent.Kafka
         /// </param>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
-            lock (assignCallCountLockObj) { assignCallCount += 1; }
-            kafkaHandle.Assign(partitions.ToList());
+            lock (assignCallLockObj)
+            {
+                if (inRebalance)
+                {
+                    throw new InvalidOperationException("Assign/Unassign method may not be called in partitions assigned handler");    
+                }
+                kafkaHandle.Assign(partitions.ToList());
+            }
         }
 
 
@@ -341,8 +365,14 @@ namespace Confluent.Kafka
         /// </param>
         public void Assign(IEnumerable<TopicPartition> partitions)
         {
-            lock (assignCallCountLockObj) { assignCallCount += 1; }
-            kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+            lock (assignCallLockObj)
+            {
+                if (inRebalance)
+                {
+                    throw new InvalidOperationException("Assign/Unassign method may not be called in partitions assigned handler");    
+                }
+                kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+            }
         }
 
 
@@ -351,8 +381,14 @@ namespace Confluent.Kafka
         /// </summary>
         public void Unassign()
         {
-            lock (assignCallCountLockObj) { assignCallCount += 1; }
-            kafkaHandle.Assign(null);
+            lock (assignCallLockObj)
+            {
+                if (inRebalance)
+                {
+                    throw new InvalidOperationException("Assign/Unassign method may not be called in partitions assigned handler");    
+                }
+                kafkaHandle.Assign(null);
+            }
         }
 
 
@@ -473,12 +509,9 @@ namespace Confluent.Kafka
 
         
         /// <summary>
-        ///     Seek to <parmref name="offset"/> on the specified topic/partition which is either
-        ///     an absolute or logical offset. This must only be done for partitions that are 
-        ///     currently being consumed (i.e., have been Assign()ed). To set the start offset for 
-        ///     not-yet-consumed partitions you should use the 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartitionOffset)" /> 
-        ///     method (or other overload) instead.
+        ///     Seek to the specified offset (either absolute or logical) on the specified 
+        ///     topic/partition. This must only be done for partitions that are currently 
+        ///     being consumed from (i.e., have been Assign()ed).
         /// </summary>
         /// <param name="tpo">
         ///     The topic/partition to seek on and the offset to seek to.
@@ -487,8 +520,38 @@ namespace Confluent.Kafka
         ///     Thrown if the request failed.
         /// </exception>
         public void Seek(TopicPartitionOffset tpo)
-            => kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, -1);
+        {
+            lock (assignCallLockObj)
+            {
+                if (inRebalance)
+                {
+                    assignCallSeekOffsets.Add(tpo);
+                }
+                else
+                {
+                    kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, -1);
+                }
+            }
+        }
 
+        /// <summary>
+        ///     Seek to the specified offsets (either absolute or logical) on the specified 
+        ///     topic/partitions. This must only be done for partitions that are currently 
+        ///     being consumed from (i.e., have been Assign()ed).
+        /// </summary>
+        /// <param name="tpo">
+        ///     The topic/partitions to seek on and the offset to seek to.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        public void Seek(IEnumerable<TopicPartitionOffset> tpos)
+        {
+            foreach (var tpo in tpos)
+            {
+                Seek(tpo);
+            }
+        }
 
         /// <summary>
         ///     Pause consumption for the provided list of partitions.
@@ -716,7 +779,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.rebalanceHandler = baseConfig.rebalanceHandler;
+            this.partitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
+            this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);

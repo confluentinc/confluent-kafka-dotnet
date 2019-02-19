@@ -61,19 +61,18 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // Note: All handlers are called on the main .Consume thread.
                 .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
-                .SetRebalanceHandler((_, e) =>
+                .SetPartitionsAssignedHandler((c, partitions) =>
                 {
-                    if (e.IsAssignment)
-                    {
-                        Console.WriteLine($"Assigned partitions: [{string.Join(", ", e.Partitions)}]");
-                        // possibly override the default partition assignment behavior:
-                        // consumer.Assign(...) 
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Revoked partitions: [{string.Join(", ", e.Partitions)}]");
-                        // consumer.Unassign()
-                    }
+                    Console.WriteLine($"Partition assignment: [{string.Join(", ", partitions)}]");
+                    // By default, consumption will resume from the last committed offset for each
+                    // partition, or if there is no committed offset, in accordance with the 
+                    // `auto.offset.reset` configuration property. You can override this behavior
+                    // by manually seeking to the desired start offsets in this handler:
+                    // c.Seek(...) 
+                })
+                .SetPartitionsRevokedHandler((c, partitions) =>
+                {
+                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
                 })
                 .Build())
             {
