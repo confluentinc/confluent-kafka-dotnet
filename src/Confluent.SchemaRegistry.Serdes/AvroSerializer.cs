@@ -142,7 +142,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
                 }
 
-                return await serializerImpl.Serialize(context.Topic, value, context.MessageComponent == MessageComponentType.Key);
+                return await serializerImpl.Serialize(context.Topic, value, context.MessageComponentType == MessageComponentType.Key);
             }
             catch (AggregateException e)
             {

@@ -35,7 +35,7 @@ namespace Confluent.Kafka
         public string Key { get; private set; }
 
         /// <summary>
-        ///     Get the header value (serialized) data.
+        ///     Get the serialized header value data.
         /// </summary>
         public byte[] GetValueBytes()
         {

@@ -23,12 +23,12 @@ namespace Confluent.Kafka
     public interface IHeader
     {
         /// <summary>
-        ///     The message key.
+        ///     The header key.
         /// </summary>
         string Key { get; }
         
         /// <summary>
-        ///     The message value serialized data.
+        ///     The serialized header value data.
         /// </summary>
         byte[] GetValueBytes();
     }
