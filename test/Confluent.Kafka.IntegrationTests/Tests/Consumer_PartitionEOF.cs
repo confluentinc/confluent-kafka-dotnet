@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             // no eof, non generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
             // no eof, generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
@@ -106,7 +106,7 @@ namespace Confluent.Kafka.IntegrationTests
             // eof, non-generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
@@ -134,7 +134,7 @@ namespace Confluent.Kafka.IntegrationTests
             // eof, generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);

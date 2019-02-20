@@ -59,13 +59,13 @@ namespace Confluent.Kafka.IntegrationTests
             // test key deserialization error behavior
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                         c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                     })
-                .SetPartitionAssignmentRevokedHandler((c, partitions) =>
+                .SetPartitionsRevokedHandler((c, partitions) =>
                 {
                     c.Unassign();
                 })
@@ -103,13 +103,13 @@ namespace Confluent.Kafka.IntegrationTests
             // test value deserialization error behavior.
             using (var consumer =
                 new ConsumerBuilder<string, Null>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                         c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
                     })
-                    .SetPartitionAssignmentRevokedHandler((c, partitions) =>
+                    .SetPartitionsRevokedHandler((c, partitions) =>
                     {
                         c.Unassign();
                     })

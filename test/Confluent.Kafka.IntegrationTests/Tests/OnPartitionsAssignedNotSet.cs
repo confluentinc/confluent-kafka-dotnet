@@ -57,10 +57,10 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
-                Assert.Empty(consumer.AssignedPartitions);
+                Assert.Empty(consumer.Assignment);
                 consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.AssignedPartitions);
-                Assert.Equal(singlePartitionTopic, consumer.AssignedPartitions[0].Topic);
+                Assert.Single(consumer.Assignment);
+                Assert.Equal(singlePartitionTopic, consumer.Assignment[0].Topic);
 
                 consumer.Close();
             }

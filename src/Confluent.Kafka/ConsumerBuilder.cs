@@ -74,12 +74,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured partition assignment handler
         /// </summary>
-        internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionsAssignedHandler { get; set; }
 
         /// <summary>
         ///     The configured partition assignment revoked handler
         /// </summary>
-        internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentRevokedHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionsRevokedHandler { get; set; }
 
         /// <summary>
         ///     The configured offsets committed handler.
@@ -103,12 +103,12 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                partitionAssignmentHandler = this.PartitionAssignmentHandler == null
+                partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Action<List<TopicPartition>>)
-                    : partitions => this.PartitionAssignmentHandler(consumer, partitions),
-                partitionAssignmentRevokedHandler = this.PartitionAssignmentRevokedHandler == null
+                    : partitions => this.PartitionsAssignedHandler(consumer, partitions),
+                partitionsRevokedHandler = this.PartitionsRevokedHandler == null
                     ? default(Action<List<TopicPartition>>)
-                    : partitions => this.PartitionAssignmentRevokedHandler(consumer, partitions)
+                    : partitions => this.PartitionsRevokedHandler(consumer, partitions)
             };
         }
 
@@ -254,7 +254,7 @@ namespace Confluent.Kafka
         ///     This handler is called when a new consumer group partition assignment has been received
         ///     by this consumer. Note: corresponding to every call to this handler, there will be a
         ///     corresponding call to the partition assignment revoked handler (if one has been set using
-        ///     <see cref="SetPartitionAssignmentRevokedHandler" />).
+        ///     <see cref="SetPartitionsRevokedHandler" />).
         /// 
         ///     If you do not call the Assign method in this handler, or do not specify a handler,
         ///     partitions will be assigned to be read from automatically, matching the assignment 
@@ -269,13 +269,13 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
+        public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionsAssignedHandler)
         {
-            if (this.PartitionAssignmentHandler != null)
+            if (this.PartitionsAssignedHandler != null)
             {
-                throw new InvalidOperationException("PartitionAssignmentHandler may not be specified more than once.");
+                throw new InvalidOperationException("PartitionsAssignedHandler may not be specified more than once.");
             }
-            this.PartitionAssignmentHandler = partitionAssignmentHandler;
+            this.PartitionsAssignedHandler = partitionsAssignedHandler;
             return this;
         }
 
@@ -290,13 +290,13 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmnetRevokedHandler)
+        public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionsRevokedHandler)
         {
-            if (this.PartitionAssignmentRevokedHandler != null)
+            if (this.PartitionsRevokedHandler != null)
             {
-                throw new InvalidOperationException("PartitionAssignmentRevokedHandler may not be specified more than once.");
+                throw new InvalidOperationException("PartitionsRevokedHandler may not be specified more than once.");
             }
-            this.PartitionAssignmentRevokedHandler = partitionAssignmnetRevokedHandler;
+            this.PartitionsRevokedHandler = partitionsRevokedHandler;
             return this;
         }
 

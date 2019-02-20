@@ -46,9 +46,9 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.AssignedPartitions" />
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assignment" />
         /// </summary>
-        List<TopicPartition> AssignedPartitions { get; }
+        List<TopicPartition> Assignment { get; }
 
 
         /// <summary>

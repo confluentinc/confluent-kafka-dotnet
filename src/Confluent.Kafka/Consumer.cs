@@ -42,8 +42,8 @@ namespace Confluent.Kafka
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
-            internal Action<List<TopicPartition>> partitionAssignmentHandler;
-            internal Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
+            internal Action<List<TopicPartition>> partitionsAssignedHandler;
+            internal Action<List<TopicPartition>> partitionsRevokedHandler;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -110,6 +110,9 @@ namespace Confluent.Kafka
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
+        
+        private List<TopicPartition> requiredPartitionAssignment = null;
+        private object requiredPartitionAssignmentLockObj = new object();
 
         private Action<List<TopicPartition>> partitionAssignmentHandler;
         private Action<List<TopicPartition>> partitionAssignmentRevokedHandler;
@@ -122,9 +125,22 @@ namespace Confluent.Kafka
         {
             var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
 
+            lock (requiredPartitionAssignmentLockObj)
+            {
+                if (err == ErrorCode.Local_AssignPartitions)
+                {
+                    requiredPartitionAssignment = partitionAssignment;
+                }
+                else
+                {
+                    // It's enforced that this this branch corresponds to Local_RevokePartitions below.
+                    requiredPartitionAssignment = new List<TopicPartition>();
+                }
+            }
+
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed)
-            { 
+            {
                 // The RebalanceCallback should never be invoked as a side effect of Dispose.
                 // If for some reason flow of execution gets here, something is badly wrong. 
                 // (and we have a closed librdkafka handle that is expecting an assign call...)
@@ -146,6 +162,7 @@ namespace Confluent.Kafka
                         if (assignCallCount > 0) { return; }
                     }
                 }
+
                 Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
             }
             else if (err == ErrorCode.Local_RevokePartitions)
@@ -212,7 +229,7 @@ namespace Confluent.Kafka
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Assign(TopicPartition)" />
         ///     or implicitly.
         /// </summary>
-        public List<TopicPartition> AssignedPartitions
+        public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
 
@@ -267,7 +284,37 @@ namespace Confluent.Kafka
         ///     Unsubscribe from the current subscription set.
         /// </summary>
         public void Unsubscribe()
-            => kafkaHandle.Unsubscribe();
+        { 
+            kafkaHandle.Unsubscribe();
+            lock (requiredPartitionAssignmentLockObj)
+            {
+                requiredPartitionAssignment = null;
+            }
+        }
+
+
+        private void ValidatePartitions(IEnumerable<TopicPartition> partitions)
+        {
+            lock (requiredPartitionAssignmentLockObj)
+            {
+                if (requiredPartitionAssignment != null)
+                {
+                    if (requiredPartitionAssignment.Count != partitions.Count())
+                    {
+                        throw new InvalidOperationException("Set of topic partitions in Consumer.Assign/Unassign call must match the consumer group assignment set.");
+                    }
+
+                    var assignPartitions = new HashSet<TopicPartition>(partitions);
+                    foreach (var p in requiredPartitionAssignment)
+                    {
+                        if (!assignPartitions.Contains(p))
+                        {
+                            throw new InvalidOperationException("Set of topic partitions in Consumer.Assign/Unassign call must match the consumer group assignment set.");
+                        }
+                    }
+                }
+            }
+        }
 
 
         /// <summary>
@@ -323,6 +370,7 @@ namespace Confluent.Kafka
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
+            ValidatePartitions(partitions.Select(tpo => tpo.TopicPartition));
             kafkaHandle.Assign(partitions.ToList());
         }
 
@@ -344,6 +392,7 @@ namespace Confluent.Kafka
         public void Assign(IEnumerable<TopicPartition> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
+            ValidatePartitions(partitions);
             kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
         }
 
@@ -354,6 +403,13 @@ namespace Confluent.Kafka
         public void Unassign()
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
+            lock (requiredPartitionAssignmentLockObj)
+            {
+                if (requiredPartitionAssignment != null && requiredPartitionAssignment.Count != 0)
+                {
+                    throw new InvalidOperationException("The set of topic partitions in call to Consumer.Assign must match the consumer group assignment set.");
+                }
+            }
             kafkaHandle.Assign(null);
         }
 
@@ -718,8 +774,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.partitionAssignmentHandler = baseConfig.partitionAssignmentHandler;
-            this.partitionAssignmentRevokedHandler = baseConfig.partitionAssignmentRevokedHandler;
+            this.partitionAssignmentHandler = baseConfig.partitionsAssignedHandler;
+            this.partitionAssignmentRevokedHandler = baseConfig.partitionsRevokedHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);
