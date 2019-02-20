@@ -77,7 +77,7 @@ namespace Confluent.Kafka
         internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentHandler { get; set; }
 
         /// <summary>
-        ///     The configured partition revocation handler
+        ///     The configured partition assignment revoked handler
         /// </summary>
         internal protected Action<IConsumer<TKey, TValue>, List<TopicPartition>> PartitionAssignmentRevokedHandler { get; set; }
 
@@ -253,12 +253,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     This handler is called when a new consumer group partition assignment has been received
         ///     by this consumer. Note: corresponding to every call to this handler, there will be a
-        ///     corresponding call to the PartitionAssignmentRevoked handler, if set using
-        ///     <see cref="SetPartitionAssignmentRevokedHandler" />.
+        ///     corresponding call to the partition assignment revoked handler (if one has been set using
+        ///     <see cref="SetPartitionAssignmentRevokedHandler" />).
         /// 
         ///     If you do not call the Assign method in this handler, or do not specify a handler,
         ///     partitions will be assigned to be read from automatically, matching the assignment 
-        ///     dictated by the consumer group. This default behavior will not occur if you call Assign
+        ///     provided by the consumer group. This default behavior will not occur if you call Assign
         ///     yourself in the handler. The set of partitions you assign to is not required to match
         ///     the assignment provided by the consumer group, but typically will.
         /// 
@@ -273,7 +273,7 @@ namespace Confluent.Kafka
         {
             if (this.PartitionAssignmentHandler != null)
             {
-                throw new InvalidOperationException("Partition assigment handler may not be specified more than once.");
+                throw new InvalidOperationException("PartitionAssignmentHandler may not be specified more than once.");
             }
             this.PartitionAssignmentHandler = partitionAssignmentHandler;
             return this;
@@ -282,10 +282,10 @@ namespace Confluent.Kafka
         /// <summary>
         ///     This handler is called immediately prior to a partition assignment being revoked.
         ///     
-        ///     If you do not call the Unassign method in this handler, or do not specify a handler,
-        ///     the consumer will be unassigned from all partitions automatically. This default
-        ///     behavior will not occur if you call Consumer.Unassign or Consumer.Assign in your
-        ///     handler.
+        ///     If you do not call the Unassign (or Assign) method in this handler, or do not
+        ///     specify a handler, the consumer will be unassigned from all partitions 
+        ///     automatically. This default behavior will not occur if you call Consumer.Unassign
+        ///     or Consumer.Assign in your handler.
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
@@ -294,7 +294,7 @@ namespace Confluent.Kafka
         {
             if (this.PartitionAssignmentRevokedHandler != null)
             {
-                throw new InvalidOperationException("Partition revocation handler may not be specified more than once.");
+                throw new InvalidOperationException("PartitionAssignmentRevokedHandler may not be specified more than once.");
             }
             this.PartitionAssignmentRevokedHandler = partitionAssignmnetRevokedHandler;
             return this;
