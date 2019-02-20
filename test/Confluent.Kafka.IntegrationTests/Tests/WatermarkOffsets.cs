@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
     {
 
         /// <summary>
-        ///     Tests for GetWatermarkOffsets and QueryWatermarkOffsets on producer and consumer.
+        ///     Tests for GetWatermarkOffsets and QueryWatermarkOffsets.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public static void WatermarkOffsets(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
@@ -45,17 +45,6 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
-
-                var queryOffsets = adminClient.QueryWatermarkOffsets(new TopicPartition(singlePartitionTopic, 0), TimeSpan.FromSeconds(20));
-                Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
-                Assert.NotEqual(queryOffsets.High, Offset.Invalid);
-
-                // TODO: can anything be said about the high watermark offset c.f. dr.Offset?
-                //       I have seen queryOffsets.High < dr.Offset and also queryOffsets.High = dr.Offset + 1.
-                //       The former only once (or was I in error?). request.required.acks has a default value
-                //       of 1, so with only one broker, I assume the former should never happen.
-                // Console.WriteLine($"Query Offsets: [{queryOffsets.Low} {queryOffsets.High}]. DR Offset: {dr.Offset}");
-                Assert.True(queryOffsets.Low < queryOffsets.High);
             }
 
             var consumerConfig = new ConsumerConfig
@@ -66,18 +55,17 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var adminClient = new AdminClient(consumer.Handle))
             {
                 consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
 
-                var getOffsets = adminClient.GetWatermarkOffsets(dr.TopicPartition);
+                var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
                 Assert.Equal(getOffsets.Low, Offset.Invalid);
                 // the offset of the next message to be read.
                 Assert.Equal(getOffsets.High, dr.Offset + 1);
 
-                var queryOffsets = adminClient.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
+                var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
                 Assert.NotEqual(queryOffsets.Low, Offset.Invalid);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
             }

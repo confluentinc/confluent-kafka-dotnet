@@ -41,18 +41,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetWatermarkOffsets(TopicPartition)" />
-        /// </summary>
-        WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
-
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.AdminClient.QueryWatermarkOffsets(TopicPartition, TimeSpan)" />
-        /// </summary>
-        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout);
-
-
-        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.AdminClient.GetMetadata(string, TimeSpan)" />
         /// </summary>
         Metadata GetMetadata(string topic, TimeSpan timeout);

@@ -173,6 +173,18 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.GetWatermarkOffsets(TopicPartition)" />
+        /// </summary>
+        WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.QueryWatermarkOffsets(TopicPartition, TimeSpan)" />
+        /// </summary>
+        WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout);
+
+
+        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" />.
         /// </summary>
         void Close();
