@@ -620,14 +620,7 @@ namespace Confluent.Kafka
         ///     The requested WatermarkOffsets (see that class for additional documentation).
         /// </returns>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-        {
-            if (!Handle.Owner.GetType().Name.Contains("Consumer"))
-            {
-                throw new InvalidOperationException(
-                    "GetWatermarkOffsets is only available on AdminClient instances constructed from a Consumer handle.");
-            }
-            return kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
-        }
+            => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
 
         /// <summary>
@@ -645,6 +638,8 @@ namespace Confluent.Kafka
         /// </returns>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
+
+
         /// <summary>
         ///     Gets the (dynamic) group member id of this consumer (as 
         ///     set by the broker).
