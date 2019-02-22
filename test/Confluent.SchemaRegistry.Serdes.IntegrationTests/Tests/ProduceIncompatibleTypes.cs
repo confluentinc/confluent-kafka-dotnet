@@ -77,10 +77,12 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     {
                         producer
                             .ProduceAsync(topic, new Message<int, string> { Key = 42, Value = "world" })
-                            .Wait();
+                            .GetAwaiter()
+                            .GetResult();
                     }
-                    catch (AggregateException e)
+                    catch (Exception e)
                     {
+                        Assert.True(e is ProduceException<int, string>);
                         throw e.InnerException;
                     }
                 });
@@ -99,10 +101,12 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     {
                         producer
                             .ProduceAsync(topic, new Message<string, int> { Key = "world", Value = 42 })
-                            .Wait();
+                            .GetAwaiter()
+                            .GetResult();
                     }
-                    catch (AggregateException e)
+                    catch (Exception e)
                     {
+                        Assert.True(e is ProduceException<string, int>);
                         throw e.InnerException;
                     }
                 });
