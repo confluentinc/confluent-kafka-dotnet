@@ -17,9 +17,11 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka.Examples
@@ -28,10 +30,11 @@ namespace Confluent.Kafka.Examples
     {
         static string ToString(int[] array) => $"[{string.Join(", ", array)}]";
 
-        static void ListGroups(string brokerList)
+        static void ListGroups(string bootstrapServers)
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = brokerList }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
+                // Warning: The API for this functionality is subject to change.
                 var groups = adminClient.ListGroups(TimeSpan.FromSeconds(10));
                 Console.WriteLine($"Consumer Groups:");
                 foreach (var g in groups)
@@ -50,10 +53,11 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static void PrintMetadata(string brokerList)
+        static void PrintMetadata(string bootstrapServers)
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = brokerList }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
+                // Warning: The API for this functionality is subject to change.
                 var meta = adminClient.GetMetadata(TimeSpan.FromSeconds(20));
                 Console.WriteLine($"{meta.OriginatingBrokerId} {meta.OriginatingBrokerName}");
                 meta.Brokers.ForEach(broker =>
@@ -72,19 +76,48 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        public static void Main(string[] args)
+        static async Task CreateTopicAsync(string bootstrapServers, string topicName)
         {
-            Console.WriteLine($"librdkafka Version: {Library.VersionString} ({Library.Version:X})");
-            Console.WriteLine($"Debug Contexts: {string.Join(", ", Library.DebugContexts)}");
-
-            if (args.Contains("--list-groups"))
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                ListGroups(args[0]);
+                try
+                {
+                    await adminClient.CreateTopicsAsync(new TopicSpecification[] { 
+                        new TopicSpecification { Name = topicName, ReplicationFactor = 1, NumPartitions = 1 } });
+                }
+                catch (CreateTopicsException e)
+                {
+                    Console.WriteLine($"An error occured creating topic {e.Results[0].Topic}: {e.Results[0].Error.Reason}");
+                }
             }
+        }
 
-            if (args.Contains("--metadata"))
+        public static async Task Main(string[] args)
+        {
+            if (args.Length < 2)
             {
-                PrintMetadata(args[0]);
+                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic> [topic-name]");
+                System.Environment.Exit(1);
+            }
+            
+            switch (args[1])
+            {
+                case "library-version":
+                    Console.WriteLine($"librdkafka Version: {Library.VersionString} ({Library.Version:X})");
+                    Console.WriteLine($"Debug Contexts: {string.Join(", ", Library.DebugContexts)}");
+                    break;
+                case "list-groups":
+                    ListGroups(args[0]);
+                    break;
+                case "metadata":
+                    PrintMetadata(args[0]);
+                    break;
+                case "create-topic":
+                    await CreateTopicAsync(args[0], args[2]);
+                    break;
+                default:
+                    Console.WriteLine($"unknown command: {args[1]}");
+                    break;
             }
         }
     }
