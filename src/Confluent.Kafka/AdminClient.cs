@@ -157,8 +157,9 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetException(
-                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
                                             }
 
@@ -167,11 +168,14 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetException(new CreateTopicsException(result));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetException(
+                                                        new CreateTopicsException(result)));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetResult(result);
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
                                         break;
@@ -180,8 +184,9 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(
-                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
                                             }
 
@@ -191,11 +196,14 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(new DeleteTopicsException(result));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(
+                                                        new DeleteTopicsException(result)));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetResult(result);
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
                                         break;
@@ -204,8 +212,9 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(
-                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
                                             }
 
@@ -215,11 +224,14 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(new CreatePartitionsException(result));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(
+                                                        new CreatePartitionsException(result)));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetResult(result);
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
                                         break;
@@ -228,8 +240,9 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
-                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
                                             }
 
@@ -238,12 +251,15 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(new DescribeConfigsException(result));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
+                                                        new DescribeConfigsException(result)));
                                             }
                                             else
                                             {
                                                 var nr = result.Select(a => new DescribeConfigsResult { ConfigResource = a.ConfigResource, Entries = a.Entries }).ToList();
-                                                ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetResult(nr);
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetResult(nr));
                                             }
                                         }
                                         break;
@@ -252,8 +268,9 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(
-                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr)));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
                                             }
 
@@ -263,11 +280,14 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(new AlterConfigsException(result));
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(
+                                                        new AlterConfigsException(result)));
                                             }
                                             else
                                             {
-                                                ((TaskCompletionSource<List<AlterConfigsReport>>) adminClientResult).TrySetResult(result);
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<AlterConfigsReport>>) adminClientResult).TrySetResult(result));
                                             }
                                         }
                                         break;
