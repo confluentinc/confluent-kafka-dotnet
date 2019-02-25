@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.5" />
+    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.6" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 

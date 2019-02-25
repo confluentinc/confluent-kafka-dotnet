@@ -63,14 +63,30 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     Assert.Throws<SerializationException>(() =>
                     {
+                        string guidTopic = new Guid().ToString();
                         try
                         {
                             producer
-                                .ProduceAsync(new Guid().ToString(), new Message<string, int> { Key = "test", Value = 112 })
-                                .Wait();
+                                .ProduceAsync(guidTopic, new Message<string, int> { Key = "test", Value = 112 })
+                                .GetAwaiter()
+                                .GetResult();
                         }
-                        catch (AggregateException e)
+                        catch (Exception e)
                         {
+                            Assert.True(e is ProduceException<string, int>);
+                            Assert.Equal(ErrorCode.Local_ValueSerialization, ((ProduceException<string, int>)e).Error.Code);
+
+                            // Test message fields are appropriately set in the case of a serialization error.
+                            Assert.Equal("test", ((ProduceException<string, int>)e).DeliveryResult.Key);
+                            Assert.Equal(112, ((ProduceException<string, int>)e).DeliveryResult.Value);
+                            Assert.Equal(Offset.Invalid, ((ProduceException<string, int>)e).DeliveryResult.Offset);
+                            Assert.Equal(Partition.Any, ((ProduceException<string, int>)e).DeliveryResult.Partition);
+                            Assert.Equal(guidTopic, ((ProduceException<string, int>)e).DeliveryResult.Topic);
+                            Assert.Equal(PersistenceStatus.NotPersisted, ((ProduceException<string, int>)e).DeliveryResult.PersistenceStatus);
+                            Assert.Equal(Timestamp.Default, ((ProduceException<string, int>)e).DeliveryResult.Timestamp);
+                            Assert.Null(((ProduceException<string, int>)e).DeliveryResult.Headers);
+
+                            // should be SerializationException.
                             throw e.InnerException;
                         }
                     });
@@ -89,10 +105,13 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     {
                         try
                         {
-                            producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                            producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 })
+                                .GetAwaiter()
+                                .GetResult();
                         }
-                        catch (AggregateException e)
+                        catch (Exception e)
                         {
+                            Assert.True(e is ProduceException<string, int>);
                             throw e.InnerException;
                         }
                     });
