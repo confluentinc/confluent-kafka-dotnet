@@ -25,13 +25,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Tests that log messages are received by OnLog on all Producer and Consumer variants.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void LogDelegate(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void LogDelegate(string bootstrapServers)
         {
             LogToFile("start LogDelegate");
 

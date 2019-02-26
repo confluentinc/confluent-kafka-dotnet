@@ -25,7 +25,7 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Some simple tests for all variants of Commit / CommitAsync.
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///       through to this, so such tests would have little value.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Commit_CommitAsync_Committed_Position(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Commit_CommitAsync_Committed_Position(string bootstrapServers)
         {
             LogToFile("start Consumer_Commit_CommitAsync_Committed_Position");
 

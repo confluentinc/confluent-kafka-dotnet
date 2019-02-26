@@ -24,13 +24,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Simple Consumer StoreOffsets test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_StoreOffsets(string bootstrapServers, string topic, string partitionedTopic)
+        public void Consumer_StoreOffsets(string bootstrapServers)
         {
             LogToFile("start Consumer_StoreOffsets");
 
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                     })
                     .Build())
             {
-                consumer.Subscribe(topic);
+                consumer.Subscribe(singlePartitionTopic);
 
                 while (assignment == null)
                 {
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeResult<Null, string> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.Null(record);
 
-                producer.ProduceAsync(topic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test store offset value", SerializationContext.Empty) }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test store offset value", SerializationContext.Empty) }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 

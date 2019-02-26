@@ -26,13 +26,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic OffsetsForTimes test on Consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_OffsetsForTimes(string bootstrapServers)
         {
             LogToFile("start Consumer_OffsetsForTimes");
 

@@ -25,7 +25,7 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     This is an experiment to see what happens when two consumers in the
@@ -35,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     You should never do this, but the brokers don't actually prevent it.
         /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DuplicateConsumerAssign(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void DuplicateConsumerAssign(string bootstrapServers)
         {
             LogToFile("start DuplicateConsumerAssign");
 

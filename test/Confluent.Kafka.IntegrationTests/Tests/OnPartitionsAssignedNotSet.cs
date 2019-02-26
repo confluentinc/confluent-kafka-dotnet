@@ -30,10 +30,10 @@ namespace Confluent.Kafka.IntegrationTests
     ///     handler has not been added to OnPartitionsAssigned
     ///     (deserializing Consumer)
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void OnPartitionsAssignedNotSet(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void OnPartitionsAssignedNotSet(string bootstrapServers)
         {
             LogToFile("start OnPartitionsAssignedNotSet");
 

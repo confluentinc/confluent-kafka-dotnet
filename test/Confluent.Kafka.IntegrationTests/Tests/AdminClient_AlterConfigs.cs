@@ -28,13 +28,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test functionality of AdminClient.AlterConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AdminClient_AlterConfigs(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void AdminClient_AlterConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_AlterConfigs");
 

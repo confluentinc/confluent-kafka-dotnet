@@ -29,13 +29,13 @@ using Confluent.Kafka.Admin;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test internal poll time is effective.
         /// </summary>
         [SkippableTheory, MemberData(nameof(KafkaParameters))]
-        public static void CancellationDelayMax(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void CancellationDelayMax(string bootstrapServers)
         {
             LogToFile("start CancellationDelayMax");
 

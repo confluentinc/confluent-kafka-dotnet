@@ -27,13 +27,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test of disabling marshaling of message headers.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_DisableHeaders(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_DisableHeaders(string bootstrapServers)
         {
             LogToFile("start Consumer_DisableHeaders");
 

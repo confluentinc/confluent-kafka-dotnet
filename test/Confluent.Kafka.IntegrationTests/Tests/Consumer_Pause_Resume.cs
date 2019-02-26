@@ -27,13 +27,13 @@ using Confluent.Kafka.Serdes;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Simple Consumer Pause / Resume test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Pause_Resume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Pause_Resume(string bootstrapServers)
         {
             LogToFile("start Consumer_Pause_Resume");
 

@@ -24,14 +24,14 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Tests that ObjectDisposedException is thrown rather than AccessViolationException
         ///     when Dispose has been called
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ClosedHandle(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_ClosedHandle(string bootstrapServers)
         {
             LogToFile("start Producer_ClosedHandle");
 
@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     when Dispose has been called
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
+        public void Consumer_ClosedHandle(string bootstrapServers)
         {
             LogToFile("start Consumer_ClosedHandle");
 
@@ -73,7 +73,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     when Dispose has been called
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void TypedProducer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
+        public void TypedProducer_ClosedHandle(string bootstrapServers)
         {
             LogToFile("start TypedProducer_ClosedHandle");
 
@@ -93,7 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     when Dispose has been called
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void TypedConsumer_ClosedHandle(string bootstrapServers, string topic, string partitionedTopic)
+        public void TypedConsumer_ClosedHandle(string bootstrapServers)
         {
             LogToFile("start TypedConsumer_ClosedHandle");
 

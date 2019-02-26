@@ -23,13 +23,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test that the ignore deserialier behaves as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void IgnoreTest(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void IgnoreTest(string bootstrapServers)
         {
             LogToFile("start IgnoreTest");
 

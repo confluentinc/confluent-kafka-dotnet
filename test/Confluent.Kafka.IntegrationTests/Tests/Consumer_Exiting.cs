@@ -25,13 +25,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test various combinations of unsubscribing / commiting before disposing the consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Exiting(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Exiting(string bootstrapServers)
         {
             LogToFile("start Consumer_Exiting");
 
@@ -82,8 +82,8 @@ namespace Confluent.Kafka.IntegrationTests
                     switch (i)
                     {
                         case 0:
-                            LogToFile("  -- Unsubscribe [BROKEN!]");
-                            // consumer.Unsubscribe();
+                            LogToFile("  -- Unsubscribe");
+                            consumer.Unsubscribe();
                             break;
                         case 1:
                             LogToFile("  -- Commit");

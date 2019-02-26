@@ -25,7 +25,7 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Make a Producer and Consumer.
@@ -34,7 +34,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Segfault?
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void GarbageCollect(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void GarbageCollect(string bootstrapServers)
         {
             LogToFile("start GarbageCollect");
 

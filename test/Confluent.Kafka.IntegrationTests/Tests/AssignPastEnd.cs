@@ -25,14 +25,14 @@ using Confluent.Kafka.Serdes;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test functionality of Consumer.Consume when assigned to offest
         ///     higher than the offset of the last message on a partition.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AssignPastEnd(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void AssignPastEnd(string bootstrapServers)
         {
             LogToFile("start AssignPastEnd");
 

@@ -27,13 +27,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic test of Consumer.Seek.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Seek(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Seek(string bootstrapServers)
         {
             LogToFile("start Consumer_Seek");
 

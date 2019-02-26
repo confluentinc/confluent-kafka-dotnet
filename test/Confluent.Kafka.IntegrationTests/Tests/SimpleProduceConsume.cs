@@ -24,14 +24,14 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     A simple test that produces a couple of messages then
         ///     consumes them back.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void SimpleProduceConsume(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void SimpleProduceConsume(string bootstrapServers)
         {
             LogToFile("start SimpleProduceConsume");
 
