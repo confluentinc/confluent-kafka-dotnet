@@ -36,7 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             class Utf32Serializer : ISerializer<string>
             {
-                public byte[] Serialize(string data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
+                public byte[] Serialize(string data, SerializationContext context)
                 {
                     return Encoding.UTF32.GetBytes(data);
                 }
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             class Utf32Deserializer : IDeserializer<string>
             {
-                public string Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
+                public string Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
                 {
                     if (isNull) { return null; }
                     return Encoding.UTF32.GetString(data);

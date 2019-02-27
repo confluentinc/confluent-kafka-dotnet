@@ -206,8 +206,8 @@ namespace Confluent.Kafka
             byte[] val, int valOffset, int valLength,
             byte[] key, int keyOffset, int keyLength,
             Timestamp timestamp,
-            Partition partition, 
-            IEnumerable<Header> headers,
+            Partition partition,
+            IEnumerable<IHeader> headers,
             IDeliveryHandler deliveryHandler)
         {
             if (timestamp.Type != TimestampType.CreateTime)
@@ -665,8 +665,8 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, true, message, topicPartition)
-                    : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -687,8 +687,8 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
-                    : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -709,7 +709,8 @@ namespace Confluent.Kafka
             {
                 if (enableDeliveryReports)
                 {
-                    var handler = new TypedTaskDeliveryHandlerShim<TKey, TValue>(topicPartition.Topic,
+                    var handler = new TypedTaskDeliveryHandlerShim<TKey, TValue>(
+                        topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
 
@@ -829,8 +830,8 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, true, message, topicPartition)
-                    : asyncKeySerializer.SerializeAsync(message.Key, true, message, topicPartition)
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -851,8 +852,8 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, false, message, topicPartition)
-                    : asyncValueSerializer.SerializeAsync(message.Value, false, message, topicPartition)
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
                         .GetResult();
@@ -876,7 +877,7 @@ namespace Confluent.Kafka
                     valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                     keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                     message.Timestamp, topicPartition.Partition, 
-                    message.Headers, 
+                    message.Headers,
                     new TypedDeliveryHandlerShim_Action<TKey, TValue>(
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),

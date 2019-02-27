@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,23 +18,18 @@
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    ///     Defines a Kafka message header.
     /// </summary>
-    public interface ISerializer<T>
+    public interface IHeader
     {
         /// <summary>
-        ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
-        ///     instance.
+        ///     The header key.
         /// </summary>
-        /// <param name="data">
-        ///     The value to serialize.
-        /// </param>
-        /// <param name="context">
-        ///     Context relevant to the serialize operation.
-        /// </param>
-        /// <returns>
-        ///     The serialized value.
-        /// </returns>
-        byte[] Serialize(T data, SerializationContext context);
+        string Key { get; }
+        
+        /// <summary>
+        ///     The serialized header value data.
+        /// </summary>
+        byte[] GetValueBytes();
     }
 }

@@ -32,22 +32,13 @@ namespace Confluent.Kafka
         /// <param name="data">
         ///     The value to serialize.
         /// </param>
-        /// <param name="messageMetadata">
-        ///     Properties of the message the data is associated with
-        ///     extra to the key or value.
-        /// </param>
-        /// <param name="destination">
-        ///     The TopicPartition to which the message is to be sent
-        ///     (partition may be Partition.Any).
-        /// </param>
-        /// <param name="isKey">
-        ///     True if serializing the message key, false if serializing the
-        ///     message value.
+        /// <param name="context">
+        ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that
         ///     completes with the serialized data.
         /// </returns>
-        Task<byte[]> SerializeAsync(T data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination);
+        Task<byte[]> SerializeAsync(T data, SerializationContext context);
     }
 }

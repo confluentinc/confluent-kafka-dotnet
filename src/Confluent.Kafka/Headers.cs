@@ -27,9 +27,9 @@ namespace Confluent.Kafka
     /// <remarks>
     ///     Message headers are supported by v0.11 brokers and above.
     /// </remarks>
-    public class Headers : IEnumerable<Header>
+    public class Headers : IEnumerable<IHeader>
     {
-        private readonly List<Header> headers = new List<Header>();
+        private readonly List<IHeader> headers = new List<IHeader>();
 
         /// <summary>
         ///     Append a new header to the collection.
@@ -75,9 +75,9 @@ namespace Confluent.Kafka
         /// <exception cref="KeyNotFoundException">
         ///     The key <paramref name="key" /> was not present in the collection.
         /// </exception>
-        public byte[] GetLast(string key)
+        public byte[] GetLastBytes(string key)
         {
-            if (TryGetLast(key, out byte[] result))
+            if (TryGetLastBytes(key, out byte[] result))
             {
                 return result;
             }
@@ -100,20 +100,21 @@ namespace Confluent.Kafka
         ///     true if the a value with the specified key was present in 
         ///     the collection, false otherwise.
         /// </returns>
-        public bool TryGetLast(string key, out byte[] lastHeader)
+        public bool TryGetLastBytes(string key, out byte[] lastHeader)
         {
             for (int i=headers.Count-1; i>=0; --i)
             {
                 if (headers[i].Key == key)
                 {
-                    lastHeader = headers[i].Value;
+                    lastHeader = headers[i].GetValueBytes();
                     return true;
                 }
             }
 
-            lastHeader = null;
+            lastHeader = default(byte[]);
             return false;
         }
+
 
         /// <summary>
         ///     Removes all headers for the given key.
@@ -124,7 +125,7 @@ namespace Confluent.Kafka
         public void Remove(string key)
             => headers.RemoveAll(a => a.Key == key);
 
-        internal class HeadersEnumerator : IEnumerator<Header>
+        internal class HeadersEnumerator : IEnumerator<IHeader>
         {
             private Headers headers;
 
@@ -136,10 +137,10 @@ namespace Confluent.Kafka
             }
 
             public object Current 
-                => ((IEnumerator<Header>)this).Current;
+                => ((IEnumerator<IHeader>)this).Current;
 
-            Header IEnumerator<Header>.Current
-                => new Header(headers.headers[location].Key, headers.headers[location].Value);
+            IHeader IEnumerator<IHeader>.Current
+                => headers.headers[location];
 
             public void Dispose() {}
 
@@ -166,7 +167,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     An enumerator object that can be used to iterate through the headers collection.
         /// </returns>
-        public IEnumerator<Header> GetEnumerator()
+        public IEnumerator<IHeader> GetEnumerator()
             => new HeadersEnumerator(this);
 
         /// <summary>
@@ -184,7 +185,7 @@ namespace Confluent.Kafka
         /// <param key="index">
         ///     The zero-based index of the element to get.
         /// </param>
-        public Header this[int index]
+        public IHeader this[int index]
             => headers[index];
 
         /// <summary>

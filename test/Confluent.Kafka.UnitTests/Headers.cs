@@ -31,7 +31,7 @@ namespace Confluent.Kafka.UnitTests
 
             Assert.Single(hdrs);
             Assert.Equal("aaa", hdrs[0].Key);
-            Assert.Equal(new byte[] {32, 42}, hdrs[0].Value);
+            Assert.Equal(new byte[] {32, 42}, hdrs[0].GetValueBytes());
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.UnitTests
 
             Assert.Single(hdrs);
             Assert.Equal("bbb", hdrs[0].Key);
-            Assert.Equal(new byte[] { 1, 2, 3 }, hdrs[0].Value);
+            Assert.Equal(new byte[] { 1, 2, 3 }, hdrs[0].GetValueBytes());
         }
 
         [Fact]
@@ -53,8 +53,8 @@ namespace Confluent.Kafka.UnitTests
             hdrs.Add(new Header("my-header", new byte[] { 44 }));
             hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
 
-            Assert.Single(hdrs.GetLast("my-header"));
-            Assert.Equal(44, hdrs.GetLast("my-header")[0]);
+            Assert.Single(hdrs.GetLastBytes("my-header"));
+            Assert.Equal(44, hdrs.GetLastBytes("my-header")[0]);
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace Confluent.Kafka.UnitTests
             var hdrs = new Headers();
             hdrs.Add(new Header("my-header", new byte[] { 42 }));
 
-            Assert.Throws<KeyNotFoundException>(() => { hdrs.GetLast("my-header-2"); });
+            Assert.Throws<KeyNotFoundException>(() => { hdrs.GetLastBytes("my-header-2"); });
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.UnitTests
             hdrs.Add(new Header("my-header", new byte[] { 44 }));
             hdrs.Add(new Header("my-header-2", new byte[] { 45 }));
 
-            Assert.True(hdrs.TryGetLast("my-header", out byte[] val));
+            Assert.True(hdrs.TryGetLastBytes("my-header", out byte[] val));
             Assert.Single(val);
             Assert.Equal(44, val[0]);
         }
@@ -85,7 +85,7 @@ namespace Confluent.Kafka.UnitTests
             var hdrs = new Headers();
             hdrs.Add(new Header("my-header", new byte[] { 42 }));
 
-            Assert.False(hdrs.TryGetLast("my-header-2", out byte[] val));
+            Assert.False(hdrs.TryGetLastBytes("my-header-2", out byte[] val));
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace Confluent.Kafka.UnitTests
         {
             var hdrs = new Headers();
             hdrs.Add(new Header("my-header", null));
-            Assert.Null(hdrs.GetLast("my-header"));
+            Assert.Null(hdrs.GetLastBytes("my-header"));
         }
 
         [Fact]
@@ -114,7 +114,7 @@ namespace Confluent.Kafka.UnitTests
             hdrs.Remove("my-header");
             Assert.Single(hdrs);
             Assert.Equal("my-header-2", hdrs[0].Key);
-            Assert.Equal(45, hdrs[0].Value[0]);
+            Assert.Equal(45, hdrs[0].GetValueBytes()[0]);
         }
 
         [Fact]
@@ -161,13 +161,13 @@ namespace Confluent.Kafka.UnitTests
                 switch (cnt)
                 {
                     case 0:
-                        Assert.Equal(new byte[] { 42 }, hdr.Value);
+                        Assert.Equal(new byte[] { 42 }, hdr.GetValueBytes());
                         break;
                     case 1:
-                        Assert.Equal(new byte[] { 44 }, hdr.Value);
+                        Assert.Equal(new byte[] { 44 }, hdr.GetValueBytes());
                         break;
                     case 2:
-                        Assert.Equal(new byte[] { 45 }, hdr.Value);
+                        Assert.Equal(new byte[] { 45 }, hdr.GetValueBytes());
                         break;
                 }
                 cnt += 1;
@@ -175,5 +175,6 @@ namespace Confluent.Kafka.UnitTests
 
             Assert.Equal(3, cnt);
         }
+
     }
 }

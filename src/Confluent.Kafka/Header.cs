@@ -25,18 +25,23 @@ namespace Confluent.Kafka
     /// <remarks>
     ///     Message headers are supported by v0.11 brokers and above.
     /// </remarks>
-    public class Header
+    public class Header : IHeader
     {
+        private byte[] val;
+
         /// <summary>
         ///     The header key.
         /// </summary>
         public string Key { get; private set; }
 
         /// <summary>
-        ///     The header value.
+        ///     Get the serialized header value data.
         /// </summary>
-        public byte[] Value { get; private set; }
-
+        public byte[] GetValueBytes()
+        {
+            return val;
+        }
+        
         /// <summary>
         ///     Create a new Header instance.
         /// </summary>
@@ -54,7 +59,7 @@ namespace Confluent.Kafka
             }
 
             Key = key;
-            Value = value;
+            val = value;
         }
     }
 }

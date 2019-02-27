@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Examples.ProducerExample
 
                     try
                     {
-                        // Notes: Awaiting the asynchronous produce request below prevents flow of execution
+                        // Note: Awaiting the asynchronous produce request below prevents flow of execution
                         // from proceeding until the acknowledgement from the broker is received (at the 
                         // expense of low throughput).
                         var deliveryReport = await producer.ProduceAsync(

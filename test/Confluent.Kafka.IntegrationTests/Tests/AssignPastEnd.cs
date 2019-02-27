@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             DeliveryResult<Null, byte[]> dr;
             using (var producer = new ProducerBuilder<Null, byte[]>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, byte[]> { Value = Serializers.Utf8.Serialize(testString, true, null, null) }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
                 Assert.True(dr.Offset >= 0);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }

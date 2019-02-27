@@ -35,7 +35,7 @@ namespace Confluent.Kafka.Examples.Protobuf
     /// </summary>
     public class ProtobufSerializer<T> : ISerializer<T> where T : IMessage<T>, new()
     {
-        public byte[] Serialize(T data, bool isKey, MessageMetadata messageMetadata, TopicPartition destination)
+        public byte[] Serialize(T data, SerializationContext context)
             => data.ToByteArray();
     }
 
@@ -51,7 +51,7 @@ namespace Confluent.Kafka.Examples.Protobuf
             parser = new MessageParser<T>(() => new T());
         }
 
-        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, bool isKey, MessageMetadata messageMetadata, TopicPartition source)
+        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
             => parser.ParseFrom(data.ToArray());
     }
 

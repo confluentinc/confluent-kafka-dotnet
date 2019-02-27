@@ -276,7 +276,7 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        private IntPtr marshalHeaders(IEnumerable<Header> headers)
+        private IntPtr marshalHeaders(IEnumerable<IHeader> headers)
         {
             var headersPtr = IntPtr.Zero;
 
@@ -299,15 +299,15 @@ namespace Confluent.Kafka.Impl
                     IntPtr keyPtr = pinnedKey.AddrOfPinnedObject();
                     IntPtr valuePtr = IntPtr.Zero;
                     GCHandle pinnedValue = default(GCHandle);
-                    if (header.Value != null)
+                    if (header.GetValueBytes() != null)
                     {
-                        pinnedValue = GCHandle.Alloc(header.Value, GCHandleType.Pinned);
+                        pinnedValue = GCHandle.Alloc(header.GetValueBytes(), GCHandleType.Pinned);
                         valuePtr = pinnedValue.AddrOfPinnedObject();
                     }
-                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(header.Value == null ? 0 : header.Value.Length));
+                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(header.GetValueBytes() == null ? 0 : header.GetValueBytes().Length));
                     // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
                     pinnedKey.Free();
-                    if (header.Value != null)
+                    if (header.GetValueBytes() != null)
                     {
                         pinnedValue.Free();
                     }
@@ -327,7 +327,7 @@ namespace Confluent.Kafka.Impl
             byte[] key, int keyOffset, int keyLength,
             int partition,
             long timestamp,
-            IEnumerable<Header> headers,
+            IEnumerable<IHeader> headers,
             IntPtr opaque)
         {
             var pValue = IntPtr.Zero;

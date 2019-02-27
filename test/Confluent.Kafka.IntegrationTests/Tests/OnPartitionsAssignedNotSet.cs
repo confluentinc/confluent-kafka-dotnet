@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             // Producing onto the topic to make sure it exists.
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", true, null, null) }).Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }).Result;
                 Assert.NotEqual(Offset.Invalid, dr.Offset);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
