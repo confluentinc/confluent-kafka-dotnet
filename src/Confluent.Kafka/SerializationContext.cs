@@ -23,6 +23,12 @@ namespace Confluent.Kafka
     public struct SerializationContext
     {
         /// <summary>
+        ///     The default SerializationContext value (representing no context defined).
+        /// </summary>
+        public static SerializationContext Empty
+            => default(SerializationContext);
+
+        /// <summary>
         ///     Create a new SerializationContext object instance.
         /// </summary>
         /// <param name="component">
