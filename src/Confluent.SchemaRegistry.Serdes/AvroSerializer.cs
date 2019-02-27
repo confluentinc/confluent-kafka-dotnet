@@ -115,17 +115,8 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="value">
         ///     The value to serialize.
         /// </param>
-        /// <param name="messageMetadata">
-        ///     Properties of the message the data is associated with in
-        ///     addition to the key or value.
-        /// </param>
-        /// <param name="destination">
-        ///     The TopicPartition to which the message is to be sent
-        ///     (partition may be Partition.Any).
-        /// </param>
-        /// <param name="isKey">
-        ///     True if deserializing the message key, false if deserializing the
-        ///     message value.
+        /// <param name="context">
+        ///     Context relevant to the serialize operation.
         /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
@@ -142,7 +133,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize);
                 }
 
-                return await serializerImpl.Serialize(context.Topic, value, context.MessageComponentType == MessageComponentType.Key);
+                return await serializerImpl.Serialize(context.Topic, value, context.Component == MessageComponentType.Key);
             }
             catch (AggregateException e)
             {

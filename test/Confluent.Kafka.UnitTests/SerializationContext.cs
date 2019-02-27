@@ -26,7 +26,7 @@ namespace Confluent.Kafka.UnitTests
         public void Constuctor()
         {
             var sc = new SerializationContext(MessageComponentType.Value, "my-topic");
-            Assert.Equal(MessageComponentType.Value, sc.MessageComponentType);
+            Assert.Equal(MessageComponentType.Value, sc.Component);
             Assert.Equal("my-topic", sc.Topic);
         }
     }

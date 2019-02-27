@@ -20,20 +20,20 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Context relevant to a serialization or deserialization operation.
     /// </summary>
-    public class SerializationContext
+    public struct SerializationContext
     {
         /// <summary>
         ///     Create a new SerializationContext object instance.
         /// </summary>
-        /// <param name="messageComponentType">
+        /// <param name="component">
         ///     The component of the message the serialization operation relates to.
         /// </param>
         /// <param name="topic">
         ///     The topic the data is being written to or read from.
         /// </param>
-        public SerializationContext(MessageComponentType messageComponentType, string topic)
+        public SerializationContext(MessageComponentType component, string topic)
         {
-            MessageComponentType = messageComponentType;
+            Component = component;
             Topic = topic;
         }
 
@@ -45,6 +45,6 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The component of the message the serialization operation relates to.
         /// </summary>
-        public MessageComponentType MessageComponentType { get; private set; }
+        public MessageComponentType Component { get; private set; }
     }
 }
