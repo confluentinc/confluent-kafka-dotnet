@@ -18,8 +18,6 @@
 
 using Confluent.Kafka.Serdes;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 

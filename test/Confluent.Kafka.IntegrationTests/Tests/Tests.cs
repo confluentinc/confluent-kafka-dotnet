@@ -14,11 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json.Linq;

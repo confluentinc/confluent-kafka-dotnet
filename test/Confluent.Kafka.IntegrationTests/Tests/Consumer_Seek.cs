@@ -20,8 +20,6 @@ using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Text;
 using Xunit;
 
 

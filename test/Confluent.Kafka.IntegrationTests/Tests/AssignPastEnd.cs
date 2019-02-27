@@ -17,7 +17,6 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Text;
 using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Serdes;

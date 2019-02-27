@@ -17,10 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka;
-using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka.IntegrationTests
