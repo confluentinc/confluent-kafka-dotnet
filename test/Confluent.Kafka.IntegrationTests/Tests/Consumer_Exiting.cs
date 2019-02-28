@@ -51,14 +51,15 @@ namespace Confluent.Kafka.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                        .SetPartitionAssignmentHandler((c, partitions) =>
-                        {
-                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                        })
-                        .SetPartitionAssignmentRevokedHandler((c, partitions) =>
-                        {
-                            c.Unassign();
-                        })
+                        .SetRebalanceHandlers(
+                            (c, partitions) =>
+                            {
+                                c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                            },
+                            (c, partitions) =>
+                            {
+                                c.Unassign();
+                            })
                         .Build())
                 {
                     consumer.Subscribe(singlePartitionTopic);

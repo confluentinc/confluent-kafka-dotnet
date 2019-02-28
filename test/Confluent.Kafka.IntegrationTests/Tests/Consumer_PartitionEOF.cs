@@ -49,12 +49,13 @@ namespace Confluent.Kafka.IntegrationTests
             // no eof, non generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
-                    {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
+                    .SetRebalanceHandlers(
+                        (c, partitions) =>
+                        {
+                            Assert.Single(partitions);
+                            Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        }, null)
                     .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
@@ -74,12 +75,13 @@ namespace Confluent.Kafka.IntegrationTests
             // no eof, generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
-                    {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
+                    .SetRebalanceHandlers(
+                        (c, partitions) =>
+                        {
+                            Assert.Single(partitions);
+                            Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        }, null)
                     .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
@@ -106,12 +108,13 @@ namespace Confluent.Kafka.IntegrationTests
             // eof, non-generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
-                    {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
+                    .SetRebalanceHandlers(
+                        (c, partitions) =>
+                        {
+                            Assert.Single(partitions);
+                            Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        }, null)
                     .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
@@ -134,12 +137,13 @@ namespace Confluent.Kafka.IntegrationTests
             // eof, generic consumer case.
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
-                    {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
+                    .SetRebalanceHandlers(
+                        (c, partitions) =>
+                        {
+                            Assert.Single(partitions);
+                            Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        }, null)
                     .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);

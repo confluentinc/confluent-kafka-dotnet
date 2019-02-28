@@ -59,17 +59,18 @@ namespace Confluent.Kafka.IntegrationTests
             // test key deserialization error behavior
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
-                    {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                .SetPartitionAssignmentRevokedHandler((c, partitions) =>
-                {
-                    c.Unassign();
-                })
-                .Build())
+                    .SetRebalanceHandlers(
+                        (c, partitions) =>
+                        {
+                            Assert.Single(partitions);
+                            Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        },
+                        (c, partitions) =>
+                        {
+                            c.Unassign();
+                        })
+                    .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);
 
@@ -103,16 +104,17 @@ namespace Confluent.Kafka.IntegrationTests
             // test value deserialization error behavior.
             using (var consumer =
                 new ConsumerBuilder<string, Null>(consumerConfig)
-                    .SetPartitionAssignmentHandler((c, partitions) =>
-                    {
-                        Assert.Single(partitions);
-                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
-                        c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                    })
-                    .SetPartitionAssignmentRevokedHandler((c, partitions) =>
-                    {
-                        c.Unassign();
-                    })
+                    .SetRebalanceHandlers(
+                        (c, partitions) =>
+                        {
+                            Assert.Single(partitions);
+                            Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                            c.Assign(partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
+                        },
+                        (c, partitions) =>
+                        {
+                            c.Unassign();
+                        })
                     .Build())
             {
                 consumer.Subscribe(singlePartitionTopic);

@@ -61,17 +61,18 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // Note: All handlers are called on the main .Consume thread.
                 .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
-                .SetPartitionAssignmentHandler((c, partitions) =>
-                {
-                    Console.WriteLine($"Partition assignment: [{string.Join(", ", partitions)}]");
-                    // possibly override the default partition assignment behavior:
-                    // c.Assign(...) 
-                })
-                .SetPartitionAssignmentRevokedHandler((c, partitions) =>
-                {
-                    Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
-                    // c.Unassign()
-                })
+                .SetRebalanceHandlers(
+                    (c, partitions) =>
+                    {
+                        Console.WriteLine($"Partition assignment: [{string.Join(", ", partitions)}]");
+                        // possibly override the default partition assignment behavior:
+                        // c.Assign(...) 
+                    },
+                    (c, partitions) =>
+                    {
+                        Console.WriteLine($"Revoked partitions: [{string.Join(", ", partitions)}]");
+                        // c.Unassign()
+                    })
                 .Build())
             {
                 consumer.Subscribe(topics);

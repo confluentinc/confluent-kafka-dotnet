@@ -16,12 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Confluent.Kafka.Impl;
-using Confluent.Kafka.Internal;
 
 
 namespace Confluent.Kafka
@@ -250,14 +244,14 @@ namespace Confluent.Kafka
             return this;
         }
 
+
         /// <summary>
-        ///     This handler is called when a new consumer group partition assignment has been received
-        ///     by this consumer. Note: corresponding to every call to this handler, there will be a
-        ///     corresponding call to the partition assignment revoked handler (if one has been set using
-        ///     <see cref="SetPartitionAssignmentRevokedHandler" />).
+        ///     The assignmentHandler (if not null) is called when a new consumer group partition
+        ///     assignment has been received by this consumer. Corresponding to every partition
+        ///     assignment, there will also be a call to the assignmentRevokedHandler (if not null).
         /// 
-        ///     If you do not call the Assign method in this handler, or do not specify a handler,
-        ///     partitions will be assigned to be read from automatically, matching the assignment 
+        ///     If you do not call the Assign method in your assignmentHandler, or do not specify a
+        ///     handler, partitions will be assigned to be read from automatically, matching the assignment 
         ///     provided by the consumer group. This default behavior will not occur if you call Assign
         ///     yourself in the handler. The set of partitions you assign to is not required to match
         ///     the assignment provided by the consumer group, but typically will.
@@ -265,38 +259,25 @@ namespace Confluent.Kafka
         ///     Consumption will resume from the last committed offset for each partition (unless an
         ///     offset is manually specified in a call to Assign), or if there is no committed
         ///     offset, in accordance with the `auto.offset.reset` configuration property.
-        /// </summary>
-        /// <remarks>
-        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
-        /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
-        {
-            if (this.PartitionAssignmentHandler != null)
-            {
-                throw new InvalidOperationException("PartitionAssignmentHandler may not be specified more than once.");
-            }
-            this.PartitionAssignmentHandler = partitionAssignmentHandler;
-            return this;
-        }
-
-        /// <summary>
-        ///     This handler is called immediately prior to a partition assignment being revoked.
         ///     
-        ///     If you do not call the Unassign (or Assign) method in this handler, or do not
-        ///     specify a handler, the consumer will be unassigned from all partitions 
+        ///     If you do not call the Unassign (or Assign) method in your assignmentRevokedHandler, or
+        ///     do not specify a handler, the consumer will be unassigned from all partitions 
         ///     automatically. This default behavior will not occur if you call Consumer.Unassign
         ///     or Consumer.Assign in your handler.
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetPartitionAssignmentRevokedHandler(Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmnetRevokedHandler)
+        public ConsumerBuilder<TKey, TValue> SetRebalanceHandlers(
+            Action<IConsumer<TKey, TValue>, List<TopicPartition>> assignmentHandler,
+            Action<IConsumer<TKey, TValue>, List<TopicPartition>> assignmentRevokedHandler)
         {
-            if (this.PartitionAssignmentRevokedHandler != null)
+            if (this.PartitionAssignmentHandler != null || this.PartitionAssignmentRevokedHandler != null)
             {
-                throw new InvalidOperationException("PartitionAssignmentRevokedHandler may not be specified more than once.");
+                throw new InvalidOperationException("Rebalance handlers may not be specified more than once.");
             }
-            this.PartitionAssignmentRevokedHandler = partitionAssignmnetRevokedHandler;
+            this.PartitionAssignmentHandler = assignmentHandler;
+            this.PartitionAssignmentRevokedHandler = assignmentRevokedHandler;
             return this;
         }
 
