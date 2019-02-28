@@ -563,52 +563,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Get the last cached low (oldest available/beginning) and high (newest/end)
-        ///     offsets for a topic/partition.
-        /// </summary>
-        /// <remarks>
-        ///     This method is only available on instances constructed from a Consumer
-        ///     handle. The low offset is updated periodically (if statistics.interval.ms 
-        ///     is set) while the high offset is updated on each fetched message set from
-        ///     the broker. If there is no cached offset (either low or high, or both) then
-        ///     Offset.Invalid will be returned for the respective offset.
-        /// </remarks>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets (see that class for additional documentation).
-        /// </returns>
-        public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
-        {
-            if (!Handle.Owner.GetType().Name.Contains("Consumer"))
-            {
-                throw new InvalidOperationException(
-                    "GetWatermarkOffsets is only available on AdminClient instances constructed from a Consumer handle.");
-            }
-            return kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
-        }
-
-
-        /// <summary>
-        ///     Query the Kafka cluster for low (oldest available/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocking).
-        /// </summary>
-        /// <param name="topicPartition">
-        ///     The topic/partition of interest.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     The requested WatermarkOffsets (see that class for additional documentation).
-        /// </returns>
-        public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
-            => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
-
-
-
-        /// <summary>
         ///     Query the cluster for metadata.
         ///
         ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.

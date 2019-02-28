@@ -78,10 +78,9 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(44.0, r7.Key);
                     Assert.Equal(234.4, r7.Value);
 
-                    var offsets = adminClient.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), TimeSpan.FromSeconds(10));
-                    Assert.Equal(0, offsets.Low);
-                    Assert.Equal(7, offsets.High);
-                    
+                    var topicMetadata = adminClient.GetMetadata(singlePartitionTopic, TimeSpan.FromSeconds(10));
+                    Assert.Single(topicMetadata.Topics);
+
                     // implicitly check this does not throw.
                 }
 
