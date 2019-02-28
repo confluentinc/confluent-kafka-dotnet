@@ -605,7 +605,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Get the last cached low (oldest available/beginning) and high (newest/end)
-        ///     offsets for a topic/partition.
+        ///     offsets for a topic/partition. Does not block.
         /// </summary>
         /// <remarks>
         ///     The low offset is updated periodically (if statistics.interval.ms 
@@ -625,7 +625,8 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Query the Kafka cluster for low (oldest available/beginning) and high (newest/end)
-        ///     offsets for the specified topic/partition (blocking).
+        ///     offsets for the specified topic/partition. This is a blocking call - always contacts
+        ///     the cluster for the required information.
         /// </summary>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
