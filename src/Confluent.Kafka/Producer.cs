@@ -196,6 +196,7 @@ namespace Confluent.Kafka
                     Partition = msg.partition, 
                     Offset = msg.offset, 
                     Error = KafkaHandle.CreatePossiblyFatalError(msg.err, null),
+                    PersistenceStatus = messageStatus,
                     Message = new Message<Null, Null> { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
                 }
             );
@@ -931,6 +932,7 @@ namespace Confluent.Kafka
                 var dr = new DeliveryResult<K, V>
                 {
                     TopicPartitionOffset = deliveryReport.TopicPartitionOffset,
+                    PersistenceStatus = deliveryReport.PersistenceStatus,
                     Message = new Message<K, V>
                     {
                         Key = Key,
@@ -993,6 +995,7 @@ namespace Confluent.Kafka
                 var dr = new DeliveryReport<K, V>
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
+                    PersistenceStatus = deliveryReport.PersistenceStatus,
                     Message = new Message<K, V> 
                     {
                         Key = Key,
