@@ -47,6 +47,7 @@ namespace Confluent.Kafka.IntegrationTests
             Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
@@ -79,6 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
             Action<DeliveryReport<byte[], byte[]>> dh2 = (DeliveryReport<byte[], byte[]> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
