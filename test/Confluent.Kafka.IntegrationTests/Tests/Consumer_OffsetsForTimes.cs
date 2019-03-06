@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // If empty request, expect empty result.
                 var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
                 Assert.Empty(result);
-
+                
                 // Getting the offset for the first produced message timestamp
                 result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },

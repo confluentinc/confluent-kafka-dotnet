@@ -26,7 +26,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Basic DeserializingConsumer test (consume mode).
+        ///     Basic Consume test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Consume(string bootstrapServers)
