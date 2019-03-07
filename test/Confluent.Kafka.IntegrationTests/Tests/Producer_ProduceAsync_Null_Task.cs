@@ -29,10 +29,10 @@ namespace Confluent.Kafka.IntegrationTests
     ///     and <see cref="Producer.ProduceAsync" /> method overload.
     ///     (null key/value case)
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Null_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_ProduceAsync_Null_Task(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Null_Task");
 

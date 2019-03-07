@@ -24,13 +24,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic test that metadata request + serialization works.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Metadata(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Metadata(string bootstrapServers)
         {
             LogToFile("start Metadata");
 

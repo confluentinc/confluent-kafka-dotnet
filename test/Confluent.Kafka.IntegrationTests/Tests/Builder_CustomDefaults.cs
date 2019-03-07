@@ -18,7 +18,6 @@
 
 using System;
 using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Xunit;
 
@@ -30,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
     ///     different default serdes for string. This test is primarily
     ///     to demonstrate the suitability of the API for this purpose.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         class MyProducerBuilder<K, V> : ProducerBuilder<K, V>
         {
@@ -102,7 +101,7 @@ namespace Confluent.Kafka.IntegrationTests
         }
 
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void ProducerBuilder(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void ProducerBuilder(string bootstrapServers)
         {
             LogToFile("start Builder_CustomDefaults");
 

@@ -17,25 +17,21 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Linq;
-using System.Text;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test internal poll time is effective.
         /// </summary>
         [SkippableTheory, MemberData(nameof(KafkaParameters))]
-        public static void CancellationDelayMax(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void CancellationDelayMax(string bootstrapServers)
         {
             LogToFile("start CancellationDelayMax");
 
@@ -80,10 +76,13 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         // expected.
                     }
-                    // 2ms + 2ms + quite a bit of leeway (but still much less than the default of 50).
-                    // in practice this should 4 almost all of the time.
+                    // 2ms + 2ms + quite a bit of leeway. Note: CancellationDelayMaxMs has been
+                    // reduced to 2ms in this test, and we check for an elapsed time less than
+                    // this to test that configuration is working. in practice the elapsed time
+                    // should 4 almost all of the time. A higher value is apparently required on
+                    // Windows (but still less than 50).
                     var elapsed = sw.ElapsedMilliseconds;
-                    Skip.If(elapsed > 8);
+                    Skip.If(elapsed > 20);
                 }
 
                 consumer.Close();

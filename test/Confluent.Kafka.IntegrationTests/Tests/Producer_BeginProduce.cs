@@ -18,7 +18,6 @@
 
 using System;
 using System.Text;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -27,10 +26,10 @@ namespace Confluent.Kafka.IntegrationTests
     /// <summary>
     ///     Test every <see cref="Producer.BeginProduce" /> method overload.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_BeginProduce(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_BeginProduce(string bootstrapServers)
         {
             LogToFile("start Producer_BeginProduce");
 
@@ -47,6 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
             Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
@@ -79,6 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
             Action<DeliveryReport<byte[], byte[]>> dh2 = (DeliveryReport<byte[], byte[]> dr) =>
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);

@@ -17,10 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka;
-using Confluent.Kafka.Admin;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -29,10 +26,10 @@ namespace Confluent.Kafka.IntegrationTests
     ///     Test a variety of cases where a producer is constructed
     ///     using the handle from another producer.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_Handles(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_Handles(string bootstrapServers)
         {
             LogToFile("start Producer_Handles");
 

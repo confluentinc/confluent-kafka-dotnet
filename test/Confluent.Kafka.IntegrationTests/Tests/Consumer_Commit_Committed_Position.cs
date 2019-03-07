@@ -18,26 +18,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
-        ///     Some simple tests for all variants of Commit / CommitAsync.
-        ///       (and also Committed and Position)
-        ///     We would ideally have these tests for the non-deserializing consumer
-        ///       as well, but the serializing consumer implementation falls straight 
-        ///       through to this, so such tests would have little value.
+        ///     Some simple tests for all variants of Commit (and also Committed and Position)
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Commit_CommitAsync_Committed_Position(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Commit_Committed_Position(string bootstrapServers)
         {
-            LogToFile("start Consumer_Commit_CommitAsync_Committed_Position");
+            LogToFile("start Consumer_Commit_Committed_Position");
 
             const int N = 8;
             const int Partition = 0;
@@ -171,7 +164,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_Commit_CommitAsync_Committed_Position");
+            LogToFile("end   Consumer_Commit_Committed_Position");
         }
 
     }

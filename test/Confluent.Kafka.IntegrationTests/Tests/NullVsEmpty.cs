@@ -23,14 +23,14 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test that null and byte[0] keys and values are produced / consumed
         ///     as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void NullVsEmpty(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void NullVsEmpty(string bootstrapServers)
         {
             LogToFile("start NullVsEmpty");
 

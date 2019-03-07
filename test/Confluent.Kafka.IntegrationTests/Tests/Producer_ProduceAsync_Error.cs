@@ -17,9 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Text;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -28,10 +26,10 @@ namespace Confluent.Kafka.IntegrationTests
     /// <summary>
     ///     Test <see cref="Producer.ProduceAsync" /> error cases.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_ProduceAsync_Error(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Error");
 
@@ -63,6 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var err = ((ProduceException<string, string>)inner).Error;
                 
                 Assert.True(err.IsError);
+                Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
                 Assert.False(err.IsFatal);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.Equal(Offset.Invalid, dr.Offset);

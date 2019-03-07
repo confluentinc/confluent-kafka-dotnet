@@ -18,21 +18,19 @@
 
 using Confluent.Kafka.Serdes;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Text;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic OffsetsForTimes test on Consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_OffsetsForTimes(string bootstrapServers)
         {
             LogToFile("start Consumer_OffsetsForTimes");
 
@@ -56,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // If empty request, expect empty result.
                 var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
                 Assert.Empty(result);
-
+                
                 // Getting the offset for the first produced message timestamp
                 result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },

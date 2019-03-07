@@ -17,76 +17,32 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Xunit;
 
 
-/*
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
-        ///     Test that produces a message then consumes it.
+        ///     Test the AddBroker method works.
         /// </summary>
+        /// <remarks>
+        ///     Assumes broker v0.10.0 or higher:
+        ///     https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
+        ///     A metadata request is used to check if there is a broker connection.
+        /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AddBrokers(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void AddBrokers(string bootstrapServers)
         {
-            // This test assumes broker v0.10.0 or higher:
-            // https://github.com/edenhill/librdkafka/wiki/Broker-version-compatibility
+            var producerConfig = new ProducerConfig { BootstrapServers = "localhost:65533" };
 
-            // This test does a broker metadata request, as it's an easy way to see 
-            // if we are connected to broker. It's not really the best way to test this
-            // (ideally, we would get from a working list of brokers to all brokers 
-            // that have changed IP) but this will be good enough.
-
-            var producerConfig = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", "unknown" }
-            };
-
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", "unknown" },
-                { "session.timeout.ms", 6000 }
-            };
-
-            using (var typedProducer = new Producer<Null, string>(producerConfig))
-            {
-                TestMetadata(
-                    () => typedProducer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
-                    typedProducer.AddBrokers);
-            }
-
-            using (var producer = new Producer<byte[], byte[]>(producerConfig))
-            {
-                TestMetadata(
-                    () => producer.GetMetadata(false, null, TimeSpan.FromSeconds(3)),
-                    producer.AddBrokers);
-            }
-
-            using (var consumer = new Consumer<byte[], byte[]>(consumerConfig))
-            {
-                TestMetadata(
-                    () => consumer.GetMetadata(false, TimeSpan.FromSeconds(3)),
-                    consumer.AddBrokers);
-            }
-
-            using (var typedConsumer = new Consumer<Null, Null>(consumerConfig))
-            {
-                TestMetadata(
-                    () => typedConsumer.GetMetadata(false, TimeSpan.FromSeconds(3)),
-                    typedConsumer.AddBrokers);
-            }
-
-            void TestMetadata(Func<Metadata> getMetadata, Func<string, int> addBrokers)
+            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var adminClient = new AdminClient(producer.Handle))
             {
                 try
                 {
-                    var metadata = getMetadata();
+                    var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
                     Assert.True(false, "Broker should not be reached here");
                 }
                 catch (KafkaException e)
@@ -94,19 +50,22 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(ErrorCode.Local_Transport, e.Error.Code);
                 }
 
-                int brokersAdded = addBrokers(bootstrapServers);
+                // test is > 0 note == 1 since bootstrapServers could include more than one broker.
+                int brokersAdded = adminClient.AddBrokers(bootstrapServers);
                 Assert.True(brokersAdded > 0, "Should have added one broker or more");
 
-                brokersAdded = addBrokers(bootstrapServers);
+                brokersAdded = adminClient.AddBrokers(bootstrapServers);
                 Assert.True(brokersAdded > 0, "Should have added one broker or more (duplicates considered added)");
 
-                var newMetadata = getMetadata();
-                Assert.True(newMetadata.Brokers.Count > 0);
+                var newMetadata = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
+                Assert.True(newMetadata.Brokers.Count == 1);
 
-                brokersAdded = addBrokers("");
+                brokersAdded = adminClient.AddBrokers("");
                 Assert.True(brokersAdded == 0, "Should not have added brokers");
+
+                newMetadata = adminClient.GetMetadata(TimeSpan.FromSeconds(3));
+                Assert.True(newMetadata.Brokers.Count > 0);
             }
         }
     }
 }
-*/

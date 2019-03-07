@@ -18,8 +18,6 @@
 
 using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using Xunit;
@@ -27,13 +25,13 @@ using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test functionality of AdminClient.DescribeConfigs.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AdminClient_DescribeConfigs(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void AdminClient_DescribeConfigs(string bootstrapServers)
         {
             LogToFile("start AdminClient_DescribeConfigs");
 

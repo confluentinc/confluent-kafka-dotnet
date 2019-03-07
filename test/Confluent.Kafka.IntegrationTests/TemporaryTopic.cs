@@ -23,19 +23,24 @@ namespace Confluent.Kafka
 {
     public class TemporaryTopic : IDisposable
     {
-        IAdminClient adminClient;
+        private string bootstrapServers;
+        
+        public string Name { get; set; }
 
         public TemporaryTopic(string bootstrapServers, int numPartitions)
         {
-            Name = Guid.NewGuid().ToString();
-            adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
-            adminClient.CreateTopicsAsync(
-                    new List<TopicSpecification> { new TopicSpecification { Name = Name, NumPartitions = numPartitions, ReplicationFactor = 1 } }).Wait();
+            this.bootstrapServers = bootstrapServers;
+            this.Name = "dotnet_test_" + Guid.NewGuid().ToString();
+
+            var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
+            adminClient.CreateTopicsAsync(new List<TopicSpecification> {
+                new TopicSpecification { Name = Name, NumPartitions = numPartitions, ReplicationFactor = 1 } }).Wait();
+            adminClient.Dispose();
         }
 
-        public string Name { get; set; }
         public void Dispose()
         {
+            var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = this.bootstrapServers }).Build();
             adminClient.DeleteTopicsAsync(new List<string> { Name }).Wait();
             adminClient.Dispose();
         }

@@ -29,10 +29,10 @@ namespace Confluent.Kafka.IntegrationTests
     ///     Test of every <see cref="Producer{TKey,TValue}.ProduceAsync" /> 
     ///     and <see cref="Producer.ProduceAsync" /> method overload.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Task(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_ProduceAsync_Task(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Task");
 
@@ -56,6 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
             for (int i=0; i<2; ++i)
             {
                 var dr = drs[i].Result;
+                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.True(dr.Offset >= 0);
                 Assert.True(dr.Partition == 0 || dr.Partition == 1);

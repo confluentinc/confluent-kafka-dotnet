@@ -17,23 +17,20 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Collections.Generic;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test auto commit operates as expected when set to false (that issue #362 is resolved).
         ///     note that 'default.topic.config' has been depreciated.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_AutoCommit(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_AutoCommit(string bootstrapServers)
         {
             LogToFile("start Consumer_AutoCommit");
 
