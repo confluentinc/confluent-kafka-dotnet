@@ -41,6 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
             Action<DeliveryReport<Null, Null>> dh = (DeliveryReport<Null, Null> dr) => 
             {
                 Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
                 Assert.False(dr.Error.IsFatal);
                 Assert.Equal((Partition)0, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);

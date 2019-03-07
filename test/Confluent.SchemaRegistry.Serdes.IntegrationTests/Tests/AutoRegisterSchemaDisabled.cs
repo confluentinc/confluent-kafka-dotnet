@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             Assert.Equal(Offset.Invalid, ((ProduceException<string, int>)e).DeliveryResult.Offset);
                             Assert.Equal(Partition.Any, ((ProduceException<string, int>)e).DeliveryResult.Partition);
                             Assert.Equal(guidTopic, ((ProduceException<string, int>)e).DeliveryResult.Topic);
-                            Assert.Equal(PersistenceStatus.NotPersisted, ((ProduceException<string, int>)e).DeliveryResult.PersistenceStatus);
+                            Assert.Equal(PersistenceStatus.NotPersisted, ((ProduceException<string, int>)e).DeliveryResult.Status);
                             Assert.Equal(Timestamp.Default, ((ProduceException<string, int>)e).DeliveryResult.Timestamp);
                             Assert.Null(((ProduceException<string, int>)e).DeliveryResult.Headers);
 

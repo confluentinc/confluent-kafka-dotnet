@@ -61,6 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var err = ((ProduceException<string, string>)inner).Error;
                 
                 Assert.True(err.IsError);
+                Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
                 Assert.False(err.IsFatal);
                 Assert.Equal(partitionedTopic, dr.Topic);
                 Assert.Equal(Offset.Invalid, dr.Offset);
