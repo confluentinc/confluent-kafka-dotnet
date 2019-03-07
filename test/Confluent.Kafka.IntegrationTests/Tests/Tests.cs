@@ -36,8 +36,8 @@ namespace Confluent.Kafka.IntegrationTests
             var json = JObject.Parse(File.ReadAllText(jsonPath));
             bootstrapServers = json["bootstrapServers"].ToString();
 
-            SinglePartitionTopic = Guid.NewGuid().ToString();
-            PartitionedTopic = Guid.NewGuid().ToString();
+            SinglePartitionTopic = "dotnet_test_" + Guid.NewGuid().ToString();
+            PartitionedTopic = "dotnet_test_" + Guid.NewGuid().ToString();
 
             // Create shared topics that are used by many of the tests.
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())

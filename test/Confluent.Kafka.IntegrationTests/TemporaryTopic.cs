@@ -30,7 +30,7 @@ namespace Confluent.Kafka
         public TemporaryTopic(string bootstrapServers, int numPartitions)
         {
             this.bootstrapServers = bootstrapServers;
-            this.Name = Guid.NewGuid().ToString();
+            this.Name = "dotnet_test_" + Guid.NewGuid().ToString();
 
             var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
             adminClient.CreateTopicsAsync(new List<TopicSpecification> {

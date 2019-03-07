@@ -35,7 +35,7 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void AddBrokers(string bootstrapServers)
         {
-            var producerConfig = new ProducerConfig { BootstrapServers = "unknown" };
+            var producerConfig = new ProducerConfig { BootstrapServers = "localhost:65533" };
 
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             using (var adminClient = new AdminClient(producer.Handle))
