@@ -17,7 +17,6 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -26,10 +25,10 @@ namespace Confluent.Kafka.IntegrationTests
     /// <summary>
     ///     Test every <see cref="Producer.BeginProduce" /> method overload (null case).
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_BeginProduce_Null(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_BeginProduce_Null(string bootstrapServers)
         {
             LogToFile("start Producer_BeginProduce_Null");
 

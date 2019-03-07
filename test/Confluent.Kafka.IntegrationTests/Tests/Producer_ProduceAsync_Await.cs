@@ -18,21 +18,20 @@
 
 using System;
 using System.Text;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Ensures that awaiting ProduceAsync does not deadlock and
         ///     some other basic things.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Await_Serializing(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_ProduceAsync_Await_Serializing(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Await_Serializing");
 
@@ -44,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
                         singlePartitionTopic,
                         new Message<Null, string> { Value = "test string" });
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
-                    Assert.True(dr.Offset > 0);
+                    Assert.True(dr.Offset != Offset.Invalid);
                 }
             };
 
@@ -59,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     some other basic things (variant 2).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Producer_ProduceAsync_Await_NonSerializing(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public async Task Producer_ProduceAsync_Await_NonSerializing(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Await_NonSerializing");
 
@@ -68,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
-                Assert.True(dr.Offset > 0);
+                Assert.True(dr.Offset != Offset.Invalid);
             }
 
             Assert.Equal(0, Library.HandleCount);
@@ -81,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     has an error (produced to non-existant partition).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static async Task Producer_ProduceAsync_Await_Throws(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public async Task Producer_ProduceAsync_Await_Throws(string bootstrapServers)
         {
             LogToFile("start Producer_ProduceAsync_Await_Throws");
 

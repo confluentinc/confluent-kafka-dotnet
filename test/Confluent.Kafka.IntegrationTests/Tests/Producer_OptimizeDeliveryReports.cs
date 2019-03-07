@@ -16,8 +16,6 @@
 
 #pragma warning disable xUnit1026
 
-using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -26,10 +24,10 @@ namespace Confluent.Kafka.IntegrationTests
     /// <summary>
     ///     Test where no fields are enabled in delivery report.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public async static void Producer_OptimizeDeliveryReports(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public async void Producer_OptimizeDeliveryReports(string bootstrapServers)
         {
             LogToFile("start Producer_OptimizeDeliveryReports");
 

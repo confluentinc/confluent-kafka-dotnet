@@ -17,7 +17,6 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -27,10 +26,10 @@ namespace Confluent.Kafka.IntegrationTests
     ///     Test dotnet.producer.enable.delivery.reports == true
     ///     results in no delivery report.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_DisableDeliveryReports(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_DisableDeliveryReports(string bootstrapServers)
         {
             LogToFile("start Producer_DisableDeliveryReports");
 

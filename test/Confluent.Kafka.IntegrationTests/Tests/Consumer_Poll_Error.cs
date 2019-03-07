@@ -19,20 +19,19 @@
 using System;
 using System.Linq;
 using System.Text;
-using System.Collections.Generic;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Test exceptions thrown during deserialization of keys
         ///     and values are surfaced via the OnConsumeError event.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Poll_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Poll_Error(string bootstrapServers)
         {
             LogToFile("start Consumer_Poll_Error");
 

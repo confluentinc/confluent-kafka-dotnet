@@ -18,20 +18,18 @@
 
 using System;
 using System.Linq;
-using System.Text;
-using System.Collections.Generic;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Tests of <see cref="Consumer.Assignment" />
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_Assignment(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_Assignment(string bootstrapServers)
         {
             LogToFile("start Consumer_Assignment");
 

@@ -18,7 +18,6 @@
 
 using Confluent.Kafka.Serdes;
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -27,10 +26,10 @@ namespace Confluent.Kafka.IntegrationTests
     /// <summary>
     ///     Tests <see cref="Producer.BeginProduce" /> error cases.
     /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_BeginProduce_Error(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_BeginProduce_Error(string bootstrapServers)
         {
             LogToFile("start Producer_BeginProduce_Error");
 

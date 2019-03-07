@@ -17,20 +17,18 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic test of OffsetsCommittedHandler.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_OffsetsCommittedHandler(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_OffsetsCommittedHandler(string bootstrapServers)
         {
             LogToFile("start Consumer_OffsetsCommittedHandler");
 

@@ -17,22 +17,19 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Text;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     PartitionEOF related tests.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_PartitionEOF(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_PartitionEOF(string bootstrapServers)
         {
             LogToFile("start Consumer_PartitionEOF");
 
