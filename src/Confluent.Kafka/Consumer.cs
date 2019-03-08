@@ -893,7 +893,7 @@ namespace Confluent.Kafka
 
             try
             {
-                var msg = Util.Marshal.PtrToStructureUnsafe<rd_kafka_message>(msgPtr);
+                var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
 
                 string topic = null;
                 if (this.enableTopicNameMarshaling)
