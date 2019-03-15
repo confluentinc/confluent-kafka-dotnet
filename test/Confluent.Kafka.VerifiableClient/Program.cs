@@ -580,7 +580,7 @@ namespace Confluent.Kafka.VerifiableClient
         /// <summary>
         ///     Handle partition revocal
         /// </summary>
-        private IEnumerable<TopicPartitionOffset> HandleRevoke(IEnumerable<TopicPartition> partitions)
+        private IEnumerable<TopicPartitionOffset> HandleRevoke(IEnumerable<TopicPartitionOffset> partitions)
         {
             Dbg($"Revoked assignment: {string.Join(", ", partitions)}");
             if (currentAssignment == null)
@@ -593,7 +593,7 @@ namespace Confluent.Kafka.VerifiableClient
 
             currentAssignment = null;
 
-            SendPartitions("partitions_revoked", partitions);
+            SendPartitions("partitions_revoked", partitions.Select(tpo => tpo.TopicPartition));
 
             return new List<TopicPartitionOffset>();
         }
