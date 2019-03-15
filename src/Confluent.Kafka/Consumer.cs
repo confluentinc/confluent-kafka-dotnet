@@ -111,8 +111,8 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> rebalancePartitionsAssignedHandler;
-        private Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> rebalancePartitionsRevokedHandler;
+        private Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
+        private Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -133,19 +133,19 @@ namespace Confluent.Kafka
 
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (rebalancePartitionsAssignedHandler == null)
+                if (partitionsAssignedHandler == null)
                 {
                     Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
                     return;
                 }
 
                 lock (assignCallCountLockObj) { assignCallCount = 0; }
-                var assignTo = rebalancePartitionsAssignedHandler(partitionAssignment);
+                var assignTo = partitionsAssignedHandler(partitionAssignment);
                 lock (assignCallCountLockObj)
                 {
                     if (assignCallCount > 0)
                     {
-                        throw new InvalidOperationException("Assign/Unassign must not be called in the rebalance partitions assigned handler.");
+                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
                     }
                 }
                 Assign(assignTo);
@@ -154,7 +154,7 @@ namespace Confluent.Kafka
             
             if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (rebalancePartitionsRevokedHandler == null)
+                if (partitionsRevokedHandler == null)
                 {
                     Unassign();
                     return;
@@ -173,12 +173,12 @@ namespace Confluent.Kafka
                         assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
                     }
                 }
-                var assignTo = rebalancePartitionsRevokedHandler(assignmentWithPositions);
+                var assignTo = partitionsRevokedHandler(assignmentWithPositions);
                 lock (assignCallCountLockObj)
                 {
                     if (assignCallCount > 0)
                     {
-                        throw new InvalidOperationException("Assign/Unassign must not be called in the rebalance partitions revoked handler.");
+                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
                     }
                 }
 
@@ -785,8 +785,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.rebalancePartitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
-            this.rebalancePartitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
+            this.partitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
+            this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);
