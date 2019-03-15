@@ -61,7 +61,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // Note: All handlers are called on the main .Consume thread.
                 .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
-                .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                .SetPartitionsAssignedHandler((c, partitions) =>
                 {
                     Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}]");
                     // possibly manually specify start offsets or override the partition assignment provided by
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                     // 
                     // return partitions.Select(tp => new TopicPartitionOffset(tp, externalOffsets[tp]));
                 })
-                .SetRebalancePartitionsRevokedHandler((c, partitions) =>
+                .SetPartitionsRevokedHandler((c, partitions) =>
                 {
                     Console.WriteLine($"Revoking assignment: [{string.Join(", ", partitions)}]");
                 })

@@ -48,14 +48,14 @@ namespace Confluent.Kafka.IntegrationTests
             // Test in which both receive and revoke events are specified.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
                         Assert.Empty(c.Assignment);
                         return partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset));
                     })
-                    .SetRebalancePartitionsRevokedHandler((c, partitions) =>
+                    .SetPartitionsRevokedHandler((c, partitions) =>
                     {
                         Assert.Single(c.Assignment);
                     })
@@ -70,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test in which only the revoked event handler is specified
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalancePartitionsRevokedHandler((c, partitions) =>
+                    .SetPartitionsRevokedHandler((c, partitions) =>
                     {
                         Assert.Single(c.Assignment);
                     })
@@ -91,7 +91,7 @@ namespace Confluent.Kafka.IntegrationTests
             // and the returned set unmodified.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalancePartitionsRevokedHandler((c, partitions) =>
+                    .SetPartitionsRevokedHandler((c, partitions) =>
                     {
                         Assert.Single(c.Assignment);
                         return partitions;
@@ -113,7 +113,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test in which only the receive event handler is specified.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Empty(c.Assignment);
                     })
@@ -134,7 +134,7 @@ namespace Confluent.Kafka.IntegrationTests
             // and assignment set is modified.
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Empty(c.Assignment);
                         Assert.Single(partitions);

@@ -50,7 +50,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         return new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset) };

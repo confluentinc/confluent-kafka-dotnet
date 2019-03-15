@@ -42,8 +42,8 @@ namespace Confluent.Kafka
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
-            internal Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> rebalancePartitionsAssignedHandler;
-            internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> rebalancePartitionsRevokedHandler;
+            internal Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
+            internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -785,8 +785,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.rebalancePartitionsAssignedHandler = baseConfig.rebalancePartitionsAssignedHandler;
-            this.rebalancePartitionsRevokedHandler = baseConfig.rebalancePartitionsRevokedHandler;
+            this.rebalancePartitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
+            this.rebalancePartitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);

@@ -69,7 +69,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     new ConsumerBuilder<Null, User>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Null)
                         .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
-                        .SetRebalancePartitionsAssignedHandler((c, partitions)
+                        .SetPartitionsAssignedHandler((c, partitions)
                             => partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning)))
                         .Build())
                 {
@@ -98,7 +98,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     new ConsumerBuilder<Null, User>(consumerConfig)
                         .SetKeyDeserializer(Deserializers.Null)
                         .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
-                        .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                        .SetPartitionsAssignedHandler((c, partitions) =>
                             c.Assign(partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Beginning))))
                         .Build())
                 {

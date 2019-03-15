@@ -46,7 +46,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);

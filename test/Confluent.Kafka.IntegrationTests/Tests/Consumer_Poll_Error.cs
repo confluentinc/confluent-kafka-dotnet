@@ -58,7 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test key deserialization error behavior
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);
@@ -98,7 +98,7 @@ namespace Confluent.Kafka.IntegrationTests
             // test value deserialization error behavior.
             using (var consumer =
                 new ConsumerBuilder<string, Null>(consumerConfig)
-                    .SetRebalancePartitionsAssignedHandler((c, partitions) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
                         Assert.Single(partitions);
                         Assert.Equal(firstProduced.TopicPartition, partitions[0]);

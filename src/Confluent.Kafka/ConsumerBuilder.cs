@@ -72,14 +72,14 @@ namespace Confluent.Kafka
         internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
         /// <summary>
-        ///     The configured rebalance partitions assigned handler.
+        ///     The configured partitions assigned handler.
         /// </summary>
-        internal protected Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> RebalancePartitionsAssignedHandler { get; set; }
+        internal protected Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> PartitionsAssignedHandler { get; set; }
 
         /// <summary>
-        ///     The configured rebalance partitions revoked handler.
+        ///     The configured partitions revoked handler.
         /// </summary>
-        internal protected Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> RebalancePartitionsRevokedHandler { get; set; }
+        internal protected Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> PartitionsRevokedHandler { get; set; }
 
         /// <summary>
         ///     The configured offsets committed handler.
@@ -103,12 +103,12 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                rebalancePartitionsAssignedHandler = this.RebalancePartitionsAssignedHandler == null
+                partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>>)
-                    : partitions => this.RebalancePartitionsAssignedHandler(consumer, partitions),
-                rebalancePartitionsRevokedHandler = this.RebalancePartitionsRevokedHandler == null
+                    : partitions => this.PartitionsAssignedHandler(consumer, partitions),
+                partitionsRevokedHandler = this.PartitionsRevokedHandler == null
                     ? default(Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>>)
-                    : partitions => this.RebalancePartitionsRevokedHandler(consumer, partitions)
+                    : partitions => this.PartitionsRevokedHandler(consumer, partitions)
             };
         }
 
@@ -253,8 +253,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     This handler is called when a new consumer group partition assignment has been received
         ///     by this consumer. Note: corresponding to every call to this handler there will be a
-        ///     corresponding call to the rebalance partitions revoked handler (if one has been set using
-        ///     SetRebalancePartitionsRevokedHandler).
+        ///     corresponding call to the partitions revoked handler (if one has been set using
+        ///     SetPartitionsRevokedHandler).
         ///
         ///     The actual partitions to consume from and start offsets are specfied by the return value
         ///     of the handler. This set of partitions is not required to match the assignment provided
@@ -266,15 +266,15 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetRebalancePartitionsAssignedHandler(
+        public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler)
         {
-            if (this.RebalancePartitionsAssignedHandler != null)
+            if (this.PartitionsAssignedHandler != null)
             {
-                throw new InvalidOperationException("The rebalance partitions assigned handler may not be specified more than once.");
+                throw new InvalidOperationException("The partitions assigned handler may not be specified more than once.");
             }
 
-            this.RebalancePartitionsAssignedHandler = partitionsAssignedHandler;
+            this.PartitionsAssignedHandler = partitionsAssignedHandler;
 
             return this;
         }
@@ -282,8 +282,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     This handler is called when a new consumer group partition assignment has been received
         ///     by this consumer. Note: corresponding to every call to this handler there will be a
-        ///     corresponding call to the rebalance partitions revoked handler (if one has been set using
-        ///     SetRebalancePartitionsRevokedHandler").
+        ///     corresponding call to the partitions revoked handler (if one has been set using
+        ///     SetPartitionsRevokedHandler").
         ///
         ///     Consumption will resume from the last committed offset for each partition, or if there is
         ///     no committed offset, in accordance with the `auto.offset.reset` configuration property.
@@ -291,15 +291,15 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetRebalancePartitionsAssignedHandler(
+        public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
         {
-            if (this.RebalancePartitionsAssignedHandler != null)
+            if (this.PartitionsAssignedHandler != null)
             {
-                throw new InvalidOperationException("The rebalance partitions assigned handler may not be specified more than once.");
+                throw new InvalidOperationException("The partitions assigned handler may not be specified more than once.");
             }
             
-            this.RebalancePartitionsAssignedHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartition> partitions) =>
+            this.PartitionsAssignedHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartition> partitions) =>
             {
                 partitionAssignmentHandler(consumer, partitions);
                 return partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Unset)).ToList();
@@ -318,15 +318,15 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetRebalancePartitionsRevokedHandler(
+        public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler)
         {
-            if (this.RebalancePartitionsRevokedHandler != null)
+            if (this.PartitionsRevokedHandler != null)
             {
-                throw new InvalidOperationException("The rebalance partitions revoked handler may not be specified more than once.");
+                throw new InvalidOperationException("The partitions revoked handler may not be specified more than once.");
             }
 
-            this.RebalancePartitionsRevokedHandler = partitionsRevokedHandler;
+            this.PartitionsRevokedHandler = partitionsRevokedHandler;
             
             return this;
         }
@@ -344,15 +344,15 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
         /// </remarks>
-        public ConsumerBuilder<TKey, TValue> SetRebalancePartitionsRevokedHandler(
+        public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartitionOffset>> partitionsRevokedHandler)
         {
-            if (this.RebalancePartitionsRevokedHandler != null)
+            if (this.PartitionsRevokedHandler != null)
             {
-                throw new InvalidOperationException("The rebalance partitions revoked handler may not be specified more than once.");
+                throw new InvalidOperationException("The partitions revoked handler may not be specified more than once.");
             }
 
-            this.RebalancePartitionsRevokedHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartitionOffset> partitions) =>
+            this.PartitionsRevokedHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartitionOffset> partitions) =>
             {
                 partitionsRevokedHandler(consumer, partitions);
                 return new List<TopicPartitionOffset>();
