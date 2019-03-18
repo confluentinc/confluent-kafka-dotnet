@@ -26,7 +26,7 @@ namespace Confluent.Kafka.UnitTests
         {
             Assert.Equal(Offset.Beginning.Value, -2);
             Assert.Equal(Offset.End.Value, -1);
-            Assert.Equal(Offset.Invalid.Value, -1001);
+            Assert.Equal(Offset.Unset.Value, -1001);
             Assert.Equal(Offset.Stored.Value, -1000);
         }
 
@@ -97,7 +97,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.False(new Offset(-42).IsSpecial);
             Assert.True(Offset.Beginning.IsSpecial);
             Assert.True(Offset.End.IsSpecial);
-            Assert.True(Offset.Invalid.IsSpecial);
+            Assert.True(Offset.Unset.IsSpecial);
             Assert.True(Offset.Stored.IsSpecial);
         }
 
@@ -106,8 +106,8 @@ namespace Confluent.Kafka.UnitTests
         {
             Assert.Equal(new Offset(42).ToString(), 42.ToString());
             Assert.Equal(new Offset(-42).ToString(), (-42).ToString());
-            Assert.Contains("Invalid", Offset.Invalid.ToString());
-            Assert.Contains((-1001).ToString(), Offset.Invalid.ToString());
+            Assert.Contains("Unset", Offset.Unset.ToString());
+            Assert.Contains((-1001).ToString(), Offset.Unset.ToString());
             Assert.Contains("Stored", Offset.Stored.ToString());
             Assert.Contains((-1000).ToString(), Offset.Stored.ToString());
             Assert.Contains("Beginning", Offset.Beginning.ToString());

@@ -48,13 +48,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                    .SetRebalanceHandler((c, e) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
-                        if (e.IsAssignment)
-                        {
-                            c.Assign(e.Partitions);
-                            assignment = e.Partitions;
-                        }
+                        assignment = partitions;
                     })
                     .Build())
             {
@@ -62,10 +58,10 @@ namespace Confluent.Kafka.IntegrationTests
 
                 while (assignment == null)
                 {
-                    consumer.Consume(TimeSpan.FromSeconds(10));
+                    consumer.Consume(TimeSpan.FromSeconds(2));
                 }
 
-                ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(10));
+                ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
 
                 producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", SerializationContext.Empty) }).Wait();
@@ -74,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.Pause(assignment);
                 producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value 2", SerializationContext.Empty) }).Wait();
-                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
                 consumer.Resume(assignment);
                 record = consumer.Consume(TimeSpan.FromSeconds(10));

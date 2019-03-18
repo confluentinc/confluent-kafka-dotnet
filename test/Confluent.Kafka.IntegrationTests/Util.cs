@@ -56,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
                         firstDeliveryReport = dr;
                     }
                     Assert.Equal(topic, dr.Topic);
-                    Assert.NotEqual<long>(dr.Offset, Offset.Invalid);
+                    Assert.NotEqual<long>(dr.Offset, Offset.Unset);
                 }
 
                 producer.Flush(TimeSpan.FromSeconds(10));

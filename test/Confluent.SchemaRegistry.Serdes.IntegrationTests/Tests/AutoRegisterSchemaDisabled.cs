@@ -79,7 +79,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             // Test message fields are appropriately set in the case of a serialization error.
                             Assert.Equal("test", ((ProduceException<string, int>)e).DeliveryResult.Key);
                             Assert.Equal(112, ((ProduceException<string, int>)e).DeliveryResult.Value);
-                            Assert.Equal(Offset.Invalid, ((ProduceException<string, int>)e).DeliveryResult.Offset);
+                            Assert.Equal(Offset.Unset, ((ProduceException<string, int>)e).DeliveryResult.Offset);
                             Assert.Equal(Partition.Any, ((ProduceException<string, int>)e).DeliveryResult.Partition);
                             Assert.Equal(guidTopic, ((ProduceException<string, int>)e).DeliveryResult.Topic);
                             Assert.Equal(PersistenceStatus.NotPersisted, ((ProduceException<string, int>)e).DeliveryResult.Status);

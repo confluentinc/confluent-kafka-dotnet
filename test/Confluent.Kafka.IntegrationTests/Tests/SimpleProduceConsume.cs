@@ -84,7 +84,7 @@ namespace Confluent.Kafka.IntegrationTests
             var result = producer.ProduceAsync(topic, new Message<Null, string> { Value = testString }).Result;
             Assert.NotNull(result?.Message);
             Assert.Equal(topic, result.Topic);
-            Assert.NotEqual<long>(result.Offset, Offset.Invalid);
+            Assert.NotEqual<long>(result.Offset, Offset.Unset);
             Assert.Equal(TimestampType.CreateTime, result.Message.Timestamp.Type);
             Assert.True(Math.Abs((DateTime.UtcNow - result.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));

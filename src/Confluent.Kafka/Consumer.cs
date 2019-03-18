@@ -42,7 +42,8 @@ namespace Confluent.Kafka
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
-            internal Action<RebalanceEvent> rebalanceHandler;
+            internal Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
+            internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -110,7 +111,8 @@ namespace Confluent.Kafka
             logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
         }
 
-        private Action<RebalanceEvent> rebalanceHandler;
+        private Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
+        private Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
@@ -129,40 +131,66 @@ namespace Confluent.Kafka
                 throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
             }
 
-            // Note: The contract with librdkafka requires the application to acknowledge rebalances by calling Assign.
-            // To make the API less error prone, this is done automatically by the C# binding if required - the number
-            // of times assign is called by user code is tracked, and if this is zero, then assign is called automatically.
-
             if (err == ErrorCode.Local_AssignPartitions)
             {
-                if (rebalanceHandler != null)
+                if (partitionsAssignedHandler == null)
                 {
-                    lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    rebalanceHandler(new RebalanceEvent(partitionAssignment, true));
-                    lock (assignCallCountLockObj)
+                    Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                    return;
+                }
+
+                lock (assignCallCountLockObj) { assignCallCount = 0; }
+                var assignTo = partitionsAssignedHandler(partitionAssignment);
+                lock (assignCallCountLockObj)
+                {
+                    if (assignCallCount > 0)
                     {
-                        if (assignCallCount > 0) { return; }
+                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
                     }
                 }
-                Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Invalid)));
+                Assign(assignTo);
+                return;
             }
-            else if (err == ErrorCode.Local_RevokePartitions)
+            
+            if (err == ErrorCode.Local_RevokePartitions)
             {
-                if (rebalanceHandler != null)
+                if (partitionsRevokedHandler == null)
                 {
-                    lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    rebalanceHandler(new RebalanceEvent(partitionAssignment, false));
-                    lock (assignCallCountLockObj)
+                    Unassign();
+                    return;
+                }
+
+                var assignmentWithPositions = new List<TopicPartitionOffset>();
+                foreach (var tp in partitionAssignment)
+                {
+                    try
                     {
-                        if (assignCallCount > 0) { return; }
+                        assignmentWithPositions.Add(new TopicPartitionOffset(tp, Position(tp)));
+                    }
+                    catch
+                    {
+                        assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
                     }
                 }
-                Unassign();
+
+                lock (assignCallCountLockObj) { assignCallCount = 0; }
+                var assignTo = partitionsRevokedHandler(assignmentWithPositions);
+                lock (assignCallCountLockObj)
+                {
+                    if (assignCallCount > 0)
+                    {
+                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
+                    }
+                }
+
+                // This distinction is important because calling Assign whilst the consumer is being
+                // closed (which will generally trigger this callback) is disallowed.
+                if (assignTo.Count() > 0) { Assign(assignTo); }
+                else { Unassign(); }
+                return;
             }
-            else
-            {
-                throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
-            }
+            
+            throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
         }
 
         private Action<CommittedOffsets> offsetsCommittedHandler;
@@ -294,7 +322,7 @@ namespace Confluent.Kafka
         ///     the previous set will be replaced.
         /// </summary>
         /// <param name="partition">
-        ///     The partition to consume from. If an offset value of Offset.Invalid
+        ///     The partition to consume from. If an offset value of Offset.Unset
         ///     (-1001) is specified, consumption will resume from the last committed
         ///     offset, or according to the 'auto.offset.reset' configuration parameter
         ///     if no offsets have been committed yet.
@@ -313,7 +341,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="partitions">
         ///     The set of partitions to consume from. If an offset value of
-        ///     Offset.Invalid (-1001) is specified for a partition, consumption
+        ///     Offset.Unset (-1001) is specified for a partition, consumption
         ///     will resume from the last committed offset on that partition, or
         ///     according to the 'auto.offset.reset' configuration parameter if
         ///     no offsets have been committed yet.
@@ -342,7 +370,7 @@ namespace Confluent.Kafka
         public void Assign(IEnumerable<TopicPartition> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
-            kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Invalid)).ToList());
+            kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)).ToList());
         }
 
 
@@ -379,32 +407,37 @@ namespace Confluent.Kafka
         ///     Thrown if result is in error.
         /// </exception>
         public void StoreOffset(ConsumeResult<TKey, TValue> result)
-            => StoreOffsets(new[] { new TopicPartitionOffset(result.TopicPartition, result.Offset + 1) });
+            => StoreOffset(new TopicPartitionOffset(result.TopicPartition, result.Offset + 1));
 
 
         /// <summary>
-        ///     Store offsets for one or more partitions.
+        ///     Store offsets for a single partition.
         /// 
         ///     The offset will be committed (written) to the offset store according
-        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        ///     to `auto.commit.interval.ms` or manual offset-less commit(). Calling
+        ///     this method in itself does not commit offsets, only store them for
+        ///     future commit.
         /// </summary>
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
-        /// <param name="offsets">
-        ///     List of offsets to be commited.
+        /// <param name="offset">
+        ///     The offset to be commited.
         /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
         /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is in error. The entire result
-        ///     (which may contain constituent results that are not in error) is available
-        ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
-        /// </exception>
-        public void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
-            => kafkaHandle.StoreOffsets(offsets);
+        public void StoreOffset(TopicPartitionOffset offset)
+        {
+            try
+            {
+                kafkaHandle.StoreOffsets(new [] { offset });
+            }
+            catch (TopicPartitionOffsetException e)
+            {
+                throw new KafkaException(e.Results[0].Error);
+            }
+        }
 
 
         /// <summary>
@@ -523,10 +556,10 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Retrieve current committed offsets for the specified topic/partitions.
+        ///     Retrieve current committed offsets for the specified topic partitions.
         ///
         ///     The offset field of each requested partition will be set to the offset
-        ///     of the last consumed message, or Offset.Invalid in case there was
+        ///     of the last consumed message, or Offset.Unset in case there was
         ///     no previous message, or, alternately a partition specific error may also
         ///     be returned.
         /// </summary>
@@ -551,25 +584,26 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Gets the current positions (offsets) for the specified topics + partitions.
+        ///     Gets the current position (offset) for the specified topic / partition.
         ///
         ///     The offset field of each requested partition will be set to the offset
-        ///     of the last consumed message + 1, or Offset.Invalid in case there was
+        ///     of the last consumed message + 1, or Offset.Unset in case there was
         ///     no previous message consumed by this consumer.
         /// </summary>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
         /// </exception>
-        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
-        ///     Thrown if any of the constituent results is in error. The entire result
-        ///     (which may contain constituent results that are not in error) is available
-        ///     via the <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
-        ///     property of the exception.
-        /// </exception>
-        public List<TopicPartitionOffset> Position(IEnumerable<TopicPartition> partitions)
-            // TODO: use a librdkafka queue for this.
-            => kafkaHandle.Position(partitions);
-
+        public Offset Position(TopicPartition partition)
+        {
+            try
+            {
+                return kafkaHandle.Position(new List<TopicPartition> { partition }).First().Offset;
+            }
+            catch (TopicPartitionOffsetException e)
+            {
+                throw new KafkaException(e.Results[0].Error);
+            }
+        }
 
         /// <summary>
         ///     Look up the offsets for the given partitions by timestamp. The returned
@@ -611,7 +645,7 @@ namespace Confluent.Kafka
         ///     The low offset is updated periodically (if statistics.interval.ms 
         ///     is set) while the high offset is updated on each fetched message set from
         ///     the broker. If there is no cached offset (either low or high, or both) then
-        ///     Offset.Invalid will be returned for the respective offset.
+        ///     Offset.Unset will be returned for the respective offset.
         /// </remarks>
         /// <param name="topicPartition">
         ///     The topic/partition of interest.
@@ -754,7 +788,8 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.rebalanceHandler = baseConfig.rebalanceHandler;
+            this.partitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
+            this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
 
             Librdkafka.Initialize(null);

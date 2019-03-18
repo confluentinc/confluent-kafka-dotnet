@@ -308,18 +308,12 @@ namespace Confluent.Kafka.VerifiableClient
             Config.Conf["enable.auto.commit"] = Config.AutoCommit;
             var consumerConfig = new ConsumerConfig(Config.Conf.ToDictionary(a => a.Key, a => a.Value.ToString()));
             consumer = new ConsumerBuilder<Null, string>(consumerConfig)
-                .SetRebalanceHandler((_, e) =>
-                {
-                    if (e.IsAssignment)
-                    {
-                        HandleAssign(e.Partitions);
-                    }
-                    else
-                    {
-                        HandleRevoke(e.Partitions);
-                    }
-                })
-                .SetOffsetsCommittedHandler((_, offsets) => SendOffsetsCommitted(offsets))
+                .SetPartitionsAssignedHandler(
+                    (_, partitions) => HandleAssign(partitions))
+                .SetPartitionsRevokedHandler(
+                    (_, partitions) => HandleRevoke(partitions))
+                .SetOffsetsCommittedHandler(
+                    (_, offsets) => SendOffsetsCommitted(offsets))
                 .Build();
 
             consumedMsgsAtLastCommit = 0;
@@ -566,7 +560,7 @@ namespace Confluent.Kafka.VerifiableClient
         ///     Handle new partition assignment
         /// </summary>
         /// <param name="partitions"></param>
-        private void HandleAssign(IEnumerable<TopicPartition> partitions)
+        private IEnumerable<TopicPartitionOffset> HandleAssign(IEnumerable<TopicPartition> partitions)
         {
             Dbg($"New assignment: {string.Join(", ", partitions)}");
             if (currentAssignment != null)
@@ -581,15 +575,15 @@ namespace Confluent.Kafka.VerifiableClient
                 currentAssignment[p] = new AssignedPartition();
             }
 
-            consumer.Assign(partitions);
-
             SendPartitions("partitions_assigned", partitions);
+
+            return partitions.Select(tp => new TopicPartitionOffset(tp, Offset.Unset));
         }
 
         /// <summary>
         ///     Handle partition revocal
         /// </summary>
-        private void HandleRevoke(IEnumerable<TopicPartition> partitions)
+        private IEnumerable<TopicPartitionOffset> HandleRevoke(IEnumerable<TopicPartitionOffset> partitions)
         {
             Dbg($"Revoked assignment: {string.Join(", ", partitions)}");
             if (currentAssignment == null)
@@ -602,9 +596,9 @@ namespace Confluent.Kafka.VerifiableClient
 
             currentAssignment = null;
 
-            consumer.Unassign();
+            SendPartitions("partitions_revoked", partitions.Select(tpo => tpo.TopicPartition));
 
-            SendPartitions("partitions_revoked", partitions);
+            return new List<TopicPartitionOffset>();
         }
 
 

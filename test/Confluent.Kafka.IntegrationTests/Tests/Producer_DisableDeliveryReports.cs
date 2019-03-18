@@ -77,7 +77,7 @@ namespace Confluent.Kafka.IntegrationTests
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 Assert.True(drTask.IsCompleted); // should complete immediately.
-                Assert.Equal(Offset.Invalid, drTask.Result.Offset);
+                Assert.Equal(Offset.Unset, drTask.Result.Offset);
                 Assert.Equal(Partition.Any, drTask.Result.Partition);
                 Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
                 Assert.Equal(TestKey, drTask.Result.Message.Key);
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<byte[], byte[]> { Key = TestKey, Value = TestValue });
                 Assert.True(drTask.IsCompleted); // should complete immediately.
-                Assert.Equal(Offset.Invalid, drTask.Result.Offset);
+                Assert.Equal(Offset.Unset, drTask.Result.Offset);
                 Assert.Equal(0, (int)drTask.Result.Partition);
                 Assert.Equal(singlePartitionTopic, drTask.Result.Topic);
                 Assert.Equal(TestKey, drTask.Result.Message.Key);

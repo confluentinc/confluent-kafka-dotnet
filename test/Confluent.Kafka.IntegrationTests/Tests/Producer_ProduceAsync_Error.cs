@@ -64,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
                 Assert.False(err.IsFatal);
                 Assert.Equal(partitionedTopic, dr.Topic);
-                Assert.Equal(Offset.Invalid, dr.Offset);
+                Assert.Equal(Offset.Unset, dr.Offset);
                 Assert.True(dr.Partition == 42);
                 Assert.Equal($"test key 0", dr.Message.Key);
                 Assert.Equal($"test val 0", dr.Message.Value);
@@ -98,7 +98,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(err.IsError);
                 Assert.False(err.IsFatal);
                 Assert.Equal(partitionedTopic, dr.Topic);
-                Assert.Equal(Offset.Invalid, dr.Offset);
+                Assert.Equal(Offset.Unset, dr.Offset);
                 Assert.True(dr.Partition == 42);
                 Assert.Equal(new byte[] { 100 }, dr.Message.Key);
                 Assert.Equal(new byte[] { 101 }, dr.Message.Value);

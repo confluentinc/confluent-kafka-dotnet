@@ -38,25 +38,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     A special value that refers to the beginning of a partition.
         /// </summary>
-        /// <returns></returns>
         public static readonly Offset Beginning = new Offset(RD_KAFKA_OFFSET_BEGINNING);
 
         /// <summary>
         ///     A special value that refers to the end of a partition.
         /// </summary>
-        /// <returns></returns>
         public static readonly Offset End = new Offset(RD_KAFKA_OFFSET_END);
 
         /// <summary>
         ///     A special value thet refers to the stored offset for a partition.
         /// </summary>
-        /// <returns></returns>
         public static readonly Offset Stored = new Offset(RD_KAFKA_OFFSET_STORED);
 
         /// <summary>
         ///     A special value that refers to an invalid, unassigned or default partition offset.
         /// </summary>
-        public static readonly Offset Invalid = new Offset(RD_KAFKA_OFFSET_INVALID);
+        public static readonly Offset Unset = new Offset(RD_KAFKA_OFFSET_INVALID);
 
         /// <summary>
         ///     Initializes a new instance of the Offset structure.
@@ -285,7 +282,7 @@ namespace Confluent.Kafka
                 case RD_KAFKA_OFFSET_STORED:
                     return $"Stored [{RD_KAFKA_OFFSET_STORED}]";
                 case RD_KAFKA_OFFSET_INVALID:
-                    return $"Invalid [{RD_KAFKA_OFFSET_INVALID}]";
+                    return $"Unset [{RD_KAFKA_OFFSET_INVALID}]";
                 default:
                     return Value.ToString();
             }

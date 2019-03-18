@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Xunit;
 
@@ -49,13 +50,10 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetRebalanceHandler((c, e) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
-                        if (e.IsAssignment)
-                        {
-                            Assert.Single(e.Partitions);
-                            c.Assign(new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset));
-                        }
+                        Assert.Single(partitions);
+                        return new List<TopicPartitionOffset> { new TopicPartitionOffset(singlePartitionTopic, firstProduced.Partition, firstProduced.Offset) };
                     })
                     .Build())
             {

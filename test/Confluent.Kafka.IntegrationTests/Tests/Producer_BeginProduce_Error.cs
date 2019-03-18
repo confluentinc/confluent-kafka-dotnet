@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.False(dr.Error.IsFatal);
                 Assert.Equal((Partition)1, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.Equal(Offset.Invalid, dr.Offset);
+                Assert.Equal(Offset.Unset, dr.Offset);
                 Assert.Null(dr.Message.Key);
                 Assert.Equal("test", dr.Message.Value);
                 Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
@@ -74,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(ErrorCode.Local_UnknownPartition, dr.Error.Code);
                 Assert.Equal((Partition)42, dr.Partition);
                 Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.Equal(Offset.Invalid, dr.Offset);
+                Assert.Equal(Offset.Unset, dr.Offset);
                 Assert.Equal(new byte[] { 11 }, dr.Message.Key);
                 Assert.Null(dr.Message.Value);
                 Assert.Equal(TimestampType.NotAvailable, dr.Message.Timestamp.Type);
