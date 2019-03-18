@@ -65,8 +65,8 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Seek(dr.TopicPartitionOffset);
 
                 // position is that of the last consumed offset. it shouldn't be equal to the seek position.
-                var pos = consumer.Position(new List<TopicPartition> { dr.TopicPartition }).First();
-                Assert.NotEqual(dr.Offset, pos.Offset);
+                var offset = consumer.Position(dr.TopicPartition);
+                Assert.NotEqual(dr.Offset, offset);
 
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);

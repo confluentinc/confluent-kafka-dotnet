@@ -58,18 +58,11 @@ namespace Confluent.Kafka.IntegrationTests
             // test key deserialization error behavior
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetRebalanceHandler((c, e) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
-                        if (e.IsAssignment)
-                        {
-                            Assert.Single(e.Partitions);
-                            Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
-                            c.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                        }
-                        else
-                        {
-                            c.Unassign();
-                        }
+                        Assert.Single(partitions);
+                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                        return partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset));
                     })
                     .Build())
             {
@@ -105,18 +98,11 @@ namespace Confluent.Kafka.IntegrationTests
             // test value deserialization error behavior.
             using (var consumer =
                 new ConsumerBuilder<string, Null>(consumerConfig)
-                    .SetRebalanceHandler((c, e) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
-                        if (e.IsAssignment)
-                        {
-                            Assert.Single(e.Partitions);
-                            Assert.Equal(firstProduced.TopicPartition, e.Partitions[0]);
-                            c.Assign(e.Partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset)));
-                        }
-                        else
-                        {
-                            c.Unassign();
-                        }
+                        Assert.Single(partitions);
+                        Assert.Equal(firstProduced.TopicPartition, partitions[0]);
+                        return partitions.Select(p => new TopicPartitionOffset(p, firstProduced.Offset));
                     })
                     .Build())
             {

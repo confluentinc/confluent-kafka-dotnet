@@ -57,22 +57,20 @@ namespace Confluent.Kafka.IntegrationTests
             using (var consumer = new ConsumerBuilder<Null, byte[]>(consumerConfig).Build())
             {
                 ConsumeResult<Null, byte[]> record;
-
-                // Consume API
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+2) });
-                consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
             }
 
             consumerConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-            using (var consumer = new ConsumerBuilder<Null, byte[]>(consumerConfig).Build())
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                ConsumeResult<Null, byte[]> record;
+                ConsumeResult<byte[], byte[]> record;
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset+1) });
-                record = consumer.Consume(TimeSpan.FromSeconds(10));
+                record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
                 // Note: dr.Offset+2 is an invalid (c.f. dr.Offset+1 which is valid), so auto.offset.reset will come
                 // into play here to determine which offset to start from (earliest). Due to the the produce call above,

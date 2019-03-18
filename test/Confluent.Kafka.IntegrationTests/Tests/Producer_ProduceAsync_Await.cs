@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
                         singlePartitionTopic,
                         new Message<Null, string> { Value = "test string" });
                     Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
-                    Assert.True(dr.Offset != Offset.Invalid);
+                    Assert.NotEqual(Offset.Unset, dr.Offset);
                 }
             };
 
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
-                Assert.True(dr.Offset != Offset.Invalid);
+                Assert.NotEqual(Offset.Unset, dr.Offset);
             }
 
             Assert.Equal(0, Library.HandleCount);

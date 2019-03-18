@@ -31,7 +31,7 @@ namespace Confluent.Kafka.IntegrationTests
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_StoreOffsets(string bootstrapServers)
         {
-            LogToFile("start Consumer_StoreOffsets");
+            LogToFile("start Consumer_StoreOffset");
 
             var consumerConfig = new ConsumerConfig
             {
@@ -49,13 +49,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             using (var consumer =
                 new ConsumerBuilder<Null, string>(consumerConfig)
-                    .SetRebalanceHandler((c, e) =>
+                    .SetPartitionsAssignedHandler((c, partitions) =>
                     {
-                        if (e.IsAssignment)
-                        {
-                            c.Assign(e.Partitions);
-                            assignment = e.Partitions;
-                        }
+                        assignment = partitions;
                     })
                     .Build())
             {
@@ -76,14 +72,11 @@ namespace Confluent.Kafka.IntegrationTests
                 // test doesn't throw.
                 consumer.StoreOffset(record);
 
-                // test doesn't throw.
-                consumer.StoreOffsets(new List<TopicPartitionOffset>());
-
                 consumer.Close();
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_StoreOffsets");
+            LogToFile("end   Consumer_StoreOffset");
         }
 
     }
