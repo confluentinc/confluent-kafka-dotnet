@@ -252,9 +252,10 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     This handler is called when a new consumer group partition assignment has been received
-        ///     by this consumer. Note: corresponding to every call to this handler there will be a
-        ///     corresponding call to the partitions revoked handler (if one has been set using
-        ///     SetPartitionsRevokedHandler).
+        ///     by this consumer.
+        ///     
+        ///     Note: corresponding to every call to this handler there will be a corresponding call to
+        ///     the partitions revoked handler (if one has been set using SetPartitionsRevokedHandler).
         ///
         ///     The actual partitions to consume from and start offsets are specfied by the return value
         ///     of the handler. This set of partitions is not required to match the assignment provided
@@ -265,6 +266,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        ///     
+        ///     Assign/Unassign must not be called in the handler.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler)
@@ -281,15 +284,18 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     This handler is called when a new consumer group partition assignment has been received
-        ///     by this consumer. Note: corresponding to every call to this handler there will be a
-        ///     corresponding call to the partitions revoked handler (if one has been set using
-        ///     SetPartitionsRevokedHandler").
+        ///     by this consumer.
+        ///     
+        ///     Note: corresponding to every call to this handler there will be a corresponding call to
+        ///     the partitions revoked handler (if one has been set using SetPartitionsRevokedHandler").
         ///
         ///     Consumption will resume from the last committed offset for each partition, or if there is
         ///     no committed offset, in accordance with the `auto.offset.reset` configuration property.
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        ///     
+        ///     Assign/Unassign must not be called in the handler.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
@@ -317,6 +323,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        ///     
+        ///     Assign/Unassign must not be called in the handler.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler)
@@ -343,6 +351,8 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        ///     
+        ///     Assign/Unassign must not be called in the handler.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartitionOffset>> partitionsRevokedHandler)

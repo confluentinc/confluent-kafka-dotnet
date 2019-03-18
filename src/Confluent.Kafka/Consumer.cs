@@ -160,7 +160,6 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                lock (assignCallCountLockObj) { assignCallCount = 0; }
                 var assignmentWithPositions = new List<TopicPartitionOffset>();
                 foreach (var tp in partitionAssignment)
                 {
@@ -173,6 +172,8 @@ namespace Confluent.Kafka
                         assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
                     }
                 }
+
+                lock (assignCallCountLockObj) { assignCallCount = 0; }
                 var assignTo = partitionsRevokedHandler(assignmentWithPositions);
                 lock (assignCallCountLockObj)
                 {
@@ -413,7 +414,9 @@ namespace Confluent.Kafka
         ///     Store offsets for a single partition.
         /// 
         ///     The offset will be committed (written) to the offset store according
-        ///     to `auto.commit.interval.ms` or manual offset-less commit().
+        ///     to `auto.commit.interval.ms` or manual offset-less commit(). Calling
+        ///     this method in itself does not commit offsets, only store them for
+        ///     future commit.
         /// </summary>
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
@@ -553,7 +556,7 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Retrieve current committed offsets for the specified topic/partitions.
+        ///     Retrieve current committed offsets for the specified topic partitions.
         ///
         ///     The offset field of each requested partition will be set to the offset
         ///     of the last consumed message, or Offset.Unset in case there was
