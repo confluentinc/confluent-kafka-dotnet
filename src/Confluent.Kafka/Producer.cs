@@ -658,19 +658,17 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
-        public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
+        public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
             Message<TKey, TValue> message)
         {
             byte[] keyBytes;
             try
             {
-                keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
-                    : asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
+                if (keySerializer != null)
+                    keyBytes = await Task.FromResult(keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic)));
+                else
+                    keyBytes = await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic));
             }
             catch (Exception exception)
             {
@@ -687,12 +685,10 @@ namespace Confluent.Kafka
             byte[] valBytes;
             try
             {
-                valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
-                    : asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
+                if (valueSerializer != null)
+                    valBytes = await Task.FromResult(valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic)));
+                else
+                    valBytes = await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic));
             }
             catch (Exception exception)
             {
@@ -722,7 +718,7 @@ namespace Confluent.Kafka
                         message.Timestamp, topicPartition.Partition, message.Headers,
                         handler);
 
-                    return handler.Task;
+                    return await handler.Task;
                 }
                 else
                 {
@@ -739,7 +735,7 @@ namespace Confluent.Kafka
                         Message = message
                     };
 
-                    return Task.FromResult(result);
+                    return await Task.FromResult(result);
                 }
             }
             catch (KafkaException ex)
