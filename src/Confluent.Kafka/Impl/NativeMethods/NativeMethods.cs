@@ -43,6 +43,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
         public const string DllName = "librdkafka";
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_test_fatal_error(
+                IntPtr rk, ErrorCode err, IntPtr reason);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_version();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

@@ -27,6 +27,7 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 
+
 namespace Confluent.Kafka.Impl
 {
     enum RdKafkaType
@@ -190,6 +191,19 @@ namespace Confluent.Kafka.Impl
             }
 
             return true;
+        }
+
+        internal void TestFatalError(ErrorCode code, string reason)
+        {
+            var reasonBytes = Util.Marshal.StringToUtf8ByteArray(reason);
+            GCHandle pinnedReason = GCHandle.Alloc(reasonBytes, GCHandleType.Pinned);
+            IntPtr reasonPtr = pinnedReason.AddrOfPinnedObject();
+            var result = Librdkafka.test_fatal_error(handle, code, reasonPtr);
+            pinnedReason.Free();
+            if (result != ErrorCode.NoError)
+            {
+                throw new KafkaException(result);
+            }
         }
 
         internal Error CreatePossiblyFatalError(ErrorCode err, string reason)

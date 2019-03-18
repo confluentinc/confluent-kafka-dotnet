@@ -25,6 +25,13 @@ namespace Confluent.Kafka.Internal
     {
         internal static class Marshal
         {
+            public static byte[] StringToUtf8ByteArray(string s)
+            {
+                var bytes = new byte[Encoding.UTF8.GetByteCount(s) + 1];
+                Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
+                return bytes;
+            }
+
             /// <summary>
             ///     Interpret a zero terminated c string as UTF-8.
             /// </summary>

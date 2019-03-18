@@ -141,6 +141,7 @@ namespace Confluent.Kafka.Impl
         {
             var methods = nativeMethodsClass.GetRuntimeMethods().ToArray();
 
+            _test_fatal_error = (Func<IntPtr, ErrorCode, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_test_fatal_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode, IntPtr, ErrorCode>));
             _version = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_version").CreateDelegate(typeof(Func<IntPtr>));
             _version_str = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_version_str").CreateDelegate(typeof(Func<IntPtr>));
             _get_debug_contexts = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_get_debug_contexts").CreateDelegate(typeof(Func<IntPtr>));
@@ -509,6 +510,10 @@ namespace Confluent.Kafka.Impl
             IntPtr rkt_opaque,
             IntPtr msg_opaque);
 
+
+        private static Func<IntPtr, ErrorCode, IntPtr, ErrorCode> _test_fatal_error;
+        internal static ErrorCode test_fatal_error(IntPtr rk, ErrorCode err, IntPtr reason)
+            => _test_fatal_error(rk, err, reason);
 
         private static Func<IntPtr> _version;
         internal static IntPtr version() => _version();
