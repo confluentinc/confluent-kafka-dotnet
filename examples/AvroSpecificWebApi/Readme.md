@@ -1,6 +1,9 @@
 ﻿# AvroSpecificWebApi
 
-This project contains a basic WebApi implementation with Swagger, and shows how to produce a message from WebApi. HomeController automatically redirects you to the Swagger UI page for the ProducerController's POST method for testing.
+This project contains a basic .Net Core WebApi implementation with Swagger, and shows how to produce a Kafka Message from WebApi. 
+
+Swagger: /swagger
+Api: /api/Producer
 
 The producerSettings object has the following format:
 
