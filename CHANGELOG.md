@@ -1,15 +1,31 @@
-# 1.0.x (unreleased)
+# 1.0.0-RC1
 
 ## New Features
 
 - Added GET subject versions to the cached schema registry client.
+- References librdkafka.redist [1.0.0-RC8](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC8)
+  - supports apline linux out-of-the-box.
+  - fallback support (that excludes security features) for most linux distributions previously unsuppored out-of-the-box.
+  - fixed a dependency issue on MacOS
+
+## Changes
+
+- A new rebalance API.
+  - `SetRebalanceHandler` has been split into `SetPartitionsAssignedHandler` and `SetPartitionsRevokedHandler`.
+  - Calling of `Assign`/`Unassign` in these handlers is prohibited.
+  - Partitions to read from / start offsets can be optionally specified manually via the return value from these handlers.
+- The `Message.PersistenceStatus` property name has changed to `Message.Status`.
+- Moved the `GetWatermarkOffsets` and `QueryWatermarkOffsets` methods from admin client to consumer.
+- Context is now provided to serdes via a `SerializationContext` class instance.
 
 ## Fixes
 
 - Corrected an error in the `rd_kafka_event_type` method signature which was causing incompatibility with mono.
 - Audited exception use across the library and made changes in various places where appropriate.
-- Removed unused CancellationToken parameters (we will add them back when implemented).
+- Removed unused `CancellationToken` parameters (we will add them back when implemented).
 - Builder classes now return interfaces, not concrete classes.
+- Removed the dependency on `CompilerServices.Unsafe` which was causing `ProduceAsync` to hang in some scenarios.
+- Fixed a deadlock-on-dispose issue in `AdminClient`.
 
 
 # 1.0.0-beta3
