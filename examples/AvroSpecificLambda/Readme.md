@@ -8,6 +8,8 @@ This project contains a basic Lambda implementation, and shows how to produce a 
   "TopicName": "mytopic"
 }
 
+When you publish the Lambda to AWS, you will need to ensure that it has access to your Kafka server. If your Kafka instance is in a VPC, then this Lambda also needs to be in the same VPC to access it. You will also need to specify Subnets and Security Groups for the Lambda to ensure that it has access to your Kafka and Schema Registry servers. 
+
 
 ## If you are going to host a WebApi under a Lambda - Use Async Methods Only!
 
