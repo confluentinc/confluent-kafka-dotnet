@@ -20,4 +20,3 @@ UpgradeLog*.htm
 *~
 \#*
 core
-/fixasync.patch
