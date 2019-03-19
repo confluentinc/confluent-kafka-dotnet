@@ -31,6 +31,11 @@ namespace AvroSpecificWebApi
             {
                 c.SwaggerDoc("v1", new Info { Title = "AvroSpecificWebApi", Version = "v1" });
             });
+
+            // You could also create your producers at this point, and add each one as an individual class to let 
+            // MVC IoC hand them out to your controllers. This might make sense if you have a single producer/topic 
+            // to write to. 
+            services.Add(new ServiceDescriptor(typeof(ProducerFactory), new ProducerFactory()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
