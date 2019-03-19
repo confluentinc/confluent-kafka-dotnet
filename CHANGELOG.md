@@ -26,6 +26,7 @@
 - Builder classes now return interfaces, not concrete classes.
 - Removed the dependency on `CompilerServices.Unsafe` which was causing `ProduceAsync` to hang in some scenarios.
 - Fixed a deadlock-on-dispose issue in `AdminClient`.
+- Made `Producer.ProduceAsync` async.
 
 
 # 1.0.0-beta3

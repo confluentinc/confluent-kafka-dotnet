@@ -70,7 +70,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<Null, string> { Value = "test-value" }).Result);
 
                 // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() =>
+                Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 0),
                         new Message<Null, string>
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
                         }).Result);
 
                 // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() =>
+                Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         new TopicPartition(singlePartitionTopic, 0),
                         new Message<Null, string> 
@@ -159,13 +159,13 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<byte[], byte[]> { Timestamp = Timestamp.Default }).Result);
 
                 // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() =>
+                Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
                         new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }).Result);
 
                 // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() =>
+                Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
                         new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }).Result);
