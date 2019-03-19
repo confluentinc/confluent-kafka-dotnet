@@ -58,9 +58,10 @@ namespace Confluent.Kafka.IntegrationTests
                     producer.ProduceAsync(new TopicPartition(topicName1, 2), new Message<Null, Null>()).Wait();
                     Assert.True(false, "expecting exception");
                 }
-                catch (KafkaException ex)
+                catch (AggregateException ex)
                 {
-                    Assert.True(ex.Error.IsError);
+                    Assert.IsType<ProduceException<Null,Null>>(ex.InnerException);
+                    Assert.True(((ProduceException<Null,Null>)ex.InnerException).Error.IsError);
                 }
             }
 
@@ -79,9 +80,10 @@ namespace Confluent.Kafka.IntegrationTests
                     var dr2 = producer.ProduceAsync(new TopicPartition(topicName2, 1), new Message<Null, Null>()).Result;
                     Assert.True(false, "expecting exception");
                 }
-                catch (KafkaException ex)
+                catch (AggregateException ex)
                 {
-                    Assert.True(ex.Error.IsError);
+                    Assert.IsType<ProduceException<Null,Null>>(ex.InnerException);
+                    Assert.True(((ProduceException<Null,Null>)ex.InnerException).Error.IsError);
                 }
             }
 
