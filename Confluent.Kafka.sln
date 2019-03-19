@@ -5,49 +5,53 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1EFCD839-0726-4BCE-B745-1E829991B1BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka", "src\Confluent.Kafka\Confluent.Kafka.csproj", "{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes", "src\Confluent.SchemaRegistry.Serdes\Confluent.SchemaRegistry.Serdes.csproj", "{02677E2D-06C2-43D7-A2EE-2BB8E28B18D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.Serdes", "src\Confluent.SchemaRegistry.Serdes\Confluent.SchemaRegistry.Serdes.csproj", "{02677E2D-06C2-43D7-A2EE-2BB8E28B18D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry", "src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj", "{AA671E3D-EB85-40A2-B183-8DA037286680}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry", "src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj", "{AA671E3D-EB85-40A2-B183-8DA037286680}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90058283-1F8F-465D-89E4-D4374A27E612}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.UnitTests", "test\Confluent.Kafka.UnitTests\Confluent.Kafka.UnitTests.csproj", "{BD6FCDB1-CC2E-4DE2-AB48-9CBD3F78E637}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.UnitTests", "test\Confluent.Kafka.UnitTests\Confluent.Kafka.UnitTests.csproj", "{BD6FCDB1-CC2E-4DE2-AB48-9CBD3F78E637}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.IntegrationTests", "test\Confluent.Kafka.IntegrationTests\Confluent.Kafka.IntegrationTests.csproj", "{DBD710F7-42E0-496C-9356-D7C72856CD6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.IntegrationTests", "test\Confluent.Kafka.IntegrationTests\Confluent.Kafka.IntegrationTests.csproj", "{DBD710F7-42E0-496C-9356-D7C72856CD6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.VerifiableClient", "test\Confluent.Kafka.VerifiableClient\Confluent.Kafka.VerifiableClient.csproj", "{FB3EF483-5AA4-444B-AA0C-E9A63EF82926}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.VerifiableClient", "test\Confluent.Kafka.VerifiableClient\Confluent.Kafka.VerifiableClient.csproj", "{FB3EF483-5AA4-444B-AA0C-E9A63EF82926}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.Benchmark", "test\Confluent.Kafka.Benchmark\Confluent.Kafka.Benchmark.csproj", "{557A1E5B-C898-44AE-96A8-4197786C8A62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.Kafka.Benchmark", "test\Confluent.Kafka.Benchmark\Confluent.Kafka.Benchmark.csproj", "{557A1E5B-C898-44AE-96A8-4197786C8A62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes.UnitTests", "test\Confluent.SchemaRegistry.Serdes.UnitTests\Confluent.SchemaRegistry.Serdes.UnitTests.csproj", "{8DBE884D-B22E-48BB-B86C-DEC115DCC2E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.Serdes.UnitTests", "test\Confluent.SchemaRegistry.Serdes.UnitTests\Confluent.SchemaRegistry.Serdes.UnitTests.csproj", "{8DBE884D-B22E-48BB-B86C-DEC115DCC2E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes.IntegrationTests", "test\Confluent.SchemaRegistry.Serdes.IntegrationTests\Confluent.SchemaRegistry.Serdes.IntegrationTests.csproj", "{EBA8D93F-2B84-44B1-A954-516DAF81B19A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.Serdes.IntegrationTests", "test\Confluent.SchemaRegistry.Serdes.IntegrationTests\Confluent.SchemaRegistry.Serdes.IntegrationTests.csproj", "{EBA8D93F-2B84-44B1-A954-516DAF81B19A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.UnitTests", "test\Confluent.SchemaRegistry.UnitTests\Confluent.SchemaRegistry.UnitTests.csproj", "{E1582DD9-7EBE-4CEC-9013-A10A572D7B0C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.UnitTests", "test\Confluent.SchemaRegistry.UnitTests\Confluent.SchemaRegistry.UnitTests.csproj", "{E1582DD9-7EBE-4CEC-9013-A10A572D7B0C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.IntegrationTests", "test\Confluent.SchemaRegistry.IntegrationTests\Confluent.SchemaRegistry.IntegrationTests.csproj", "{EC57E6D6-371F-4538-8C48-35C37CA2ED67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Confluent.SchemaRegistry.IntegrationTests", "test\Confluent.SchemaRegistry.IntegrationTests\Confluent.SchemaRegistry.IntegrationTests.csproj", "{EC57E6D6-371F-4538-8C48-35C37CA2ED67}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{9CE4B5F7-9251-4340-BACB-207066A5DBE8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdminClient", "examples\AdminClient\AdminClient.csproj", "{964449D5-3024-420E-9262-1913EC189D6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdminClient", "examples\AdminClient\AdminClient.csproj", "{964449D5-3024-420E-9262-1913EC189D6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroBlogExamples", "examples\AvroBlogExamples\AvroBlogExamples.csproj", "{7C6FD5A2-5E53-4360-8DD5-1A2E9EA45CD8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroBlogExamples", "examples\AvroBlogExamples\AvroBlogExamples.csproj", "{7C6FD5A2-5E53-4360-8DD5-1A2E9EA45CD8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroGeneric", "examples\AvroGeneric\AvroGeneric.csproj", "{200D1043-8C5A-48E3-AE61-3D1085E2B634}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroGeneric", "examples\AvroGeneric\AvroGeneric.csproj", "{200D1043-8C5A-48E3-AE61-3D1085E2B634}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSpecific", "examples\AvroSpecific\AvroSpecific.csproj", "{C4037015-9BB6-4028-9FF7-3BA2900C3CB9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSpecific", "examples\AvroSpecific\AvroSpecific.csproj", "{C4037015-9BB6-4028-9FF7-3BA2900C3CB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfluentCloud", "examples\ConfluentCloud\ConfluentCloud.csproj", "{8F2BFCF2-D1FD-4963-96B1-529B969653AC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfluentCloud", "examples\ConfluentCloud\ConfluentCloud.csproj", "{8F2BFCF2-D1FD-4963-96B1-529B969653AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Consumer", "examples\Consumer\Consumer.csproj", "{CFDE34BC-071A-4AC2-AC03-B621DC719181}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Consumer", "examples\Consumer\Consumer.csproj", "{CFDE34BC-071A-4AC2-AC03-B621DC719181}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Producer", "examples\Producer\Producer.csproj", "{C5114860-FBED-491E-8DB5-E8B51F2A2E6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Producer", "examples\Producer\Producer.csproj", "{C5114860-FBED-491E-8DB5-E8B51F2A2E6C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigGen", "src\ConfigGen\ConfigGen.csproj", "{5642B638-F4AA-4C77-BE6E-C0FFF7CC103F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigGen", "src\ConfigGen\ConfigGen.csproj", "{5642B638-F4AA-4C77-BE6E-C0FFF7CC103F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protobuf", "examples\Protobuf\Protobuf.csproj", "{DBAE4CDC-7775-4D51-B457-ACEE5D1D9275}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Protobuf", "examples\Protobuf\Protobuf.csproj", "{DBAE4CDC-7775-4D51-B457-ACEE5D1D9275}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvroSpecificLambda", "examples\AvroSpecificLambda\AvroSpecificLambda.csproj", "{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvroSpecificWebApi", "examples\AvroSpecificWebApi\AvroSpecificWebApi.csproj", "{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,9 +61,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -302,6 +303,33 @@ Global
 		{DBAE4CDC-7775-4D51-B457-ACEE5D1D9275}.Release|x64.Build.0 = Release|Any CPU
 		{DBAE4CDC-7775-4D51-B457-ACEE5D1D9275}.Release|x86.ActiveCfg = Release|Any CPU
 		{DBAE4CDC-7775-4D51-B457-ACEE5D1D9275}.Release|x86.Build.0 = Release|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Debug|x64.Build.0 = Debug|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Debug|x86.Build.0 = Debug|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Release|x64.ActiveCfg = Release|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Release|x64.Build.0 = Release|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Release|x86.ActiveCfg = Release|Any CPU
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4}.Release|x86.Build.0 = Release|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Debug|x64.Build.0 = Debug|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Debug|x86.Build.0 = Debug|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Release|x64.ActiveCfg = Release|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Release|x64.Build.0 = Release|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Release|x86.ActiveCfg = Release|Any CPU
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{09C3255B-1972-4EB8-91D0-FB9F5CD82BCB} = {1EFCD839-0726-4BCE-B745-1E829991B1BC}
@@ -324,5 +352,10 @@ Global
 		{C5114860-FBED-491E-8DB5-E8B51F2A2E6C} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
 		{5642B638-F4AA-4C77-BE6E-C0FFF7CC103F} = {1EFCD839-0726-4BCE-B745-1E829991B1BC}
 		{DBAE4CDC-7775-4D51-B457-ACEE5D1D9275} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
+		{466F88C0-7769-4BAA-9BE2-D688BFDDADD4} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
+		{EEEC5BBF-5868-43FB-B6A5-6DA1D76B4156} = {9CE4B5F7-9251-4340-BACB-207066A5DBE8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {84EDBC77-0F92-43CF-9538-121CCE1A2F91}
 	EndGlobalSection
 EndGlobal
