@@ -3,7 +3,7 @@
 ## New Features
 
 - Added GET subject versions to the cached schema registry client.
-- References librdkafka.redist [1.0.0-RC8](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC8)
+- References librdkafka.redist [1.0.0-RC9](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0-RC9)
   - supports apline linux out-of-the-box.
   - fallback support (that excludes security features) for most linux distributions previously unsuppored out-of-the-box.
   - fixed a dependency issue on MacOS

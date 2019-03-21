@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC8">
+    <PackageReference Include="librdkafka.redist" Version="1.0.0-RC9">
         <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.Memory" Version="4.5.0" />
