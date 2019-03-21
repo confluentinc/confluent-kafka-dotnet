@@ -39,28 +39,17 @@ namespace Confluent.Kafka.Serdes
                     return null;
                 }
 
-                try
-                {
-                    #if NETCOREAPP2_1
-                        return Encoding.UTF8.GetString(data);
-                    #else
-                        return Encoding.UTF8.GetString(data.ToArray());
-                    #endif
-                }
-                catch (Exception e)
-                {
-                    throw new DeserializationException("Error occured deserializing UTF8 string value", e);
-                }
+                #if NETCOREAPP2_1
+                    return Encoding.UTF8.GetString(data);
+                #else
+                    return Encoding.UTF8.GetString(data.ToArray());
+                #endif
             }
         }
 
         /// <summary>
         ///     Null value deserializer.
         /// </summary>
-        /// <remarks>
-        ///     Unexpected input will result in a
-        ///     <see cref="DeserializationException" />.
-        /// </remarks>
         public static IDeserializer<Null> Null = new NullDeserializer();
 
         private class NullDeserializer : IDeserializer<Null>
@@ -69,7 +58,7 @@ namespace Confluent.Kafka.Serdes
             {
                 if (!isNull)
                 {
-                    throw new DeserializationException("Deserializer<Null> may only be used to deserialize data that is null.");
+                    throw new ArgumentException("Deserializer<Null> may only be used to deserialize data that is null.");
                 }
 
                 return null;
@@ -98,12 +87,12 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new DeserializationException($"Null data encountered deserializing Int64 value.");
+                    throw new ArgumentNullException($"Null data encountered deserializing Int64 value.");
                 }
 
                 if (data.Length != 8)
                 {
-                    throw new DeserializationException($"Deserializer<Long> encountered data of length {data.Length}. Expecting data length to be 8.");
+                    throw new ArgumentException($"Deserializer<Long> encountered data of length {data.Length}. Expecting data length to be 8.");
                 }
 
                 // network byte order -> big endian -> most significant byte in the smallest address.
@@ -130,12 +119,12 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new DeserializationException($"Null data encountered deserializing an Int32 value");
+                    throw new ArgumentNullException($"Null data encountered deserializing Int32 value");
                 }
 
                 if (data.Length != 4)
                 {
-                    throw new DeserializationException($"Deserializer<Int32> encountered data of length {data.Length}. Expecting data length to be 4.");
+                    throw new ArgumentException($"Deserializer<Int32> encountered data of length {data.Length}. Expecting data length to be 4.");
                 }
 
                 // network byte order -> big endian -> most significant byte in the smallest address.
@@ -158,12 +147,12 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new DeserializationException($"Null data encountered deserializing an float value.");
+                    throw new ArgumentNullException($"Null data encountered deserializing float value.");
                 }
 
                 if (data.Length != 4)
                 {
-                    throw new DeserializationException($"Deserializer<float> encountered data of length {data.Length}. Expecting data length to be 4.");
+                    throw new ArgumentException($"Deserializer<float> encountered data of length {data.Length}. Expecting data length to be 4.");
                 }
 
                 // network byte order -> big endian -> most significant byte in the smallest address.
@@ -182,18 +171,11 @@ namespace Confluent.Kafka.Serdes
                 }
                 else
                 {
-                    try
-                    {
-                        #if NETCOREAPP2_1
-                            return BitConverter.ToSingle(data);
-                        #else
-                            return BitConverter.ToSingle(data.ToArray(), 0);
-                        #endif
-                    }
-                    catch (Exception e)
-                    {
-                        throw new DeserializationException("Error occured deserializing float value.", e);
-                    }
+                    #if NETCOREAPP2_1
+                        return BitConverter.ToSingle(data);
+                    #else
+                        return BitConverter.ToSingle(data.ToArray(), 0);
+                    #endif
                 }
             }
         }
@@ -209,12 +191,12 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new DeserializationException($"Null data encountered deserializing an double value.");
+                    throw new ArgumentNullException($"Null data encountered deserializing double value.");
                 }
 
                 if (data.Length != 8)
                 {
-                    throw new DeserializationException($"Deserializer<double> encountered data of length {data.Length}. Expecting data length to be 8.");
+                    throw new ArgumentException($"Deserializer<double> encountered data of length {data.Length}. Expecting data length to be 8.");
                 }
 
                 // network byte order -> big endian -> most significant byte in the smallest address.
@@ -237,18 +219,11 @@ namespace Confluent.Kafka.Serdes
                 }
                 else
                 {
-                    try
-                    {
-                        #if NETCOREAPP2_1
-                                        return BitConverter.ToDouble(data);
-                        #else
-                                        return BitConverter.ToDouble(data.ToArray(), 0);
-                        #endif
-                    }
-                    catch (Exception e)
-                    {
-                        throw new DeserializationException("Error occured deserializing double value.", e);
-                    }
+                    #if NETCOREAPP2_1
+                                    return BitConverter.ToDouble(data);
+                    #else
+                                    return BitConverter.ToDouble(data.ToArray(), 0);
+                    #endif
                 }
             }
         }

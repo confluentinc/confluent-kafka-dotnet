@@ -422,7 +422,7 @@ namespace Confluent.Kafka
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
         /// <param name="offset">
-        ///     The offset to be commited.
+        ///     The offset to be committed.
         /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
@@ -1014,7 +1014,7 @@ namespace Confluent.Kafka
                             new SerializationContext(MessageComponentType.Key, topic));
                     }
                 }
-                catch (Exception exception)
+                catch (Exception ex)
                 {
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
@@ -1030,7 +1030,7 @@ namespace Confluent.Kafka
                             IsPartitionEOF = false
                         },
                         new Error(ErrorCode.Local_KeyDeserialization),
-                        exception);
+                        ex);
                 }
 
                 V val;
@@ -1046,7 +1046,7 @@ namespace Confluent.Kafka
                             new SerializationContext(MessageComponentType.Value, topic));
                     }
                 }
-                catch (Exception exception)
+                catch (Exception ex)
                 {
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
@@ -1062,7 +1062,7 @@ namespace Confluent.Kafka
                             IsPartitionEOF = false
                         },
                         new Error(ErrorCode.Local_ValueDeserialization),
-                        exception);
+                        ex);
                 }
 
                 return new ConsumeResult<K, V> 
@@ -1100,19 +1100,35 @@ namespace Confluent.Kafka
                 };
             }
 
-            TKey key = keyDeserializer != null
-                ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
-                : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
+            TKey key;
+            try
+            {
+                key = keyDeserializer != null
+                    ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
+                    : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                        .GetAwaiter()
+                        .GetResult();
+            }
+            catch (Exception ex)
+            {
+                throw new ConsumeException(rawResult, new Error(ErrorCode.Local_KeyDeserialization), ex);
+            }
 
-            TValue val = valueDeserializer != null
-                ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
-                : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
-                    .ConfigureAwait(continueOnCapturedContext: false)
-                    .GetAwaiter()
-                    .GetResult();
+            TValue val;
+            try
+            {
+                val = valueDeserializer != null
+                    ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
+                    : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                        .GetAwaiter()
+                        .GetResult();
+            }
+            catch (Exception ex)
+            {
+                throw new ConsumeException(rawResult, new Error(ErrorCode.Local_ValueDeserialization), ex);
+            }
 
             return new ConsumeResult<TKey, TValue>
             {
@@ -1140,10 +1156,18 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     The partitions assigned/revoked and offsets committed handlers may
         ///     be invoked as a side-effect of calling this method (on the same
         ///     thread).
         /// </remarks>
+        /// <exception cref="ConsumeException">
+        ///     Thrown when a call to this method is unsuccessful for any reason
+        ///     (except cancellation by user). Inspect the Error property of the
+        ///     exception for detailed information.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        ///     Thrown on cancellation.
+        /// </exception>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
             while (true)
@@ -1172,10 +1196,14 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     OnPartitionsAssigned/Revoked and OnOffsetsCommitted events may
+        ///     The partitions assigned/revoked and offsets committed handlers may
         ///     be invoked as a side-effect of calling this method (on the same
         ///     thread).
         /// </remarks>
+        /// <exception cref="ConsumeException">
+        ///     Thrown when a call to this method is unsuccessful for any reason.
+        ///     Inspect the Error property of the exception for detailed information.
+        /// </exception>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => (keyDeserializer != null && valueDeserializer != null)
                 ? ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case

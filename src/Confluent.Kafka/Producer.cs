@@ -658,6 +658,14 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any produce request that was unsuccessful for
+        ///     any reason (excluding user application logic errors). The Error
+        ///     property of the exception provides more detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
         public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
             Message<TKey, TValue> message)
@@ -669,7 +677,7 @@ namespace Confluent.Kafka
                     ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
                     : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic));
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
                 throw new ProduceException<TKey, TValue>(
                     new Error(ErrorCode.Local_KeySerialization),
@@ -678,7 +686,7 @@ namespace Confluent.Kafka
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     },
-                    exception);
+                    ex);
             }
 
             byte[] valBytes;
@@ -688,7 +696,7 @@ namespace Confluent.Kafka
                     ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
                     : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic));
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
                 throw new ProduceException<TKey, TValue>(
                     new Error(ErrorCode.Local_ValueSerialization),
@@ -697,7 +705,7 @@ namespace Confluent.Kafka
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     },
-                    exception);
+                    ex);
             }
 
             try
@@ -746,8 +754,6 @@ namespace Confluent.Kafka
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     });
             }
-
-            // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
 
@@ -767,6 +773,14 @@ namespace Confluent.Kafka
         ///     A Task which will complete with a delivery report corresponding to
         ///     the produce request, or an exception if an error occured.
         /// </returns>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any produce request that was unsuccessful for
+        ///     any reason (excluding user application logic errors). The Error
+        ///     property of the exception provides more detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
             Message<TKey, TValue> message
@@ -790,6 +804,21 @@ namespace Confluent.Kafka
         ///     A delegate that will be called with a delivery report corresponding
         ///     to the produce request (if enabled).
         /// </param>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any error that is known immediately (excluding
+        ///     user application logic errors), for example ErrorCode.Local_QueueFull.
+        ///     Asynchronous notification of unsuccessful produce requests is made
+        ///     available via the <paramref name="deliveryHandler" /> parameter (if
+        ///     specified). The Error property of the exception / delivery report
+        ///     provides more detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown in response to error conditions that reflect an error in
+        ///     the application logic of the calling application.
+        /// </exception>
         public void BeginProduce(
             string topic,
             Message<TKey, TValue> message,
@@ -811,6 +840,21 @@ namespace Confluent.Kafka
         ///     A delegate that will be called with a delivery report corresponding
         ///     to the produce request (if enabled).
         /// </param>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any error that is known immediately (excluding
+        ///     user application logic errors), for example ErrorCode.Local_QueueFull.
+        ///     Asynchronous notification of unsuccessful produce requests is made
+        ///     available via the <paramref name="deliveryHandler" /> parameter (if
+        ///     specified). The Error property of the exception / delivery report
+        ///     provides more detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown in response to error conditions that reflect an error in
+        ///     the application logic of the calling application.
+        /// </exception>
         public void BeginProduce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
@@ -889,8 +933,6 @@ namespace Confluent.Kafka
                             TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                         });
             }
-
-            // want other exceptions: ArgumentException, InvalidOperationException to propagate up.
         }
 
         private class TypedTaskDeliveryHandlerShim<K, V> : TaskCompletionSource<DeliveryResult<K, V>>, IDeliveryHandler
