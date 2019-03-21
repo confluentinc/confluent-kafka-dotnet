@@ -422,7 +422,7 @@ namespace Confluent.Kafka
         ///     `enable.auto.offset.store` must be set to "false" when using this API.
         /// </remarks>
         /// <param name="offset">
-        ///     The offset to be commited.
+        ///     The offset to be committed.
         /// </param>
         /// <exception cref="Confluent.Kafka.KafkaException">
         ///     Thrown if the request failed.
@@ -1156,13 +1156,17 @@ namespace Confluent.Kafka
         ///     The consume result.
         /// </returns>
         /// <remarks>
-        ///     The partitions assigned/revoked and offsets commited handlers may
+        ///     The partitions assigned/revoked and offsets committed handlers may
         ///     be invoked as a side-effect of calling this method (on the same
         ///     thread).
         /// </remarks>
         /// <exception cref="ConsumeException">
-        ///     Thrown if a consume request is unsuccessful for any reason. Inspect
-        ///     the Error property of the exception for detailed information.
+        ///     Thrown when a call to this method is unsuccessful for any reason
+        ///     (except cancellation by user). Inspect the Error property of the
+        ///     exception for detailed information.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        ///     Thrown on cancellation.
         /// </exception>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -1197,8 +1201,8 @@ namespace Confluent.Kafka
         ///     thread).
         /// </remarks>
         /// <exception cref="ConsumeException">
-        ///     Thrown if a consume request is unsuccessful for any reason. Inspect
-        ///     the Error property of the exception for detailed information.
+        ///     Thrown when a call to this method is unsuccessful for any reason.
+        ///     Inspect the Error property of the exception for detailed information.
         /// </exception>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => (keyDeserializer != null && valueDeserializer != null)

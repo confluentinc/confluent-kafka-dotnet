@@ -805,19 +805,18 @@ namespace Confluent.Kafka
         ///     to the produce request (if enabled).
         /// </param>
         /// <exception cref="ProduceException{TKey,TValue}">
-        ///     Thrown in response to any produce request error that is known
-        ///     immediately (excluding user application logic errors), for example
-        ///     ErrorCode.Local_QueueFull. Asynchronous notification of unsuccessful
-        ///     produce requests us made available via the
-        ///     <paramref name="deliveryHandler" /> parameter (if specified). The
-        ///     Error property of the exception / delivery report provides more
-        ///     detailed information.
+        ///     Thrown in response to any error that is known immediately (excluding
+        ///     user application logic errors), for example ErrorCode.Local_QueueFull.
+        ///     Asynchronous notification of unsuccessful produce requests is made
+        ///     available via the <paramref name="deliveryHandler" /> parameter (if
+        ///     specified). The Error property of the exception / delivery report
+        ///     provides more detailed information.
         /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
         /// <exception cref="InvalidOperationException">
-        ///     Thrown in response to some error conditions that reflect an error in
+        ///     Thrown in response to error conditions that reflect an error in
         ///     the application logic of the calling application.
         /// </exception>
         public void BeginProduce(
@@ -842,19 +841,18 @@ namespace Confluent.Kafka
         ///     to the produce request (if enabled).
         /// </param>
         /// <exception cref="ProduceException{TKey,TValue}">
-        ///     Thrown in response to any produce request error that is known
-        ///     immediately (excluding user application logic errors), for example
-        ///     ErrorCode.Local_QueueFull. Asynchronous notification of unsuccessful
-        ///     produce requests us made available via the
-        ///     <paramref name="deliveryHandler" /> parameter (if specified). The
-        ///     Error property of the exception / delivery report provides more
-        ///     detailed information.
+        ///     Thrown in response to any error that is known immediately (excluding
+        ///     user application logic errors), for example ErrorCode.Local_QueueFull.
+        ///     Asynchronous notification of unsuccessful produce requests is made
+        ///     available via the <paramref name="deliveryHandler" /> parameter (if
+        ///     specified). The Error property of the exception / delivery report
+        ///     provides more detailed information.
         /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
         /// <exception cref="InvalidOperationException">
-        ///     Thrown in response to some error conditions that reflect an error in
+        ///     Thrown in response to error conditions that reflect an error in
         ///     the application logic of the calling application.
         /// </exception>
         public void BeginProduce(

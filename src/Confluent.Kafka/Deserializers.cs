@@ -119,7 +119,7 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new ArgumentNullException($"Null data encountered deserializing an Int32 value");
+                    throw new ArgumentNullException($"Null data encountered deserializing Int32 value");
                 }
 
                 if (data.Length != 4)
@@ -147,7 +147,7 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new ArgumentNullException($"Null data encountered deserializing an float value.");
+                    throw new ArgumentNullException($"Null data encountered deserializing float value.");
                 }
 
                 if (data.Length != 4)
@@ -191,7 +191,7 @@ namespace Confluent.Kafka.Serdes
             {
                 if (isNull)
                 {
-                    throw new ArgumentNullException($"Null data encountered deserializing an double value.");
+                    throw new ArgumentNullException($"Null data encountered deserializing double value.");
                 }
 
                 if (data.Length != 8)
