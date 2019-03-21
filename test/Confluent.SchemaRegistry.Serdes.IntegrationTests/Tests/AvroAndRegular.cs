@@ -138,7 +138,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
-                        Assert.ThrowsAny<DeserializationException>(() => 
+                        Assert.ThrowsAny<ConsumeException>(() => 
                             {
                                 try
                                 {
@@ -158,7 +158,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
-                        Assert.ThrowsAny<DeserializationException>(() =>
+                        Assert.ThrowsAny<ConsumeException>(() =>
                             {
                                 try
                                 {

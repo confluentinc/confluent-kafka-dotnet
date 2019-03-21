@@ -137,11 +137,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             catch (AggregateException e)
             {
-                throw new SerializationException("Error occured serializing Avro data.", e.InnerException);
-            }
-            catch (Exception e)
-            {
-                throw new SerializationException("Error occured serializing Avro data.", e);
+                throw e.InnerException;
             }
         }
     }

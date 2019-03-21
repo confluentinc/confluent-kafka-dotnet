@@ -61,7 +61,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }))
                         .Build())
                 {
-                    Assert.Throws<SerializationException>(() =>
+                    Assert.Throws<SchemaRegistryException>(() =>
                     {
                         string guidTopic = new Guid().ToString();
                         try
@@ -101,7 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                         .Build())
                 {
-                    Assert.Throws<SerializationException>(() =>
+                    Assert.Throws<SchemaRegistryException>(() =>
                     {
                         try
                         {
