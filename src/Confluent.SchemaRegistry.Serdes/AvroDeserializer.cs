@@ -105,11 +105,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             catch (AggregateException e)
             {
-                throw new DeserializationException("Error occured deserializing Avro data.", e.InnerException);
-            }
-            catch (Exception e)
-            {
-                throw new DeserializationException("Error occured deserializing Avro data.", e);
+                throw e.InnerException;
             }
         }
 

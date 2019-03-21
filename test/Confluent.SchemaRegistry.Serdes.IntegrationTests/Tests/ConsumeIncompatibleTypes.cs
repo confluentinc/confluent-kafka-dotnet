@@ -88,7 +88,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                catch (DeserializationException)
+                catch (ConsumeException)
                 {
                     hadError = true;
                 }
@@ -110,7 +110,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     consumer.Consume(TimeSpan.FromSeconds(10));
                 }
-                catch (DeserializationException)
+                catch (ConsumeException)
                 {
                     hadError = true;
                 }
