@@ -1102,14 +1102,14 @@ namespace Confluent.Kafka
 
             TKey key = keyDeserializer != null
                 ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
-                : asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
+                : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
 
             TValue val = valueDeserializer != null
                 ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
-                : asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
+                : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
                     .ConfigureAwait(continueOnCapturedContext: false)
                     .GetAwaiter()
                     .GetResult();
