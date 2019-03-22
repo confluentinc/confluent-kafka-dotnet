@@ -322,25 +322,10 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) }
         };
 
+
         /// <summary>
-        ///     Get the configuration for the specified resources. The returned 
-        ///     configuration includes default values and the IsDefault property
-        ///     can be used to distinguish them from user supplied values. The 
-        ///     value of config entries where IsSensitive is true is always null 
-        ///     so that sensitive information is not disclosed. Config entries where
-        ///     IsReadOnly is true cannot be updated. This operation is supported 
-        ///     by brokers with version 0.11.0.0 or higher.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeConfigsAsync(IEnumerable{ConfigResource}, DescribeConfigsOptions)" />
         /// </summary>
-        /// <param name="resources">
-        ///     The resources (topic and broker resource types are currently 
-        ///     supported)
-        /// </param>
-        /// <param name="options">
-        ///     The options to use when describing configs.
-        /// </param>
-        /// <returns>
-        ///     Configs for the specified resources.
-        /// </returns>
         public Task<List<DescribeConfigsResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
@@ -354,26 +339,10 @@ namespace Confluent.Kafka
             return completionSource.Task;
         }
 
+
         /// <summary>
-        ///     Update the configuration for the specified resources. Updates are not transactional
-        ///     so they may succeed for some resources while fail for others. The configs for a 
-        ///     particular resource are updated atomically. This operation is supported by brokers 
-        ///     with version 0.11.0.0 or higher. IMPORTANT NOTE: Unspecified configuration properties
-        ///     will be reverted to their default values. Furthermore, if you use DescribeConfigsAsync
-        ///     to obtain the current set of configuration values, modify them, then use 
-        ///     AlterConfigsAsync to set them, you will loose any non-default values that are marked 
-        ///     as sensitive because they are not provided by DescribeConfigsAsync.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.AlterConfigsAsync(Dictionary{ConfigResource, List{ConfigEntry}}, AlterConfigsOptions)" />
         /// </summary>
-        /// <param name="configs">
-        ///     The resources with their configs (topic is the only resource type with configs
-        ///     that can be updated currently).
-        /// </param>
-        /// <param name="options">
-        ///     The options to use when altering configs.
-        /// </param>
-        /// <returns>
-        ///     The results of the alter configs requests.
-        /// </returns>
         public Task AlterConfigsAsync(Dictionary<ConfigResource, List<ConfigEntry>> configs, AlterConfigsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
@@ -391,18 +360,10 @@ namespace Confluent.Kafka
             return completionSource.Task;
         }
 
+
         /// <summary>
-        ///     Create a set of new topics.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.CreateTopicsAsync(IEnumerable{TopicSpecification}, CreateTopicsOptions)" />
         /// </summary>
-        /// <param name="topics">
-        ///     A collection of specifications for the new topics to create.
-        /// </param>
-        /// <param name="options">
-        ///     The options to use when creating the topics.
-        /// </param>
-        /// <returns>
-        ///     The results of the create topic requests.
-        /// </returns>
         public Task CreateTopicsAsync(IEnumerable<TopicSpecification> topics, CreateTopicsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
@@ -417,21 +378,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Delete a set of topics. This operation is not transactional so it may succeed for some topics while fail
-        ///     for others. It may take several seconds after the DeleteTopicsResult returns success for all the brokers to
-        ///     become aware that the topics are gone. During this time, topics may continue to be visible via admin 
-        ///     operations. If delete.topic.enable is false on the brokers, DeleteTopicsAsync will mark the topics for
-        ///     deletion, but not actually delete them. The Task will return successfully in this case.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteTopicsAsync(IEnumerable{string}, DeleteTopicsOptions)" />
         /// </summary>
-        /// <param name="topics">
-        ///     The topic names to delete.
-        /// </param>
-        /// <param name="options">
-        ///     The options to use when deleting topics.
-        /// </param>
-        /// <returns>
-        ///     The results of the delete topic requests.
-        /// </returns>
         public Task DeleteTopicsAsync(IEnumerable<string> topics, DeleteTopicsOptions options = null)
         {
             // TODO: To support results that may complete at different times, we may also want to implement:
@@ -446,18 +394,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Increase the number of partitions for one or more topics as per
-        ///     the supplied PartitionsSpecifications.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.CreatePartitionsAsync(IEnumerable{PartitionsSpecification}, CreatePartitionsOptions)" />
         /// </summary>
-        /// <param name="partitionsSpecifications">
-        ///     A collection of PartitionsSpecifications.
-        /// </param>
-        /// <param name="options">
-        ///     The options to use when creating the partitions.
-        /// </param>
-        /// <returns>
-        ///     The results of the PartitionsSpecification requests.
-        /// </returns>
         public Task CreatePartitionsAsync(
             IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null)
         {
@@ -530,51 +468,28 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Get information pertaining to all groups in the Kafka cluster (blocking)
-        ///
-        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality 
-        ///     is subject to change.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListGroups(TimeSpan)" />
         /// </summary>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
         public List<GroupInfo> ListGroups(TimeSpan timeout)
             => kafkaHandle.ListGroups(timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
-        ///     Get information pertaining to a particular group in the
-        ///     Kafka cluster (blocking).
-        ///
-        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListGroup(string, TimeSpan)" />
         /// </summary>
-        /// <param name="group">
-        ///     The group of interest.
-        /// </param>
-        /// <param name="timeout">
-        ///     The maximum period of time the call may block.
-        /// </param>
-        /// <returns>
-        ///     Returns information pertaining to the specified group
-        ///     or null if this group does not exist.
-        /// </returns>
         public GroupInfo ListGroup(string group, TimeSpan timeout)
             => kafkaHandle.ListGroup(group, timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
-        ///     Query the cluster for metadata.
-        ///
-        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.GetMetadata(TimeSpan)" />
         /// </summary>
         public Metadata GetMetadata(TimeSpan timeout)
             => kafkaHandle.GetMetadata(true, null, timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>
-        ///     Query the cluster for metadata for a specific topic.
-        /// 
-        ///     [API-SUBJECT-TO-CHANGE] - The API associated with this functionality is subject to change.
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.GetMetadata(string, TimeSpan)" />
         /// </summary>
         public Metadata GetMetadata(string topic, TimeSpan timeout)
             => kafkaHandle.GetMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
