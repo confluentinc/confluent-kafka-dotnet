@@ -28,30 +28,110 @@ using System.Collections.Concurrent;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a high-level Apache Kafka producer client that provides key
-    ///     and value serialization.
+    ///     Defines a high-level Apache Kafka producer client
+    ///     that provides key and value serialization.
     /// </summary>
     public interface IProducer<TKey, TValue> : IClient
     {
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(string, Message{TKey, TValue})" />
+        ///     Asynchronously send a single message to a
+        ///     Kafka topic. The partition the message is
+        ///     sent to is determined by the partitioner
+        ///     defined using the 'partitioner' configuration
+        ///     property.
         /// </summary>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with a delivery
+        ///     report corresponding to the produce request,
+        ///     or an exception if an error occured.
+        /// </returns>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any produce request
+        ///     that was unsuccessful for any reason
+        ///     (excluding user application logic errors).
+        ///     The Error property of the exception provides
+        ///     more detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
             Message<TKey, TValue> message);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.ProduceAsync(TopicPartition, Message{TKey, TValue})" />
+        ///     Asynchronously send a single message to a
+        ///     Kafka topic/partition.
         /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic partition to produce the
+        ///     message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <returns>
+        ///     A Task which will complete with a delivery
+        ///     report corresponding to the produce request,
+        ///     or an exception if an error occured.
+        /// </returns>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any produce request
+        ///     that was unsuccessful for any reason
+        ///     (excluding user application logic errors).
+        ///     The Error property of the exception provides
+        ///     more detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
             Message<TKey, TValue> message);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Asynchronously send a single message to a
+        ///     Kafka topic. The partition the message is sent
+        ///     to is determined by the partitioner defined
+        ///     using the 'partitioner' configuration property.
         /// </summary>
+        /// <param name="topic">
+        ///     The topic to produce the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     A delegate that will be called
+        ///     with a delivery report corresponding to the
+        ///     produce request (if enabled).
+        /// </param>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any error that is known
+        ///     immediately (excluding user application logic
+        ///     errors), for example ErrorCode.Local_QueueFull.
+        ///     Asynchronous notification of unsuccessful produce
+        ///     requests is made available via the <paramref name="deliveryHandler" />
+        ///     parameter (if specified). The Error property of
+        ///     the exception / delivery report provides more
+        ///     detailed information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown in response to error conditions that
+        ///     reflect an error in the application logic of
+        ///     the calling application.
+        /// </exception>
         void BeginProduce(
             string topic,
             Message<TKey, TValue> message,
@@ -59,8 +139,39 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Asynchronously send a single message to a
+        ///     Kafka topic partition.
         /// </summary>
+        /// <param name="topicPartition">
+        ///     The topic partition to produce
+        ///     the message to.
+        /// </param>
+        /// <param name="message">
+        ///     The message to produce.
+        /// </param>
+        /// <param name="deliveryHandler">
+        ///     A delegate that will be called
+        ///     with a delivery report corresponding to the
+        ///     produce request (if enabled).
+        /// </param>
+        /// <exception cref="ProduceException{TKey,TValue}">
+        ///     Thrown in response to any error that is known
+        ///     immediately (excluding user application logic errors),
+        ///     for example ErrorCode.Local_QueueFull. Asynchronous
+        ///     notification of unsuccessful produce requests is made
+        ///     available via the <paramref name="deliveryHandler" />
+        ///     parameter (if specified). The Error property of the
+        ///     exception / delivery report provides more detailed
+        ///     information.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown in response to invalid argument values.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown in response to error conditions that reflect
+        ///     an error in the application logic of the calling
+        ///     application.
+        /// </exception>
         void BeginProduce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
@@ -68,20 +179,97 @@ namespace Confluent.Kafka
 
         
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Poll(TimeSpan)" />
+        ///     Poll for callback events. Typically, you should not 
+        ///     call this method. Only call on producer instances 
+        ///     where background polling has been disabled.
         /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time to block if
+        ///     no callback events are waiting. You should
+        ///     typically use a relatively short timout period
+        ///     because this operation cannot be cancelled.
+        /// </param>
+        /// <returns>
+        ///     Returns the number of events served.
+        /// </returns>
         int Poll(TimeSpan timeout);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Flush(TimeSpan)" />
+        ///     Wait until all outstanding produce requests and
+        ///     delievery report callbacks are completed.
+        ///    
+        ///     [API-SUBJECT-TO-CHANGE] - the semantics and/or
+        ///     type of the return value is subject to change.
         /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block.
+        ///     You should typically use a relatively short
+        ///     timout period and loop until the return value
+        ///     becomes zero because this operation cannot be
+        ///     cancelled. 
+        /// </param>
+        /// <returns>
+        ///     The current librdkafka out queue length. This
+        ///     should be interpreted as a rough indication of
+        ///     the number of messages waiting to be sent to or
+        ///     acknowledged by the broker. If zero, there are
+        ///     no outstanding messages or callbacks.
+        ///     Specifically, the value is equal to the sum of
+        ///     the number of produced messages for which a
+        ///     delivery report has not yet been handled and a
+        ///     number which is less than or equal to the
+        ///     number of pending delivery report callback
+        ///     events (as determined by the number of
+        ///     outstanding protocol requests).
+        /// </returns>
+        /// <remarks>
+        ///     This method should typically be called prior to
+        ///     destroying a producer instance to make sure all
+        ///     queued and in-flight produce requests are
+        ///     completed before terminating. The wait time is
+        ///     bounded by the timeout parameter.
+        ///    
+        ///     A related configuration parameter is
+        ///     message.timeout.ms which determines the
+        ///     maximum length of time librdkafka attempts
+        ///     to deliver a message before giving up and
+        ///     so also affects the maximum time a call to
+        ///     Flush may block.
+        /// 
+        ///     Where this Producer instance shares a Handle
+        ///     with one or more other producer instances, the
+        ///     Flush method will wait on messages produced by
+        ///     the other producer instances as well.
+        /// </remarks>
         int Flush(TimeSpan timeout);
 
-
+        
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.Producer{TKey,TValue}.Flush(CancellationToken)" />
+        ///     Wait until all outstanding produce requests and
+        ///     delievery report callbacks are completed.
         /// </summary>
+        /// <remarks>
+        ///     This method should typically be called prior to
+        ///     destroying a producer instance to make sure all
+        ///     queued and in-flight produce requests are 
+        ///     completed before terminating. 
+        ///    
+        ///     A related configuration parameter is
+        ///     message.timeout.ms which determines the
+        ///     maximum length of time librdkafka attempts
+        ///     to deliver a message before giving up and
+        ///     so also affects the maximum time a call to
+        ///     Flush may block.
+        /// 
+        ///     Where this Producer instance shares a Handle
+        ///     with one or more other producer instances, the
+        ///     Flush method will wait on messages produced by
+        ///     the other producer instances as well.
+        /// </remarks>
+        /// <exception cref="System.OperationCanceledException">
+        ///     Thrown if the operation is cancelled.
+        /// </exception>
         void Flush(CancellationToken cancellationToken = default(CancellationToken));
     }
 }
