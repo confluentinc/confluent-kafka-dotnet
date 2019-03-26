@@ -1,3 +1,15 @@
+# 1.0.0-RC2
+
+## New Features
+
+- References librdkafka.redist [v1.0.0](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0)
+
+## Changes
+
+- Moved API docs from the client classes to their respective interfaces.
+- Update formatting of client API docs so they display well in Visual Studio Code intellisense.
+
+
 # 1.0.0-RC1
 
 ## New Features
