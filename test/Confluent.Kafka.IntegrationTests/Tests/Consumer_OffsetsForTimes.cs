@@ -16,11 +16,11 @@
 
 #pragma warning disable xUnit1026
 
-using Confluent.Kafka.Serdes;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {

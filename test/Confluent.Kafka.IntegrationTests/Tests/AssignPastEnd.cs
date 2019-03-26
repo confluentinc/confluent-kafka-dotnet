@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using Xunit;
-using Confluent.Kafka.Serdes;
 
 
 namespace Confluent.Kafka.IntegrationTests
