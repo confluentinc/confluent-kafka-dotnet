@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
-using Confluent.Kafka.Serdes;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.Kafka.Examples.AvroSpecific;

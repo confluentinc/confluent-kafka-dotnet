@@ -16,7 +16,6 @@
 
 #pragma warning disable xUnit1026
 
-using Confluent.Kafka.Serdes;
 using System;
 using Xunit;
 
