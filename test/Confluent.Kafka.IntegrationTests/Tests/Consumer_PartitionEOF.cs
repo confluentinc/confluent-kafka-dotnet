@@ -60,8 +60,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
                 var cr2 = consumer.Consume();
-                Assert.NotNull(cr1.Message);
-                Assert.False(cr1.IsPartitionEOF);
+                Assert.NotNull(cr2.Message);
+                Assert.False(cr2.IsPartitionEOF);
                 var cr3 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr3);
 
@@ -85,8 +85,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
                 var cr2 = consumer.Consume();
-                Assert.NotNull(cr1.Message);
-                Assert.False(cr1.IsPartitionEOF);
+                Assert.NotNull(cr2.Message);
+                Assert.False(cr2.IsPartitionEOF);
                 var cr3 = consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Null(cr3);
 
@@ -117,8 +117,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
                 var cr2 = consumer.Consume();
-                Assert.NotNull(cr1.Message);
-                Assert.False(cr1.IsPartitionEOF);
+                Assert.NotNull(cr2.Message);
+                Assert.False(cr2.IsPartitionEOF);
                 var cr3 = consumer.Consume();
                 Assert.Null(cr3.Message);
                 Assert.True(cr3.IsPartitionEOF);
@@ -145,8 +145,8 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(cr1.Message);
                 Assert.False(cr1.IsPartitionEOF);
                 var cr2 = consumer.Consume();
-                Assert.NotNull(cr1.Message);
-                Assert.False(cr1.IsPartitionEOF);
+                Assert.NotNull(cr2.Message);
+                Assert.False(cr2.IsPartitionEOF);
                 var cr3 = consumer.Consume();
                 Assert.Null(cr3.Message);
                 Assert.True(cr3.IsPartitionEOF);

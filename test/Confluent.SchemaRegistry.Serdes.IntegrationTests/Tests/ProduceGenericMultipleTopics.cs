@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.Serdes;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using Avro;
