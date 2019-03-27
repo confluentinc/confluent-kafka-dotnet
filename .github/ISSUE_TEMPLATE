@@ -12,12 +12,13 @@ How to reproduce
 
 Checklist
 =========
-Please provide the following information:
 
- - [ ] Confluent.Kafka nuget version:
- - [ ] Apache Kafka version: 
- - [ ] Client configuration:
- - [ ] Operating system:
- - [ ] Provide logs (with "debug" : "..." as necessary in configuration)
- - [ ] Provide broker log excerpts
- - [ ] Critical issue
+Please provide the following information:
+ - [ ] A complete (i.e. we can run it), minimal program demonstrating the problem. No need to supply a project file.
+ - [ ] Confluent.Kafka nuget version.
+ - [ ] Apache Kafka version.
+ - [ ] Client configuration.
+ - [ ] Operating system.
+ - [ ] Provide logs (with "debug" : "..." as necessary in configuration).
+ - [ ] Provide broker log excerpts.
+ - [ ] Critical issue.
