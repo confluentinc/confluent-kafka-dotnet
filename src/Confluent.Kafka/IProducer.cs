@@ -179,9 +179,7 @@ namespace Confluent.Kafka
 
         
         /// <summary>
-        ///     Poll for callback events. Typically, you should not 
-        ///     call this method. Only call on producer instances 
-        ///     where background polling has been disabled.
+        ///     Poll for callback events.
         /// </summary>
         /// <param name="timeout">
         ///     The maximum period of time to block if
