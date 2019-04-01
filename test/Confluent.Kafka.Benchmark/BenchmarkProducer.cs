@@ -18,7 +18,6 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
-using System.Collections.Generic;
 
 
 namespace Confluent.Kafka.Benchmark
@@ -76,6 +75,13 @@ namespace Confluent.Kafka.Benchmark
                         var msgCount = nMessages;
                         Action<DeliveryReport<Null, byte[]>> deliveryHandler = (DeliveryReport<Null, byte[]> deliveryReport) => 
                         {
+                            if (deliveryReport.Error.IsError)
+                            {
+                                // Not interested in benchmark results in the (unlikely) event there is an error.
+                                Console.WriteLine($"A error occured producing a message: {deliveryReport.Error.Reason}");
+                                Environment.Exit(1); // note: exceptions do not currently propagate to calling code from a deliveryHandler method.
+                            }
+
                             if (--msgCount == 0)
                             {
                                 autoEvent.Set();
@@ -84,19 +90,62 @@ namespace Confluent.Kafka.Benchmark
 
                         for (int i = 0; i < nMessages; i += 1)
                         {
-                            producer.BeginProduce(topic, new Message<Null, byte[]> { Value = val, Headers = headers }, deliveryHandler);
+                            try
+                            {
+                                producer.BeginProduce(topic, new Message<Null, byte[]> { Value = val, Headers = headers }, deliveryHandler);
+                            }
+                            catch (ProduceException<Null, byte[]> ex)
+                            {
+                                if (ex.Error.Code == ErrorCode.Local_QueueFull)
+                                {
+                                    producer.Poll(TimeSpan.FromSeconds(1));
+                                    i -= 1;
+                                }
+                                else
+                                {
+                                    throw;
+                                }
+                            }
                         }
 
-                        autoEvent.WaitOne();
+                        while (true)
+                        {
+                            if (autoEvent.WaitOne(TimeSpan.FromSeconds(1)))
+                            {
+                                break;
+                            }
+                            Console.WriteLine(msgCount);
+                        }
                     }
                     else
                     {
-                        var tasks = new Task[nMessages];
-                        for (int i = 0; i < nMessages; i += 1)
+                        try
                         {
-                            tasks[i] = producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = val, Headers = headers });
+                            var tasks = new Task[nMessages];
+                            for (int i = 0; i < nMessages; i += 1)
+                            {
+                                tasks[i] = producer.ProduceAsync(topic, new Message<Null, byte[]> { Value = val, Headers = headers });
+                                if (tasks[i].IsFaulted)
+                                {
+                                    if (((ProduceException<Null, byte[]>)tasks[i].Exception.InnerException).Error.Code == ErrorCode.Local_QueueFull)
+                                    {
+                                        producer.Poll(TimeSpan.FromSeconds(1));
+                                        i -= 1;
+                                    }
+                                    else
+                                    {
+                                        // unexpected, abort benchmark test.
+                                        throw tasks[i].Exception;
+                                    }
+                                }
+                            }
+
+                            Task.WaitAll(tasks);
                         }
-                        Task.WaitAll(tasks);
+                        catch (AggregateException ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
                     }
 
                     var duration = DateTime.Now.Ticks - startTime;

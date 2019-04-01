@@ -78,6 +78,9 @@ namespace Confluent.Kafka
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
 
+        private int eventsServedCount = 0;
+        private object pollSyncObj = new object();
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -86,7 +89,17 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-                            ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
+                            int eventsServedCount_ = ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
+
+                            // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
+                            if (eventsServedCount_ > 0)
+                            {
+                                lock (pollSyncObj)
+                                {
+                                    this.eventsServedCount += eventsServedCount_;
+                                    Monitor.Pulse(pollSyncObj);
+                                }
+                            }
                         }
                     }
                     catch (OperationCanceledException) {}
@@ -218,6 +231,7 @@ namespace Confluent.Kafka
                 }
             }
 
+            ErrorCode err;
             if (this.enableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
@@ -229,7 +243,7 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                var err = KafkaHandle.Produce(
+                err = KafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
@@ -240,13 +254,13 @@ namespace Confluent.Kafka
 
                 if (err != ErrorCode.NoError)
                 {
+                    // note: freed in the delivery handler callback otherwise.
                     gch.Free();
-                    throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
                 }
             }
             else
             {
-                var err = KafkaHandle.Produce(
+                err = KafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
@@ -254,11 +268,11 @@ namespace Confluent.Kafka
                     timestamp.UnixTimestampMs,
                     headers,
                     IntPtr.Zero);
+            }
 
-                if (err != ErrorCode.NoError)
-                {
-                    throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
-                }
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -268,12 +282,22 @@ namespace Confluent.Kafka
         /// </summary>
         public int Poll(TimeSpan timeout)
         {
-            if (!manualPoll)
+            if (manualPoll)
             {
-                throw new InvalidOperationException("Poll method called, but manual polling is not enabled.");
+                return this.KafkaHandle.Poll((IntPtr)timeout.TotalMillisecondsAsInt());
             }
 
-            return this.KafkaHandle.Poll((IntPtr)timeout.TotalMillisecondsAsInt());
+            lock (pollSyncObj)
+            {
+                if (eventsServedCount == 0)
+                {
+                    Monitor.Wait(pollSyncObj, timeout);
+                }
+
+                var result = eventsServedCount;
+                eventsServedCount = 0;
+                return result;
+            }
         }
 
 
