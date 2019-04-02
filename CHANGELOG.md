@@ -1,3 +1,19 @@
+# 1.0.0-RC3
+
+## New Features
+
+- `Producer.Poll` can now be used with producer instances that are in background polling mode.
+  - Typically use: Block for a minimal period of time following a `ErrorCode.Local_QueueFull` error.
+
+## Changes
+
+- Removed the `Confluent.Kafka.Serdes` namespace.
+
+## Fixes
+
+- Added `CompressionType` property to `ProducerConfig` class.
+
+
 # 1.0.0-RC2
 
 ## New Features
