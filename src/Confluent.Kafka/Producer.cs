@@ -92,9 +92,9 @@ namespace Confluent.Kafka
                             int eventsServedCountLocal = ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
 
                             // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
-                            lock (pollSyncObj)
+                            if (eventsServedCountLocal > 0)
                             {
-                                if (eventsServedCountLocal > 0)
+                                lock (pollSyncObj)
                                 {
                                     this.eventsServedCount = eventsServedCountLocal;
                                     Monitor.Pulse(pollSyncObj);
