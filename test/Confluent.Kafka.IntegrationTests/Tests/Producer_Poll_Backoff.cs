@@ -44,7 +44,9 @@ namespace Confluent.Kafka.IntegrationTests
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new ProducerBuilder<Null, string>(pConfig).Build())
             {
-                // test number of queue full exceptions is as expected.
+                // test timing around producer.Poll.
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 var exceptionCount = 0;
                 for (int i=0; i<11; ++i)
                 {
@@ -54,32 +56,16 @@ namespace Confluent.Kafka.IntegrationTests
                     }
                     catch (ProduceException<Null, string> ex)
                     {
-                        Assert.Equal(ErrorCode.Local_QueueFull, ex.Error.Code);
                         exceptionCount += 1;
-                    }
-                }
-                Assert.Equal(1, exceptionCount);
-
-                producer.Flush();
-
-                // test timing around producer.Poll.
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                for (int i=0; i<11; ++i)
-                {
-                    try
-                    {
-                        producer.BeginProduce(tempTopic.Name, new Message<Null, string> { Value = "a message" });
-                    }
-                    catch (ProduceException<Null, string>)
-                    {
+                        Assert.Equal(ErrorCode.Local_QueueFull, ex.Error.Code);
                         var served = producer.Poll(TimeSpan.FromSeconds(4));
-                        Assert.Equal(1, served);
+                        Assert.True(served >= 1);
                         var elapsed = sw.ElapsedMilliseconds;
                         Assert.True(elapsed > 100); // linger.ms
                         Assert.True(elapsed < 4000);
                     }
                 }
+                Assert.Equal(1, exceptionCount);
 
                 producer.Flush();
             }

@@ -96,7 +96,7 @@ namespace Confluent.Kafka
                             {
                                 lock (pollSyncObj)
                                 {
-                                    this.eventsServedCount = eventsServedCount_;
+                                    this.eventsServedCount += eventsServedCount_;
                                     Monitor.Pulse(pollSyncObj);
                                 }
                             }
@@ -289,9 +289,14 @@ namespace Confluent.Kafka
 
             lock (pollSyncObj)
             {
+                if (eventsServedCount == 0)
+                {
+                    Monitor.Wait(pollSyncObj, timeout);
+                }
+
+                var result = eventsServedCount;
                 eventsServedCount = 0;
-                Monitor.Wait(pollSyncObj, timeout);
-                return eventsServedCount;
+                return result;
             }
         }
 

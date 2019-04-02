@@ -188,7 +188,10 @@ namespace Confluent.Kafka
         ///     because this operation cannot be cancelled.
         /// </param>
         /// <returns>
-        ///     Returns the number of events served.
+        ///     Returns the number of events served since
+        ///     the last call to this method or if this 
+        ///     method has not yet been called, over the
+        ///     lifetime of the producer.
         /// </returns>
         int Poll(TimeSpan timeout);
 
