@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka branch v1.0.0-RC7 *** - do not modify manually.
+// *** Auto-generated from librdkafka branch v1.0.0 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -24,6 +24,58 @@ using System.Linq;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     Partitioner enum values
+    /// </summary>
+    public enum Partitioner
+    {
+        /// <summary>
+        ///     Random
+        /// </summary>
+        Random,
+
+        /// <summary>
+        ///     Consistent
+        /// </summary>
+        Consistent,
+
+        /// <summary>
+        ///     ConsistentRandom
+        /// </summary>
+        ConsistentRandom,
+
+        /// <summary>
+        ///     Murmur2
+        /// </summary>
+        Murmur2,
+
+        /// <summary>
+        ///     Murmur2Random
+        /// </summary>
+        Murmur2Random
+    }
+
+    /// <summary>
+    ///     AutoOffsetReset enum values
+    /// </summary>
+    public enum AutoOffsetReset
+    {
+        /// <summary>
+        ///     Latest
+        /// </summary>
+        Latest,
+
+        /// <summary>
+        ///     Earliest
+        /// </summary>
+        Earliest,
+
+        /// <summary>
+        ///     Error
+        /// </summary>
+        Error
+    }
+
     /// <summary>
     ///     BrokerAddressFamily enum values
     /// </summary>
@@ -88,55 +140,34 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
-    ///     Partitioner enum values
+    ///     CompressionType enum values
     /// </summary>
-    public enum Partitioner
+    public enum CompressionType
     {
         /// <summary>
-        ///     Random
+        ///     None
         /// </summary>
-        Random,
+        None,
 
         /// <summary>
-        ///     Consistent
+        ///     Gzip
         /// </summary>
-        Consistent,
+        Gzip,
 
         /// <summary>
-        ///     ConsistentRandom
+        ///     Snappy
         /// </summary>
-        ConsistentRandom,
+        Snappy,
 
         /// <summary>
-        ///     Murmur2
+        ///     Lz4
         /// </summary>
-        Murmur2,
+        Lz4,
 
         /// <summary>
-        ///     Murmur2Random
+        ///     Zstd
         /// </summary>
-        Murmur2Random
-    }
-
-    /// <summary>
-    ///     AutoOffsetReset enum values
-    /// </summary>
-    public enum AutoOffsetReset
-    {
-        /// <summary>
-        ///     Latest
-        /// </summary>
-        Latest,
-
-        /// <summary>
-        ///     Earliest
-        /// </summary>
-        Earliest,
-
-        /// <summary>
-        ///     Error
-        /// </summary>
-        Error
+        Zstd
     }
 
     /// <summary>
@@ -415,14 +446,6 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public BrokerAddressFamily? BrokerAddressFamily { get { return (BrokerAddressFamily?)GetEnum(typeof(BrokerAddressFamily), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
-
-        /// <summary>
-        ///     When enabled the client will only connect to brokers it needs to communicate with. When disabled the client will maintain connections to all brokers in the cluster.
-        ///
-        ///     default: true
-        ///     importance: medium
-        /// </summary>
-        public bool? EnableSparseConnections { get { return GetBool("enable.sparse.connections"); } set { this.SetObject("enable.sparse.connections", value); } }
 
         /// <summary>
         ///     The initial time to wait before reconnecting to a broker after the connection has been closed. The time is increased exponentially until `reconnect.backoff.max.ms` is reached. -25% to +50% jitter is applied to each reconnect backoff. A value of 0 disables the backoff and reconnects immediately.
@@ -746,6 +769,38 @@ namespace Confluent.Kafka
         public string DeliveryReportFields { get { return Get("dotnet.producer.delivery.report.fields"); } set { this.SetObject("dotnet.producer.delivery.report.fields", value.ToString()); } }
 
         /// <summary>
+        ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
+        ///
+        ///     default: 5000
+        ///     importance: medium
+        /// </summary>
+        public int? RequestTimeoutMs { get { return GetInt("request.timeout.ms"); } set { this.SetObject("request.timeout.ms", value); } }
+
+        /// <summary>
+        ///     Local message timeout. This value is only enforced locally and limits the time a produced message waits for successful delivery. A time of 0 is infinite. This is the maximum time librdkafka may use to deliver a message (including retries). Delivery error occurs when either the retry count or the message timeout are exceeded.
+        ///
+        ///     default: 300000
+        ///     importance: high
+        /// </summary>
+        public int? MessageTimeoutMs { get { return GetInt("message.timeout.ms"); } set { this.SetObject("message.timeout.ms", value); } }
+
+        /// <summary>
+        ///     Partitioner: `random` - random distribution, `consistent` - CRC32 hash of key (Empty and NULL keys are mapped to single partition), `consistent_random` - CRC32 hash of key (Empty and NULL keys are randomly partitioned), `murmur2` - Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition), `murmur2_random` - Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. This is functionally equivalent to the default partitioner in the Java Producer.).
+        ///
+        ///     default: consistent_random
+        ///     importance: high
+        /// </summary>
+        public Partitioner? Partitioner { get { return (Partitioner?)GetEnum(typeof(Partitioner), "partitioner"); } set { this.SetObject("partitioner", value); } }
+
+        /// <summary>
+        ///     Compression level parameter for algorithm selected by configuration property `compression.codec`. Higher values will result in better compression at the cost of more CPU usage. Usable range is algorithm-dependent: [0-9] for gzip; [0-12] for lz4; only 0 for snappy; -1 = codec-dependent default compression level.
+        ///
+        ///     default: -1
+        ///     importance: medium
+        /// </summary>
+        public int? CompressionLevel { get { return GetInt("compression.level"); } set { this.SetObject("compression.level", value); } }
+
+        /// <summary>
         ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.in.flight.requests.per.connection=5` (must be less than or equal to 5), `retries=INT32_MAX` (must be greater than 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.
         ///
         ///     default: false
@@ -810,44 +865,20 @@ namespace Confluent.Kafka
         public int? QueueBufferingBackpressureThreshold { get { return GetInt("queue.buffering.backpressure.threshold"); } set { this.SetObject("queue.buffering.backpressure.threshold", value); } }
 
         /// <summary>
+        ///     compression codec to use for compressing message sets. This is the default value for all topics, may be overridden by the topic configuration property `compression.codec`.
+        ///
+        ///     default: none
+        ///     importance: medium
+        /// </summary>
+        public CompressionType? CompressionType { get { return (CompressionType?)GetEnum(typeof(CompressionType), "compression.type"); } set { this.SetObject("compression.type", value); } }
+
+        /// <summary>
         ///     Maximum number of messages batched in one MessageSet. The total MessageSet size is also limited by message.max.bytes.
         ///
         ///     default: 10000
         ///     importance: medium
         /// </summary>
         public int? BatchNumMessages { get { return GetInt("batch.num.messages"); } set { this.SetObject("batch.num.messages", value); } }
-
-        /// <summary>
-        ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
-        ///
-        ///     default: 5000
-        ///     importance: medium
-        /// </summary>
-        public int? RequestTimeoutMs { get { return GetInt("request.timeout.ms"); } set { this.SetObject("request.timeout.ms", value); } }
-
-        /// <summary>
-        ///     Local message timeout. This value is only enforced locally and limits the time a produced message waits for successful delivery. A time of 0 is infinite. This is the maximum time librdkafka may use to deliver a message (including retries). Delivery error occurs when either the retry count or the message timeout are exceeded.
-        ///
-        ///     default: 300000
-        ///     importance: high
-        /// </summary>
-        public int? MessageTimeoutMs { get { return GetInt("message.timeout.ms"); } set { this.SetObject("message.timeout.ms", value); } }
-
-        /// <summary>
-        ///     Partitioner: `random` - random distribution, `consistent` - CRC32 hash of key (Empty and NULL keys are mapped to single partition), `consistent_random` - CRC32 hash of key (Empty and NULL keys are randomly partitioned), `murmur2` - Java Producer compatible Murmur2 hash of key (NULL keys are mapped to single partition), `murmur2_random` - Java Producer compatible Murmur2 hash of key (NULL keys are randomly partitioned. This is functionally equivalent to the default partitioner in the Java Producer.).
-        ///
-        ///     default: consistent_random
-        ///     importance: high
-        /// </summary>
-        public Partitioner? Partitioner { get { return (Partitioner?)GetEnum(typeof(Partitioner), "partitioner"); } set { this.SetObject("partitioner", value); } }
-
-        /// <summary>
-        ///     Compression level parameter for algorithm selected by configuration property `compression.codec`. Higher values will result in better compression at the cost of more CPU usage. Usable range is algorithm-dependent: [0-9] for gzip; [0-12] for lz4; only 0 for snappy; -1 = codec-dependent default compression level.
-        ///
-        ///     default: -1
-        ///     importance: medium
-        /// </summary>
-        public int? CompressionLevel { get { return GetInt("compression.level"); } set { this.SetObject("compression.level", value); } }
 
     }
 
@@ -887,6 +918,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public string ConsumeResultFields { set { this.SetObject("dotnet.consumer.consume.result.fields", value); } }
+
+        /// <summary>
+        ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error which is retrieved by consuming messages and checking 'message->err'.
+        ///
+        ///     default: largest
+        ///     importance: high
+        /// </summary>
+        public AutoOffsetReset? AutoOffsetReset { get { return (AutoOffsetReset?)GetEnum(typeof(AutoOffsetReset), "auto.offset.reset"); } set { this.SetObject("auto.offset.reset", value); } }
 
         /// <summary>
         ///     Client group id string. All clients sharing the same group.id belong to the same group.
@@ -1039,14 +1078,6 @@ namespace Confluent.Kafka
         ///     importance: medium
         /// </summary>
         public bool? CheckCrcs { get { return GetBool("check.crcs"); } set { this.SetObject("check.crcs", value); } }
-
-        /// <summary>
-        ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error which is retrieved by consuming messages and checking 'message->err'.
-        ///
-        ///     default: largest
-        ///     importance: high
-        /// </summary>
-        public AutoOffsetReset? AutoOffsetReset { get { return (AutoOffsetReset?)GetEnum(typeof(AutoOffsetReset), "auto.offset.reset"); } set { this.SetObject("auto.offset.reset", value); } }
 
     }
 
