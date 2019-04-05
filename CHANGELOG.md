@@ -1,3 +1,38 @@
+# 1.0.0
+
+1.0.0 is a major update of the API. Feature highlights:
+
+- Inherits all of the new features in librdkafka [v1.0.0](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0)
+- General improvements to client classes:
+  - Strongly typed configuration.
+  - Construction is via builder classes:
+    - Allows/enforces that event handlers are specified at construction time.
+    - More extensible.
+  - Header support.
+  - New Message class abstraction and (many) flow on changes.
+  - Consistency in error reporting across library (via exceptions).
+  - Support for fatal errors.
+- Added an AdminClient:
+  - CreateTopics, DeleteTopics, CreatePartitions, AlterConfigs, and DescribeConfigs methods.
+  - Moved ListGroups and GetMetadata methods from the Producer and Consumer classes to AdminClient.
+- Producer specific improvements:
+  - New serialization interface:
+    - Non-blocking support for async serializers.
+    - Very flexible:
+      - e.g. can be easily extended to support header serialization.
+  - Capability to specify custom timestamps when producing messages. 
+  - Message persistence status support.
+  - Renamed ProduceAsync variants with a callback to BeginProduce.
+- Consumer improvements:
+  - A new rebalance API.
+  - New deserialization API analogous to the new serialization API.
+  - PartitionEOF notification is via ConsumeResult, not events.
+- SchemaRegistry integration
+  - Added support for basic authentication.
+  - Added GET subject versions to the cached schema registry client.
+  - Confluent.Kafka.Avro renamed Confluent.SchemaRegistry.Serdes in preparation for support for additional serialization formats.
+
+
 # 1.0.0-RC3
 
 ## New Features
