@@ -39,8 +39,8 @@ namespace Confluent.Kafka
             public Action<string> statisticsHandler;
         }
 
-        private ISimpleSerializer<TKey> keySerializer;
-        private ISimpleSerializer<TValue> valueSerializer;
+        private SimpleSerializer<TKey> keySerializer;
+        private SimpleSerializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
         private IAsyncSerializer<TValue> asyncValueSerializer;
 
@@ -425,8 +425,8 @@ namespace Confluent.Kafka
         }
 
         private void InitializeSerializers(
-            ISimpleSerializer<TKey> keySerializer,
-            ISimpleSerializer<TValue> valueSerializer,
+            SimpleSerializer<TKey> keySerializer,
+            SimpleSerializer<TValue> valueSerializer,
             IAsyncSerializer<TKey> asyncKeySerializer,
             IAsyncSerializer<TValue> asyncValueSerializer)
         {
@@ -438,7 +438,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (ISimpleSerializer<TKey>)serializer;
+                this.keySerializer = (SimpleSerializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -461,7 +461,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.valueSerializer = (ISimpleSerializer<TValue>)serializer;
+                this.valueSerializer = (SimpleSerializer<TValue>)serializer;
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
@@ -617,7 +617,7 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key)
+                    ? keySerializer(message.Key)
                     : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic));
             }
             catch (Exception ex)
@@ -636,7 +636,7 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value)
+                    ? valueSerializer(message.Value)
                     : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic));
             }
             catch (Exception ex)
@@ -738,7 +738,7 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key)
+                    ? keySerializer(message.Key)
                     : Task.Run(async () => await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic)))
                         .ConfigureAwait(false)
                         .GetAwaiter()
@@ -760,7 +760,7 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value)
+                    ? valueSerializer(message.Value)
                     : Task.Run(async () => await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic)))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()

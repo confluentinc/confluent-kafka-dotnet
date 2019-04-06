@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                     singlePartitionTopic,
                     new Message<byte[], byte[]>
                     {
-                        Value = SimpleSerializers.Utf8.Serialize("my-value"),
+                        Value = SimpleSerializers.Utf8("my-value"),
                         Headers = new Headers() { new Header("my-header", new byte[] { 42 }) }
                     }
                 ).Result;

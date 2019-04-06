@@ -143,7 +143,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
                     avroWriter.Write(data, new BinaryEncoder(stream));
 
-                    // TODO: maybe change the ISimpleSerializer interface so that this copy isn't necessary.
+                    // TODO: maybe change the SimpleSerializer delegate so that this copy isn't necessary.
                     return stream.ToArray();
                 }
             }

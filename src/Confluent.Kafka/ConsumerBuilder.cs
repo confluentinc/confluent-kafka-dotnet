@@ -54,12 +54,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured key deserializer.
         /// </summary>
-        internal protected IDeserializer<TKey> KeyDeserializer { get; set; }
+        internal protected Deserializer<TKey> KeyDeserializer { get; set; }
 
         /// <summary>
         ///     The configured value deserializer.
         /// </summary>
-        internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
+        internal protected Deserializer<TValue> ValueDeserializer { get; set; }
 
         /// <summary>
         ///     The configured async key deserializer.
@@ -201,7 +201,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Set the deserializer to use to deserialize keys.
         /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IDeserializer<TKey> deserializer)
+        public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(Deserializer<TKey> deserializer)
         {
             if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
             {
@@ -214,7 +214,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Set the deserializer to use to deserialize values.
         /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IDeserializer<TValue> deserializer)
+        public ConsumerBuilder<TKey, TValue> SetValueDeserializer(Deserializer<TValue> deserializer)
         {
             if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
             {

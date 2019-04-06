@@ -2,8 +2,9 @@
 
 ## Changes
 
-- Renamed `ISerializer` to `ISimpleSerializer`, and `Serializers` to `SimpleSerializers`.
 - Removed `SerializationContext` from non-async serde interfaces.
+- Replaced `ISerializer` interface with `SimpleSerializer` delegate.
+- Replaced `IDeserializer` interface with `Deserializer` delegate.
 
 
 # 1.0.0-RC3

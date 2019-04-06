@@ -27,13 +27,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [InlineData(new byte[] { 1, 2, 3, 4, 5 })]
         public void CanReconstructByteArray(byte[] values)
         {
-            Assert.Equal(values, Deserializers.ByteArray.Deserialize(SimpleSerializers.ByteArray.Serialize(values), false));
+            Assert.Equal(values, Deserializers.ByteArray(SimpleSerializers.ByteArray(values), false));
         }
 
         [Fact]
         public void CanReconstructByteArrayNull()
         {
-            Assert.Null(Deserializers.ByteArray.Deserialize(SimpleSerializers.ByteArray.Serialize(null), true));
+            Assert.Null(Deserializers.ByteArray(SimpleSerializers.ByteArray(null), true));
         }
     }
 }

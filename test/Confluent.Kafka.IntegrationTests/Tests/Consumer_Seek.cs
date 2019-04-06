@@ -49,9 +49,9 @@ namespace Confluent.Kafka.IntegrationTests
                     .Build())
             {
                 const string checkValue = "check value";
-                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8.Serialize(checkValue) }).Result;
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8.Serialize("second value") }).Result;
-                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8.Serialize("third value") }).Result;
+                var dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8(checkValue) }).Result;
+                var dr2 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8("second value") }).Result;
+                var dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8("third value") }).Result;
 
                 consumer.Assign(new TopicPartitionOffset[] { new TopicPartitionOffset(singlePartitionTopic, 0, dr.Offset) });
 

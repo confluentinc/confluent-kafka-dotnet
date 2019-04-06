@@ -63,12 +63,12 @@ namespace Confluent.Kafka.IntegrationTests
                 ConsumeResult<byte[], byte[]> record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
 
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8.Serialize("test value") }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8("test value") }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record?.Message);
 
                 consumer.Pause(assignment);
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8.Serialize("test value 2") }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = SimpleSerializers.Utf8("test value 2") }).Wait();
                 record = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(record);
                 consumer.Resume(assignment);
