@@ -1,3 +1,11 @@
+# 1.0.0-RC4
+
+## Changes
+
+- Renamed `ISerializer` to `ISimpleSerializer`, and `Serializers` to `SimpleSerializers`.
+- Removed `SerializationContext` from non-async serde interfaces.
+
+
 # 1.0.0-RC3
 
 ## New Features

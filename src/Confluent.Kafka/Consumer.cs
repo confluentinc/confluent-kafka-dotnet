@@ -754,8 +754,7 @@ namespace Confluent.Kafka
                             msg.key == IntPtr.Zero
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
-                            msg.key == IntPtr.Zero,
-                            new SerializationContext(MessageComponentType.Key, topic));
+                            msg.key == IntPtr.Zero);
                     }
                 }
                 catch (Exception ex)
@@ -786,8 +785,7 @@ namespace Confluent.Kafka
                             msg.val == IntPtr.Zero
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
-                            msg.val == IntPtr.Zero,
-                            new SerializationContext(MessageComponentType.Value, topic));
+                            msg.val == IntPtr.Zero);
                     }
                 }
                 catch (Exception ex)
@@ -848,7 +846,7 @@ namespace Confluent.Kafka
             try
             {
                 key = keyDeserializer != null
-                    ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
+                    ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null)
                     : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
@@ -863,7 +861,7 @@ namespace Confluent.Kafka
             try
             {
                 val = valueDeserializer != null
-                    ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
+                    ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null)
                     : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()

@@ -54,8 +54,8 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer =
                 new ProducerBuilder<Null, String>(producerConfig)
-                    .SetKeySerializer(Serializers.Null)
-                    .SetValueSerializer(Serializers.Utf8)
+                    .SetKeySerializer(SimpleSerializers.Null)
+                    .SetValueSerializer(SimpleSerializers.Utf8)
                     .Build())
             {
                 producer.BeginProduce(new TopicPartition(singlePartitionTopic, 1), new Message<Null, String> { Value = "test" }, dh);

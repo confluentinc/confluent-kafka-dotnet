@@ -32,7 +32,7 @@ namespace Confluent.Kafka
         
         private class Utf8Deserializer : IDeserializer<string>
         {
-            public string Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public string Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (isNull)
                 {
@@ -54,7 +54,7 @@ namespace Confluent.Kafka
 
         private class NullDeserializer : IDeserializer<Null>
         {
-            public Null Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public Null Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (!isNull)
                 {
@@ -72,7 +72,7 @@ namespace Confluent.Kafka
 
         private class IgnoreDeserializer : IDeserializer<Ignore>
         {
-            public Ignore Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public Ignore Deserialize(ReadOnlySpan<byte> data, bool isNull)
                 => null;
         }
 
@@ -83,7 +83,7 @@ namespace Confluent.Kafka
 
         private class Int64Deserializer : IDeserializer<long>
         {
-            public long Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public long Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (isNull)
                 {
@@ -115,7 +115,7 @@ namespace Confluent.Kafka
 
         private class Int32Deserializer : IDeserializer<int>
         {
-            public int Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public int Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (isNull)
                 {
@@ -143,7 +143,7 @@ namespace Confluent.Kafka
 
         private class SingleDeserializer : IDeserializer<float>
         {
-            public float Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public float Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (isNull)
                 {
@@ -187,7 +187,7 @@ namespace Confluent.Kafka
 
         private class DoubleDeserializer : IDeserializer<double>
         {
-            public double Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public double Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (isNull)
                 {
@@ -238,7 +238,7 @@ namespace Confluent.Kafka
 
         private class ByteArrayDeserializer : IDeserializer<byte[]>
         {
-            public byte[] Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+            public byte[] Deserialize(ReadOnlySpan<byte> data, bool isNull)
             {
                 if (isNull) { return null; }
                 return data.ToArray();

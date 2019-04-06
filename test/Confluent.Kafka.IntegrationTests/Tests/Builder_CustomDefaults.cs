@@ -33,9 +33,9 @@ namespace Confluent.Kafka.IntegrationTests
     {
         class MyProducerBuilder<K, V> : ProducerBuilder<K, V>
         {
-            class Utf32Serializer : ISerializer<string>
+            class Utf32Serializer : ISimpleSerializer<string>
             {
-                public byte[] Serialize(string data, SerializationContext context)
+                public byte[] Serialize(string data)
                 {
                     return Encoding.UTF32.GetBytes(data);
                 }
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (KeySerializer == null && AsyncKeySerializer == null)
                     {
-                        this.KeySerializer = (ISerializer<K>)(new Utf32Serializer());
+                        this.KeySerializer = (ISimpleSerializer<K>)(new Utf32Serializer());
                     }
                 }
 
@@ -57,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (ValueSerializer == null && AsyncValueSerializer == null)
                     {
-                        this.ValueSerializer = (ISerializer<V>)(new Utf32Serializer());
+                        this.ValueSerializer = (ISimpleSerializer<V>)(new Utf32Serializer());
                     }
                 }
                 
@@ -69,7 +69,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             class Utf32Deserializer : IDeserializer<string>
             {
-                public string Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+                public string Deserialize(ReadOnlySpan<byte> data, bool isNull)
                 {
                     if (isNull) { return null; }
                     return Encoding.UTF32.GetString(data);

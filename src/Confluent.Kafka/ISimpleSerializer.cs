@@ -20,7 +20,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
     /// </summary>
-    public interface ISerializer<T>
+    public interface ISimpleSerializer<T>
     {
         /// <summary>
         ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
@@ -29,12 +29,9 @@ namespace Confluent.Kafka
         /// <param name="data">
         ///     The value to serialize.
         /// </param>
-        /// <param name="context">
-        ///     Context relevant to the serialize operation.
-        /// </param>
         /// <returns>
         ///     The serialized value.
         /// </returns>
-        byte[] Serialize(T data, SerializationContext context);
+        byte[] Serialize(T data);
     }
 }

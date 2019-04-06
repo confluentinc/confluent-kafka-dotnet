@@ -23,16 +23,16 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Serializers for use with <see cref="Producer{TKey,TValue}" />.
     /// </summary>
-    public static class Serializers
+    public static class SimpleSerializers
     {
         /// <summary>
         ///     String (UTF8) serializer.
         /// </summary>
-        public static ISerializer<string> Utf8 = new Utf8Serializer();
-        
-        private class Utf8Serializer : ISerializer<string>
+        public static ISimpleSerializer<string> Utf8 = new Utf8Serializer();
+
+        private class Utf8Serializer : ISimpleSerializer<string>
         {
-            public byte[] Serialize(string data, SerializationContext context)
+            public byte[] Serialize(string data)
             {
                 if (data == null)
                 {
@@ -47,11 +47,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Null serializer.
         /// </summary>
-        public static ISerializer<Null> Null = new NullSerializer();
+        public static ISimpleSerializer<Null> Null = new NullSerializer();
 
-        private class NullSerializer : ISerializer<Null>
+        private class NullSerializer : ISimpleSerializer<Null>
         {
-            public byte[] Serialize(Null data, SerializationContext context)
+            public byte[] Serialize(Null data)
                 => null;
         }
 
@@ -59,11 +59,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Int64 (big endian, network byte order) serializer.
         /// </summary>
-        public static ISerializer<long> Int64 = new Int64Serializer();
+        public static ISimpleSerializer<long> Int64 = new Int64Serializer();
 
-        private class Int64Serializer : ISerializer<long>
+        private class Int64Serializer : ISimpleSerializer<long>
         {
-            public byte[] Serialize(long data, SerializationContext context)
+            public byte[] Serialize(long data)
             {
                 var result = new byte[8];
                 result[0] = (byte)(data >> 56);
@@ -82,11 +82,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Int32 (big endian, network byte order) serializer.
         /// </summary>
-        public static ISerializer<int> Int32 = new Int32Serializer();
+        public static ISimpleSerializer<int> Int32 = new Int32Serializer();
 
-        private class Int32Serializer : ISerializer<int>
+        private class Int32Serializer : ISimpleSerializer<int>
         {
-            public byte[] Serialize(int data, SerializationContext context)
+            public byte[] Serialize(int data)
             {
                 var result = new byte[4]; // int is always 32 bits on .NET.
                 // network byte order -> big endian -> most significant byte in the smallest address.
@@ -105,11 +105,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Single (big endian, network byte order) serializer
         /// </summary>
-        public static ISerializer<float> Single = new SingleSerializer();
+        public static ISimpleSerializer<float> Single = new SingleSerializer();
 
-        private class SingleSerializer : ISerializer<float>
+        private class SingleSerializer : ISimpleSerializer<float>
         {
-            public byte[] Serialize(float data, SerializationContext context)
+            public byte[] Serialize(float data)
             {
                 if (BitConverter.IsLittleEndian)
                 {
@@ -135,11 +135,11 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Double (big endian, network byte order) serializer
         /// </summary>
-        public static ISerializer<double> Double = new DoubleSerializer();
+        public static ISimpleSerializer<double> Double = new DoubleSerializer();
 
-        private class DoubleSerializer : ISerializer<double>
+        private class DoubleSerializer : ISimpleSerializer<double>
         {
-            public byte[] Serialize(double data, SerializationContext context)
+            public byte[] Serialize(double data)
             {
                 if (BitConverter.IsLittleEndian)
                 {
@@ -172,11 +172,11 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Byte order is original order.
         /// </remarks>
-        public static ISerializer<byte[]> ByteArray = new ByteArraySerializer();
+        public static ISimpleSerializer<byte[]> ByteArray = new ByteArraySerializer();
         
-        private class ByteArraySerializer : ISerializer<byte[]>
+        private class ByteArraySerializer : ISimpleSerializer<byte[]>
         {
-            public byte[] Serialize(byte[] data, SerializationContext context)
+            public byte[] Serialize(byte[] data)
                 => data;
         }
     }

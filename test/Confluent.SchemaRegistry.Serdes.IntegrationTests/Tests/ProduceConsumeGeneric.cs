@@ -59,7 +59,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var p =
                 new ProducerBuilder<Null, GenericRecord>(config)
-                    .SetKeySerializer(Serializers.Null)
+                    .SetKeySerializer(SimpleSerializers.Null)
                     .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
             {
@@ -74,7 +74,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var p =
                 new ProducerBuilder<Null, User>(config)
-                    .SetKeySerializer(Serializers.Null)
+                    .SetKeySerializer(SimpleSerializers.Null)
                     .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
                     .Build())
             {
