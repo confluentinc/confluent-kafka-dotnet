@@ -39,8 +39,8 @@ namespace Confluent.Kafka
             public Action<string> statisticsHandler;
         }
 
-        private ISerializer<TKey> keySerializer;
-        private ISerializer<TValue> valueSerializer;
+        private Serializer<TKey> keySerializer;
+        private Serializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
         private IAsyncSerializer<TValue> asyncValueSerializer;
 
@@ -425,8 +425,8 @@ namespace Confluent.Kafka
         }
 
         private void InitializeSerializers(
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer,
+            Serializer<TKey> keySerializer,
+            Serializer<TValue> valueSerializer,
             IAsyncSerializer<TKey> asyncKeySerializer,
             IAsyncSerializer<TValue> asyncValueSerializer)
         {
@@ -438,7 +438,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (ISerializer<TKey>)serializer;
+                this.keySerializer = (Serializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -461,7 +461,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.valueSerializer = (ISerializer<TValue>)serializer;
+                this.valueSerializer = (Serializer<TValue>)serializer;
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
@@ -617,7 +617,7 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    ? keySerializer(message.Key)
                     : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic));
             }
             catch (Exception ex)
@@ -636,7 +636,7 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    ? valueSerializer(message.Value)
                     : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic));
             }
             catch (Exception ex)
@@ -738,7 +738,7 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    ? keySerializer(message.Key)
                     : Task.Run(async () => await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic)))
                         .ConfigureAwait(false)
                         .GetAwaiter()
@@ -760,7 +760,7 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    ? valueSerializer(message.Value)
                     : Task.Run(async () => await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic)))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()

@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,26 +19,18 @@ using System;
 
 namespace Confluent.Kafka
 {
+
     /// <summary>
     ///     Defines a deserializer for use with <see cref="Confluent.Kafka.Consumer{TKey,TValue}" />.
     /// </summary>
-    public interface IDeserializer<T>
-    {
-        /// <summary>
-        ///     Deserialize a message key or value.
-        /// </summary>
-        /// <param name="data">
-        ///     The data to deserialize.
-        /// </param>
-        /// <param name="isNull">
-        ///     Whether or not the value is null.
-        /// </param>
-        /// <param name="context">
-        ///     Context relevant to the deserialize operation.
-        /// </param>
-        /// <returns>
-        ///     The deserialized value.
-        /// </returns>
-        T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context);
-    }
+    /// <param name="data">
+    ///     The data to deserialize.
+    /// </param>
+    /// <param name="isNull">
+    ///     Whether or not the value is null.
+    /// </param>
+    /// <returns>
+    ///     The deserialized value.
+    /// </returns>
+    public delegate T Deserializer<T>(ReadOnlySpan<byte> data, bool isNull);
 }

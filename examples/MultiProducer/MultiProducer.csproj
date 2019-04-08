@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.0.0-RC3" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.0.0-RC4" /> -->
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
   </ItemGroup>
 

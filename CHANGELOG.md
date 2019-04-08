@@ -1,3 +1,12 @@
+# 1.0.0-RC4
+
+## Changes
+
+- Removed `SerializationContext` from non-async serde interfaces.
+- Replaced `ISerializer` interface with `Serializer` delegate.
+- Replaced `IDeserializer` interface with `Deserializer` delegate.
+
+
 # 1.0.0-RC3
 
 ## New Features

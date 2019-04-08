@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                     .SetLogHandler((_, m) => logCount += 1)
                     .Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test value", SerializationContext.Empty) }).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8("test value") }).Result;
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
             Assert.True(logCount > 0);

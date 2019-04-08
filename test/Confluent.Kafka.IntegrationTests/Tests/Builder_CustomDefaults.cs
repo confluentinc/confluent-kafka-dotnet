@@ -33,23 +33,17 @@ namespace Confluent.Kafka.IntegrationTests
     {
         class MyProducerBuilder<K, V> : ProducerBuilder<K, V>
         {
-            class Utf32Serializer : ISerializer<string>
-            {
-                public byte[] Serialize(string data, SerializationContext context)
-                {
-                    return Encoding.UTF32.GetBytes(data);
-                }
-            }
-
             public MyProducerBuilder(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
             public override IProducer<K, V> Build()
             {
+                Serializer<string> utf32Serializer = (string data) => Encoding.UTF32.GetBytes(data);
+
                 if (typeof(K) == typeof(string))
                 {
                     if (KeySerializer == null && AsyncKeySerializer == null)
                     {
-                        this.KeySerializer = (ISerializer<K>)(new Utf32Serializer());
+                        this.KeySerializer = (Serializer<K>)(object)utf32Serializer;
                     }
                 }
 
@@ -57,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (ValueSerializer == null && AsyncValueSerializer == null)
                     {
-                        this.ValueSerializer = (ISerializer<V>)(new Utf32Serializer());
+                        this.ValueSerializer = (Serializer<V>)(object)utf32Serializer;
                     }
                 }
                 
@@ -67,24 +61,21 @@ namespace Confluent.Kafka.IntegrationTests
 
         class MyConsumerBuilder<K, V> : ConsumerBuilder<K, V>
         {
-            class Utf32Deserializer : IDeserializer<string>
-            {
-                public string Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
-                {
-                    if (isNull) { return null; }
-                    return Encoding.UTF32.GetString(data);
-                }
-            }
-
             public MyConsumerBuilder(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
             public override IConsumer<K, V> Build()
             {
+                Deserializer<string> utf32Deserializer = (ReadOnlySpan<byte> data, bool isNull) =>
+                {
+                    if (isNull) { return null; }
+                    return Encoding.UTF32.GetString(data);
+                };
+
                 if (typeof(K) == typeof(string))
                 {
                     if (KeyDeserializer == null && AsyncKeyDeserializer == null)
                     {
-                        this.KeyDeserializer = (IDeserializer<K>)new Utf32Deserializer();
+                        this.KeyDeserializer = (Deserializer<K>)(object)utf32Deserializer;
                     }
                 }
                 
@@ -92,7 +83,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (ValueDeserializer == null && AsyncValueDeserializer == null)
                     {
-                        this.ValueDeserializer = (IDeserializer<V>) new Utf32Deserializer();
+                        this.ValueDeserializer = (Deserializer<V>)(object)utf32Deserializer;
                     }
                 }
 
