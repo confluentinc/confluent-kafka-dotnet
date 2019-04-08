@@ -116,7 +116,7 @@ namespace Confluent.SchemaRegistry
         public string SchemaRegistryUrl
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); } 
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value.ToString()); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value); }
         }
 
         /// <summary>

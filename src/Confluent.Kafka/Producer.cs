@@ -527,19 +527,19 @@ namespace Confluent.Kafka
             var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableBackgroundPoll).Value;
             if (enableBackgroundPollObj != null)
             {
-                this.manualPoll = !bool.Parse(enableBackgroundPollObj.ToString());
+                this.manualPoll = !bool.Parse(enableBackgroundPollObj);
             }
 
             var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableDeliveryReports).Value;
             if (enableDeliveryReportsObj != null)
             {
-                this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
+                this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj);
             }
 
             var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.DeliveryReportFields).Value;
             if (deliveryReportEnabledFieldsObj != null)
             {
-                var fields = deliveryReportEnabledFieldsObj.ToString().Replace(" ", "");
+                var fields = deliveryReportEnabledFieldsObj.Replace(" ", "");
                 if (fields != "all")
                 {
                     this.enableDeliveryReportKey = false;
@@ -571,7 +571,7 @@ namespace Confluent.Kafka
 
             modifiedConfig.ToList().ForEach((kvp) => {
                 if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
-                configHandle.Set(kvp.Key, kvp.Value.ToString());
+                configHandle.Set(kvp.Key, kvp.Value);
             });
 
 

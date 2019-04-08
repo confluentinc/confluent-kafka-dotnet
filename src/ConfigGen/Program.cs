@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -293,7 +293,7 @@ namespace Confluent.Kafka
         static string ConfigNameToDotnetName(string configName)
             => Regex.Replace(
                 string.Concat(
-                    configName.Split('.').Select(p => p[0].ToString().ToUpper() + p.Substring(1))),
+                    configName.Split('.').Select(p => char.ToUpper(p[0]) + p.Substring(1))),
                 "_[a-z]",
                 m => "_" + m.Value.Substring(1).ToUpper());
 
@@ -313,7 +313,7 @@ namespace Confluent.Kafka
                 return substitute;
             }
 
-            var result = enumName[0].ToString().ToUpper() + enumName.Substring(1);
+            var result = char.ToUpper(enumName[0]) + enumName.Substring(1);
             if (result.Contains('_'))
             {
                 Console.WriteLine($"warning: enum value contains underscore (is not consistent with .net naming standards): {enumName}");

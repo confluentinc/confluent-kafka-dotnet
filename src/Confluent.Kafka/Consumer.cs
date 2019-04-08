@@ -551,7 +551,7 @@ namespace Confluent.Kafka
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)
             {
-                var fields = enabledFieldsObj.ToString().Replace(" ", "");
+                var fields = enabledFieldsObj.Replace(" ", "");
                 if (fields != "all")
                 {
                     this.enableHeaderMarshaling = false;
@@ -580,7 +580,7 @@ namespace Confluent.Kafka
                 .ToList()
                 .ForEach((kvp) => {
                     if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
-                    configHandle.Set(kvp.Key, kvp.Value.ToString());
+                    configHandle.Set(kvp.Key, kvp.Value);
                 });
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
