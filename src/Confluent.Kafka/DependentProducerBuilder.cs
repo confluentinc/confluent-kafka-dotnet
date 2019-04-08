@@ -34,12 +34,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
-        public ISerializer<TKey> KeySerializer { get; set; }
+        public Serializer<TKey> KeySerializer { get; set; }
 
         /// <summary>
         ///     The configured value serializer.
         /// </summary>
-        public ISerializer<TValue> ValueSerializer { get; set; }
+        public Serializer<TValue> ValueSerializer { get; set; }
 
         /// <summary>
         ///     The configured async key serializer.
@@ -65,7 +65,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize keys.
         /// </summary>
-        public DependentProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
+        public DependentProducerBuilder<TKey, TValue> SetKeySerializer(Serializer<TKey> serializer)
         {
             this.KeySerializer = serializer;
             return this;
@@ -74,7 +74,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize values.
         /// </summary>
-        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(Serializer<TValue> serializer)
         {
             this.ValueSerializer = serializer;
             return this;

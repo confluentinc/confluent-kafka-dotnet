@@ -29,31 +29,6 @@ using System.Threading.Tasks;
 /// </summary>
 namespace Confluent.Kafka.Examples.Protobuf
 {
-    /// <summary>
-    ///     protobuf serializer
-    /// </summary>
-    public class ProtobufSerializer<T> : ISerializer<T> where T : IMessage<T>, new()
-    {
-        public byte[] Serialize(T data, SerializationContext context)
-            => data.ToByteArray();
-    }
-
-    /// <summary>
-    ///     protobuf deserializer
-    /// </summary>
-    public class ProtobufDeserializer<T> : IDeserializer<T> where T : IMessage<T>, new()
-    {
-        private MessageParser<T> parser;
-
-        public ProtobufDeserializer()
-        {
-            parser = new MessageParser<T>(() => new T());
-        }
-
-        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
-            => parser.ParseFrom(data.ToArray());
-    }
-
     class Program
     {
         static async Task Main(string[] args)
@@ -65,12 +40,14 @@ namespace Confluent.Kafka.Examples.Protobuf
                 AutoOffsetReset = AutoOffsetReset.Latest
             };
 
+            var messageParser = new MessageParser<User>(() => new User());
+
             var consumeTask = Task.Run(() =>
             {
                 // consume a single message then exit.
                 using (var consumer =
                     new ConsumerBuilder<int, User>(consumerConfig)
-                        .SetValueDeserializer(new ProtobufDeserializer<User>())
+                        .SetValueDeserializer((data, isNull) => messageParser.ParseFrom(data.ToArray()))
                         .Build())
                 {
                     consumer.Subscribe("protobuf-test-topic");
@@ -86,7 +63,7 @@ namespace Confluent.Kafka.Examples.Protobuf
 
             using (var producer =
                 new ProducerBuilder<int, User>(producerConfig)
-                    .SetValueSerializer(new ProtobufSerializer<User>())
+                    .SetValueSerializer(data => data.ToByteArray())
                     .Build())
             {
                 await producer.ProduceAsync("protobuf-test-topic", new Message<int, User> { Key = 0, Value = new User { FavoriteColor = "green" } });

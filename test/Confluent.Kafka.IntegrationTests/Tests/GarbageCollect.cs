@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize("test string", SerializationContext.Empty) }).Wait();
+                producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8("test string") }).Wait();
             }
 
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
