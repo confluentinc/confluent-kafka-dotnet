@@ -25,5 +25,5 @@ namespace Confluent.Kafka
     /// <returns>
     ///     The serialized value.
     /// </returns>
-    public delegate byte[] SimpleSerializer<T>(T data);
+    public delegate byte[] Serializer<T>(T data);
 }

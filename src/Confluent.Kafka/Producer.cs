@@ -39,20 +39,20 @@ namespace Confluent.Kafka
             public Action<string> statisticsHandler;
         }
 
-        private SimpleSerializer<TKey> keySerializer;
-        private SimpleSerializer<TValue> valueSerializer;
+        private Serializer<TKey> keySerializer;
+        private Serializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
         private IAsyncSerializer<TValue> asyncValueSerializer;
 
         private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
-            { typeof(Null), SimpleSerializers.Null },
-            { typeof(int), SimpleSerializers.Int32 },
-            { typeof(long), SimpleSerializers.Int64 },
-            { typeof(string), SimpleSerializers.Utf8 },
-            { typeof(float), SimpleSerializers.Single },
-            { typeof(double), SimpleSerializers.Double },
-            { typeof(byte[]), SimpleSerializers.ByteArray }
+            { typeof(Null), Serializers.Null },
+            { typeof(int), Serializers.Int32 },
+            { typeof(long), Serializers.Int64 },
+            { typeof(string), Serializers.Utf8 },
+            { typeof(float), Serializers.Single },
+            { typeof(double), Serializers.Double },
+            { typeof(byte[]), Serializers.ByteArray }
         };
 
         private int cancellationDelayMaxMs;
@@ -425,8 +425,8 @@ namespace Confluent.Kafka
         }
 
         private void InitializeSerializers(
-            SimpleSerializer<TKey> keySerializer,
-            SimpleSerializer<TValue> valueSerializer,
+            Serializer<TKey> keySerializer,
+            Serializer<TValue> valueSerializer,
             IAsyncSerializer<TKey> asyncKeySerializer,
             IAsyncSerializer<TValue> asyncValueSerializer)
         {
@@ -438,7 +438,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (SimpleSerializer<TKey>)serializer;
+                this.keySerializer = (Serializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -461,7 +461,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.valueSerializer = (SimpleSerializer<TValue>)serializer;
+                this.valueSerializer = (Serializer<TValue>)serializer;
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {

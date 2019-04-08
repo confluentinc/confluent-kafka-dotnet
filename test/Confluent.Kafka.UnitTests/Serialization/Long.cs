@@ -26,13 +26,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [MemberData(nameof(TestData))]
         public void CanReconstructLong(long value)
         {
-            Assert.Equal(value, Deserializers.Int64(SimpleSerializers.Int64(value), false));
+            Assert.Equal(value, Deserializers.Int64(Serializers.Int64(value), false));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = SimpleSerializers.Int64(23L);
+            var data = Serializers.Int64(23L);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }

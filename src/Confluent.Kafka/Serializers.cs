@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Serializers for use with <see cref="Producer{TKey,TValue}" />.
     /// </summary>
-    public static class SimpleSerializers
+    public static class Serializers
     {
         /// <summary>
         ///     String (UTF8) serializer.
         /// </summary>
-        public static SimpleSerializer<string> Utf8 = data =>
+        public static Serializer<string> Utf8 = data =>
         {
             if (data == null)
             {
@@ -42,13 +42,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Null serializer.
         /// </summary>
-        public static SimpleSerializer<Null> Null = data => null;
+        public static Serializer<Null> Null = data => null;
 
 
         /// <summary>
         ///     System.Int64 (big endian, network byte order) serializer.
         /// </summary>
-        public static SimpleSerializer<long> Int64 = data =>
+        public static Serializer<long> Int64 = data =>
         {
             var result = new byte[8];
             result[0] = (byte)(data >> 56);
@@ -66,7 +66,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Int32 (big endian, network byte order) serializer.
         /// </summary>
-        public static SimpleSerializer<int> Int32 = data =>
+        public static Serializer<int> Int32 = data =>
         {
             var result = new byte[4]; // int is always 32 bits on .NET.
             // network byte order -> big endian -> most significant byte in the smallest address.
@@ -84,7 +84,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Single (big endian, network byte order) serializer
         /// </summary>
-        public static SimpleSerializer<float> Single = data =>
+        public static Serializer<float> Single = data =>
         {
             if (BitConverter.IsLittleEndian)
             {
@@ -109,7 +109,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     System.Double (big endian, network byte order) serializer
         /// </summary>
-        public static SimpleSerializer<double> Double = data =>
+        public static Serializer<double> Double = data =>
         {
             if (BitConverter.IsLittleEndian)
             {
@@ -141,6 +141,6 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Byte order is original order.
         /// </remarks>
-        public static SimpleSerializer<byte[]> ByteArray = data => data;        
+        public static Serializer<byte[]> ByteArray = data => data;        
     }
 }

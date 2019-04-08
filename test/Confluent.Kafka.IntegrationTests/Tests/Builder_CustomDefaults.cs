@@ -37,13 +37,13 @@ namespace Confluent.Kafka.IntegrationTests
 
             public override IProducer<K, V> Build()
             {
-                SimpleSerializer<string> utf32Serializer = (string data) => Encoding.UTF32.GetBytes(data);
+                Serializer<string> utf32Serializer = (string data) => Encoding.UTF32.GetBytes(data);
 
                 if (typeof(K) == typeof(string))
                 {
                     if (KeySerializer == null && AsyncKeySerializer == null)
                     {
-                        this.KeySerializer = (SimpleSerializer<K>)(object)utf32Serializer;
+                        this.KeySerializer = (Serializer<K>)(object)utf32Serializer;
                     }
                 }
 
@@ -51,7 +51,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     if (ValueSerializer == null && AsyncValueSerializer == null)
                     {
-                        this.ValueSerializer = (SimpleSerializer<V>)(object)utf32Serializer;
+                        this.ValueSerializer = (Serializer<V>)(object)utf32Serializer;
                     }
                 }
                 
