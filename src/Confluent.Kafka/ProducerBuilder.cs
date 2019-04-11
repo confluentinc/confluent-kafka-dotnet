@@ -33,17 +33,17 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        internal protected Action<Producer<TKey, TValue>, Error> ErrorHandler { get; set; }
+        internal protected Action<IProducer<TKey, TValue>, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        internal protected Action<Producer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+        internal protected Action<IProducer<TKey, TValue>, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        internal protected Action<Producer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        internal protected Action<IProducer<TKey, TValue>, string> StatisticsHandler { get; set; }
         
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Confluent.Kafka
         ///     Executes on the poll thread (by default, a background thread managed by
         ///     the producer).
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<Producer<TKey, TValue>, string> statisticsHandler)
+        public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<IProducer<TKey, TValue>, string> statisticsHandler)
         {
             if (this.StatisticsHandler != null)
             {
@@ -128,7 +128,7 @@ namespace Confluent.Kafka
         ///     Executes on the poll thread (by default, a background thread managed by
         ///     the producer).
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<Producer<TKey, TValue>, Error> errorHandler)
+        public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<IProducer<TKey, TValue>, Error> errorHandler)
         {
             if (this.ErrorHandler != null)
             {
@@ -154,7 +154,7 @@ namespace Confluent.Kafka
         ///     Confluent.Kafka APIs from within a log handler or perform any
         ///     prolonged operations.
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetLogHandler(Action<Producer<TKey, TValue>, LogMessage> logHandler)
+        public ProducerBuilder<TKey, TValue> SetLogHandler(Action<IProducer<TKey, TValue>, LogMessage> logHandler)
         {
             if (this.LogHandler != null)
             {
