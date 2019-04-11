@@ -39,17 +39,17 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        internal protected Action<Consumer<TKey, TValue>, Error> ErrorHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        internal protected Action<Consumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        internal protected Action<Consumer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     The configured key deserializer.
@@ -141,7 +141,7 @@ namespace Confluent.Kafka
         ///     Executes as a side-effect of the Consume method (on the same thread).
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetStatisticsHandler(
-            Action<Consumer<TKey, TValue>, string> statisticsHandler)
+            Action<IConsumer<TKey, TValue>, string> statisticsHandler)
         {
             if (this.StatisticsHandler != null)
             {
@@ -161,7 +161,7 @@ namespace Confluent.Kafka
         ///     Executes as a side-effect of the Consume method (on the same thread).
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetErrorHandler(
-            Action<Consumer<TKey, TValue>, Error> errorHandler)
+            Action<IConsumer<TKey, TValue>, Error> errorHandler)
         {
             if (this.ErrorHandler != null)
             {
@@ -188,7 +188,7 @@ namespace Confluent.Kafka
         ///     prolonged operations.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetLogHandler(
-            Action<Consumer<TKey, TValue>, LogMessage> logHandler)
+            Action<IConsumer<TKey, TValue>, LogMessage> logHandler)
         {
             if (this.LogHandler != null)
             {
