@@ -53,8 +53,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, string>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<string>(schemaRegistry))
                     .Build())
             {
                 producer
@@ -67,8 +67,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<int, string>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<int>(schemaRegistry))
-                    .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetKeySerializer(new AsyncAvroSerializer<int>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<string>(schemaRegistry))
                     .Build())
             {
                 Assert.Throws<SchemaRegistryException>(() =>
@@ -91,8 +91,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, int>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
+                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<int>(schemaRegistry))
                     .Build())
             {                
                 Assert.Throws<SchemaRegistryException>(() =>

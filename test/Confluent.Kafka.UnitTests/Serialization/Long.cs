@@ -26,13 +26,13 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [MemberData(nameof(TestData))]
         public void CanReconstructLong(long value)
         {
-            Assert.Equal(value, Deserializers.Int64(Serializers.Int64(value), false));
+            Assert.Equal(value, Deserializers.Int64.Deserialize(Serializers.Int64.Serialize(value, SerializationContext.Empty), false, SerializationContext.Empty));
         }
 
         [Fact]
         public void IsBigEndian()
         {
-            var data = Serializers.Int64(23L);
+            var data = Serializers.Int64.Serialize(23L, SerializationContext.Empty);
             Assert.Equal(23, data[7]);
             Assert.Equal(0, data[0]);
         }
@@ -40,14 +40,14 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNull()
         {
-            Assert.ThrowsAny<ArgumentNullException>(() => Deserializers.Int64(null, true));
+            Assert.ThrowsAny<ArgumentNullException>(() => Deserializers.Int64.Deserialize(null, true, SerializationContext.Empty));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Int64(new byte[7], false));
-            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Int64(new byte[9], false));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Int64.Deserialize(new byte[7], false, SerializationContext.Empty));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Int64.Deserialize(new byte[9], false, SerializationContext.Empty));
         }
 
         public static IEnumerable<object[]> TestData()

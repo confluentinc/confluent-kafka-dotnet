@@ -91,7 +91,7 @@ namespace Confluent.SchemaRegistry.Serdes
             else
             {
                 throw new InvalidOperationException(
-                    $"{nameof(AvroDeserializer<T>)} " +
+                    $"{nameof(AsyncAvroDeserializer<T>)} " +
                     "only accepts type parameters of int, bool, double, string, float, " +
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
                 );
@@ -117,7 +117,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                     DatumReader<T> datumReader;
-                    await deserializeMutex.WaitAsync();
+                    await deserializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                     try
                     {
                         datumReaderBySchemaId.TryGetValue(writerId, out datumReader);

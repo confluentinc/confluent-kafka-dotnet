@@ -60,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var p =
                 new ProducerBuilder<Null, GenericRecord>(config)
                     .SetKeySerializer(Serializers.Null)
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
             {
                 var record = new GenericRecord(s);
@@ -75,7 +75,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var p =
                 new ProducerBuilder<Null, User>(config)
                     .SetKeySerializer(Serializers.Null)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry))
                     .Build())
             {
                 var user = new User
@@ -107,7 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer =
                 new ConsumerBuilder<Null, GenericRecord>(cconfig)
                     .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry))
+                    .SetValueDeserializer(new AsyncAvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 // consume generic record produced as a generic record.
@@ -143,7 +143,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer =
                 new ConsumerBuilder<Null, User>(cconfig)
                     .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetValueDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
