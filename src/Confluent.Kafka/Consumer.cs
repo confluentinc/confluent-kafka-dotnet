@@ -45,8 +45,8 @@ namespace Confluent.Kafka
             internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
         }
 
-        private Deserializer<TKey> keyDeserializer;
-        private Deserializer<TValue> valueDeserializer;
+        private IDeserializer<TKey> keyDeserializer;
+        private IDeserializer<TValue> valueDeserializer;
         private IAsyncDeserializer<TKey> asyncKeyDeserializer;
         private IAsyncDeserializer<TValue> asyncValueDeserializer;
 
@@ -617,7 +617,7 @@ namespace Confluent.Kafka
                     throw new InvalidOperationException(
                         $"Key deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keyDeserializer = (Deserializer<TKey>)deserializer;
+                this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
             else if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer != null)
             {
@@ -641,7 +641,7 @@ namespace Confluent.Kafka
                     throw new InvalidOperationException(
                         $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
                 }
-                this.valueDeserializer = (Deserializer<TValue>)deserializer;
+                this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
             else if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer != null)
             {
@@ -661,8 +661,8 @@ namespace Confluent.Kafka
 
         private ConsumeResult<K, V> ConsumeImpl<K,V>(
             int millisecondsTimeout,
-            Deserializer<K> keyDeserializer,
-            Deserializer<V> valueDeserializer)
+            IDeserializer<K> keyDeserializer,
+            IDeserializer<V> valueDeserializer)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -750,11 +750,12 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        key = keyDeserializer(
+                        key = keyDeserializer.Deserialize(
                             msg.key == IntPtr.Zero
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
-                            msg.key == IntPtr.Zero);
+                            msg.key == IntPtr.Zero,
+                            new SerializationContext(MessageComponentType.Key, topic));
                     }
                 }
                 catch (Exception ex)
@@ -781,11 +782,12 @@ namespace Confluent.Kafka
                 {
                     unsafe
                     {
-                        val = valueDeserializer(
+                        val = valueDeserializer.Deserialize(
                             msg.val == IntPtr.Zero
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
-                            msg.val == IntPtr.Zero);
+                            msg.val == IntPtr.Zero,
+                            new SerializationContext(MessageComponentType.Value, topic));
                     }
                 }
                 catch (Exception ex)
@@ -846,7 +848,7 @@ namespace Confluent.Kafka
             try
             {
                 key = keyDeserializer != null
-                    ? keyDeserializer(rawResult.Key, rawResult.Key == null)
+                    ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
                     : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
@@ -861,7 +863,7 @@ namespace Confluent.Kafka
             try
             {
                 val = valueDeserializer != null
-                    ? valueDeserializer(rawResult.Value, rawResult.Value == null)
+                    ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
                     : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
                         .ConfigureAwait(continueOnCapturedContext: false)
                         .GetAwaiter()
