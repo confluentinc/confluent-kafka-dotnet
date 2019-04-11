@@ -20,11 +20,43 @@ using System.Text;
 
 namespace Confluent.Kafka
 {
+    internal class WrappedAsyncSerializer<T> : ISerializer<T>
+    {
+        private IAsyncSerializer<T> asyncSerializer;
+
+        public WrappedAsyncSerializer(IAsyncSerializer<T> asyncSerializer)
+        {
+            this.asyncSerializer = asyncSerializer;
+        }
+
+        public byte[] Serialize(T data, SerializationContext context)
+        {
+            return asyncSerializer.SerializeAsync(data, context)
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult();
+        }
+    }
+
     /// <summary>
     ///     Serializers for use with <see cref="Producer{TKey,TValue}" />.
     /// </summary>
     public static class Serializers
     {
+        /// <summary>
+        ///     Convert an async serializer into a sync
+        ///     serializer.
+        /// </summary>
+        /// <remarks>
+        ///     To avoid deadlocks in single threaded
+        ///     synchronization contexts you need to ensure
+        ///     ConfigureAwait(false) is applied to every
+        ///     await in the transitive closure of all methods
+        ///     called by your deserializer.
+        /// </remarks>
+        public static ISerializer<T> SyncOverAsync<T>(IAsyncSerializer<T> asyncSerializer)
+            => new WrappedAsyncSerializer<T>(asyncSerializer);
+
         /// <summary>
         ///     String (UTF8) serializer.
         /// </summary>

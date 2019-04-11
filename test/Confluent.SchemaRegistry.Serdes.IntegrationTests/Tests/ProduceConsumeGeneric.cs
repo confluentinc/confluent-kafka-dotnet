@@ -107,7 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer =
                 new ConsumerBuilder<Null, GenericRecord>(cconfig)
                     .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry))
+                    .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<GenericRecord>(schemaRegistry)))
                     .Build())
             {
                 // consume generic record produced as a generic record.
@@ -143,7 +143,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer =
                 new ConsumerBuilder<Null, User>(cconfig)
                     .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<User>(schemaRegistry)))
                     .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });

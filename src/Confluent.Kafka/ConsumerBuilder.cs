@@ -225,32 +225,6 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Set the async deserializer to use to deserialize keys.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IAsyncDeserializer<TKey> deserializer)
-        {
-            if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
-            {
-                throw new InvalidOperationException("Key deserializer may not be specified more than once.");
-            }
-            this.AsyncKeyDeserializer = deserializer;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the async deserializer to use to deserialize values.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IAsyncDeserializer<TValue> deserializer)
-        {
-            if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
-            {
-                throw new InvalidOperationException("Value deserializer may not be specified more than once.");
-            }
-            this.AsyncValueDeserializer = deserializer;
-            return this;
-        }
-
-        /// <summary>
         ///     This handler is called when a new consumer group partition assignment has been received
         ///     by this consumer.
         ///     

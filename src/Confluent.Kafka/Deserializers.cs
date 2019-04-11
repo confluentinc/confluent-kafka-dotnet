@@ -20,11 +20,43 @@ using System.Text;
 
 namespace Confluent.Kafka
 {
+    internal class WrappedAsyncDeserializer<T> : IDeserializer<T>
+    {
+        private IAsyncDeserializer<T> asyncDeserializer;
+
+        public WrappedAsyncDeserializer(IAsyncDeserializer<T> asyncDeserializer)
+        {
+            this.asyncDeserializer = asyncDeserializer;
+        }
+
+        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
+        {
+            return asyncDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(data.ToArray()), isNull, context)
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult();
+        }
+    }
+
     /// <summary>
     ///     Deserializers for use with <see cref="Consumer{TKey,TValue}" />.
     /// </summary>
     public static class Deserializers
     {
+        /// <summary>
+        ///     Convert an async deserializer into a sync
+        ///     deserializer.
+        /// </summary>
+        /// <remarks>
+        ///     To avoid deadlocks in single threaded
+        ///     synchronization contexts you need to ensure
+        ///     ConfigureAwait(false) is applied to every
+        ///     await in the transitive closure of all methods
+        ///     called by your deserializer.
+        /// </remarks>
+        public static IDeserializer<T> SyncOverAsync<T>(IAsyncDeserializer<T> asyncDeserializer)
+            => new WrappedAsyncDeserializer<T>(asyncDeserializer);
+
         /// <summary>
         ///     String (UTF8 encoded) deserializer.
         /// </summary>

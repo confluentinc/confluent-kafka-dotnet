@@ -110,7 +110,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
                             .SetKeyDeserializer(Deserializers.Utf8)
-                            .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<string>(schemaRegistry)))
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
@@ -121,7 +121,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
-                            .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .SetKeyDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<string>(schemaRegistry)))
                             .SetValueDeserializer(Deserializers.Utf8).Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
@@ -133,7 +133,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
                             .SetKeyDeserializer(Deserializers.Utf8)
-                            .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<string>(schemaRegistry)))
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
@@ -152,7 +152,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
-                            .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                            .SetKeyDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<string>(schemaRegistry)))
                             .SetValueDeserializer(Deserializers.Utf8)
                             .Build())
                     {

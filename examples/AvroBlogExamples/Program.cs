@@ -108,7 +108,7 @@ namespace AvroBlogExample
             using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var consumer =
                 new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
-                    .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry))
+                    .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry)))
                     .Build())
             {
                 consumer.Subscribe("log-messages");

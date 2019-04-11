@@ -901,7 +901,7 @@ namespace Confluent.Kafka
                 cancellationToken.ThrowIfCancellationRequested();
                 ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
                     ? ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer) // fast path for simple case.
-                    : ConsumeViaBytes(cancellationDelayMaxMs);
+                    : throw new InvalidOperationException("Key or value serializer not specified.");
 
                 if (result == null) { continue; }
                 return result;
@@ -915,6 +915,6 @@ namespace Confluent.Kafka
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => (keyDeserializer != null && valueDeserializer != null)
                 ? ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
-                : ConsumeViaBytes(timeout.TotalMillisecondsAsInt());
+                : throw new InvalidOperationException("Key or value deserializer not specified.");
     }
 }
