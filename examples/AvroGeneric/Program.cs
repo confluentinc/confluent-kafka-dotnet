@@ -61,8 +61,8 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
                 using (var consumer =
                     new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry))
+                        .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AsyncAvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {

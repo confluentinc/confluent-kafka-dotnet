@@ -109,5 +109,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        public IDeserializer<T> AsSyncOverAsync()
+            => new SyncOverAsyncDeserializer<T>(this);
     }
 }

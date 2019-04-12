@@ -140,5 +140,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw e.InnerException;
             }
         }
+
+        public ISerializer<T> AsSyncOverAsync()
+            => new SyncOverAsyncSerializer<T>(this);
     }
 }

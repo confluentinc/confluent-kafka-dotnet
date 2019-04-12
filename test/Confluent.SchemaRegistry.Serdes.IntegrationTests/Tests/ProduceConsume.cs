@@ -92,8 +92,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
                 new ConsumerBuilder<string, User>(consumerConfig)
-                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {
