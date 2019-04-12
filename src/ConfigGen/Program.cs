@@ -254,7 +254,7 @@ namespace ConfigGen
         static string createFileHeader(string branch)
         {
             return
-@"// *** Auto-generated from librdkafka " + branch + @" *** - do not modify manually.
+@"// *** Auto-generated from librdkafka branch " + branch + @" *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -418,26 +418,40 @@ namespace Confluent.Kafka
             return codeText;
         }
 
+        static string createClassConstructors(string name)
+        {
+            var codeText = "\n";
+            codeText += $@"        /// <summary>
+        ///     Initialize a new empty <see cref=""{name}"" /> instance.
+        /// </summary>
+        public {name}() {{ }}
+
+        /// <summary>
+        ///     Initialize a new <see cref=""{name}"" /> instance based on
+        ///     an existing <see cref=""ClientConfig"" /> instance.
+        /// </summary>
+        public {name}(ClientConfig config) : base(config) {{ }}
+
+        /// <summary>
+        ///     Initialize a new <see cref=""{name}"" /> instance based on
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public {name}(IEnumerable<KeyValuePair<string, string>> config) : base(config) {{ }}
+
+        /// <summary>
+        ///     Initialize a new <see cref=""{name}"" /> wrapping
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public {name}(IDictionary<string, string> config) : base(config) {{ }}
+";
+            return codeText;
+        }
+
         static string createConsumerSpecific()
         {
             return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ConsumerConfig"" /> instance.
-        /// </summary>
-        public ConsumerConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ConsumerConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ConsumerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ConsumerConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
+                createClassConstructors("ConsumerConfig") +
+@"
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey,TValue}"" />
@@ -458,23 +472,8 @@ namespace Confluent.Kafka
         static string createProducerSpecific()
         {
             return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ProducerConfig"" /> instance.
-        /// </summary>
-        public ProducerConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ProducerConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ProducerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ProducerConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
+                createClassConstructors("ProducerConfig") +
+@"
         /// <summary>
         ///     Specifies whether or not the producer should start a background poll 
         ///     thread to receive delivery reports and event notifications. Generally,
@@ -512,24 +511,7 @@ namespace Confluent.Kafka
 
         static string createAdminClientSpecific()
         {
-            return 
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""AdminClientConfig"" /> instance.
-        /// </summary>
-        public AdminClientConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""AdminClientConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public AdminClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""AdminClientConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-";
+            return createClassConstructors("AdminClientConfig");
         }
 
         static List<PropertySpecification> extractAll(string configDoc)
@@ -666,6 +648,7 @@ namespace Confluent.Kafka
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += MappingConfiguration.AcksEnumString;
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
+            codeText += createClassConstructors("ClientConfig");
             codeText += MappingConfiguration.SaslMechanismGetSetString;
             codeText += MappingConfiguration.AcksGetSetString;
             codeText += createProperties(props.Where(p => p.CPorA == "*"));

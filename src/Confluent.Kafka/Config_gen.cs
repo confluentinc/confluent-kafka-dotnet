@@ -224,6 +224,29 @@ namespace Confluent.Kafka
     {
 
         /// <summary>
+        ///     Initialize a new empty <see cref="ClientConfig" /> instance.
+        /// </summary>
+        public ClientConfig() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance based on
+        ///     an existing <see cref="ClientConfig" /> instance.
+        /// </summary>
+        public ClientConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance based on
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> wrapping
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public ClientConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
         /// </summary>
         public SaslMechanism? SaslMechanism
@@ -695,22 +718,29 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClientConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="AdminClientConfig" /> instance.
         /// </summary>
-        public AdminClientConfig() {}
+        public AdminClientConfig() { }
 
         /// <summary>
         ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
         ///     an existing <see cref="ClientConfig" /> instance.
         /// </summary>
-        public AdminClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public AdminClientConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
         ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
         ///     an existing key/value pair collection.
         /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="AdminClientConfig" /> wrapping
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
     }
 
 
@@ -719,22 +749,29 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="ProducerConfig" /> instance.
         /// </summary>
-        public ProducerConfig() {}
+        public ProducerConfig() { }
 
         /// <summary>
         ///     Initialize a new <see cref="ProducerConfig" /> instance based on
         ///     an existing <see cref="ClientConfig" /> instance.
         /// </summary>
-        public ProducerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ProducerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
         ///     Initialize a new <see cref="ProducerConfig" /> instance based on
         ///     an existing key/value pair collection.
         /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ProducerConfig" /> wrapping
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public ProducerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
         ///     Specifies whether or not the producer should start a background poll 
@@ -888,22 +925,29 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="ConsumerConfig" /> instance.
         /// </summary>
-        public ConsumerConfig() {}
+        public ConsumerConfig() { }
 
         /// <summary>
         ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
         ///     an existing <see cref="ClientConfig" /> instance.
         /// </summary>
-        public ConsumerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ConsumerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
         ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
         ///     an existing key/value pair collection.
         /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ConsumerConfig" /> wrapping
+        ///     an existing key/value pair collection.
+        /// </summary>
+        public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
