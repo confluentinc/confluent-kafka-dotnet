@@ -69,8 +69,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry))
                     .Build())
             {
                 for (int i = 0; i < 100; ++i)
@@ -92,8 +92,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
                 new ConsumerBuilder<string, User>(consumerConfig)
-                    .SetKeyDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<string>(schemaRegistry)))
-                    .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<User>(schemaRegistry)))
+                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {

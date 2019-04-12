@@ -44,20 +44,6 @@ namespace Confluent.Kafka
     public static class Deserializers
     {
         /// <summary>
-        ///     Convert an async deserializer into a sync
-        ///     deserializer.
-        /// </summary>
-        /// <remarks>
-        ///     To avoid deadlocks in single threaded
-        ///     synchronization contexts you need to ensure
-        ///     ConfigureAwait(false) is applied to every
-        ///     await in the transitive closure of all methods
-        ///     called by your deserializer.
-        /// </remarks>
-        public static IDeserializer<T> SyncOverAsync<T>(IAsyncDeserializer<T> asyncDeserializer)
-            => new WrappedAsyncDeserializer<T>(asyncDeserializer);
-
-        /// <summary>
         ///     String (UTF8 encoded) deserializer.
         /// </summary>
         public static IDeserializer<string> Utf8 = new Utf8Deserializer();

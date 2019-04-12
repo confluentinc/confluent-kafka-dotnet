@@ -80,8 +80,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetKeyDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<string>(schemaRegistry)))
-                        .SetValueDeserializer(Deserializers.SyncOverAsync(new AvroDeserializer<User>(schemaRegistry)))
+                        .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry))
+                        .SetValueDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -113,8 +113,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
