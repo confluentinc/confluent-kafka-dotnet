@@ -26,8 +26,8 @@ using Confluent.SchemaRegistry;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     Avro serializer. Use this serializer with GenericRecord, types 
-    ///     generated using the avrogen.exe tool or one of the following 
+    ///     (async) Avro serializer. Use this serializer with GenericRecord,
+    ///     types generated using the avrogen.exe tool or one of the following 
     ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Initiliaze a new instance of the AvroSerializer class.
+        ///     Initiliaze a new instance of the AsyncAvroSerializer class.
         ///     When passed as a parameter to the Confluent.Kafka.Producer constructor,
         ///     the following configuration properties will be extracted from the producer's
         ///     configuration property collection:
