@@ -22,15 +22,54 @@ using Confluent.SchemaRegistry;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
+    /// <summary>
+    ///     Avro deserializer. Use this deserializer with GenericRecord, types 
+    ///     generated using the avrogen.exe tool or one of the following 
+    ///     primitive types: int, long, float, double, boolean, string, byte[].
+    /// </summary>
+    /// <remarks>
+    ///     Serialization format:
+    ///       byte 0:           Magic byte use to identify the protocol format.
+    ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
+    ///       following bytes:  The serialized data.
+    /// </remarks>
     public class AvroDeserializer<T> : IDeserializer<T>
     {
         AsyncAvroDeserializer<T> asyncDeserializer;
 
+        /// <summary>
+        ///     Initiliaze a new AvroDeserializer instance.
+        /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     An implementation of ISchemaRegistryClient used for
+        ///     communication with Confluent Schema Registry.
+        /// </param>
+        /// <param name="config">
+        ///     Deserializer configuration properties (refer to 
+        ///     <see cref="AvroDeserializerConfig" />).
+        /// </param>
         public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
             asyncDeserializer = new AsyncAvroDeserializer<T>(schemaRegistryClient, config);
         }
 
+        /// <summary>
+        ///     Deserialize an object of type <typeparamref name="T"/>
+        ///     from a byte array.
+        /// </summary>
+        /// <param name="data">
+        ///     The raw byte data to deserialize.
+        /// </param>
+        /// <param name="isNull">
+        ///     True if this is a null value.
+        /// </param>
+        /// <param name="context">
+        ///     Context relevant to the deserialize operation.
+        /// </param>
+        /// <returns>
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes
+        ///     with the deserialized value.
+        /// </returns>
         public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
             => asyncDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(data.ToArray()), isNull, context)
                 .ConfigureAwait(continueOnCapturedContext: false)

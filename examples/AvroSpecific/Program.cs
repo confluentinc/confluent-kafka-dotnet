@@ -80,8 +80,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry))
-                        .SetValueDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                        .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {

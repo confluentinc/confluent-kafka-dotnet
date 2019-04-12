@@ -2,6 +2,16 @@
 
 ## Changes
 
+- Reverted RC4 changes.
+- Renamed AvroSerializer to AsyncAvroSerializer and AvroDeserializer to AsyncAvroDeserializer
+- Added sync-over-async AvroSerializer and AvroDeserializer implementations.
+- Removed IAsyncDeserializer setter overloads from the ConsumerBuilder class.
+- BeginProduce throws an exception if used when async serializers are configured.
+
+## Fixes
+
+- Fixed possible deadlock in Producer.BeginProduce and Consumer.Consume methods that may occur in the event of threadpool exhaustion.
+
 
 # 1.0.0-RC4
 

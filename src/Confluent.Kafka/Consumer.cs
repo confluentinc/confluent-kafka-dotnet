@@ -829,66 +829,6 @@ namespace Confluent.Kafka
         }
 
 
-        private ConsumeResult<TKey, TValue> ConsumeViaBytes(int millisecondsTimeout)
-        {
-            // TODO: add method(s) to ConsumerBase to handle the async case more optimally.
-            var rawResult = ConsumeImpl(millisecondsTimeout, Deserializers.ByteArray, Deserializers.ByteArray);
-            if (rawResult == null) { return null; }
-            if (rawResult.Message == null)
-            {
-                return new ConsumeResult<TKey, TValue>
-                {
-                    TopicPartitionOffset = rawResult.TopicPartitionOffset,
-                    Message = null,
-                    IsPartitionEOF = rawResult.IsPartitionEOF // always true
-                };
-            }
-
-            TKey key;
-            try
-            {
-                key = keyDeserializer != null
-                    ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
-                    : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
-            }
-            catch (Exception ex)
-            {
-                throw new ConsumeException(rawResult, new Error(ErrorCode.Local_KeyDeserialization), ex);
-            }
-
-            TValue val;
-            try
-            {
-                val = valueDeserializer != null
-                    ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
-                    : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
-            }
-            catch (Exception ex)
-            {
-                throw new ConsumeException(rawResult, new Error(ErrorCode.Local_ValueDeserialization), ex);
-            }
-
-            return new ConsumeResult<TKey, TValue>
-            {
-                TopicPartitionOffset = rawResult.TopicPartitionOffset,
-                Message = rawResult.Message == null ? null : new Message<TKey, TValue>
-                {
-                    Key = key,
-                    Value = val,
-                    Headers = rawResult.Headers,
-                    Timestamp = rawResult.Timestamp
-                },
-                IsPartitionEOF = rawResult.IsPartitionEOF
-            };
-        }
-
-
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(CancellationToken)" />
         /// </summary>
@@ -901,7 +841,7 @@ namespace Confluent.Kafka
                 cancellationToken.ThrowIfCancellationRequested();
                 ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
                     ? ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer) // fast path for simple case.
-                    : throw new InvalidOperationException("Key or value serializer not specified.");
+                    : throw new InvalidOperationException("Consume may not be called when IAsyncDeserializer configured.");
 
                 if (result == null) { continue; }
                 return result;
@@ -915,6 +855,6 @@ namespace Confluent.Kafka
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => (keyDeserializer != null && valueDeserializer != null)
                 ? ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
-                : throw new InvalidOperationException("Key or value deserializer not specified.");
+                : throw new InvalidOperationException("Consume may not be called when IAsyncDeserializer configured.");
     }
 }

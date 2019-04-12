@@ -739,7 +739,7 @@ namespace Confluent.Kafka
             {
                 keyBytes = (keySerializer != null)
                     ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
-                    : throw new InvalidOperationException("IAsyncSerializer may not be used by BeginProduce method when serializing key.");
+                    : throw new InvalidOperationException("BeginProduce may not be called when IAsyncSerializer configured.");
             }
             catch (Exception ex)
             {
@@ -758,7 +758,7 @@ namespace Confluent.Kafka
             {
                 valBytes = (valueSerializer != null)
                     ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
-                    : throw new InvalidOperationException("IAsyncSerializer may not be used by BeginProduce method when serializing value.");
+                    : throw new InvalidOperationException("BeginProduce may not be called when IAsyncSerializer configured.");
             }
             catch (Exception ex)
             {
