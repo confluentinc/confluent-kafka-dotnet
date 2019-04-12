@@ -6,7 +6,7 @@ namespace Confluent.Kafka
     {
         private IAsyncDeserializer<T> asyncDeserializer { get; }
 
-        public SyncOverAsyncDeserializer(IAsyncDeserializer<T> asyncSerializer)
+        public SyncOverAsyncDeserializer(IAsyncDeserializer<T> asyncDeserializer)
         {
             this.asyncDeserializer = asyncDeserializer;
         }
