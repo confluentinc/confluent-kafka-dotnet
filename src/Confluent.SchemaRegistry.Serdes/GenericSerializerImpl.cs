@@ -74,7 +74,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 int schemaId;
                 global::Avro.RecordSchema writerSchema;
-                await serializeMutex.WaitAsync();
+                await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
                     // TODO: If any of these caches fills up, this is probably an

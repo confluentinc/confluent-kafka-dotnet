@@ -113,7 +113,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
-                await serializeMutex.WaitAsync();
+                await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
                     string subject = isKey
