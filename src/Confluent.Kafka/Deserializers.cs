@@ -20,24 +20,6 @@ using System.Text;
 
 namespace Confluent.Kafka
 {
-    internal class WrappedAsyncDeserializer<T> : IDeserializer<T>
-    {
-        private IAsyncDeserializer<T> asyncDeserializer;
-
-        public WrappedAsyncDeserializer(IAsyncDeserializer<T> asyncDeserializer)
-        {
-            this.asyncDeserializer = asyncDeserializer;
-        }
-
-        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
-        {
-            return asyncDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(data.ToArray()), isNull, context)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult();
-        }
-    }
-
     /// <summary>
     ///     Deserializers for use with <see cref="Consumer{TKey,TValue}" />.
     /// </summary>

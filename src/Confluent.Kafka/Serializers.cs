@@ -20,24 +20,6 @@ using System.Text;
 
 namespace Confluent.Kafka
 {
-    internal class WrappedAsyncSerializer<T> : ISerializer<T>
-    {
-        private IAsyncSerializer<T> asyncSerializer;
-
-        public WrappedAsyncSerializer(IAsyncSerializer<T> asyncSerializer)
-        {
-            this.asyncSerializer = asyncSerializer;
-        }
-
-        public byte[] Serialize(T data, SerializationContext context)
-        {
-            return asyncSerializer.SerializeAsync(data, context)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult();
-        }
-    }
-
     /// <summary>
     ///     Serializers for use with <see cref="Producer{TKey,TValue}" />.
     /// </summary>
