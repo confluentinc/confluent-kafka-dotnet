@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,25 +17,25 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test sync over async does not deadlock when number
-    ///     of threads blocked on is one less than the number
-    ///     of worker threads available.
+    ///     Test more concurrent ProduceAsync requests than
+    ///     there are thread pool worker threads.
     /// </summary>
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_BeginProduce_SyncOverAsync(string bootstrapServers)
+        public void Producer_ProduceAsync_HighConcurrency(string bootstrapServers)
         {
-            LogToFile("start Producer_BeginProduce_SyncOverAsync");
+            LogToFile("start Producer_ProduceAsync_HighConcurrency");
 
             ThreadPool.GetMaxThreads(out int originalWorkerThreads, out int originalCompletionPortThreads);
 
@@ -43,50 +43,29 @@ namespace Confluent.Kafka.IntegrationTests
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
 
-            var pConfig = new ProducerConfig
-            {
-                BootstrapServers = bootstrapServers
-            };
-            
+            var pConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new ProducerBuilder<Null, string>(pConfig)
                 .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync())
                 .Build())
+            using (var dProducer = new DependentProducerBuilder<Null, string>(producer.Handle)
+                .SetValueSerializer(new SimpleAsyncSerializer())
+                .Build())
             {
                 var tasks = new List<Task>();
 
-                // will deadlock if N >= workerThreads. Set to max number that 
-                // should not deadlock.
-                int N = workerThreads-1;
+                int N = workerThreads+2;
                 for (int i=0; i<N; ++i)
                 {
-                    Func<int, Action> actionCreator = (taskNumber) =>
-                    {
-                        return () =>
-                        {
-                            Console.WriteLine($"running task {taskNumber}");
-                            object waitObj = new object();
+                    tasks.Add(producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
+                }
 
-                            Action<DeliveryReport<Null, string>> handler = dr => 
-                            {
-                                Assert.True(dr.Error.Code == ErrorCode.NoError);
+                Task.WaitAll(tasks.ToArray());
 
-                                lock (waitObj)
-                                {
-                                    Monitor.Pulse(waitObj);
-                                }
-                            };
-
-                            producer.BeginProduce(tempTopic.Name, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
-
-                            lock (waitObj)
-                            {
-                                Monitor.Wait(waitObj);
-                            }
-                        };
-                    };
-
-                    tasks.Add(Task.Run(actionCreator(i)));
+                for (int i=0; i<N; ++i)
+                {
+                    tasks.Add(dProducer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "test" }));
                 }
 
                 Task.WaitAll(tasks.ToArray());
@@ -95,7 +74,7 @@ namespace Confluent.Kafka.IntegrationTests
             ThreadPool.SetMaxThreads(originalWorkerThreads, originalCompletionPortThreads);
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_BeginProduce_SyncOverAsync");
+            LogToFile("end   Producer_ProduceAsync_HighConcurrency");
         }
     }
 }
