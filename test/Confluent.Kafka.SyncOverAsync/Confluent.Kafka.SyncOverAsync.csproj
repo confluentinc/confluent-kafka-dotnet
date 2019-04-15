@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
-    <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj" />
   </ItemGroup>
 
 </Project>

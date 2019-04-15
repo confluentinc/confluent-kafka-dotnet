@@ -49,10 +49,10 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Throws<ProduceException<Null, string>>(
                     () => producer.BeginProduce(testTopic.Name, new Message<Null, string> { Value = "test" }, dr => { Assert.True(false); }));
 
-                Assert.Throws<ProduceException<Null, string>>(
+                Assert.Throws<ProduceException<string, Null>>(
                     () => dProducer.BeginProduce(testTopic.Name, new Message<string, Null> { Key = "test" }));
 
-                Assert.Throws<ProduceException<Null, string>>(
+                Assert.Throws<ProduceException<string, Null>>(
                     () => dProducer.BeginProduce(testTopic.Name, new Message<string, Null> { Key = "test" }, dr => { Assert.True(false); }));
             }
 

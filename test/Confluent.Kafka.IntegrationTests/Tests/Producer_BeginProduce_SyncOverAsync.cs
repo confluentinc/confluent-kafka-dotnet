@@ -64,7 +64,6 @@ namespace Confluent.Kafka.IntegrationTests
                     {
                         return () =>
                         {
-                            Console.WriteLine($"running task {taskNumber}");
                             object waitObj = new object();
 
                             Action<DeliveryReport<Null, string>> handler = dr => 

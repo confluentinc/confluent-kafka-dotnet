@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,68 +14,91 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.SchemaRegistry.Serdes;
-using Confluent.SchemaRegistry;
-using Avro;
-using Avro.Generic;
 using Xunit;
 
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 {
-    public static partial class Tests
+    /// <summary>
+    ///     Test sync over async does not deadlock when number
+    ///     of threads blocked on is one less than the number
+    ///     of worker threads available.
+    /// </summary>
+    public partial class Tests
     {
-        /// <summary>
-        ///     Test that use of SyncOverAsync wrappers doesn't deadlock due to
-        ///     thread pool exhaustion or other reasons.
-        /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
         public static void SyncOverAsync(string bootstrapServers, string schemaRegistryServers)
         {
+            ThreadPool.GetMaxThreads(out int originalWorkerThreads, out int originalCompletionPortThreads);
+
             ThreadPool.GetMinThreads(out int workerThreads, out int completionPortThreads);   
             ThreadPool.SetMaxThreads(workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads(out workerThreads, out completionPortThreads);
-            // Make sure this is something reasonably low. If these fail for some reason, may want to reconsider test.
-            Assert.True(workerThreads < 128);
-            Assert.True(completionPortThreads < 128);
-            File.AppendAllLines("c:\\tmp\\deadlock.txt", new [] { $"A {workerThreads} {completionPortThreads}\n" });
 
-            var pConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var srConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var pConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers
+            };
             
-            using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var schemaRegistry = new CachedSchemaRegistryClient(srConfig))
-            using (var producer = new ProducerBuilder<Null, User>(pConfig)
-                .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry).AsSyncOverAsync())
+            var schemaRegistryConfig = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = schemaRegistryServers
+            };
+
+            var topic = Guid.NewGuid().ToString();
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            using (var producer = new ProducerBuilder<Null, string>(pConfig)
+                .SetValueSerializer(new AsyncAvroSerializer<string>(schemaRegistry).AsSyncOverAsync())
                 .Build())
             {
-                Action<DeliveryReport<Null, User>> handler = dr =>
-                {
-                    Assert.True(dr.Error.Code == ErrorCode.NoError);
-                };
-
                 var tasks = new List<Task>();
-                for (int i=0; i<workerThreads-4; ++i)
+
+                // will deadlock if N >= workerThreads. Set to max number that 
+                // should not deadlock.
+                int N = workerThreads-1;
+                for (int i=0; i<N; ++i)
                 {
-                    tasks.Add(Task.Run(() => producer.BeginProduce(topic.Name, new Message<Null, User> { Value = new User { name = $"name-{i}", favorite_color = $"col-{i}",  favorite_number = i } }, handler)));
+                    Func<int, Action> actionCreator = (taskNumber) =>
+                    {
+                        return () =>
+                        {
+                            object waitObj = new object();
+
+                            Action<DeliveryReport<Null, string>> handler = dr => 
+                            {
+                                Assert.True(dr.Error.Code == ErrorCode.NoError);
+
+                                lock (waitObj)
+                                {
+                                    Monitor.Pulse(waitObj);
+                                }
+                            };
+
+                            producer.BeginProduce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+
+                            lock (waitObj)
+                            {
+                                Monitor.Wait(waitObj);
+                            }
+                        };
+                    };
+
+                    tasks.Add(Task.Run(actionCreator(i)));
                 }
-                ThreadPool.GetAvailableThreads(out workerThreads, out completionPortThreads);
-                // at this point N SR requests will be in flight where N > num workerThreads.
-                // Assert.Equal(0, workerThreads);
-                File.AppendAllLines("c:\\tmp\\deadlock.txt", new [] { $"B {workerThreads} {completionPortThreads}\n" });
-            
-                producer.Flush();
 
-                // the primary test here is that the integration test doesn't deadlock
+                Task.WaitAll(tasks.ToArray());
             }
-        }
 
+            ThreadPool.SetMaxThreads(originalWorkerThreads, originalCompletionPortThreads);
+
+            Assert.Equal(0, Library.HandleCount);
+        }
     }
 }

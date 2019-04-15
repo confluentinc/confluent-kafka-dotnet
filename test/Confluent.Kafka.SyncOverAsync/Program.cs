@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 
 
 // This program is included as an educational tool to allow you to
@@ -109,7 +107,7 @@ namespace Confluent.Kafka.SyncOverAsync
                     tasks.Add(Task.Run(actionCreator(i)));
                 }
 
-                Console.WriteLine($"waiting for {tasks.Count} produce tasks to complete");
+                Console.WriteLine($"waiting for {tasks.Count} produce tasks to complete. --> expecting deadlock <--");
                 Task.WaitAll(tasks.ToArray());
 
                 Console.WriteLine($"number outstanding produce requests on exit: {producer.Flush(TimeSpan.FromSeconds(10))}");
