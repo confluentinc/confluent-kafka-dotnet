@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryResult<Null, string> dr;
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            using (var adminClient = new AdminClient(producer.Handle))
+            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.

@@ -27,7 +27,7 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Consumer{TKey,TValue}" /> instances.
+    ///     A builder class for <see cref="IConsumer{TKey,TValue}" />.
     /// </summary>
     public class ConsumerBuilder<TKey, TValue>
     {
@@ -353,7 +353,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Build a new Consumer instance.
+        ///     Build a new IConsumer implementation instance.
         /// </summary>
         public virtual IConsumer<TKey, TValue> Build()
         {

@@ -29,7 +29,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer with serialization capability.
     /// </summary>
-    public class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
+    internal class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
     {
         internal class Config
         {

@@ -21,7 +21,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder for <see cref="AdminClient" /> instances.
+    ///     A builder for <see cref="IAdminClient" />.
     /// </summary>
     public class AdminClientBuilder
     {
@@ -33,17 +33,17 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        internal protected Action<AdminClient, Error> ErrorHandler { get; set; }
+        internal protected Action<IAdminClient, Error> ErrorHandler { get; set; }
         
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        internal protected Action<AdminClient, LogMessage> LogHandler { get; set; }
+        internal protected Action<IAdminClient, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        internal protected Action<AdminClient, string> StatisticsHandler { get; set; }
+        internal protected Action<IAdminClient, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     Initialize a new <see cref="AdminClientBuilder" /> instance.
@@ -73,7 +73,7 @@ namespace Confluent.Kafka
         ///     Executes on the poll thread (a background thread managed by
         ///     the admin client).
         /// </remarks>
-        public AdminClientBuilder SetStatisticsHandler(Action<AdminClient, string> statisticsHandler)
+        public AdminClientBuilder SetStatisticsHandler(Action<IAdminClient, string> statisticsHandler)
         {
             if (this.StatisticsHandler != null)
             {
@@ -93,7 +93,7 @@ namespace Confluent.Kafka
         ///     Executes on the poll thread (a background thread managed by the admin
         ///     client).
         /// </remarks>
-        public AdminClientBuilder SetErrorHandler(Action<AdminClient, Error> errorHandler)
+        public AdminClientBuilder SetErrorHandler(Action<IAdminClient, Error> errorHandler)
         {
             if (this.ErrorHandler != null)
             {
@@ -119,7 +119,7 @@ namespace Confluent.Kafka
         ///     Confluent.Kafka APIs from within a log handler or perform any
         ///     prolonged operations.
         /// </remarks>
-        public AdminClientBuilder SetLogHandler(Action<AdminClient, LogMessage> logHandler)
+        public AdminClientBuilder SetLogHandler(Action<IAdminClient, LogMessage> logHandler)
         {
             if (this.LogHandler != null)
             {

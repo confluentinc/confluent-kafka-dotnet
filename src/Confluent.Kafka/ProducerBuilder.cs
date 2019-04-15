@@ -21,7 +21,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Producer{TKey, TValue}" /> instances.
+    ///     A builder class for <see cref="IProducer{TKey,TValue}" />.
     /// </summary>
     public class ProducerBuilder<TKey, TValue>
     {
@@ -217,7 +217,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Build a new Producer instance.
+        ///     Build a new IProducer implementation instance.
         /// </summary>
         public virtual IProducer<TKey, TValue> Build()
         {
