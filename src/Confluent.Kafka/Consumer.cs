@@ -820,7 +820,10 @@ namespace Confluent.Kafka
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
                 ConsumeResult<TKey, TValue> result = ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer);
-                if (result == null) { continue; }
+                if (result == null)
+                {
+                    continue;
+                }
                 return result;
             }
         }

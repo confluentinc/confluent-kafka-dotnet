@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
-using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 
+
+// This program is included as an educational tool to allow you to
+// experiment with different scenarios that may cause deadlocks.
+//
+// For more information, two good reasourcs are:
+//   https://devblogs.microsoft.com/pfxteam/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
+//   https://blog.stephencleary.com/2012/07/dont-block-on-async-code.html
 
 namespace Confluent.Kafka.SyncOverAsync
 {
@@ -28,7 +34,6 @@ namespace Confluent.Kafka.SyncOverAsync
     {
         public byte[] Serialize(string data, SerializationContext context)
         {
-            // real sync.
             Thread.Sleep(500);
             return Serializers.Utf8.Serialize(data, context);
         }
@@ -45,28 +50,22 @@ namespace Confluent.Kafka.SyncOverAsync
 
             var pConfig = new ProducerConfig
             {
-                BootstrapServers = "127.0.0.1:9092",
-                Acks = Acks.All,
-                Debug = "all"
-            };
-
-            var srConfig = new SchemaRegistryConfig
-            {
-                SchemaRegistryUrl = "127.0.0.1:8081"
+                BootstrapServers = args[0]
             };
             
             using (var producer = new ProducerBuilder<Null, string>(pConfig)
-                .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync())
-                //.SetValueSerializer(new SimpleSyncSerializer())
+                .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync()) // may deadlock due to thread pool exhaustion.
+                // .SetValueSerializer(new SimpleSyncSerializer()) // will never deadlock.
                 .Build())
             {
                 var topic = Guid.NewGuid().ToString();
                 var tasks = new List<Task>();
 
-                // workerThreads-1 tasks will not deadlock. workerThreads will.
-                for (int i=0; i<workerThreads; ++i)
+                // will deadlock if N >= workerThreads.
+                int N = workerThreads;
+                for (int i=0; i<N; ++i)
                 {
-                    // creates a unique delvery report handler for each task.
+                    // create a unique delvery report handler for each task.
                     Func<int, Action> actionCreator = (taskNumber) =>
                     {
                         return () =>
@@ -76,6 +75,9 @@ namespace Confluent.Kafka.SyncOverAsync
 
                             Action<DeliveryReport<Null, string>> handler = dr => 
                             {
+                                // in a deadlock scenario, the delivery handler will
+                                // never execute since execution of the BeginProduce
+                                // method calls never progresses past serialization.
                                 Console.WriteLine($"delivery report: {dr.Value}");
                                 lock (waitObj)
                                 {
@@ -93,7 +95,8 @@ namespace Confluent.Kafka.SyncOverAsync
                                 Console.WriteLine(ex.StackTrace);
                             }
 
-                            // will never hit.
+                            // in a deadlock scenario, this line never be hit, since the
+                            // serializer blocks during the BeginProduce call.
                             Console.WriteLine($"waiting for delivery report {taskNumber}");
 
                             lock (waitObj)
