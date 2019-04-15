@@ -77,4 +77,18 @@ namespace Confluent.Kafka
                     .GetAwaiter()
                     .GetResult();
     }
+
+    /// <summary>
+    ///     Extension methods related to SyncOverAsyncDeserializer.
+    /// </summary>
+    public static class SyncOverAsyncDeserializerExtensionMethods
+    {
+        /// <summary>
+        ///     Create a sync deserializer by wrapping an async
+        ///     one. For more information on the potential
+        ///     pitfalls in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsyncDeserializer{T}" />.
+        /// </summary>
+        public static ISerializer<T> AsSyncOverAsync<T>(this IAsyncSerializer<T> asyncSerializer)
+            => new SyncOverAsyncSerializer<T>(asyncSerializer);
+    }
 }
