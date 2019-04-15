@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -44,6 +45,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             // Make sure this is something reasonably low. If these fail for some reason, may want to reconsider test.
             Assert.True(workerThreads < 128);
             Assert.True(completionPortThreads < 128);
+            File.AppendAllLines("c:\\tmp\\deadlock.txt", new [] { $"A {workerThreads} {completionPortThreads}\n" });
 
             var pConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var srConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
@@ -54,16 +56,21 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry).AsSyncOverAsync())
                 .Build())
             {
-                Action<DeliveryResult<Null, User>> handler = dr => Console.WriteLine($"{dr.Value.name}");
-
-                for (int i=0; i<workerThreads+2; ++i)
+                Action<DeliveryReport<Null, User>> handler = dr =>
                 {
-                    Task.Run(() => producer.BeginProduce(topic.Name, new Message<Null, User> { Value = new User { name = $"name-{i}", favorite_color = $"col-{i}",  favorite_number = i } }, handler));
+                    Assert.True(dr.Error.Code == ErrorCode.NoError);
+                };
+
+                var tasks = new List<Task>();
+                for (int i=0; i<workerThreads-4; ++i)
+                {
+                    tasks.Add(Task.Run(() => producer.BeginProduce(topic.Name, new Message<Null, User> { Value = new User { name = $"name-{i}", favorite_color = $"col-{i}",  favorite_number = i } }, handler)));
                 }
                 ThreadPool.GetAvailableThreads(out workerThreads, out completionPortThreads);
                 // at this point N SR requests will be in flight where N > num workerThreads.
-                Assert.Equal(0, workerThreads);
-
+                // Assert.Equal(0, workerThreads);
+                File.AppendAllLines("c:\\tmp\\deadlock.txt", new [] { $"B {workerThreads} {completionPortThreads}\n" });
+            
                 producer.Flush();
 
                 // the primary test here is that the integration test doesn't deadlock
