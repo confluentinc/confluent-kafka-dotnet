@@ -142,9 +142,9 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <summary>
-        ///     Create a sync serializer that wraps this async
+        ///     Create a sync serializer by wrapping this async
         ///     serializer. For more information on the potential
-        ///     problems in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsyncSerializer{TKey}" />.
+        ///     pitfalls in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsyncSerializer{TKey}" />.
         /// </summary>
         public ISerializer<T> AsSyncOverAsync()
             => new SyncOverAsyncSerializer<T>(this);

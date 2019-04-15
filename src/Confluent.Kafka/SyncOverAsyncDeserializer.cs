@@ -28,10 +28,10 @@ namespace Confluent.Kafka
     ///  
     ///     2. In any application, there is potential
     ///        for a deadlock due to thread pool exhaustion.
-    ///        This can happen because for an async method
-    ///        to complete, typically a thread pool thread
-    ///        is required. However, if all available thread
-    ///        pool threads are in use waiting for the 
+    ///        This can happen because in order for an async
+    ///        method to complete, a thread pool thread is
+    ///        typically required. However, if all available
+    ///        thread pool threads are in use waiting for the 
     ///        async methods to complete, there will be
     ///        no threads available to complete the tasks
     ///        (deadlock). Due to (a) the large default
