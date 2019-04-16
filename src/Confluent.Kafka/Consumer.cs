@@ -47,8 +47,6 @@ namespace Confluent.Kafka
 
         private IDeserializer<TKey> keyDeserializer;
         private IDeserializer<TValue> valueDeserializer;
-        private IAsyncDeserializer<TKey> asyncKeyDeserializer;
-        private IAsyncDeserializer<TValue> asyncValueDeserializer;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -610,7 +608,7 @@ namespace Confluent.Kafka
             }
 
             // setup key deserializer.
-            if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer == null)
+            if (builder.KeyDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
@@ -619,18 +617,9 @@ namespace Confluent.Kafka
                 }
                 this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
-            else if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer != null)
-            {
-                this.asyncKeyDeserializer = builder.AsyncKeyDeserializer;
-            }
-            else if (builder.KeyDeserializer != null && builder.AsyncKeyDeserializer == null)
-            {
-                this.keyDeserializer = builder.KeyDeserializer;
-            }
             else
             {
-                // enforced by the builder class.
-                throw new InvalidOperationException("FATAL: Both async and sync key deserializers were set.");
+                this.keyDeserializer = builder.KeyDeserializer;
             }
 
             // setup value deserializer.

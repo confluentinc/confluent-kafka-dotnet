@@ -105,7 +105,7 @@ namespace AvroBlogExample
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var consumer =
                 new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
                     .SetValueDeserializer(new AsyncAvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())

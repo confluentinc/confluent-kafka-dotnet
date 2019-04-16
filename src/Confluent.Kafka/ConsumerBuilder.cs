@@ -62,16 +62,6 @@ namespace Confluent.Kafka
         internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
 
         /// <summary>
-        ///     The configured async key deserializer.
-        /// </summary>
-        internal protected IAsyncDeserializer<TKey> AsyncKeyDeserializer { get; set; }
-
-        /// <summary>
-        ///     The configured async value deserializer.
-        /// </summary>
-        internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
-
-        /// <summary>
         ///     The configured partitions assigned handler.
         /// </summary>
         internal protected Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> PartitionsAssignedHandler { get; set; }
@@ -203,7 +193,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IDeserializer<TKey> deserializer)
         {
-            if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
+            if (this.KeyDeserializer != null)
             {
                 throw new InvalidOperationException("Key deserializer may not be specified more than once.");
             }
@@ -216,7 +206,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IDeserializer<TValue> deserializer)
         {
-            if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
+            if (this.ValueDeserializer != null)
             {
                 throw new InvalidOperationException("Value deserializer may not be specified more than once.");
             }
