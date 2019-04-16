@@ -623,7 +623,7 @@ namespace Confluent.Kafka
             }
 
             // setup value deserializer.
-            if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer == null)
+            if (builder.ValueDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
@@ -632,18 +632,9 @@ namespace Confluent.Kafka
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
-            else if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer != null)
-            {
-                this.asyncValueDeserializer = builder.AsyncValueDeserializer;
-            }
-            else if (builder.ValueDeserializer != null && builder.AsyncValueDeserializer == null)
+            else if (builder.ValueDeserializer != null)
             {
                 this.valueDeserializer = builder.ValueDeserializer;
-            }
-            else
-            {
-                // enforced by the builder class.
-                throw new InvalidOperationException("FATAL: Both async and sync value deserializers were set.");
             }
         }
 
@@ -828,10 +819,7 @@ namespace Confluent.Kafka
                 // Note: An alternative to throwing on cancellation is to return null,
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
-                ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
-                    ? ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer) // fast path for simple case.
-                    : throw new InvalidOperationException("Consume may not be called when IAsyncDeserializer configured.");
-
+                ConsumeResult<TKey, TValue> result = ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer);
                 if (result == null) { continue; }
                 return result;
             }
@@ -842,8 +830,6 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(TimeSpan)" />
         /// </summary>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
-            => (keyDeserializer != null && valueDeserializer != null)
-                ? ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
-                : throw new InvalidOperationException("Consume may not be called when IAsyncDeserializer configured.");
+            => ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer);
     }
 }
