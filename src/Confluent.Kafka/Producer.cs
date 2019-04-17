@@ -711,20 +711,20 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
-        public void BeginProduce(
+        public void Produce(
             string topic,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null
         )
-            => BeginProduce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
+            => Produce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
-        public void BeginProduce(
+        public void Produce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
@@ -739,7 +739,7 @@ namespace Confluent.Kafka
             {
                 keyBytes = (keySerializer != null)
                     ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
-                    : throw new InvalidOperationException("BeginProduce may not be called when IAsyncSerializer configured.");
+                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
             }
             catch (Exception ex)
             {
@@ -758,7 +758,7 @@ namespace Confluent.Kafka
             {
                 valBytes = (valueSerializer != null)
                     ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
-                    : throw new InvalidOperationException("BeginProduce may not be called when IAsyncSerializer configured.");
+                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
             }
             catch (Exception ex)
             {

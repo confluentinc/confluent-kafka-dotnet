@@ -24,14 +24,14 @@ namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
     ///     Test that use of async serializers with
-    ///     BeginProduce is not possible.
+    ///     Produce is not possible.
     /// </summary>
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_BeginProduce_Async(string bootstrapServers)
+        public void Producer_Produce_Async(string bootstrapServers)
         {
-            LogToFile("start Producer_BeginProduce_Async");
+            LogToFile("start Producer_Produce_Async");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
@@ -44,20 +44,20 @@ namespace Confluent.Kafka.IntegrationTests
                 .Build())
             {
                 Assert.Throws<ProduceException<Null, string>>(
-                    () => producer.BeginProduce(testTopic.Name, new Message<Null, string> { Value = "test" }));
+                    () => producer.Produce(testTopic.Name, new Message<Null, string> { Value = "test" }));
 
                 Assert.Throws<ProduceException<Null, string>>(
-                    () => producer.BeginProduce(testTopic.Name, new Message<Null, string> { Value = "test" }, dr => { Assert.True(false); }));
+                    () => producer.Produce(testTopic.Name, new Message<Null, string> { Value = "test" }, dr => { Assert.True(false); }));
 
                 Assert.Throws<ProduceException<string, Null>>(
-                    () => dProducer.BeginProduce(testTopic.Name, new Message<string, Null> { Key = "test" }));
+                    () => dProducer.Produce(testTopic.Name, new Message<string, Null> { Key = "test" }));
 
                 Assert.Throws<ProduceException<string, Null>>(
-                    () => dProducer.BeginProduce(testTopic.Name, new Message<string, Null> { Key = "test" }, dr => { Assert.True(false); }));
+                    () => dProducer.Produce(testTopic.Name, new Message<string, Null> { Key = "test" }, dr => { Assert.True(false); }));
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_BeginProduce_Async");
+            LogToFile("end   Producer_Produce_Async");
         }
     }
 }

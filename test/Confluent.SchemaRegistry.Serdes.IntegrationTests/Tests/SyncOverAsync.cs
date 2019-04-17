@@ -81,7 +81,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                                 }
                             };
 
-                            producer.BeginProduce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+                            producer.Produce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
 
                             lock (waitObj)
                             {

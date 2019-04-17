@@ -117,8 +117,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // Test headers work as expected with all serializing Produce variants. 
 
-                producer.BeginProduce(singlePartitionTopic, new Message<Null, string> { Value = "the value" }, dh);
-                producer.BeginProduce(
+                producer.Produce(singlePartitionTopic, new Message<Null, string> { Value = "the value" }, dh);
+                producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0), 
                     new Message<Null, string> { Value = "the value", Headers = headers2},
                     dh);
@@ -147,14 +147,14 @@ namespace Confluent.Kafka.IntegrationTests
                 dr_ol7 = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }).Result;
                 Assert.Single(dr_ol7.Message.Headers);
 
-                // Test headers work as expected with all non-serializing BeginProduce variants.
+                // Test headers work as expected with all non-serializing Produce variants.
 
                 Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs_2.Add(dr);
 
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }, dh);
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
-                producer.BeginProduce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = null }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
+                producer.Produce(singlePartitionTopic, new Message<byte[], byte[]> { Headers = headers }, dh);
 
                 producer.Flush(TimeSpan.FromSeconds(10));
 

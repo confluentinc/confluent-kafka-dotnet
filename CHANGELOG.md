@@ -7,7 +7,8 @@
 - Added SyncOverAsyncSerializer and SyncOverAsyncDeserializer adapter classes.
 - Added AsSyncOverAsync factory method to AsyncAvroSerializer and AsyncAvroDeserializer.
 - Removed IAsyncDeserializer setter overloads from the ConsumerBuilder class.
-- BeginProduce throws an exception if used when async serializers are configured.
+- Renamed Producer.BeginProduce to Producer.Produce.
+- Produce throws an exception if used when async serializers are configured.
 
 
 # 1.0.0-RC4

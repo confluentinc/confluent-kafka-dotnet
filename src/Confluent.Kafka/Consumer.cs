@@ -632,7 +632,7 @@ namespace Confluent.Kafka
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
-            else if (builder.ValueDeserializer != null)
+            else
             {
                 this.valueDeserializer = builder.ValueDeserializer;
             }

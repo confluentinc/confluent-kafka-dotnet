@@ -1,4 +1,20 @@
-﻿using System;
+﻿// Copyright 2019 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +24,7 @@ using Confluent.Kafka;
 // This program is included as an educational tool to allow you to
 // experiment with different scenarios that may cause deadlocks.
 //
-// For more information, two good reasourcs are:
+// For more information, some good reasourcs are:
 //   https://devblogs.microsoft.com/pfxteam/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
 //   https://blog.stephencleary.com/2012/07/dont-block-on-async-code.html
 //   https://blogs.msdn.microsoft.com/vancem/2018/10/16/diagnosing-net-core-threadpool-starvation-with-perfview-why-my-service-is-not-saturating-all-cores-or-seems-to-stall/
@@ -75,7 +91,7 @@ namespace Confluent.Kafka.SyncOverAsync
                             Action<DeliveryReport<Null, string>> handler = dr => 
                             {
                                 // in a deadlock scenario, the delivery handler will
-                                // never execute since execution of the BeginProduce
+                                // never execute since execution of the Produce
                                 // method calls never progresses past serialization.
                                 Console.WriteLine($"delivery report: {dr.Value}");
                                 lock (waitObj)
@@ -86,8 +102,8 @@ namespace Confluent.Kafka.SyncOverAsync
 
                             try
                             {
-                                producer.BeginProduce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
-                                // will never get to after BeginProduce, because deadlock occurs when running serializers.
+                                producer.Produce(topic, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+                                // will never get to after Produce, because deadlock occurs when running serializers.
                             }
                             catch (Exception ex)
                             {
@@ -95,7 +111,7 @@ namespace Confluent.Kafka.SyncOverAsync
                             }
 
                             // in a deadlock scenario, this line never be hit, since the
-                            // serializer blocks during the BeginProduce call.
+                            // serializer blocks during the Produce call.
                             Console.WriteLine($"waiting for delivery report {taskNumber}");
 
                             lock (waitObj)

@@ -53,8 +53,8 @@ namespace Confluent.Kafka.IntegrationTests
 
                 sw.Reset();
                 sw.Start();
-                producer.BeginProduce(tempTopic.Name, new Message<Null, string> { Value = "a message 2" }, dr => Assert.False(dr.Error.IsError));
-                // should block until the callback for the BeginProduce call executes.
+                producer.Produce(tempTopic.Name, new Message<Null, string> { Value = "a message 2" }, dr => Assert.False(dr.Error.IsError));
+                // should block until the callback for the Produce call executes.
                 Assert.Equal(1, producer.Poll(TimeSpan.FromSeconds(4)));
                 Assert.True(sw.ElapsedMilliseconds > 0);
                 Assert.True(sw.ElapsedMilliseconds < 3500);

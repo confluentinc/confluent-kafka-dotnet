@@ -132,7 +132,7 @@ namespace Confluent.Kafka
         ///     reflect an error in the application logic of
         ///     the calling application.
         /// </exception>
-        void BeginProduce(
+        void Produce(
             string topic,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
@@ -172,7 +172,7 @@ namespace Confluent.Kafka
         ///     an error in the application logic of the calling
         ///     application.
         /// </exception>
-        void BeginProduce(
+        void Produce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);

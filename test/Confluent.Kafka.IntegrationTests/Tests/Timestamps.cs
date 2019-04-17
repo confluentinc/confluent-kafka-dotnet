@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            var drs_beginProduce = new List<DeliveryReport<Null, string>>();
+            var drs_produce = new List<DeliveryReport<Null, string>>();
             var drs_task = new List<DeliveryResult<Null, string>>();
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
@@ -90,17 +90,17 @@ namespace Confluent.Kafka.IntegrationTests
                         }).Result);
 
                 Action<DeliveryReport<Null, string>> dh 
-                    = (DeliveryReport<Null, string> dr) => drs_beginProduce.Add(dr);
+                    = (DeliveryReport<Null, string> dr) => drs_produce.Add(dr);
 
 
                 // --- begin produce, serializer case.
 
-                producer.BeginProduce(
+                producer.Produce(
                     singlePartitionTopic,
                     new Message<Null, string> { Value = "testvalue" }, dh);
 
                 // TimestampType: CreateTime
-                producer.BeginProduce(
+                producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> 
                     { 
@@ -110,13 +110,13 @@ namespace Confluent.Kafka.IntegrationTests
                     dh);
 
                 // TimestampType: CreateTime (default)
-                producer.BeginProduce(
+                producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> { Value = "test-value" },
                     dh);
 
                 // TimestampType: LogAppendTime
-                Assert.Throws<ArgumentException>(() => producer.BeginProduce(
+                Assert.Throws<ArgumentException>(() => producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> 
                     { 
@@ -126,7 +126,7 @@ namespace Confluent.Kafka.IntegrationTests
                     dh));
 
                 // TimestampType: NotAvailable
-                Assert.Throws<ArgumentException>(() => producer.BeginProduce(
+                Assert.Throws<ArgumentException>(() => producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0),
                     new Message<Null, string> 
                     { 
@@ -138,7 +138,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
-            var drs2_beginProduce = new List<DeliveryReport<byte[], byte[]>>();
+            var drs2_produce = new List<DeliveryReport<byte[], byte[]>>();
             var drs2_task = new List<DeliveryResult<byte[], byte[]>>();
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
@@ -173,31 +173,31 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // --- begin produce, byte[] case.
 
-                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs2_beginProduce.Add(dr);
+                Action<DeliveryReport<byte[], byte[]>> dh = (DeliveryReport<byte[], byte[]> dr) => drs2_produce.Add(dr);
 
-                producer.BeginProduce(
+                producer.Produce(
                     singlePartitionTopic, new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 
                 // TimestampType: CreateTime
-                producer.BeginProduce(
+                producer.Produce(
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) },
                     dh);
 
                 // TimestampType: CreateTime (default)
-                producer.BeginProduce(
+                producer.Produce(
                     singlePartitionTopic,
                     new Message<byte[], byte[]> { Timestamp = Timestamp.Default }, dh);
 
                 // TimestampType: LogAppendTime
                 Assert.Throws<ArgumentException>(() =>
-                    producer.BeginProduce(
+                    producer.Produce(
                         singlePartitionTopic,
                         new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, dh));
 
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() =>
-                    producer.BeginProduce(singlePartitionTopic,
+                    producer.Produce(singlePartitionTopic,
                     new Message<byte[], byte[]> { Timestamp = new Timestamp(10, TimestampType.NotAvailable) }, dh));
 
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
@@ -219,15 +219,15 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // serializing deliveryhandler
 
-                assertCloseToNow(consumer, drs_beginProduce[0].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_produce[0].TopicPartitionOffset);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {drs_beginProduce[1].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs_produce[1].TopicPartitionOffset});
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
-                assertCloseToNow(consumer, drs_beginProduce[2].TopicPartitionOffset);
+                assertCloseToNow(consumer, drs_produce[2].TopicPartitionOffset);
             }
 
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
@@ -248,15 +248,15 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // non-serializing deliveryhandler
 
-                assertCloseToNow_byte(consumer, drs2_beginProduce[0].TopicPartitionOffset);
+                assertCloseToNow_byte(consumer, drs2_produce[0].TopicPartitionOffset);
 
-                consumer.Assign(new List<TopicPartitionOffset>() {drs2_beginProduce[1].TopicPartitionOffset});
+                consumer.Assign(new List<TopicPartitionOffset>() {drs2_produce[1].TopicPartitionOffset});
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
                 Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
 
-                assertCloseToNow_byte(consumer, drs2_beginProduce[2].TopicPartitionOffset);
+                assertCloseToNow_byte(consumer, drs2_produce[2].TopicPartitionOffset);
             }
             
             Assert.Equal(0, Library.HandleCount);

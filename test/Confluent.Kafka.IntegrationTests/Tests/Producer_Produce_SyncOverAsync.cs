@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_BeginProduce_SyncOverAsync(string bootstrapServers)
+        public void Producer_Produce_SyncOverAsync(string bootstrapServers)
         {
-            LogToFile("start Producer_BeginProduce_SyncOverAsync");
+            LogToFile("start Producer_Produce_SyncOverAsync");
 
             ThreadPool.GetMaxThreads(out int originalWorkerThreads, out int originalCompletionPortThreads);
 
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                                 }
                             };
 
-                            producer.BeginProduce(tempTopic.Name, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
+                            producer.Produce(tempTopic.Name, new Message<Null, string> { Value = $"value: {taskNumber}" }, handler);
 
                             lock (waitObj)
                             {
@@ -94,7 +94,7 @@ namespace Confluent.Kafka.IntegrationTests
             ThreadPool.SetMaxThreads(originalWorkerThreads, originalCompletionPortThreads);
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_BeginProduce_SyncOverAsync");
+            LogToFile("end   Producer_Produce_SyncOverAsync");
         }
     }
 }
