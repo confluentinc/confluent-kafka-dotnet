@@ -1,3 +1,16 @@
+# 1.0.0-RC5
+
+## Changes
+
+- Reverted RC4 changes.
+- Renamed AvroSerializer to AsyncAvroSerializer and AvroDeserializer to AsyncAvroDeserializer
+- Added SyncOverAsyncSerializer and SyncOverAsyncDeserializer adapter classes.
+- Added AsSyncOverAsync factory method to AsyncAvroSerializer and AsyncAvroDeserializer.
+- Removed IAsyncDeserializer setter overloads from the ConsumerBuilder class.
+- Renamed Producer.BeginProduce to Producer.Produce.
+- Produce throws an exception if used when async serializers are configured.
+
+
 # 1.0.0-RC4
 
 ## Changes

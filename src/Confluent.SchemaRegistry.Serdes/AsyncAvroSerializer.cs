@@ -26,8 +26,8 @@ using Confluent.SchemaRegistry;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     Avro serializer. Use this serializer with GenericRecord, types 
-    ///     generated using the avrogen.exe tool or one of the following 
+    ///     (async) Avro serializer. Use this serializer with GenericRecord,
+    ///     types generated using the avrogen.exe tool or one of the following 
     ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AvroSerializer<T> : IAsyncSerializer<T>
+    public class AsyncAvroSerializer<T> : IAsyncSerializer<T>
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Initiliaze a new instance of the AvroSerializer class.
+        ///     Initiliaze a new instance of the AsyncAvroSerializer class.
         ///     When passed as a parameter to the Confluent.Kafka.Producer constructor,
         ///     the following configuration properties will be extracted from the producer's
         ///     configuration property collection:
@@ -76,7 +76,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Serializer configuration properties (refer to 
         ///     <see cref="AvroSerializerConfig" />)
         /// </param>
-        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
+        public AsyncAvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
 

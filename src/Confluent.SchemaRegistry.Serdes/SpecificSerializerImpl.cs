@@ -113,7 +113,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
-                await serializeMutex.WaitAsync();
+                await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
                     string subject = isKey
@@ -143,7 +143,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     writer.Write(IPAddress.HostToNetworkOrder(writerSchemaId.Value));
                     avroWriter.Write(data, new BinaryEncoder(stream));
 
-                    // TODO: maybe change the Serializer delegate so that this copy isn't necessary.
+                    // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
                     return stream.ToArray();
                 }
             }

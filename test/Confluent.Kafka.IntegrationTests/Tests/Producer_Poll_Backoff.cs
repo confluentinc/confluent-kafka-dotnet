@@ -52,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     try
                     {
-                        producer.BeginProduce(tempTopic.Name, new Message<Null, string> { Value = "a message" });
+                        producer.Produce(tempTopic.Name, new Message<Null, string> { Value = "a message" });
                     }
                     catch (ProduceException<Null, string> ex)
                     {

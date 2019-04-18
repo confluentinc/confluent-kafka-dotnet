@@ -22,7 +22,7 @@ using Confluent.SchemaRegistry;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroDeserializer{T}" />
+    ///     <see cref="Confluent.SchemaRegistry.Serdes.AsyncAvroDeserializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class AvroDeserializerConfig : Config {}
