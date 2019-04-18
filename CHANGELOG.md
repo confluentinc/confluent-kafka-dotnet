@@ -1,4 +1,4 @@
-# 1.0.0-RC5
+# 1.0.0-RC6
 
 ## New Features
 
