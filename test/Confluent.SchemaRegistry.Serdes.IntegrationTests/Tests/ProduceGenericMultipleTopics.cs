@@ -45,7 +45,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var p =
                 new ProducerBuilder<Null, GenericRecord>(config)
                     .SetKeySerializer(Serializers.Null)
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
             {
                 var record = new GenericRecord(s);

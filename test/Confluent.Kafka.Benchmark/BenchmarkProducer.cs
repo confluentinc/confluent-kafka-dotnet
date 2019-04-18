@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Benchmark
                         {
                             try
                             {
-                                producer.BeginProduce(topic, new Message<Null, byte[]> { Value = val, Headers = headers }, deliveryHandler);
+                                producer.Produce(topic, new Message<Null, byte[]> { Value = val, Headers = headers }, deliveryHandler);
                             }
                             catch (ProduceException<Null, byte[]> ex)
                             {

@@ -29,7 +29,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer with serialization capability.
     /// </summary>
-    public class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
+    internal class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
     {
         internal class Config
         {
@@ -39,8 +39,8 @@ namespace Confluent.Kafka
             public Action<string> statisticsHandler;
         }
 
-        private Serializer<TKey> keySerializer;
-        private Serializer<TValue> valueSerializer;
+        private ISerializer<TKey> keySerializer;
+        private ISerializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
         private IAsyncSerializer<TValue> asyncValueSerializer;
 
@@ -425,8 +425,8 @@ namespace Confluent.Kafka
         }
 
         private void InitializeSerializers(
-            Serializer<TKey> keySerializer,
-            Serializer<TValue> valueSerializer,
+            ISerializer<TKey> keySerializer,
+            ISerializer<TValue> valueSerializer,
             IAsyncSerializer<TKey> asyncKeySerializer,
             IAsyncSerializer<TValue> asyncValueSerializer)
         {
@@ -438,7 +438,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (Serializer<TKey>)serializer;
+                this.keySerializer = (ISerializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -461,7 +461,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.valueSerializer = (Serializer<TValue>)serializer;
+                this.valueSerializer = (ISerializer<TValue>)serializer;
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
@@ -617,7 +617,7 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer(message.Key)
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
                     : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic));
             }
             catch (Exception ex)
@@ -636,7 +636,7 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer(message.Value)
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
                     : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic));
             }
             catch (Exception ex)
@@ -711,20 +711,20 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
-        public void BeginProduce(
+        public void Produce(
             string topic,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null
         )
-            => BeginProduce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
+            => Produce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
-        public void BeginProduce(
+        public void Produce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
@@ -738,11 +738,8 @@ namespace Confluent.Kafka
             try
             {
                 keyBytes = (keySerializer != null)
-                    ? keySerializer(message.Key)
-                    : Task.Run(async () => await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic)))
-                        .ConfigureAwait(false)
-                        .GetAwaiter()
-                        .GetResult();
+                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
+                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
             }
             catch (Exception ex)
             {
@@ -760,11 +757,8 @@ namespace Confluent.Kafka
             try
             {
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer(message.Value)
-                    : Task.Run(async () => await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic)))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
+                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
+                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
             }
             catch (Exception ex)
             {

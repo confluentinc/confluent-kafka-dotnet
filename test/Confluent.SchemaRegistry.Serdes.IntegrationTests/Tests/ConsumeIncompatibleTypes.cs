@@ -58,8 +58,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry))
                     .Build())
             {
                 var user = new User
@@ -77,8 +77,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
                 new ConsumerBuilder<User, User>(consumerConfig)
-                    .SetKeyDeserializer(new AvroDeserializer<User>(schemaRegistry))
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetKeyDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });
@@ -99,8 +99,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
                 new ConsumerBuilder<string, string>(consumerConfig)
-                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
-                    .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                    .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, 0) });

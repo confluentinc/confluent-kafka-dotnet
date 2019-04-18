@@ -38,7 +38,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = "localhost:65533" };
 
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            using (var adminClient = new AdminClient(producer.Handle))
+            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 try
                 {

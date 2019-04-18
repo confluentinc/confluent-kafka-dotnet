@@ -42,16 +42,16 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.0.0-RC4
+Install-Package Confluent.Kafka -Version 1.0.0-RC6
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.0.0-RC4 Confluent.Kafka
+dotnet add package -v 1.0.0-RC6 Confluent.Kafka
 ```
 
-**Note:** We recommend using the `1.0.0-RC4` version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.6).
+**Note:** We recommend using the `1.0.0-RC6` version of Confluent.Kafka for new projects in preference to the most recent stable release (0.11.6).
 The 1.0 API provides more features, is considerably improved and is more performant than 0.11.x releases.
 
 ### Branch builds
@@ -110,7 +110,7 @@ Note that a server round-trip is slow (3ms at a minimum; actual latency depends 
 In highly concurrent scenarios you will achieve high overall throughput out of the producer using 
 the above approach, but there will be a delay on each `await` call. In stream processing 
 applications, where you would like to process many messages in rapid succession, you would typically
-make use the `BeginProduce` method instead:
+make use the `Produce` method instead:
 
 ```csharp
 using System;
@@ -131,7 +131,7 @@ class Program
         {
             for (int i=0; i<100; ++i)
             {
-                p.BeginProduce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
+                p.Produce("my-topic", new Message<Null, string> { Value = i.ToString() }, handler);
             }
 
             // wait for up to 10 seconds for any inflight messages to be delivered.
@@ -234,7 +234,7 @@ this scenario there.
 
 #### Producer
 
-When using `BeginProduce`, to determine whether a particular message has been successfully delivered to a cluster,
+When using `Produce`, to determine whether a particular message has been successfully delivered to a cluster,
 check the `Error` field of the `DeliveryReport` during the delivery handler callback.
 
 When using `ProduceAsync`, any delivery result other than `NoError` will cause the returned `Task` to be in the

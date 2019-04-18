@@ -60,7 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
             //  - creation of topic 
             //  - producing to created topics works.
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-            using (var adminClient2 = new AdminClient(producer.Handle))
+            using (var adminClient2 = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 adminClient2.CreateTopicsAsync(
                     new List<TopicSpecification> { new TopicSpecification { Name = topicName3, NumPartitions = 24, ReplicationFactor = 1 } }).Wait();

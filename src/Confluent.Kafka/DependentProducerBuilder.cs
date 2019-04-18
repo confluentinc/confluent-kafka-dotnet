@@ -21,8 +21,8 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Producer{TKey, TValue}" /> instances
-    ///     that leverage an existing client handle.
+    ///     A builder class for <see cref="IProducer{TKey, TValue}" /> instance
+    ///     implementations that leverage an existing client handle.
     /// </summary>
     public class DependentProducerBuilder<TKey, TValue>
     {
@@ -34,12 +34,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
-        public Serializer<TKey> KeySerializer { get; set; }
+        public ISerializer<TKey> KeySerializer { get; set; }
 
         /// <summary>
         ///     The configured value serializer.
         /// </summary>
-        public Serializer<TValue> ValueSerializer { get; set; }
+        public ISerializer<TValue> ValueSerializer { get; set; }
 
         /// <summary>
         ///     The configured async key serializer.
@@ -65,7 +65,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize keys.
         /// </summary>
-        public DependentProducerBuilder<TKey, TValue> SetKeySerializer(Serializer<TKey> serializer)
+        public DependentProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
             this.KeySerializer = serializer;
             return this;
@@ -74,7 +74,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize values.
         /// </summary>
-        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(Serializer<TValue> serializer)
+        public DependentProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
             this.ValueSerializer = serializer;
             return this;
@@ -99,7 +99,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Build a new Producer instance.
+        ///     Build a new IProducer implementation instance.
         /// </summary>
         public virtual IProducer<TKey, TValue> Build()
         {

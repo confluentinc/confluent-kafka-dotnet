@@ -1,3 +1,22 @@
+# 1.0.0-RC6
+
+## New Features
+
+- Added DependentAdminClientBuilder class.
+
+
+## Changes
+
+- Reverted RC4 changes.
+- Renamed AvroSerializer to AsyncAvroSerializer and AvroDeserializer to AsyncAvroDeserializer
+- Added SyncOverAsyncSerializer and SyncOverAsyncDeserializer adapter classes.
+- Added AsSyncOverAsync factory method to AsyncAvroSerializer and AsyncAvroDeserializer.
+- Removed IAsyncDeserializer setter overloads from the ConsumerBuilder class.
+- Renamed Producer.BeginProduce to Producer.Produce.
+- Produce throws an exception if used when async serializers are configured.
+- Made AdminClient, Producer, and Consumer classes internal.
+
+
 # 1.0.0-RC4
 
 ## Changes

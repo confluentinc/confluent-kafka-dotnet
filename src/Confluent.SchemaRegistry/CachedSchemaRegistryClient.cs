@@ -169,7 +169,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public async Task<int> GetSchemaIdAsync(string subject, string schema)
         {
-            await cacheMutex.WaitAsync();
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
@@ -205,7 +205,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public async Task<int> RegisterSchemaAsync(string subject, string schema)
         {
-            await cacheMutex.WaitAsync();
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
@@ -241,7 +241,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public async Task<string> GetSchemaAsync(int id)
         {
-            await cacheMutex.WaitAsync();
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 if (!this.schemaById.TryGetValue(id, out string schema))
@@ -266,7 +266,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public async Task<string> GetSchemaAsync(string subject, int version)
         {
-            await cacheMutex.WaitAsync();
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 CleanCacheIfFull();

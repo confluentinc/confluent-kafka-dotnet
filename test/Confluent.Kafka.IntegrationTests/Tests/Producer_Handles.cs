@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 using (var producer5 = new DependentProducerBuilder<int, int>(producer3.Handle).Build())
                 using (var producer6 = new DependentProducerBuilder<string, byte[]>(producer4.Handle).Build())
                 using (var producer7 = new ProducerBuilder<double, double>(producerConfig).Build())
-                using (var adminClient = new AdminClient(producer7.Handle))
+                using (var adminClient = new DependentAdminClientBuilder(producer7.Handle).Build())
                 {
                     var r1 = producer1.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Key = new byte[] { 42 }, Value = new byte[] { 33 } }).Result;
                     Assert.Equal(new byte[] { 42 }, r1.Key);
