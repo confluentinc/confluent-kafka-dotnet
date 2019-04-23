@@ -23,6 +23,9 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A builder class for <see cref="IProducer{TKey, TValue}" /> instance
     ///     implementations that leverage an existing client handle.
+    ///
+    ///     [API-SUBJECT-TO-CHANGE] - This class may be removed in the future
+    ///     in favor of an improved API for this functionality.
     /// </summary>
     public class DependentProducerBuilder<TKey, TValue>
     {
