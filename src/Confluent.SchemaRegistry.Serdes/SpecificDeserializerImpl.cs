@@ -91,7 +91,7 @@ namespace Confluent.SchemaRegistry.Serdes
             else
             {
                 throw new InvalidOperationException(
-                    $"{nameof(AsyncAvroDeserializer<T>)} " +
+                    $"{nameof(AvroDeserializer<T>)} " +
                     "only accepts type parameters of int, bool, double, string, float, " +
                     "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
                 );

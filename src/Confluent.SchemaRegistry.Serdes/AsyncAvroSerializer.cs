@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AsyncAvroSerializer<T> : IAsyncSerializer<T>
+    public class AvroSerializer<T> : IAsyncSerializer<T>
     {
         private bool autoRegisterSchema = true;
         private int initialBufferSize = DefaultInitialBufferSize;
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Initiliaze a new instance of the AsyncAvroSerializer class.
+        ///     Initiliaze a new instance of the AvroSerializer class.
         ///     When passed as a parameter to the Confluent.Kafka.Producer constructor,
         ///     the following configuration properties will be extracted from the producer's
         ///     configuration property collection:
@@ -76,7 +76,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Serializer configuration properties (refer to 
         ///     <see cref="AvroSerializerConfig" />)
         /// </param>
-        public AsyncAvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
 

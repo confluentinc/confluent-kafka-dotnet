@@ -1,3 +1,13 @@
+# 1.0.0-RC7
+
+## Changes
+
+- Moved SyncOverAsync functionality to the Confluent.Kafka.SyncOverAsync namespace.
+- Marked DependentProducerBuilder as API-SUBJECT-TO-CHANGE.
+- No-op handlers are no longer registered with librdkafka if corresponding handlers are not specified in client builder classes.
+- Renamed AsyncAvroSerializer to AvroSerializer and AsyncAvroDeserializer to AvroDeserializer
+
+
 # 1.0.0-RC6
 
 ## New Features
