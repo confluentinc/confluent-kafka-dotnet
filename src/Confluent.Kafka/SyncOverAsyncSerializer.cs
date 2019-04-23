@@ -1,6 +1,6 @@
 using System;
 
-namespace Confluent.Kafka
+namespace Confluent.Kafka.SyncOverAsync
 {
     /// <summary>
     ///     An adapter that allows an async serializer
@@ -76,7 +76,6 @@ namespace Confluent.Kafka
                 .GetResult();
     }
 
-
     /// <summary>
     ///     Extension methods related to SyncOverAsyncSerializer.
     /// </summary>
@@ -85,7 +84,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Create a sync serializer by wrapping an async
         ///     one. For more information on the potential
-        ///     pitfalls in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsyncSerializer{T}" />.
+        ///     pitfalls in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsync.SyncOverAsyncSerializer{T}" />.
         /// </summary>
         public static ISerializer<T> AsSyncOverAsync<T>(this IAsyncSerializer<T> asyncSerializer)
             => new SyncOverAsyncSerializer<T>(asyncSerializer);
