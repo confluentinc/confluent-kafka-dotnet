@@ -590,12 +590,27 @@ namespace Confluent.Kafka
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
-            Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
+            if (partitionsAssignedHandler != null || partitionsRevokedHandler != null)
+            {
+                Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
+            }
+            if (offsetsCommittedHandler != null)
+            {
+                Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
+            }
 
-            Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            if (errorHandler != null)
+            {
+                Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
+            }
+            if (logHandler != null)
+            {
+                Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
+            }
+            if (statisticsHandler != null)
+            {
+                Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            }
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.

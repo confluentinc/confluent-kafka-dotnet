@@ -587,9 +587,18 @@ namespace Confluent.Kafka
             logCallbackDelegate = LogCallback;
             statisticsCallbackDelegate = StatisticsCallback;
 
-            Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            if (errorHandler != null)
+            {
+                Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
+            }
+            if (logHandler != null)
+            {
+                Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
+            }
+            if (statisticsHandler != null)
+            {
+                Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            }
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
