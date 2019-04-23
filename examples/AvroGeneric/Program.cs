@@ -16,6 +16,7 @@
 
 using Avro;
 using Avro.Generic;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using System;
@@ -61,8 +62,8 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
                 using (var consumer =
                     new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
-                        .SetValueDeserializer(new AsyncAvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -95,8 +96,8 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AsyncAvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");

@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             // should not throw.
-            var avroSerializer = new AsyncAvroSerializer<int>(null, config);
+            var avroSerializer = new AvroSerializer<int>(null, config);
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var config = new Dictionary<string, string> { };
 
             // should not throw.
-            var avroDeserializer = new AsyncAvroDeserializer<int>(null, config);
+            var avroDeserializer = new AvroDeserializer<int>(null, config);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 { "some.random.config.param", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AsyncAvroDeserializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => { var avroDeserializer = new AvroDeserializer<int>(null, config); });
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 { "some.random.config.param", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AsyncAvroSerializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config); });
         }
 
         [Fact]
@@ -97,7 +97,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 { "avro.unknown", "70" }
             };
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AsyncAvroSerializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config); });
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 { "avro.serializer.auto.register.schemas", "false" }
             };
 
-            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AsyncAvroDeserializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => {  var avroDeserializer = new AvroDeserializer<int>(null, config); });
         }
     }
 }

@@ -17,6 +17,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
 
 namespace Confluent.Kafka.IntegrationTests
 {

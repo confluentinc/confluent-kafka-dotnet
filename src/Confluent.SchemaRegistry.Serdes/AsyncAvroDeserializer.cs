@@ -36,14 +36,14 @@ namespace Confluent.SchemaRegistry.Serdes
     ///       bytes 1-4:        Unique global id of the Avro schema that was used for encoding (as registered in Confluent Schema Registry), big endian.
     ///       following bytes:  The serialized data.
     /// </remarks>
-    public class AsyncAvroDeserializer<T> : IAsyncDeserializer<T>
+    public class AvroDeserializer<T> : IAsyncDeserializer<T>
     {
         private IAvroDeserializerImpl<T> deserializerImpl;
 
         private ISchemaRegistryClient schemaRegistryClient;
 
         /// <summary>
-        ///     Initiliaze a new AsyncAvroDeserializer instance.
+        ///     Initiliaze a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     An implementation of ISchemaRegistryClient used for
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Deserializer configuration properties (refer to 
         ///     <see cref="AvroDeserializerConfig" />).
         /// </param>
-        public AsyncAvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
+        public AvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
 

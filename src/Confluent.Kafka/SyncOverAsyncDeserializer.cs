@@ -1,6 +1,6 @@
 using System;
 
-namespace Confluent.Kafka
+namespace Confluent.Kafka.SyncOverAsync
 {
     /// <summary>
     ///     An adapter that allows an async deserializer
@@ -86,7 +86,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Create a sync deserializer by wrapping an async
         ///     one. For more information on the potential
-        ///     pitfalls in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsyncDeserializer{T}" />.
+        ///     pitfalls in doing this, refer to <see cref="Confluent.Kafka.SyncOverAsync.SyncOverAsyncDeserializer{T}" />.
         /// </summary>
         public static IDeserializer<T> AsSyncOverAsync<T>(this IAsyncDeserializer<T> asyncDeserializer)
             => new SyncOverAsyncDeserializer<T>(asyncDeserializer);

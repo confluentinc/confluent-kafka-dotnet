@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
 using Xunit;
 
 
@@ -55,7 +56,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var topic = Guid.NewGuid().ToString();
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer = new ProducerBuilder<Null, string>(pConfig)
-                .SetValueSerializer(new AsyncAvroSerializer<string>(schemaRegistry).AsSyncOverAsync())
+                .SetValueSerializer(new AvroSerializer<string>(schemaRegistry).AsSyncOverAsync())
                 .Build())
             {
                 var tasks = new List<Task>();

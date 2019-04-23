@@ -22,14 +22,14 @@ using Confluent.SchemaRegistry;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     <see cref="Confluent.SchemaRegistry.Serdes.AsyncAvroSerializer{T}" />
+    ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroSerializer{T}" />
     ///     configuration properties.
     /// </summary>
     public class AvroSerializerConfig : Config
     {
         /// <summary>
         ///     Configuration property names specific to 
-        ///     <see cref="Confluent.SchemaRegistry.Serdes.AsyncAvroSerializer{T}" />.
+        ///     <see cref="Confluent.SchemaRegistry.Serdes.AvroSerializer{T}" />.
         /// </summary>
         public static class PropertyNames
         {

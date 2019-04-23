@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Examples.AvroSpecific;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Xunit;
@@ -69,8 +70,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
-                    .SetValueSerializer(new AsyncAvroSerializer<User>(schemaRegistry))
+                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
                     .Build())
             {
                 for (int i = 0; i < 100; ++i)
@@ -92,8 +93,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
                 new ConsumerBuilder<string, User>(consumerConfig)
-                    .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
-                    .SetValueDeserializer(new AsyncAvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {
