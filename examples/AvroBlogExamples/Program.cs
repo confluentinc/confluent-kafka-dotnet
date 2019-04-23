@@ -40,7 +40,7 @@ namespace AvroBlogExample
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<Null, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AsyncAvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
             {   
                 var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
@@ -72,7 +72,7 @@ namespace AvroBlogExample
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<Null, MessageTypes.LogMessage>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetValueSerializer(new AsyncAvroSerializer<MessageTypes.LogMessage>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry))
                     .Build())
             {
                 await producer.ProduceAsync("log-messages",
@@ -109,7 +109,7 @@ namespace AvroBlogExample
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var consumer =
                 new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
-                    .SetValueDeserializer(new AsyncAvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 consumer.Subscribe("log-messages");

@@ -59,7 +59,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 using (var producer =
                     new ProducerBuilder<string, string>(producerConfig)
                         .SetKeySerializer(Serializers.Utf8)
-                        .SetValueSerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                        .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
                         .Build())
                 {
                     // implicit check that this does not fail.
@@ -83,7 +83,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var producer =
                     new ProducerBuilder<string, string>(producerConfig)
-                        .SetKeySerializer(new AsyncAvroSerializer<string>(schemaRegistry))
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
                         .SetValueSerializer(Serializers.Utf8)
                         .Build())
                 {
@@ -111,7 +111,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
                             .SetKeyDeserializer(Deserializers.Utf8)
-                            .SetValueDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                            .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
@@ -122,7 +122,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
-                            .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                            .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                             .SetValueDeserializer(Deserializers.Utf8).Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
@@ -134,7 +134,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
                             .SetKeyDeserializer(Deserializers.Utf8)
-                            .SetValueDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                            .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                             .Build())
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
@@ -153,7 +153,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                     using (var consumer =
                         new ConsumerBuilder<string, string>(consumerConfig)
-                            .SetKeyDeserializer(new AsyncAvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                            .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                             .SetValueDeserializer(Deserializers.Utf8)
                             .Build())
                     {
