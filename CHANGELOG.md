@@ -1,3 +1,44 @@
+# 1.0.0
+
+## Summary
+
+1.0.0 is a major update of the API, introducing many new features and enhancements.
+Note: The 1.0 API is not compatible with earlier versions of the library.
+
+Feature highlights:
+
+- Inherits all of the new features in librdkafka [v1.0.0](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0)
+- General improvements to client classes:
+  - Strongly typed configuration.
+  - Construction is via builder classes:
+    - Allows/enforces that event handlers are specified at construction time.
+    - More extensible.
+  - Header support.
+  - New Message class abstraction and related changes.
+  - Consistency in error reporting across library (via exceptions).
+  - Support for fatal errors.
+- Added AdminClient:
+  - CreateTopics, DeleteTopics, CreatePartitions, AlterConfigs, and DescribeConfigs methods.
+  - Moved ListGroups and GetMetadata methods from the Producer and Consumer classes to AdminClient.
+- Producer specific improvements:
+  - New serialization interface:
+    - Non-blocking support for async serializers.
+    - Very flexible:
+      - e.g. can be easily extended to support header serialization.
+  - Capability to specify custom timestamps when producing messages. 
+  - Message persistence status support.
+  - Renamed ProduceAsync variants with a callback to Produce.
+- Consumer improvements:
+  - A new rebalance API.
+  - New deserialization API analogous to the new serialization API.
+  - PartitionEOF notification is via ConsumeResult, not events.
+    - EOF notification is now disabled by default. To enable, set the EnablePartitionEof config property to true.
+- Confluent Schema Registry integration
+  - Added support for basic authentication.
+  - Added GET subject versions to the cached schema registry client.
+  - Renamed Confluent.Kafka.Avro to Confluent.SchemaRegistry.Serdes in preparation for support for additional serialization formats.
+
+
 # 1.0.0-RC7
 
 ## Changes
