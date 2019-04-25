@@ -17,7 +17,7 @@ Feature highlights:
   - New Message class abstraction and related changes.
   - Consistency in error reporting across library (via exceptions).
   - Support for fatal errors.
-- Added an AdminClient:
+- Added AdminClient:
   - CreateTopics, DeleteTopics, CreatePartitions, AlterConfigs, and DescribeConfigs methods.
   - Moved ListGroups and GetMetadata methods from the Producer and Consumer classes to AdminClient.
 - Producer specific improvements:
