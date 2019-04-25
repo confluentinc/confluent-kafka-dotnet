@@ -436,6 +436,7 @@ namespace Confluent.Kafka.Impl
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
                         nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Centos7));
+                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Alpine));
                     }
                 }
                 else
