@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using Xunit;
+using System.Diagnostics;
 
 
 namespace Confluent.Kafka.UnitTests
@@ -30,5 +31,52 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal("myfacility", lm.Facility);
             Assert.Equal("mymessage", lm.Message);
         }
+
+        [Fact]
+        public void SystemDiagnosticsConvert()
+        {
+            var lm = new LogMessage("name", SyslogLevel.Emergency, "facility", "message");
+            Assert.Equal((int)TraceLevel.Error, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Alert, "facility", "message");
+            Assert.Equal((int)TraceLevel.Error, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Critical, "facility", "message");
+            Assert.Equal((int)TraceLevel.Error, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Error, "facility", "message");
+            Assert.Equal((int)TraceLevel.Error, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Warning, "facility", "message");
+            Assert.Equal((int)TraceLevel.Warning, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Notice, "facility", "message");
+            Assert.Equal((int)TraceLevel.Info, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Info, "facility", "message");
+            Assert.Equal((int)TraceLevel.Info, lm.LevelAs(LogLevelType.SystemDiagnostics));
+            lm = new LogMessage("name", SyslogLevel.Debug, "facility", "message");
+            Assert.Equal((int)TraceLevel.Verbose, lm.LevelAs(LogLevelType.SystemDiagnostics));
+        }
+
+        [Fact]
+        public void MicrosoftExtensionsLogging()
+        {
+            // Microsoft.Extensions.Logging.LogLevel: [0] Trace, [1] Debug, [2] Information, [3] Warning, [4] Error, [5] Critical, [6] None
+            // Note: Package containing Microsoft.Extensions.Logging.LogLevel is not referenced
+            //       so as to retain compatibility with net452.
+
+            var lm = new LogMessage("name", SyslogLevel.Emergency, "facility", "message");
+            Assert.Equal(5, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Alert, "facility", "message");
+            Assert.Equal(5, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Critical, "facility", "message");
+            Assert.Equal(5, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Error, "facility", "message");
+            Assert.Equal(4, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Warning, "facility", "message");
+            Assert.Equal(3, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Notice, "facility", "message");
+            Assert.Equal(2, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Info, "facility", "message");
+            Assert.Equal(2, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+            lm = new LogMessage("name", SyslogLevel.Debug, "facility", "message");
+            Assert.Equal(1, lm.LevelAs(LogLevelType.MicrosoftExtensionsLogging));
+        }
+
     }
 }
