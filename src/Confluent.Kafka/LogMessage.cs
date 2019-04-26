@@ -105,7 +105,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Convert the syslog message severity
         ///     level to correspond to the values of
-        //      a different log level enumeration type.
+        ///     a different log level enumeration type.
         /// </summary>
         public int LevelAs(LogLevelType type)
         {
