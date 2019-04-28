@@ -43,20 +43,35 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
         ///     an existing <see cref="Config" /> instance.
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
-        public Config(Config config) { this.properties = config.ToDictionary(a => a.Key, a => a.Value); }
+        public Config(Config config) { this.properties = config.properties; }
+
+        /// <summary>
+        ///     Initialize a new <see cref="Config" /> wrapping
+        ///     an existing key/value dictionary.
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
+        /// </summary>
+        public Config(IDictionary<string, string> config) { this.properties = config; }
 
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
         ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     </para>
         /// </summary>
         public Config(IEnumerable<KeyValuePair<string, string>> config) { this.properties = config.ToDictionary(a => a.Key, a => a.Value); }
 
         /// <summary>
-        ///     Initialize a new <see cref="Config" /> wrapping
-        ///     an existing key/value pair collection.
+        /// Creates a copy of this instance.
         /// </summary>
-        public Config(IDictionary<string, string> config) { this.properties = config; }
+        /// <returns>A new instance of this config with a copy of the values from this instance.</returns>
+        public Config Clone() => new Config(properties.ToDictionary(c => c.Key, c => c.Value));
 
         /// <summary>
         ///     Set a configuration property using a string key / value pair.
