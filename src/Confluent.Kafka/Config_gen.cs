@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka branch v1.0.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.0.0 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -229,22 +229,33 @@ namespace Confluent.Kafka
         public ClientConfig() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ClientConfig" /> instance based on
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        /// </summary>
+        /// <summary>
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public ClientConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ClientConfig" /> instance based on
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
         ///     an existing key/value pair collection.
-        /// </summary>
-        public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="ClientConfig" /> wrapping
-        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public ClientConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance copying
+        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     </para>
+        /// </summary>
+        public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
         /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
@@ -725,22 +736,33 @@ namespace Confluent.Kafka
         public AdminClientConfig() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        /// </summary>
+        /// <summary>
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public AdminClientConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
         ///     an existing key/value pair collection.
-        /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> wrapping
-        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance copying
+        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     </para>
+        /// </summary>
+        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
     }
 
 
@@ -756,22 +778,33 @@ namespace Confluent.Kafka
         public ProducerConfig() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance based on
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        /// </summary>
+        /// <summary>
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public ProducerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance based on
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
         ///     an existing key/value pair collection.
-        /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> wrapping
-        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public ProducerConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ProducerConfig" /> instance copying
+        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     </para>
+        /// </summary>
+        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
         /// <summary>
         ///     Specifies whether or not the producer should start a background poll 
@@ -932,22 +965,33 @@ namespace Confluent.Kafka
         public ConsumerConfig() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        /// </summary>
+        /// <summary>
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public ConsumerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
         ///     an existing key/value pair collection.
-        /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> wrapping
-        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     </para>
         /// </summary>
         public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance copying
+        ///     an existing key/value pair collection.
+        ///     <para>
+        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     </para>
+        /// </summary>
+        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
