@@ -254,7 +254,7 @@ namespace ConfigGen
         static string createFileHeader(string branch)
         {
             return
-@"// *** Auto-generated from librdkafka branch " + branch + @" *** - do not modify manually.
+@"// *** Auto-generated from librdkafka " + branch + @" *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
