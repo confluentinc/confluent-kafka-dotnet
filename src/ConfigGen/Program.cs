@@ -443,7 +443,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance copying
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
         /// </summary>
         public {name}(IEnumerable<KeyValuePair<string, string>> config) : base(config) {{ }}
 ";

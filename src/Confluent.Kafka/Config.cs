@@ -57,7 +57,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
         /// </summary>
         public Config(IEnumerable<KeyValuePair<string, string>> config) { this.properties = config.ToDictionary(a => a.Key, a => a.Value); }
 

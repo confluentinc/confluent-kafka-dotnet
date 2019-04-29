@@ -245,7 +245,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="ClientConfig" /> instance copying
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
         /// </summary>
         public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
@@ -744,7 +744,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="AdminClientConfig" /> instance copying
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
         /// </summary>
         public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
     }
@@ -778,7 +778,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="ProducerConfig" /> instance copying
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
         /// </summary>
         public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
@@ -957,7 +957,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="ConsumerConfig" /> instance copying
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. the original will be NOT modified
+        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
         /// </summary>
         public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
