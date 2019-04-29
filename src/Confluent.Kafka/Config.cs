@@ -62,12 +62,6 @@ namespace Confluent.Kafka
         public Config(IEnumerable<KeyValuePair<string, string>> config) { this.properties = config.ToDictionary(a => a.Key, a => a.Value); }
 
         /// <summary>
-        /// Creates a copy of this instance.
-        /// </summary>
-        /// <returns>A new instance of this config with a copy of the values from this instance.</returns>
-        public Config Clone() => new Config(properties.ToDictionary(c => c.Key, c => c.Value));
-
-        /// <summary>
         ///     Set a configuration property using a string key / value pair.
         /// </summary>
         /// <remarks>
