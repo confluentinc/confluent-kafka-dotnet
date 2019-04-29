@@ -429,21 +429,21 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance wrapping
         ///     an existing <see cref=""ClientConfig"" /> instance.
-        ///     This will change the values ""in-place"" i.e. the original will be modified
+        ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public {name}(ClientConfig config) : base(config) {{ }}
 
         /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance wrapping
         ///     an existing key/value pair collection.
-        ///     This will change the values ""in-place"" i.e. the original will be modified
+        ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public {name}(IDictionary<string, string> config) : base(config) {{ }}
 
         /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance copying
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
+        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the provided collection
         /// </summary>
         public {name}(IEnumerable<KeyValuePair<string, string>> config) : base(config) {{ }}
 ";

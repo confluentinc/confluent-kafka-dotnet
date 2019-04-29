@@ -43,21 +43,21 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
         ///     an existing <see cref="Config" /> instance.
-        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public Config(Config config) { this.properties = config.properties; }
 
         /// <summary>
         ///     Initialize a new <see cref="Config" /> wrapping
         ///     an existing key/value dictionary.
-        ///     This will change the values "in-place" i.e. the original will be modified
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public Config(IDictionary<string, string> config) { this.properties = config; }
 
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
         ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class will NOT modify the original
+        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the original
         /// </summary>
         public Config(IEnumerable<KeyValuePair<string, string>> config) { this.properties = config.ToDictionary(a => a.Key, a => a.Value); }
 
