@@ -71,7 +71,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
                     .Build())
             {
-                Assert.Throws<SerializationException>(() =>
+                Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {
@@ -95,7 +95,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
                     .Build())
             {                
-                Assert.Throws<SerializationException>(() =>
+                Assert.Throws<SchemaRegistryException>(() =>
                 {
                     try
                     {

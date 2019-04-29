@@ -41,14 +41,14 @@ namespace Confluent.Kafka.UnitTests.Serialization
         [Fact]
         public void DeserializeArgNull()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Int64.Deserialize(null, true, SerializationContext.Empty));
+            Assert.ThrowsAny<ArgumentNullException>(() => Deserializers.Int64.Deserialize(null, true, SerializationContext.Empty));
         }
 
         [Fact]
         public void DeserializeArgLengthNotEqual8Throw()
         {
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Int64.Deserialize(new byte[7], false, SerializationContext.Empty));
-            Assert.ThrowsAny<DeserializationException>(() => Deserializers.Int64.Deserialize(new byte[9], false, SerializationContext.Empty));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Int64.Deserialize(new byte[7], false, SerializationContext.Empty));
+            Assert.ThrowsAny<ArgumentException>(() => Deserializers.Int64.Deserialize(new byte[9], false, SerializationContext.Empty));
         }
 
         public static IEnumerable<object[]> TestData()
