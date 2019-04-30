@@ -26,8 +26,8 @@ using Confluent.SchemaRegistry;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     Avro serializer. Use this serializer with GenericRecord, types 
-    ///     generated using the avrogen.exe tool or one of the following 
+    ///     (async) Avro serializer. Use this serializer with GenericRecord,
+    ///     types generated using the avrogen.exe tool or one of the following 
     ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>

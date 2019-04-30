@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Examples.AvroSpecific;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Xunit;
@@ -92,8 +93,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
                 new ConsumerBuilder<string, User>(consumerConfig)
-                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                     .SetErrorHandler((_, e) => Assert.True(false, e.Reason))
                     .Build())
             {

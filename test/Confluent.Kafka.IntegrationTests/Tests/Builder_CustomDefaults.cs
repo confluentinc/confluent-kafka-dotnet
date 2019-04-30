@@ -82,7 +82,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 if (typeof(K) == typeof(string))
                 {
-                    if (KeyDeserializer == null && AsyncKeyDeserializer == null)
+                    if (KeyDeserializer == null)
                     {
                         this.KeyDeserializer = (IDeserializer<K>)new Utf32Deserializer();
                     }
@@ -90,7 +90,7 @@ namespace Confluent.Kafka.IntegrationTests
                 
                 if (typeof(V) == typeof(string))
                 {
-                    if (ValueDeserializer == null && AsyncValueDeserializer == null)
+                    if (ValueDeserializer == null)
                     {
                         this.ValueDeserializer = (IDeserializer<V>) new Utf32Deserializer();
                     }

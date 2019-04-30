@@ -1,3 +1,110 @@
+# 1.0.0
+
+## Summary
+
+1.0.0 is a major update of the API, introducing many new features and enhancements.
+Note: The 1.0 API is not compatible with earlier versions of the library.
+
+Feature highlights:
+
+- Inherits all of the new features in librdkafka [v1.0.0](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0)
+- General improvements to client classes:
+  - Strongly typed configuration.
+  - Construction is via builder classes:
+    - Allows/enforces that event handlers are specified at construction time.
+    - More extensible.
+  - Header support.
+  - New Message class abstraction and related changes.
+  - Consistency in error reporting across library (via exceptions).
+  - Support for fatal errors.
+- Added AdminClient:
+  - CreateTopics, DeleteTopics, CreatePartitions, AlterConfigs, and DescribeConfigs methods.
+  - Moved ListGroups and GetMetadata methods from the Producer and Consumer classes to AdminClient.
+- Producer specific improvements:
+  - New serialization interface:
+    - Non-blocking support for async serializers.
+    - Very flexible:
+      - e.g. can be easily extended to support header serialization.
+  - Capability to specify custom timestamps when producing messages. 
+  - Message persistence status support.
+  - Renamed ProduceAsync variants with a callback to Produce.
+- Consumer improvements:
+  - A new rebalance API.
+  - New deserialization API analogous to the new serialization API.
+  - PartitionEOF notification is via ConsumeResult, not events.
+    - EOF notification is now disabled by default. To enable, set the EnablePartitionEof config property to true.
+- Confluent Schema Registry integration
+  - Added support for basic authentication.
+  - Added GET subject versions to the cached schema registry client.
+  - Renamed Confluent.Kafka.Avro to Confluent.SchemaRegistry.Serdes in preparation for support for additional serialization formats.
+
+
+# 1.0.0-RC7
+
+## Changes
+
+- Moved SyncOverAsync functionality to the Confluent.Kafka.SyncOverAsync namespace.
+- Marked DependentProducerBuilder as API-SUBJECT-TO-CHANGE.
+- No-op handlers are no longer registered with librdkafka if corresponding handlers are not specified in client builder classes.
+- Renamed AsyncAvroSerializer to AvroSerializer and AsyncAvroDeserializer to AvroDeserializer
+
+
+# 1.0.0-RC6
+
+## New Features
+
+- Added DependentAdminClientBuilder class.
+
+
+## Changes
+
+- Reverted RC4 changes.
+- Renamed AvroSerializer to AsyncAvroSerializer and AvroDeserializer to AsyncAvroDeserializer
+- Added SyncOverAsyncSerializer and SyncOverAsyncDeserializer adapter classes.
+- Added AsSyncOverAsync factory method to AsyncAvroSerializer and AsyncAvroDeserializer.
+- Removed IAsyncDeserializer setter overloads from the ConsumerBuilder class.
+- Renamed Producer.BeginProduce to Producer.Produce.
+- Produce throws an exception if used when async serializers are configured.
+- Made AdminClient, Producer, and Consumer classes internal.
+
+
+# 1.0.0-RC4
+
+## Changes
+
+- Removed `SerializationContext` from non-async serde interfaces.
+- Replaced `ISerializer` interface with `Serializer` delegate.
+- Replaced `IDeserializer` interface with `Deserializer` delegate.
+
+
+# 1.0.0-RC3
+
+## New Features
+
+- `Producer.Poll` can now be used with producer instances that are in background polling mode.
+  - Typically use: Block for a minimal period of time following a `ErrorCode.Local_QueueFull` error.
+
+## Changes
+
+- Removed the `Confluent.Kafka.Serdes` namespace.
+
+## Fixes
+
+- Added `CompressionType` property to `ProducerConfig` class.
+
+
+# 1.0.0-RC2
+
+## New Features
+
+- References librdkafka.redist [v1.0.0](https://github.com/edenhill/librdkafka/releases/tag/v1.0.0)
+
+## Changes
+
+- Moved API docs from the client classes to their respective interfaces.
+- Update formatting of client API docs so they display well in Visual Studio Code intellisense.
+
+
 # 1.0.0-RC1
 
 ## New Features

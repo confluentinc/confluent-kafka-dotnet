@@ -21,8 +21,11 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Producer{TKey, TValue}" /> instances
-    ///     that leverage an existing client handle.
+    ///     A builder class for <see cref="IProducer{TKey, TValue}" /> instance
+    ///     implementations that leverage an existing client handle.
+    ///
+    ///     [API-SUBJECT-TO-CHANGE] - This class may be removed in the future
+    ///     in favor of an improved API for this functionality.
     /// </summary>
     public class DependentProducerBuilder<TKey, TValue>
     {
@@ -99,7 +102,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Build a new Producer instance.
+        ///     Build a new IProducer implementation instance.
         /// </summary>
         public virtual IProducer<TKey, TValue> Build()
         {

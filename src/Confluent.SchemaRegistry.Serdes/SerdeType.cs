@@ -19,7 +19,7 @@ namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
     ///     Enumeration of serde types recognised by the 
-    ///     Avro ProduceAsync and BeginProduce methods.
+    ///     Avro ProduceAsync and Produce methods.
     /// </summary>
     public enum SerdeType
     {

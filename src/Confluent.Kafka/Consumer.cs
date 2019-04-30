@@ -24,7 +24,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
-using Confluent.Kafka.Serdes;
 
 
 namespace Confluent.Kafka
@@ -33,7 +32,7 @@ namespace Confluent.Kafka
     ///     Implements a high-level Apache Kafka consumer with
     ///     deserialization capability.
     /// </summary>
-    public class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IClient
+    internal class Consumer<TKey, TValue> : IConsumer<TKey, TValue>, IClient
     {
         internal class Config
         {
@@ -48,8 +47,6 @@ namespace Confluent.Kafka
 
         private IDeserializer<TKey> keyDeserializer;
         private IDeserializer<TValue> valueDeserializer;
-        private IAsyncDeserializer<TKey> asyncKeyDeserializer;
-        private IAsyncDeserializer<TValue> asyncValueDeserializer;
 
         private Dictionary<Type, object> defaultDeserializers = new Dictionary<Type, object>
         {
@@ -552,7 +549,7 @@ namespace Confluent.Kafka
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)
             {
-                var fields = enabledFieldsObj.ToString().Replace(" ", "");
+                var fields = enabledFieldsObj.Replace(" ", "");
                 if (fields != "all")
                 {
                     this.enableHeaderMarshaling = false;
@@ -581,7 +578,7 @@ namespace Confluent.Kafka
                 .ToList()
                 .ForEach((kvp) => {
                     if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
-                    configHandle.Set(kvp.Key, kvp.Value.ToString());
+                    configHandle.Set(kvp.Key, kvp.Value);
                 });
 
             // Explicitly keep references to delegates so they are not reclaimed by the GC.
@@ -593,12 +590,27 @@ namespace Confluent.Kafka
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
-            Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
+            if (partitionsAssignedHandler != null || partitionsRevokedHandler != null)
+            {
+                Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
+            }
+            if (offsetsCommittedHandler != null)
+            {
+                Librdkafka.conf_set_offset_commit_cb(configPtr, commitDelegate);
+            }
 
-            Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            if (errorHandler != null)
+            {
+                Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
+            }
+            if (logHandler != null)
+            {
+                Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
+            }
+            if (statisticsHandler != null)
+            {
+                Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            }
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
@@ -611,7 +623,7 @@ namespace Confluent.Kafka
             }
 
             // setup key deserializer.
-            if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer == null)
+            if (builder.KeyDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TKey), out object deserializer))
                 {
@@ -620,22 +632,13 @@ namespace Confluent.Kafka
                 }
                 this.keyDeserializer = (IDeserializer<TKey>)deserializer;
             }
-            else if (builder.KeyDeserializer == null && builder.AsyncKeyDeserializer != null)
-            {
-                this.asyncKeyDeserializer = builder.AsyncKeyDeserializer;
-            }
-            else if (builder.KeyDeserializer != null && builder.AsyncKeyDeserializer == null)
+            else
             {
                 this.keyDeserializer = builder.KeyDeserializer;
             }
-            else
-            {
-                // enforced by the builder class.
-                throw new InvalidOperationException("FATAL: Both async and sync key deserializers were set.");
-            }
 
             // setup value deserializer.
-            if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer == null)
+            if (builder.ValueDeserializer == null)
             {
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
@@ -644,18 +647,9 @@ namespace Confluent.Kafka
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }
-            else if (builder.ValueDeserializer == null && builder.AsyncValueDeserializer != null)
-            {
-                this.asyncValueDeserializer = builder.AsyncValueDeserializer;
-            }
-            else if (builder.ValueDeserializer != null && builder.AsyncValueDeserializer == null)
-            {
-                this.valueDeserializer = builder.ValueDeserializer;
-            }
             else
             {
-                // enforced by the builder class.
-                throw new InvalidOperationException("FATAL: Both async and sync value deserializers were set.");
+                this.valueDeserializer = builder.ValueDeserializer;
             }
         }
 
@@ -830,66 +824,6 @@ namespace Confluent.Kafka
         }
 
 
-        private ConsumeResult<TKey, TValue> ConsumeViaBytes(int millisecondsTimeout)
-        {
-            // TODO: add method(s) to ConsumerBase to handle the async case more optimally.
-            var rawResult = ConsumeImpl(millisecondsTimeout, Deserializers.ByteArray, Deserializers.ByteArray);
-            if (rawResult == null) { return null; }
-            if (rawResult.Message == null)
-            {
-                return new ConsumeResult<TKey, TValue>
-                {
-                    TopicPartitionOffset = rawResult.TopicPartitionOffset,
-                    Message = null,
-                    IsPartitionEOF = rawResult.IsPartitionEOF // always true
-                };
-            }
-
-            TKey key;
-            try
-            {
-                key = keyDeserializer != null
-                    ? keyDeserializer.Deserialize(rawResult.Key, rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic))
-                    : Task.Run(async () => await asyncKeyDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Key), rawResult.Key == null, new SerializationContext(MessageComponentType.Key, rawResult.Topic)))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
-            }
-            catch (Exception ex)
-            {
-                throw new ConsumeException(rawResult, new Error(ErrorCode.Local_KeyDeserialization), ex);
-            }
-
-            TValue val;
-            try
-            {
-                val = valueDeserializer != null
-                    ? valueDeserializer.Deserialize(rawResult.Value, rawResult.Value == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic))
-                    : Task.Run(async () => await asyncValueDeserializer.DeserializeAsync(new ReadOnlyMemory<byte>(rawResult.Value), rawResult == null, new SerializationContext(MessageComponentType.Value, rawResult.Topic)))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
-            }
-            catch (Exception ex)
-            {
-                throw new ConsumeException(rawResult, new Error(ErrorCode.Local_ValueDeserialization), ex);
-            }
-
-            return new ConsumeResult<TKey, TValue>
-            {
-                TopicPartitionOffset = rawResult.TopicPartitionOffset,
-                Message = rawResult.Message == null ? null : new Message<TKey, TValue>
-                {
-                    Key = key,
-                    Value = val,
-                    Headers = rawResult.Headers,
-                    Timestamp = rawResult.Timestamp
-                },
-                IsPartitionEOF = rawResult.IsPartitionEOF
-            };
-        }
-
-
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(CancellationToken)" />
         /// </summary>
@@ -900,11 +834,11 @@ namespace Confluent.Kafka
                 // Note: An alternative to throwing on cancellation is to return null,
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
-                ConsumeResult<TKey, TValue> result = (keyDeserializer != null && valueDeserializer != null)
-                    ? ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer) // fast path for simple case.
-                    : ConsumeViaBytes(cancellationDelayMaxMs);
-
-                if (result == null) { continue; }
+                ConsumeResult<TKey, TValue> result = ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer);
+                if (result == null)
+                {
+                    continue;
+                }
                 return result;
             }
         }
@@ -914,8 +848,6 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(TimeSpan)" />
         /// </summary>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
-            => (keyDeserializer != null && valueDeserializer != null)
-                ? ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer) // fast path for simple case
-                : ConsumeViaBytes(timeout.TotalMillisecondsAsInt());
+            => ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer);
     }
 }

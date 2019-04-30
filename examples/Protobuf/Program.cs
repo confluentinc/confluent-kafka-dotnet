@@ -17,7 +17,6 @@
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
-using Confluent.Kafka.Serdes;
 using Google.Protobuf;
 using System;
 using System.Threading;

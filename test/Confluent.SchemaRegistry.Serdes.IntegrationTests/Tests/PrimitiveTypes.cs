@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 using Xunit;
@@ -156,8 +157,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<string, string>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(stringTopic, 0, 0) });
@@ -168,8 +169,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<byte[]>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<byte[]>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<byte[]>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<byte[]>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(bytesTopic, 0, 0) });
@@ -180,8 +181,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<int, int>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<int>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<int>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<int>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<int>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(intTopic, 0, 0) });
@@ -192,8 +193,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<long, long>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<long>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<long>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<long>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<long>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(longTopic, 0, 0) });
@@ -204,8 +205,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<bool, bool>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<bool>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<bool>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<bool>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<bool>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(boolTopic, 0, 0) });
@@ -216,8 +217,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<float, float>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<float>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<float>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<float>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<float>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(floatTopic, 0, 0) });
@@ -228,8 +229,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<double, double>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<double>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<double>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<double>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<double>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(doubleTopic, 0, 0) });
@@ -240,8 +241,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 using (var consumer =
                     new ConsumerBuilder<Null, Null>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<Null>(schemaRegistry))
-                        .SetValueDeserializer(new AvroDeserializer<Null>(schemaRegistry))
+                        .SetKeyDeserializer(new AvroDeserializer<Null>(schemaRegistry).AsSyncOverAsync())
+                        .SetValueDeserializer(new AvroDeserializer<Null>(schemaRegistry).AsSyncOverAsync())
                         .Build())
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(nullTopic, 0, 0) });

@@ -27,7 +27,7 @@ using Confluent.Kafka.Internal;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A builder class for <see cref="Consumer{TKey,TValue}" /> instances.
+    ///     A builder class for <see cref="IConsumer{TKey,TValue}" />.
     /// </summary>
     public class ConsumerBuilder<TKey, TValue>
     {
@@ -39,17 +39,17 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        internal protected Action<Consumer<TKey, TValue>, Error> ErrorHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        internal protected Action<Consumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        internal protected Action<Consumer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     The configured key deserializer.
@@ -60,16 +60,6 @@ namespace Confluent.Kafka
         ///     The configured value deserializer.
         /// </summary>
         internal protected IDeserializer<TValue> ValueDeserializer { get; set; }
-
-        /// <summary>
-        ///     The configured async key deserializer.
-        /// </summary>
-        internal protected IAsyncDeserializer<TKey> AsyncKeyDeserializer { get; set; }
-
-        /// <summary>
-        ///     The configured async value deserializer.
-        /// </summary>
-        internal protected IAsyncDeserializer<TValue> AsyncValueDeserializer { get; set; }
 
         /// <summary>
         ///     The configured partitions assigned handler.
@@ -141,7 +131,7 @@ namespace Confluent.Kafka
         ///     Executes as a side-effect of the Consume method (on the same thread).
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetStatisticsHandler(
-            Action<Consumer<TKey, TValue>, string> statisticsHandler)
+            Action<IConsumer<TKey, TValue>, string> statisticsHandler)
         {
             if (this.StatisticsHandler != null)
             {
@@ -161,7 +151,7 @@ namespace Confluent.Kafka
         ///     Executes as a side-effect of the Consume method (on the same thread).
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetErrorHandler(
-            Action<Consumer<TKey, TValue>, Error> errorHandler)
+            Action<IConsumer<TKey, TValue>, Error> errorHandler)
         {
             if (this.ErrorHandler != null)
             {
@@ -188,7 +178,7 @@ namespace Confluent.Kafka
         ///     prolonged operations.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetLogHandler(
-            Action<Consumer<TKey, TValue>, LogMessage> logHandler)
+            Action<IConsumer<TKey, TValue>, LogMessage> logHandler)
         {
             if (this.LogHandler != null)
             {
@@ -203,7 +193,7 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IDeserializer<TKey> deserializer)
         {
-            if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
+            if (this.KeyDeserializer != null)
             {
                 throw new InvalidOperationException("Key deserializer may not be specified more than once.");
             }
@@ -216,37 +206,11 @@ namespace Confluent.Kafka
         /// </summary>
         public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IDeserializer<TValue> deserializer)
         {
-            if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
+            if (this.ValueDeserializer != null)
             {
                 throw new InvalidOperationException("Value deserializer may not be specified more than once.");
             }
             this.ValueDeserializer = deserializer;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the async deserializer to use to deserialize keys.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetKeyDeserializer(IAsyncDeserializer<TKey> deserializer)
-        {
-            if (this.KeyDeserializer != null || this.AsyncKeyDeserializer != null)
-            {
-                throw new InvalidOperationException("Key deserializer may not be specified more than once.");
-            }
-            this.AsyncKeyDeserializer = deserializer;
-            return this;
-        }
-
-        /// <summary>
-        ///     Set the async deserializer to use to deserialize values.
-        /// </summary>
-        public ConsumerBuilder<TKey, TValue> SetValueDeserializer(IAsyncDeserializer<TValue> deserializer)
-        {
-            if (this.ValueDeserializer != null || this.AsyncValueDeserializer != null)
-            {
-                throw new InvalidOperationException("Value deserializer may not be specified more than once.");
-            }
-            this.AsyncValueDeserializer = deserializer;
             return this;
         }
 
@@ -389,7 +353,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Build a new Consumer instance.
+        ///     Build a new IConsumer implementation instance.
         /// </summary>
         public virtual IConsumer<TKey, TValue> Build()
         {

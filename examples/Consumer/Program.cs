@@ -16,7 +16,6 @@
 //
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka.Serdes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,7 +52,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             const int commitPeriod = 5;
 
             // Note: If a key or value deserializer is not set (as is the case below), the 
-            // deserializer corresponding to the appropriate type from Confluent.Kafka.Serdes
+            // deserializer corresponding to the appropriate type from Confluent.Kafka.Deserializers
             // will be used automatically (where available). The default deserializer for string
             // is UTF8. The default deserializer for Ignore returns null for all input data
             // (including non-null data).

@@ -20,7 +20,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Confluent.Kafka.Serdes;
 using Confluent.Kafka.Impl;
 using Confluent.Kafka.Internal;
 
@@ -30,7 +29,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     A high level producer with serialization capability.
     /// </summary>
-    public class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
+    internal class Producer<TKey, TValue> : IProducer<TKey, TValue>, IClient
     {
         internal class Config
         {
@@ -79,6 +78,9 @@ namespace Confluent.Kafka
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
 
+        private int eventsServedCount = 0;
+        private object pollSyncObj = new object();
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -87,7 +89,17 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-                            ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
+                            int eventsServedCount_ = ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
+
+                            // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
+                            if (eventsServedCount_ > 0)
+                            {
+                                lock (pollSyncObj)
+                                {
+                                    this.eventsServedCount += eventsServedCount_;
+                                    Monitor.Pulse(pollSyncObj);
+                                }
+                            }
                         }
                     }
                     catch (OperationCanceledException) {}
@@ -219,6 +231,7 @@ namespace Confluent.Kafka
                 }
             }
 
+            ErrorCode err;
             if (this.enableDeliveryReports && deliveryHandler != null)
             {
                 // Passes the TaskCompletionSource to the delivery report callback via the msg_opaque pointer
@@ -230,7 +243,7 @@ namespace Confluent.Kafka
                 var gch = GCHandle.Alloc(deliveryHandler);
                 var ptr = GCHandle.ToIntPtr(gch);
 
-                var err = KafkaHandle.Produce(
+                err = KafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
@@ -241,13 +254,13 @@ namespace Confluent.Kafka
 
                 if (err != ErrorCode.NoError)
                 {
+                    // note: freed in the delivery handler callback otherwise.
                     gch.Free();
-                    throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
                 }
             }
             else
             {
-                var err = KafkaHandle.Produce(
+                err = KafkaHandle.Produce(
                     topic,
                     val, valOffset, valLength,
                     key, keyOffset, keyLength,
@@ -255,11 +268,11 @@ namespace Confluent.Kafka
                     timestamp.UnixTimestampMs,
                     headers,
                     IntPtr.Zero);
+            }
 
-                if (err != ErrorCode.NoError)
-                {
-                    throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
-                }
+            if (err != ErrorCode.NoError)
+            {
+                throw new KafkaException(KafkaHandle.CreatePossiblyFatalError(err, null));
             }
         }
 
@@ -269,12 +282,22 @@ namespace Confluent.Kafka
         /// </summary>
         public int Poll(TimeSpan timeout)
         {
-            if (!manualPoll)
+            if (manualPoll)
             {
-                throw new InvalidOperationException("Poll method called, but manual polling is not enabled.");
+                return this.KafkaHandle.Poll((IntPtr)timeout.TotalMillisecondsAsInt());
             }
 
-            return this.KafkaHandle.Poll((IntPtr)timeout.TotalMillisecondsAsInt());
+            lock (pollSyncObj)
+            {
+                if (eventsServedCount == 0)
+                {
+                    Monitor.Wait(pollSyncObj, timeout);
+                }
+
+                var result = eventsServedCount;
+                eventsServedCount = 0;
+                return result;
+            }
         }
 
 
@@ -504,19 +527,19 @@ namespace Confluent.Kafka
             var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableBackgroundPoll).Value;
             if (enableBackgroundPollObj != null)
             {
-                this.manualPoll = !bool.Parse(enableBackgroundPollObj.ToString());
+                this.manualPoll = !bool.Parse(enableBackgroundPollObj);
             }
 
             var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableDeliveryReports).Value;
             if (enableDeliveryReportsObj != null)
             {
-                this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj.ToString());
+                this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj);
             }
 
             var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.DeliveryReportFields).Value;
             if (deliveryReportEnabledFieldsObj != null)
             {
-                var fields = deliveryReportEnabledFieldsObj.ToString().Replace(" ", "");
+                var fields = deliveryReportEnabledFieldsObj.Replace(" ", "");
                 if (fields != "all")
                 {
                     this.enableDeliveryReportKey = false;
@@ -548,7 +571,7 @@ namespace Confluent.Kafka
 
             modifiedConfig.ToList().ForEach((kvp) => {
                 if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
-                configHandle.Set(kvp.Key, kvp.Value.ToString());
+                configHandle.Set(kvp.Key, kvp.Value);
             });
 
 
@@ -564,9 +587,18 @@ namespace Confluent.Kafka
             logCallbackDelegate = LogCallback;
             statisticsCallbackDelegate = StatisticsCallback;
 
-            Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
-            Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
-            Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            if (errorHandler != null)
+            {
+                Librdkafka.conf_set_error_cb(configPtr, errorCallbackDelegate);
+            }
+            if (logHandler != null)
+            {
+                Librdkafka.conf_set_log_cb(configPtr, logCallbackDelegate);
+            }
+            if (statisticsHandler != null)
+            {
+                Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            }
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object is no longer useable.
@@ -688,20 +720,20 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.BeginProduce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
-        public void BeginProduce(
+        public void Produce(
             string topic,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null
         )
-            => BeginProduce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
+            => Produce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.BeginProduce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
+        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
         /// </summary>
-        public void BeginProduce(
+        public void Produce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
             Action<DeliveryReport<TKey, TValue>> deliveryHandler = null)
@@ -716,10 +748,7 @@ namespace Confluent.Kafka
             {
                 keyBytes = (keySerializer != null)
                     ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic))
-                    : Task.Run(async () => await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic)))
-                        .ConfigureAwait(false)
-                        .GetAwaiter()
-                        .GetResult();
+                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
             }
             catch (Exception ex)
             {
@@ -738,10 +767,7 @@ namespace Confluent.Kafka
             {
                 valBytes = (valueSerializer != null)
                     ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic))
-                    : Task.Run(async () => await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic)))
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                        .GetAwaiter()
-                        .GetResult();
+                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
             }
             catch (Exception ex)
             {

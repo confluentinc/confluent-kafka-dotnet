@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+﻿// Copyright 2016-2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ using System.Linq;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     Avro deserializer. Use this deserializer with GenericRecord, types 
-    ///     generated using the avrogen.exe tool or one of the following 
+    ///     (async) Avro deserializer. Use this deserializer with GenericRecord,
+    ///     types generated using the avrogen.exe tool or one of the following 
     ///     primitive types: int, long, float, double, boolean, string, byte[].
     /// </summary>
     /// <remarks>
@@ -108,6 +108,5 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw e.InnerException;
             }
         }
-
     }
 }

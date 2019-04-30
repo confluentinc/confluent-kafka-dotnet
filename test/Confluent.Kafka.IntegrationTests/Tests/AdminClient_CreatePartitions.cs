@@ -45,7 +45,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // test creating a new partition works.
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-            using (var adminClient = new AdminClient(producer.Handle))
+            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName1, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName1, IncreaseTo = 2 } }).Wait();
@@ -67,7 +67,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // check validate only works.
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-            using (var adminClient = new AdminClient(producer.Handle))
+            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName2, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = topicName2, IncreaseTo = 10 } }, new CreatePartitionsOptions { ValidateOnly = true }).Wait();
@@ -89,7 +89,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // check valid Assignments property value works.
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-            using (var adminClient = new AdminClient(producer.Handle))
+            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName3, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                 adminClient.CreatePartitionsAsync(
@@ -103,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // check invalid Assignments property value works.
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
-            using (var adminClient = new AdminClient(producer.Handle))
+            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = topicName4, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
 

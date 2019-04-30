@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
-using Confluent.Kafka.Serdes;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using Avro;
@@ -108,7 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer =
                 new ConsumerBuilder<Null, GenericRecord>(cconfig)
                     .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry))
+                    .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 // consume generic record produced as a generic record.
@@ -144,7 +144,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var consumer =
                 new ConsumerBuilder<Null, User>(cconfig)
                     .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry))
+                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });

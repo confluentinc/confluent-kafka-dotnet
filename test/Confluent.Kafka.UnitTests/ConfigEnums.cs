@@ -79,5 +79,30 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(Partitioner.Murmur2Random, config4.Partitioner);
             Assert.Equal(PartitionAssignmentStrategy.RoundRobin, config5.PartitionAssignmentStrategy);
         }
+
+        [Fact]
+        public void CompileTimeCheck()
+        {
+            // Set a value for every enum. This tests that ConfigGen 
+            // isn't missing any (compile time check).
+            var pConfig = new ProducerConfig
+            {
+                CompressionType = CompressionType.Lz4,
+                SecurityProtocol = SecurityProtocol.SaslSsl,
+                Partitioner = Partitioner.Murmur2,
+                BrokerAddressFamily = BrokerAddressFamily.V4,
+                SaslMechanism = SaslMechanism.ScramSha256,
+                Acks = Acks.Leader,
+            };
+
+            var cConfig = new ConsumerConfig
+            {
+                SecurityProtocol = SecurityProtocol.SaslPlaintext,
+                PartitionAssignmentStrategy = PartitionAssignmentStrategy.Range,
+                AutoOffsetReset = AutoOffsetReset.Latest,
+                BrokerAddressFamily = BrokerAddressFamily.V6,
+                SaslMechanism = SaslMechanism.Plain
+            };
+        }
     }
 }

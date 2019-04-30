@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,6 +40,7 @@ namespace ConfigGen
                 if (p.Name == "request.required.acks") { return false; }
                 // legacy
                 if (p.Name == "consume.callback.max.messages") { return false; }
+                if (p.Name == "offset.store.method") { return false; }
                 if (p.Name == "offset.store.path") { return false; }
                 if (p.Name == "offset.store.sync.interval.ms") { return false; }
                 if (p.Name == "builtin.features") { return false; }
@@ -204,7 +205,7 @@ namespace ConfigGen
     }
 
     
-    class PropertySpecification
+    class PropertySpecification : IComparable
     {
         public PropertySpecification() {}
 
@@ -230,6 +231,9 @@ namespace ConfigGen
         public string Description { get; set; }
         public string Type { get; set; }
         public string AliasFor { get; set; }
+
+        public int CompareTo(object obj)
+            => Name.CompareTo(((PropertySpecification)obj).Name);
     }
 
     class Program
@@ -250,7 +254,7 @@ namespace ConfigGen
         static string createFileHeader(string branch)
         {
             return
-@"// *** Auto-generated from librdkafka branch " + branch + @" *** - do not modify manually.
+@"// *** Auto-generated from librdkafka " + branch + @" *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -289,7 +293,7 @@ namespace Confluent.Kafka
         static string ConfigNameToDotnetName(string configName)
             => Regex.Replace(
                 string.Concat(
-                    configName.Split('.').Select(p => p[0].ToString().ToUpper() + p.Substring(1))),
+                    configName.Split('.').Select(p => char.ToUpper(p[0]) + p.Substring(1))),
                 "_[a-z]",
                 m => "_" + m.Value.Substring(1).ToUpper());
 
@@ -309,7 +313,7 @@ namespace Confluent.Kafka
                 return substitute;
             }
 
-            var result = enumName[0].ToString().ToUpper() + enumName.Substring(1);
+            var result = char.ToUpper(enumName[0]) + enumName.Substring(1);
             if (result.Contains('_'))
             {
                 Console.WriteLine($"warning: enum value contains underscore (is not consistent with .net naming standards): {enumName}");
@@ -588,7 +592,7 @@ namespace Confluent.Kafka
             {
                 if (global.Count(gp => gp.Name.Equals(p.Name)) > 0) { removeTopicLevel.Add(p.Name); }
             }
-            props = props.Where(p => !removeTopicLevel.Contains(p.Name)).ToList();
+            props = topicLevel.Where(p => !removeTopicLevel.Contains(p.Name)).Concat(global).ToList();
             return props;
         }
 
@@ -621,6 +625,13 @@ namespace Confluent.Kafka
             }).ToList();
         }
 
+        static void PrintProps(IEnumerable<PropertySpecification> props)
+        {
+            var props_ = props.ToArray();
+            Array.Sort(props_);
+            Console.WriteLine(String.Join("  ", props_.Select(p => p.Name)));
+        }
+
         static async Task<int> Main(string[] args)
         {
             if (args.Length != 1)
@@ -635,12 +646,11 @@ namespace Confluent.Kafka
                 .GetAsync(url))
                 .Content.ReadAsStringAsync();
 
-            var props =
-                choosePreferredNames(
-                linkAliased(
-                removeDuplicateTopicLevel(
-                MappingConfiguration.RemoveLegacyOrNotRelevant(
-                extractAll(configDoc)))));
+            var props = extractAll(configDoc);
+            var props2 = MappingConfiguration.RemoveLegacyOrNotRelevant(props);
+            var props3 = removeDuplicateTopicLevel(props2);
+            var props4 = props = linkAliased(props3);
+            var props5 = choosePreferredNames(props4);
 
             if (props.Count() == 0)
             {

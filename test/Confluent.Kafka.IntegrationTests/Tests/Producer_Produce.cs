@@ -24,14 +24,14 @@ using Xunit;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     Test every <see cref="Producer.BeginProduce" /> method overload.
+    ///     Test every <see cref="Producer.Produce" /> method overload.
     /// </summary>
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_BeginProduce(string bootstrapServers)
+        public void Producer_Produce(string bootstrapServers)
         {
-            LogToFile("start Producer_BeginProduce");
+            LogToFile("start Producer_Produce");
 
             var producerConfig = new ProducerConfig
             { 
@@ -59,11 +59,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
             {
-                producer.BeginProduce(
+                producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0), 
                     new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
 
-                producer.BeginProduce(
+                producer.Produce(
                     singlePartitionTopic,
                     new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
 
@@ -92,11 +92,11 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                producer.BeginProduce(
+                producer.Produce(
                     new TopicPartition(singlePartitionTopic, 0), 
                     new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 42"), Value = Encoding.UTF8.GetBytes("test val 42") }, dh2);
 
-                producer.BeginProduce(
+                producer.Produce(
                     singlePartitionTopic, 
                     new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 43"), Value = Encoding.UTF8.GetBytes("test val 43") }, dh2);
 
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.IntegrationTests
 
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_BeginProduce");
+            LogToFile("end   Producer_Produce");
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Implements an Apache Kafka admin client.
     /// </summary>
-    public class AdminClient : IAdminClient
+    internal class AdminClient : IAdminClient
     {
         private int cancellationDelayMaxMs;
 
@@ -425,7 +425,7 @@ namespace Confluent.Kafka
         ///     make broker requests. It is valid to provide either a Consumer, Producer
         ///     or AdminClient handle.
         /// </param>
-        public AdminClient(Handle handle)
+        internal AdminClient(Handle handle)
         {                            
             this.ownedClient = null;
             this.handle = handle;

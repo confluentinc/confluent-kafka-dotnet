@@ -16,7 +16,7 @@
 
 using Avro.Generic;
 using Confluent.Kafka;
-using Confluent.Kafka.Serdes;
+using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using System;
@@ -106,10 +106,10 @@ namespace AvroBlogExample
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient( new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
             using (var consumer =
                 new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
-                    .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry))
+                    .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())
                     .Build())
             {
                 consumer.Subscribe("log-messages");
