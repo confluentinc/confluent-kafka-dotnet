@@ -224,9 +224,17 @@ namespace Confluent.Kafka
     {
 
         /// <summary>
+        /// Creates a new ClientConfig class by taking a copy of the provided <paramref name="configSource"/>.
+        /// The <paramref name="configSource"/> can be any of: IEnumerable; Dictonary; any of the Config types.
+        /// </summary>
+        /// <param name="configSource"></param>
+        /// <returns></returns>
+        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+
+        /// <summary>
         ///     Initialize a new empty <see cref="ClientConfig" /> instance.
         /// </summary>
-        public ClientConfig() { }
+        public ClientConfig() : base() { }
 
         /// <summary>
         ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
@@ -241,13 +249,6 @@ namespace Confluent.Kafka
         ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public ClientConfig(IDictionary<string, string> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="ClientConfig" /> instance copying
-        ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the provided collection
-        /// </summary>
-        public ClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
         /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
@@ -723,9 +724,17 @@ namespace Confluent.Kafka
     {
 
         /// <summary>
+        /// Creates a new AdminClientConfig class by taking a copy of the provided <paramref name="configSource"/>.
+        /// The <paramref name="configSource"/> can be any of: IEnumerable; Dictonary; any of the Config types.
+        /// </summary>
+        /// <param name="configSource"></param>
+        /// <returns></returns>
+        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+
+        /// <summary>
         ///     Initialize a new empty <see cref="AdminClientConfig" /> instance.
         /// </summary>
-        public AdminClientConfig() { }
+        public AdminClientConfig() : base() { }
 
         /// <summary>
         ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
@@ -740,13 +749,6 @@ namespace Confluent.Kafka
         ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance copying
-        ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the provided collection
-        /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
     }
 
 
@@ -757,9 +759,17 @@ namespace Confluent.Kafka
     {
 
         /// <summary>
+        /// Creates a new ProducerConfig class by taking a copy of the provided <paramref name="configSource"/>.
+        /// The <paramref name="configSource"/> can be any of: IEnumerable; Dictonary; any of the Config types.
+        /// </summary>
+        /// <param name="configSource"></param>
+        /// <returns></returns>
+        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+
+        /// <summary>
         ///     Initialize a new empty <see cref="ProducerConfig" /> instance.
         /// </summary>
-        public ProducerConfig() { }
+        public ProducerConfig() : base() { }
 
         /// <summary>
         ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
@@ -774,13 +784,6 @@ namespace Confluent.Kafka
         ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public ProducerConfig(IDictionary<string, string> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance copying
-        ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the provided collection
-        /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
         /// <summary>
         ///     Specifies whether or not the producer should start a background poll 
@@ -936,9 +939,17 @@ namespace Confluent.Kafka
     {
 
         /// <summary>
+        /// Creates a new ConsumerConfig class by taking a copy of the provided <paramref name="configSource"/>.
+        /// The <paramref name="configSource"/> can be any of: IEnumerable; Dictonary; any of the Config types.
+        /// </summary>
+        /// <param name="configSource"></param>
+        /// <returns></returns>
+        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+
+        /// <summary>
         ///     Initialize a new empty <see cref="ConsumerConfig" /> instance.
         /// </summary>
-        public ConsumerConfig() { }
+        public ConsumerConfig() : base() { }
 
         /// <summary>
         ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
@@ -953,13 +964,6 @@ namespace Confluent.Kafka
         ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
-
-        /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance copying
-        ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the provided collection
-        /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config) { }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set

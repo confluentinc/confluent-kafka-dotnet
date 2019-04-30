@@ -420,11 +420,19 @@ namespace Confluent.Kafka
 
         static string createClassConstructors(string name)
         {
-            var codeText = "\n";
-            codeText += $@"        /// <summary>
+            var codeText = $@"
+        /// <summary>
+        /// Creates a new {name} class by taking a copy of the provided <paramref name=""configSource""/>.
+        /// The <paramref name=""configSource""/> can be any of: IEnumerable; Dictonary; any of the Config types.
+        /// </summary>
+        /// <param name=""configSource""></param>
+        /// <returns></returns>
+        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+
+        /// <summary>
         ///     Initialize a new empty <see cref=""{name}"" /> instance.
         /// </summary>
-        public {name}() {{ }}
+        public {name}() : base() {{ }}
 
         /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance wrapping
@@ -439,13 +447,6 @@ namespace Confluent.Kafka
         ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public {name}(IDictionary<string, string> config) : base(config) {{ }}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""{name}"" /> instance copying
-        ///     an existing key/value pair collection.
-        ///     This will make a copy of the provided values i.e. operations on this class WILL NOT modify the provided collection
-        /// </summary>
-        public {name}(IEnumerable<KeyValuePair<string, string>> config) : base(config) {{ }}
 ";
             return codeText;
         }
