@@ -427,7 +427,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name=""configSource""></param>
         /// <returns></returns>
-        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+        public static new {name} CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new {name}(configSource.ToDictionary(a => a.Key, a => a.Value));
 
         /// <summary>
         ///     Initialize a new empty <see cref=""{name}"" /> instance.

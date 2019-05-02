@@ -229,7 +229,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="configSource"></param>
         /// <returns></returns>
-        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+        public static new ClientConfig CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new ClientConfig(configSource.ToDictionary(a => a.Key, a => a.Value));
 
         /// <summary>
         ///     Initialize a new empty <see cref="ClientConfig" /> instance.
@@ -729,7 +729,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="configSource"></param>
         /// <returns></returns>
-        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+        public static new AdminClientConfig CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new AdminClientConfig(configSource.ToDictionary(a => a.Key, a => a.Value));
 
         /// <summary>
         ///     Initialize a new empty <see cref="AdminClientConfig" /> instance.
@@ -764,7 +764,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="configSource"></param>
         /// <returns></returns>
-        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+        public static new ProducerConfig CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new ProducerConfig(configSource.ToDictionary(a => a.Key, a => a.Value));
 
         /// <summary>
         ///     Initialize a new empty <see cref="ProducerConfig" /> instance.
@@ -944,7 +944,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="configSource"></param>
         /// <returns></returns>
-        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
+        public static new ConsumerConfig CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new ConsumerConfig(configSource.ToDictionary(a => a.Key, a => a.Value));
 
         /// <summary>
         ///     Initialize a new empty <see cref="ConsumerConfig" /> instance.
