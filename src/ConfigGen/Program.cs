@@ -322,6 +322,33 @@ namespace Confluent.Kafka
             return result;
         }
 
+        static string createConfigKeys(IEnumerable<PropertySpecification> props)
+        {
+            var codeText = "\n";
+            codeText += $"    public partial class Config\n";
+            codeText += $"    {{\n";
+            codeText += $"        /// <summary>\n";
+            codeText += $"        ///     A reference to the configuration key names\n";
+            codeText += $"        /// </summary>\n";
+            codeText += $"        public static class KeyNames\n";
+            codeText += $"        {{\n";
+
+            foreach (var prop in props)
+            {
+                codeText += $"            /// <summary>\n";
+                codeText += $"            ///     {prop.Description}\n";
+                codeText += $"            ///\n";
+                codeText += $"            ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n";
+                codeText += $"            ///     importance: {prop.Importance}\n";
+                codeText += $"            /// </summary>\n";
+                codeText += $"            public const string {ConfigNameToDotnetName(prop.Name)} = \"{prop.Name}\";\n\n";
+            }
+
+            codeText += $"        }}\n";
+            codeText += $"    }}\n";
+            return codeText;
+        }
+
         static string createProperties(IEnumerable<PropertySpecification> props)
         {
             var codeText = "";
@@ -651,6 +678,7 @@ namespace Confluent.Kafka
             codeText += createEnums(props.Where(p => p.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(p.Name)).ToList());
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += MappingConfiguration.AcksEnumString;
+            codeText += createConfigKeys(props);
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
             codeText += createClassConstructors("ClientConfig");
             codeText += MappingConfiguration.SaslMechanismGetSetString;

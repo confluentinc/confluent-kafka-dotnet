@@ -25,7 +25,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Base functionality common to all configuration classes.
     /// </summary>
-    public class Config : IEnumerable<KeyValuePair<string, string>>
+    public partial class Config : IEnumerable<KeyValuePair<string, string>>
     {
         private static Dictionary<string, string> EnumNameToConfigValueSubstitutes = new Dictionary<string, string>
         {
