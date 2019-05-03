@@ -441,7 +441,7 @@ namespace Confluent.Kafka
             codeText += $"    ///     {docs}\n";
             codeText += $"    /// </summary>\n";
             codeText += $"    public class {name}{(derive ? " : ClientConfig" : " : Config")}\n";
-            codeText += $"    {{\n";
+            codeText += $"    {{";
             return codeText;
         }
 
@@ -449,24 +449,24 @@ namespace Confluent.Kafka
         {
             var codeText = $@"
         /// <summary>
-        /// Creates a new {name} class by taking a copy of the provided <paramref name=""configSource""/>.
-        /// The <paramref name=""configSource""/> can be any of: IEnumerable; Dictonary; any of the Config types.
-        /// </summary>
-        /// <param name=""configSource""></param>
-        /// <returns></returns>
-        public static new {name} CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new {name}(configSource.ToDictionary(a => a.Key, a => a.Value));
-
-        /// <summary>
         ///     Initialize a new empty <see cref=""{name}"" /> instance.
         /// </summary>
         public {name}() : base() {{ }}
 
         /// <summary>
+        ///     Initialize a new <see cref=""{name}"" /> instance copying
+        ///     an existing key/value collection.
+        ///     This will create a copy of the <paramref name=""configSource""/> i.e. operations on this class WILL NOT modify the provided collection
+        /// </summary>
+        /// <param name=""configSource""></param>
+        public {name}(IEnumerable<KeyValuePair<string, string>> configSource) : base(configSource) {{ }}
+
+        /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance wrapping
-        ///     an existing <see cref=""ClientConfig"" /> instance.
+        ///     an existing <see cref=""Config"" /> instance.
         ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public {name}(ClientConfig config) : base(config) {{ }}
+        public {name}(Config config) : base(config) {{ }}
 
         /// <summary>
         ///     Initialize a new <see cref=""{name}"" /> instance wrapping

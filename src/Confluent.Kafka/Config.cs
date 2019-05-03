@@ -36,17 +36,17 @@ namespace Confluent.Kafka
         };
 
         /// <summary>
-        /// Creates a new Config class by taking a copy of the provided <paramref name="configSource"/>.
-        /// The <paramref name="configSource"/> can be any of: IEnumerable; Dictonary; any of the Config types
-        /// </summary>
-        /// <param name="configSource"></param>
-        /// <returns></returns>
-        public static Config CopyFrom(IEnumerable<KeyValuePair<string, string>> configSource) => new Config(configSource.ToDictionary(a => a.Key, a => a.Value));
-
-        /// <summary>
         ///     Initialize a new empty <see cref="Config" /> instance.
         /// </summary>
         public Config() { this.properties = new Dictionary<string, string>(); }
+
+        /// <summary>
+        ///     Initialize a new <see cref="Config" /> wrapping
+        ///     an existing key/value dictionary.
+        ///     This will create a copy of the <paramref name="configSource"/> i.e. operations on this class WILL NOT modify the provided collection
+        /// </summary>
+        /// <param name="configSource"></param>
+        public Config(IEnumerable<KeyValuePair<string, string>> configSource) : this(configSource.ToDictionary(a => a.Key, a => a.Value)) { }
 
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
