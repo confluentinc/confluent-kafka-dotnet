@@ -116,8 +116,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     {
                         consumer.Assign(new TopicPartitionOffset(topic1.Name, 0, 0));
                         var cr = consumer.Consume();
-                        Assert.Equal("hello", cr.Key);
-                        Assert.Equal("world", cr.Value);
+                        Assert.Equal("hello", cr.Message?.Key);
+                        Assert.Equal("world", cr.Message?.Value);
                     }
 
                     using (var consumer =
@@ -127,8 +127,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     {
                         consumer.Assign(new TopicPartitionOffset(topic2.Name, 0, 0));
                         var cr = consumer.Consume();
-                        Assert.Equal("hello", cr.Key);
-                        Assert.Equal("world", cr.Value);
+                        Assert.Equal("hello", cr.Message?.Key);
+                        Assert.Equal("world", cr.Message?.Value);
                     }
 
                     using (var consumer =

@@ -75,7 +75,7 @@ namespace Confluent.Kafka.Examples.Protobuf
                 {
                     consumer.Subscribe("protobuf-test-topic");
                     var cr = consumer.Consume();
-                    Console.WriteLine($"User: [id: {cr.Key}, favorite color: {cr.Message.Value.FavoriteColor}]");
+                    Console.WriteLine($"User: [id: {cr.Message?.Key}, favorite color: {cr.Message.Value.FavoriteColor}]");
                 }
             });
 
