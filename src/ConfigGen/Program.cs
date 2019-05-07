@@ -31,8 +31,9 @@ namespace ConfigGen
         ///     A function that filters out properties from the librdkafka list that should
         ///     not be automatically extracted.
         /// </summary>
-        internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props) 
-            => props.Where(p => {
+        internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props)
+            => props.Where(p =>
+            {
                 // handled as a special case.
                 if (p.Name == "sasl.mechanisms") { return false; }
                 if (p.Name == "sasl.mechanism") { return false; }
@@ -204,10 +205,10 @@ namespace ConfigGen
 
     }
 
-    
+
     class PropertySpecification : IComparable
     {
-        public PropertySpecification() {}
+        public PropertySpecification() { }
 
         public PropertySpecification(PropertySpecification other)
         {
@@ -322,7 +323,7 @@ namespace Confluent.Kafka
             return result;
         }
 
-        static string createConfigKeys(IEnumerable<PropertySpecification> props)
+        static string createConfigPropertyNames(IEnumerable<PropertySpecification> props)
         {
             var codeText = "\n";
             codeText += $"    public partial class Config\n";
@@ -330,23 +331,68 @@ namespace Confluent.Kafka
             codeText += $"        /// <summary>\n";
             codeText += $"        ///     A reference to the configuration key names\n";
             codeText += $"        /// </summary>\n";
-            codeText += $"        public static class KeyNames\n";
+            codeText += $"        public static class PropertyNames\n";
             codeText += $"        {{\n";
+
+            var codeTextC = string.Empty;
+            var codeTextP = string.Empty;
+            var codeTextA = string.Empty;
 
             foreach (var prop in props)
             {
-                codeText += $"            /// <summary>\n";
-                codeText += $"            ///     {prop.Description}\n";
-                codeText += $"            ///\n";
-                codeText += $"            ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n";
-                codeText += $"            ///     importance: {prop.Importance}\n";
-                codeText += $"            /// </summary>\n";
-                codeText += $"            public const string {ConfigNameToDotnetName(prop.Name)} = \"{prop.Name}\";\n\n";
+                var code = CreateProperty(prop);
+                switch (prop.CPorA)
+                {
+                    case "C":
+                        codeTextC += code;
+                        break;
+                    case "P":
+                        codeTextP += code;
+                        break;
+                    case "A":
+                        codeTextA += code;
+                        break;
+                    case "*":
+                        codeTextC += code;
+                        codeTextP += code;
+                        codeTextA += code;
+                        break;
+                    default:
+                        throw new InvalidOperationException("unrecognised config property type: " + prop.CPorA);
+                }
             }
+
+            codeText += CreateClass("Consumer", codeTextC) + "\n";
+            codeText += CreateClass("Producer", codeTextP) + "\n";
+            codeText += CreateClass("Admin", codeTextA);
 
             codeText += $"        }}\n";
             codeText += $"    }}\n";
             return codeText;
+
+            string CreateClass(string name, string code)
+            {
+                return
+                    $"            /// <summary>\n" +
+                    $"            ///     A reference to the configuration key names for {name}\n" +
+                    $"            /// </summary>\n" +
+                    $"            public static class {name}\n" +
+                    $"            {{\n" +
+                    code +
+                    $"            }}\n";
+            }
+
+            string CreateProperty(PropertySpecification prop)
+            {
+                return
+                    $"                /// <summary>\n" +
+                    $"                ///     {prop.Description}\n" +
+                    $"                ///\n" +
+                    $"                ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n" +
+                    $"                ///     importance: {prop.Importance}\n" +
+                    $"                /// </summary>\n" +
+                    $"                public const string {ConfigNameToDotnetName(prop.Name)} = \"{prop.Name}\";\n\n";
+            }
         }
 
         static string createProperties(IEnumerable<PropertySpecification> props)
@@ -397,7 +443,7 @@ namespace Confluent.Kafka
         static string createEnums(List<PropertySpecification> props)
         {
             var codeText = "";
-            for (int j=0; j<props.Count(); ++j)
+            for (int j = 0; j < props.Count(); ++j)
             {
                 var prop = props[j];
                 List<string> vs = null;
@@ -420,14 +466,14 @@ namespace Confluent.Kafka
                 codeText += $"    /// </summary>\n";
                 codeText += $"    public enum {ConfigNameToDotnetName(prop.Name)}\n";
                 codeText += $"    {{\n";
-                for (int i=0; i<vs.Count; ++i)
+                for (int i = 0; i < vs.Count; ++i)
                 {
                     var v = vs[i];
                     var nm = EnumNameToDotnetName(v);
                     codeText += $"        /// <summary>\n";
                     codeText += $"        ///     {nm}\n";
                     codeText += $"        /// </summary>\n";
-                    codeText += $"        {nm}{(i == vs.Count-1 ? "" : ",\n")}\n";
+                    codeText += $"        {nm}{(i == vs.Count - 1 ? "" : ",\n")}\n";
                 }
                 codeText += $"    }}\n";
             }
@@ -577,7 +623,7 @@ namespace Confluent.Kafka
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias)
                 {
-                    var firstIdx = desc.IndexOf('`')+1;
+                    var firstIdx = desc.IndexOf('`') + 1;
                     prop.AliasFor = desc.Substring(firstIdx, desc.IndexOf('`', firstIdx) - desc.IndexOf('`') - 1);
                 }
                 else
@@ -626,7 +672,8 @@ namespace Confluent.Kafka
 
         static List<PropertySpecification> choosePreferredNames(List<PropertySpecification> props)
         {
-            return props.Select(p => {
+            return props.Select(p =>
+            {
                 if (p.AliasFor != null && MappingConfiguration.PreferredNames.ContainsKey(p.AliasFor))
                 {
                     var af = p.AliasFor;
@@ -678,7 +725,7 @@ namespace Confluent.Kafka
             codeText += createEnums(props.Where(p => p.Type == "enum" || MappingConfiguration.AdditionalEnums.Keys.Contains(p.Name)).ToList());
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += MappingConfiguration.AcksEnumString;
-            codeText += createConfigKeys(props);
+            codeText += createConfigPropertyNames(props);
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
             codeText += createClassConstructors("ClientConfig");
             codeText += MappingConfiguration.SaslMechanismGetSetString;

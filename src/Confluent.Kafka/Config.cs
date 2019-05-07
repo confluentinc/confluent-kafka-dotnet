@@ -42,7 +42,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Initialize a new <see cref="Config" /> wrapping
-        ///     an existing key/value dictionary.
+        ///     an existing key/value colection.
         ///     This will create a copy of the <paramref name="configSource"/> i.e. operations on this class WILL NOT modify the provided collection
         /// </summary>
         /// <param name="configSource"></param>
