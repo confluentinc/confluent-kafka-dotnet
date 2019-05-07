@@ -15,12 +15,15 @@
 // Refer to LICENSE for more information.
 
 
+using System;
+
 namespace Confluent.Kafka
 {
     /// <summary>
     ///     Names of all configuration properties specific to the
     ///     .NET Client.
     /// </summary>
+    [Obsolete("Please use Config.PropertyNames instead")]
     public static class ConfigPropertyNames
     {
         /// <summary>
