@@ -374,7 +374,7 @@ namespace Confluent.Kafka
             {
                 return
                     $"            /// <summary>\n" +
-                    $"            ///     A reference to the configuration key names for {name}\n" +
+                    $"            ///     A reference to the key names for {name} specific configuration properties.\n" +
                     $"            /// </summary>\n" +
                     $"            public static class {name}\n" +
                     $"            {{\n" +

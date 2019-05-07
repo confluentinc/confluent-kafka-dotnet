@@ -225,7 +225,7 @@ namespace Confluent.Kafka
         public static class PropertyNames
         {
             /// <summary>
-            ///     A reference to the configuration key names for Consumer
+            ///     A reference to the key names for Consumer specific configuration properties.
             /// </summary>
             public static class Consumer
             {
@@ -816,7 +816,7 @@ namespace Confluent.Kafka
             }
 
             /// <summary>
-            ///     A reference to the configuration key names for Producer
+            ///     A reference to the key names for Producer specific configuration properties.
             /// </summary>
             public static class Producer
             {
@@ -1359,7 +1359,7 @@ namespace Confluent.Kafka
             }
 
             /// <summary>
-            ///     A reference to the configuration key names for Admin
+            ///     A reference to the key names for Admin specific configuration properties.
             /// </summary>
             public static class Admin
             {
