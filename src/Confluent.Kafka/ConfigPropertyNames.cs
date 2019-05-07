@@ -23,7 +23,6 @@ namespace Confluent.Kafka
     ///     Names of all configuration properties specific to the
     ///     .NET Client.
     /// </summary>
-    [Obsolete("Please use Config.PropertyNames instead")]
     public static class ConfigPropertyNames
     {
         /// <summary>
