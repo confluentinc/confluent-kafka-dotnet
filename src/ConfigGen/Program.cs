@@ -331,7 +331,7 @@ namespace Confluent.Kafka
             codeText += $"        /// <summary>\n";
             codeText += $"        ///     A reference to the configuration key names\n";
             codeText += $"        /// </summary>\n";
-            codeText += $"        public static class PropertyNames\n";
+            codeText += $"        public static partial class PropertyNames\n";
             codeText += $"        {{\n";
 
             var codeTextC = string.Empty;
@@ -376,7 +376,7 @@ namespace Confluent.Kafka
                     $"            /// <summary>\n" +
                     $"            ///     A reference to the key names for {name} specific configuration properties.\n" +
                     $"            /// </summary>\n" +
-                    $"            public static class {name}\n" +
+                    $"            public static partial class {name}\n" +
                     $"            {{\n" +
                     code +
                     $"            }}\n";

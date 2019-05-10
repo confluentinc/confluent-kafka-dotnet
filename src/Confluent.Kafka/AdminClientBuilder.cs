@@ -52,7 +52,7 @@ namespace Confluent.Kafka
         ///     A collection of librdkafka configuration parameters 
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
+        ///     <see cref="Confluent.Kafka.Config.PropertyNames" />).
         ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </param>
         public AdminClientBuilder(IEnumerable<KeyValuePair<string, string>> config)

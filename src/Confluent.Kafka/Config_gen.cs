@@ -222,12 +222,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     A reference to the configuration key names
         /// </summary>
-        public static class PropertyNames
+        public static partial class PropertyNames
         {
             /// <summary>
             ///     A reference to the key names for Consumer specific configuration properties.
             /// </summary>
-            public static class Consumer
+            public static partial class Consumer
             {
                 /// <summary>
                 ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error which is retrieved by consuming messages and checking 'message->err'.
@@ -818,7 +818,7 @@ namespace Confluent.Kafka
             /// <summary>
             ///     A reference to the key names for Producer specific configuration properties.
             /// </summary>
-            public static class Producer
+            public static partial class Producer
             {
                 /// <summary>
                 ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
@@ -1361,7 +1361,7 @@ namespace Confluent.Kafka
             /// <summary>
             ///     A reference to the key names for Admin specific configuration properties.
             /// </summary>
-            public static class Admin
+            public static partial class Admin
             {
                 /// <summary>
                 ///     Client identifier.

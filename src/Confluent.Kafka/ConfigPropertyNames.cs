@@ -23,6 +23,7 @@ namespace Confluent.Kafka
     ///     Names of all configuration properties specific to the
     ///     .NET Client.
     /// </summary>
+    [Obsolete("Please use Config.PropertyNames instead")]
     public static class ConfigPropertyNames
     {
         /// <summary>
@@ -38,7 +39,7 @@ namespace Confluent.Kafka
             /// 
             ///     default: true
             /// </summary>
-            public const string EnableBackgroundPoll = "dotnet.producer.enable.background.poll";
+            public const string EnableBackgroundPoll = Config.PropertyNames.Producer.EnableBackgroundPoll;
 
             /// <summary>
             ///     Specifies whether to enable notification of delivery reports. Typically
@@ -47,7 +48,7 @@ namespace Confluent.Kafka
             /// 
             ///     default: true
             /// </summary>
-            public const string EnableDeliveryReports = "dotnet.producer.enable.delivery.reports";
+            public const string EnableDeliveryReports = Config.PropertyNames.Producer.EnableDeliveryReports;
 
             /// <summary>
             ///     A comma separated list of fields that may be optionally set in delivery
@@ -57,7 +58,7 @@ namespace Confluent.Kafka
             /// 
             ///     default: all
             /// </summary>
-            public const string DeliveryReportFields = "dotnet.producer.delivery.report.fields";
+            public const string DeliveryReportFields = Config.PropertyNames.Producer.DeliveryReportFields;
         }
         
 
@@ -77,7 +78,7 @@ namespace Confluent.Kafka
             /// 
             ///     default: all
             /// </summary>
-            public const string ConsumeResultFields = "dotnet.consumer.consume.result.fields";
+            public const string ConsumeResultFields = Config.PropertyNames.Consumer.ConsumeResultFields;
         }
 
         /// <summary>
@@ -87,7 +88,7 @@ namespace Confluent.Kafka
         ///     default: 100
         ///     range: 1 &lt;= dotnet.cancellation.delay.max.ms &lt;= 10000
         /// </summary>
-        public const string CancellationDelayMaxMs = "dotnet.cancellation.delay.max.ms";
+        public const string CancellationDelayMaxMs = Config.PropertyNames.CancellationDelayMaxMs;
         
     }
 }

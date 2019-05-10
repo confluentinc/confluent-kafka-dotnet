@@ -511,9 +511,9 @@ namespace Confluent.Kafka
 
             var modifiedConfig = config
                 .Where(prop => 
-                    prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
-                    prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
-                    prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields);
+                    prop.Key != Kafka.Config.PropertyNames.Producer.EnableBackgroundPoll &&
+                    prop.Key != Kafka.Config.PropertyNames.Producer.EnableDeliveryReports &&
+                    prop.Key != Kafka.Config.PropertyNames.Producer.DeliveryReportFields);
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -524,19 +524,19 @@ namespace Confluent.Kafka
                 throw new ArgumentException("The 'delivery.report.only.error' property is not supported by this client");
             }
 
-            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableBackgroundPoll).Value;
+            var enableBackgroundPollObj = config.FirstOrDefault(prop => prop.Key == Kafka.Config.PropertyNames.Producer.EnableBackgroundPoll).Value;
             if (enableBackgroundPollObj != null)
             {
                 this.manualPoll = !bool.Parse(enableBackgroundPollObj);
             }
 
-            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.EnableDeliveryReports).Value;
+            var enableDeliveryReportsObj = config.FirstOrDefault(prop => prop.Key == Kafka.Config.PropertyNames.Producer.EnableDeliveryReports).Value;
             if (enableDeliveryReportsObj != null)
             {
                 this.enableDeliveryReports = bool.Parse(enableDeliveryReportsObj);
             }
 
-            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Producer.DeliveryReportFields).Value;
+            var deliveryReportEnabledFieldsObj = config.FirstOrDefault(prop => prop.Key == Kafka.Config.PropertyNames.Producer.DeliveryReportFields).Value;
             if (deliveryReportEnabledFieldsObj != null)
             {
                 var fields = deliveryReportEnabledFieldsObj.Replace(" ", "");
@@ -560,7 +560,7 @@ namespace Confluent.Kafka
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
                                 case "status": this.enableDeliveryReportPersistedStatus = true; break;
                                 default: throw new ArgumentException(
-                                    $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
+                                    $"Unknown delivery report field name '{part}' in config value '{Kafka.Config.PropertyNames.Producer.DeliveryReportFields}'.");
                             }
                         }
                     }
