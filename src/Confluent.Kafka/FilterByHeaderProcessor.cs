@@ -23,7 +23,7 @@ namespace Confluent.Kafka
   /// <summary>
   /// Compute if message should be kept based on filterByHeader List
   /// </summary>
-  public class FilterByHeaderValidator
+  public class FilterByHeaderProcessor
   {
     private readonly List<FilterByHeader> _filterByHeaders;
 
@@ -31,7 +31,7 @@ namespace Confluent.Kafka
     /// ctor
     /// </summary>
     /// <param name="filterByHeaders"> list of filter by header</param>
-    public FilterByHeaderValidator(IEnumerable<FilterByHeader> filterByHeaders)
+    public FilterByHeaderProcessor(IEnumerable<FilterByHeader> filterByHeaders)
     {
       if (filterByHeaders == null)
         throw new ArgumentNullException(nameof(filterByHeaders));

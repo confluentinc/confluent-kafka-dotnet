@@ -229,10 +229,10 @@ namespace Confluent.Kafka
       return valAsByteArray;
     }
 
-    private FilterByHeaderValidator _filterByHeaderValidator;
+    private FilterByHeaderProcessor _filterByHeaderValidator;
     public void RegisterFilterByHeaders(IEnumerable<FilterByHeader> filterByHeaders)
     {
-      _filterByHeaderValidator = new FilterByHeaderValidator(filterByHeaders);
+      _filterByHeaderValidator = new FilterByHeaderProcessor(filterByHeaders);
     }
 
 
