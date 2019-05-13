@@ -30,9 +30,6 @@ namespace Confluent.Kafka.Impl
         MSG_F_BLOCK = 4
     }
 
-    /// <remarks>
-    ///     TODO: remove when get_metadata works with string for only_topic
-    /// </remarks>
     internal sealed class SafeTopicHandle : SafeHandleZeroIsInvalid
     {
         const int RD_KAFKA_PARTITION_UA = -1;
@@ -43,19 +40,19 @@ namespace Confluent.Kafka.Impl
 
         protected override bool ReleaseHandle()
         {
-            LibRdKafka.topic_destroy(handle);
-            // See SafeKafkaHandle.Topic
+            Librdkafka.topic_destroy(handle);
+            // This corresponds to the DangerousAddRef call when
+            // the TopicHandle was created.
             kafkaHandle.DangerousRelease();
             return true;
         }
 
         internal string GetName()
-            => Util.Marshal.PtrToStringUTF8(LibRdKafka.topic_name(handle));
+            => Util.Marshal.PtrToStringUTF8(Librdkafka.topic_name(handle));
 
         internal bool PartitionAvailable(int partition)
         {
-            ThrowIfHandleClosed();
-            return LibRdKafka.topic_partition_available(handle, partition);
+            return Librdkafka.topic_partition_available(handle, partition);
         }
     }
 }

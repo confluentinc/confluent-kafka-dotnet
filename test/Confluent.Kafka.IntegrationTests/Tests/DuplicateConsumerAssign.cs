@@ -14,16 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
-using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     This is an experiment to see what happens when two consumers in the
@@ -33,42 +33,49 @@ namespace Confluent.Kafka.IntegrationTests
         ///     You should never do this, but the brokers don't actually prevent it.
         /// </remarks>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void DuplicateConsumerAssign(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void DuplicateConsumerAssign(string bootstrapServers)
         {
-            var consumerConfig = new Dictionary<string, object>
+            LogToFile("start DuplicateConsumerAssign");
+
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000
             };
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var testString = "hello world";
 
-            Message<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            DeliveryResult<byte[], byte[]> dr;
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
                 Assert.NotNull(dr);
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer1 = new Consumer(consumerConfig))
-            using (var consumer2 = new Consumer(consumerConfig))
+            using (var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
                 consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
                 consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                Message msg;
-                var haveMsg1 = consumer1.Consume(out msg, TimeSpan.FromSeconds(10));
-                Assert.NotNull(msg);
-                var haveMsg2 = consumer2.Consume(out msg, TimeSpan.FromSeconds(10));
-                Assert.NotNull(msg);
-
+                ConsumeResult<byte[], byte[]> record;
+                record = consumer1.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record);
+                Assert.NotNull(record.Message);
+                record = consumer2.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(record);
+                Assert.NotNull(record.Message);
+                
                 // NOTE: two consumers from the same group should never be assigned to the same
                 // topic / partition. This 'test' is here because I was curious to see what happened
                 // in practice if this did occur. Because this is not expected usage, no validation
                 // has been included in this test.
             }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   DuplicateConsumerAssign");
         }
 
     }

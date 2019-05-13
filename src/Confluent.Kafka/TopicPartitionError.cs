@@ -48,7 +48,7 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     A Kafka error.
         /// </param>
-        public TopicPartitionError(string topic, int partition, Error error)
+        public TopicPartitionError(string topic, Partition partition, Error error)
         {
             Topic = topic;
             Partition = partition;
@@ -63,7 +63,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the Kafka partition.
         /// </summary>
-        public int Partition { get; }
+        public Partition Partition { get; }
 
         /// <summary>
         ///     Gets the Kafka error.
@@ -120,9 +120,9 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(TopicPartitionError a, TopicPartitionError b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return (b is null);
             }
 
             return a.Equals(b);

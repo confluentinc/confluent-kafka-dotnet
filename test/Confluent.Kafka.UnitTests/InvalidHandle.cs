@@ -31,26 +31,30 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void KafkaHandleCreation()
         {
-            var config = new Dictionary<string, object>
+            var cConfig = new ConsumerConfig
             {
-                ["group.id"] = "test",
-                ["sasl.mechanisms"] = "PLAIN",
-                ["security.protocol"] = "ssl",
-                ["ssl.ca.location"] = "invalid"
+                GroupId = "test",
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.Ssl,
+                SslCaLocation = "invalid"
             };
             
-            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new Consumer(config));
-            Assert.Contains("ssl.ca.location failed", e.Message);
-            // note: if this test fail, it may be because an other error is thrown
-            // in a new librdkafka version, adpat test in this case
+            var pConfig = new ProducerConfig
+            {
+                SaslMechanism = SaslMechanism.Plain,
+                SecurityProtocol = SecurityProtocol.Ssl,
+                SslCaLocation = "invalid"
+            };
 
-            e = Assert.Throws<InvalidOperationException>(() => new Consumer<Null, Null>(config, null, null));
+            InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder<byte[], byte[]>(cConfig).Build());
+            Assert.Contains("ssl.ca.location failed", e.Message);
+            // note: if this test fails, it may be because another error is thrown
+            // in a new librdkafka version, adapt test in this case
+
+            e = Assert.Throws<InvalidOperationException>(() => new ConsumerBuilder<byte[], byte[]>(cConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
 
-            e = Assert.Throws<InvalidOperationException>(() => new Producer(config));
-            Assert.Contains("ssl.ca.location failed", e.Message);
-
-            e = Assert.Throws<InvalidOperationException>(() => new Producer<Null, Null>(config, null, null));
+            e = Assert.Throws<InvalidOperationException>(() => new ProducerBuilder<byte[], byte[]>(pConfig).Build());
             Assert.Contains("ssl.ca.location failed", e.Message);
         }
     }

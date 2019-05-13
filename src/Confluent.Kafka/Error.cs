@@ -16,6 +16,9 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
+
 namespace Confluent.Kafka
 {
     /// <summary>
@@ -24,6 +27,14 @@ namespace Confluent.Kafka
     /// </summary>
     public class Error
     {
+        /// <summary>
+        ///     Initialize a new Error instance that is a copy of another.
+        /// </summary>
+        /// <param name="error">
+        ///     The error object to initialize from.
+        /// </param>
+        public Error(Error error) : this(error.Code, error.Reason, error.IsFatal) { }
+
         /// <summary>
         ///     Initialize a new Error instance from a particular
         ///     <see cref="ErrorCode"/> value.
@@ -39,6 +50,35 @@ namespace Confluent.Kafka
         {
             Code = code;
             reason = null;
+            IsFatal = code == ErrorCode.Local_Fatal;
+        }
+
+        /// <summary>
+        ///     Initialize a new Error instance.
+        /// </summary>
+        /// <param name="code">
+        ///     The error code.
+        /// </param>
+        /// <param name="reason">
+        ///     The error reason. If null, this will be a static value
+        ///     associated with the error.
+        /// </param>
+        /// <param name="isFatal">
+        ///     Whether or not the error is fatal.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        ///     
+        /// </exception>
+        public Error(ErrorCode code, string reason, bool isFatal)
+        {
+            if (code == ErrorCode.Local_Fatal && !isFatal)
+            {
+                throw new ArgumentException("isFatal parameter must be 'true' when code is 'Local_Fatal'.");
+            }
+
+            Code = code;
+            this.reason = reason;
+            IsFatal = isFatal;
         }
 
         /// <summary>
@@ -58,6 +98,7 @@ namespace Confluent.Kafka
         {
             Code = code;
             this.reason = reason;
+            IsFatal = code == ErrorCode.Local_Fatal;
         }
 
         /// <summary>
@@ -65,7 +106,12 @@ namespace Confluent.Kafka
         /// </summary>
         public ErrorCode Code { get; }
 
-        private string reason;
+        /// <summary>
+        ///     Whether or not the error is fatal.
+        /// </summary>
+        public bool IsFatal { get; }
+
+        private readonly string reason;
 
         /// <summary>
         ///     Gets a human readable reason string associated with this error.
@@ -78,7 +124,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     true if Code != ErrorCode.NoError.
         /// </summary>
-        public bool HasError
+        public bool IsError
             => Code != ErrorCode.NoError;
 
         /// <summary>
@@ -92,15 +138,6 @@ namespace Confluent.Kafka
         /// </summary>
         public bool IsBrokerError
             => (int)Code > 0;
-
-        /// <summary>
-        ///     Converts the specified Error value to a boolean value (false if e.Code == ErrorCode.NoError, true otherwise).
-        /// </summary>
-        /// <param name="e">
-        ///     The Error value to convert.
-        /// </param>
-        public static implicit operator bool(Error e)
-            => e.HasError;
 
         /// <summary>
         ///     Converts the specified Error value to the value of it's Code property.
@@ -136,7 +173,11 @@ namespace Confluent.Kafka
                 return false;
             }
 
-            return ((Error)obj).Code == Code;
+            // Note: in practice, if the Code's are equal, the IsFatal's will be equal.
+            // However, the logic for arranging this is outside the responsibility of 
+            // this class (unfortunately) and this class needs to be general enough to
+            // deal with the possibility that this might not be the case.
+            return (((Error)obj).Code == Code) && (((Error)obj).IsFatal == IsFatal);
         }
 
         /// <summary>
@@ -162,9 +203,9 @@ namespace Confluent.Kafka
         /// </returns>
         public static bool operator ==(Error a, Error b)
         {
-            if (object.ReferenceEquals(a, null))
+            if (a is null)
             {
-                return object.ReferenceEquals(b, null);
+                return b is null;
             }
 
             return a.Equals(b);

@@ -28,16 +28,12 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
-        private const string SchemaRegistryUrlPropertyName = "schema.registry.url";
-        private const string SchemaRegistryConnectionTimeoutMsPropertyName = "schema.registry.connection.timeout.ms";
-        private const string SchemaRegistryMaxCachedSchemasPropertyName = "schema.registry.max.cached.schemas";
-
         private IRestService restService;
         private readonly int identityMapCapacity;
         private readonly Dictionary<int, string> schemaById = new Dictionary<int, string>();
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
-        private readonly object cacheLock = new object();
+        private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
@@ -49,7 +45,10 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const int DefaultMaxCachedSchemas = 1000;
 
-        /// <include file='include_docs.xml' path='API.Member[@name="ISchemaRegistryClient_MaxCachedSchemas"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.MaxCachedSchemas" />
+        /// </summary>
         public int MaxCachedSchemas
             => identityMapCapacity;
 
@@ -59,25 +58,68 @@ namespace Confluent.SchemaRegistry
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, object>> config)
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
         {
             if (config == null)
             {
                 throw new ArgumentNullException("config properties must be specified.");
             }
 
-            var schemaRegistryUrisMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryUrlPropertyName).FirstOrDefault();
-            if (schemaRegistryUrisMaybe.Value == null)
-            {
-                throw new ArgumentException("schema.registry.url configuration property must be specified.");
-            }
+            var schemaRegistryUrisMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
+            if (schemaRegistryUrisMaybe.Value == null) { throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl} configuration property must be specified."); }
             var schemaRegistryUris = (string)schemaRegistryUrisMaybe.Value;
 
-            var timeoutMsMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryConnectionTimeoutMsPropertyName).FirstOrDefault();
-            var timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : (int)timeoutMsMaybe.Value;
+            var timeoutMsMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs);
+            int timeoutMs;
+            try { timeoutMs = timeoutMsMaybe.Value == null ? DefaultTimeout : Convert.ToInt32(timeoutMsMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer."); }
 
-            var identityMapCapacityMaybe = config.Where(prop => prop.Key.ToLower() == SchemaRegistryMaxCachedSchemasPropertyName).FirstOrDefault();
-            this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : (int)identityMapCapacityMaybe.Value;
+            var identityMapCapacityMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
+            try { this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer."); }
+
+            var basicAuthSource = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource).Value) ?? "";
+            var basicAuthInfo = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value) ?? "";
+
+            string username = null;
+            string password = null;
+
+            if (basicAuthSource == "USER_INFO" || basicAuthSource == "")
+            {
+                if (basicAuthInfo != "")
+                {
+                    var userPass = (basicAuthInfo).Split(':');
+                    if (userPass.Length != 2)
+                    {
+                        throw new ArgumentException($"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
+                    }
+                    username = userPass[0];
+                    password = userPass[1];
+                }
+            }
+            else if (basicAuthSource == "SASL_INHERIT")
+            {
+                if (basicAuthInfo != "")
+                {
+                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} as also specified.");
+                }
+                var saslUsername = config.FirstOrDefault(prop => prop.Key == "sasl.username");
+                var saslPassword = config.FirstOrDefault(prop => prop.Key == "sasl.password");
+                if (saslUsername.Value == null)
+                {
+                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.username' property not specified.");
+                }
+                if (saslPassword.Value == null)
+                {
+                    throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
+                }
+                username = Convert.ToString(saslUsername.Value);
+                password = Convert.ToString(saslPassword.Value);
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
+            }
 
             foreach (var property in config)
             {
@@ -86,15 +128,17 @@ namespace Confluent.SchemaRegistry
                     continue;
                 }
 
-                if (property.Key != SchemaRegistryUrlPropertyName && 
-                    property.Key != SchemaRegistryConnectionTimeoutMsPropertyName && 
-                    property.Key != SchemaRegistryMaxCachedSchemasPropertyName)
+                if (property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo)
                 {
-                    throw new ArgumentException($"CachedSchemaRegistryClient: unexpected configuration parameter {property.Key}");
+                    throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password);
         }
 
         /// <remarks>
@@ -119,11 +163,15 @@ namespace Confluent.SchemaRegistry
             return false;
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaIdAsync"]/*' />
-        public Task<int> GetSchemaIdAsync(string subject, string schema)
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaIdAsync(string, string)" />
+        /// </summary>
+        public async Task<int> GetSchemaIdAsync(string subject, string schema)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
                 if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
                 {
                     idBySchema = new Dictionary<string, int>();
@@ -138,20 +186,28 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    schemaId = restService.CheckSchemaAsync(subject, schema, true).Result.Id;
+                    schemaId = (await restService.CheckSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false)).Id;
                     idBySchema[schema] = schemaId;
                     schemaById[schemaId] = schema;
                 }
 
-                return Task.FromResult(schemaId);
+                return schemaId;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_RegisterSchemaAsync"]/*' />
-        public Task<int> RegisterSchemaAsync(string subject, string schema)
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.RegisterSchemaAsync(string, string)" />
+        /// </summary>
+        public async Task<int> RegisterSchemaAsync(string subject, string schema)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
                 if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
                 {
                     idBySchema = new Dictionary<string, int>();
@@ -166,37 +222,53 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    schemaId = restService.RegisterSchemaAsync(subject, schema).Result;
+                    schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema] = schemaId;
                     schemaById[schemaId] = schema;
                 }
 
-                return Task.FromResult(schemaId);
+                return schemaId;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsync"]/*' />
-        public Task<string> GetSchemaAsync(int id)
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaAsync(int)" />
+        /// </summary>
+        public async Task<string> GetSchemaAsync(int id)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
                 if (!this.schemaById.TryGetValue(id, out string schema))
                 {
                     CleanCacheIfFull();
 
-                    schema = restService.GetSchemaAsync(id).Result;
+                    schema = await restService.GetSchemaAsync(id).ConfigureAwait(continueOnCapturedContext: false);
                     schemaById[id] = schema;
                 }
 
-                return Task.FromResult(schema);
+                return schema;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetSchemaAsyncSubjectVersion"]/*' />
-        public Task<string> GetSchemaAsync(string subject, int version)
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaAsync(string, int)" />
+        /// </summary>
+        public async Task<string> GetSchemaAsync(string subject, int version)
         {
-            lock (cacheLock)
-            { 
+            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
+            {
                 CleanCacheIfFull();
 
                 if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
@@ -207,40 +279,88 @@ namespace Confluent.SchemaRegistry
 
                 if (!schemaByVersion.TryGetValue(version, out string schemaString))
                 {
-                    var schema = restService.GetSchemaAsync(subject, version).Result;
+                    var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
                     schemaString = schema.SchemaString;
                     schemaByVersion[version] = schemaString;
                     schemaById[schema.Id] = schemaString;
                 }
 
-                return Task.FromResult(schemaString);
+                return schemaString;
+            }
+            finally
+            {
+                cacheMutex.Release();
             }
         }
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetLatestSchemaAsync"]/*' />
-        public async Task<Schema> GetLatestSchemaAsync(string subject)
-            => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(false);
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_GetAllSubjectsAsync"]/*' />
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetLatestSchemaAsync(string)" />
+        /// </summary>
+        public async Task<Schema> GetLatestSchemaAsync(string subject)
+            => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetAllSubjectsAsync" />
+        /// </summary>
         public Task<List<string>> GetAllSubjectsAsync()
             => restService.GetSubjectsAsync();
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_IsCompatibleAsync"]/*' />
-        public async Task<bool> IsCompatibleAsync(string subject, string schema)
-            => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(false);
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructKeySubjectName"]/*' />
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSubjectVersionsAsync(string)" />
+        /// </summary>
+        public async Task<List<int>> GetSubjectVersionsAsync(string subject)
+            => await restService.GetSubjectVersionsAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.IsCompatibleAsync(string, string)" />
+        /// </summary>
+        public async Task<bool> IsCompatibleAsync(string subject, string schema)
+            => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructKeySubjectName(string)" />
+        /// </summary>
         public string ConstructKeySubjectName(string topic)
             => $"{topic}-key";
 
-        /// <include file='include_docs.xml' path='API/Member[@name="ISchemaRegistryClient_ConstructValueSubjectName"]/*' />
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructValueSubjectName(string)" />
+        /// </summary>
         public string ConstructValueSubjectName(string topic)
             => $"{topic}-value";
+
 
         /// <summary>
         ///     Releases unmanaged resources owned by this CachedSchemaRegistryClient instance.
         /// </summary>
         public void Dispose()
-            => restService.Dispose();
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+
+        /// <summary>
+        ///     Releases the unmanaged resources used by this object
+        ///     and optionally disposes the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        ///     true to release both managed and unmanaged resources;
+        ///     false to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                restService.Dispose();
+            }
+        }
     }
 }

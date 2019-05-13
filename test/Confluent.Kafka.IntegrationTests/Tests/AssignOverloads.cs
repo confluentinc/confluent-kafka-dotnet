@@ -14,57 +14,80 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
-using System.Text;
 using System.Collections.Generic;
-using Confluent.Kafka.Serialization;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
-        ///     Simple test of both Consumer.Assign overloads.
+        ///     Simple test of all Consumer.Assign overloads.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void AssignOverloads(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void AssignOverloads(string bootstrapServers)
         {
-            var consumerConfig = new Dictionary<string, object>
+            LogToFile("start AssignOverloads");
+
+            var consumerConfig = new ConsumerConfig
             {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "session.timeout.ms", 6000 }
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                SessionTimeoutMs = 6000,
+                EnableAutoCommit = false
             };
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             var testString = "hello world";
             var testString2 = "hello world 2";
+            var testString3 = "hello world 3";
+            var testString4 = "hello world 4";
 
-            Message<Null, string> dr;
-            using (var producer = new Producer<Null, string>(producerConfig, null, new StringSerializer(Encoding.UTF8)))
+            DeliveryResult<Null, string> dr, dr3;
+            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, null, testString).Result;
-                Assert.False(dr.Error.HasError);
-                var dr2 = producer.ProduceAsync(singlePartitionTopic, null, testString2).Result;
-                Assert.False(dr2.Error.HasError);
+                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString2 }).Wait();
+                dr3 = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString3 }).Result;
+                producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString4 }).Wait();
                 producer.Flush(TimeSpan.FromSeconds(10));
             }
 
-            using (var consumer = new Consumer<Null, string>(consumerConfig, null, new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig).Build())
             {
                 // Explicitly specify partition offset.
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });
-                Message<Null, string> msg;
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-                Assert.Equal(msg.Value, testString);
-
+                var cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Commit();
+                Assert.Equal(cr.Value, testString);
+                
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
-                Assert.True(consumer.Consume(out msg, TimeSpan.FromSeconds(10)));
-                Assert.Equal(msg.Value, testString2);
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Commit();
+                Assert.NotNull(cr.Message);
+                Assert.Equal(cr.Message.Value, testString2);
+
+                // Explicitly specify partition offset.
+                consumer.Assign(new TopicPartitionOffset(dr.TopicPartition, dr3.Offset));
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Commit();
+                Assert.Equal(cr.Value, testString3);
+
+                // Determine offset to consume from automatically.
+                consumer.Assign(dr.TopicPartition);
+                cr = consumer.Consume(TimeSpan.FromSeconds(10));
+                consumer.Commit();
+                Assert.NotNull(cr.Message);
+                Assert.Equal(cr.Message.Value, testString4);
             }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   AssignOverloads");
         }
 
     }

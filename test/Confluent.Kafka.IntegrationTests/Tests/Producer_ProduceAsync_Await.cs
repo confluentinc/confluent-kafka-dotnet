@@ -14,40 +14,105 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
-using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    /// <summary>
-    ///     Ensures that awaiting ProduceAsync does not deadlock.
-    /// </summary>
-    public static partial class Tests
+    public partial class Tests
     {
-        public static async Task Producer_ProduceAsync_Await_Task(Dictionary<string, object> config, string topic)
-        {
-            using (var producer = new Producer(config))
-            {
-                var dr = await producer.ProduceAsync(topic, new byte[] {42}, new byte[] {44});
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
-        }
-
+        /// <summary>
+        ///     Ensures that awaiting ProduceAsync does not deadlock and
+        ///     some other basic things.
+        /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Producer_ProduceAsync_Await(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Producer_ProduceAsync_Await_Serializing(string bootstrapServers)
         {
-            var producerConfig = new Dictionary<string, object> 
-            { 
-                { "bootstrap.servers", bootstrapServers },
-                { "api.version.request", true }
+            LogToFile("start Producer_ProduceAsync_Await_Serializing");
+
+            Func<Task> mthd = async () => 
+            {
+                using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                {
+                    var dr = await producer.ProduceAsync(
+                        singlePartitionTopic,
+                        new Message<Null, string> { Value = "test string" });
+                    Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+                    Assert.NotEqual(Offset.Unset, dr.Offset);
+                }
             };
 
-            var task = Producer_ProduceAsync_Await_Task(producerConfig, singlePartitionTopic);
-            task.Wait();
+            mthd().Wait();
+            
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Producer_ProduceAsync_Await_Serializing");
+        }
+
+        /// <summary>
+        ///     Ensures that awaiting ProduceAsync does not deadlock and
+        ///     some other basic things (variant 2).
+        /// </summary>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public async Task Producer_ProduceAsync_Await_NonSerializing(string bootstrapServers)
+        {
+            LogToFile("start Producer_ProduceAsync_Await_NonSerializing");
+
+            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                var dr = await producer.ProduceAsync(
+                    singlePartitionTopic,
+                    new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                Assert.NotEqual(Offset.Unset, dr.Offset);
+            }
+
+            Assert.Equal(0, Library.HandleCount);
+
+            LogToFile("end   Producer_ProduceAsync_Await_NonSerializing");
+        }
+
+        /// <summary>
+        ///     Ensures that ProduceAsync throws when the DeliveryReport 
+        ///     has an error (produced to non-existant partition).
+        /// </summary>
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public async Task Producer_ProduceAsync_Await_Throws(string bootstrapServers)
+        {
+            LogToFile("start Producer_ProduceAsync_Await_Throws");
+
+            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                await Assert.ThrowsAsync<ProduceException<byte[], byte[]>>(
+                    async () => 
+                    {
+                        await producer.ProduceAsync(
+                            new TopicPartition(singlePartitionTopic, 42),
+                            new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                        throw new Exception("unexpected exception");
+                    });
+            }
+            
+            // variation 2
+
+            Func<Task> mthd = async () =>
+            {
+                using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                {
+                    var dr = await producer.ProduceAsync(
+                        new TopicPartition(singlePartitionTopic, 1001),
+                        new Message<byte[], byte[]> { Value = Encoding.UTF8.GetBytes("test string") });
+                    throw new Exception("unexpected exception.");
+                }
+            };
+
+            Assert.Throws<AggregateException>(() => { mthd().Wait(); });
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Producer_ProduceAsync_Await_Throws");
         }
     }
 }

@@ -14,38 +14,39 @@
 //
 // Refer to LICENSE for more information.
 
+using Avro.Generic;
+using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry.Serdes;
+using Confluent.SchemaRegistry;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Avro;
-using Avro.Generic;
-using Confluent.Kafka;
-using Confluent.Kafka.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace AvroBlogExample
 {
     /// <summary>
     ///     Complete source for the examples programs presented in the blog post:
-    ///     [insert blog URL here]
+    ///     https://www.confluent.io/blog/decoupling-systems-with-apache-kafka-schema-registry-and-avro/
     /// </summary>
     class Program
     {
-        static void ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
+        async static Task ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
-            {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
-
-            using (var producer = new Producer<Null, GenericRecord>(config, null, new AvroSerializer<GenericRecord>()))
-            {
-                var logLevelSchema = (EnumSchema)Schema.Parse(
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var producer =
+                new ProducerBuilder<Null, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
+                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .Build())
+            {   
+                var logLevelSchema = (Avro.EnumSchema)Avro.Schema.Parse(
                     File.ReadAllText("LogLevel.asvc"));
 
-                var logMessageSchema = (RecordSchema)Schema
+                var logMessageSchema = (Avro.RecordSchema)Avro.Schema
                     .Parse(File.ReadAllText("LogMessage.V1.asvc")
                         .Replace(
                             "MessageTypes.LogLevel", 
@@ -55,62 +56,86 @@ namespace AvroBlogExample
                 record.Add("IP", "127.0.0.1");
                 record.Add("Message", "a test log message");
                 record.Add("Severity", new GenericEnum(logLevelSchema, "Error"));
-                producer.ProduceAsync("log-messages", null, record)
-                    .ContinueWith(dr => Console.WriteLine(dr.Result.Error 
-                        ? $"error producing message: {dr.Result.Error.Reason}"
-                        : $"produced to: {dr.Result.TopicPartitionOffset}"));
+                await producer
+                    .ProduceAsync("log-messages", new Message<Null, GenericRecord> { Value = record })
+                    .ContinueWith(task => Console.WriteLine(
+                        task.IsFaulted
+                            ? $"error producing message: {task.Exception.Message}"
+                            : $"produced to: {task.Result.TopicPartitionOffset}"));
 
                 producer.Flush(TimeSpan.FromSeconds(30));
             }
         }
 
-        static void ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
+        async static Task ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            var config = new Dictionary<string, object>
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var producer =
+                new ProducerBuilder<Null, MessageTypes.LogMessage>(new ProducerConfig { BootstrapServers = bootstrapServers })
+                    .SetValueSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry))
+                    .Build())
             {
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl }
-            };
-
-            using (var producer = new Producer<Null, MessageTypes.LogMessage>(config, null, new AvroSerializer<MessageTypes.LogMessage>()))
-            {
-                producer.ProduceAsync(
-                    "log-messages", null, 
-                    new MessageTypes.LogMessage
+                await producer.ProduceAsync("log-messages",
+                    new Message<Null, MessageTypes.LogMessage>
                     {
-                        IP = "192.168.0.1",
-                        Message = "a test message 2",
-                        Severity = MessageTypes.LogLevel.Info,
-                        Tags = new Dictionary<string, string> { { "location", "CA" } }
+                        Value = new MessageTypes.LogMessage
+                        {
+                            IP = "192.168.0.1",
+                            Message = "a test message 2",
+                            Severity = MessageTypes.LogLevel.Info,
+                            Tags = new Dictionary<string, string> { { "location", "CA" } }
+                        }
                     });
+
                 producer.Flush(TimeSpan.FromSeconds(30));
             }
         }
 
         static void ConsumeSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            var consumerConfig = new Dictionary<string, object>
-            {
-                { "group.id", Guid.NewGuid().ToString() },
-                { "bootstrap.servers", bootstrapServers },
-                { "schema.registry.url", schemaRegistryUrl },
-                { "auto.offset.reset", "beginning" }
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
             };
 
-            using (var consumer = new Consumer<Null, MessageTypes.LogMessage>(
-                consumerConfig, null, new AvroDeserializer<MessageTypes.LogMessage>()))
+            var consumerConfig = new ConsumerConfig
             {
-                consumer.OnConsumeError 
-                    += (_, error) => Console.WriteLine($"an error occured: {error.Error.Reason}");
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers,
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
 
-                consumer.OnMessage 
-                    += (_, msg) => Console.WriteLine($"{msg.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")}: [{msg.Value.Severity}] {msg.Value.Message}");
-
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var consumer =
+                new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
+                    .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())
+                    .Build())
+            {
                 consumer.Subscribe("log-messages");
 
-                while (true)
+                try
                 {
-                    consumer.Poll(TimeSpan.FromSeconds(1));
+                    while (true)
+                    {
+                        try
+                        {
+                            var consumeResult = consumer.Consume(cts.Token);
+
+                            Console.WriteLine(
+                                consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                                + $": [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
+                        }
+                        catch (ConsumeException e)
+                        {
+                            Console.WriteLine($"an error occured: {e.Error.Reason}");
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // commit final offsets and leave the group.
+                    consumer.Close();
                 }
             }
         }
@@ -118,7 +143,7 @@ namespace AvroBlogExample
         private static void PrintUsage()
             => Console.WriteLine("Usage: .. <generic-produce|specific-produce|consume> <bootstrap-servers> <schema-registry-url>");
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             if (args.Length != 3)
             {
@@ -133,10 +158,10 @@ namespace AvroBlogExample
             switch (mode)
             {
                 case "generic-produce":
-                    ProduceGeneric(bootstrapServers, schemaRegistryUrl);
+                    await ProduceGeneric(bootstrapServers, schemaRegistryUrl);
                     break;
                 case "specific-produce":
-                    ProduceSpecific(bootstrapServers, schemaRegistryUrl);
+                    await ProduceSpecific(bootstrapServers, schemaRegistryUrl);
                     break;
                 case "consume":
                     ConsumeSpecific(bootstrapServers, schemaRegistryUrl);

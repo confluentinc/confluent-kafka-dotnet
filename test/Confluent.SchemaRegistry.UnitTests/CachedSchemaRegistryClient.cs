@@ -32,17 +32,14 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void NoUrls()
         {
-            var config = new Dictionary<string, object>();
+            var config = new SchemaRegistryConfig();
             Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
         }
 
         [Fact]
         public void ConstructKeySubjectName()
         {
-            var config = new Dictionary<string, object>
-            {
-                { "schema.registry.url", "irrelevanthost:8081" }
-            };
+            var config = new SchemaRegistryConfig { SchemaRegistryUrl = "irrelevanthost:8081" };
 
             CachedSchemaRegistryClient src = new CachedSchemaRegistryClient(config);
             Assert.Equal("mytopic-key", src.ConstructKeySubjectName("mytopic"));
@@ -51,10 +48,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void ConstructValueSubjectName()
         {
-            var config = new Dictionary<string, object>
-            {
-                { "schema.registry.url", "irrelevanthost:8081" }
-            };
+            var config = new SchemaRegistryConfig { SchemaRegistryUrl = "irrelevanthost:8081" };
 
             CachedSchemaRegistryClient src = new CachedSchemaRegistryClient(config);
             Assert.Equal("mytopic-value", src.ConstructValueSubjectName("mytopic"));

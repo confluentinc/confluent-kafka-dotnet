@@ -24,7 +24,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void FillTheCache(string server)
+        public static void FillTheCache(Config config)
         {
             const int capacity = 16;
 
@@ -33,14 +33,14 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            var config = new Dictionary<string, object>
+            var srConfig = new SchemaRegistryConfig
             {
-                { "schema.registry.url", server },
-                { "schema.registry.connection.timeout.ms", 3000 },
-                { "schema.registry.max.cached.schemas", capacity }
+                SchemaRegistryUrl = config.Server,
+                SchemaRegistryRequestTimeoutMs = 3000,
+                SchemaRegistryMaxCachedSchemas = capacity
             };
 
-            var sr = new CachedSchemaRegistryClient(config);
+            var sr = new CachedSchemaRegistryClient(srConfig);
 
             var registerCount = capacity + 10;
 

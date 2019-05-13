@@ -20,8 +20,8 @@ build_script:
   - docfx doc/docfx.json
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj -c %CONFIGURATION%)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.Kafka.Avro/Confluent.Kafka.Avro.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
 after_build:
   - 7z a docs-%APPVEYOR_REPO_COMMIT%.zip doc/_site/*
@@ -32,7 +32,7 @@ test_script:
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
-  - path: ./src/Confluent.Kafka.Avro/bin*/Release/*.nupkg
+  - path: ./src/Confluent.SchemaRegistry.Serdes/bin*/Release/*.nupkg
   - path: ./src/Confluent.SchemaRegistry/bin*/Release/*.nupkg
   - path: ./docs*.zip
     name: docs
@@ -40,9 +40,9 @@ artifacts:
 deploy:
   - provider: S3
     access_key_id:
-      secure: 1CwAH4xAr+14pkeEBRd3CNdaWrustJaN83PEZVq407I=
+      secure: fMceNBsTvTiBtBGUQ9dxMJtt3W/VLJE18uF8JJ7QKvc=
     secret_access_key:
-      secure: vXjAddNBH6D5FqC+Y3DqYykQaASQ+HQUEiFeYy59Vk71DmS5QgTIeZIRp18D0qZa
+      secure: JAkB+rZdmz+7if0Y2wqXyujTrRQVHjslpzhzXbvye0gArblFtdzwevkqCoibk9Of
     region: us-west-1
     bucket: dotnet-ci
     artifact: docs

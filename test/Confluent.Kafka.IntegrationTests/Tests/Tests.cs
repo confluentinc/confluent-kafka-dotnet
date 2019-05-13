@@ -14,26 +14,92 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka.Admin;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
-
+using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public class GlobalFixture : IDisposable
     {
+        private string bootstrapServers;
+
+        public GlobalFixture()
+        {
+            var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
+            var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
+            var jsonPath = Path.Combine(assemblyDirectory, "testconf.json");
+            var json = JObject.Parse(File.ReadAllText(jsonPath));
+            bootstrapServers = json["bootstrapServers"].ToString();
+
+            SinglePartitionTopic = "dotnet_test_" + Guid.NewGuid().ToString();
+            PartitionedTopic = "dotnet_test_" + Guid.NewGuid().ToString();
+
+            // Create shared topics that are used by many of the tests.
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                adminClient.CreateTopicsAsync(new List<TopicSpecification> {
+                    new TopicSpecification { Name = SinglePartitionTopic, NumPartitions = 1, ReplicationFactor = 1 },
+                    new TopicSpecification { Name = PartitionedTopic, NumPartitions = 2, ReplicationFactor = 1 }
+                }).Wait();
+            }
+        }
+
+        public void Dispose()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                adminClient.DeleteTopicsAsync(new List<string> { SinglePartitionTopic, PartitionedTopic }).Wait();
+            }
+        }
+
+        public string SinglePartitionTopic { get; set; }
+
+        public string PartitionedTopic { get; set; }
+    }
+
+    [CollectionDefinition("Global collection")]
+    public class GlobalCollection : ICollectionFixture<GlobalFixture>
+    {
+        // This class has no code, and is never created. Its purpose is
+        // simply to be the place to apply [CollectionDefinition] and all
+        // the ICollectionFixture<> interfaces.
+    }
+
+
+    [Collection("Global collection")]
+    public partial class Tests
+    {
+        private string singlePartitionTopic;
+        private string partitionedTopic;
+
         private static List<object[]> kafkaParameters;
 
-        static Tests()
+        private object logLockObj = new object();
+        private void LogToFile(string msg)
+        {
+            lock (logLockObj)
+            {
+                // Uncomment to enable logging to a file. Useful for debugging,
+                // for example, which test caused librdkafka to segfault.
+                // File.AppendAllLines("/tmp/test.txt", new [] { msg });
+            }
+        }
+
+        public Tests(GlobalFixture globalFixture)
         {
             // Quick fix for https://github.com/Microsoft/vstest/issues/918
             // Some tests will log using ConsoleLogger which print to standard Err by default, bugged on vstest
             // If we have error in test, they may hang
             // Write to standard output solve the issue
             Console.SetError(Console.Out);
+
+            singlePartitionTopic = globalFixture.SinglePartitionTopic;
+            partitionedTopic = globalFixture.PartitionedTopic;
         }
 
         public static IEnumerable<object[]> KafkaParameters()
@@ -42,16 +108,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
                 var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
-                var jsonPath = Path.Combine(assemblyDirectory, "kafka.parameters.json");
+                var jsonPath = Path.Combine(assemblyDirectory, "testconf.json");
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
                 kafkaParameters = new List<object[]>
                 {
-                    new object[]
-                    {
-                        json["bootstrapServers"].ToString(),
-                        json["singlePartitionTopic"].ToString(),
-                        json["partitionedTopic"].ToString()
-                    }
+                    new object[] { json["bootstrapServers"].ToString() }
                 };
             }
             return kafkaParameters;

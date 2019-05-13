@@ -27,9 +27,9 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.Local_BadMsg);
 
-            Assert.Equal(tpoe.Topic, "mytopic");
-            Assert.Equal(tpoe.Partition, 42);
-            Assert.Equal(tpoe.Offset, 107);
+            Assert.Equal("mytopic", tpoe.Topic);
+            Assert.Equal((Partition)42, tpoe.Partition);
+            Assert.Equal(107, tpoe.Offset);
             Assert.Equal(tpoe.Error, new Error(ErrorCode.Local_BadMsg));
         }
 
@@ -85,11 +85,11 @@ namespace Confluent.Kafka.UnitTests
         {
             var tpoe = new TopicPartitionOffsetError("mytopic", 42, 107, ErrorCode.Local_BadMsg);
 
-            Assert.True(tpoe.ToString().Contains(tpoe.Topic));
-            Assert.True(tpoe.ToString().Contains(tpoe.Partition.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Offset.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Error.ToString()));
-            Assert.True(tpoe.ToString().Contains(tpoe.Error.Reason));
+            Assert.Contains(tpoe.Topic, tpoe.ToString());
+            Assert.Contains(tpoe.Partition.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Offset.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Error.ToString(), tpoe.ToString());
+            Assert.Contains(tpoe.Error.Reason, tpoe.ToString());
         }
 
         [Fact]

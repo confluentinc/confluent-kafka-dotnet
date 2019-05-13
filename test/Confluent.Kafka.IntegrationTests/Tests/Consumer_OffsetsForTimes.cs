@@ -14,54 +14,55 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Confluent.Kafka.Serialization;
 using Xunit;
+
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic OffsetsForTimes test on Consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Consumer_OffsetsForTimes(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Consumer_OffsetsForTimes(string bootstrapServers)
         {
+            LogToFile("start Consumer_OffsetsForTimes");
+
             const int N = 10;
             const int Partition = 0;
 
             var messages = ProduceMessages(bootstrapServers, singlePartitionTopic, Partition, N);
 
-            var consumerConfig = new Dictionary<string, object>
+            var consumerConfig = new ConsumerConfig
             {
-                {"group.id", Guid.NewGuid().ToString()},
-                {"bootstrap.servers", bootstrapServers},
-                {"api.version.request", true}
+                GroupId = Guid.NewGuid().ToString(),
+                BootstrapServers = bootstrapServers
             };
 
             var firstMessage = messages[0];
             var lastMessage = messages[N - 1];
-            using (var consumer = new Consumer<string, string>(consumerConfig, new StringDeserializer(Encoding.UTF8), new StringDeserializer(Encoding.UTF8)))
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
             {
-                // NOTE: When calling OffsetsForTimes a proper timeout for must be set. 
-                // If it will be too short, we'll get an exception here or incorrect result.
-                // See librdkafka implementation for details https://github.com/edenhill/librdkafka/blob/master/src/rdkafka.c#L2475
                 var timeout = TimeSpan.FromSeconds(10);
 
+                // If empty request, expect empty result.
+                var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
+                Assert.Empty(result);
+                
                 // Getting the offset for the first produced message timestamp
-                var result = consumer.OffsetsForTimes(
+                result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
+                Assert.Single(result);
                 Assert.Equal(result[0].Offset, firstMessage.Offset);
-                Assert.False(result[0].Error.HasError);
 
                 // Getting the offset for the last produced message timestamp
                 result = consumer.OffsetsForTimes(
@@ -69,20 +70,18 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
+                Assert.Single(result);
                 Assert.Equal(result[0].Offset, lastMessage.Offset);
-                Assert.False(result[0].Error.HasError);
 
-                // Getting the offset for the timestamp that very far in the past
+                // Getting the offset for the timestamp that is very far in the past
                 var unixTimeEpoch = Timestamp.UnixTimeEpoch;
                 result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, 0);
-                Assert.False(result[0].Error.HasError);
+                Assert.Single(result);
+                Assert.Equal(0, result[0].Offset);
 
                 // Getting the offset for the timestamp that very far in the future
                 result = consumer.OffsetsForTimes(
@@ -90,26 +89,33 @@ namespace Confluent.Kafka.IntegrationTests
                         timeout)
                     .ToList();
 
-                Assert.Equal(result.Count, 1);
-                Assert.Equal(result[0].Offset, 0);
-                Assert.False(result[0].Error.HasError);
+                Assert.Single(result);
+                Assert.Equal(0, result[0].Offset);
             }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Consumer_OffsetsForTimes");
         }
 
-        private static Message<string, string>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
+        private static DeliveryResult<byte[], byte[]>[] ProduceMessages(string bootstrapServers, string topic, int partition, int count)
         {
-            var producerConfig = new Dictionary<string, object>
-            {
-                {"bootstrap.servers", bootstrapServers},
-                {"api.version.request", true}
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var messages = new Message<string, string>[count];
-            using (var producer = new Producer<string, string>(producerConfig, new StringSerializer(Encoding.UTF8), new StringSerializer(Encoding.UTF8)))
+            var messages = new DeliveryResult<byte[], byte[]>[count];
+            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
                 for (var index = 0; index < count; index++)
                 {
-                    var message = producer.ProduceAsync(topic, $"test key {index}", $"test val {index}", partition).Result;
+                    var message = producer.ProduceAsync(
+                        new TopicPartition(topic, partition),
+                        new Message<byte[], byte[]>
+                        { 
+                            Key = Serializers.Utf8.Serialize($"test key {index}", SerializationContext.Empty),
+                            Value = Serializers.Utf8.Serialize($"test val {index}", SerializationContext.Empty),
+                            Timestamp = Timestamp.Default, 
+                            Headers = null
+                        }
+                    ).Result;
                     messages[index] = message;
                     Task.Delay(200).Wait();
                 }

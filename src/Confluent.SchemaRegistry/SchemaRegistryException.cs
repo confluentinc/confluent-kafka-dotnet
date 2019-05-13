@@ -16,6 +16,7 @@
 
 using System;
 using System.Net;
+using System.Net.Http;
 
 
 namespace Confluent.SchemaRegistry
@@ -23,7 +24,7 @@ namespace Confluent.SchemaRegistry
     /// <summary>
     ///     Represents an error returned by Confluent Schema Registry.
     /// </summary>
-    public class SchemaRegistryException : Exception
+    public class SchemaRegistryException : HttpRequestException
     {
         /// <summary>
         ///     An error code specfic to Schema Registry of the form XXX or XXXYY.

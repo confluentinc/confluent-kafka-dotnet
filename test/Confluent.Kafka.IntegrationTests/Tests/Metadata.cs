@@ -14,26 +14,31 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable xUnit1026
+
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using Xunit;
-using Newtonsoft.Json.Linq;
 
 
 namespace Confluent.Kafka.IntegrationTests
 {
-    public static partial class Tests
+    public partial class Tests
     {
         /// <summary>
         ///     Basic test that metadata request + serialization works.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public static void Metadata(string bootstrapServers, string singlePartitionTopic, string partitionedTopic)
+        public void Metadata(string bootstrapServers)
         {
-            var producerConfig = new Dictionary<string, object> { { "bootstrap.servers", bootstrapServers } };
+            LogToFile("start Metadata");
 
-            using (var producer = new Producer(producerConfig))
+            var config = new AdminClientConfig { BootstrapServers = bootstrapServers };
+
+            using (var adminClient = new AdminClientBuilder(config).Build())
             {
-                var metadata = producer.GetMetadata(true, null);
+                var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
                 Assert.NotNull(metadata.Brokers);
                 Assert.True(metadata.Brokers.Count > 0);
 
@@ -79,6 +84,9 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(metadata.Brokers[i].Port, brokers[i].Value<int>("Port"));
                 }
             }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Metadata");
         }
     }
 }

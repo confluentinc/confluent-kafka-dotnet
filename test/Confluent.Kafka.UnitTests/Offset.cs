@@ -26,21 +26,21 @@ namespace Confluent.Kafka.UnitTests
         {
             Assert.Equal(Offset.Beginning.Value, -2);
             Assert.Equal(Offset.End.Value, -1);
-            Assert.Equal(Offset.Invalid.Value, -1001);
+            Assert.Equal(Offset.Unset.Value, -1001);
             Assert.Equal(Offset.Stored.Value, -1000);
         }
 
         [Fact]
         public void Constructor()
         {
-            Assert.Equal(new Offset(42).Value, 42);
+            Assert.Equal(42, new Offset(42).Value);
         }
 
         [Fact]
         public void Casts()
         {
             long offsetValue = new Offset(42);
-            Assert.Equal(offsetValue, 42);
+            Assert.Equal(42, offsetValue);
 
             Offset offset = 42;
             Assert.Equal(offset, new Offset(42));
@@ -70,6 +70,20 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public void Addition_Int()
+        {
+            Offset a = new Offset(42);
+            Assert.Equal(45, a + 3);
+        }
+
+        [Fact]
+        public void Addition_Long()
+        {
+            Offset a = new Offset(42);
+            Assert.Equal(100, a + (long)58);
+        }
+
+        [Fact]
         public void Hash()
         {
             Offset offset = new Offset(42);
@@ -83,7 +97,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.False(new Offset(-42).IsSpecial);
             Assert.True(Offset.Beginning.IsSpecial);
             Assert.True(Offset.End.IsSpecial);
-            Assert.True(Offset.Invalid.IsSpecial);
+            Assert.True(Offset.Unset.IsSpecial);
             Assert.True(Offset.Stored.IsSpecial);
         }
 
@@ -92,14 +106,14 @@ namespace Confluent.Kafka.UnitTests
         {
             Assert.Equal(new Offset(42).ToString(), 42.ToString());
             Assert.Equal(new Offset(-42).ToString(), (-42).ToString());
-            Assert.True(Offset.Invalid.ToString().Contains("Invalid"));
-            Assert.True(Offset.Invalid.ToString().Contains((-1001).ToString()));
-            Assert.True(Offset.Stored.ToString().Contains("Stored"));
-            Assert.True(Offset.Stored.ToString().Contains((-1000).ToString()));
-            Assert.True(Offset.Beginning.ToString().Contains("Beginning"));
-            Assert.True(Offset.Beginning.ToString().Contains((-2).ToString()));
-            Assert.True(Offset.End.ToString().Contains("End"));
-            Assert.True(Offset.End.ToString().Contains((-1).ToString()));
+            Assert.Contains("Unset", Offset.Unset.ToString());
+            Assert.Contains((-1001).ToString(), Offset.Unset.ToString());
+            Assert.Contains("Stored", Offset.Stored.ToString());
+            Assert.Contains((-1000).ToString(), Offset.Stored.ToString());
+            Assert.Contains("Beginning", Offset.Beginning.ToString());
+            Assert.Contains((-2).ToString(), Offset.Beginning.ToString());
+            Assert.Contains("End", Offset.End.ToString());
+            Assert.Contains((-1).ToString(), Offset.End.ToString());
         }
     }
 }

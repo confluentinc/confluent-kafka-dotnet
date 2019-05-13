@@ -37,18 +37,5 @@ namespace Confluent.Kafka.Impl
         }
 
         public override bool IsInvalid => handle == IntPtr.Zero;
-
-        /// <summary>
-        ///     Prevent AccessViolationException when handle has already been closed.
-        ///     Should be called at start of every function using handle,
-        ///     except in ReleaseHandle.
-        /// </summary>
-        protected void ThrowIfHandleClosed()
-        {
-            if (IsClosed)
-            {
-                throw new ObjectDisposedException($"{handleName} handle is closed", innerException: null);
-            }
-        }
     }
 }
