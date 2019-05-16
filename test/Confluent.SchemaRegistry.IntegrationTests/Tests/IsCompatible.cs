@@ -45,7 +45,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             sr.RegisterSchemaAsync(subject, testSchema1).Wait();
 
             Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
+            Assert.False(sr.IsCompatibleAsync(subject, 1, testSchema2).Result);
             Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+            Assert.True(sr.IsCompatibleAsync(subject, 1, testSchema1).Result);
 
 
             // case 2: record not specified.

@@ -208,7 +208,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Check if an avro schema is compatible with latest version registered against a 
+        ///     Check if an avro schema is compatible with latest version registered against a
         ///     specified subject.
         /// </summary>
         /// <param name="subject">
@@ -219,14 +219,36 @@ namespace Confluent.SchemaRegistry
         /// </param>
         /// <returns>
         ///     true if <paramref name="avroSchema" /> is compatible with the latest version 
-        ///     registered against a specified subject, false otherwise.
+        ///     registered against <paramref name="subject" />, false otherwise.
         /// </returns>
         [Obsolete("Superseded by IsCompatibleAsync(string, Schema)")]
         Task<bool> IsCompatibleAsync(string subject, string avroSchema);
 
 
         /// <summary>
-        ///     Check if a schema is compatible with latest version registered against a 
+        ///     Check if an avro schema is compatible with a particular version registered against
+        ///     a specified subject.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to check.
+        /// </param>
+        /// <param name="versionId">
+        ///     The version of the subject to check.
+        /// </param>
+        /// <param name="avroSchema">
+        ///     The schema to check.
+        /// </param>
+        /// <returns>
+        ///     true if <paramref name="avroSchema" /> is compatible with the specified 
+        ///     <paramref name="versionId" /> registered against <paramref name="subject" />, false
+        ///     otherwise.
+        /// </returns>
+        [Obsolete("Superseded by IsCompatibleAsync(string, int, Schema)")]
+        Task<bool> IsCompatibleAsync(string subject, int versionId, string avroSchema);
+
+
+        /// <summary>
+        ///     Check if an avro schema is compatible with latest version registered against a
         ///     specified subject.
         /// </summary>
         /// <param name="subject">
@@ -237,9 +259,75 @@ namespace Confluent.SchemaRegistry
         /// </param>
         /// <returns>
         ///     true if <paramref name="schema" /> is compatible with the latest version 
-        ///     registered against a specified subject, false otherwise.
+        ///     registered against <paramref name="subject" />, false otherwise.
         /// </returns>
         Task<bool> IsCompatibleAsync(string subject, Schema schema);
+
+
+        /// <summary>
+        ///     Check if a schema is compatible with a particular version registered against a
+        ///     specified subject.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to check.
+        /// </param>
+        /// <param name="versionId">
+        ///     The version of the subject to check.
+        /// </param>
+        /// <param name="schema">
+        ///     The schema to check.
+        /// </param>
+        /// <returns>
+        ///     true if <paramref name="avroSchema" /> is compatible with the specified 
+        ///     <paramref name="versionId" /> registered against <paramref name="subject" />, false
+        ///     otherwise.
+        /// </returns>
+        Task<bool> IsCompatibleAsync(string subject, int versionId, Schema schema);
+
+
+        /// <summary>
+        ///     Get the compatibility level of a specified <paramref name="subject" />.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to get the compatibility level for.
+        /// </param>
+        /// <returns>
+        ///     The compatibility level of <paramref name="subject" />.
+        /// </returns>
+        /// <exception cref="SchemaRegistryException">
+        ///     Thrown if no compatibility level has been set for <paramref name="subject" />.
+        /// </exception>
+        Task<Compatibility> GetCompatibilityAsync(string subject);
+
+
+        /// <summary>
+        ///     Update the compatibility level of a specified <paramref name="subject" />.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to update.
+        /// </param>
+        /// <param name="compatibility">
+        ///     The new compatibility level.
+        /// </param>
+        Task UpdateCompatibilityAsync(string subject, Compatibility compatibility);
+
+
+        /// <summary>
+        ///     Get the global compatibility level.
+        /// </summary>
+        /// <returns>
+        ///     The global compatibility level.
+        /// </returns>
+        Task<Compatibility> GetGlobalCompatibilityAsync();
+
+
+        /// <summary>
+        ///     Update the global compatibility level.
+        /// </summary>
+        /// <param name="compatibility">
+        ///     The new compatibility level.
+        /// </param>
+        Task UpdateGlobalCompatibilityAsync(Compatibility compatibility);
 
 
         /// <summary>

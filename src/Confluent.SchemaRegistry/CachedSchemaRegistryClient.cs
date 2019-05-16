@@ -44,9 +44,15 @@ namespace Confluent.SchemaRegistry
     ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetCompatibilityAsync(string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetGlobalCompatibilityAsync" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, Schema)" />
+    ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, int, Schema)" />
     ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, int, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.UpdateCompatibilityAsync(string, Compatibility)" />
+    ///      - <see cref="CachedSchemaRegistryClient.UpdateGlobalCompatibilityAsync(Compatibility)" />
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
@@ -509,8 +515,38 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
+        public async Task<bool> IsCompatibleAsync(string subject, int versionId, Schema schema)
+            => await restService.TestCompatibilityAsync(subject, versionId, schema).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
             => await restService.TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<bool> IsCompatibleAsync(string subject, int versionId, string avroSchema)
+            => await restService.TestCompatibilityAsync(subject, versionId, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<Compatibility> GetCompatibilityAsync(string subject)
+            => await restService.GetCompatibilityAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task UpdateCompatibilityAsync(string subject, Compatibility compatibility)
+            => await restService.SetCompatibilityAsync(subject, compatibility).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<Compatibility> GetGlobalCompatibilityAsync()
+            => await restService.GetGlobalCompatibilityAsync().ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task UpdateGlobalCompatibilityAsync(Compatibility compatibility)
+            => await restService.SetGlobalCompatibilityAsync(compatibility).ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc />
