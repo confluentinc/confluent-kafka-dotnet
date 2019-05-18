@@ -115,7 +115,6 @@ namespace Confluent.Kafka
             return false;
         }
 
-
         /// <summary>
         ///     Removes all headers for the given key.
         /// </summary>
@@ -125,42 +124,6 @@ namespace Confluent.Kafka
         public void Remove(string key)
             => headers.RemoveAll(a => a.Key == key);
 
-        internal class HeadersEnumerator : IEnumerator<IHeader>
-        {
-            private Headers headers;
-
-            private int location = -1;
-
-            public HeadersEnumerator(Headers headers)
-            {
-                this.headers = headers;
-            }
-
-            public object Current 
-                => ((IEnumerator<IHeader>)this).Current;
-
-            IHeader IEnumerator<IHeader>.Current
-                => headers.headers[location];
-
-            public void Dispose() {}
-
-            public bool MoveNext()
-            {
-                location += 1;
-                if (location >= headers.headers.Count)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            public void Reset()
-            {
-                this.location = -1;
-            }
-        }
-
         /// <summary>
         ///     Returns an enumerator that iterates through the headers collection.
         /// </summary>
@@ -168,7 +131,7 @@ namespace Confluent.Kafka
         ///     An enumerator object that can be used to iterate through the headers collection.
         /// </returns>
         public IEnumerator<IHeader> GetEnumerator()
-            => new HeadersEnumerator(this);
+            => headers.GetEnumerator();
 
         /// <summary>
         ///     Returns an enumerator that iterates through the headers collection.
@@ -177,7 +140,7 @@ namespace Confluent.Kafka
         ///     An enumerator object that can be used to iterate through the headers collection.
         /// </returns>
         IEnumerator IEnumerable.GetEnumerator()
-            => new HeadersEnumerator(this);
+            => GetEnumerator();
 
         /// <summary>
         ///     Gets the header at the specified index
