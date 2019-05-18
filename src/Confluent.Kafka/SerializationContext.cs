@@ -37,10 +37,14 @@ namespace Confluent.Kafka
         /// <param name="topic">
         ///     The topic the data is being written to or read from.
         /// </param>
-        public SerializationContext(MessageComponentType component, string topic)
+        /// <param name="header">
+        ///     The headers associated with the message being processed.
+        /// </param>
+        public SerializationContext(MessageComponentType component, string topic, Headers header)
         {
             Component = component;
             Topic = topic;
+            Headers = header;
         }
 
         /// <summary>
@@ -52,5 +56,11 @@ namespace Confluent.Kafka
         ///     The component of the message the serialization operation relates to.
         /// </summary>
         public MessageComponentType Component { get; private set; }
+
+        /// <summary>
+        ///     The headers associated with the message being processed.
+        /// </summary>
+        public Headers Headers { get; private set; }
+
     }
 }

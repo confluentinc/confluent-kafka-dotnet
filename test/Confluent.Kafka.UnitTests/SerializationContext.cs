@@ -25,9 +25,11 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Constuctor()
         {
-            var sc = new SerializationContext(MessageComponentType.Value, "my-topic");
+            var headers = new Headers { new Header("key", new byte[] { 123 }) };
+            var sc = new SerializationContext(MessageComponentType.Value, "my-topic", headers);
             Assert.Equal(MessageComponentType.Value, sc.Component);
             Assert.Equal("my-topic", sc.Topic);
+            Assert.Equal(headers, sc.Headers);
         }
     }
 }
