@@ -1,3 +1,12 @@
+# 1.0.1-RC1
+
+## Enhancements
+
+- Support for Alpine Linux.
+- New LogLevelType enum and functions to convert between different log level type levels.
+- Added netstandard20 as a target.
+
+
 # 1.0.0
 
 ## Summary
