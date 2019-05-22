@@ -544,9 +544,9 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = config
-                .Where(prop => prop.Key != Kafka.Config.PropertyNames.Consumer.ConsumeResultFields);
+                .Where(prop => prop.Key != ConsumerConfig.PropertyNames.ConsumeResultFields);
 
-            var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == Kafka.Config.PropertyNames.Consumer.ConsumeResultFields).Value;
+            var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConsumerConfig.PropertyNames.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)
             {
                 var fields = enabledFieldsObj.Replace(" ", "");
@@ -566,7 +566,7 @@ namespace Confluent.Kafka
                                 case "timestamp": this.enableTimestampMarshaling = true; break;
                                 case "topic": this.enableTopicNameMarshaling = true; break;
                                 default: throw new ArgumentException(
-                                    $"Unexpected consume result field name '{part}' in config value '{Kafka.Config.PropertyNames.Consumer.ConsumeResultFields}'.");
+                                    $"Unexpected consume result field name '{part}' in config value '{ConsumerConfig.PropertyNames.ConsumeResultFields}'.");
                             }
                         }
                     }

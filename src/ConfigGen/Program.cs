@@ -326,13 +326,6 @@ namespace Confluent.Kafka
         static string createConfigPropertyNames(IEnumerable<PropertySpecification> props)
         {
             var codeText = "\n";
-            codeText += $"    public partial class Config\n";
-            codeText += $"    {{\n";
-            codeText += $"        /// <summary>\n";
-            codeText += $"        ///     A reference to the configuration key names\n";
-            codeText += $"        /// </summary>\n";
-            codeText += $"        public static partial class PropertyNames\n";
-            codeText += $"        {{\n";
 
             var codeTextC = string.Empty;
             var codeTextP = string.Empty;
@@ -366,32 +359,38 @@ namespace Confluent.Kafka
             codeText += CreateClass("Producer", codeTextP) + "\n";
             codeText += CreateClass("Admin", codeTextA);
 
-            codeText += $"        }}\n";
-            codeText += $"    }}\n";
+            //codeText += $"        }}\n";
+            //codeText += $"    }}\n";
             return codeText;
 
             string CreateClass(string name, string code)
             {
                 return
-                    $"            /// <summary>\n" +
-                    $"            ///     A reference to the key names for {name} specific configuration properties.\n" +
-                    $"            /// </summary>\n" +
-                    $"            public static partial class {name}\n" +
-                    $"            {{\n" +
+                    $"    /// <summary>\n" +
+                    $"    ///     A reference to the key names for {name} specific configuration properties.\n" +
+                    $"    /// </summary>\n" +
+                    $"    public partial class {name}Config\n" +
+                    $"    {{\n" +
+                    $"        /// <summary>\n"+
+                    $"        ///     A reference to the configuration key names\n"+
+                    $"        /// </summary>\n"+
+                    $"        public static partial class PropertyNames\n"+
+                    $"        {{\n"+
                     code +
-                    $"            }}\n";
+                    $"        }}\n"+
+                    $"    }}\n";
             }
 
             string CreateProperty(PropertySpecification prop)
             {
                 return
-                    $"                /// <summary>\n" +
-                    $"                ///     {prop.Description}\n" +
-                    $"                ///\n" +
-                    $"                ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n" +
-                    $"                ///     importance: {prop.Importance}\n" +
-                    $"                /// </summary>\n" +
-                    $"                public const string {ConfigNameToDotnetName(prop.Name)} = \"{prop.Name}\";\n\n";
+                    $"            /// <summary>\n" +
+                    $"            ///     {prop.Description}\n" +
+                    $"            ///\n" +
+                    $"            ///     default: {(prop.Default == "" ? "''" : prop.Default)}\n" +
+                    $"            ///     importance: {prop.Importance}\n" +
+                    $"            /// </summary>\n" +
+                    $"            public const string {ConfigNameToDotnetName(prop.Name)} = \"{prop.Name}\";\n\n";
             }
         }
 
@@ -486,7 +485,7 @@ namespace Confluent.Kafka
             codeText += $"    /// <summary>\n";
             codeText += $"    ///     {docs}\n";
             codeText += $"    /// </summary>\n";
-            codeText += $"    public class {name}{(derive ? " : ClientConfig" : " : Config")}\n";
+            codeText += $"    public partial class {name}{(derive ? " : ClientConfig" : " : Config")}\n";
             codeText += $"    {{";
             return codeText;
         }

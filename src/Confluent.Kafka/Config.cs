@@ -213,7 +213,7 @@ namespace Confluent.Kafka
         ///     range: 1 &lt;= dotnet.cancellation.delay.max.ms &lt;= 10000
         ///     importance: low
         /// </summary>
-        public int CancellationDelayMaxMs { set { this.SetObject(Config.PropertyNames.CancellationDelayMaxMs, value); } }
+        public int CancellationDelayMaxMs { set { this.SetObject(ConsumerConfig.PropertyNames.CancellationDelayMaxMs, value); } }
 
         private const int DefaultCancellationDelayMaxMs = 100;
 
@@ -221,7 +221,7 @@ namespace Confluent.Kafka
             IEnumerable<KeyValuePair<string, string>> config, out int cancellationDelayMaxMs)
         {
             var cancellationDelayMaxString = config
-                .Where(prop => prop.Key == PropertyNames.CancellationDelayMaxMs)
+                .Where(prop => prop.Key == ConsumerConfig.PropertyNames.CancellationDelayMaxMs)
                 .Select(a => a.Value)
                 .FirstOrDefault();
 
@@ -230,12 +230,12 @@ namespace Confluent.Kafka
                 if (!int.TryParse(cancellationDelayMaxString, out cancellationDelayMaxMs))
                 {
                     throw new ArgumentException(
-                        $"{PropertyNames.CancellationDelayMaxMs} must be a valid integer value.");
+                        $"{ConsumerConfig.PropertyNames.CancellationDelayMaxMs} must be a valid integer value.");
                 }
                 if (cancellationDelayMaxMs < 1 || cancellationDelayMaxMs > 10000)
                 {
                     throw new ArgumentOutOfRangeException(
-                        $"{PropertyNames.CancellationDelayMaxMs} must be in the range 1 <= {PropertyNames.CancellationDelayMaxMs} <= 10000");
+                        $"{ConsumerConfig.PropertyNames.CancellationDelayMaxMs} must be in the range 1 <= {ConsumerConfig.PropertyNames.CancellationDelayMaxMs} <= 10000");
                 }
             }
             else
@@ -243,7 +243,7 @@ namespace Confluent.Kafka
                 cancellationDelayMaxMs = DefaultCancellationDelayMaxMs;
             }
 
-            return config.Where(prop => prop.Key != PropertyNames.CancellationDelayMaxMs);
+            return config.Where(prop => prop.Key != ConsumerConfig.PropertyNames.CancellationDelayMaxMs);
         }
     }
 }

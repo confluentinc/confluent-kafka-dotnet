@@ -87,7 +87,7 @@ namespace Confluent.Kafka
         ///     A collection of librdkafka configuration parameters 
         ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
         ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.Config.PropertyNames" />).
+        ///     <see cref="ProducerConfig.PropertyNames" />).
         ///     At a minimum, 'bootstrap.servers' must be specified.
         /// </summary>
         public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
