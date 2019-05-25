@@ -88,6 +88,6 @@ namespace Confluent.Kafka
         ///     default: 100
         ///     range: 1 &lt;= dotnet.cancellation.delay.max.ms &lt;= 10000
         /// </summary>
-        public const string CancellationDelayMaxMs = ConsumerConfig.PropertyNames.CancellationDelayMaxMs;
+        public const string CancellationDelayMaxMs = ClientConfig.PropertyNames.CancellationDelayMaxMs;
     }
 }
