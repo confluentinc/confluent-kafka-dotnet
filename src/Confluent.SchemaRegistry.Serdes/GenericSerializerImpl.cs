@@ -113,8 +113,8 @@ namespace Confluent.SchemaRegistry.Serdes
                     // better to use hash functions based on the writerSchemaString 
                     // object reference, not value.
                     string subject = isKey
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic);
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic, data.Schema.Fullname)
+                        : schemaRegistryClient.ConstructValueSubjectName(topic, data.Schema.Fullname);
 
                     var subjectSchemaPair = new KeyValuePair<string, string>(subject, writerSchemaString);
                     if (!registeredSchemas.Contains(subjectSchemaPair))

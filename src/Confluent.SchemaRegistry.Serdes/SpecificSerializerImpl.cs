@@ -117,8 +117,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 try
                 {
                     string subject = isKey
-                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
-                        : schemaRegistryClient.ConstructValueSubjectName(topic);
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic, typeof(T).FullName)
+                        : schemaRegistryClient.ConstructValueSubjectName(topic, typeof(T).FullName);
 
                     if (!subjectsRegistered.Contains(subject))
                     {
