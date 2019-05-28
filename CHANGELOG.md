@@ -1,3 +1,13 @@
+# 1.0.1
+
+## Enhancements
+
+- Support for Alpine Linux.
+- New LogLevelType enum and functions to convert between different log level type levels.
+- Added netstandard20 as a target.
+- References librdkafka [1.0.1](https://github.com/edenhill/librdkafka/releases/tag/v1.0.1).
+
+
 # 1.0.0
 
 ## Summary

@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -67,5 +69,57 @@ namespace Confluent.Kafka
         ///     Gets the log message.
         /// </summary>
         public string Message { get; }
+
+        
+        // SysLog levels:
+        // [0] emergency, [1] alert, [2] critical, [3] error, [4] warning, [5] notice, [6] info, [7] debug.
+
+        private static int[] SystemDiagnosticsLevelLookup = new int[]
+        {
+            // System.Diagnostics.TraceLevel: [0] Off, [1] Error, [2] Warning, [3] Info, [4] Verbose
+
+            1, // emergency -> error
+            1, // alert -> error
+            1, // critical -> error
+            1, // error -> error
+            2, // warning -> warning
+            3, // notice -> info
+            3, // info -> info
+            4  // debug -> verbose
+        };
+
+        private static int[] MicrosoftExtensionsLoggingLevelLookup = new int[]
+        {
+            // Microsoft.Extensions.Logging.LogLevel: [0] Trace, [1] Debug, [2] Information, [3] Warning, [4] Error, [5] Critical, [6] None
+
+            5, // emergency -> critical
+            5, // alert -> critical
+            5, // critical -> critical
+            4, // error -> error
+            3, // warning -> warning
+            2, // notice -> information
+            2, // info -> information
+            1, // debug -> debug
+        };
+
+        /// <summary>
+        ///     Convert the syslog message severity
+        ///     level to correspond to the values of
+        ///     a different log level enumeration type.
+        /// </summary>
+        public int LevelAs(LogLevelType type)
+        {
+            switch (type)
+            {
+                case LogLevelType.SysLogLevel:
+                    return (int)Level;
+                case LogLevelType.MicrosoftExtensionsLogging:
+                    return MicrosoftExtensionsLoggingLevelLookup[(int)Level];
+                case LogLevelType.SystemDiagnostics:
+                    return SystemDiagnosticsLevelLookup[(int)Level];
+                default:
+                    throw new ArgumentException($"Unexpected log level type: {type}");
+            }
+        }
     }
 }

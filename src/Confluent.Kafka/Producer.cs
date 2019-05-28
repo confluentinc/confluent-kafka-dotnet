@@ -459,7 +459,7 @@ namespace Confluent.Kafka
                 if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
                 {
                     throw new ArgumentNullException(
-                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
+                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
                 }
                 this.valueSerializer = (ISerializer<TValue>)serializer;
             }

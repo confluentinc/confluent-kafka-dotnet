@@ -35,20 +35,20 @@ client. Thanks Andreas!
 
 confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 
-- [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3]* - The core client library.
+- [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3, netstandard2.0]* - The core client library.
 - [Confluent.SchemaRegistry.Serdes](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes/) *[net452, netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
-- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4]* - Confluent Schema Registry client (a dependency of Confluent.SchemaRegistry.Serdes).
+- [Confluent.SchemaRegistry](https://www.nuget.org/packages/Confluent.SchemaRegistry/) *[net452, netstandard1.4, netstandard2.0]* - Confluent Schema Registry client (a dependency of Confluent.SchemaRegistry.Serdes).
 
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.0.0
+Install-Package Confluent.Kafka -Version 1.0.1
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.0.0 Confluent.Kafka
+dotnet add package -v 1.0.1 Confluent.Kafka
 ```
 
 
