@@ -150,10 +150,13 @@ namespace Confluent.SchemaRegistry
         /// <param name="topic">
         ///     The topic name.
         /// </param>
+        /// <param name="recordType">
+        ///     The fully qualified avro record type.
+        /// </param>
         /// <returns>
         ///     The key subject name given a topic name.
         /// </returns>
-        string ConstructKeySubjectName(string topic);
+        string ConstructKeySubjectName(string topic, string recordType=null);
 
 
         /// <summary>
@@ -162,9 +165,12 @@ namespace Confluent.SchemaRegistry
         /// <param name="topic">
         ///     The topic name.
         /// </param>
+        /// <param name="recordType">
+        ///     The fully qualified avro record type.
+        /// </param>
         /// <returns>
         ///     The value subject name given a topic name.
         /// </returns>
-        string ConstructValueSubjectName(string topic);
+        string ConstructValueSubjectName(string topic, string recordType = null);
     }
 }

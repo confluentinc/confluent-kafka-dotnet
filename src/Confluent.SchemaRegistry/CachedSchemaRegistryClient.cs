@@ -35,6 +35,9 @@ namespace Confluent.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
+        private readonly SubjectNameStrategy KeySubjectNameStrategy;
+        private readonly SubjectNameStrategy ValueSubjectNameStrategy;
+
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
@@ -121,6 +124,14 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
+            var keySubjNameStrategy = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value) ?? "";
+            var valueSubjNameStrategy = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value) ?? "";
+
+            if(Enum.TryParse<SubjectNameStrategy>(keySubjNameStrategy, out var strategy))
+                KeySubjectNameStrategy = strategy;
+            if (Enum.TryParse<SubjectNameStrategy>(valueSubjNameStrategy, out strategy))
+                ValueSubjectNameStrategy = strategy;
+
             foreach (var property in config)
             {
                 if (!property.Key.StartsWith("schema.registry."))
@@ -132,7 +143,9 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
@@ -324,17 +337,40 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructKeySubjectName(string)" />
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructKeySubjectName(string,string)" />
         /// </summary>
-        public string ConstructKeySubjectName(string topic)
-            => $"{topic}-key";
-
+        public string ConstructKeySubjectName(string topic, string recordType = null)
+        {
+            if (!string.IsNullOrWhiteSpace(recordType))
+            {
+                switch (KeySubjectNameStrategy)
+                {
+                    case SubjectNameStrategy.RecordNameStrategy:
+                        return $"{recordType}-key";
+                    case SubjectNameStrategy.TopicRecordNameStrategy:
+                        return $"{topic}-{recordType}-key";
+                }
+            }
+            return $"{topic}-key";
+        }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructValueSubjectName(string)" />
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructValueSubjectName(string,string)" />
         /// </summary>
-        public string ConstructValueSubjectName(string topic)
-            => $"{topic}-value";
+        public string ConstructValueSubjectName(string topic, string recordType = null)
+        {
+            if (!string.IsNullOrWhiteSpace(recordType))
+            {
+                switch (ValueSubjectNameStrategy)
+                {
+                    case SubjectNameStrategy.RecordNameStrategy:
+                        return $"{recordType}-value";
+                    case SubjectNameStrategy.TopicRecordNameStrategy:
+                        return $"{topic}-{recordType}-value";
+                }
+            }
+            return $"{topic}-value";
+        }
 
 
         /// <summary>
