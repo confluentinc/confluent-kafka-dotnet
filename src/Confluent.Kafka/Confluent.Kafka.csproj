@@ -23,7 +23,6 @@
         <PrivateAssets Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">None</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.Memory" Version="4.5.0" />
-    <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="3.0.0" PrivateAssets="All"/>
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
