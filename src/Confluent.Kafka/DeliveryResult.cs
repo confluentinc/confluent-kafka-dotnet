@@ -44,7 +44,7 @@ namespace Confluent.Kafka
             => new TopicPartition(Topic, Partition);
 
         /// <summary>
-        ///     The TopicPartitionOffset assoicated with the message.
+        ///     The TopicPartitionOffset associated with the message.
         /// </summary>
         public TopicPartitionOffset TopicPartitionOffset
         {

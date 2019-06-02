@@ -43,7 +43,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private ISchemaRegistryClient schemaRegistryClient;
 
         /// <summary>
-        ///     Initiliaze a new AvroDeserializer instance.
+        ///     Initialize a new AvroDeserializer instance.
         /// </summary>
         /// <param name="schemaRegistryClient">
         ///     An implementation of ISchemaRegistryClient used for

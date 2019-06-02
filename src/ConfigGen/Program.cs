@@ -17,7 +17,7 @@ namespace ConfigGen
         ///     these property types are specified here.
         /// </summary>
         /// <remarks>
-        ///     sasl.mechanisms is an awkward case becasue the values contain '-' characters (and 
+        ///     sasl.mechanisms is an awkward case because the values contain '-' characters (and 
         ///     there are other values that contain the '_' character, so can't 1:1 map with this).
         ///     This type is defined by hand later.
         /// </remarks>
