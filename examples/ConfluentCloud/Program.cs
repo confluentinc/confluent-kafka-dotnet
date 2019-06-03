@@ -28,7 +28,7 @@ namespace ConfluentCloudExample
     ///     
     ///     https://www.confluent.io/confluent-cloud/
     /// 
-    ///     Confluent Cloud does not auto-create topics. You will need to use the cloud
+    ///     Confluent Cloud does not auto-create topics. You will need to use the ccloud
     ///     cli to create the dotnet-test-topic topic before running this example. The
     ///     <ccloud bootstrap servers>, <ccloud key> and <ccloud secret> parameters are
     ///     available via the confluent cloud web interface. For more information,
