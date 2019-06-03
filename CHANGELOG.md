@@ -3,7 +3,7 @@
 ## Changes
 
 - Applied `ConfigureAwait(false)` to all internal `await`ed calls, which resolves deadlock issues in
-synchronization contexts with limited numbers of threads.
+synchronization contexts with limited numbers of threads [#967](https://github.com/confluentinc/confluent-kafka-dotnet/pull/967).
 
 
 # 1.0.1
