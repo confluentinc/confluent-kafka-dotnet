@@ -77,7 +77,7 @@ namespace Confluent.Kafka.IntegrationTests
 
         /// <summary>
         ///     Ensures that ProduceAsync throws when the DeliveryReport 
-        ///     has an error (produced to non-existant partition).
+        ///     has an error (produced to non-existent partition).
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public async Task Producer_ProduceAsync_Await_Throws(string bootstrapServers)
