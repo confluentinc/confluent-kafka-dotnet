@@ -11,34 +11,34 @@ namespace ConfigGen
 {
     internal class MappingConfiguration
     {
-        /// <summary>
-        ///     librdkafka _RK_C_S2I properties are automatically interpreted as enums, however 
-        ///     _RK_C_STR properties with discrete set of allowed values are not. Enum values for 
-        ///     these property types are specified here.
-        /// </summary>
-        /// <remarks>
-        ///     sasl.mechanisms is an awkward case because the values contain '-' characters (and 
-        ///     there are other values that contain the '_' character, so can't 1:1 map with this).
-        ///     This type is defined by hand later.
-        /// </remarks>
+        /// <summary> 
+        ///     librdkafka _RK_C_S2I properties are automatically interpreted as enums, however  
+        ///     _RK_C_STR properties with discrete set of allowed values are not. Enum values for  
+        ///     these property types are specified here. 
+        /// </summary> 
+        /// <remarks> 
+        ///     sasl.mechanisms is an awkward case because the values contain '-' characters (and  
+        ///     there are other values that contain the '_' character, so can't 1:1 map with this). 
+        ///     This type is defined by hand later. 
+        /// </remarks> 
         internal static Dictionary<string, List<string>> AdditionalEnums => new Dictionary<string, List<string>>
         {
             { "partition.assignment.strategy", new List<string> { "range", "roundrobin" } },
             { "partitioner", new List<string> { "random", "consistent", "consistent_random", "murmur2", "murmur2_random" } }
         };
 
-        /// <summary>
-        ///     A function that filters out properties from the librdkafka list that should
-        ///     not be automatically extracted.
-        /// </summary>
-        internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props) 
+        /// <summary> 
+        ///     A function that filters out properties from the librdkafka list that should 
+        ///     not be automatically extracted. 
+        /// </summary> 
+        internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props)
             => props.Where(p => {
-                // handled as a special case.
+                // handled as a special case. 
                 if (p.Name == "sasl.mechanisms") { return false; }
                 if (p.Name == "sasl.mechanism") { return false; }
                 if (p.Name == "acks") { return false; }
                 if (p.Name == "request.required.acks") { return false; }
-                // legacy
+                // legacy 
                 if (p.Name == "consume.callback.max.messages") { return false; }
                 if (p.Name == "offset.store.method") { return false; }
                 if (p.Name == "offset.store.path") { return false; }
@@ -53,15 +53,15 @@ namespace ConfigGen
                 if (p.Name == "enable.auto.commit" && !p.IsGlobal) { return false; }
                 if (p.Name == "auto.commit.enable" && !p.IsGlobal) { return false; }
                 if (p.Name == "queuing.strategy") { return false; }
-                // other
+                // other 
                 if (p.Name.Contains("_")) { return false; }
                 return true;
             }).ToList();
 
-        /// <summary>
-        ///     A dictionary of synonym config properties. The key is included in the config
-        ///     classes, the value is not.
-        /// </summary>
+        /// <summary> 
+        ///     A dictionary of synonym config properties. The key is included in the config 
+        ///     classes, the value is not. 
+        /// </summary> 
         internal static Dictionary<string, string> PreferredNames =>
             new Dictionary<string, string>
             {
@@ -73,138 +73,138 @@ namespace ConfigGen
                 { "compression.type", "compression.codec" }
             };
 
-        /// <summary>
-        ///     SaslMechanism definition
-        /// </summary>
+        /// <summary> 
+        ///     SaslMechanism definition 
+        /// </summary> 
         internal static string SaslMechanismEnumString =>
-@"
-    /// <summary>
-    ///     SaslMechanism enum values
-    /// </summary>
-    public enum SaslMechanism
-    {
-        /// <summary>
-        ///     GSSAPI
-        /// </summary>
-        Gssapi,
-
-        /// <summary>
-        ///     PLAIN
-        /// </summary>
-        Plain,
-
-        /// <summary>
-        ///     SCRAM-SHA-256
-        /// </summary>
-        ScramSha256,
-
-        /// <summary>
-        ///     SCRAM-SHA-512
-        /// </summary>
-        ScramSha512
-    }
+@" 
+    /// <summary> 
+    ///     SaslMechanism enum values 
+    /// </summary> 
+    public enum SaslMechanism 
+    { 
+        /// <summary> 
+        ///     GSSAPI 
+        /// </summary> 
+        Gssapi, 
+ 
+        /// <summary> 
+        ///     PLAIN 
+        /// </summary> 
+        Plain, 
+ 
+        /// <summary> 
+        ///     SCRAM-SHA-256 
+        /// </summary> 
+        ScramSha256, 
+ 
+        /// <summary> 
+        ///     SCRAM-SHA-512 
+        /// </summary> 
+        ScramSha512 
+    } 
 ";
 
-        /// <summary>
-        ///     get/set for SaslMechanism.
-        /// </summary>
+        /// <summary> 
+        ///     get/set for SaslMechanism. 
+        /// </summary> 
         internal static string SaslMechanismGetSetString =>
-@"
-        /// <summary>
-        ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
-        /// </summary>
-        public SaslMechanism? SaslMechanism
-        {
-            get
-            {
-                var r = Get(""sasl.mechanism"");
-                if (r == null) { return null; }
-                if (r == ""GSSAPI"") { return Confluent.Kafka.SaslMechanism.Gssapi; }
-                if (r == ""PLAIN"") { return Confluent.Kafka.SaslMechanism.Plain; }
-                if (r == ""SCRAM-SHA-256"") { return Confluent.Kafka.SaslMechanism.ScramSha256; }
-                if (r == ""SCRAM-SHA-512"") { return Confluent.Kafka.SaslMechanism.ScramSha512; }
-                throw new ArgumentException($""Unknown sasl.mechanism value {r}"");
-            }
-            set
-            {
-                if (value == null) { this.properties.Remove(""sasl.mechanism""); }
-                else if (value == Confluent.Kafka.SaslMechanism.Gssapi) { this.properties[""sasl.mechanism""] = ""GSSAPI""; }
-                else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties[""sasl.mechanism""] = ""PLAIN""; }
-                else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-256""; }
-                else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-512""; }
-                else throw new ArgumentException($""Unknown sasl.mechanism value {value}"");
-            }
-        }
-
+@" 
+        /// <summary> 
+        ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism. 
+        /// </summary> 
+        public SaslMechanism? SaslMechanism 
+        { 
+            get 
+            { 
+                var r = Get(""sasl.mechanism""); 
+                if (r == null) { return null; } 
+                if (r == ""GSSAPI"") { return Confluent.Kafka.SaslMechanism.Gssapi; } 
+                if (r == ""PLAIN"") { return Confluent.Kafka.SaslMechanism.Plain; } 
+                if (r == ""SCRAM-SHA-256"") { return Confluent.Kafka.SaslMechanism.ScramSha256; } 
+                if (r == ""SCRAM-SHA-512"") { return Confluent.Kafka.SaslMechanism.ScramSha512; } 
+                throw new ArgumentException($""Unknown sasl.mechanism value {r}""); 
+            } 
+            set 
+            { 
+                if (value == null) { this.properties.Remove(""sasl.mechanism""); } 
+                else if (value == Confluent.Kafka.SaslMechanism.Gssapi) { this.properties[""sasl.mechanism""] = ""GSSAPI""; } 
+                else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties[""sasl.mechanism""] = ""PLAIN""; } 
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-256""; } 
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties[""sasl.mechanism""] = ""SCRAM-SHA-512""; } 
+                else throw new ArgumentException($""Unknown sasl.mechanism value {value}""); 
+            } 
+        } 
+ 
 ";
 
 
-        /// <summary>
-        ///     SaslMechanism definition
-        /// </summary>
+        /// <summary> 
+        ///     SaslMechanism definition 
+        /// </summary> 
         internal static string AcksEnumString =>
-@"
-    /// <summary>
-    ///     Acks enum values
-    /// </summary>
-    public enum Acks : int
-    {
-        /// <summary>
-        ///     None
-        /// </summary>
-        None = 0,
-
-        /// <summary>
-        ///     Leader
-        /// </summary>
-        Leader = 1,
-
-        /// <summary>
-        ///     All
-        /// </summary>
-        All = -1
-    }
+@" 
+    /// <summary> 
+    ///     Acks enum values 
+    /// </summary> 
+    public enum Acks : int 
+    { 
+        /// <summary> 
+        ///     None 
+        /// </summary> 
+        None = 0, 
+ 
+        /// <summary> 
+        ///     Leader 
+        /// </summary> 
+        Leader = 1, 
+ 
+        /// <summary> 
+        ///     All 
+        /// </summary> 
+        All = -1 
+    } 
 ";
 
-        /// <summary>
-        ///     get/set for Acks.
-        /// </summary>
+        /// <summary> 
+        ///     get/set for Acks. 
+        /// </summary> 
         internal static string AcksGetSetString =>
-@"
-        /// <summary>
-        ///     This field indicates the number of acknowledgements the leader broker must receive from ISR brokers
-        ///     before responding to the request: Zero=Broker does not send any response/ack to client, One=The
-        ///     leader will write the record to its local log but will respond without awaiting full acknowledgement
-        ///     from all followers. All=Broker will block until message is committed by all in sync replicas (ISRs).
-        ///     If there are less than min.insync.replicas (broker configuration) in the ISR set the produce request
-        ///     will fail.
-        /// </summary>
-        public Acks? Acks
-        {
-            get
-            {
-                var r = Get(""acks"");
-                if (r == null) { return null; }
-                if (r == ""0"") { return Confluent.Kafka.Acks.None; }
-                if (r == ""1"") { return Confluent.Kafka.Acks.Leader; }
-                if (r == ""-1"" || r == ""all"") { return Confluent.Kafka.Acks.All; }
-                return (Acks)(int.Parse(r));
-            }
-            set
-            {
-                if (value == null) { this.properties.Remove(""acks""); }
-                else if (value == Confluent.Kafka.Acks.None) { this.properties[""acks""] = ""0""; }
-                else if (value == Confluent.Kafka.Acks.Leader) { this.properties[""acks""] = ""1""; }
-                else if (value == Confluent.Kafka.Acks.All) { this.properties[""acks""] = ""-1""; }
-                else { this.properties[""acks""] = ((int)value.Value).ToString(); }
-            }
-        }
-
+@" 
+        /// <summary> 
+        ///     This field indicates the number of acknowledgements the leader broker must receive from ISR brokers 
+        ///     before responding to the request: Zero=Broker does not send any response/ack to client, One=The 
+        ///     leader will write the record to its local log but will respond without awaiting full acknowledgement 
+        ///     from all followers. All=Broker will block until message is committed by all in sync replicas (ISRs). 
+        ///     If there are less than min.insync.replicas (broker configuration) in the ISR set the produce request 
+        ///     will fail. 
+        /// </summary> 
+        public Acks? Acks 
+        { 
+            get 
+            { 
+                var r = Get(""acks""); 
+                if (r == null) { return null; } 
+                if (r == ""0"") { return Confluent.Kafka.Acks.None; } 
+                if (r == ""1"") { return Confluent.Kafka.Acks.Leader; } 
+                if (r == ""-1"" || r == ""all"") { return Confluent.Kafka.Acks.All; } 
+                return (Acks)(int.Parse(r)); 
+            } 
+            set 
+            { 
+                if (value == null) { this.properties.Remove(""acks""); } 
+                else if (value == Confluent.Kafka.Acks.None) { this.properties[""acks""] = ""0""; } 
+                else if (value == Confluent.Kafka.Acks.Leader) { this.properties[""acks""] = ""1""; } 
+                else if (value == Confluent.Kafka.Acks.All) { this.properties[""acks""] = ""-1""; } 
+                else { this.properties[""acks""] = ((int)value.Value).ToString(); } 
+            } 
+        } 
+ 
 ";
 
     }
 
-    
+
     class PropertySpecification : IComparable
     {
         public PropertySpecification() {}
@@ -224,7 +224,7 @@ namespace ConfigGen
 
         public bool IsGlobal { get; set; }
         public string Name { get; set; }
-        public string CPorA { get; set; }  // Consumer, Producer or All.
+        public string CPorA { get; set; }  // Consumer, Producer or All. 
         public string Range { get; set; }
         public string Importance { get; set; }
         public string Default { get; set; }
@@ -254,39 +254,39 @@ namespace ConfigGen
         static string createFileHeader(string branch)
         {
             return
-@"// *** Auto-generated from librdkafka " + branch + @" *** - do not modify manually.
-//
-// Copyright 2018 Confluent Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the 'License');
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an 'AS IS' BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-// Refer to LICENSE for more information.
-
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-
-
-namespace Confluent.Kafka
-{
+@"// *** Auto-generated from librdkafka " + branch + @" *** - do not modify manually. 
+// 
+// Copyright 2018 Confluent Inc. 
+// 
+// Licensed under the Apache License, Version 2.0 (the 'License'); 
+// you may not use this file except in compliance with the License. 
+// You may obtain a copy of the License at 
+// 
+// http://www.apache.org/licenses/LICENSE-2.0 
+// 
+// Unless required by applicable law or agreed to in writing, software 
+// distributed under the License is distributed on an 'AS IS' BASIS, 
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+// See the License for the specific language governing permissions and 
+// limitations under the License. 
+// 
+// Refer to LICENSE for more information. 
+ 
+using System; 
+using System.Collections; 
+using System.Collections.Generic; 
+using System.Linq; 
+ 
+ 
+namespace Confluent.Kafka 
+{ 
 ";
         }
 
         static string createFileFooter()
         {
             return
-@"}
+@"} 
 ";
         }
 
@@ -362,15 +362,15 @@ namespace Confluent.Kafka
         static string createClassFooter()
         {
             return
-@"    }
-
+@"    } 
+ 
 ";
         }
 
         static string createEnums(List<PropertySpecification> props)
         {
             var codeText = "";
-            for (int j=0; j<props.Count(); ++j)
+            for (int j = 0; j < props.Count(); ++j)
             {
                 var prop = props[j];
                 List<string> vs = null;
@@ -383,7 +383,7 @@ namespace Confluent.Kafka
                     vs = prop.Range.Split(',').Select(v => v.Trim()).ToList();
                     if (prop.Name == "auto.offset.reset")
                     {
-                        // Only expose the options allowed by the Java client.
+                        // Only expose the options allowed by the Java client. 
                         vs = new List<string> { "Latest", "Earliest", "Error" };
                     }
                 }
@@ -393,14 +393,14 @@ namespace Confluent.Kafka
                 codeText += $"    /// </summary>\n";
                 codeText += $"    public enum {ConfigNameToDotnetName(prop.Name)}\n";
                 codeText += $"    {{\n";
-                for (int i=0; i<vs.Count; ++i)
+                for (int i = 0; i < vs.Count; ++i)
                 {
                     var v = vs[i];
                     var nm = EnumNameToDotnetName(v);
                     codeText += $"        /// <summary>\n";
                     codeText += $"        ///     {nm}\n";
                     codeText += $"        /// </summary>\n";
-                    codeText += $"        {nm}{(i == vs.Count-1 ? "" : ",\n")}\n";
+                    codeText += $"        {nm}{(i == vs.Count - 1 ? "" : ",\n")}\n";
                 }
                 codeText += $"    }}\n";
             }
@@ -418,118 +418,96 @@ namespace Confluent.Kafka
             return codeText;
         }
 
+        static string createClassConstructors(string name)
+        {
+            var codeText = $@"
+        /// <summary> 
+        ///     Initialize a new empty <see cref=""{name}"" /> instance. 
+        /// </summary> 
+        public {name}() : base() {{ }} 
+ 
+        /// <summary> 
+        ///     Initialize a new <see cref=""{name}"" /> instance wrapping 
+        ///     an existing <see cref=""ClientConfig"" /> instance. 
+        ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection 
+        /// </summary> 
+        public {name}(ClientConfig config) : base(config) {{ }} 
+ 
+        /// <summary> 
+        ///     Initialize a new <see cref=""{name}"" /> instance wrapping 
+        ///     an existing key/value pair collection. 
+        ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection 
+        /// </summary> 
+        public {name}(IDictionary<string, string> config) : base(config) {{ }} 
+";
+            return codeText;
+        }
+
         static string createConsumerSpecific()
         {
             return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ConsumerConfig"" /> instance.
-        /// </summary>
-        public ConsumerConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ConsumerConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ConsumerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ConsumerConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     A comma separated list of fields that may be optionally set
-        ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey,TValue}"" />
-        ///     objects returned by the
-        ///     <see cref=""Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)"" />
-        ///     method. Disabling fields that you do not require will improve 
-        ///     throughput and reduce memory consumption. Allowed values:
-        ///     headers, timestamp, topic, all, none
-        /// 
-        ///     default: all
-        ///     importance: low
-        /// </summary>
-        public string ConsumeResultFields { set { this.SetObject(""dotnet.consumer.consume.result.fields"", value); } }
-
+                createClassConstructors("ConsumerConfig") +
+@" 
+        /// <summary> 
+        ///     A comma separated list of fields that may be optionally set 
+        ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey,TValue}"" /> 
+        ///     objects returned by the 
+        ///     <see cref=""Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)"" /> 
+        ///     method. Disabling fields that you do not require will improve  
+        ///     throughput and reduce memory consumption. Allowed values: 
+        ///     headers, timestamp, topic, all, none 
+        ///  
+        ///     default: all 
+        ///     importance: low 
+        /// </summary> 
+        public string ConsumeResultFields { set { this.SetObject(""dotnet.consumer.consume.result.fields"", value); } } 
+ 
 ";
         }
 
         static string createProducerSpecific()
         {
             return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ProducerConfig"" /> instance.
-        /// </summary>
-        public ProducerConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ProducerConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ProducerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ProducerConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Specifies whether or not the producer should start a background poll 
-        ///     thread to receive delivery reports and event notifications. Generally,
-        ///     this should be set to true. If set to false, you will need to call 
-        ///     the Poll function manually.
-        /// 
-        ///     default: true
-        ///     importance: low
-        /// </summary>
-        public bool? EnableBackgroundPoll { get { return GetBool(""dotnet.producer.enable.background.poll""); } set { this.SetObject(""dotnet.producer.enable.background.poll"", value); } }
-
-        /// <summary>
-        ///     Specifies whether to enable notification of delivery reports. Typically
-        ///     you should set this parameter to true. Set it to false for ""fire and
-        ///     forget"" semantics and a small boost in performance.
-        /// 
-        ///     default: true
-        ///     importance: low
-        /// </summary>
-        public bool? EnableDeliveryReports { get { return GetBool(""dotnet.producer.enable.delivery.reports""); } set { this.SetObject(""dotnet.producer.enable.delivery.reports"", value); } }
-
-        /// <summary>
-        ///     A comma separated list of fields that may be optionally set in delivery
-        ///     reports. Disabling delivery report fields that you do not require will
-        ///     improve maximum throughput and reduce memory usage. Allowed values:
-        ///     key, value, timestamp, headers, all, none.
-        /// 
-        ///     default: all
-        ///     importance: low
-        /// </summary>
-        public string DeliveryReportFields { get { return Get(""dotnet.producer.delivery.report.fields""); } set { this.SetObject(""dotnet.producer.delivery.report.fields"", value.ToString()); } }
-
+                createClassConstructors("ProducerConfig") +
+@" 
+        /// <summary> 
+        ///     Specifies whether or not the producer should start a background poll  
+        ///     thread to receive delivery reports and event notifications. Generally, 
+        ///     this should be set to true. If set to false, you will need to call  
+        ///     the Poll function manually. 
+        ///  
+        ///     default: true 
+        ///     importance: low 
+        /// </summary> 
+        public bool? EnableBackgroundPoll { get { return GetBool(""dotnet.producer.enable.background.poll""); } set { this.SetObject(""dotnet.producer.enable.background.poll"", value); } } 
+ 
+        /// <summary> 
+        ///     Specifies whether to enable notification of delivery reports. Typically 
+        ///     you should set this parameter to true. Set it to false for ""fire and 
+        ///     forget"" semantics and a small boost in performance. 
+        ///  
+        ///     default: true 
+        ///     importance: low 
+        /// </summary> 
+        public bool? EnableDeliveryReports { get { return GetBool(""dotnet.producer.enable.delivery.reports""); } set { this.SetObject(""dotnet.producer.enable.delivery.reports"", value); } } 
+ 
+        /// <summary> 
+        ///     A comma separated list of fields that may be optionally set in delivery 
+        ///     reports. Disabling delivery report fields that you do not require will 
+        ///     improve maximum throughput and reduce memory usage. Allowed values: 
+        ///     key, value, timestamp, headers, all, none. 
+        ///  
+        ///     default: all 
+        ///     importance: low 
+        /// </summary> 
+        public string DeliveryReportFields { get { return Get(""dotnet.producer.delivery.report.fields""); } set { this.SetObject(""dotnet.producer.delivery.report.fields"", value.ToString()); } } 
+ 
 ";
         }
 
         static string createAdminClientSpecific()
         {
-            return 
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""AdminClientConfig"" /> instance.
-        /// </summary>
-        public AdminClientConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""AdminClientConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public AdminClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""AdminClientConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-";
+            return createClassConstructors("AdminClientConfig");
         }
 
         static List<PropertySpecification> extractAll(string configDoc)
@@ -564,7 +542,7 @@ namespace Confluent.Kafka
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias)
                 {
-                    var firstIdx = desc.IndexOf('`')+1;
+                    var firstIdx = desc.IndexOf('`') + 1;
                     prop.AliasFor = desc.Substring(firstIdx, desc.IndexOf('`', firstIdx) - desc.IndexOf('`') - 1);
                 }
                 else
@@ -584,7 +562,7 @@ namespace Confluent.Kafka
 
         static List<PropertySpecification> removeDuplicateTopicLevel(List<PropertySpecification> props)
         {
-            // remove topicLevel properties that are in both topic level and global.
+            // remove topicLevel properties that are in both topic level and global. 
             var global = props.Where(p => p.IsGlobal).ToList();
             var topicLevel = props.Where(p => !p.IsGlobal).ToList();
             var removeTopicLevel = new List<string>();
@@ -598,7 +576,7 @@ namespace Confluent.Kafka
 
         static List<PropertySpecification> linkAliased(List<PropertySpecification> props)
         {
-            // link up aliased properties.
+            // link up aliased properties. 
             var nonAlias = props.Where(p => p.AliasFor == null).ToList();
             var aliases = props.Where(p => p.AliasFor != null).ToList();
             foreach (var alias in aliases)
@@ -666,6 +644,7 @@ namespace Confluent.Kafka
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += MappingConfiguration.AcksEnumString;
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
+            codeText += createClassConstructors("ClientConfig");
             codeText += MappingConfiguration.SaslMechanismGetSetString;
             codeText += MappingConfiguration.AcksGetSetString;
             codeText += createProperties(props.Where(p => p.CPorA == "*"));
