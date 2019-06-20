@@ -127,10 +127,15 @@ namespace Confluent.SchemaRegistry
             var keySubjNameStrategy = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value) ?? "";
             var valueSubjNameStrategy = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value) ?? "";
 
-            if(Enum.TryParse<SubjectNameStrategy>(keySubjNameStrategy, out var strategy))
+            if (Enum.TryParse<SubjectNameStrategy>(keySubjNameStrategy, out var strategy))
+            {
                 KeySubjectNameStrategy = strategy;
+            }
+
             if (Enum.TryParse<SubjectNameStrategy>(valueSubjNameStrategy, out strategy))
+            {
                 ValueSubjectNameStrategy = strategy;
+            }
 
             foreach (var property in config)
             {
