@@ -108,7 +108,7 @@ Note that a server round-trip is slow (3ms at a minimum; actual latency depends 
 In highly concurrent scenarios you will achieve high overall throughput out of the producer using 
 the above approach, but there will be a delay on each `await` call. In stream processing 
 applications, where you would like to process many messages in rapid succession, you would typically
-make use the `Produce` method instead:
+use the `Produce` method instead:
 
 ```csharp
 using System;
