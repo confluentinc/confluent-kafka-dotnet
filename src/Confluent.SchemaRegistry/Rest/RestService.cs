@@ -266,11 +266,11 @@ namespace Confluent.SchemaRegistry
         #region Compatibility
 
         public async Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema)
-            => (await RequestAsync<CompatibilityCheck>($"/compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema))
+            => (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema))
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
         public async Task<bool> TestLatestCompatibilityAsync(string subject, string schema)
-            => (await RequestAsync<CompatibilityCheck>($"/compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema))
+            => (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema))
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
         #endregion Compatibility
@@ -278,19 +278,19 @@ namespace Confluent.SchemaRegistry
         #region Config
 
         public async Task<Compatibility> GetGlobalCompatibilityAsync()
-            => (await RequestAsync<Config>("/config", HttpMethod.Get)
+            => (await RequestAsync<Config>("config", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
-            => (await RequestAsync<Config>($"/config/{subject}", HttpMethod.Get)
+            => (await RequestAsync<Config>($"config/{subject}", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
         public async Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
-            => await RequestAsync<Config>("/config", HttpMethod.Put, new Config(compatibility))
+            => await RequestAsync<Config>("config", HttpMethod.Put, new Config(compatibility))
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
-            => await RequestAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility))
+            => await RequestAsync<Config>($"config/{subject}", HttpMethod.Put, new Config(compatibility))
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         #endregion Config
