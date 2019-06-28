@@ -14,15 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
-using System.Net;
-using System.Linq;
-using System.Net.Http;
-using System;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 
 namespace Confluent.SchemaRegistry
@@ -52,21 +53,27 @@ namespace Confluent.SchemaRegistry
         ///     Initializes a new instance of the RestService class.
         /// </summary>
         public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password)
-        { 
-            var authorizationHeader = username != null && password != null 
+        {
+            var authorizationHeader = username != null && password != null
                 ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
                 : null;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
-                .Select(uri => uri.StartsWith("http", StringComparison.Ordinal) ? uri : "http://" + uri) // need http or https - use http if not present.
-                .Select(uri => 
-                    {
-                        var client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                        if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
-                        return client;
-                    })
+                .Select(SanitizeUri)// need http or https - use http if not present.
+                .Select(uri =>
+                {
+                    var client = new HttpClient { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
+                    return client;
+                })
                 .ToList();
+        }
+
+        private static string SanitizeUri(string uri)
+        {
+            var sanitized = uri.StartsWith("http", StringComparison.Ordinal) ? uri : $"http://{uri}";
+            return $"{Regex.Replace(sanitized, "(/$)+", string.Empty)}/";
         }
 
         #region Base Requests
@@ -84,7 +91,7 @@ namespace Confluent.SchemaRegistry
             string aggregatedErrorMessage = null;
             HttpResponseMessage response = null;
             bool firstError = true;
-            
+
             int startClientIndex;
             lock (lastClientUsedLock)
             {
@@ -219,7 +226,7 @@ namespace Confluent.SchemaRegistry
         #region Schemas
 
         public async Task<string> GetSchemaAsync(int id)
-            => (await RequestAsync<SchemaString>($"/schemas/ids/{id}", HttpMethod.Get)
+            => (await RequestAsync<SchemaString>($"schemas/ids/{id}", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false)).Schema;
 
         #endregion Schemas
@@ -227,31 +234,31 @@ namespace Confluent.SchemaRegistry
         #region Subjects
 
         public async Task<List<string>> GetSubjectsAsync()
-            => await RequestListOfAsync<string>("/subjects", HttpMethod.Get)
+            => await RequestListOfAsync<string>("subjects", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<List<int>> GetSubjectVersionsAsync(string subject)
-            => await RequestListOfAsync<int>($"/subjects/{subject}/versions", HttpMethod.Get)
+            => await RequestListOfAsync<int>($"subjects/{subject}/versions", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<Schema> GetSchemaAsync(string subject, int version)
-            => await RequestAsync<Schema>($"/subjects/{subject}/versions/{version}", HttpMethod.Get)
+            => await RequestAsync<Schema>($"subjects/{subject}/versions/{version}", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<Schema> GetLatestSchemaAsync(string subject)
-            => await RequestAsync<Schema>($"/subjects/{subject}/versions/latest", HttpMethod.Get)
+            => await RequestAsync<Schema>($"subjects/{subject}/versions/latest", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<int> RegisterSchemaAsync(string subject, string schema)
-            => (await RequestAsync<SchemaId>($"/subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema))
+            => (await RequestAsync<SchemaId>($"subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema))
                         .ConfigureAwait(continueOnCapturedContext: false)).Id;
 
         public async Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas)
-            => await RequestAsync<Schema>($"/subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema))
+            => await RequestAsync<Schema>($"subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema))
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<Schema> CheckSchemaAsync(string subject, string schema)
-            => await RequestAsync<Schema>($"/subjects/{subject}", HttpMethod.Post, new SchemaString(schema))
+            => await RequestAsync<Schema>($"subjects/{subject}", HttpMethod.Post, new SchemaString(schema))
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         #endregion Subjects
@@ -285,7 +292,7 @@ namespace Confluent.SchemaRegistry
         public async Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
             => await RequestAsync<Config>($"/config/{subject}", HttpMethod.Put, new Config(compatibility))
                         .ConfigureAwait(continueOnCapturedContext: false);
-        
+
         #endregion Config
 
         public void Dispose()
