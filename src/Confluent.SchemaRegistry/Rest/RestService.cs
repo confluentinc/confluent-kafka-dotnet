@@ -22,7 +22,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 
@@ -73,7 +72,7 @@ namespace Confluent.SchemaRegistry
         private static string SanitizeUri(string uri)
         {
             var sanitized = uri.StartsWith("http", StringComparison.Ordinal) ? uri : $"http://{uri}";
-            return $"{Regex.Replace(sanitized, "(/$)+", string.Empty)}/";
+            return $"{sanitized.TrimEnd('/')}/";
         }
 
         #region Base Requests
