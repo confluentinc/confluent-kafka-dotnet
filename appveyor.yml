@@ -32,7 +32,7 @@ after_build:
 test_script:
  - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj
  - dotnet test -c %CONFIGURATION% test/Confluent.Kafka.StrongName.UnitTests/Confluent.Kafka.StrongName.UnitTests.csproj
- - dotnet test -c %CONFIGURATION% test/Confluent.SchemaRegistry.StrongName.UnitTests/Confluent.SchemaRegistry.StrongName.UnitTests.csproj
+# - dotnet test -c %CONFIGURATION% test/Confluent.SchemaRegistry.StrongName.UnitTests/Confluent.SchemaRegistry.StrongName.UnitTests.csproj
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
