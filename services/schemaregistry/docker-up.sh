@@ -14,7 +14,7 @@ docker run -d \
     --name schema_registry_auth \
     --network=host \
     -v schema_registry_auth:/conf/schema-registry \
-    -e SCHEMA_REGISTRY_HOST_NAME="schema-registry-ssl" \
+    -e SCHEMA_REGISTRY_HOST_NAME="schema-registry-auth" \
     -e SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS="PLAINTEXT://$ADVERTISED_IP:9092" \
     -e SCHEMA_REGISTRY_LISTENERS="http://0.0.0.0:8082" \
     -e SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL="$ADVERTISED_IP:2181" \
