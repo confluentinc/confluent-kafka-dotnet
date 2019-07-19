@@ -1,3 +1,10 @@
+# 1.1.0
+
+## Enhancements
+
+- References librdkafka v1.1.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.1.0) for more informtion. Notable improvement for Windows SSL users: You no longer need to specify a CA certificate file/directory (SslCaLocation) - librdkafka will load the CA certs by default from the Windows Root Certificate Store.
+
+
 # 1.0.1.1
 
 ## Changes
