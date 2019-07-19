@@ -1,7 +1,6 @@
-# Test Environment Scripts
+# Development / Test Environment Scripts
 
-This directory contains scripts for bringing up various services that are useful for
-development / testing purposes:
+This directory contains scripts for bringing up a number of services that are useful for development / testing purposes. You can use them on **Linux**, **OS X** and **Windows** (the latter via a Virtual Machine - see below). The services are:
 
 1. Zookeeper [port: 2181, prometheus metrics port: 7062]
 2. Kafka broker #1 [port 9092, prometheus metrics port: 7071]
