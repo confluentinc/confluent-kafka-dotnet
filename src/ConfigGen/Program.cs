@@ -525,7 +525,7 @@ namespace Confluent.Kafka
                     continue;
                 }
 
-                var columns = line.Split('|');
+                var columns = SplitLine(line).ToArray();
                 if (columns.Length != 6) { continue; }
                 if (columns[0].Contains("-----")) { continue; }
                 if (columns[0].Contains("Property")) { continue; }
@@ -558,6 +558,23 @@ namespace Confluent.Kafka
             }
 
             return props;
+        }
+
+        static IEnumerable<string> SplitLine(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                yield break;
+
+            int lastPipe = 0;
+            for (int i = 1; i < line.Length - 1; i++)
+            {
+                if (line[i] == '|' && line[i - 1] == ' ' && line[i + 1] == ' ')
+                {
+                    yield return line.Substring(lastPipe, i - lastPipe).Trim();
+                    lastPipe = i + 1;
+                }
+            }
+            yield return line.Substring(lastPipe + 1).Trim();
         }
 
         static List<PropertySpecification> removeDuplicateTopicLevel(List<PropertySpecification> props)
