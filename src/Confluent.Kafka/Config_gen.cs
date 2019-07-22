@@ -1,29 +1,29 @@
-// *** Auto-generated from librdkafka v1.0.0 *** - do not modify manually. 
-// 
-// Copyright 2018 Confluent Inc. 
-// 
-// Licensed under the Apache License, Version 2.0 (the 'License'); 
-// you may not use this file except in compliance with the License. 
-// You may obtain a copy of the License at 
-// 
-// http://www.apache.org/licenses/LICENSE-2.0 
-// 
-// Unless required by applicable law or agreed to in writing, software 
-// distributed under the License is distributed on an 'AS IS' BASIS, 
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-// See the License for the specific language governing permissions and 
-// limitations under the License. 
-// 
-// Refer to LICENSE for more information. 
- 
-using System; 
-using System.Collections; 
-using System.Collections.Generic; 
-using System.Linq; 
- 
- 
-namespace Confluent.Kafka 
-{ 
+// *** Auto-generated from librdkafka v1.0.0 *** - do not modify manually.
+//
+// Copyright 2018 Confluent Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the 'License');
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an 'AS IS' BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// Refer to LICENSE for more information.
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+
+namespace Confluent.Kafka
+{
     /// <summary>
     ///     Partitioner enum values
     /// </summary>
@@ -169,53 +169,53 @@ namespace Confluent.Kafka
         /// </summary>
         Zstd
     }
- 
-    /// <summary> 
-    ///     SaslMechanism enum values 
-    /// </summary> 
-    public enum SaslMechanism 
-    { 
-        /// <summary> 
-        ///     GSSAPI 
-        /// </summary> 
-        Gssapi, 
- 
-        /// <summary> 
-        ///     PLAIN 
-        /// </summary> 
-        Plain, 
- 
-        /// <summary> 
-        ///     SCRAM-SHA-256 
-        /// </summary> 
-        ScramSha256, 
- 
-        /// <summary> 
-        ///     SCRAM-SHA-512 
-        /// </summary> 
-        ScramSha512 
-    } 
- 
-    /// <summary> 
-    ///     Acks enum values 
-    /// </summary> 
-    public enum Acks : int 
-    { 
-        /// <summary> 
-        ///     None 
-        /// </summary> 
-        None = 0, 
- 
-        /// <summary> 
-        ///     Leader 
-        /// </summary> 
-        Leader = 1, 
- 
-        /// <summary> 
-        ///     All 
-        /// </summary> 
-        All = -1 
-    } 
+
+    /// <summary>
+    ///     SaslMechanism enum values
+    /// </summary>
+    public enum SaslMechanism
+    {
+        /// <summary>
+        ///     GSSAPI
+        /// </summary>
+        Gssapi,
+
+        /// <summary>
+        ///     PLAIN
+        /// </summary>
+        Plain,
+
+        /// <summary>
+        ///     SCRAM-SHA-256
+        /// </summary>
+        ScramSha256,
+
+        /// <summary>
+        ///     SCRAM-SHA-512
+        /// </summary>
+        ScramSha512
+    }
+
+    /// <summary>
+    ///     Acks enum values
+    /// </summary>
+    public enum Acks : int
+    {
+        /// <summary>
+        ///     None
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        ///     Leader
+        /// </summary>
+        Leader = 1,
+
+        /// <summary>
+        ///     All
+        /// </summary>
+        All = -1
+    }
 
     /// <summary>
     ///     Configuration common to all clients
@@ -223,81 +223,81 @@ namespace Confluent.Kafka
     public class ClientConfig : Config
     {
 
-        /// <summary> 
-        ///     Initialize a new empty <see cref="ClientConfig" /> instance. 
-        /// </summary> 
-        public ClientConfig() : base() { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping 
-        ///     an existing <see cref="ClientConfig" /> instance. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public ClientConfig(ClientConfig config) : base(config) { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping 
-        ///     an existing key/value pair collection. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public ClientConfig(IDictionary<string, string> config) : base(config) { } 
- 
-        /// <summary> 
-        ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism. 
-        /// </summary> 
-        public SaslMechanism? SaslMechanism 
-        { 
-            get 
-            { 
-                var r = Get("sasl.mechanism"); 
-                if (r == null) { return null; } 
-                if (r == "GSSAPI") { return Confluent.Kafka.SaslMechanism.Gssapi; } 
-                if (r == "PLAIN") { return Confluent.Kafka.SaslMechanism.Plain; } 
-                if (r == "SCRAM-SHA-256") { return Confluent.Kafka.SaslMechanism.ScramSha256; } 
-                if (r == "SCRAM-SHA-512") { return Confluent.Kafka.SaslMechanism.ScramSha512; } 
-                throw new ArgumentException($"Unknown sasl.mechanism value {r}"); 
-            } 
-            set 
-            { 
-                if (value == null) { this.properties.Remove("sasl.mechanism"); } 
-                else if (value == Confluent.Kafka.SaslMechanism.Gssapi) { this.properties["sasl.mechanism"] = "GSSAPI"; } 
-                else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; } 
-                else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; } 
-                else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; } 
-                else throw new ArgumentException($"Unknown sasl.mechanism value {value}"); 
-            } 
-        } 
- 
- 
-        /// <summary> 
-        ///     This field indicates the number of acknowledgements the leader broker must receive from ISR brokers 
-        ///     before responding to the request: Zero=Broker does not send any response/ack to client, One=The 
-        ///     leader will write the record to its local log but will respond without awaiting full acknowledgement 
-        ///     from all followers. All=Broker will block until message is committed by all in sync replicas (ISRs). 
-        ///     If there are less than min.insync.replicas (broker configuration) in the ISR set the produce request 
-        ///     will fail. 
-        /// </summary> 
-        public Acks? Acks 
-        { 
-            get 
-            { 
-                var r = Get("acks"); 
-                if (r == null) { return null; } 
-                if (r == "0") { return Confluent.Kafka.Acks.None; } 
-                if (r == "1") { return Confluent.Kafka.Acks.Leader; } 
-                if (r == "-1" || r == "all") { return Confluent.Kafka.Acks.All; } 
-                return (Acks)(int.Parse(r)); 
-            } 
-            set 
-            { 
-                if (value == null) { this.properties.Remove("acks"); } 
-                else if (value == Confluent.Kafka.Acks.None) { this.properties["acks"] = "0"; } 
-                else if (value == Confluent.Kafka.Acks.Leader) { this.properties["acks"] = "1"; } 
-                else if (value == Confluent.Kafka.Acks.All) { this.properties["acks"] = "-1"; } 
-                else { this.properties["acks"] = ((int)value.Value).ToString(); } 
-            } 
-        } 
- 
+        /// <summary>
+        ///     Initialize a new empty <see cref="ClientConfig" /> instance.
+        /// </summary>
+        public ClientConfig() : base() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
+        ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ClientConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ClientConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
+        /// </summary>
+        public SaslMechanism? SaslMechanism
+        {
+            get
+            {
+                var r = Get("sasl.mechanism");
+                if (r == null) { return null; }
+                if (r == "GSSAPI") { return Confluent.Kafka.SaslMechanism.Gssapi; }
+                if (r == "PLAIN") { return Confluent.Kafka.SaslMechanism.Plain; }
+                if (r == "SCRAM-SHA-256") { return Confluent.Kafka.SaslMechanism.ScramSha256; }
+                if (r == "SCRAM-SHA-512") { return Confluent.Kafka.SaslMechanism.ScramSha512; }
+                throw new ArgumentException($"Unknown sasl.mechanism value {r}");
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove("sasl.mechanism"); }
+                else if (value == Confluent.Kafka.SaslMechanism.Gssapi) { this.properties["sasl.mechanism"] = "GSSAPI"; }
+                else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
+                else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
+                else throw new ArgumentException($"Unknown sasl.mechanism value {value}");
+            }
+        }
+
+
+        /// <summary>
+        ///     This field indicates the number of acknowledgements the leader broker must receive from ISR brokers
+        ///     before responding to the request: Zero=Broker does not send any response/ack to client, One=The
+        ///     leader will write the record to its local log but will respond without awaiting full acknowledgement
+        ///     from all followers. All=Broker will block until message is committed by all in sync replicas (ISRs).
+        ///     If there are less than min.insync.replicas (broker configuration) in the ISR set the produce request
+        ///     will fail.
+        /// </summary>
+        public Acks? Acks
+        {
+            get
+            {
+                var r = Get("acks");
+                if (r == null) { return null; }
+                if (r == "0") { return Confluent.Kafka.Acks.None; }
+                if (r == "1") { return Confluent.Kafka.Acks.Leader; }
+                if (r == "-1" || r == "all") { return Confluent.Kafka.Acks.All; }
+                return (Acks)(int.Parse(r));
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove("acks"); }
+                else if (value == Confluent.Kafka.Acks.None) { this.properties["acks"] = "0"; }
+                else if (value == Confluent.Kafka.Acks.Leader) { this.properties["acks"] = "1"; }
+                else if (value == Confluent.Kafka.Acks.All) { this.properties["acks"] = "-1"; }
+                else { this.properties["acks"] = ((int)value.Value).ToString(); }
+            }
+        }
+
         /// <summary>
         ///     Client identifier.
         ///
@@ -706,8 +706,8 @@ namespace Confluent.Kafka
         /// </summary>
         public string PluginLibraryPaths { get { return Get("plugin.library.paths"); } set { this.SetObject("plugin.library.paths", value); } }
 
-    } 
- 
+    }
+
 
     /// <summary>
     ///     AdminClient configuration properties
@@ -715,26 +715,26 @@ namespace Confluent.Kafka
     public class AdminClientConfig : ClientConfig
     {
 
-        /// <summary> 
-        ///     Initialize a new empty <see cref="AdminClientConfig" /> instance. 
-        /// </summary> 
-        public AdminClientConfig() : base() { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping 
-        ///     an existing <see cref="ClientConfig" /> instance. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public AdminClientConfig(ClientConfig config) : base(config) { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping 
-        ///     an existing key/value pair collection. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public AdminClientConfig(IDictionary<string, string> config) : base(config) { } 
-    } 
- 
+        /// <summary>
+        ///     Initialize a new empty <see cref="AdminClientConfig" /> instance.
+        /// </summary>
+        public AdminClientConfig() : base() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
+        ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public AdminClientConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
+    }
+
 
     /// <summary>
     ///     Producer configuration properties
@@ -742,57 +742,57 @@ namespace Confluent.Kafka
     public class ProducerConfig : ClientConfig
     {
 
-        /// <summary> 
-        ///     Initialize a new empty <see cref="ProducerConfig" /> instance. 
-        /// </summary> 
-        public ProducerConfig() : base() { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping 
-        ///     an existing <see cref="ClientConfig" /> instance. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public ProducerConfig(ClientConfig config) : base(config) { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping 
-        ///     an existing key/value pair collection. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public ProducerConfig(IDictionary<string, string> config) : base(config) { } 
- 
-        /// <summary> 
-        ///     Specifies whether or not the producer should start a background poll  
-        ///     thread to receive delivery reports and event notifications. Generally, 
-        ///     this should be set to true. If set to false, you will need to call  
-        ///     the Poll function manually. 
-        ///  
-        ///     default: true 
-        ///     importance: low 
-        /// </summary> 
-        public bool? EnableBackgroundPoll { get { return GetBool("dotnet.producer.enable.background.poll"); } set { this.SetObject("dotnet.producer.enable.background.poll", value); } } 
- 
-        /// <summary> 
-        ///     Specifies whether to enable notification of delivery reports. Typically 
-        ///     you should set this parameter to true. Set it to false for "fire and 
-        ///     forget" semantics and a small boost in performance. 
-        ///  
-        ///     default: true 
-        ///     importance: low 
-        /// </summary> 
-        public bool? EnableDeliveryReports { get { return GetBool("dotnet.producer.enable.delivery.reports"); } set { this.SetObject("dotnet.producer.enable.delivery.reports", value); } } 
- 
-        /// <summary> 
-        ///     A comma separated list of fields that may be optionally set in delivery 
-        ///     reports. Disabling delivery report fields that you do not require will 
-        ///     improve maximum throughput and reduce memory usage. Allowed values: 
-        ///     key, value, timestamp, headers, all, none. 
-        ///  
-        ///     default: all 
-        ///     importance: low 
-        /// </summary> 
-        public string DeliveryReportFields { get { return Get("dotnet.producer.delivery.report.fields"); } set { this.SetObject("dotnet.producer.delivery.report.fields", value.ToString()); } } 
- 
+        /// <summary>
+        ///     Initialize a new empty <see cref="ProducerConfig" /> instance.
+        /// </summary>
+        public ProducerConfig() : base() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
+        ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ProducerConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ProducerConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Specifies whether or not the producer should start a background poll
+        ///     thread to receive delivery reports and event notifications. Generally,
+        ///     this should be set to true. If set to false, you will need to call
+        ///     the Poll function manually.
+        ///
+        ///     default: true
+        ///     importance: low
+        /// </summary>
+        public bool? EnableBackgroundPoll { get { return GetBool("dotnet.producer.enable.background.poll"); } set { this.SetObject("dotnet.producer.enable.background.poll", value); } }
+
+        /// <summary>
+        ///     Specifies whether to enable notification of delivery reports. Typically
+        ///     you should set this parameter to true. Set it to false for "fire and
+        ///     forget" semantics and a small boost in performance.
+        ///
+        ///     default: true
+        ///     importance: low
+        /// </summary>
+        public bool? EnableDeliveryReports { get { return GetBool("dotnet.producer.enable.delivery.reports"); } set { this.SetObject("dotnet.producer.enable.delivery.reports", value); } }
+
+        /// <summary>
+        ///     A comma separated list of fields that may be optionally set in delivery
+        ///     reports. Disabling delivery report fields that you do not require will
+        ///     improve maximum throughput and reduce memory usage. Allowed values:
+        ///     key, value, timestamp, headers, all, none.
+        ///
+        ///     default: all
+        ///     importance: low
+        /// </summary>
+        public string DeliveryReportFields { get { return Get("dotnet.producer.delivery.report.fields"); } set { this.SetObject("dotnet.producer.delivery.report.fields", value.ToString()); } }
+
         /// <summary>
         ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
         ///
@@ -905,8 +905,8 @@ namespace Confluent.Kafka
         /// </summary>
         public int? BatchNumMessages { get { return GetInt("batch.num.messages"); } set { this.SetObject("batch.num.messages", value); } }
 
-    } 
- 
+    }
+
 
     /// <summary>
     ///     Consumer configuration properties
@@ -914,39 +914,39 @@ namespace Confluent.Kafka
     public class ConsumerConfig : ClientConfig
     {
 
-        /// <summary> 
-        ///     Initialize a new empty <see cref="ConsumerConfig" /> instance. 
-        /// </summary> 
-        public ConsumerConfig() : base() { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping 
-        ///     an existing <see cref="ClientConfig" /> instance. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public ConsumerConfig(ClientConfig config) : base(config) { } 
- 
-        /// <summary> 
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping 
-        ///     an existing key/value pair collection. 
-        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection 
-        /// </summary> 
-        public ConsumerConfig(IDictionary<string, string> config) : base(config) { } 
- 
-        /// <summary> 
-        ///     A comma separated list of fields that may be optionally set 
-        ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey,TValue}" /> 
-        ///     objects returned by the 
-        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)" /> 
-        ///     method. Disabling fields that you do not require will improve  
-        ///     throughput and reduce memory consumption. Allowed values: 
-        ///     headers, timestamp, topic, all, none 
-        ///  
-        ///     default: all 
-        ///     importance: low 
-        /// </summary> 
-        public string ConsumeResultFields { set { this.SetObject("dotnet.consumer.consume.result.fields", value); } } 
- 
+        /// <summary>
+        ///     Initialize a new empty <see cref="ConsumerConfig" /> instance.
+        /// </summary>
+        public ConsumerConfig() : base() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
+        ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ConsumerConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     A comma separated list of fields that may be optionally set
+        ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey,TValue}" />
+        ///     objects returned by the
+        ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)" />
+        ///     method. Disabling fields that you do not require will improve
+        ///     throughput and reduce memory consumption. Allowed values:
+        ///     headers, timestamp, topic, all, none
+        ///
+        ///     default: all
+        ///     importance: low
+        /// </summary>
+        public string ConsumeResultFields { set { this.SetObject("dotnet.consumer.consume.result.fields", value); } }
+
         /// <summary>
         ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error which is retrieved by consuming messages and checking 'message->err'.
         ///
@@ -1107,6 +1107,6 @@ namespace Confluent.Kafka
         /// </summary>
         public bool? CheckCrcs { get { return GetBool("check.crcs"); } set { this.SetObject("check.crcs", value); } }
 
-    } 
- 
-} 
+    }
+
+}
