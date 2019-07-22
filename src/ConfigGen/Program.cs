@@ -532,13 +532,13 @@ namespace Confluent.Kafka
 
                 var prop = new PropertySpecification();
                 prop.IsGlobal = parsingGlobal;
-                prop.Name = columns[0].Trim();
-                prop.CPorA = columns[1].Trim();
-                prop.Range = columns[2].Trim();
-                prop.Default = columns[3].Trim();
-                prop.Importance = columns[4].Trim();
+                prop.Name = columns[0];
+                prop.CPorA = columns[1];
+                prop.Range = columns[2];
+                prop.Default = columns[3];
+                prop.Importance = columns[4];
 
-                var desc = columns[5].Trim();
+                var desc = columns[5];
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias)
                 {
