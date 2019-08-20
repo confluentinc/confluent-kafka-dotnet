@@ -19,8 +19,8 @@ build_script:
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
   
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION%
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
   - docfx doc/docfx.json
 
