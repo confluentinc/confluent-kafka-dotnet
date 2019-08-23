@@ -12,12 +12,12 @@ namespace ConfigGen
     internal class MappingConfiguration
     {
         /// <summary>
-        ///     librdkafka _RK_C_S2I properties are automatically interpreted as enums, however 
-        ///     _RK_C_STR properties with discrete set of allowed values are not. Enum values for 
+        ///     librdkafka _RK_C_S2I properties are automatically interpreted as enums, however
+        ///     _RK_C_STR properties with discrete set of allowed values are not. Enum values for
         ///     these property types are specified here.
         /// </summary>
         /// <remarks>
-        ///     sasl.mechanisms is an awkward case because the values contain '-' characters (and 
+        ///     sasl.mechanisms is an awkward case because the values contain '-' characters (and
         ///     there are other values that contain the '_' character, so can't 1:1 map with this).
         ///     This type is defined by hand later.
         /// </remarks>
@@ -31,7 +31,7 @@ namespace ConfigGen
         ///     A function that filters out properties from the librdkafka list that should
         ///     not be automatically extracted.
         /// </summary>
-        internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props) 
+        internal static List<PropertySpecification> RemoveLegacyOrNotRelevant(List<PropertySpecification> props)
             => props.Where(p => {
                 // handled as a special case.
                 if (p.Name == "sasl.mechanisms") { return false; }
@@ -204,7 +204,7 @@ namespace ConfigGen
 
     }
 
-    
+
     class PropertySpecification : IComparable
     {
         public PropertySpecification() {}
@@ -370,7 +370,7 @@ namespace Confluent.Kafka
         static string createEnums(List<PropertySpecification> props)
         {
             var codeText = "";
-            for (int j=0; j<props.Count(); ++j)
+            for (int j = 0; j < props.Count(); ++j)
             {
                 var prop = props[j];
                 List<string> vs = null;
@@ -393,14 +393,14 @@ namespace Confluent.Kafka
                 codeText += $"    /// </summary>\n";
                 codeText += $"    public enum {ConfigNameToDotnetName(prop.Name)}\n";
                 codeText += $"    {{\n";
-                for (int i=0; i<vs.Count; ++i)
+                for (int i = 0; i < vs.Count; ++i)
                 {
                     var v = vs[i];
                     var nm = EnumNameToDotnetName(v);
                     codeText += $"        /// <summary>\n";
                     codeText += $"        ///     {nm}\n";
                     codeText += $"        /// </summary>\n";
-                    codeText += $"        {nm}{(i == vs.Count-1 ? "" : ",\n")}\n";
+                    codeText += $"        {nm}{(i == vs.Count - 1 ? "" : ",\n")}\n";
                 }
                 codeText += $"    }}\n";
             }
@@ -418,35 +418,45 @@ namespace Confluent.Kafka
             return codeText;
         }
 
+        static string createClassConstructors(string name)
+        {
+            var codeText = $@"
+        /// <summary>
+        ///     Initialize a new empty <see cref=""{name}"" /> instance.
+        /// </summary>
+        public {name}() : base() {{ }}
+
+        /// <summary>
+        ///     Initialize a new <see cref=""{name}"" /> instance wrapping
+        ///     an existing <see cref=""ClientConfig"" /> instance.
+        ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public {name}(ClientConfig config) : base(config) {{ }}
+
+        /// <summary>
+        ///     Initialize a new <see cref=""{name}"" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values ""in-place"" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public {name}(IDictionary<string, string> config) : base(config) {{ }}
+";
+            return codeText;
+        }
+
         static string createConsumerSpecific()
         {
             return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ConsumerConfig"" /> instance.
-        /// </summary>
-        public ConsumerConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ConsumerConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ConsumerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ConsumerConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
+                createClassConstructors("ConsumerConfig") +
+@"
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey,TValue}"" />
         ///     objects returned by the
         ///     <see cref=""Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)"" />
-        ///     method. Disabling fields that you do not require will improve 
+        ///     method. Disabling fields that you do not require will improve
         ///     throughput and reduce memory consumption. Allowed values:
         ///     headers, timestamp, topic, all, none
-        /// 
+        ///
         ///     default: all
         ///     importance: low
         /// </summary>
@@ -458,29 +468,14 @@ namespace Confluent.Kafka
         static string createProducerSpecific()
         {
             return
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""ProducerConfig"" /> instance.
-        /// </summary>
-        public ProducerConfig() {}
-
+                createClassConstructors("ProducerConfig") +
+@"
         /// <summary>
-        ///     Initialize a new <see cref=""ProducerConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public ProducerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""ProducerConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Specifies whether or not the producer should start a background poll 
+        ///     Specifies whether or not the producer should start a background poll
         ///     thread to receive delivery reports and event notifications. Generally,
-        ///     this should be set to true. If set to false, you will need to call 
+        ///     this should be set to true. If set to false, you will need to call
         ///     the Poll function manually.
-        /// 
+        ///
         ///     default: true
         ///     importance: low
         /// </summary>
@@ -490,7 +485,7 @@ namespace Confluent.Kafka
         ///     Specifies whether to enable notification of delivery reports. Typically
         ///     you should set this parameter to true. Set it to false for ""fire and
         ///     forget"" semantics and a small boost in performance.
-        /// 
+        ///
         ///     default: true
         ///     importance: low
         /// </summary>
@@ -501,7 +496,7 @@ namespace Confluent.Kafka
         ///     reports. Disabling delivery report fields that you do not require will
         ///     improve maximum throughput and reduce memory usage. Allowed values:
         ///     key, value, timestamp, headers, all, none.
-        /// 
+        ///
         ///     default: all
         ///     importance: low
         /// </summary>
@@ -512,24 +507,7 @@ namespace Confluent.Kafka
 
         static string createAdminClientSpecific()
         {
-            return 
-@"        /// <summary>
-        ///     Initialize a new empty <see cref=""AdminClientConfig"" /> instance.
-        /// </summary>
-        public AdminClientConfig() {}
-
-        /// <summary>
-        ///     Initialize a new <see cref=""AdminClientConfig"" /> instance based on
-        ///     an existing <see cref=""ClientConfig"" /> instance.
-        /// </summary>
-        public AdminClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-
-        /// <summary>
-        ///     Initialize a new <see cref=""AdminClientConfig"" /> instance based on
-        ///     an existing key/value pair collection.
-        /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
-";
+            return createClassConstructors("AdminClientConfig");
         }
 
         static List<PropertySpecification> extractAll(string configDoc)
@@ -547,24 +525,24 @@ namespace Confluent.Kafka
                     continue;
                 }
 
-                var columns = line.Split('|');
+                var columns = SplitLine(line).ToArray();
                 if (columns.Length != 6) { continue; }
                 if (columns[0].Contains("-----")) { continue; }
                 if (columns[0].Contains("Property")) { continue; }
 
                 var prop = new PropertySpecification();
                 prop.IsGlobal = parsingGlobal;
-                prop.Name = columns[0].Trim();
-                prop.CPorA = columns[1].Trim();
-                prop.Range = columns[2].Trim();
-                prop.Default = columns[3].Trim();
-                prop.Importance = columns[4].Trim();
+                prop.Name = columns[0];
+                prop.CPorA = columns[1];
+                prop.Range = columns[2];
+                prop.Default = columns[3];
+                prop.Importance = columns[4];
 
-                var desc = columns[5].Trim();
+                var desc = columns[5];
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias)
                 {
-                    var firstIdx = desc.IndexOf('`')+1;
+                    var firstIdx = desc.IndexOf('`') + 1;
                     prop.AliasFor = desc.Substring(firstIdx, desc.IndexOf('`', firstIdx) - desc.IndexOf('`') - 1);
                 }
                 else
@@ -580,6 +558,23 @@ namespace Confluent.Kafka
             }
 
             return props;
+        }
+
+        static IEnumerable<string> SplitLine(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                yield break;
+
+            int lastPipe = 0;
+            for (int i = 1; i < line.Length - 1; i++)
+            {
+                if (line[i] == '|' && line[i - 1] == ' ' && line[i + 1] == ' ')
+                {
+                    yield return line.Substring(lastPipe, i - lastPipe).Trim();
+                    lastPipe = i + 1;
+                }
+            }
+            yield return line.Substring(lastPipe + 1).Trim();
         }
 
         static List<PropertySpecification> removeDuplicateTopicLevel(List<PropertySpecification> props)
@@ -666,6 +661,7 @@ namespace Confluent.Kafka
             codeText += MappingConfiguration.SaslMechanismEnumString;
             codeText += MappingConfiguration.AcksEnumString;
             codeText += createClassHeader("ClientConfig", "Configuration common to all clients", false);
+            codeText += createClassConstructors("ClientConfig");
             codeText += MappingConfiguration.SaslMechanismGetSetString;
             codeText += MappingConfiguration.AcksGetSetString;
             codeText += createProperties(props.Where(p => p.CPorA == "*"));

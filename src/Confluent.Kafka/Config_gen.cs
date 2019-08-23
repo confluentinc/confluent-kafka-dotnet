@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka branch v1.0.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.0.0 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -222,6 +222,25 @@ namespace Confluent.Kafka
     /// </summary>
     public class ClientConfig : Config
     {
+
+        /// <summary>
+        ///     Initialize a new empty <see cref="ClientConfig" /> instance.
+        /// </summary>
+        public ClientConfig() : base() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
+        ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ClientConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ClientConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
@@ -695,22 +714,25 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClientConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="AdminClientConfig" /> instance.
         /// </summary>
-        public AdminClientConfig() {}
+        public AdminClientConfig() : base() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public AdminClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public AdminClientConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
         ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
     }
 
 
@@ -719,29 +741,32 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="ProducerConfig" /> instance.
         /// </summary>
-        public ProducerConfig() {}
+        public ProducerConfig() : base() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance based on
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ProducerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ProducerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance based on
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
         ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ProducerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
-        ///     Specifies whether or not the producer should start a background poll 
+        ///     Specifies whether or not the producer should start a background poll
         ///     thread to receive delivery reports and event notifications. Generally,
-        ///     this should be set to true. If set to false, you will need to call 
+        ///     this should be set to true. If set to false, you will need to call
         ///     the Poll function manually.
-        /// 
+        ///
         ///     default: true
         ///     importance: low
         /// </summary>
@@ -751,7 +776,7 @@ namespace Confluent.Kafka
         ///     Specifies whether to enable notification of delivery reports. Typically
         ///     you should set this parameter to true. Set it to false for "fire and
         ///     forget" semantics and a small boost in performance.
-        /// 
+        ///
         ///     default: true
         ///     importance: low
         /// </summary>
@@ -762,7 +787,7 @@ namespace Confluent.Kafka
         ///     reports. Disabling delivery report fields that you do not require will
         ///     improve maximum throughput and reduce memory usage. Allowed values:
         ///     key, value, timestamp, headers, all, none.
-        /// 
+        ///
         ///     default: all
         ///     importance: low
         /// </summary>
@@ -801,7 +826,7 @@ namespace Confluent.Kafka
         public int? CompressionLevel { get { return GetInt("compression.level"); } set { this.SetObject("compression.level", value); } }
 
         /// <summary>
-        ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.in.flight.requests.per.connection=5` (must be less than or equal to 5), `retries=INT32_MAX` (must be greater than 0), `acks=all`, `queuing.strategy=fifo`. Producer instantiation will fail if user-supplied configuration is incompatible.
+        ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.in.flight.requests.per.connection=5` (must be less than or equal to 5), `retries=INT32_MAX` (must be greater than 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.
         ///
         ///     default: false
         ///     importance: high
@@ -888,32 +913,35 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="ConsumerConfig" /> instance.
         /// </summary>
-        public ConsumerConfig() {}
+        public ConsumerConfig() : base() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ConsumerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ConsumerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
         ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey,TValue}" />
         ///     objects returned by the
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)" />
-        ///     method. Disabling fields that you do not require will improve 
+        ///     method. Disabling fields that you do not require will improve
         ///     throughput and reduce memory consumption. Allowed values:
         ///     headers, timestamp, topic, all, none
-        /// 
+        ///
         ///     default: all
         ///     importance: low
         /// </summary>
