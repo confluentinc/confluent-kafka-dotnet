@@ -246,6 +246,7 @@ namespace ConfigGen
             if (type == "enum value") { return "enum"; }
             if (type == "CSV flags") { return "string"; }
             if (type == "pattern list") { return "string"; }
+            if (type == "float") { return "double"; }
             if (type == "pointer") { return "pointer"; }
             if (type == "") { return "pointer"; }
             throw new Exception($"unknown type '{type}'");
@@ -303,7 +304,9 @@ namespace Confluent.Kafka
             { "sasl_ssl", "SaslSsl" },
             { "consistent_random", "ConsistentRandom" },
             { "murmur2_random", "Murmur2Random"},
-            { "roundrobin", "RoundRobin" }
+            { "roundrobin", "RoundRobin" },
+            { "read_uncommitted", "ReadUncommitted" },
+            { "read_committed", "ReadCommitted" }
         };
 
         static string EnumNameToDotnetName(string enumName)
@@ -535,10 +538,10 @@ namespace Confluent.Kafka
                 prop.Name = columns[0];
                 prop.CPorA = columns[1];
                 prop.Range = columns[2];
-                prop.Default = columns[3];
+                prop.Default = columns[3].Replace("\\|", "|");
                 prop.Importance = columns[4];
 
-                var desc = columns[5];
+                var desc = columns[5].Replace("\\|", "|");
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias)
                 {
