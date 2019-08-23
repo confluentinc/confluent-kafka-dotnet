@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 namespace Confluent.SchemaRegistry
 {
     /// <remarks>
-    ///     It may be useful to expose this publically, but this is not
+    ///     It may be useful to expose this publicly, but this is not
     ///     required by the Avro serializers, so we will keep this internal 
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>

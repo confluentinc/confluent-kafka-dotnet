@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         ///     with the specified offsets.
         /// </summary>
         /// <param name="low">
-        ///     The offset of the earlist message in the topic/partition. If 
+        ///     The offset of the earliest message in the topic/partition. If 
         ///     no messages have been written to the topic, the low watermark
         ///     offset is set to 0. The low watermark will also be 0 if 
         ///     one message has been written to the partition (with offset 0).
@@ -50,7 +50,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Gets the offset of the earlist message in the topic/partition. If 
+        ///     Gets the offset of the earliest message in the topic/partition. If 
         ///     no messages have been written to the topic, the low watermark
         ///     offset is set to 0. The low watermark will also be 0 if 
         ///     one message has been written to the partition (with offset 0).

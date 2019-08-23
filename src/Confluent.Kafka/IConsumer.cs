@@ -474,7 +474,7 @@ namespace Confluent.Kafka
         /// </remarks>
         /// <param name="timestampsToSearch">
         ///     The mapping from partition
-        ///     to the timestampto look up.
+        ///     to the timestamp to look up.
         /// </param>
         /// <param name="timeout">
         ///     The maximum period of time the
@@ -547,7 +547,7 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Commits offsets, alerts the group coodinator
+        ///     Commits offsets, alerts the group coordinator
         ///     that the consumer is exiting the group then
         ///     releases all resources used by this consumer.
         ///     You should call <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" />
@@ -558,7 +558,7 @@ namespace Confluent.Kafka
         ///     or <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Unsubscribe" />,
         ///     the group will rebalance after a timeout
         ///     specified by the group's `session.timeout.ms`.
-        ///     Note: the partition asignment and partitions
+        ///     Note: the partition assignment and partitions
         ///     revoked handlers may be called as a side-effect
         ///     of calling this method.
         /// </summary>

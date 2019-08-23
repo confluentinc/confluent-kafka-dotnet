@@ -38,7 +38,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.Contains("myhost", bm.ToString());
             Assert.Contains(8080.ToString(), bm.ToString());
 
-            // TODO: JSON based test. Note: there is coverage of this already in the Metdata integration test.
+            // TODO: JSON based test. Note: there is coverage of this already in the Metadata integration test.
         }
     }
 }
