@@ -246,6 +246,7 @@ namespace ConfigGen
             if (type == "enum value") { return "enum"; }
             if (type == "CSV flags") { return "string"; }
             if (type == "pattern list") { return "string"; }
+            if (type == "float") { return "double"; }
             if (type == "pointer") { return "pointer"; }
             if (type == "") { return "pointer"; }
             throw new Exception($"unknown type '{type}'");
@@ -303,7 +304,9 @@ namespace Confluent.Kafka
             { "sasl_ssl", "SaslSsl" },
             { "consistent_random", "ConsistentRandom" },
             { "murmur2_random", "Murmur2Random"},
-            { "roundrobin", "RoundRobin" }
+            { "roundrobin", "RoundRobin" },
+            { "read_uncommitted", "ReadUncommitted" },
+            { "read_committed", "ReadCommitted" }
         };
 
         static string EnumNameToDotnetName(string enumName)
