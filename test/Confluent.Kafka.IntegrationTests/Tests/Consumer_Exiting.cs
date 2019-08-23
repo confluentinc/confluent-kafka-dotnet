@@ -26,7 +26,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test various combinations of unsubscribing / commiting before disposing the consumer.
+        ///     Test various combinations of unsubscribing / committing before disposing the consumer.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_Exiting(string bootstrapServers)

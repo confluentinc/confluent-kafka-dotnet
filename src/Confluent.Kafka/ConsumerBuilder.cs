@@ -221,7 +221,7 @@ namespace Confluent.Kafka
         ///     Note: corresponding to every call to this handler there will be a corresponding call to
         ///     the partitions revoked handler (if one has been set using SetPartitionsRevokedHandler).
         ///
-        ///     The actual partitions to consume from and start offsets are specfied by the return value
+        ///     The actual partitions to consume from and start offsets are specified by the return value
         ///     of the handler. This set of partitions is not required to match the assignment provided
         ///     by the consumer group, but typically will. Partition offsets may be a specific offset, or
         ///     special value (Beginning, End or Unset). If Unset, consumption will resume from the

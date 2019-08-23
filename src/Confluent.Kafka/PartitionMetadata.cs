@@ -41,7 +41,7 @@ namespace Confluent.Kafka
         /// </param>
         /// <param name="inSyncReplicas">
         ///     The ids of all brokers that contain in-sync replicas of the partition.
-        ///     Note: this value is cached by the broker and is consequently not guarenteed to be up-to-date.
+        ///     Note: this value is cached by the broker and is consequently not guaranteed to be up-to-date.
         /// </param>
         /// <param name="error">
         ///     A rich <see cref="Error"/> object associated with the request for this partition metadata.
@@ -77,7 +77,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Gets a rich <see cref="Error"/> object associated with the request for this partition metadata.
-        ///     Note: this value is cached by the broker and is consequently not guarenteed to be up-to-date.
+        ///     Note: this value is cached by the broker and is consequently not guaranteed to be up-to-date.
         /// </summary>
         public Error Error { get; }
 

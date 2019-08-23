@@ -184,7 +184,7 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum period of time to block if
         ///     no callback events are waiting. You should
-        ///     typically use a relatively short timout period
+        ///     typically use a relatively short timeout period
         ///     because this operation cannot be cancelled.
         /// </param>
         /// <returns>
@@ -198,7 +198,7 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Wait until all outstanding produce requests and
-        ///     delievery report callbacks are completed.
+        ///     delivery report callbacks are completed.
         ///    
         ///     [API-SUBJECT-TO-CHANGE] - the semantics and/or
         ///     type of the return value is subject to change.
@@ -206,7 +206,7 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time to block.
         ///     You should typically use a relatively short
-        ///     timout period and loop until the return value
+        ///     timeout period and loop until the return value
         ///     becomes zero because this operation cannot be
         ///     cancelled. 
         /// </param>
@@ -248,7 +248,7 @@ namespace Confluent.Kafka
         
         /// <summary>
         ///     Wait until all outstanding produce requests and
-        ///     delievery report callbacks are completed.
+        ///     delivery report callbacks are completed.
         /// </summary>
         /// <remarks>
         ///     This method should typically be called prior to
