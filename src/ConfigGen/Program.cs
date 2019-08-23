@@ -538,10 +538,10 @@ namespace Confluent.Kafka
                 prop.Name = columns[0];
                 prop.CPorA = columns[1];
                 prop.Range = columns[2];
-                prop.Default = columns[3];
+                prop.Default = columns[3].Replace("\\|", "|");
                 prop.Importance = columns[4];
 
-                var desc = columns[5];
+                var desc = columns[5].Replace("\\|", "|");
                 bool isAlias = desc.StartsWith("Alias");
                 if (isAlias)
                 {

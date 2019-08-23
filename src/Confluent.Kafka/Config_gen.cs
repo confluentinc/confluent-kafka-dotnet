@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka master *** - do not modify manually.
+// *** Auto-generated from librdkafka 7632802d315b1a10f27e957400a3ec74f12ffbe8 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -725,7 +725,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Shell command to refresh or acquire the client's Kerberos ticket. This command is executed on client creation and every sasl.kerberos.min.time.before.relogin (0=disable). %{config.prop.name} is replaced by corresponding config object value.
         ///
-        ///     default: kinit -R -t "%{sasl.kerberos.keytab}" -k %{sasl.kerberos.principal} \|\| kinit -t "%{sasl.kerberos.keytab}" -k %{sasl.kerberos.principal}
+        ///     default: kinit -R -t "%{sasl.kerberos.keytab}" -k %{sasl.kerberos.principal} || kinit -t "%{sasl.kerberos.keytab}" -k %{sasl.kerberos.principal}
         ///     importance: low
         /// </summary>
         public string SaslKerberosKinitCmd { get { return Get("sasl.kerberos.kinit.cmd"); } set { this.SetObject("sasl.kerberos.kinit.cmd", value); } }
