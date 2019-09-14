@@ -643,7 +643,7 @@ namespace Confluent.Kafka
                 if (!defaultDeserializers.TryGetValue(typeof(TValue), out object deserializer))
                 {
                     throw new InvalidOperationException(
-                        $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TKey).Name}.");
+                        $"Value deserializer was not specified and there is no default deserializer defined for type {typeof(TValue).Name}.");
                 }
                 this.valueDeserializer = (IDeserializer<TValue>)deserializer;
             }

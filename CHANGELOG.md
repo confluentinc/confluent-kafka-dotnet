@@ -1,3 +1,28 @@
+# 1.1.0
+
+## Enhancements
+
+- References librdkafka v1.1.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.1.0) for more informtion. Notable improvement for Windows SSL users: You no longer need to specify a CA certificate file/directory (SslCaLocation) - librdkafka will load the CA certs by default from the Windows Root Certificate Store.
+
+
+# 1.0.1.1
+
+## Changes
+
+- Applied `ConfigureAwait(false)` to all internal `await`ed calls, which resolves deadlock issues in
+synchronization contexts with limited numbers of threads [#967](https://github.com/confluentinc/confluent-kafka-dotnet/pull/967).
+
+
+# 1.0.1
+
+## Enhancements
+
+- Support for Alpine Linux.
+- New LogLevelType enum and functions to convert between different log level type levels.
+- Added netstandard20 as a target.
+- References librdkafka [1.0.1](https://github.com/edenhill/librdkafka/releases/tag/v1.0.1).
+
+
 # 1.0.0
 
 ## Summary

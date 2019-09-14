@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,22 +15,27 @@
 // Refer to LICENSE for more information.
 
 
-namespace Confluent.SchemaRegistry.Serdes
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Enumeration of serde types recognized by the 
-    ///     Avro ProduceAsync and Produce methods.
+    ///     Enumerates different log level enumerations.
     /// </summary>
-    public enum SerdeType
+    public enum LogLevelType
     {
         /// <summary>
-        ///     Use the regular serializer.
+        ///     Confluent.Kafka.SysLogLevel (severity
+        ///     levels correspond to syslog)
         /// </summary>
-        Regular = 1,
+        SysLogLevel = 1,
 
         /// <summary>
-        ///     Use the Avro serializer.
+        ///     Microsoft.Extensions.Logging.LogLevel
         /// </summary>
-        Avro = 2
+        MicrosoftExtensionsLogging = 2,
+
+        /// <summary>
+        ///     System.Diagnostics.TraceLevel
+        /// </summary>
+        SystemDiagnostics = 3
     }
 }

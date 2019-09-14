@@ -26,7 +26,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test that the ignore deserialier behaves as expected.
+        ///     Test that the ignore deserializer behaves as expected.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void IgnoreTest(string bootstrapServers)

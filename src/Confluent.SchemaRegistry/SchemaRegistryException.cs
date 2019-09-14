@@ -27,7 +27,7 @@ namespace Confluent.SchemaRegistry
     public class SchemaRegistryException : HttpRequestException
     {
         /// <summary>
-        ///     An error code specfic to Schema Registry of the form XXX or XXXYY.
+        ///     An error code specific to Schema Registry of the form XXX or XXXYY.
         ///     where XXX is standard http error status (400-500) and YY specific to schema registry
         ///     Example: 40403 = Schema not found
         /// </summary>

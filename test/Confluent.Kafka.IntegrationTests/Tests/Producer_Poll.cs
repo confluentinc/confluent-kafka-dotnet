@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var sw = new Stopwatch();
                 sw.Start();
                 // Note: Poll returns the number of events served since the last
-                // call to Poll (or if the poll method hasn't beeen called, over
+                // call to Poll (or if the poll method hasn't been called, over
                 // the lifetime of the producer).
                 Assert.True(producer.Poll(TimeSpan.FromMilliseconds(500)) >= 1);
                 Assert.True(sw.ElapsedMilliseconds < 1);

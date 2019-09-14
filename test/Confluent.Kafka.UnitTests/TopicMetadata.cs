@@ -33,6 +33,6 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(new Error(ErrorCode.Local_AllBrokersDown), tm.Error);
         }
 
-        // TODO: ToString() tests. Note: there is coverage of this already in the Metdata integration test.
+        // TODO: ToString() tests. Note: there is coverage of this already in the Metadata integration test.
     }
 }

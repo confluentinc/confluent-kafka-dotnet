@@ -459,7 +459,7 @@ namespace Confluent.Kafka
                 if (!defaultSerializers.TryGetValue(typeof(TValue), out object serializer))
                 {
                     throw new ArgumentNullException(
-                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
+                        $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
                 }
                 this.valueSerializer = (ISerializer<TValue>)serializer;
             }
@@ -601,7 +601,7 @@ namespace Confluent.Kafka
             }
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
-            configHandle.SetHandleAsInvalid(); // config object is no longer useable.
+            configHandle.SetHandleAsInvalid(); // config object is no longer usable.
 
             if (!manualPoll)
             {
@@ -627,7 +627,7 @@ namespace Confluent.Kafka
             {
                 keyBytes = (keySerializer != null)
                     ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers))
-                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers));
+                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, message.Headers)).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -646,7 +646,7 @@ namespace Confluent.Kafka
             {
                 valBytes = (valueSerializer != null)
                     ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers))
-                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers));
+                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, message.Headers)).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -676,7 +676,7 @@ namespace Confluent.Kafka
                         message.Timestamp, topicPartition.Partition, message.Headers,
                         handler);
 
-                    return await handler.Task;
+                    return await handler.Task.ConfigureAwait(false);
                 }
                 else
                 {
