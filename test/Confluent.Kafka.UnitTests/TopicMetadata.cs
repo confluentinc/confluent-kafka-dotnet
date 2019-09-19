@@ -49,7 +49,7 @@ namespace Confluent.Kafka.UnitTests
 
             var partitions2 = new List<PartitionMetadata>();
             var tm2 = new TopicMetadata("mytopic", partitions2, ErrorCode.Local_AllBrokersDown);
-            Assert.Contains(ErrorCode.Local_AllBrokersDown.ToString(), tm2.ToString());
+            Assert.Contains(tm2.Error.Code.ToString(), tm2.ToString());
         }
     }
 }
