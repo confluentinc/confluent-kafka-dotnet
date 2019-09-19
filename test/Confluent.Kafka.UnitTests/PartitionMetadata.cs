@@ -56,7 +56,7 @@ namespace Confluent.Kafka.UnitTests
 
             int[] replicas2 = new int[0];
             int[] inSyncReplicas2 = new int[0];
-            var pm2 = new PartitionMetadata(0, 41, replicas, inSyncReplicas, ErrorCode.NoError);
+            var pm2 = new PartitionMetadata(0, 41, replicas2, inSyncReplicas2, ErrorCode.Local_AllBrokersDown);
 
             Assert.Contains(pm2.Leader.ToString(), pm2.ToString());
         }
