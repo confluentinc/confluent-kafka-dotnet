@@ -34,6 +34,31 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(new Error(ErrorCode.Local_AllBrokersDown), pm.Error);
         }
 
-        // TODO: ToString() tests. Note: there is coverage of this already in the Metadata integration test.
+        [Fact]
+        public void ToStringTest()
+        {
+            int[] replicas = new int[]{42, 43};
+            int[] inSyncReplicas = new int[]{42};
+            var pm1 = new PartitionMetadata(20, 42, replicas, inSyncReplicas, ErrorCode.NoError);
+
+            Assert.Contains(pm1.PartitionId.ToString(), pm1.ToString());
+            Assert.Contains(pm1.Error.Code.ToString(), pm1.ToString());
+            foreach(var replica in pm1.Replicas)
+            {
+                Assert.Contains(replica.ToString(), pm1.ToString());
+            }
+
+            foreach(var inSyncReplica in pm1.InSyncReplicas)
+            {
+                Assert.Contains(inSyncReplica.ToString(), pm1.ToString());
+            }
+
+
+            int[] replicas2 = new int[0];
+            int[] inSyncReplicas2 = new int[0];
+            var pm2 = new PartitionMetadata(0, 41, replicas, inSyncReplicas, ErrorCode.NoError);
+
+            Assert.Contains(pm2.Leader.ToString(), pm2.ToString());
+        }
     }
 }
