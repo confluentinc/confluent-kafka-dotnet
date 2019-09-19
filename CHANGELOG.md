@@ -2,13 +2,13 @@
 
 ## Enhancements
 
-- References librdkafka v1.2.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.2.0) for more informtion. Headline feature is consumer side support for transactions.
+- References librdkafka v1.2.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.2.0) for more information. Headline feature is consumer side support for transactions.
 - Added `IDictionary` overload to `Config` constructors (contribution by @AndyPook).
 - `Confluent.Kafka`, `Confluent.SchemaRegistry` and `Confluent.SchemaRegistry.Serdes` are now all signed, and `Confluent.Kafka.StrongName` depreciated.
 
 ## Fixes
 
-- Updated the librdkaka build load order so that the most featureful version is used on any given platform.
+- Updated the librdkafka build load order so that the most featureful version is used on any given platform.
 
 
 # 1.1.0
