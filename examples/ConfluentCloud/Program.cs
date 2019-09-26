@@ -41,8 +41,6 @@ namespace ConfluentCloudExample
             var pConfig = new ProducerConfig
             {
                 BootstrapServers = "<ccloud bootstrap servers>",
-                BrokerVersionFallback = "0.10.0.0",
-                ApiVersionFallbackMs = 0,
                 SaslMechanism = SaslMechanism.Plain,
                 SecurityProtocol = SecurityProtocol.SaslSsl,
                 // Note: If your root CA certificates are in an unusual location you
@@ -66,8 +64,6 @@ namespace ConfluentCloudExample
             var cConfig = new ConsumerConfig
             {
                 BootstrapServers = "<confluent cloud bootstrap servers>",
-                BrokerVersionFallback = "0.10.0.0",
-                ApiVersionFallbackMs = 0,
                 SaslMechanism = SaslMechanism.Plain,
                 SecurityProtocol = SecurityProtocol.SaslSsl,
                 SaslUsername = "<confluent cloud key>",
