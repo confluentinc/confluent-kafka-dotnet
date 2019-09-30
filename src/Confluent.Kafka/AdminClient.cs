@@ -145,7 +145,7 @@ namespace Confluent.Kafka
                                 if (adminClientResult.GetType() != expectedType)
                                 {
                                     // Should never happen.
-                                    throw new InvalidOperationException($"Completion source type mismatch. Exected {expectedType.Name}, got {type}");
+                                    throw new InvalidOperationException($"Completion source type mismatch. Expected {expectedType.Name}, got {type}");
                                 }
 
                                 var errorCode = Librdkafka.event_error(eventPtr);

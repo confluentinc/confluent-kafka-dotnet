@@ -13,14 +13,16 @@
     <PackageId>Confluent.SchemaRegistry.Serdes</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes</AssemblyName>
-    <VersionPrefix>1.0.1.1</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <TargetFrameworks>netstandard2.0;net452;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Serdes.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.6" />
+    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.7" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 

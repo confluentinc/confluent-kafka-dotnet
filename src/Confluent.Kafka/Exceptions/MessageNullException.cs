@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2019 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,23 +14,18 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 
-namespace Confluent.SchemaRegistry.Serdes
+namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Enumeration of serde types recognized by the 
-    ///     Avro ProduceAsync and Produce methods.
+    ///     Thrown when there is an attempt to dereference a null Message reference.
     /// </summary>
-    public enum SerdeType
+    public class MessageNullException : NullReferenceException
     {
-        /// <summary>
-        ///     Use the regular serializer.
-        /// </summary>
-        Regular = 1,
-
-        /// <summary>
-        ///     Use the Avro serializer.
-        /// </summary>
-        Avro = 2
+        public MessageNullException()
+            : base("Attempt to dereference null Message reference")
+        {
+        }
     }
 }

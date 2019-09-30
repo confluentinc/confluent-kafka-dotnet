@@ -24,7 +24,7 @@ using Confluent.Kafka;
 // This program is included as an educational tool to allow you to
 // experiment with different scenarios that may cause deadlocks.
 //
-// For more information, some good reasourcs are:
+// For more information, some good resources are:
 //   https://devblogs.microsoft.com/pfxteam/should-i-expose-synchronous-wrappers-for-asynchronous-methods/
 //   https://blog.stephencleary.com/2012/07/dont-block-on-async-code.html
 //   https://blogs.msdn.microsoft.com/vancem/2018/10/16/diagnosing-net-core-threadpool-starvation-with-perfview-why-my-service-is-not-saturating-all-cores-or-seems-to-stall/
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.SyncOverAsync
                 int N = workerThreads;
                 for (int i=0; i<N; ++i)
                 {
-                    // create a unique delvery report handler for each task.
+                    // create a unique delivery report handler for each task.
                     Func<int, Action> actionCreator = (taskNumber) =>
                     {
                         return () =>

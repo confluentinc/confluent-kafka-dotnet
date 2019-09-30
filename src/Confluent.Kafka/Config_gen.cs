@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka branch v1.0.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka 7632802d315b1a10f27e957400a3ec74f12ffbe8 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -124,6 +124,22 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
+    ///     SslEndpointIdentificationAlgorithm enum values
+    /// </summary>
+    public enum SslEndpointIdentificationAlgorithm
+    {
+        /// <summary>
+        ///     None
+        /// </summary>
+        None,
+
+        /// <summary>
+        ///     Https
+        /// </summary>
+        Https
+    }
+
+    /// <summary>
     ///     PartitionAssignmentStrategy enum values
     /// </summary>
     public enum PartitionAssignmentStrategy
@@ -137,6 +153,22 @@ namespace Confluent.Kafka
         ///     RoundRobin
         /// </summary>
         RoundRobin
+    }
+
+    /// <summary>
+    ///     IsolationLevel enum values
+    /// </summary>
+    public enum IsolationLevel
+    {
+        /// <summary>
+        ///     ReadUncommitted
+        /// </summary>
+        ReadUncommitted,
+
+        /// <summary>
+        ///     ReadCommitted
+        /// </summary>
+        ReadCommitted
     }
 
     /// <summary>
@@ -222,6 +254,25 @@ namespace Confluent.Kafka
     /// </summary>
     public class ClientConfig : Config
     {
+
+        /// <summary>
+        ///     Initialize a new empty <see cref="ClientConfig" /> instance.
+        /// </summary>
+        public ClientConfig() : base() { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
+        ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ClientConfig(ClientConfig config) : base(config) { }
+
+        /// <summary>
+        ///     Initialize a new <see cref="ClientConfig" /> instance wrapping
+        ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
+        /// </summary>
+        public ClientConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
         ///     SASL mechanism to use for authentication. Supported: GSSAPI, PLAIN, SCRAM-SHA-256, SCRAM-SHA-512. **NOTE**: Despite the name, you may not configure more than one mechanism.
@@ -336,7 +387,7 @@ namespace Confluent.Kafka
         public int? MetadataRequestTimeoutMs { get { return GetInt("metadata.request.timeout.ms"); } set { this.SetObject("metadata.request.timeout.ms", value); } }
 
         /// <summary>
-        ///     Topic metadata refresh interval in milliseconds. The metadata is automatically refreshed on error and connect. Use -1 to disable the intervalled refresh.
+        ///     Period of time in milliseconds at which topic and broker metadata is refreshed in order to proactively discover any new brokers, topics, partitions or partition leader changes. Use -1 to disable the intervalled refresh (not recommended). If there are no locally referenced topics (no topic objects created, no messages produced, no subscription or no assignment) then only the broker list will be refreshed every interval but no more often than every 10s.
         ///
         ///     default: 300000
         ///     importance: low
@@ -576,12 +627,20 @@ namespace Confluent.Kafka
         public string SslKeyLocation { get { return Get("ssl.key.location"); } set { this.SetObject("ssl.key.location", value); } }
 
         /// <summary>
-        ///     Private key passphrase
+        ///     Private key passphrase (for use with `ssl.key.location` and `set_ssl_cert()`)
         ///
         ///     default: ''
         ///     importance: low
         /// </summary>
         public string SslKeyPassword { get { return Get("ssl.key.password"); } set { this.SetObject("ssl.key.password", value); } }
+
+        /// <summary>
+        ///     Client's private key string (PEM format) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeyPem { get { return Get("ssl.key.pem"); } set { this.SetObject("ssl.key.pem", value); } }
 
         /// <summary>
         ///     Path to client's public key (PEM) used for authentication.
@@ -592,10 +651,18 @@ namespace Confluent.Kafka
         public string SslCertificateLocation { get { return Get("ssl.certificate.location"); } set { this.SetObject("ssl.certificate.location", value); } }
 
         /// <summary>
+        ///     Client's public key string (PEM format) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCertificatePem { get { return Get("ssl.certificate.pem"); } set { this.SetObject("ssl.certificate.pem", value); } }
+
+        /// <summary>
         ///     File or directory path to CA certificate(s) for verifying the broker's key.
         ///
         ///     default: ''
-        ///     importance: medium
+        ///     importance: low
         /// </summary>
         public string SslCaLocation { get { return Get("ssl.ca.location"); } set { this.SetObject("ssl.ca.location", value); } }
 
@@ -624,6 +691,22 @@ namespace Confluent.Kafka
         public string SslKeystorePassword { get { return Get("ssl.keystore.password"); } set { this.SetObject("ssl.keystore.password", value); } }
 
         /// <summary>
+        ///     Enable OpenSSL's builtin broker (server) certificate verification. This verification can be extended by the application by implementing a certificate_verify_cb.
+        ///
+        ///     default: true
+        ///     importance: low
+        /// </summary>
+        public bool? EnableSslCertificateVerification { get { return GetBool("enable.ssl.certificate.verification"); } set { this.SetObject("enable.ssl.certificate.verification", value); } }
+
+        /// <summary>
+        ///     Endpoint identification algorithm to validate broker hostname using broker certificate. https - Server (broker) hostname verification as specified in RFC2818. none - No endpoint verification. OpenSSL >= 1.0.2 required.
+        ///
+        ///     default: none
+        ///     importance: low
+        /// </summary>
+        public SslEndpointIdentificationAlgorithm? SslEndpointIdentificationAlgorithm { get { return (SslEndpointIdentificationAlgorithm?)GetEnum(typeof(SslEndpointIdentificationAlgorithm), "ssl.endpoint.identification.algorithm"); } set { this.SetObject("ssl.endpoint.identification.algorithm", value); } }
+
+        /// <summary>
         ///     Kerberos principal name that Kafka runs as, not including /hostname@REALM
         ///
         ///     default: kafka
@@ -640,15 +723,15 @@ namespace Confluent.Kafka
         public string SaslKerberosPrincipal { get { return Get("sasl.kerberos.principal"); } set { this.SetObject("sasl.kerberos.principal", value); } }
 
         /// <summary>
-        ///     Full kerberos kinit command string, %{config.prop.name} is replaced by corresponding config object value, %{broker.name} returns the broker's hostname.
+        ///     Shell command to refresh or acquire the client's Kerberos ticket. This command is executed on client creation and every sasl.kerberos.min.time.before.relogin (0=disable). %{config.prop.name} is replaced by corresponding config object value.
         ///
-        ///     default: kinit -S "%{sasl.kerberos.service.name}/%{broker.name}" -k -t "%{sasl.kerberos.keytab}" %{sasl.kerberos.principal}
+        ///     default: kinit -R -t "%{sasl.kerberos.keytab}" -k %{sasl.kerberos.principal} || kinit -t "%{sasl.kerberos.keytab}" -k %{sasl.kerberos.principal}
         ///     importance: low
         /// </summary>
         public string SaslKerberosKinitCmd { get { return Get("sasl.kerberos.kinit.cmd"); } set { this.SetObject("sasl.kerberos.kinit.cmd", value); } }
 
         /// <summary>
-        ///     Path to Kerberos keytab file. Uses system default if not set.**NOTE**: This is not automatically used but must be added to the template in sasl.kerberos.kinit.cmd as ` ... -t %{sasl.kerberos.keytab}`.
+        ///     Path to Kerberos keytab file. This configuration property is only used as a variable in `sasl.kerberos.kinit.cmd` as ` ... -t "%{sasl.kerberos.keytab}"`.
         ///
         ///     default: ''
         ///     importance: low
@@ -656,7 +739,7 @@ namespace Confluent.Kafka
         public string SaslKerberosKeytab { get { return Get("sasl.kerberos.keytab"); } set { this.SetObject("sasl.kerberos.keytab", value); } }
 
         /// <summary>
-        ///     Minimum time in milliseconds between key refresh attempts.
+        ///     Minimum time in milliseconds between key refresh attempts. Disable automatic key refresh by setting this property to 0.
         ///
         ///     default: 60000
         ///     importance: low
@@ -680,6 +763,22 @@ namespace Confluent.Kafka
         public string SaslPassword { get { return Get("sasl.password"); } set { this.SetObject("sasl.password", value); } }
 
         /// <summary>
+        ///     SASL/OAUTHBEARER configuration. The format is implementation-dependent and must be parsed accordingly. The default unsecured token implementation (see https://tools.ietf.org/html/rfc7515#appendix-A.5) recognizes space-separated name=value pairs with valid names including principalClaimName, principal, scopeClaimName, scope, and lifeSeconds. The default value for principalClaimName is "sub", the default value for scopeClaimName is "scope", and the default value for lifeSeconds is 3600. The scope value is CSV format with the default value being no/empty scope. For example: `principalClaimName=azp principal=admin scopeClaimName=roles scope=role1,role2 lifeSeconds=600`. In addition, SASL extensions can be communicated to the broker via `extension_<extensionname>=value`. For example: `principal=admin extension_traceId=123`
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SaslOauthbearerConfig { get { return Get("sasl.oauthbearer.config"); } set { this.SetObject("sasl.oauthbearer.config", value); } }
+
+        /// <summary>
+        ///     Enable the builtin unsecure JWT OAUTHBEARER token handler if no oauthbearer_refresh_cb has been set. This builtin handler should only be used for development or testing, and not in production.
+        ///
+        ///     default: false
+        ///     importance: low
+        /// </summary>
+        public bool? EnableSaslOauthbearerUnsecureJwt { get { return GetBool("enable.sasl.oauthbearer.unsecure.jwt"); } set { this.SetObject("enable.sasl.oauthbearer.unsecure.jwt", value); } }
+
+        /// <summary>
         ///     List of plugin libraries to load (; separated). The library search path is platform dependent (see dlopen(3) for Unix and LoadLibrary() for Windows). If no filename extension is specified the platform-specific extension (such as .dll or .so) will be appended automatically.
         ///
         ///     default: ''
@@ -695,22 +794,25 @@ namespace Confluent.Kafka
     /// </summary>
     public class AdminClientConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="AdminClientConfig" /> instance.
         /// </summary>
-        public AdminClientConfig() {}
+        public AdminClientConfig() : base() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public AdminClientConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public AdminClientConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="AdminClientConfig" /> instance based on
+        ///     Initialize a new <see cref="AdminClientConfig" /> instance wrapping
         ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public AdminClientConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
     }
 
 
@@ -719,29 +821,32 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="ProducerConfig" /> instance.
         /// </summary>
-        public ProducerConfig() {}
+        public ProducerConfig() : base() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance based on
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ProducerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ProducerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ProducerConfig" /> instance based on
+        ///     Initialize a new <see cref="ProducerConfig" /> instance wrapping
         ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ProducerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ProducerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
-        ///     Specifies whether or not the producer should start a background poll 
+        ///     Specifies whether or not the producer should start a background poll
         ///     thread to receive delivery reports and event notifications. Generally,
-        ///     this should be set to true. If set to false, you will need to call 
+        ///     this should be set to true. If set to false, you will need to call
         ///     the Poll function manually.
-        /// 
+        ///
         ///     default: true
         ///     importance: low
         /// </summary>
@@ -751,7 +856,7 @@ namespace Confluent.Kafka
         ///     Specifies whether to enable notification of delivery reports. Typically
         ///     you should set this parameter to true. Set it to false for "fire and
         ///     forget" semantics and a small boost in performance.
-        /// 
+        ///
         ///     default: true
         ///     importance: low
         /// </summary>
@@ -762,7 +867,7 @@ namespace Confluent.Kafka
         ///     reports. Disabling delivery report fields that you do not require will
         ///     improve maximum throughput and reduce memory usage. Allowed values:
         ///     key, value, timestamp, headers, all, none.
-        /// 
+        ///
         ///     default: all
         ///     importance: low
         /// </summary>
@@ -835,10 +940,10 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Delay in milliseconds to wait for messages in the producer queue to accumulate before constructing message batches (MessageSets) to transmit to brokers. A higher value allows larger and more effective (less overhead, improved compression) batches of messages to accumulate at the expense of increased message delivery latency.
         ///
-        ///     default: 0
+        ///     default: 0.5
         ///     importance: high
         /// </summary>
-        public int? LingerMs { get { return GetInt("linger.ms"); } set { this.SetObject("linger.ms", value); } }
+        public double? LingerMs { get { return (double?)GetEnum(typeof(double), "linger.ms"); } set { this.SetObject("linger.ms", value); } }
 
         /// <summary>
         ///     How many times to retry sending a failing Message. **Note:** retrying may cause reordering unless `enable.idempotence` is set to true.
@@ -888,32 +993,35 @@ namespace Confluent.Kafka
     /// </summary>
     public class ConsumerConfig : ClientConfig
     {
+
         /// <summary>
         ///     Initialize a new empty <see cref="ConsumerConfig" /> instance.
         /// </summary>
-        public ConsumerConfig() {}
+        public ConsumerConfig() : base() { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
         ///     an existing <see cref="ClientConfig" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ConsumerConfig(ClientConfig config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ConsumerConfig(ClientConfig config) : base(config) { }
 
         /// <summary>
-        ///     Initialize a new <see cref="ConsumerConfig" /> instance based on
+        ///     Initialize a new <see cref="ConsumerConfig" /> instance wrapping
         ///     an existing key/value pair collection.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public ConsumerConfig(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref="Confluent.Kafka.ConsumeResult{TKey,TValue}" />
         ///     objects returned by the
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Consume(System.TimeSpan)" />
-        ///     method. Disabling fields that you do not require will improve 
+        ///     method. Disabling fields that you do not require will improve
         ///     throughput and reduce memory consumption. Allowed values:
         ///     headers, timestamp, topic, all, none
-        /// 
+        ///
         ///     default: all
         ///     importance: low
         /// </summary>
@@ -1062,6 +1170,14 @@ namespace Confluent.Kafka
         ///     importance: medium
         /// </summary>
         public int? FetchErrorBackoffMs { get { return GetInt("fetch.error.backoff.ms"); } set { this.SetObject("fetch.error.backoff.ms", value); } }
+
+        /// <summary>
+        ///     Controls how to read messages written transactionally: `read_committed` - only return transactional messages which have been committed. `read_uncommitted` - return all messages, even transactional messages which have been aborted.
+        ///
+        ///     default: read_uncommitted
+        ///     importance: high
+        /// </summary>
+        public IsolationLevel? IsolationLevel { get { return (IsolationLevel?)GetEnum(typeof(IsolationLevel), "isolation.level"); } set { this.SetObject("isolation.level", value); } }
 
         /// <summary>
         ///     Emit RD_KAFKA_RESP_ERR__PARTITION_EOF event whenever the consumer reaches the end of a partition.

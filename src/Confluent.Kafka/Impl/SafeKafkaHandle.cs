@@ -727,7 +727,7 @@ namespace Confluent.Kafka.Impl
             Librdkafka.queue_destroy(cQueue);
             if (rkev == IntPtr.Zero)
             {
-                // This shouldn't happen since timoeut is infinite
+                // This shouldn't happen since timeout is infinite
                 throw new KafkaException(ErrorCode.Local_TimedOut);
             }
 

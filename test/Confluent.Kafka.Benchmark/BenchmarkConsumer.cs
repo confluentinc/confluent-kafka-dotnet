@@ -30,7 +30,8 @@ namespace Confluent.Kafka.Benchmark
                 GroupId = "benchmark-consumer-group",
                 BootstrapServers = bootstrapServers,
                 SessionTimeoutMs = 6000,
-                ConsumeResultFields = nHeaders == 0 ? "none" : "headers"
+                ConsumeResultFields = nHeaders == 0 ? "none" : "headers",
+                QueuedMinMessages = 1000000
             };
 
             using (var consumer = new ConsumerBuilder<Ignore, Ignore>(consumerConfig).Build())
