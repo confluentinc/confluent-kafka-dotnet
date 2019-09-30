@@ -52,12 +52,12 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Serialize GenericRecord instance to a byte array in Avro format. The serialized
-        ///     data is preceeded by a "magic byte" (1 byte) and the id of the schema as registered
+        ///     data is preceded by a "magic byte" (1 byte) and the id of the schema as registered
         ///     in Confluent's Schema Registry (4 bytes, network byte order). This call may block or throw 
         ///     on first use for a particular topic during schema registration.
         /// </summary>
         /// <param name="topic">
-        ///     The topic associated wih the data.
+        ///     The topic associated with the data.
         /// </param>
         /// <param name="data">
         ///     The object to serialize.

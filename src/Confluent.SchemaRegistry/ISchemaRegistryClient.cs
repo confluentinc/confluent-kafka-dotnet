@@ -101,7 +101,7 @@ namespace Confluent.SchemaRegistry
         ///     The subject to get the latest associated schema for.
         /// </param>
         /// <returns>
-        ///     The latest schema registred against <paramref name="subject" />.
+        ///     The latest schema registered against <paramref name="subject" />.
         /// </returns>
         Task<Schema> GetLatestSchemaAsync(string subject);
 

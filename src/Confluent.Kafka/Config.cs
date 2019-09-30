@@ -38,19 +38,21 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Initialize a new empty <see cref="Config" /> instance.
         /// </summary>
-        public Config() {}
+        public Config() { this.properties = new Dictionary<string, string>(); }
 
         /// <summary>
         ///     Initialize a new <see cref="Config" /> instance based on
         ///     an existing <see cref="Config" /> instance.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public Config(Config config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public Config(Config config) { this.properties = config.properties; }
 
         /// <summary>
-        ///     Initialize a new <see cref="Config" /> instance based on
-        ///     an existing key/value pair collection.
+        ///     Initialize a new <see cref="Config" /> wrapping
+        ///     an existing key/value dictionary.
+        ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
-        public Config(IEnumerable<KeyValuePair<string, string>> config) { this.properties = new Dictionary<string, string>(config.ToDictionary(a => a.Key, a => a.Value)); }
+        public Config(IDictionary<string, string> config) { this.properties = config; }
 
         /// <summary>
         ///     Set a configuration property using a string key / value pair.
@@ -106,7 +108,7 @@ namespace Confluent.Kafka
             if (result == null) { return null; }
             return int.Parse(result);
         }
-        
+
         /// <summary>
         ///     Gets a configuration property bool? value given a key.
         /// </summary>
@@ -178,7 +180,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configuration properties.
         /// </summary>
-        protected Dictionary<string, string> properties = new Dictionary<string, string>();
+        protected IDictionary<string, string> properties;
 
         /// <summary>
         ///     	Returns an enumerator that iterates through the property collection.

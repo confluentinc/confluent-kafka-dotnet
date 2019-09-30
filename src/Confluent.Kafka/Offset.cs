@@ -46,7 +46,7 @@ namespace Confluent.Kafka
         public static readonly Offset End = new Offset(RD_KAFKA_OFFSET_END);
 
         /// <summary>
-        ///     A special value thet refers to the stored offset for a partition.
+        ///     A special value that refers to the stored offset for a partition.
         /// </summary>
         public static readonly Offset Stored = new Offset(RD_KAFKA_OFFSET_STORED);
 
