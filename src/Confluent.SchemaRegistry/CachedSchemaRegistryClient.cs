@@ -35,8 +35,8 @@ namespace Confluent.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
-        private readonly SubjectNameStrategy KeySubjectNameStrategy;
-        private readonly SubjectNameStrategy ValueSubjectNameStrategy;
+        private readonly SubjectNameStrategy KeySubjectNameStrategy = DefaultKeySubjectNameStrategy;
+        private readonly SubjectNameStrategy ValueSubjectNameStrategy = DefaultValueSubjectNameStrategy;
 
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
@@ -48,6 +48,15 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const int DefaultMaxCachedSchemas = 1000;
 
+        /// <summary>
+        ///     The default key subject name strategy.
+        /// </summary>
+        public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Topic;
+
+        /// <summary>
+        ///     The default value subject name strategy.
+        /// </summary>
+        public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.MaxCachedSchemas" />
@@ -124,17 +133,19 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
-            var keySubjNameStrategy = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value) ?? "";
-            var valueSubjNameStrategy = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value) ?? "";
+            var keySubjectNameStrategyString = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value) ?? "";
+            var valueSubjectNameStrategyString = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value) ?? "";
 
-            if (Enum.TryParse<SubjectNameStrategy>(keySubjNameStrategy, out var strategy))
+            if (keySubjectNameStrategyString != "" &&
+                !Enum.TryParse<SubjectNameStrategy>(keySubjectNameStrategyString, out KeySubjectNameStrategy))
             {
-                KeySubjectNameStrategy = strategy;
+                throw new ArgumentException($"Unknown KeySubjectNameStrategy: {keySubjectNameStrategyString}");
             }
 
-            if (Enum.TryParse<SubjectNameStrategy>(valueSubjNameStrategy, out strategy))
+            if (valueSubjectNameStrategyString != "" &&
+                !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out ValueSubjectNameStrategy))
             {
-                ValueSubjectNameStrategy = strategy;
+                throw new ArgumentException($"Unknown ValueSubjectNameStrategy: {valueSubjectNameStrategyString}");
             }
 
             foreach (var property in config)
@@ -346,17 +357,22 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string ConstructKeySubjectName(string topic, string recordType = null)
         {
-            if (!string.IsNullOrWhiteSpace(recordType))
+            if (KeySubjectNameStrategy != SubjectNameStrategy.Topic && recordType == null)
             {
-                switch (KeySubjectNameStrategy)
-                {
-                    case SubjectNameStrategy.RecordNameStrategy:
-                        return $"{recordType}-key";
-                    case SubjectNameStrategy.TopicRecordNameStrategy:
-                        return $"{topic}-{recordType}-key";
-                }
+                throw new ArgumentNullException($"recordType must not be null for KeySubjectNameStrategy: {KeySubjectNameStrategy}");
             }
-            return $"{topic}-key";
+
+            switch (KeySubjectNameStrategy)
+            {
+                case SubjectNameStrategy.Record:
+                    return $"{recordType}";
+                case SubjectNameStrategy.TopicRecord:
+                    return $"{topic}-{recordType}";
+                case SubjectNameStrategy.Topic:
+                    return $"{topic}-key";
+                default:
+                    throw new InvalidOperationException($"Unknown SubjectNameStrategy: {KeySubjectNameStrategy}");
+            }
         }
 
         /// <summary>
@@ -364,17 +380,22 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string ConstructValueSubjectName(string topic, string recordType = null)
         {
-            if (!string.IsNullOrWhiteSpace(recordType))
+            if (ValueSubjectNameStrategy != SubjectNameStrategy.Topic && recordType == null)
             {
-                switch (ValueSubjectNameStrategy)
-                {
-                    case SubjectNameStrategy.RecordNameStrategy:
-                        return $"{recordType}-value";
-                    case SubjectNameStrategy.TopicRecordNameStrategy:
-                        return $"{topic}-{recordType}-value";
-                }
+                throw new ArgumentNullException($"recordType must not be null for ValueSubjectNameStrategy: {ValueSubjectNameStrategy}");
             }
-            return $"{topic}-value";
+
+            switch (ValueSubjectNameStrategy)
+            {
+                case SubjectNameStrategy.Record:
+                    return $"{recordType}";
+                case SubjectNameStrategy.TopicRecord:
+                    return $"{topic}-{recordType}";
+                case SubjectNameStrategy.Topic:
+                    return $"{topic}-value";
+                default:
+                    throw new InvalidOperationException($"Unknown SubjectNameStrategy: {ValueSubjectNameStrategy}");
+            }
         }
 
 

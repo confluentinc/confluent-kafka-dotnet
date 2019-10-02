@@ -15,10 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry.Serdes;
-using Confluent.SchemaRegistry;
 using Xunit;
 
 

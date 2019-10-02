@@ -39,29 +39,29 @@ namespace Confluent.SchemaRegistry
     }
 
     /// <summary>
-    ///     Subject name strategy
-    ///     Implementation is based on this article: https://www.confluent.io/blog/put-several-event-types-kafka-topic/
+    ///     Subject name strategy. Refer to: https://www.confluent.io/blog/put-several-event-types-kafka-topic/
     /// </summary>
     public enum SubjectNameStrategy
     {
         /// <summary>
-        /// (default): The subject name for message keys is <topic>-key, and <topic>-value for message values.
-        /// This means that the schemas of all messages in the topic must be compatible with each other.
+        ///     (default): The subject name for message keys is &lt;topic&gt;-key, and &lt;topic&gt;-value for message values.
+        ///     This means that the schemas of all messages in the topic must be compatible with each other.
         /// </summary>
-        TopicNameStrategy,
+        Topic,
 
         /// <summary>
-        /// The subject name is the fully-qualified name of the Avro record type of the message.
-        /// Thus, the schema registry checks the compatibility for a particular record type, regardless of topic.
-        /// This setting allows any number of different event types in the same topic.
+        ///     The subject name is the fully-qualified name of the Avro record type of the message.
+        ///     Thus, the schema registry checks the compatibility for a particular record type, regardless of topic.
+        ///     This setting allows any number of different event types in the same topic.
         /// </summary>
-        RecordNameStrategy,
+        Record,
 
         /// <summary>
-        /// The subject name is <topic>-<type>, where <topic> is the Kafka topic name, and <type> is the fully-qualified name of the Avro record type of the message.
-        /// This setting also allows any number of event types in the same topic, and further constrains the compatibility check to the current topic only.
+        ///     The subject name is &lt;topic&gt;-&lt;type&gt;, where &lt;topic&gt; is the Kafka topic name, and &lt;type&gt;
+        ///     is the fully-qualified name of the Avro record type of the message. This setting also allows any number of event
+        ///     types in the same topic, and further constrains the compatibility check to the current topic only.
         /// </summary>
-        TopicRecordNameStrategy
+        TopicRecord
     }
 
     /// <summary>
@@ -113,14 +113,12 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
 
             /// <summary>
-            ///     Key subject name strategy
+            ///     Key subject name strategy.
             /// </summary>
             public const string SchemaRegistryKeySubjectNameStrategy = "schema.registry.key.subject.name.strategy";
 
             /// <summary>
-            ///     Value subject name strategy
-            ///     Values: TopicNameStrategy (default), RecordNameStrategy, TopicRecordNameStrategy
-            ///     See enum SubjectNameStrategy for description.
+            ///     Value subject name strategy.
             /// </summary>
             public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
         }
@@ -189,6 +187,11 @@ namespace Confluent.SchemaRegistry
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
         }
 
+        /// <summary>
+        ///     Key subject name strategy.
+        ///     
+        ///     default: SubjectNameStrategy.Topic
+        /// </summary>
         public SubjectNameStrategy? SchemaRegistryKeySubjectNameStrategy
         {
             get
@@ -204,7 +207,6 @@ namespace Confluent.SchemaRegistry
                     else
                         return result;
                 }
-                
             }
             set
             {
@@ -213,6 +215,11 @@ namespace Confluent.SchemaRegistry
             }
         }
 
+        /// <summary>
+        ///     Value subject name strategy.
+        ///
+        ///     default: SubjectNameStrategy.Topic
+        /// </summary>
         public SubjectNameStrategy? SchemaRegistryValueSubjectNameStrategy
         {
             get
@@ -228,7 +235,6 @@ namespace Confluent.SchemaRegistry
                     else
                         return result;
                 }
-
             }
             set
             {

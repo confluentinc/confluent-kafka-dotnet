@@ -15,12 +15,8 @@
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 using Confluent.Kafka.SyncOverAsync;
-using Confluent.Kafka.Examples.AvroSpecific;
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 

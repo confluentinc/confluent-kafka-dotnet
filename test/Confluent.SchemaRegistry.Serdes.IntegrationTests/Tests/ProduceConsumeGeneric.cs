@@ -16,12 +16,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
 using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry.Serdes;
-using Confluent.SchemaRegistry;
 using Avro;
 using Avro.Generic;
 using Xunit;
@@ -31,18 +30,13 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 {
     public static partial class Tests
     {
-        /// <summary>
-        ///     Test that messages produced with the Avro serializer can be consumed with the
-        ///     Avro deserializer.
-        /// </summary>
-        [Theory, MemberData(nameof(TestParameters))]
-        public static void ProduceConsumeGeneric(string bootstrapServers, string schemaRegistryServers)
+        private static void ProduceConsumeGeneric(string bootstrapServers, string schemaRegistryServers, SubjectNameStrategy nameStrategy)
         {
-            var s = (RecordSchema)RecordSchema.Parse(
+            var rs = (RecordSchema)RecordSchema.Parse(
                 @"{
                     ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
                     ""type"": ""record"",
-                    ""name"": ""User"",
+                    ""name"": ""ProduceConsumeUser2"",
                     ""fields"": [
                         {""name"": ""name"", ""type"": ""string""},
                         {""name"": ""favorite_number"",  ""type"": [""int"", ""null""]},
@@ -52,48 +46,54 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             );
 
             var config = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var schemaRegistryConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var schemaRegistryConfig = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = schemaRegistryServers,
+                // Test SchemaRegistryKeySubjectNameStrategy here,
+                // and SchemaRegistryValueSubjectNameStrategy in ProduceConsume.
+                SchemaRegistryKeySubjectNameStrategy = nameStrategy
+            };
 
             var topic = Guid.NewGuid().ToString();
 
-            DeliveryResult<Null, GenericRecord> dr;
+            DeliveryResult<GenericRecord, Null> dr;
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var p =
-                new ProducerBuilder<Null, GenericRecord>(config)
-                    .SetKeySerializer(Serializers.Null)
-                    .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                new ProducerBuilder<GenericRecord, Null>(config)
+                    .SetKeySerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
+                    .SetValueSerializer(Serializers.Null)
                     .Build())
             {
-                var record = new GenericRecord(s);
+                var record = new GenericRecord(rs);
                 record.Add("name", "my name 2");
                 record.Add("favorite_number", 44);
                 record.Add("favorite_color", null);
-                dr = p.ProduceAsync(topic, new Message<Null, GenericRecord> { Value = record }).Result;
+                dr = p.ProduceAsync(topic, new Message<GenericRecord, Null> { Key = record }).Result;
             }
 
             // produce a specific record (to later consume back as a generic record).
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var p =
-                new ProducerBuilder<Null, User>(config)
-                    .SetKeySerializer(Serializers.Null)
-                    .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
+                new ProducerBuilder<ProduceConsumeUser2, Null>(config)
+                    .SetKeySerializer(new AvroSerializer<ProduceConsumeUser2>(schemaRegistry))
+                    .SetValueSerializer(Serializers.Null)
                     .Build())
             {
-                var user = new User
+                var user = new ProduceConsumeUser2
                 {
                     name = "my name 3",
                     favorite_number = 47,
                     favorite_color = "orange"
                 };
                 
-                p.ProduceAsync(topic, new Message<Null, User> { Value = user }).Wait();
+                p.ProduceAsync(topic, new Message<ProduceConsumeUser2, Null> { Key = user }).Wait();
             }
 
-            Assert.Null(dr.Message.Key);
-            Assert.NotNull(dr.Message.Value);
-            dr.Message.Value.TryGetValue("name", out object name);
-            dr.Message.Value.TryGetValue("favorite_number", out object number);
-            dr.Message.Value.TryGetValue("favorite_color", out object color);
+            Assert.Null(dr.Message.Value);
+            Assert.NotNull(dr.Message.Key);
+            dr.Message.Key.TryGetValue("name", out object name);
+            dr.Message.Key.TryGetValue("favorite_number", out object number);
+            dr.Message.Key.TryGetValue("favorite_color", out object color);
 
             Assert.IsType<string>(name);
             Assert.IsType<int>(number);
@@ -106,17 +106,17 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
-                new ConsumerBuilder<Null, GenericRecord>(cconfig)
-                    .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                new ConsumerBuilder<GenericRecord, Null>(cconfig)
+                    .SetKeyDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(Deserializers.Null)
                     .Build())
             {
                 // consume generic record produced as a generic record.
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.Consume(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-                record.Message.Value.TryGetValue("name", out object msgName);
-                record.Message.Value.TryGetValue("favorite_number", out object msgNumber);
-                record.Message.Value.TryGetValue("favorite_color", out object msgColor);
+                record.Message.Key.TryGetValue("name", out object msgName);
+                record.Message.Key.TryGetValue("favorite_number", out object msgNumber);
+                record.Message.Key.TryGetValue("favorite_color", out object msgColor);
 
                 Assert.IsType<string>(msgName);
                 Assert.IsType<int>(msgNumber);
@@ -127,9 +127,9 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 // consume generic record produced as a specific record.
                 record = consumer.Consume(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-                record.Message.Value.TryGetValue("name", out msgName);
-                record.Message.Value.TryGetValue("favorite_number", out msgNumber);
-                record.Message.Value.TryGetValue("favorite_color", out msgColor);
+                record.Message.Key.TryGetValue("name", out msgName);
+                record.Message.Key.TryGetValue("favorite_number", out msgNumber);
+                record.Message.Key.TryGetValue("favorite_color", out msgColor);
 
                 Assert.IsType<string>(msgName);
                 Assert.IsType<int>(msgNumber);
@@ -142,18 +142,71 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var consumer =
-                new ConsumerBuilder<Null, User>(cconfig)
-                    .SetKeyDeserializer(Deserializers.Null)
-                    .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
+                new ConsumerBuilder<ProduceConsumeUser2, Null>(cconfig)
+                    .SetKeyDeserializer(new AvroDeserializer<ProduceConsumeUser2>(schemaRegistry).AsSyncOverAsync())
+                    .SetValueDeserializer(Deserializers.Null)
                     .Build())
             {
                 consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic, 0, dr.Offset) });
                 var record = consumer.Consume(new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
-                Assert.Equal("my name 2", record.Message.Value.name);
-                Assert.Equal(44, record.Message.Value.favorite_number);
-                Assert.Null(record.Message.Value.favorite_color);
+                Assert.Equal("my name 2", record.Message.Key.name);
+                Assert.Equal(44, record.Message.Key.favorite_number);
+                Assert.Null(record.Message.Key.favorite_color);
+            }
+
+            // Check that what's in schema registry is what's expected.
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
+            {
+                var subjects = schemaRegistry.GetAllSubjectsAsync().Result;
+
+                if (nameStrategy == SubjectNameStrategy.TopicRecord)
+                {
+                    Assert.Single(subjects.Where(s => s.Contains(topic)));
+                    Assert.Single(subjects.Where(s => s == $"{topic}-{((Avro.RecordSchema)ProduceConsumeUser2._SCHEMA).Fullname}"));
+                }
+
+                if (nameStrategy == SubjectNameStrategy.Topic)
+                {
+                    Assert.Single(subjects.Where(s => s.Contains(topic)));
+                    Assert.Single(subjects.Where(s => s == $"{topic}-key"));
+                }
+
+                if (nameStrategy == SubjectNameStrategy.Record)
+                {
+                    Assert.Single(subjects.Where(s => s.Contains(topic))); // the string key.
+                    Assert.Single(subjects.Where(s => s == $"{((Avro.RecordSchema)ProduceConsumeUser2._SCHEMA).Fullname}"));
+                }
             }
         }
+        
+        /// <summary>
+        ///     Test that messages produced with the Avro serializer can be consumed with the
+        ///     Avro deserializer (topic name strategy).
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        private static void ProduceConsumeGeneric_Topic(string bootstrapServers, string schemaRegistryServers)
+        {
+            ProduceConsumeGeneric(bootstrapServers, schemaRegistryServers, SubjectNameStrategy.Topic);
+        }
 
+        /// <summary>
+        ///     Test that messages produced with the Avro serializer can be consumed with the
+        ///     Avro deserializer (topic record name strategy).
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        private static void ProduceConsumeGeneric_TopicRecord(string bootstrapServers, string schemaRegistryServers)
+        {
+            ProduceConsumeGeneric(bootstrapServers, schemaRegistryServers, SubjectNameStrategy.TopicRecord);
+        }
+
+        /// <summary>
+        ///     Test that messages produced with the Avro serializer can be consumed with the
+        ///     Avro deserializer (record name strategy).
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        private static void ProduceConsumeGeneric_Record(string bootstrapServers, string schemaRegistryServers)
+        {
+            ProduceConsumeGeneric(bootstrapServers, schemaRegistryServers, SubjectNameStrategy.Topic);
+        }
     }
 }

@@ -19,8 +19,6 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests

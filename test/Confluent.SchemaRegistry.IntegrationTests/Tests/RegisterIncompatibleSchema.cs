@@ -35,7 +35,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.Server });
 
-            var subject = sr.ConstructKeySubjectName(topicName);
+            var subject = sr.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
             var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var testSchema2 = // incompatible with testSchema1

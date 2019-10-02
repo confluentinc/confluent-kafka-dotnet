@@ -20,7 +20,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avro.Generic;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
 
 
 namespace Confluent.SchemaRegistry.Serdes

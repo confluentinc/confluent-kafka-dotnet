@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Avro.Generic;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
 using System;
 using System.Linq;
 
