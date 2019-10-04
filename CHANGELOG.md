@@ -1,8 +1,15 @@
+# 1.2.1-RC1
+
+## Fixes
+
+- References librdkafka v1.2.1-RC1 which resolves an issue that broke GSSAPI authentication on Windows.
+
+
 # 1.2.0
 
 ## Bugs
 
-  **WARNING: There is a possible issue with SASL GSSAPI authentication on Windows with this release. If you are using GSSAPI authentication on Windows, please remain on v1.1 until this issue is resolved.**
+  **WARNING: There is an issue with SASL GSSAPI authentication on Windows with this release. This is resolved in v1.2.1-RC1.**
 	
 ## Enhancements
 
