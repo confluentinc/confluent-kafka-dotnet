@@ -2,7 +2,7 @@
 
 ## Bugs
 
-  **WARNING: There is a possible issue with SASL GSSAPI authentication on Windows with this release. If you are using GSSAPI authentication on Windows, please remain on librdkafka v1.1 until this issue is resolved.**
+  **WARNING: There is a possible issue with SASL GSSAPI authentication on Windows with this release. If you are using GSSAPI authentication on Windows, please remain on v1.1 until this issue is resolved.**
 	
 ## Enhancements
 
