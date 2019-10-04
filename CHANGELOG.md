@@ -1,5 +1,9 @@
 # 1.2.0
 
+## Bugs
+
+  **WARNING: There is a possible issue with SASL GSSAPI authentication on Windows with this release. If you are using GSSAPI authentication on Windows, please remain on v1.1 until this issue is resolved.**
+	
 ## Enhancements
 
 - References librdkafka v1.2.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.2.0) for more information. Headline feature is consumer side support for transactions.
