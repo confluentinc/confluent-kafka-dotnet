@@ -148,7 +148,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the BasicAuthCredentialsSource property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the BasicAuthCredentialsSource property")]
         public AuthCredentialsSource? SchemaRegistryBasicAuthCredentialsSource
         {
             get => BasicAuthCredentialsSource;
@@ -170,7 +170,7 @@ namespace Confluent.SchemaRegistry
         ///     A comma-separated list of URLs for schema registry instances that are
         ///     used to register or lookup schemas.
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the Url property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the Url property")]
         public string SchemaRegistryUrl
         {
             get => Url;
@@ -194,7 +194,7 @@ namespace Confluent.SchemaRegistry
         /// 
         ///     default: 30000
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the RequestTimeoutMs property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the RequestTimeoutMs property")]
         public int? SchemaRegistryRequestTimeoutMs
         {
             get => RequestTimeoutMs;
@@ -220,7 +220,7 @@ namespace Confluent.SchemaRegistry
         /// 
         ///     default: 1000
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the MaxCachedSchemas property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the MaxCachedSchemas property")]
         public int? SchemaRegistryMaxCachedSchemas
         {
             get => MaxCachedSchemas;
@@ -240,7 +240,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Basic auth credentials in the form {username}:{password}.
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the BasicAuthUserInfo property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the BasicAuthUserInfo property")]
         public string SchemaRegistryBasicAuthUserInfo
         {
             get => BasicAuthUserInfo;
@@ -281,7 +281,7 @@ namespace Confluent.SchemaRegistry
         ///     
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the KeySubjectNameStrategy property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the KeySubjectNameStrategy property")]
         public SubjectNameStrategy? SchemaRegistryKeySubjectNameStrategy
         {
             get => KeySubjectNameStrategy;
@@ -322,7 +322,7 @@ namespace Confluent.SchemaRegistry
         ///     
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
-        [Obsolete("This property will be depreciated in a future version of this library in favor of the ValueSubjectNameStrategy property")]
+        [Obsolete("This property will be removed in a future version of this library in favor of the ValueSubjectNameStrategy property")]
         public SubjectNameStrategy? SchemaRegistryValueSubjectNameStrategy
         {
             get => ValueSubjectNameStrategy;

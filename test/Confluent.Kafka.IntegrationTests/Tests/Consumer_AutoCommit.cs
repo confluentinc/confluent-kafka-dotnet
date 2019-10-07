@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
     {
         /// <summary>
         ///     Test auto commit operates as expected when set to false (that issue #362 is resolved).
-        ///     note that 'default.topic.config' has been depreciated.
+        ///     note that 'default.topic.config' has been deprecated.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_AutoCommit(string bootstrapServers)
