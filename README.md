@@ -302,4 +302,6 @@ then:
 dotnet test
 ```
 
-Copyright (c) 2016-2017 [Confluent Inc.](https://www.confluent.io), 2015-2016, [Andreas Heider](mailto:andreas@heider.io)
+Copyright (c) 
+2016-2019 [Confluent Inc.](https://www.confluent.io)
+2015-2016 [Andreas Heider](mailto:andreas@heider.io)
