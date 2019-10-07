@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -37,21 +36,99 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
-        public void ConstructKeySubjectName()
+        public void InvalidSubjectNameStrategy()
         {
             var config = new SchemaRegistryConfig { SchemaRegistryUrl = "irrelevanthost:8081" };
-
-            CachedSchemaRegistryClient src = new CachedSchemaRegistryClient(config);
-            Assert.Equal("mytopic-key", src.ConstructKeySubjectName("mytopic"));
+            config.Set(SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy, "bad_value");
+            Assert.Throws<ArgumentException>(() => new CachedSchemaRegistryClient(config));
         }
 
         [Fact]
-        public void ConstructValueSubjectName()
+        public void ConstructKeySubjectName_Topic1()
         {
             var config = new SchemaRegistryConfig { SchemaRegistryUrl = "irrelevanthost:8081" };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("mytopic-key", src.ConstructKeySubjectName("mytopic", "myschemaname"));
+        }
 
-            CachedSchemaRegistryClient src = new CachedSchemaRegistryClient(config);
-            Assert.Equal("mytopic-value", src.ConstructValueSubjectName("mytopic"));
+        [Fact]
+        public void ConstructKeySubjectName_Topic2()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = "irrelevanthost:8081",
+                SchemaRegistryKeySubjectNameStrategy = SubjectNameStrategy.Topic
+            };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("mytopic-key", src.ConstructKeySubjectName("mytopic", "myschemaname"));
+        }
+
+        [Fact]
+        public void ConstructKeySubjectName_Record()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = "irrelevanthost:8081",
+                SchemaRegistryKeySubjectNameStrategy = SubjectNameStrategy.Record
+            };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("myschemaname", src.ConstructKeySubjectName("mytopic", "myschemaname"));
+        }
+
+        [Fact]
+        public void ConstructKeySubjectName_TopicRecord()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = "irrelevanthost:8081",
+                SchemaRegistryKeySubjectNameStrategy = SubjectNameStrategy.TopicRecord
+            };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("mytopic-myschemaname", src.ConstructKeySubjectName("mytopic", "myschemaname"));
+        }
+
+        [Fact]
+        public void ConstructValueSubjectName_Topic1()
+        {
+            var config = new SchemaRegistryConfig { SchemaRegistryUrl = "irrelevanthost:8081" };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("mytopic-value", src.ConstructValueSubjectName("mytopic", "myschemaname"));
+        }
+
+        [Fact]
+        public void ConstructValueSubjectName_Topic2()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = "irrelevanthost:8081",
+                SchemaRegistryValueSubjectNameStrategy = SubjectNameStrategy.Topic
+            };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("mytopic-value", src.ConstructValueSubjectName("mytopic", "myschemaname"));
+        }
+
+        [Fact]
+        public void ConstructValueSubjectName_Record()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = "irrelevanthost:8081",
+                SchemaRegistryValueSubjectNameStrategy = SubjectNameStrategy.Record
+            };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("myschemaname", src.ConstructValueSubjectName("mytopic", "myschemaname"));
+        }
+
+        [Fact]
+        public void ConstructValueSubjectName_TopicRecord()
+        {
+            var config = new SchemaRegistryConfig
+            {
+                SchemaRegistryUrl = "irrelevanthost:8081",
+                SchemaRegistryValueSubjectNameStrategy = SubjectNameStrategy.TopicRecord
+            };
+            var src = new CachedSchemaRegistryClient(config);
+            Assert.Equal("mytopic-myschemaname", src.ConstructValueSubjectName("mytopic", "myschemaname"));
         }
     }
 }

@@ -39,6 +39,32 @@ namespace Confluent.SchemaRegistry
     }
 
     /// <summary>
+    ///     Subject name strategy. Refer to: https://www.confluent.io/blog/put-several-event-types-kafka-topic/
+    /// </summary>
+    public enum SubjectNameStrategy
+    {
+        /// <summary>
+        ///     (default): The subject name for message keys is &lt;topic&gt;-key, and &lt;topic&gt;-value for message values.
+        ///     This means that the schemas of all messages in the topic must be compatible with each other.
+        /// </summary>
+        Topic,
+
+        /// <summary>
+        ///     The subject name is the fully-qualified name of the Avro record type of the message.
+        ///     Thus, the schema registry checks the compatibility for a particular record type, regardless of topic.
+        ///     This setting allows any number of different event types in the same topic.
+        /// </summary>
+        Record,
+
+        /// <summary>
+        ///     The subject name is &lt;topic&gt;-&lt;type&gt;, where &lt;topic&gt; is the Kafka topic name, and &lt;type&gt;
+        ///     is the fully-qualified name of the Avro record type of the message. This setting also allows any number of event
+        ///     types in the same topic, and further constrains the compatibility check to the current topic only.
+        /// </summary>
+        TopicRecord
+    }
+
+    /// <summary>
     ///     <see cref="CachedSchemaRegistryClient" /> configuration properties.
     /// </summary>
     public class SchemaRegistryConfig : IEnumerable<KeyValuePair<string, string>>
@@ -85,6 +111,16 @@ namespace Confluent.SchemaRegistry
             ///     default: "" (no authentication).
             /// </summary>
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
+
+            /// <summary>
+            ///     Key subject name strategy.
+            /// </summary>
+            public const string SchemaRegistryKeySubjectNameStrategy = "schema.registry.key.subject.name.strategy";
+
+            /// <summary>
+            ///     Value subject name strategy.
+            /// </summary>
+            public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
         }
 
         /// <summary>
@@ -149,6 +185,62 @@ namespace Confluent.SchemaRegistry
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
+        }
+
+        /// <summary>
+        ///     Key subject name strategy.
+        ///     
+        ///     default: SubjectNameStrategy.Topic
+        /// </summary>
+        public SubjectNameStrategy? SchemaRegistryKeySubjectNameStrategy
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaRegistryKeySubjectNameStrategy);
+                if (r == null) { return null; }
+                else
+                {
+                    SubjectNameStrategy result;
+                    if (!Enum.TryParse<SubjectNameStrategy>(r, out result))
+                        throw new ArgumentException(
+                            $"Unknown ${PropertyNames.SchemaRegistryKeySubjectNameStrategy} value: {r}.");
+                    else
+                        return result;
+                }
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaRegistryKeySubjectNameStrategy); }
+                else { this.properties[PropertyNames.SchemaRegistryKeySubjectNameStrategy] = value.ToString(); }
+            }
+        }
+
+        /// <summary>
+        ///     Value subject name strategy.
+        ///
+        ///     default: SubjectNameStrategy.Topic
+        /// </summary>
+        public SubjectNameStrategy? SchemaRegistryValueSubjectNameStrategy
+        {
+            get
+            {
+                var r = Get(PropertyNames.SchemaRegistryValueSubjectNameStrategy);
+                if (r == null) { return null; }
+                else
+                {
+                    SubjectNameStrategy result;
+                    if (!Enum.TryParse<SubjectNameStrategy>(r, out result))
+                        throw new ArgumentException(
+                            $"Unknown ${PropertyNames.SchemaRegistryValueSubjectNameStrategy} value: {r}.");
+                    else
+                        return result;
+                }
+            }
+            set
+            {
+                if (value == null) { this.properties.Remove(PropertyNames.SchemaRegistryValueSubjectNameStrategy); }
+                else { this.properties[PropertyNames.SchemaRegistryValueSubjectNameStrategy] = value.ToString(); }
+            }
         }
 
         /// <summary>

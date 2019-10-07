@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -24,27 +23,40 @@ namespace Confluent.SchemaRegistry.IntegrationTests
     public static partial class Tests
     {
         [Theory, MemberData(nameof(SchemaRegistryParameters))]
-        public static void IsCompatible(Config config)
+        public static void IsCompatible_Topic(Config config)
         {
-            var topicName = Guid.NewGuid().ToString();
+            var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.Server });
 
             var testSchema1 = 
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.Server });
-
-            var subject = sr.ConstructKeySubjectName(topicName);
-            var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
-
             var testSchema2 = // incompatible with testSchema1
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_shape\",\"type\":[\"string\",\"null\"]}]}";
 
+
+            // case 1: record specified.
+            var topicName = Guid.NewGuid().ToString();
+            var subject = sr.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
+
+            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
+
             Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
             Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+
+
+            // case 2: record not specified.
+            topicName = Guid.NewGuid().ToString();
+            subject = sr.ConstructKeySubjectName(topicName);
+
+            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
+
+            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
+            Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+
 
             // Note: backwards / forwards compatibility scenarios are not tested here. This is really just testing the API call.
         }

@@ -19,8 +19,6 @@ using Xunit;
 using System.Collections.Generic;
 using System.Linq;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 using Confluent.Kafka.Examples.AvroSpecific;
 
 
@@ -36,7 +34,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
-            schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic)).Returns($"{testTopic}-value");
+            schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic, It.IsAny<string>())).Returns($"{testTopic}-value");
             schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
                 (string topic, string schema) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
@@ -143,6 +141,20 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void Poco_Serialize()
+        {
+            var serializer = new AvroSerializer<Dictionary<string, string>>(schemaRegistryClient);
+            Assert.Throws<System.InvalidOperationException>(() => serializer.SerializeAsync(new Dictionary<string, string> { { "cat", "dog" } }, new SerializationContext(MessageComponentType.Key, testTopic)).GetAwaiter().GetResult());
+        }
+
+        [Fact]
+        public void Poco_Deserialize()
+        {
+            var deserializer = new AvroDeserializer<Dictionary<string, string>>(schemaRegistryClient);
+            Assert.Throws<System.InvalidOperationException>(() => deserializer.DeserializeAsync(new System.ReadOnlyMemory<byte>(new byte[] { 1, 2, 3 }), false, new SerializationContext(MessageComponentType.Key, testTopic)).GetAwaiter().GetResult());
         }
 
         [Fact]

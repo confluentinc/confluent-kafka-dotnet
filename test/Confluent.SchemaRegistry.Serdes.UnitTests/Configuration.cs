@@ -19,8 +19,6 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -35,7 +33,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
-            schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic)).Returns($"{testTopic}-value");
+            schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic, null)).Returns($"{testTopic}-value");
             schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
                 (string topic, string schema) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );

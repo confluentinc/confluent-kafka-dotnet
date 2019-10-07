@@ -35,6 +35,9 @@ namespace Confluent.SchemaRegistry
         private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
+        private readonly SubjectNameStrategy KeySubjectNameStrategy = DefaultKeySubjectNameStrategy;
+        private readonly SubjectNameStrategy ValueSubjectNameStrategy = DefaultValueSubjectNameStrategy;
+
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
         /// </summary>
@@ -45,12 +48,46 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const int DefaultMaxCachedSchemas = 1000;
 
+        /// <summary>
+        ///     The default key subject name strategy.
+        /// </summary>
+        public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Topic;
+
+        /// <summary>
+        ///     The default value subject name strategy.
+        /// </summary>
+        public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.MaxCachedSchemas" />
         /// </summary>
         public int MaxCachedSchemas
             => identityMapCapacity;
+
+
+        private static SubjectNameStrategy GetKeySubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var keySubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value ?? "";
+            SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Topic;
+            if (keySubjectNameStrategyString != "" &&
+                !Enum.TryParse<SubjectNameStrategy>(keySubjectNameStrategyString, out keySubjectNameStrategy))
+            {
+                throw new ArgumentException($"Unknown KeySubjectNameStrategy: {keySubjectNameStrategyString}");
+            }
+            return keySubjectNameStrategy;
+        }
+
+        private static SubjectNameStrategy GetValueSubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var valueSubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value ?? "";
+            SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Topic;
+            if (valueSubjectNameStrategyString != "" &&
+                !Enum.TryParse<SubjectNameStrategy>(valueSubjectNameStrategyString, out valueSubjectNameStrategy))
+            {
+                throw new ArgumentException($"Unknown ValueSubjectNameStrategy: {valueSubjectNameStrategyString}");
+            }
+            return valueSubjectNameStrategy;
+        }
 
         /// <summary>
         ///     Initialize a new instance of the SchemaRegistryClient class.
@@ -78,8 +115,8 @@ namespace Confluent.SchemaRegistry
             try { this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer."); }
 
-            var basicAuthSource = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource).Value) ?? "";
-            var basicAuthInfo = Convert.ToString(config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value) ?? "";
+            var basicAuthSource = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource).Value ?? "";
+            var basicAuthInfo = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo).Value ?? "";
 
             string username = null;
             string password = null;
@@ -113,13 +150,16 @@ namespace Confluent.SchemaRegistry
                 {
                     throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource} set to 'SASL_INHERIT', but 'sasl.password' property not specified.");
                 }
-                username = Convert.ToString(saslUsername.Value);
-                password = Convert.ToString(saslPassword.Value);
+                username = saslUsername.Value;
+                password = saslPassword.Value;
             }
             else
             {
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
+
+            KeySubjectNameStrategy = GetKeySubjectNameStrategy(config);
+            ValueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
 
             foreach (var property in config)
             {
@@ -132,7 +172,9 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
@@ -324,17 +366,50 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructKeySubjectName(string)" />
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructKeySubjectName(string,string)" />
         /// </summary>
-        public string ConstructKeySubjectName(string topic)
-            => $"{topic}-key";
+        public string ConstructKeySubjectName(string topic, string recordType = null)
+        {
+            if (KeySubjectNameStrategy != SubjectNameStrategy.Topic && recordType == null)
+            {
+                throw new ArgumentNullException($"recordType must not be null for KeySubjectNameStrategy: {KeySubjectNameStrategy}");
+            }
 
+            switch (KeySubjectNameStrategy)
+            {
+                case SubjectNameStrategy.Record:
+                    return $"{recordType}";
+                case SubjectNameStrategy.TopicRecord:
+                    return $"{topic}-{recordType}";
+                case SubjectNameStrategy.Topic:
+                    return $"{topic}-key";
+                default:
+                    throw new InvalidOperationException($"Unknown SubjectNameStrategy: {KeySubjectNameStrategy}");
+            }
+        }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructValueSubjectName(string)" />
+        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructValueSubjectName(string,string)" />
         /// </summary>
-        public string ConstructValueSubjectName(string topic)
-            => $"{topic}-value";
+        public string ConstructValueSubjectName(string topic, string recordType = null)
+        {
+            if (ValueSubjectNameStrategy != SubjectNameStrategy.Topic && recordType == null)
+            {
+                throw new ArgumentNullException($"recordType must not be null for ValueSubjectNameStrategy: {ValueSubjectNameStrategy}");
+            }
+
+            switch (ValueSubjectNameStrategy)
+            {
+                case SubjectNameStrategy.Record:
+                    return $"{recordType}";
+                case SubjectNameStrategy.TopicRecord:
+                    return $"{topic}-{recordType}";
+                case SubjectNameStrategy.Topic:
+                    return $"{topic}-value";
+                default:
+                    throw new InvalidOperationException($"Unknown SubjectNameStrategy: {ValueSubjectNameStrategy}");
+            }
+        }
 
 
         /// <summary>

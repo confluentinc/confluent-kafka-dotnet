@@ -23,6 +23,9 @@ namespace Confluent.Kafka
     /// </summary>
     public class MessageNullException : NullReferenceException
     {
+        /// <summary>
+        ///     Initializes a new instance of MessageNullException.
+        /// </summary>
         public MessageNullException()
             : base("Attempt to dereference null Message reference")
         {
