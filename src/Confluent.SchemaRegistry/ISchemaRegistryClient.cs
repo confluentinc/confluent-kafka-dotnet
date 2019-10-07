@@ -151,8 +151,8 @@ namespace Confluent.SchemaRegistry
         ///     The topic name.
         /// </param>
         /// <param name="recordType">
-        ///     The fully qualified avro record type or null if the key is not
-        ///     an avro record type.
+        ///     The fully qualified Avro record type or null if the key is not
+        ///     an Avro record type.
         /// </param>
         /// <returns>
         ///     The key subject name given a topic name.
@@ -167,8 +167,8 @@ namespace Confluent.SchemaRegistry
         ///     The topic name.
         /// </param>
         /// <param name="recordType">
-        ///     The fully qualified avro record type or null if the value is not
-        ///     an avro record type.
+        ///     The fully qualified Avro record type or null if the value is not
+        ///     an Avro record type.
         /// </param>
         /// <returns>
         ///     The value subject name given a topic name.

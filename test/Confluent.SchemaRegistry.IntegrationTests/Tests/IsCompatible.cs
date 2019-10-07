@@ -37,6 +37,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_shape\",\"type\":[\"string\",\"null\"]}]}";
 
+
+            // case 1: record specified.
             var topicName = Guid.NewGuid().ToString();
             var subject = sr.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
 
@@ -44,6 +46,17 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
             Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+
+
+            // case 2: record not specified.
+            topicName = Guid.NewGuid().ToString();
+            subject = sr.ConstructKeySubjectName(topicName);
+
+            sr.RegisterSchemaAsync(subject, testSchema1).Wait();
+
+            Assert.False(sr.IsCompatibleAsync(subject, testSchema2).Result);
+            Assert.True(sr.IsCompatibleAsync(subject, testSchema1).Result);
+
 
             // Note: backwards / forwards compatibility scenarios are not tested here. This is really just testing the API call.
         }

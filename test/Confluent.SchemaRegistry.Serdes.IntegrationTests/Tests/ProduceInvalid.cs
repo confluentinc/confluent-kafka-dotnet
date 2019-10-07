@@ -24,18 +24,13 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
     public static partial class Tests
     {
         /// <summary>
-        ///     Test a bunch of invalid combinations of produce type and
-        ///     subject name strategies.
+        ///     Test producing non-record type using TopicRecord strategy fails (value)
         /// </summary>
         [Theory, MemberData(nameof(TestParameters))]
-        private static void ProduceInvalid(string bootstrapServers, string schemaRegistryServers)
+        private static void ProduceInvalid_NotRecord1(string bootstrapServers, string schemaRegistryServers)
         {
             string topic = Guid.NewGuid().ToString();
-
-            var producerConfig = new ProducerConfig
-            {
-                BootstrapServers = bootstrapServers
-            };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             // 1. TopicRecord naming strategy only works with avro record types (value)
             var schemaRegistryConfig1 = new SchemaRegistryConfig
@@ -64,6 +59,16 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Assert.IsType<ProduceException<string, string>>(caught);
                 Assert.Equal(ErrorCode.Local_ValueSerialization, ((ProduceException<string, string>)caught).Error.Code);
             }
+        }
+
+        /// <summary>
+        ///     Test producing non-record type using Record strategy fails (value)
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        private static void ProduceInvalid_NotRecord2(string bootstrapServers, string schemaRegistryServers)
+        {
+            string topic = Guid.NewGuid().ToString();
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             // 2. Record naming strategy only works with avro record types (value)
             var schemaRegistryConfig2 = new SchemaRegistryConfig
@@ -75,7 +80,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             using (var producer =
                 new ProducerBuilder<string, string>(producerConfig)
                     // not a record type.
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
+                    .SetValueSerializer(new AvroSerializer<string>(schemaRegistry))
                     .Build())
             {
                 Exception caught = null;
@@ -92,6 +97,16 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Assert.IsType<ProduceException<string, string>>(caught);
                 Assert.Equal(ErrorCode.Local_ValueSerialization, ((ProduceException<string, string>)caught).Error.Code);
             }
+        }
+
+        /// <summary>
+        ///     Test producing non-record type using TopicRecord strategy fails (key)
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        private static void ProduceInvalid_NotRecord3(string bootstrapServers, string schemaRegistryServers)
+        {
+            string topic = Guid.NewGuid().ToString();
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             // 3. TopicRecord naming strategy only works with avro record types (key)
             var schemaRegistryConfig3 = new SchemaRegistryConfig
@@ -120,6 +135,16 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 Assert.IsType<ProduceException<string, string>>(caught);
                 Assert.Equal(ErrorCode.Local_KeySerialization, ((ProduceException<string, string>)caught).Error.Code);
             }
+        }
+
+        /// <summary>
+        ///     Test producing non-record type using Record strategy fails (key)
+        /// </summary>
+        [Theory, MemberData(nameof(TestParameters))]
+        private static void ProduceInvalid_NotRecord4(string bootstrapServers, string schemaRegistryServers)
+        {
+            string topic = Guid.NewGuid().ToString();
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             // 2. Record naming strategy only works with avro record types (key)
             var schemaRegistryConfig4 = new SchemaRegistryConfig
