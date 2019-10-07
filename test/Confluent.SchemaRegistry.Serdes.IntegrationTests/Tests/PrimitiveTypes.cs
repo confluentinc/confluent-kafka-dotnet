@@ -32,7 +32,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         [Theory, MemberData(nameof(TestParameters))]
         public static void PrimitiveTypes(string bootstrapServers, string schemaRegistryServers)
         {
-            var schemaRegistryConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             {

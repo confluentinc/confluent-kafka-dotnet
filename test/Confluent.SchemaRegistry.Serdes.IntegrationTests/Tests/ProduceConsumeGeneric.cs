@@ -48,10 +48,10 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var config = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers,
-                // Test SchemaRegistryKeySubjectNameStrategy here,
-                // and SchemaRegistryValueSubjectNameStrategy in ProduceConsume.
-                SchemaRegistryKeySubjectNameStrategy = nameStrategy
+                Url = schemaRegistryServers,
+                // Test KeySubjectNameStrategy here,
+                // and ValueSubjectNameStrategy in ProduceConsume.
+                KeySubjectNameStrategy = nameStrategy
             };
 
             var topic = Guid.NewGuid().ToString();

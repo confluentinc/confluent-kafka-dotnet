@@ -46,10 +46,10 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers,
-                // Test SchemaRegistryValueSubjectNameStrategy here,
-                // and SchemaRegistryKeySubjectNameStrategy in ProduceConsumeGeneric.
-                SchemaRegistryValueSubjectNameStrategy = nameStrategy
+                Url = schemaRegistryServers,
+                // Test ValueSubjectNameStrategy here,
+                // and KeySubjectNameStrategy in ProduceConsumeGeneric.
+                ValueSubjectNameStrategy = nameStrategy
             };
 
             var adminClientConfig = new AdminClientConfig

@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}," +
                 "{\"name\":\"favorite_shape\",\"type\":[\"string\",\"null\"], \"default\": \"square\"}]}";
 
-            var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.Server });
+            var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
             var subject = sr.ConstructValueSubjectName(topicName);
             var id1 = sr.RegisterSchemaAsync(subject, testSchema1).Result;

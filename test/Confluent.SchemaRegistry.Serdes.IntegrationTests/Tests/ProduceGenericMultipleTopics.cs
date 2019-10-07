@@ -29,7 +29,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             );
 
             var config = new ProducerConfig { BootstrapServers = bootstrapServers };
-            var schemaRegistryConfig = new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers };
+            var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
 
             var topic = Guid.NewGuid().ToString();
             var topic2 = Guid.NewGuid().ToString();

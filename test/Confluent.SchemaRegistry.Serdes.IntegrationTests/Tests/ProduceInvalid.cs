@@ -35,8 +35,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             // 1. TopicRecord naming strategy only works with avro record types (value)
             var schemaRegistryConfig1 = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers,
-                SchemaRegistryValueSubjectNameStrategy = SubjectNameStrategy.TopicRecord
+                Url = schemaRegistryServers,
+                ValueSubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig1))
             using (var producer =
@@ -73,8 +73,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             // 2. Record naming strategy only works with avro record types (value)
             var schemaRegistryConfig2 = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers,
-                SchemaRegistryValueSubjectNameStrategy = SubjectNameStrategy.Record
+                Url = schemaRegistryServers,
+                ValueSubjectNameStrategy = SubjectNameStrategy.Record
             };
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig2))
             using (var producer =
@@ -111,8 +111,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             // 3. TopicRecord naming strategy only works with avro record types (key)
             var schemaRegistryConfig3 = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers,
-                SchemaRegistryKeySubjectNameStrategy = SubjectNameStrategy.TopicRecord
+                Url = schemaRegistryServers,
+                KeySubjectNameStrategy = SubjectNameStrategy.TopicRecord
             };
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig3))
             using (var producer =
@@ -149,8 +149,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             // 2. Record naming strategy only works with avro record types (key)
             var schemaRegistryConfig4 = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers,
-                SchemaRegistryKeySubjectNameStrategy = SubjectNameStrategy.Record
+                Url = schemaRegistryServers,
+                KeySubjectNameStrategy = SubjectNameStrategy.Record
             };
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig4))
             using (var producer =

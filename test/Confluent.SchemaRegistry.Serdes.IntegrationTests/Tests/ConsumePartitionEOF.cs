@@ -40,7 +40,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers
+                Url = schemaRegistryServers
             };
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))

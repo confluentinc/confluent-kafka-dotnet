@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
             var schemaRegistryConfig = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = schemaRegistryServers
+                Url = schemaRegistryServers
             };
 
             var topic = Guid.NewGuid().ToString();

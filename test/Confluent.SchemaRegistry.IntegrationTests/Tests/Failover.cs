@@ -32,7 +32,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
 
-            using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = $"{config.Server},http://localhost:65432" }))
+            using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = $"{config.Server},http://localhost:65432" }))
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = sr.ConstructKeySubjectName(topicName);
@@ -41,7 +41,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 Assert.Equal(id, id2);
             }
 
-            using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = $"http://localhost:65432,{config.Server}" }))
+            using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = $"http://localhost:65432,{config.Server}" }))
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = sr.ConstructKeySubjectName(topicName);
@@ -50,7 +50,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 Assert.Equal(id, id2);
             }
 
-            using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = $"http://localhost:65432,http://localhost:65431" }))
+            using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = $"http://localhost:65432,http://localhost:65431" }))
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = sr.ConstructKeySubjectName(topicName);
