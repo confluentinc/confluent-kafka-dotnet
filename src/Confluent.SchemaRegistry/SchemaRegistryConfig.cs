@@ -126,7 +126,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
         /// </summary>
-        public AuthCredentialsSource? SchemaRegistryBasicAuthCredentialsSource
+        public AuthCredentialsSource? BasicAuthCredentialsSource
         {
             get
             {
@@ -146,13 +146,47 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
+        ///     Specifies the configuration property(ies) that provide the basic authentication credentials.
+        /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the BasicAuthCredentialsSource property")]
+        public AuthCredentialsSource? SchemaRegistryBasicAuthCredentialsSource
+        {
+            get => BasicAuthCredentialsSource;
+            set { BasicAuthCredentialsSource = value; }
+        }
+
+
+        /// <summary>
         ///     A comma-separated list of URLs for schema registry instances that are
         ///     used to register or lookup schemas.
         /// </summary>
-        public string SchemaRegistryUrl
+        public string Url
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); } 
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value); }
+        }
+
+        /// <summary>
+        ///     A comma-separated list of URLs for schema registry instances that are
+        ///     used to register or lookup schemas.
+        /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the Url property")]
+        public string SchemaRegistryUrl
+        {
+            get => Url;
+            set { Url = value; }
+        }
+
+
+        /// <summary>
+        ///     Specifies the timeout for requests to Confluent Schema Registry.
+        /// 
+        ///     default: 30000
+        /// </summary>
+        public int? RequestTimeoutMs
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
         }
 
         /// <summary>
@@ -160,10 +194,24 @@ namespace Confluent.SchemaRegistry
         /// 
         ///     default: 30000
         /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the RequestTimeoutMs property")]
         public int? SchemaRegistryRequestTimeoutMs
         {
-            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
+            get => RequestTimeoutMs;
+            set { RequestTimeoutMs = value; }
+        }
+
+
+        /// <summary>
+        ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
+        ///     should cache locally.
+        /// 
+        ///     default: 1000
+        /// </summary>
+        public int? MaxCachedSchemas
+        {
+            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas, value.ToString()); }
         }
 
         /// <summary>
@@ -172,27 +220,40 @@ namespace Confluent.SchemaRegistry
         /// 
         ///     default: 1000
         /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the MaxCachedSchemas property")]
         public int? SchemaRegistryMaxCachedSchemas
         {
-            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas, value.ToString()); }
+            get => MaxCachedSchemas;
+            set { MaxCachedSchemas = value; }
         }
+
 
         /// <summary>
         ///     Basic auth credentials in the form {username}:{password}.
         /// </summary>
-        public string SchemaRegistryBasicAuthUserInfo
+        public string BasicAuthUserInfo
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
         }
 
         /// <summary>
+        ///     Basic auth credentials in the form {username}:{password}.
+        /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the BasicAuthUserInfo property")]
+        public string SchemaRegistryBasicAuthUserInfo
+        {
+            get => BasicAuthUserInfo;
+            set { BasicAuthUserInfo = value; }
+        }
+
+
+        /// <summary>
         ///     Key subject name strategy.
         ///     
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
-        public SubjectNameStrategy? SchemaRegistryKeySubjectNameStrategy
+        public SubjectNameStrategy? KeySubjectNameStrategy
         {
             get
             {
@@ -216,11 +277,24 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
+        ///     Key subject name strategy.
+        ///     
+        ///     default: SubjectNameStrategy.Topic
+        /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the KeySubjectNameStrategy property")]
+        public SubjectNameStrategy? SchemaRegistryKeySubjectNameStrategy
+        {
+            get => KeySubjectNameStrategy;
+            set { KeySubjectNameStrategy = value; }
+        }
+
+
+        /// <summary>
         ///     Value subject name strategy.
         ///
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
-        public SubjectNameStrategy? SchemaRegistryValueSubjectNameStrategy
+        public SubjectNameStrategy? ValueSubjectNameStrategy
         {
             get
             {
@@ -242,6 +316,19 @@ namespace Confluent.SchemaRegistry
                 else { this.properties[PropertyNames.SchemaRegistryValueSubjectNameStrategy] = value.ToString(); }
             }
         }
+
+        /// <summary>
+        ///     Value subject name strategy.
+        ///     
+        ///     default: SubjectNameStrategy.Topic
+        /// </summary>
+        [Obsolete("This property will be removed in a future version of this library in favor of the ValueSubjectNameStrategy property")]
+        public SubjectNameStrategy? SchemaRegistryValueSubjectNameStrategy
+        {
+            get => ValueSubjectNameStrategy;
+            set { ValueSubjectNameStrategy = value; }
+        }
+
 
         /// <summary>
         ///     Set a configuration property using a string key / value pair.

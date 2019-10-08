@@ -50,10 +50,10 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 // schema.registry.url property for redundancy (comma separated list). 
                 // The property name is not plural to follow the convention set by
                 // the Java implementation.
-                SchemaRegistryUrl = schemaRegistryUrl,
+                Url = schemaRegistryUrl,
                 // optional schema registry client properties:
-                SchemaRegistryRequestTimeoutMs = 5000,
-                SchemaRegistryMaxCachedSchemas = 10
+                RequestTimeoutMs = 5000,
+                MaxCachedSchemas = 10
             };
 
             var consumerConfig = new ConsumerConfig

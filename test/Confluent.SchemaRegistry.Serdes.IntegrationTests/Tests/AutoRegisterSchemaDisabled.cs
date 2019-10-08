@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 var schemaRegistryConfig = new SchemaRegistryConfig
                 {
-                    SchemaRegistryUrl = schemaRegistryServers
+                    Url = schemaRegistryServers
                 };
 
                 // first a quick check the value case fails.
@@ -126,7 +126,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 }
 
                 // config with avro.serializer.auto.register.schemas == false should work now.
-                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryServers }))
+                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryServers }))
                 using (var producer =
                     new ProducerBuilder<string, int>(producerConfig)
                         .SetKeySerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false }))

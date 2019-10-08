@@ -8,7 +8,7 @@
 
 - References librdkafka v1.2.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.2.0) for more information. Headline feature is consumer side support for transactions.
 - Added `IDictionary` overload to `Config` constructors (contribution by @AndyPook).
-- `Confluent.Kafka`, `Confluent.SchemaRegistry` and `Confluent.SchemaRegistry.Serdes` are now all signed, and `Confluent.Kafka.StrongName` depreciated.
+- `Confluent.Kafka`, `Confluent.SchemaRegistry` and `Confluent.SchemaRegistry.Serdes` are now all signed, and `Confluent.Kafka.StrongName` deprecated.
 
 ## Fixes
 
@@ -249,7 +249,7 @@ Feature highlights:
 - The methods used to produce messages have changed:
   - Methods that accept a callback are now named `BeginProduce` (not `ProduceAsync`), analogous to similar methods in the standard library.
   - Callbacks are now specified as `Action<DeliveryReportResult<TKey, TValue>>` delegates, not implementations of `IDeliveryHandler`.
-  - The `IDeliveryHandler` interface has been depreciated.
+  - The `IDeliveryHandler` interface has been deprecated.
   - There are two variants of `ProduceAsync` and `BeginProduce`, the first takes a topic name and a `Message`. The second takes a `TopicPartition` and a message.
     - i.e. when producing, there is now clear separation between what is produced and where it is produced to.
   - The new API is more future proof.

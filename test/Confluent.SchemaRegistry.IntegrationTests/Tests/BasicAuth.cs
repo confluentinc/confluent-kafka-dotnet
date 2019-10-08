@@ -38,9 +38,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // 1.1. credentials specified as USER_INFO.
             var conf = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = config.ServerWithAuth,
-                SchemaRegistryBasicAuthCredentialsSource = AuthCredentialsSource.UserInfo,
-                SchemaRegistryBasicAuthUserInfo = $"{config.Username}:{config.Password}"
+                Url = config.ServerWithAuth,
+                BasicAuthCredentialsSource = AuthCredentialsSource.UserInfo,
+                BasicAuthUserInfo = $"{config.Username}:{config.Password}"
             };
 
             // some sanity checking of strongly typed config property name mappings.
@@ -60,8 +60,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // 1.2. credentials specified as USER_INFO implicitly (and using strongly typed SchemaRegistryConfig)
             var conf2 = new SchemaRegistryConfig
             {
-                SchemaRegistryUrl = config.ServerWithAuth,
-                SchemaRegistryBasicAuthUserInfo = $"{config.Username}:{config.Password}"
+                Url = config.ServerWithAuth,
+                BasicAuthUserInfo = $"{config.Username}:{config.Password}"
             };
             using (var sr = new CachedSchemaRegistryClient(conf2))
             {
@@ -90,8 +90,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             }
 
             // 1.4. credentials specified as SASL_INHERIT via strongly typed config.
-            var conf3 = new SchemaRegistryConfig { SchemaRegistryUrl = config.ServerWithAuth };
-            conf3.SchemaRegistryBasicAuthCredentialsSource = AuthCredentialsSource.SaslInherit;
+            var conf3 = new SchemaRegistryConfig { Url = config.ServerWithAuth };
+            conf3.BasicAuthCredentialsSource = AuthCredentialsSource.SaslInherit;
             conf3.Set("sasl.username", config.Username);
             conf3.Set("sasl.password", config.Password);
             using (var sr = new CachedSchemaRegistryClient(conf3))
@@ -138,7 +138,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // connect to authenticating without credentials. shouldn't work.
             Assert.Throws<HttpRequestException>(() => 
             { 
-                var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = config.ServerWithAuth });
+                var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithAuth });
                 var topicName = Guid.NewGuid().ToString();
                 var subject = sr.ConstructValueSubjectName(topicName);
                 try

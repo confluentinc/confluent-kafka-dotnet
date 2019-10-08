@@ -37,7 +37,7 @@ namespace AvroBlogExample
     {
         async static Task ProduceGeneric(string bootstrapServers, string schemaRegistryUrl)
         {
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<Null, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
                     .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
@@ -69,7 +69,7 @@ namespace AvroBlogExample
 
         async static Task ProduceSpecific(string bootstrapServers, string schemaRegistryUrl)
         {
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<Null, MessageTypes.LogMessage>(new ProducerConfig { BootstrapServers = bootstrapServers })
                     .SetValueSerializer(new AvroSerializer<MessageTypes.LogMessage>(schemaRegistry))
@@ -106,7 +106,7 @@ namespace AvroBlogExample
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { SchemaRegistryUrl = schemaRegistryUrl }))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var consumer =
                 new ConsumerBuilder<Null, MessageTypes.LogMessage>(consumerConfig)
                     .SetValueDeserializer(new AvroDeserializer<MessageTypes.LogMessage>(schemaRegistry).AsSyncOverAsync())

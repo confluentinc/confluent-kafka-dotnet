@@ -48,7 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 
                 var schemaRegistryConfig = new SchemaRegistryConfig
                 {
-                    SchemaRegistryUrl = schemaRegistryServers
+                    Url = schemaRegistryServers
                 };
 
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
