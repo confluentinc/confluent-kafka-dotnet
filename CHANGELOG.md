@@ -1,3 +1,19 @@
+# 1.3.0-PRE1
+
+## Enhancements
+
+- Added support for [Subject Name Strategies](https://www.confluent.io/blog/put-several-event-types-kafka-topic/) to `Confluent.SchemaRegistry` (thanks to [@fipil](https://github.com/fipil), [@alexpedrero](https://github.com/alexpedrero) and [@eroyal](https://github.com/eroyal) for their input).
+- `ConsumeResult` now throws `MessageNullException`, not `NullReferenceException` when a message property is accessed but no message exists (thanks to [@enzian](https://github.com/enzian) for this change).
+
+## Changes
+
+- Deprecated properties of `SchemaRegistryConfig` with the (superfluous) prefix `SchemaRegistry`. Added corresponding properties without this prefix.
+
+## Fixes
+
+- Resolved issue [993](https://github.com/confluentinc/confluent-kafka-dotnet/issues/993) whereby `RestService` was unable to communicate with Schema Registry hosted on a non-root path. Thanks to [@jonathansant](https://github.com/jonathansant) for this fix.
+
+
 # 1.2.1
 
 ## Fixes
