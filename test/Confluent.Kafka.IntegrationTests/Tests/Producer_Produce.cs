@@ -36,7 +36,8 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig
             { 
                 BootstrapServers = bootstrapServers,
-                EnableIdempotence = true
+                EnableIdempotence = true,
+                LingerMs = 1.5
             };
 
 
