@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka 7632802d315b1a10f27e957400a3ec74f12ffbe8 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.2.1 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -943,7 +943,7 @@ namespace Confluent.Kafka
         ///     default: 0.5
         ///     importance: high
         /// </summary>
-        public double? LingerMs { get { return (double?)GetEnum(typeof(double), "linger.ms"); } set { this.SetObject("linger.ms", value); } }
+        public double? LingerMs { get { return GetDouble("linger.ms"); } set { this.SetObject("linger.ms", value); } }
 
         /// <summary>
         ///     How many times to retry sending a failing Message. **Note:** retrying may cause reordering unless `enable.idempotence` is set to true.
@@ -1174,7 +1174,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Controls how to read messages written transactionally: `read_committed` - only return transactional messages which have been committed. `read_uncommitted` - return all messages, even transactional messages which have been aborted.
         ///
-        ///     default: read_uncommitted
+        ///     default: read_committed
         ///     importance: high
         /// </summary>
         public IsolationLevel? IsolationLevel { get { return (IsolationLevel?)GetEnum(typeof(IsolationLevel), "isolation.level"); } set { this.SetObject("isolation.level", value); } }

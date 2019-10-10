@@ -126,6 +126,22 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
+        ///     Gets a configuration property double? value given a key.
+        /// </summary>
+        /// <param name="key">
+        ///     The configuration property to get.
+        /// </param>
+        /// <returns>
+        ///     The configuration property value.
+        /// </returns>
+        protected double? GetDouble(string key)
+        {
+            var result = Get(key);
+            if (result == null) { return null; }
+            return double.Parse(result);
+        }
+
+        /// <summary>
         ///     Gets a configuration property enum value given a key.
         /// </summary>
         /// <param name="key">
