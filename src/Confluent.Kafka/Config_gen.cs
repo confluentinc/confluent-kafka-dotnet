@@ -937,21 +937,21 @@ namespace Confluent.Kafka
         /// </summary>
         public int? QueueBufferingMaxKbytes { get { return GetInt("queue.buffering.max.kbytes"); } set { this.SetObject("queue.buffering.max.kbytes", value); } }
 
-        /// <summary>
-        ///     Delay in milliseconds to wait for messages in the producer queue to accumulate before constructing message batches (MessageSets) to transmit to brokers. A higher value allows larger and more effective (less overhead, improved compression) batches of messages to accumulate at the expense of increased message delivery latency.
-        ///
-        ///     default: 0.5
-        ///     importance: high
-        /// </summary>
-        public double? LingerMs { get { return (double?)GetEnum(typeof(double), "linger.ms"); } set { this.SetObject("linger.ms", value); } }
+		/// <summary>
+		///     Delay in milliseconds to wait for messages in the producer queue to accumulate before constructing message batches (MessageSets) to transmit to brokers. A higher value allows larger and more effective (less overhead, improved compression) batches of messages to accumulate at the expense of increased message delivery latency.
+		///
+		///     default: 0.5
+		///     importance: high
+		/// </summary>
+		public double? LingerMs { get { return (double?)GetDouble("linger.ms"); } set { this.SetObject("linger.ms", value); } }
 
-        /// <summary>
-        ///     How many times to retry sending a failing Message. **Note:** retrying may cause reordering unless `enable.idempotence` is set to true.
-        ///
-        ///     default: 2
-        ///     importance: high
-        /// </summary>
-        public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
+		/// <summary>
+		///     How many times to retry sending a failing Message. **Note:** retrying may cause reordering unless `enable.idempotence` is set to true.
+		///
+		///     default: 2
+		///     importance: high
+		/// </summary>
+		public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
 
         /// <summary>
         ///     The backoff time in milliseconds before retrying a protocol request.
