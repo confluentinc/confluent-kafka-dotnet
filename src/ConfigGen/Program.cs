@@ -352,6 +352,9 @@ namespace Confluent.Kafka
                     case "bool":
                         codeText += $"GetBool(\"{prop.Name}\")";
                         break;
+                    case "double":
+                        codeText += $"GetDouble(\"{prop.Name}\")";
+                        break;
                     default:
                         codeText += $"({nullableType})GetEnum(typeof({type}), \"{prop.Name}\")";
                         break;
