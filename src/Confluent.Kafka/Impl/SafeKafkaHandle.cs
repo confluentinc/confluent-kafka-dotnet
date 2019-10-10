@@ -1297,7 +1297,7 @@ namespace Confluent.Kafka.Impl
             setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
             setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
-            
+
             IntPtr[] deleteTopicsPtrs = new IntPtr[deleteTopics.Count(t => t != null)];
             int idx = 0;
             foreach (var deleteTopic in deleteTopics)
