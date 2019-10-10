@@ -236,6 +236,10 @@ namespace Confluent.Kafka.Impl
         internal int AddBrokers(string brokers)
         {
             ThrowIfHandleClosed();
+            if (brokers == null)
+            {
+                throw new NullReferenceException("List of brokers is required.");
+            }
             return (int)Librdkafka.brokers_add(handle, brokers);
         }
 
@@ -645,6 +649,12 @@ namespace Confluent.Kafka.Impl
                 }
                 foreach (var partition in partitions)
                 {
+                    if (partition.Topic == null)
+                    {
+                        Librdkafka.topic_partition_list_destroy(list);
+                        throw new NullReferenceException("Topic is required to assign partitions.");
+                    }
+
                     IntPtr ptr = Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
                     Marshal.WriteInt64(
                         ptr,
@@ -1229,6 +1239,11 @@ namespace Confluent.Kafka.Impl
                 var increaseTo = newPartitionsForTopic.IncreaseTo;
                 var assignments = newPartitionsForTopic.ReplicaAssignments;
 
+                if (newPartitionsForTopic.Topic == null)
+                {
+                    throw new NullReferenceException("Cannot assign partition to null topic.");
+                }
+
                 IntPtr ptr = Librdkafka.NewPartitions_new(topic, (UIntPtr)increaseTo, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
                 if (ptr == IntPtr.Zero)
                 {
@@ -1282,11 +1297,16 @@ namespace Confluent.Kafka.Impl
             setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
             setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
             setOption_completionSource(optionsPtr, completionSourcePtr);
-
-            IntPtr[] deleteTopicsPtrs = new IntPtr[deleteTopics.Count()];
+            
+            IntPtr[] deleteTopicsPtrs = new IntPtr[deleteTopics.Count(t => t != null)];
             int idx = 0;
             foreach (var deleteTopic in deleteTopics)
             {
+                if (deleteTopic == null)
+                {
+                    continue;
+                }
+
                 var deleteTopicPtr = Librdkafka.DeleteTopic_new(deleteTopic);
                 deleteTopicsPtrs[idx] = deleteTopicPtr;
                 idx += 1;
