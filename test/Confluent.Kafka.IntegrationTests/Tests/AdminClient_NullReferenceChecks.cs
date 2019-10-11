@@ -38,6 +38,8 @@ namespace Confluent.Kafka.IntegrationTests
             var topicName1 = Guid.NewGuid().ToString();
             string nullTopic = null;
 
+            Exception createTopicsException = null;
+            Exception createPartitionsException = null;
             // test creating a null topic throws a related exception
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
@@ -47,9 +49,10 @@ namespace Confluent.Kafka.IntegrationTests
                     adminClient.CreateTopicsAsync(new TopicSpecification[] { new TopicSpecification { Name = nullTopic, NumPartitions = 1, ReplicationFactor = 1 } }).Wait();
                     Assert.True(false, "Expected exception.");
                 }
-                catch (KafkaException ex)
+                catch (ArgumentException ex)
                 {
                     Assert.Contains("topic", ex.Message.ToLower());
+                    createTopicsException = ex;
                 }
             }
 
@@ -63,11 +66,15 @@ namespace Confluent.Kafka.IntegrationTests
                     adminClient.CreatePartitionsAsync(new List<PartitionsSpecification> { new PartitionsSpecification { Topic = nullTopic, IncreaseTo = 2 } }).Wait();
                     Assert.True(false, "Expected exception.");
                 }
-                catch (NullReferenceException ex)
+                catch (ArgumentException ex)
                 {
                     Assert.Contains("topic", ex.Message.ToLower());
+                    createPartitionsException = ex;
                 }
             }
+
+            Assert.True(createTopicsException != null && createPartitionsException != null);
+            Assert.True(createTopicsException.GetType() == createPartitionsException.GetType(), ".CreateTopic and .CreatePartition should have consistent interface for null-related exceptions.");
 
             // test adding a null list of brokers throws null reference exception.
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
@@ -78,7 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                     adminClient.AddBrokers(null);
                     Assert.True(false, "Expected exception.");
                 }
-                catch (NullReferenceException ex)
+                catch (ArgumentNullException ex)
                 {
                     Assert.Contains("broker", ex.Message.ToLower());
                 }
@@ -99,21 +106,34 @@ namespace Confluent.Kafka.IntegrationTests
                 }
             }
 
-            // This test-case completing is the test case
-            // Used to cause a seg-fault.
+            // Deleting null topic throws exception
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
-                adminClient.DeleteTopicsAsync(new List<string> { topicName1, nullTopic });
-                Assert.True(true);
+                try
+                {
+                    adminClient.DeleteTopicsAsync(new List<string> { topicName1, nullTopic });
+                    Assert.True(false, "Expected exception.");
+                }
+                catch(ArgumentException ex)
+                {
+                    Assert.Contains("topic", ex.Message);
+                }
             }
 
-            // Asserts existing ListGroup behavior - null group is valid option
+            // ListGroup throws exception if group is null
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
-                adminClient.ListGroup(null, TimeSpan.FromSeconds(10));
-                Assert.True(true);
+                try
+                {
+                    adminClient.ListGroup(null, TimeSpan.FromSeconds(10));
+                    Assert.True(false, "Expected exception.");
+                }
+                catch (ArgumentNullException ex)
+                {
+                    Assert.Contains("group", ex.Message);
+                }
             }
 
             Assert.Equal(0, Library.HandleCount);
