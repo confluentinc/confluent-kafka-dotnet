@@ -91,6 +91,22 @@ namespace Confluent.Kafka.IntegrationTests
                 }
             }
 
+            // Should not segfault when describing consumer-group configs
+            using (var consumer = new ConsumerBuilder<Null,Null>(new ConsumerConfig{ BootstrapServers = bootstrapServers, GroupId = Guid.NewGuid().ToString() }).Build())
+            using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producerClient = new DependentAdminClientBuilder(producer.Handle).Build())
+            using (var consumerClient = new DependentAdminClientBuilder(consumer.Handle).Build())
+            {
+                var resources = new List<ConfigResource>()
+                {
+                    new ConfigResource() { Name = "non-existent-cgroup", Type = ResourceType.Any },
+                    new ConfigResource() { Name = "non-existent-cgroup", Type = ResourceType.Group }
+                };
+
+                var consumerConfigs = consumerClient.DescribeConfigsAsync(resources).Result;                    
+                var producerConfigs = producerClient.DescribeConfigsAsync(resources).Result;                
+            }
+
             // test retrieving metadata for a null topic
             using (var producer = new ProducerBuilder<Null, Null>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
             using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
