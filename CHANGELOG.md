@@ -1,3 +1,8 @@
+# 1.2.2-RC2
+
+- References librdkafka v1.2.2-RC2 which upgrades the lz4 dependency to 1.9.2.
+
+
 # 1.2.1
 
 ## Fixes
