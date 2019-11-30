@@ -1,10 +1,10 @@
-# 1.3.0-RC1
+# 1.3.0-RC2
 
 ## Enhancements
 
 - Added support for [Subject Name Strategies](https://www.confluent.io/blog/put-several-event-types-kafka-topic/) to `Confluent.SchemaRegistry` (thanks to [@fipil](https://github.com/fipil), [@alexpedrero](https://github.com/alexpedrero) and [@eroyal](https://github.com/eroyal) for their input).
 - `ConsumeResult` now throws `MessageNullException`, not `NullReferenceException` when a message property is accessed but no message exists (thanks to [@enzian](https://github.com/enzian) for this change).
-- References librdkafka v1.3.0-RC1. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.3.0-RC1) for more information. Headline features are support for fetch from follower (KIP-392) and static group membership (KIP-345).
+- References librdkafka v1.3.0-RC2. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.3.0-RC2) for more information. Headline feature is support for fetch from follower (KIP-392).
 
 ## Changes
 

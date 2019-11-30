@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.3.0-RC1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.3.0-RC2 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -1050,14 +1050,6 @@ namespace Confluent.Kafka
         ///     importance: high
         /// </summary>
         public string GroupId { get { return Get("group.id"); } set { this.SetObject("group.id", value); } }
-
-        /// <summary>
-        ///     Enable static group membership. Static group members are able to leave and rejoin a group within the configured `session.timeout.ms` without prompting a group rebalance. This should be used in combination with a larger `session.timeout.ms` to avoid group rebalances caused by transient unavailability (e.g. process restarts). Requires broker version >= 2.3.0.
-        ///
-        ///     default: ''
-        ///     importance: medium
-        /// </summary>
-        public string GroupInstanceId { get { return Get("group.instance.id"); } set { this.SetObject("group.instance.id", value); } }
 
         /// <summary>
         ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
