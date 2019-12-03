@@ -4,6 +4,10 @@ services:
     image: confluentinc/cp-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+  zookeeper_2:
+    image: confluentinc/cp-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
   kafka:
     image: confluentinc/cp-kafka
     depends_on:
@@ -13,6 +17,16 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092, PLAINTEXT_HOST://localhost:29092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  kafka_2:
+    image: confluentinc/cp-kafka
+    depends_on:
+      - zookeeper_2
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_2:9092, PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_2:2181
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
   schema-registry:
     image: confluentinc/cp-schema-registry
@@ -32,3 +46,15 @@ services:
       SCHEMA_REGISTRY_AUTHENTICATION_REALM: SchemaRegistry
       SCHEMA_REGISTRY_AUTHENTICATION_ROLES: Testers
       SCHEMA_REGISTRY_OPTS: -Djava.security.auth.login.config=/conf/schema-registry/schema-registry.jaas
+  schema-registry_2:
+    image: confluentinc/cp-schema-registry
+    depends_on:
+      - zookeeper_2
+      - kafka_2
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka_2:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper_2:2181
