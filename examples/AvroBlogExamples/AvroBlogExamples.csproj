@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes" Version="1.3.0-RC2" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes" Version="1.3.0-RC3" /> -->
     <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj" />
   </ItemGroup>
 
