@@ -35,7 +35,7 @@ namespace Confluent.Kafka
         /// <param name="key">The key in the message.</param>
         /// <param name="keyBytes">The bytes of the key after serialization.</param>
         /// <param name="value">The value in the message.</param>
-        /// <param name="valueBytes">The bytes of the value after serializations.</param>
+        /// <param name="valueBytes">The bytes of the value after serialization.</param>
         public PartitionRequest(Message<TKey, TValue> message, TKey key, byte[] keyBytes, TValue value, byte[] valueBytes)
         {
             this.Message = message;
