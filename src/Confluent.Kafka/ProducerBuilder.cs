@@ -44,7 +44,11 @@ namespace Confluent.Kafka
         ///     The configured statistics handler.
         /// </summary>
         internal protected Action<IProducer<TKey, TValue>, string> StatisticsHandler { get; set; }
-        
+
+        /// <summary>
+        ///     The configured partitioner handler.
+        /// </summary>
+        internal protected Func<IProducer<TKey, TValue>, PartitionRequest<TKey, TValue>, Partition> PartitionerHandler { get; set; }
 
         /// <summary>
         ///     The configured key serializer.
@@ -66,9 +70,9 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
-        internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
+        internal Producer<TKey, TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
-            return new Producer<TKey,TValue>.Config
+            return new Producer<TKey, TValue>.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null
@@ -79,7 +83,10 @@ namespace Confluent.Kafka
                     : logMessage => this.LogHandler(producer, logMessage),
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.StatisticsHandler(producer, stats)
+                    : stats => this.StatisticsHandler(producer, stats),
+                partitionerHandler = this.PartitionerHandler == null
+                    ? default(Func<PartitionRequest<TKey, TValue>, int>)
+                    : partitionRequest => this.PartitionerHandler(producer, partitionRequest)
             };
         }
 
@@ -115,6 +122,17 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Statistics handler may not be specified more than once.");
             }
             this.StatisticsHandler = statisticsHandler;
+            return this;
+        }
+
+        public ProducerBuilder<TKey, TValue> SetPartitioner(Func<IProducer<TKey, TValue>, PartitionRequest<TKey, TValue>, int> partitionerHandler)
+        {
+            if (this.PartitionerHandler != null)
+            {
+                throw new InvalidOperationException("Partitioner handler may not be specified more than once.");
+            }
+
+            this.PartitionerHandler = partitionerHandler;
             return this;
         }
 
