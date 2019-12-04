@@ -30,6 +30,16 @@ namespace Confluent.Kafka.Impl
     {
         public SafeTopicConfigHandle() : base("kafka topic config", false) { }
 
+        internal static SafeTopicConfigHandle Create(IntPtr topic_conf)
+        {
+            var ch = new SafeTopicConfigHandle
+            {
+                handle = topic_conf,
+            };
+
+            return ch;
+        }
+
         internal static SafeTopicConfigHandle Create()
         {
             var ch = Librdkafka.topic_conf_new();
