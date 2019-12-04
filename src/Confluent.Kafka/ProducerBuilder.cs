@@ -85,7 +85,7 @@ namespace Confluent.Kafka
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
                 partitionerHandler = this.PartitionerHandler == null
-                    ? default(Func<PartitionRequest<TKey, TValue>, int>)
+                    ? default(Func<PartitionRequest<TKey, TValue>, Partition>)
                     : partitionRequest => this.PartitionerHandler(producer, partitionRequest)
             };
         }
@@ -125,11 +125,17 @@ namespace Confluent.Kafka
             return this;
         }
 
-        public ProducerBuilder<TKey, TValue> SetPartitioner(Func<IProducer<TKey, TValue>, PartitionRequest<TKey, TValue>, int> partitionerHandler)
+        /// <summary>
+        ///     Set the handler to be called when a <seealso cref="Partition"/> needs to be determined for a <seealso cref="Message{TKey, TValue}"/>.
+        /// </summary>
+        /// <remarks>
+        ///     This handler is only called when the <seealso cref="Message{TKey, TValue}"/>'s partition is set to <seealso cref="Partition.Any"/>.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetPartitionRequestHandler(Func<IProducer<TKey, TValue>, PartitionRequest<TKey, TValue>, Partition> partitionerHandler)
         {
             if (this.PartitionerHandler != null)
             {
-                throw new InvalidOperationException("Partitioner handler may not be specified more than once.");
+                throw new InvalidOperationException("PartitionRequest handler may not be specified more than once.");
             }
 
             this.PartitionerHandler = partitionerHandler;

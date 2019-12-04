@@ -37,7 +37,7 @@ namespace Confluent.Kafka
             public Action<Error> errorHandler;
             public Action<LogMessage> logHandler;
             public Action<string> statisticsHandler;
-            public Func<PartitionRequest<TKey, TValue>, int> partitionerHandler;
+            public Func<PartitionRequest<TKey, TValue>, Partition> partitionerHandler;
         }
 
         private ISerializer<TKey> keySerializer;
@@ -116,7 +116,7 @@ namespace Confluent.Kafka
             errorHandler?.Invoke(KafkaHandle.CreatePossiblyFatalError(err, reason));
         }
 
-        private Func<PartitionRequest<TKey, TValue>, int> partitionerHandler;
+        private Func<PartitionRequest<TKey, TValue>, Partition> partitionerHandler;
         private Librdkafka.PartitionerDelegate partitionerCallbackDelegate;
         private int PartitionerCallback(IntPtr rkt,
             IntPtr keydata,
