@@ -25,7 +25,7 @@ namespace Confluent.Kafka.UnitTests
     public class ConsumerTests
     {
         [Fact]
-        public void Constuctor()
+        public void Constructor()
         {
             // Throw exception if 'group.id' is not set in config and ensure that exception
             // mentions 'group.id'.
@@ -61,6 +61,28 @@ namespace Confluent.Kafka.UnitTests
                 }).Build();
             });
             Assert.Contains("range", e.Message);
+        }
+
+        [Fact]
+        public void Constructor_ConsumerTxn()
+        {
+            // should not throw
+            using (var c = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:666",
+                    GroupId = Guid.NewGuid().ToString(),
+                    IsolationLevel = IsolationLevel.ReadCommitted
+                }).Build())
+            { }
+
+            // should not throw
+            using (var c = new ConsumerBuilder<byte[], byte[]>(new ConsumerConfig
+                {
+                    BootstrapServers = "localhost:666",
+                    GroupId = Guid.NewGuid().ToString(),
+                    IsolationLevel = IsolationLevel.ReadUncommitted
+                }).Build())
+            { }
         }
 
         private static ConsumerConfig CreateValidConfiguration()

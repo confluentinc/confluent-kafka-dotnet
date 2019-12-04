@@ -1,3 +1,20 @@
+# 1.3.0
+
+## Enhancements
+
+- Added support for [Subject Name Strategies](https://www.confluent.io/blog/put-several-event-types-kafka-topic/) to `Confluent.SchemaRegistry` (thanks to [@fipil](https://github.com/fipil), [@alexpedrero](https://github.com/alexpedrero) and [@eroyal](https://github.com/eroyal) for their input).
+- `ConsumeResult` now throws `MessageNullException`, not `NullReferenceException` when a message property is accessed but no message exists (thanks to [@enzian](https://github.com/enzian) for this change).
+- References librdkafka v1.3.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.3.0) for more information. Headline feature is support for fetch from follower (KIP-392).
+
+## Changes
+
+- Deprecated properties of `SchemaRegistryConfig` with the (superfluous) prefix `SchemaRegistry`. Added corresponding properties without this prefix.
+
+## Fixes
+
+- Resolved issue [993](https://github.com/confluentinc/confluent-kafka-dotnet/issues/993) whereby `RestService` was unable to communicate with Schema Registry hosted on a non-root path. Thanks to [@jonathansant](https://github.com/jonathansant) for this fix.
+
+
 # 1.2.2
 
 - References librdkafka v1.2.2 which upgrades the lz4 dependency to v1.9.2.
