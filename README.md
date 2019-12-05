@@ -252,55 +252,9 @@ available via the `Error` and `ConsumeResult` fields.
 The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
 [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
+### Developer Notes
 
-## Build
-
-To build the library or any test or example project, run the following from within the relevant project directory:
-
-```
-dotnet restore
-dotnet build
-```
-
-To run an example project, run the following from within the example's project directory:
-
-```
-dotnet run <args>
-```
-
-## Tests
-
-### Unit Tests
-
-From within the test/Confluent.Kafka.UnitTests directory, run:
-
-```
-dotnet test
-```
-
-### Integration Tests
-
-From within the [Confluent Platform](https://www.confluent.io/product/compare/) (or Apache Kafka) distribution directory,
-run the following two commands (in separate terminal windows) to set up a single broker test Kafka cluster:
-
-```
-./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties
-
-./bin/kafka-server-start ./etc/kafka/server.properties
-```
-
-Now use the `bootstrap-topics.sh` script in the test/Confleunt.Kafka.IntegrationTests directory to set up the
-prerequisite topics:
-
-```
-./bootstrap-topics.sh <confluent platform path> <zookeeper>
-```
-
-then:
-
-```
-dotnet test
-```
+Instructions on building and testing confluent-kafka-dotnet can be found [here](DEVELOPER.md).
 
 Copyright (c) 
 2016-2019 [Confluent Inc.](https://www.confluent.io)
