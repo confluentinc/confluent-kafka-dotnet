@@ -284,6 +284,11 @@ namespace Confluent.Kafka
         ///     revoked. The second parameter provides the set of partitions the consumer is 
         ///     currently assigned to, and the current position of the consumer on each of these
         ///     partitions.
+        ///
+        ///     The return value of the handler specifies the consumer's desired partitions/offsets for the partition assignment. 
+        ///     The group coordinator will attempt to honor these desired partitions/offsets. If an empty collection
+        ///     is returned by the handler, the Group Coordinator will assign the partitions instead; this is usually 
+        ///     the desired behavior.
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
