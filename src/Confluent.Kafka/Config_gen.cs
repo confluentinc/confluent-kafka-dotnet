@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.3.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka txns *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -763,7 +763,7 @@ namespace Confluent.Kafka
         public string SaslPassword { get { return Get("sasl.password"); } set { this.SetObject("sasl.password", value); } }
 
         /// <summary>
-        ///     SASL/OAUTHBEARER configuration. The format is implementation-dependent and must be parsed accordingly. The default unsecured token implementation (see https://tools.ietf.org/html/rfc7515#appendix-A.5) recognizes space-separated name=value pairs with valid names including principalClaimName, principal, scopeClaimName, scope, and lifeSeconds. The default value for principalClaimName is "sub", the default value for scopeClaimName is "scope", and the default value for lifeSeconds is 3600. The scope value is CSV format with the default value being no/empty scope. For example: `principalClaimName=azp principal=admin scopeClaimName=roles scope=role1,role2 lifeSeconds=600`. In addition, SASL extensions can be communicated to the broker via `extension_NAME=value`. For example: `principal=admin extension_traceId=123`
+        ///     SASL/OAUTHBEARER configuration. The format is implementation-dependent and must be parsed accordingly. The default unsecured token implementation (see https://tools.ietf.org/html/rfc7515#appendix-A.5) recognizes space-separated name=value pairs with valid names including principalClaimName, principal, scopeClaimName, scope, and lifeSeconds. The default value for principalClaimName is "sub", the default value for scopeClaimName is "scope", and the default value for lifeSeconds is 3600. The scope value is CSV format with the default value being no/empty scope. For example: `principalClaimName=azp principal=admin scopeClaimName=roles scope=role1,role2 lifeSeconds=600`. In addition, SASL extensions can be communicated to the broker via `extension_<extensionname>=value`. For example: `principal=admin extension_traceId=123`
         ///
         ///     default: ''
         ///     importance: low
@@ -914,6 +914,22 @@ namespace Confluent.Kafka
         public int? CompressionLevel { get { return GetInt("compression.level"); } set { this.SetObject("compression.level", value); } }
 
         /// <summary>
+        ///     The TransactionalId to use for transactional delivery. This enables reliability semantics which span multiple producer sessions since it allows the client to guarantee that transactions using the same TransactionalId have been completed prior to starting any new transactions. If no TransactionalId is provided, then the producer is limited to idempotent delivery. Note that enable.idempotence must be enabled if a TransactionalId is configured. The default is null, which means transactions cannot be used. Note that, by default, transactions require a cluster of at least three brokers which is the recommended setting for production; for development you can change this, by adjusting broker setting transaction.state.log.replication.factor.
+        ///
+        ///     default: ''
+        ///     importance: high
+        /// </summary>
+        public string TransactionalId { get { return Get("transactional.id"); } set { this.SetObject("transactional.id", value); } }
+
+        /// <summary>
+        ///     The maximum amount of time in milliseconds that the transaction coordinator will wait for a transaction status update from the producer before proactively aborting the ongoing transaction. If this value is larger than the `transaction.max.timeout.ms` setting in the broker, the init_transactions() call will fail with ERR_INVALID_TRANSACTION_TIMEOUT. The transaction timeout must be at least 1000 ms larger than `message.timeout.ms` and `socket.timeout.ms`.
+        ///
+        ///     default: 60000
+        ///     importance: medium
+        /// </summary>
+        public int? TransactionTimeoutMs { get { return GetInt("transaction.timeout.ms"); } set { this.SetObject("transaction.timeout.ms", value); } }
+
+        /// <summary>
         ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.in.flight.requests.per.connection=5` (must be less than or equal to 5), `retries=INT32_MAX` (must be greater than 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.
         ///
         ///     default: false
@@ -1050,6 +1066,14 @@ namespace Confluent.Kafka
         ///     importance: high
         /// </summary>
         public string GroupId { get { return Get("group.id"); } set { this.SetObject("group.id", value); } }
+
+        /// <summary>
+        ///     Enable static group membership. Static group members are able to leave and rejoin a group within the configured `session.timeout.ms` without prompting a group rebalance. This should be used in combination with a larger `session.timeout.ms` to avoid group rebalances caused by transient unavailability (e.g. process restarts). Requires broker version >= 2.3.0.
+        ///
+        ///     default: ''
+        ///     importance: medium
+        /// </summary>
+        public string GroupInstanceId { get { return Get("group.instance.id"); } set { this.SetObject("group.instance.id", value); } }
 
         /// <summary>
         ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
