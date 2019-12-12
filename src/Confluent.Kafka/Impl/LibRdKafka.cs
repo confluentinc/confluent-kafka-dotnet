@@ -184,6 +184,7 @@ namespace Confluent.Kafka.Impl
             _begin_transaction = (Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_begin_transaction").CreateDelegate(typeof(Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _commit_transaction = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_commit_transaction").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
             _abort_transaction = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_abort_transaction").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
+            _send_offsets_to_transaction = (Func<IntPtr, IntPtr, string, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_send_offsets_to_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr, string, StringBuilder, UIntPtr, ErrorCode>));
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Single(m => m.Name == "rd_kafka_new").CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
             _name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_memberid").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -697,6 +698,11 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode> _abort_transaction;
         internal static ErrorCode abort_transaction(IntPtr rk, int timeout, StringBuilder errstr, UIntPtr errstr_size)
             => _abort_transaction(rk, timeout, errstr, errstr_size);
+
+        private static Func<IntPtr, IntPtr, string, StringBuilder, UIntPtr, ErrorCode> _send_offsets_to_transaction;
+        internal static ErrorCode send_offsets_to_transaction(
+                IntPtr rk, IntPtr offsets, string consumer_group, StringBuilder errstr, UIntPtr errstr_size)
+            => _send_offsets_to_transaction(rk, offsets, consumer_group, errstr, errstr_size);
 
         private static Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle> _new;
         internal static SafeKafkaHandle kafka_new(RdKafkaType type, IntPtr conf,

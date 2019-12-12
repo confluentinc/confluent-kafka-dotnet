@@ -272,5 +272,50 @@ namespace Confluent.Kafka
         ///     Thrown if the operation is cancelled.
         /// </exception>
         void Flush(CancellationToken cancellationToken = default(CancellationToken));
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block.
+        /// </param>
+        void InitTransactions(TimeSpan timeout);
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void BeginTransaction();
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block.
+        /// </param>
+        void CommitTransaction(TimeSpan timeout);
+        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum length of time to block.
+        /// </param>
+        void AbortTransaction(TimeSpan timeout);
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="offsets">
+        /// 
+        /// </param>
+        /// <param name="group">
+        ///     
+        /// </param>
+        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group);
     }
 }

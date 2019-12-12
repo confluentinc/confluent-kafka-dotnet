@@ -924,5 +924,20 @@ namespace Confluent.Kafka
                 }
             }
         }
+
+        public void InitTransactions(TimeSpan timeout)
+            => KafkaHandle.InitTransactions(timeout.TotalMillisecondsAsInt());
+
+        public void BeginTransaction()
+            => KafkaHandle.BeginTransaction();
+
+        public void CommitTransaction(TimeSpan timeout)
+            => KafkaHandle.CommitTransaction(timeout.TotalMillisecondsAsInt());
+        
+        public void AbortTransaction(TimeSpan timeout)
+            => KafkaHandle.AbortTransaction(timeout.TotalMillisecondsAsInt());
+
+        public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group)
+            => KafkaHandle.SendOffsetsToTransaction(offsets, group);
     }
 }

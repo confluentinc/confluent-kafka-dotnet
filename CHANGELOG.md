@@ -1,3 +1,10 @@
+# 1.4.0
+
+## Enhancements
+
+- Transactions! 
+
+
 # 1.3.0
 
 ## Enhancements
