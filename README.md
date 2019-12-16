@@ -42,13 +42,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.2.2
+Install-Package Confluent.Kafka -Version 1.3.0
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.2.2 Confluent.Kafka
+dotnet add package -v 1.3.0 Confluent.Kafka
 ```
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.
@@ -252,55 +252,9 @@ available via the `Error` and `ConsumeResult` fields.
 The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
 [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
+### Developer Notes
 
-## Build
-
-To build the library or any test or example project, run the following from within the relevant project directory:
-
-```
-dotnet restore
-dotnet build
-```
-
-To run an example project, run the following from within the example's project directory:
-
-```
-dotnet run <args>
-```
-
-## Tests
-
-### Unit Tests
-
-From within the test/Confluent.Kafka.UnitTests directory, run:
-
-```
-dotnet test
-```
-
-### Integration Tests
-
-From within the [Confluent Platform](https://www.confluent.io/product/compare/) (or Apache Kafka) distribution directory,
-run the following two commands (in separate terminal windows) to set up a single broker test Kafka cluster:
-
-```
-./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties
-
-./bin/kafka-server-start ./etc/kafka/server.properties
-```
-
-Now use the `bootstrap-topics.sh` script in the test/Confleunt.Kafka.IntegrationTests directory to set up the
-prerequisite topics:
-
-```
-./bootstrap-topics.sh <confluent platform path> <zookeeper>
-```
-
-then:
-
-```
-dotnet test
-```
+Instructions on building and testing confluent-kafka-dotnet can be found [here](DEVELOPER.md).
 
 Copyright (c) 
 2016-2019 [Confluent Inc.](https://www.confluent.io)

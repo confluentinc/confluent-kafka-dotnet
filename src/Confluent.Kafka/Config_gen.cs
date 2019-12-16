@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.2.1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.3.0 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -347,7 +347,7 @@ namespace Confluent.Kafka
         public string BootstrapServers { get { return Get("bootstrap.servers"); } set { this.SetObject("bootstrap.servers", value); } }
 
         /// <summary>
-        ///     Maximum Kafka protocol request message size.
+        ///     Maximum Kafka protocol request message size. Due to differing framing overhead between protocol versions the producer is unable to reliably enforce a strict max message limit at produce time and may exceed the maximum size by one message in protocol ProduceRequests, the broker will enforce the the topic's `max.message.bytes` limit (see Apache Kafka documentation).
         ///
         ///     default: 1000000
         ///     importance: medium
@@ -763,7 +763,7 @@ namespace Confluent.Kafka
         public string SaslPassword { get { return Get("sasl.password"); } set { this.SetObject("sasl.password", value); } }
 
         /// <summary>
-        ///     SASL/OAUTHBEARER configuration. The format is implementation-dependent and must be parsed accordingly. The default unsecured token implementation (see https://tools.ietf.org/html/rfc7515#appendix-A.5) recognizes space-separated name=value pairs with valid names including principalClaimName, principal, scopeClaimName, scope, and lifeSeconds. The default value for principalClaimName is "sub", the default value for scopeClaimName is "scope", and the default value for lifeSeconds is 3600. The scope value is CSV format with the default value being no/empty scope. For example: `principalClaimName=azp principal=admin scopeClaimName=roles scope=role1,role2 lifeSeconds=600`. In addition, SASL extensions can be communicated to the broker via `extension_<extensionname>=value`. For example: `principal=admin extension_traceId=123`
+        ///     SASL/OAUTHBEARER configuration. The format is implementation-dependent and must be parsed accordingly. The default unsecured token implementation (see https://tools.ietf.org/html/rfc7515#appendix-A.5) recognizes space-separated name=value pairs with valid names including principalClaimName, principal, scopeClaimName, scope, and lifeSeconds. The default value for principalClaimName is "sub", the default value for scopeClaimName is "scope", and the default value for lifeSeconds is 3600. The scope value is CSV format with the default value being no/empty scope. For example: `principalClaimName=azp principal=admin scopeClaimName=roles scope=role1,role2 lifeSeconds=600`. In addition, SASL extensions can be communicated to the broker via `extension_NAME=value`. For example: `principal=admin extension_traceId=123`
         ///
         ///     default: ''
         ///     importance: low
@@ -785,6 +785,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public string PluginLibraryPaths { get { return Get("plugin.library.paths"); } set { this.SetObject("plugin.library.paths", value); } }
+
+        /// <summary>
+        ///     A rack identifier for this client. This can be any string value which indicates where this client is physically located. It corresponds with the broker config `broker.rack`.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string ClientRack { get { return Get("client.rack"); } set { this.SetObject("client.rack", value); } }
 
     }
 
