@@ -37,7 +37,7 @@ namespace Confluent.Kafka
             public Action<Error> errorHandler;
             public Action<LogMessage> logHandler;
             public Action<string> statisticsHandler;
-            public Func<PartitionRequest<TKey, TValue>, Partition> partitionerHandler;
+            public Dictionary<string, IPartitioner> partitioners;
         }
 
         private ISerializer<TKey> keySerializer;
@@ -67,6 +67,10 @@ namespace Confluent.Kafka
         private bool enableDeliveryReportTimestamp = true;
         private bool enableDeliveryReportHeaders = true;
         private bool enableDeliveryReportPersistedStatus = true;
+
+        private Dictionary<string, IPartitioner> partitioners;
+        private Dictionary<string, Librdkafka.PartitionerDelegate> partitionerCallbacks =
+            new Dictionary<string, Librdkafka.PartitionerDelegate>();
 
         private SafeKafkaHandle ownedKafkaHandle;
         private Handle borrowedHandle;
@@ -114,23 +118,6 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return; }
             errorHandler?.Invoke(KafkaHandle.CreatePossiblyFatalError(err, reason));
-        }
-
-        private Func<PartitionRequest<TKey, TValue>, Partition> partitionerHandler;
-        private Librdkafka.PartitionerDelegate partitionerCallbackDelegate;
-        private int PartitionerCallback(IntPtr rkt,
-            IntPtr keydata,
-            UIntPtr keylen,
-            int partition_cnt,
-            IntPtr rkt_opaque,
-            IntPtr msg_opaque)
-        {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            if (ownedKafkaHandle.IsClosed) { return 0; }
-
-            // TODO: Can't trigger this?
-
-            return 0;
         }
 
         private Action<string> statisticsHandler;
@@ -407,6 +394,11 @@ namespace Confluent.Kafka
                 // events are not called if kafkaHandle has been closed.
                 // this avoids deadlocks in common scenarios.
                 ownedKafkaHandle.Dispose();
+
+                foreach (var partitioner in this.partitioners.Values)
+                {
+                    partitioner?.Dispose();
+                }
             }
         }
 
@@ -519,7 +511,7 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
-            this.partitionerHandler = baseConfig.partitionerHandler;
+            this.partitioners = baseConfig.partitioners;
 
             var config = Confluent.Kafka.Config.ExtractCancellationDelayMaxMs(baseConfig.config, out this.cancellationDelayMaxMs);
 
@@ -604,7 +596,6 @@ namespace Confluent.Kafka
             errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
             statisticsCallbackDelegate = StatisticsCallback;
-            partitionerCallbackDelegate = PartitionerCallback;
 
             if (errorHandler != null)
             {
@@ -618,12 +609,42 @@ namespace Confluent.Kafka
             {
                 Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
             }
-            if (partitionerHandler != null)
-            {
-                Librdkafka.topic_conf_set_partitioner_cb(configPtr, partitionerCallbackDelegate);
-            }
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
+
+            if (this.partitioners?.Any() ?? false)
+            {
+                foreach (var partitioner in this.partitioners)
+                {
+                    var topicConfigHandle = SafeTopicConfigHandle.Create();
+                    IntPtr topicConfigPtr = topicConfigHandle.DangerousGetHandle();
+
+                    Librdkafka.PartitionerDelegate partitionerDelegate =
+                        (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt,
+                         IntPtr rkt_opaque, IntPtr msg_opaque) =>
+                    {
+                        if (this.ownedKafkaHandle.IsClosed) { return Partition.Any; }
+
+                        var topic = partitioner.Key;
+                        var providedPartitioner = partitioner.Value;
+
+                        return CallCustomPartitioner(topic, providedPartitioner, keydata, keylen, partition_cnt, rkt_opaque, msg_opaque);
+                    };
+
+                    this.partitionerCallbacks.Add(partitioner.Key, partitionerDelegate);
+
+                    // Set partitioner on the topic_conf...
+                    Librdkafka.topic_conf_set_partitioner_cb(topicConfigPtr, partitionerDelegate);
+
+                    // Associate topic_conf with topic
+                    // this also caches the topic handle (and topic_conf)
+                    this.ownedKafkaHandle.getKafkaTopicHandle(partitioner.Key, topicConfigPtr);
+
+                    // topic_conf ownership was transferred
+                    topicConfigHandle.SetHandleAsInvalid();
+                }
+            }
+
             configHandle.SetHandleAsInvalid(); // config object is no longer usable.
 
             if (!manualPoll)
@@ -682,8 +703,6 @@ namespace Confluent.Kafka
                     },
                     ex);
             }
-
-            topicPartition = GetPartition(topicPartition, message, message.Key, keyBytes, message.Value, valBytes);
 
             try
             {
@@ -806,8 +825,6 @@ namespace Confluent.Kafka
                 );
             }
 
-            topicPartition = GetPartition(topicPartition, message, message.Key, keyBytes, message.Value, valBytes);
-
             try
             {
                 ProduceImpl(
@@ -834,20 +851,16 @@ namespace Confluent.Kafka
             }
         }
 
-        private TopicPartition GetPartition(TopicPartition topicPartition, Message<TKey, TValue> message, TKey key, byte[] keyBytes, TValue value, byte[] valBytes)
+        private Partition CallCustomPartitioner(string topic, IPartitioner partitioner, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque)
         {
-            var newTopicPartition = topicPartition;
-
-            if (this.partitionerHandler != null && topicPartition.Partition == Partition.Any)
+            try
             {
-                var partition = this.partitionerHandler?.Invoke(new PartitionRequest<TKey, TValue>(message, key, keyBytes, value, valBytes));
-                if (partition.HasValue)
-                {
-                    newTopicPartition = new TopicPartition(topicPartition.Topic, partition.Value);
-                }
+                return partitioner.Partition(topic, keydata, keylen, partition_cnt, rkt_opaque, msg_opaque);
             }
-
-            return newTopicPartition;
+            catch
+            {
+                return Partition.Any;
+            }
         }
 
         private class TypedTaskDeliveryHandlerShim<K, V> : TaskCompletionSource<DeliveryResult<K, V>>, IDeliveryHandler

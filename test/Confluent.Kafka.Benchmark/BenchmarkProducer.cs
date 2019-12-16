@@ -30,7 +30,8 @@ namespace Confluent.Kafka.Benchmark
             int nMessages, 
             int nTests, 
             int nHeaders,
-            bool useDeliveryHandler)
+            bool useDeliveryHandler,
+            bool usePartitioner = false)
         {
             // mirrors the librdkafka performance test example.
             var config = new ProducerConfig
@@ -55,7 +56,14 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
 
-            using (var producer = new ProducerBuilder<Null, byte[]>(config).Build())
+            var producerBuilder = new ProducerBuilder<Null, byte[]>(config);
+
+            if (usePartitioner)
+            {
+                producerBuilder.SetPartitioner(topic, new BenchmarkPartioner(useAllPartitions: false));
+            }
+
+            using (var producer = producerBuilder.Build())
             {
                 for (var j=0; j<nTests; j += 1)
                 {
@@ -164,14 +172,14 @@ namespace Confluent.Kafka.Benchmark
         ///     Producer benchmark masquerading as an integration test.
         ///     Uses Task based produce method.
         /// </summary>
-        public static long TaskProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests)
-            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, false);
+        public static long TaskProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests, bool usePartitioner)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, useDeliveryHandler: false, usePartitioner: usePartitioner);
 
         /// <summary>
         ///     Producer benchmark (with custom delivery handler) masquerading
         ///     as an integration test. Uses Task based produce method.
         /// </summary>
-        public static long DeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests)
-            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, true);
+        public static long DeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests, bool usePartitioner)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, useDeliveryHandler: true, usePartitioner: usePartitioner);
     }
 }

@@ -46,9 +46,9 @@ namespace Confluent.Kafka
         internal protected Action<IProducer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
         /// <summary>
-        ///     The configured partitioner handler.
+        ///     The custom partitioners.
         /// </summary>
-        internal protected Func<IProducer<TKey, TValue>, PartitionRequest<TKey, TValue>, Partition> PartitionerHandler { get; set; }
+        internal protected Dictionary<string, IPartitioner> Partitioners { get; set; } = new Dictionary<string, IPartitioner>();
 
         /// <summary>
         ///     The configured key serializer.
@@ -84,9 +84,7 @@ namespace Confluent.Kafka
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
                     : stats => this.StatisticsHandler(producer, stats),
-                partitionerHandler = this.PartitionerHandler == null
-                    ? default(Func<PartitionRequest<TKey, TValue>, Partition>)
-                    : partitionRequest => this.PartitionerHandler(producer, partitionRequest)
+                partitioners = this.Partitioners,
             };
         }
 
@@ -126,19 +124,27 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Set the handler to be called when a <seealso cref="Partition"/> needs to be determined for a <seealso cref="Message{TKey, TValue}"/>.
+        ///     Set the partitioner to be called when a <seealso cref="Partition"/> needs to be determined for a <seealso cref="Message{TKey, TValue}"/>.
         /// </summary>
         /// <remarks>
         ///     This handler is only called when the <seealso cref="Message{TKey, TValue}"/>'s partition is set to <seealso cref="Partition.Any"/>.
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetPartitionRequestHandler(Func<IProducer<TKey, TValue>, PartitionRequest<TKey, TValue>, Partition> partitionerHandler)
+        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, IPartitioner partitioner)
         {
-            if (this.PartitionerHandler != null)
+            if (string.IsNullOrWhiteSpace(topic))
             {
-                throw new InvalidOperationException("PartitionRequest handler may not be specified more than once.");
+                throw new ArgumentNullException(nameof(topic));
             }
 
-            this.PartitionerHandler = partitionerHandler;
+            if (this.Partitioners.ContainsKey(topic))
+            {
+                this.Partitioners[topic] = partitioner;
+            }
+            else
+            {
+                this.Partitioners.Add(topic, partitioner);
+            }
+
             return this;
         }
 
