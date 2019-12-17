@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Examples.WordCount
     public class Program
     {
         /// <summary>
-        ///     Default timeout to use for transaction related operations.
+        ///     Default timeout used for transaction related operations.
         /// </summary>
         static TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
@@ -46,21 +46,21 @@ namespace Confluent.Kafka.Examples.WordCount
         /// <summary>
         ///     The name of the Kafka topic containing the input lines of text to count the words in.
         ///         * key = null
-        ///         * value = line of text: string
+        ///         * value = a line of text (type: string)
         /// </summary>
         const string Topic_InputLines = "line-input";
 
         /// <summary>
         ///     The name of the Kafka topic containing the stream of words to count.
-        ///         * key = individual words: string
+        ///         * key = individual words (type: string)
         ///         * value = null
         /// </summary>
         const string Topic_Words = "words";
 
         /// <summary>
         ///     The name of the Kafka topic containing the word count state [should be compacted].
-        ///         * key = word: string
-        ///         * value = count: int
+        ///         * key = word (type: string)
+        ///         * value = count (type: int)
         /// </summary>
         const string Topic_Counts = "counts";
 
@@ -185,8 +185,19 @@ namespace Confluent.Kafka.Examples.WordCount
             var TxnCommitPeriod = TimeSpan.FromSeconds(10);
 
             var lastTxnCommit = DateTime.Now;
-            using (var consumer = new ConsumerBuilder<Null, string>(cConfig).Build())
             using (var producer = new ProducerBuilder<string, Null>(pConfig).Build())
+            using (var consumer = new ConsumerBuilder<Null, string>(cConfig)
+                .SetPartitionsAssignedHandler((c, partitions) => {
+                    Console.WriteLine(
+                        "** MapWords consumer group rebalanced. Partition assignment: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "]");
+                    Console.WriteLine("Aborting current MapWords transaction.");
+                    producer.AbortTransaction(DefaultTimeout);
+                    c.Committed(c.Assignment, DefaultTimeout).ForEach(tpo => c.Seek(tpo));
+                    producer.BeginTransaction();
+                })
+                .Build())
             {
                 consumer.Subscribe(Topic_InputLines);
                 producer.InitTransactions(DefaultTimeout);
@@ -194,15 +205,17 @@ namespace Confluent.Kafka.Examples.WordCount
                 producer.BeginTransaction();
                 var offsets = new Dictionary<TopicPartition, Offset>();
                 var wCount = 0;
+                var lCount = 0;
                 while (true)
                 {
                     try
                     {
                         var cr = consumer.Consume(ct);
+                        lCount += 1;
 
                         offsets[cr.TopicPartition] = cr.Offset;
 
-                        var words = Regex.Split(cr.Value.ToLower(), @"[^a-zA-Z0-9_]").Where(s => s != String.Empty);
+                        var words = Regex.Split(cr.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
                         foreach (var w in words)
                         {
                             // todo: handle queue full exception.
@@ -216,7 +229,9 @@ namespace Confluent.Kafka.Examples.WordCount
                             producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_MapWords, DefaultTimeout);
                             offsets.Clear();
                             producer.CommitTransaction(DefaultTimeout);
-                            Console.WriteLine($"Committed MapWords transaction. total {wCount} words prouduced so far.");
+                            Console.WriteLine($"Committed MapWords transaction comprising {wCount} words from {lCount} lines.");
+                            wCount = 0;
+                            lCount = 0;
                             producer.BeginTransaction();
                         }
                     }
@@ -246,7 +261,7 @@ namespace Confluent.Kafka.Examples.WordCount
         ///     Materialize the count state in the Topic_Counts change log topic for the
         ///     specified partitions into a Dictionary&lt;string, int&gt;
         /// </summary>
-        public static void LoadCountState(RocksDb db, string brokerList, IEnumerable<Partition> partitions, CancellationToken ct)
+        public static void LoadCountState(RocksDb db, string brokerList, IEnumerable<Partition> partitions, ColumnFamilyHandle columnFamily, CancellationToken ct)
         {
             var cConfig = new ConsumerConfig
             {
@@ -255,6 +270,7 @@ namespace Confluent.Kafka.Examples.WordCount
                 EnablePartitionEof = true
             };
 
+            int msgCount = 0;
             using (var consumer = new ConsumerBuilder<string, int>(cConfig).Build())
             {
                 consumer.Assign(partitions.Select(p => new TopicPartitionOffset(Topic_Counts, p, Offset.Beginning)));
@@ -273,12 +289,13 @@ namespace Confluent.Kafka.Examples.WordCount
                     }
                     else
                     {
-                        db.Put(Encoding.UTF8.GetBytes(cr.Key), BitConverter.GetBytes(cr.Value));
+                        msgCount += 1;
+                        db.Put(Encoding.UTF8.GetBytes(cr.Key), BitConverter.GetBytes(cr.Value), columnFamily);
                     }
                 }
             }
 
-            Console.WriteLine($"Finished materializing word aggregate state.");
+            Console.WriteLine($"Finished materializing word counts state. Backed by {msgCount} messages in Kafka");
         }
 
 
@@ -310,15 +327,29 @@ namespace Confluent.Kafka.Examples.WordCount
                 MaxPollIntervalMs = 86400000
             };
 
+            var writeBatch = new WriteBatch();
+            ColumnFamilyHandle columnFamily = null;
             var lastTxnCommit = DateTime.Now;
             using (var producer = new ProducerBuilder<string, int>(pConfig).Build())
             using (var consumer = new ConsumerBuilder<string, Null>(cConfig)
                 .SetPartitionsAssignedHandler((c, partitions) => {
                     Console.WriteLine(
-                        " ### Consumer Group Rebalanced. Partition Assignment:" + string.Join(',', partitions.Select(p => p.Partition.Value)));
+                        "** AggregateWords consumer group rebalanced. Partition assignment: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "]");
+
+                    // clear rocksdb state.
                     db.DropColumnFamily("counts");
                     db.CreateColumnFamily(new ColumnFamilyOptions(), "counts");
-                    LoadCountState(db, brokerList, partitions.Select(p => p.Partition), ct);
+                    
+                    Console.WriteLine("Aborting current AggregateWords transaction.");
+                    producer.AbortTransaction(DefaultTimeout);
+                    c.Committed(c.Assignment, DefaultTimeout).ForEach(tpo => c.Seek(tpo));
+                    producer.BeginTransaction();
+                    writeBatch.Clear();
+
+                    columnFamily = db.GetColumnFamily("counts");
+                    LoadCountState(db, brokerList, partitions.Select(p => p.Partition), columnFamily, ct);
                 })
                 .Build())
             {
@@ -328,7 +359,6 @@ namespace Confluent.Kafka.Examples.WordCount
                 producer.BeginTransaction();
                 var offsets = new Dictionary<TopicPartition, Offset>();
                 var wCount = 0;
-                var writeBatch = new WriteBatch();
 
                 while (true)
                 {
@@ -338,11 +368,11 @@ namespace Confluent.Kafka.Examples.WordCount
                         offsets[cr.TopicPartition] = cr.Offset;
 
                         var kBytes = Encoding.UTF8.GetBytes(cr.Key);
-                        var vBytes = db.Get(kBytes);
+                        var vBytes = db.Get(kBytes, columnFamily);
                         var v = vBytes == null ? 0 : BitConverter.ToInt32(vBytes);
                         var updatedV = v+1;
 
-                        writeBatch.Put(kBytes, BitConverter.GetBytes(updatedV));
+                        writeBatch.Put(kBytes, BitConverter.GetBytes(updatedV), columnFamily);
 
                         while (true)
                         {
@@ -375,10 +405,12 @@ namespace Confluent.Kafka.Examples.WordCount
                         {
                             lastTxnCommit = DateTime.Now;
                             db.Write(writeBatch);
+                            writeBatch.Clear();
                             producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_Aggregate, DefaultTimeout);
                             offsets.Clear();
                             producer.CommitTransaction(DefaultTimeout);
-                            Console.WriteLine($"Committed word count txn. total words counted so far: {wCount}");
+                            Console.WriteLine($"Committed AggregateWords transaction comprising updates to {wCount} words.");
+                            wCount = 0;
                             producer.BeginTransaction();
                         }
                     }
@@ -407,38 +439,55 @@ namespace Confluent.Kafka.Examples.WordCount
             }
         }
 
-        public async static Task PeriodicallyDisplayTopCountsState(string brokerList, RocksDb db)
+        public async static Task PeriodicallyDisplayTopCountsState(string brokerList, RocksDb db, CancellationToken ct)
         {
             while (true)
             {
-                await Task.Delay(5000);
-                Console.WriteLine("First three words:\n");
-                var it = db.NewIterator().SeekToFirst();
-                var cnt = 0;
-                while (it.Valid() && cnt++ < 4) {
-                    Console.WriteLine($"{Encoding.UTF8.GetString(it.Key())} {BitConverter.ToInt32(it.Value())}\n");
+                await Task.Delay(10000, ct);
+                var it = db.NewIterator(db.GetColumnFamily("counts")).SeekToFirst();
+
+                var N = 5;
+                var maxWords = new List<(int, string)>();
+                while (it.Valid())
+                {
+                    var wc = (BitConverter.ToInt32(it.Value()), Encoding.UTF8.GetString(it.Key()));
+                    if (maxWords.Count < N) { maxWords.Add(wc); }
+                    else { if (wc.Item1 > maxWords[N-1].Item1) { maxWords[N-1] = wc; } }
+                    maxWords.Sort((x, y) => y.Item1.CompareTo(x.Item1));
                     it.Next();
                 }
-                Console.WriteLine("---\n");
+
+                if (maxWords.Count > 0) { Console.WriteLine("Most frequently occuring words known to this instance:"); }
+                foreach (var wc in maxWords)
+                {
+                    Console.WriteLine(" " + wc.Item2 + " " + wc.Item1);
+                }
             }
         }
 
         public static async Task Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length != 3)
             {
-                Console.WriteLine("Usage: .. brokerList client-id");
+                Console.WriteLine("Usage: .. brokerList [gen|proc] client-id");
                 return;
             }
 
             string brokerList = args[0];
-            string clientId = args[1];
+            string mode = args[1];
+            string clientId = args[2];
 
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };
+
+            if (mode == "gen")
+            {
+                await Generator_LineInputData(brokerList, cts.Token);
+                return;
+            }
 
             RocksDb db = null;
             try
@@ -453,33 +502,17 @@ namespace Confluent.Kafka.Examples.WordCount
 
                 await CreateTopicsMaybe(brokerList);
                 var processors = new List<Task>();
-                processors.Add(Task.Run(async () =>
-                    {
-                        try { await Generator_LineInputData(brokerList, cts.Token); }
-                        catch (Exception e) { Console.WriteLine("LineInputData failed: " + e.ToString()); }
-                    }));
-                processors.Add(Task.Run(() =>
-                    {
-                        try { Processor_MapWords(brokerList, clientId, cts.Token); }
-                        catch (Exception e) { Console.WriteLine("MapWords failed: " + e.ToString()); }
-                    }));
-                processors.Add(Task.Run(() =>
-                    {
-                        try { Processor_AggregateWords(brokerList, clientId, db, cts.Token); }
-                        catch (Exception e) { Console.WriteLine("Aggregate failed: " + e.ToString()); }
-                    }));
-                processors.Add(Task.Run(async () =>
-                    {
-                        try { await PeriodicallyDisplayTopCountsState(brokerList, db); }
-                        catch (Exception e) { Console.WriteLine("Count state display failed: " + e.ToString()); }
-                    }));
+                processors.Add(Task.Run(() => Processor_MapWords(brokerList, clientId, cts.Token)));
+                processors.Add(Task.Run(() => Processor_AggregateWords(brokerList, clientId, db, cts.Token)));
+                processors.Add(Task.Run(async () => await PeriodicallyDisplayTopCountsState(brokerList, db, cts.Token)));
 
-                await Task.WhenAny(processors.ToArray());
-                Console.WriteLine("exiting");
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine("\nApplication terminated.");
+                var allTasks = await Task.WhenAny(processors.ToArray());
+                if (allTasks.IsFaulted)
+                {
+                    Console.WriteLine(allTasks.Exception.InnerException.ToString());
+                }
+                
+                Console.WriteLine("exiting...");
             }
             finally
             {
