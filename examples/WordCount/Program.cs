@@ -21,15 +21,23 @@ using Confluent.Kafka.Admin;
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using RocksDbSharp;
 
-namespace Confluent.Kafka.Examples.ProducerExample
+
+namespace Confluent.Kafka.Examples.WordCount
 {
     public class Program
     {
+        /// <summary>
+        ///     Default timeout to use for transaction related operations.
+        /// </summary>
+        static TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
+
         /// <summary>
         ///     The numer of partitions we'll use for each topic.
         /// </summary>
@@ -181,7 +189,7 @@ namespace Confluent.Kafka.Examples.ProducerExample
             using (var producer = new ProducerBuilder<string, Null>(pConfig).Build())
             {
                 consumer.Subscribe(Topic_InputLines);
-                producer.InitTransactions(TimeSpan.FromSeconds(30));
+                producer.InitTransactions(DefaultTimeout);
 
                 producer.BeginTransaction();
                 var offsets = new Dictionary<TopicPartition, Offset>();
@@ -204,9 +212,10 @@ namespace Confluent.Kafka.Examples.ProducerExample
 
                         if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
                         {
-                            producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_MapWords);
+                            lastTxnCommit = DateTime.Now;
+                            producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_MapWords, DefaultTimeout);
                             offsets.Clear();
-                            producer.CommitTransaction(TimeSpan.FromSeconds(30));
+                            producer.CommitTransaction(DefaultTimeout);
                             Console.WriteLine($"Committed MapWords transaction. total {wCount} words prouduced so far.");
                             producer.BeginTransaction();
                         }
@@ -225,8 +234,8 @@ namespace Confluent.Kafka.Examples.ProducerExample
                         }
 
                         // else abortable.
-                        producer.AbortTransaction(TimeSpan.FromSeconds(30));
-                        consumer.Committed(consumer.Assignment, TimeSpan.FromSeconds(30)).ForEach(tpo => consumer.Seek(tpo));
+                        producer.AbortTransaction(DefaultTimeout);
+                        consumer.Committed(consumer.Assignment, DefaultTimeout).ForEach(tpo => consumer.Seek(tpo));
                     }
                 }
             }
@@ -237,10 +246,8 @@ namespace Confluent.Kafka.Examples.ProducerExample
         ///     Materialize the count state in the Topic_Counts change log topic for the
         ///     specified partitions into a Dictionary&lt;string, int&gt;
         /// </summary>
-        public static Dictionary<string, int> LoadCountState(string brokerList, IEnumerable<Partition> partitions, CancellationToken ct)
+        public static void LoadCountState(RocksDb db, string brokerList, IEnumerable<Partition> partitions, CancellationToken ct)
         {
-            Dictionary<string, int> counts = new Dictionary<string, int>();
-
             var cConfig = new ConsumerConfig
             {
                 BootstrapServers = brokerList,
@@ -266,17 +273,14 @@ namespace Confluent.Kafka.Examples.ProducerExample
                     }
                     else
                     {
-                        counts[cr.Key] = cr.Value;
+                        db.Put(Encoding.UTF8.GetBytes(cr.Key), BitConverter.GetBytes(cr.Value));
                     }
                 }
             }
 
-            Console.WriteLine($"Finished materializing count state for {counts.Count} words");
-            return counts;
+            Console.WriteLine($"Finished materializing word aggregate state.");
         }
 
-        static Dictionary<string, int> countState = new Dictionary<string, int>();
-        static object countLockObj = new object();
 
         /// <summary>
         ///     A transactional (exactly once) processing loop that reads individual words and updates 
@@ -285,8 +289,10 @@ namespace Confluent.Kafka.Examples.ProducerExample
         ///     When a rebalance occurs (including on startup), the total count state for all assigned
         ///     partitions is reloaded before the loop comences to update it.
         /// </summary>
-        public static void Processor_AggregateWords(string brokerList, string clientId, CancellationToken ct)
+        public static void Processor_AggregateWords(string brokerList, string clientId, RocksDb db, CancellationToken ct)
         {
+            var TxnCommitPeriod = TimeSpan.FromSeconds(10);
+
             var pConfig = new ProducerConfig
             {
                 BootstrapServers = brokerList,
@@ -304,26 +310,26 @@ namespace Confluent.Kafka.Examples.ProducerExample
                 MaxPollIntervalMs = 86400000
             };
 
-            var TxnCommitPeriod = TimeSpan.FromSeconds(10);
-
             var lastTxnCommit = DateTime.Now;
             using (var producer = new ProducerBuilder<string, int>(pConfig).Build())
             using (var consumer = new ConsumerBuilder<string, Null>(cConfig)
                 .SetPartitionsAssignedHandler((c, partitions) => {
-                    var cs = LoadCountState(brokerList, partitions.Select(p => p.Partition), ct);
-                    lock (countLockObj)
-                    {
-                        countState = cs;
-                    }
+                    Console.WriteLine(
+                        " ### Consumer Group Rebalanced. Partition Assignment:" + string.Join(',', partitions.Select(p => p.Partition.Value)));
+                    db.DropColumnFamily("counts");
+                    db.CreateColumnFamily(new ColumnFamilyOptions(), "counts");
+                    LoadCountState(db, brokerList, partitions.Select(p => p.Partition), ct);
                 })
                 .Build())
             {
                 consumer.Subscribe(Topic_Words);
-                producer.InitTransactions(TimeSpan.FromSeconds(30));
+                producer.InitTransactions(DefaultTimeout);
 
                 producer.BeginTransaction();
                 var offsets = new Dictionary<TopicPartition, Offset>();
                 var wCount = 0;
+                var writeBatch = new WriteBatch();
+
                 while (true)
                 {
                     try
@@ -331,21 +337,47 @@ namespace Confluent.Kafka.Examples.ProducerExample
                         var cr = consumer.Consume(ct);
                         offsets[cr.TopicPartition] = cr.Offset;
 
-                        lock (countLockObj)
-                        {
-                            if (!countState.ContainsKey(cr.Key)) { countState.Add(cr.Key, 0); }
-                            countState[cr.Key] += 1;
+                        var kBytes = Encoding.UTF8.GetBytes(cr.Key);
+                        var vBytes = db.Get(kBytes);
+                        var v = vBytes == null ? 0 : BitConverter.ToInt32(vBytes);
+                        var updatedV = v+1;
 
-                            // TODO: handle queue full exception.
-                            producer.Produce(Topic_Counts, new Message<string, int> { Key = cr.Key, Value = countState[cr.Key] });
-                            wCount += 1;
+                        writeBatch.Put(kBytes, BitConverter.GetBytes(updatedV));
+
+                        while (true)
+                        {
+                            try
+                            {
+                                // It's acceptable to omit checking delivery results (delivered to the
+                                // application via the optional callback passed to produce) for errors
+                                // because any problem they expose will also be covered by the call to
+                                // commit transactions.
+                                producer.Produce(Topic_Counts, new Message<string, int> { Key = cr.Key, Value = updatedV });
+                            }
+                            catch (KafkaException e)
+                            {
+                                // An immediate failure of the produce call is most often caused by the
+                                // local message queue being full, and appropriate response to that is 
+                                // to retry. Else: todo, good explanation.
+                                if (e.Error.Code == ErrorCode.Local_QueueFull)
+                                {
+                                    Thread.Sleep(TimeSpan.FromSeconds(1000));
+                                    continue;
+                                }
+                                throw;
+                            }
+                            break;
                         }
+
+                        wCount += 1;
 
                         if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
                         {
-                            producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_Aggregate);
+                            lastTxnCommit = DateTime.Now;
+                            db.Write(writeBatch);
+                            producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_Aggregate, DefaultTimeout);
                             offsets.Clear();
-                            producer.CommitTransaction(TimeSpan.FromSeconds(30));
+                            producer.CommitTransaction(DefaultTimeout);
                             Console.WriteLine($"Committed word count txn. total words counted so far: {wCount}");
                             producer.BeginTransaction();
                         }
@@ -358,32 +390,34 @@ namespace Confluent.Kafka.Examples.ProducerExample
                     catch (KafkaException e)
                     {
                         Console.WriteLine("AggregateWords error: " + e.ToString());
-                        if (e.Error.IsFatal)
-                        {
-                            throw;
-                        }
+                        if (e.Error.IsFatal) { throw; }
 
-                        // else abortable.
-                        producer.AbortTransaction(TimeSpan.FromSeconds(30));
-                        consumer.Committed(consumer.Assignment, TimeSpan.FromSeconds(30)).ForEach(tpo => consumer.Seek(tpo));
+                        try
+                        {
+                            producer.AbortTransaction(DefaultTimeout);
+                            consumer.Committed(consumer.Assignment, DefaultTimeout).ForEach(tpo => consumer.Seek(tpo));
+                        }
+                        catch
+                        {
+                            if (e.Error.IsFatal) { throw; }
+                            // TODO: unsure what is most appropriate here.
+                        }
                     }
                 }
             }
         }
 
-        public async static Task PeriodicallyDisplayTopCountsState(string brokerList)
+        public async static Task PeriodicallyDisplayTopCountsState(string brokerList, RocksDb db)
         {
             while (true)
             {
                 await Task.Delay(5000);
-                lock (countLockObj)
-                {
-                    var countCount = 0;
-                    foreach (var oc in countState.OrderBy(a => a.Value).Reverse())
-                    {
-                        if (countCount++ > 3) { break; }
-                        Console.WriteLine(oc.Key + ": " + oc.Value);
-                    }
+                Console.WriteLine("First three words:\n");
+                var it = db.NewIterator().SeekToFirst();
+                var cnt = 0;
+                while (it.Valid() && cnt++ < 4) {
+                    Console.WriteLine($"{Encoding.UTF8.GetString(it.Key())} {BitConverter.ToInt32(it.Value())}\n");
+                    it.Next();
                 }
                 Console.WriteLine("---\n");
             }
@@ -391,8 +425,6 @@ namespace Confluent.Kafka.Examples.ProducerExample
 
         public static async Task Main(string[] args)
         {
-            Confluent.Kafka.Library.Load("/usr/local/lib/librdkafka.so");
-
             if (args.Length != 2)
             {
                 Console.WriteLine("Usage: .. brokerList client-id");
@@ -408,53 +440,38 @@ namespace Confluent.Kafka.Examples.ProducerExample
                 cts.Cancel();
             };
 
+            RocksDb db = null;
             try
             {
+                var options = new DbOptions()
+                    .SetCreateIfMissing(true)
+                    .SetCreateMissingColumnFamilies(true);
+
+                var columnFamilies = new ColumnFamilies { { "counts", new ColumnFamilyOptions() } };
+
+                db = RocksDb.Open(options, System.IO.Path.Join(System.IO.Path.GetTempPath(), "rocksdb_" + Guid.NewGuid().ToString()), columnFamilies);
+
                 await CreateTopicsMaybe(brokerList);
                 var processors = new List<Task>();
                 processors.Add(Task.Run(async () =>
                     {
-                        try
-                        {
-                            await Generator_LineInputData(brokerList, cts.Token);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("LineInputData failed: " + e.ToString());
-                        }
+                        try { await Generator_LineInputData(brokerList, cts.Token); }
+                        catch (Exception e) { Console.WriteLine("LineInputData failed: " + e.ToString()); }
                     }));
                 processors.Add(Task.Run(() =>
                     {
-                        try
-                        {
-                            Processor_MapWords(brokerList, clientId, cts.Token);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("MapWords failed: " + e.ToString());
-                        }
+                        try { Processor_MapWords(brokerList, clientId, cts.Token); }
+                        catch (Exception e) { Console.WriteLine("MapWords failed: " + e.ToString()); }
                     }));
                 processors.Add(Task.Run(() =>
                     {
-                        try
-                        {
-                            Processor_AggregateWords(brokerList, clientId, cts.Token);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Aggregate failed: " + e.ToString());
-                        }
+                        try { Processor_AggregateWords(brokerList, clientId, db, cts.Token); }
+                        catch (Exception e) { Console.WriteLine("Aggregate failed: " + e.ToString()); }
                     }));
                 processors.Add(Task.Run(async () =>
                     {
-                        try
-                        {
-                            await PeriodicallyDisplayTopCountsState(brokerList);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Count state display failed: " + e.ToString());
-                        }
+                        try { await PeriodicallyDisplayTopCountsState(brokerList, db); }
+                        catch (Exception e) { Console.WriteLine("Count state display failed: " + e.ToString()); }
                     }));
 
                 await Task.WhenAny(processors.ToArray());
@@ -463,6 +480,10 @@ namespace Confluent.Kafka.Examples.ProducerExample
             catch (OperationCanceledException)
             {
                 Console.WriteLine("\nApplication terminated.");
+            }
+            finally
+            {
+                if (db != null) { db.Dispose(); }
             }
         }
     }

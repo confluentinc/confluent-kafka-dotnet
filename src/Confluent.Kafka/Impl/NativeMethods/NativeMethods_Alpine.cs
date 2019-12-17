@@ -232,7 +232,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_send_offsets_to_transaction(
                 IntPtr rk, IntPtr offsets, string consumer_group,
-                StringBuilder errstr, UIntPtr errstr_size);
+                int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern SafeKafkaHandle rd_kafka_new(

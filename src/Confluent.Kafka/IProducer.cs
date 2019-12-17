@@ -316,6 +316,6 @@ namespace Confluent.Kafka
         /// <param name="group">
         ///     
         /// </param>
-        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group);
+        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, TimeSpan timespan);
     }
 }

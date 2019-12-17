@@ -530,12 +530,12 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group)
+        internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, int millisecondsTimeout)
         {
             IntPtr offsetsPtr = GetCTopicPartitionList(offsets);
 
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var errorCode = Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, group, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            var errorCode = Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, group, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
             if (errorCode != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));                
