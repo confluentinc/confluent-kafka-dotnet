@@ -33,9 +33,9 @@ client. Thanks Andreas!
 
 ## Documentation
 
-* [Github Wiki](https://github.com/confluentinc/confluent-kafka-dotnet/wiki)
+* [Wiki](https://github.com/confluentinc/confluent-kafka-dotnet/wiki)
 * [Blog Posts and Presentations](https://github.com/confluentinc/confluent-kafka-dotnet/wiki/Presentations-&-Blogs)
-* [Hosted by Confluent](https://docs.confluent.io/current/clients/dotnet.html)
+* [Official (and usually outdated) .NET client documentation](https://docs.confluent.io/current/clients/dotnet.html)
 * [API Reference](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.html)
 
 
