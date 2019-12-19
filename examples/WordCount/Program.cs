@@ -171,7 +171,6 @@ namespace Confluent.Kafka.Examples.WordCount
             var pConfig = new ProducerConfig
             {
                 BootstrapServers = brokerList,
-                EnableIdempotence = true,
                 TransactionalId = TransactionalId_MapWords + "-" + clientId
             };
 
@@ -179,7 +178,9 @@ namespace Confluent.Kafka.Examples.WordCount
             {
                 BootstrapServers = brokerList,
                 GroupId = ConsumerGroup_MapWords,
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                AutoOffsetReset = AutoOffsetReset.Earliest,
+                // offsets are committed using the 
+                EnableAutoCommit = false,
             };
 
             var TxnCommitPeriod = TimeSpan.FromSeconds(10);
@@ -203,7 +204,7 @@ namespace Confluent.Kafka.Examples.WordCount
                 producer.InitTransactions(DefaultTimeout);
 
                 producer.BeginTransaction();
-                var offsets = new Dictionary<TopicPartition, Offset>();
+                var consumedOffsets = new Dictionary<TopicPartition, Offset>();
                 var wCount = 0;
                 var lCount = 0;
                 while (true)
@@ -213,7 +214,7 @@ namespace Confluent.Kafka.Examples.WordCount
                         var cr = consumer.Consume(ct);
                         lCount += 1;
 
-                        offsets[cr.TopicPartition] = cr.Offset;
+                        consumedOffsets[cr.TopicPartition] = cr.Offset;
 
                         var words = Regex.Split(cr.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
                         foreach (var w in words)
@@ -226,8 +227,12 @@ namespace Confluent.Kafka.Examples.WordCount
                         if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
                         {
                             lastTxnCommit = DateTime.Now;
-                            producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_MapWords, DefaultTimeout);
-                            offsets.Clear();
+                            producer.SendOffsetsToTransaction(
+                                consumedOffsets.Select(
+                                    // Note: committed offsets reflect next message to consume, not last message consumed.
+                                    o => new TopicPartitionOffset(o.Key, o.Value + 1)
+                                ), ConsumerGroup_MapWords, DefaultTimeout);
+                            consumedOffsets.Clear();
                             producer.CommitTransaction(DefaultTimeout);
                             Console.WriteLine($"Committed MapWords transaction comprising {wCount} words from {lCount} lines.");
                             wCount = 0;
@@ -313,7 +318,6 @@ namespace Confluent.Kafka.Examples.WordCount
             var pConfig = new ProducerConfig
             {
                 BootstrapServers = brokerList,
-                EnableIdempotence = true,
                 TransactionalId = TransactionalId_Aggregate + "-" + clientId
             };
 
@@ -324,7 +328,8 @@ namespace Confluent.Kafka.Examples.WordCount
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 // This should be greater than the maximum amount of time required to read in
                 // existing count state.
-                MaxPollIntervalMs = 86400000
+                MaxPollIntervalMs = 86400000,
+                EnableAutoCommit = false
             };
 
             var writeBatch = new WriteBatch();
@@ -357,7 +362,7 @@ namespace Confluent.Kafka.Examples.WordCount
                 producer.InitTransactions(DefaultTimeout);
 
                 producer.BeginTransaction();
-                var offsets = new Dictionary<TopicPartition, Offset>();
+                var consumedOffsets = new Dictionary<TopicPartition, Offset>();
                 var wCount = 0;
 
                 while (true)
@@ -365,7 +370,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     try
                     {
                         var cr = consumer.Consume(ct);
-                        offsets[cr.TopicPartition] = cr.Offset;
+                        consumedOffsets[cr.TopicPartition] = cr.Offset;
 
                         var kBytes = Encoding.UTF8.GetBytes(cr.Key);
                         var vBytes = db.Get(kBytes, columnFamily);
@@ -406,8 +411,12 @@ namespace Confluent.Kafka.Examples.WordCount
                             lastTxnCommit = DateTime.Now;
                             db.Write(writeBatch);
                             writeBatch.Clear();
-                            producer.SendOffsetsToTransaction(offsets.Select(a => new TopicPartitionOffset(a.Key, a.Value)), ConsumerGroup_Aggregate, DefaultTimeout);
-                            offsets.Clear();
+                            producer.SendOffsetsToTransaction(
+                                consumedOffsets.Select(
+                                    // Note: committed offsets reflect next message to consume, not last message consumed.
+                                    o => new TopicPartitionOffset(o.Key, o.Value + 1)
+                                ), ConsumerGroup_Aggregate, DefaultTimeout);
+                            consumedOffsets.Clear();
                             producer.CommitTransaction(DefaultTimeout);
                             Console.WriteLine($"Committed AggregateWords transaction comprising updates to {wCount} words.");
                             wCount = 0;
