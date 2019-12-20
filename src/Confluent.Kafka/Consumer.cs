@@ -386,6 +386,14 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Committed(TimeSpan)" />
+        /// </summary>
+        public List<TopicPartitionOffset> Committed(TimeSpan timeout)
+            // TODO: use a librdkafka queue for this.
+            => kafkaHandle.Committed(Assignment, (IntPtr)timeout.TotalMillisecondsAsInt());
+
+
+        /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Committed(IEnumerable{TopicPartition}, TimeSpan)" />
         /// </summary>
         public List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)

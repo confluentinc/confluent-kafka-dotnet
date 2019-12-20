@@ -440,6 +440,35 @@ namespace Confluent.Kafka
         void Resume(IEnumerable<TopicPartition> partitions);
 
 
+
+        /// <summary>
+        ///     Retrieve current committed offsets for the
+        ///     current assignment.
+        ///
+        ///     The offset field of each requested partition
+        ///     will be set to the offset of the last consumed
+        ///     message, or Offset.Unset in case there was no
+        ///     previous message, or, alternately a partition
+        ///     specific error may also be returned.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call
+        ///     may block.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the
+        ///     <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        List<TopicPartitionOffset> Committed(TimeSpan timeout);
+
+
         /// <summary>
         ///     Retrieve current committed offsets for the
         ///     specified topic partitions.

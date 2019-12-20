@@ -195,7 +195,7 @@ namespace Confluent.Kafka.Examples.WordCount
                         "]");
                     Console.WriteLine("Aborting current MapWords transaction.");
                     producer.AbortTransaction(DefaultTimeout);
-                    c.Committed(c.Assignment, DefaultTimeout).ForEach(tpo => c.Seek(tpo));
+                    c.Committed(DefaultTimeout).ForEach(tpo => c.Seek(tpo));
                     producer.BeginTransaction();
                 })
                 .Build())
@@ -255,7 +255,7 @@ namespace Confluent.Kafka.Examples.WordCount
 
                         // else abortable.
                         producer.AbortTransaction(DefaultTimeout);
-                        consumer.Committed(consumer.Assignment, DefaultTimeout).ForEach(tpo => consumer.Seek(tpo));
+                        consumer.Committed(DefaultTimeout).ForEach(tpo => consumer.Seek(tpo));
                     }
                 }
             }
@@ -349,7 +349,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     
                     Console.WriteLine("Aborting current AggregateWords transaction.");
                     producer.AbortTransaction(DefaultTimeout);
-                    c.Committed(c.Assignment, DefaultTimeout).ForEach(tpo => c.Seek(tpo));
+                    c.Committed(DefaultTimeout).ForEach(tpo => c.Seek(tpo));
                     producer.BeginTransaction();
                     writeBatch.Clear();
 
@@ -436,7 +436,7 @@ namespace Confluent.Kafka.Examples.WordCount
                         try
                         {
                             producer.AbortTransaction(DefaultTimeout);
-                            consumer.Committed(consumer.Assignment, DefaultTimeout).ForEach(tpo => consumer.Seek(tpo));
+                            consumer.Committed(DefaultTimeout).ForEach(tpo => consumer.Seek(tpo));
                         }
                         catch
                         {
