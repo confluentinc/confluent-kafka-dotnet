@@ -294,9 +294,8 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 /* rd_kafka_topic_partition_list_t ** */ out IntPtr topics);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_offsets_store(
-                IntPtr rk,
-                /* const rd_kafka_topic_partition_list_t * */ IntPtr offsets);
+        internal static extern ErrorCode rd_kafka_offset_store(
+                IntPtr rk, int partition, long offset);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_commit(

@@ -675,23 +675,15 @@ namespace Confluent.Kafka.Impl
         }
 
 
-        internal void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
+        internal void StoreOffset(TopicPartitionOffset offset)
         {
             ThrowIfHandleClosed();
 
-            IntPtr cOffsets = GetCTopicPartitionList(offsets);
-            ErrorCode err = Librdkafka.offsets_store(handle, cOffsets);
-            var results = GetTopicPartitionOffsetErrorList(cOffsets);
-            Librdkafka.topic_partition_list_destroy(cOffsets);
+            ErrorCode err = Librdkafka.offset_store(handle, offset.Partition, offset.Offset);
 
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
-            }
-
-            if (results.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
-            {
-                throw new TopicPartitionOffsetException(results);
             }
         }
 

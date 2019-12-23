@@ -322,16 +322,7 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.StoreOffset(TopicPartitionOffset)" />
         /// </summary>
         public void StoreOffset(TopicPartitionOffset offset)
-        {
-            try
-            {
-                kafkaHandle.StoreOffsets(new [] { offset });
-            }
-            catch (TopicPartitionOffsetException e)
-            {
-                throw new KafkaException(e.Results[0].Error);
-            }
-        }
+            => kafkaHandle.StoreOffset(offset);
 
 
         /// <summary>

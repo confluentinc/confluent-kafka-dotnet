@@ -199,7 +199,7 @@ namespace Confluent.Kafka.Impl
             _consumer_close = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_consumer_close").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _assign = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_assign").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _assignment = (Assignment)methods.Single(m => m.Name == "rd_kafka_assignment").CreateDelegate(typeof(Assignment));
-            _offsets_store = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_offsets_store").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _offset_store = (Func<IntPtr, int, long, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_offset_store").CreateDelegate(typeof(Func<IntPtr, int, long, ErrorCode>));
             _commit = (Func<IntPtr, IntPtr, bool, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_commit").CreateDelegate(typeof(Func<IntPtr, IntPtr, bool, ErrorCode>));
             _commit_queue = (Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_commit_queue").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, CommitDelegate, IntPtr, ErrorCode>));
             _committed = (Func<IntPtr, IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_committed").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, ErrorCode>));
@@ -761,9 +761,9 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode assignment(IntPtr rk, out IntPtr topics)
             => _assignment(rk, out topics);
 
-        private static Func<IntPtr, IntPtr, ErrorCode> _offsets_store;
-        internal static ErrorCode offsets_store(IntPtr rk, IntPtr offsets)
-            => _offsets_store(rk, offsets);
+        private static Func<IntPtr, int, long, ErrorCode> _offset_store;
+        internal static ErrorCode offset_store(IntPtr rk, int partition, long offset)
+            => _offset_store(rk, partition, offset);
 
         private static Func<IntPtr, IntPtr, bool, ErrorCode> _commit;
         internal static ErrorCode commit(IntPtr rk, IntPtr offsets, bool async)
