@@ -9,10 +9,12 @@
 ## Changes
 
 - Deprecated properties of `SchemaRegistryConfig` with the (superfluous) prefix `SchemaRegistry`. Added corresponding properties without this prefix.
+- The methods `AddBrokers`, `Assign`, `ListGroups`, `CreatePartitions`, `DeleteTopics`, and `CreateTopics` now throw `ArgumentException` (or derivatives) appropriately. Thanks to [johnsoncore](https://github.com/johnsoncore) for this improvement.
 
 ## Fixes
 
 - Resolved issue [993](https://github.com/confluentinc/confluent-kafka-dotnet/issues/993) whereby `RestService` was unable to communicate with Schema Registry hosted on a non-root path. Thanks to [@jonathansant](https://github.com/jonathansant) for this fix.
+- After `linger.ms` was changed from `int` to `double` in librdkafka v1.2.0, this property was errantly expecting a non-existant enum type in the .NET Client. Thanks to [lorienpatt](https://github.com/lorienpatt) for the fix.
 
 
 # 1.2.1
