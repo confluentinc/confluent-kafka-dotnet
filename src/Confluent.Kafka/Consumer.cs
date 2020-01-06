@@ -78,22 +78,44 @@ namespace Confluent.Kafka
 
         private SafeKafkaHandle kafkaHandle;
 
+        // .NET Exceptions are not propagated through native code, so we need to
+        // do this book keeping explicitly.
+        private Exception handlerException = null;
+
         private Action<Error> errorHandler;
         private Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            errorHandler?.Invoke(kafkaHandle.CreatePossiblyFatalError(err, reason));
+            try
+            {
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                errorHandler?.Invoke(kafkaHandle.CreatePossiblyFatalError(err, reason));
+            }
+            catch (Exception)
+            {
+                // Eat any exception thrown by user error handler code. Although these could be 
+                // exposed to the application via the initiating function call easily enough,
+                // they aren't for consistency with the producer (where the poll method is called)
+                // on a background thread.
+            }
         }
 
         private Action<string> statisticsHandler;
         private Librdkafka.StatsDelegate statisticsCallbackDelegate;
         private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-            statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            try
+            {
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
+            
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -102,10 +124,17 @@ namespace Confluent.Kafka
         private Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
-            logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            try
+            {
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
+                logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            }
+            catch (Exception)
+            {
+                // Eat any exception thrown by user log handler code.
+            }
         }
 
         private Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
@@ -117,77 +146,84 @@ namespace Confluent.Kafka
             IntPtr partitions,
             IntPtr opaque)
         {
-            var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
-
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            if (kafkaHandle.IsClosed)
-            { 
-                // The RebalanceCallback should never be invoked as a side effect of Dispose.
-                // If for some reason flow of execution gets here, something is badly wrong. 
-                // (and we have a closed librdkafka handle that is expecting an assign call...)
-                throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
-            }
-
-            if (err == ErrorCode.Local_AssignPartitions)
+            try
             {
-                if (partitionsAssignedHandler == null)
+                var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
+
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                if (kafkaHandle.IsClosed)
+                { 
+                    // The RebalanceCallback should never be invoked as a side effect of Dispose.
+                    // If for some reason flow of execution gets here, something is badly wrong. 
+                    // (and we have a closed librdkafka handle that is expecting an assign call...)
+                    throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
+                }
+
+                if (err == ErrorCode.Local_AssignPartitions)
                 {
-                    Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                    if (partitionsAssignedHandler == null)
+                    {
+                        Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                        return;
+                    }
+
+                    lock (assignCallCountLockObj) { assignCallCount = 0; }
+                    var assignTo = partitionsAssignedHandler(partitionAssignment);
+                    lock (assignCallCountLockObj)
+                    {
+                        if (assignCallCount > 0)
+                        {
+                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
+                        }
+                    }
+                    Assign(assignTo);
                     return;
                 }
-
-                lock (assignCallCountLockObj) { assignCallCount = 0; }
-                var assignTo = partitionsAssignedHandler(partitionAssignment);
-                lock (assignCallCountLockObj)
+                
+                if (err == ErrorCode.Local_RevokePartitions)
                 {
-                    if (assignCallCount > 0)
+                    if (partitionsRevokedHandler == null)
                     {
-                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
+                        Unassign();
+                        return;
                     }
-                }
-                Assign(assignTo);
-                return;
-            }
-            
-            if (err == ErrorCode.Local_RevokePartitions)
-            {
-                if (partitionsRevokedHandler == null)
-                {
-                    Unassign();
+
+                    var assignmentWithPositions = new List<TopicPartitionOffset>();
+                    foreach (var tp in partitionAssignment)
+                    {
+                        try
+                        {
+                            assignmentWithPositions.Add(new TopicPartitionOffset(tp, Position(tp)));
+                        }
+                        catch
+                        {
+                            assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
+                        }
+                    }
+
+                    lock (assignCallCountLockObj) { assignCallCount = 0; }
+                    var assignTo = partitionsRevokedHandler(assignmentWithPositions);
+                    lock (assignCallCountLockObj)
+                    {
+                        if (assignCallCount > 0)
+                        {
+                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
+                        }
+                    }
+
+                    // This distinction is important because calling Assign whilst the consumer is being
+                    // closed (which will generally trigger this callback) is disallowed.
+                    if (assignTo.Count() > 0) { Assign(assignTo); }
+                    else { Unassign(); }
                     return;
                 }
-
-                var assignmentWithPositions = new List<TopicPartitionOffset>();
-                foreach (var tp in partitionAssignment)
-                {
-                    try
-                    {
-                        assignmentWithPositions.Add(new TopicPartitionOffset(tp, Position(tp)));
-                    }
-                    catch
-                    {
-                        assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
-                    }
-                }
-
-                lock (assignCallCountLockObj) { assignCallCount = 0; }
-                var assignTo = partitionsRevokedHandler(assignmentWithPositions);
-                lock (assignCallCountLockObj)
-                {
-                    if (assignCallCount > 0)
-                    {
-                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
-                    }
-                }
-
-                // This distinction is important because calling Assign whilst the consumer is being
-                // closed (which will generally trigger this callback) is disallowed.
-                if (assignTo.Count() > 0) { Assign(assignTo); }
-                else { Unassign(); }
-                return;
+                
+                throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
             }
-            
-            throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
         }
 
         private Action<CommittedOffsets> offsetsCommittedHandler;
@@ -201,10 +237,17 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
 
-            offsetsCommittedHandler?.Invoke(new CommittedOffsets(
-                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
-                kafkaHandle.CreatePossiblyFatalError(err, null)
-            ));
+            try
+            {
+                offsetsCommittedHandler?.Invoke(new CommittedOffsets(
+                    SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
+                    kafkaHandle.CreatePossiblyFatalError(err, null)
+                ));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
         }
 
         private static byte[] KeyAsByteArray(rd_kafka_message msg)
@@ -476,6 +519,12 @@ namespace Confluent.Kafka
         {
             // commits offsets and unsubscribes.
             kafkaHandle.ConsumerClose();
+            if (this.handlerException != null)
+            {
+                var ex = this.handlerException;
+                this.handlerException = null;
+                throw ex;
+            }
 
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -668,6 +717,18 @@ namespace Confluent.Kafka
         public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
+
+            if (this.handlerException != null)
+            {
+                var ex = this.handlerException;
+                this.handlerException = null;
+                if (msgPtr != IntPtr.Zero)
+                {
+                    Librdkafka.message_destroy(msgPtr);
+                }
+                throw ex;
+            }
+
             if (msgPtr == IntPtr.Zero)
             {
                 return null;

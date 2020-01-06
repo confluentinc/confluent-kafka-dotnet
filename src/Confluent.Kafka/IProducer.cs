@@ -63,7 +63,8 @@ namespace Confluent.Kafka
         /// </exception>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            Message<TKey, TValue> message);
+            Message<TKey, TValue> message,
+            CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>
@@ -94,7 +95,8 @@ namespace Confluent.Kafka
         /// </exception>
         Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            Message<TKey, TValue> message);
+            Message<TKey, TValue> message,
+            CancellationToken cancellationToken = default(CancellationToken));
 
 
         /// <summary>

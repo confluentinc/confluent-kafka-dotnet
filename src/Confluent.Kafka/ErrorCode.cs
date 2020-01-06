@@ -296,17 +296,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Unknown broker
         /// </summary>
-        ERR__UNKNOWN_BROKER = -146,
+        Local_UnknownBroker = -146,
 
         /// <summary>
         ///     Functionality not configured
         /// </summary>
-        ERR__NOT_CONFIGURED = -145,
+        Local_NotConfigured = -145,
 
         /// <summary>
         ///     Instance has been fenced
         /// </summary>
-        ERR__FENCED = -144,
+        Local_Fenced = -144,
+
+        /// <summary>
+        ///     Application generated exception.
+        /// </summary>
+        Local_Application = -143,
 
 
 

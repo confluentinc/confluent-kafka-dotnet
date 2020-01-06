@@ -30,7 +30,7 @@ namespace Confluent.Kafka
         ///     Initialize a new instance of KafkaException based on 
         ///     an existing Error instance.
         /// </summary>
-        /// <param name="error"> 
+        /// <param name="error">
         ///     The Kafka Error.
         /// </param>
         public KafkaException(Error error)
