@@ -2,7 +2,14 @@
 
 ## Enhancements
 
-- Transactions! 
+- References librdkafka v1.4.0-PRE4. Refer to the [release notes](...) for more information. Headline features:
+  - Producer support for transactions ([@edenhill](https://github.com/edenhill)). This is the final piece in the puzzle required to enable exactly once stream processing in .NET.
+  - Static group membership ([@rnpridgeon](https://github.com/rnpridgeon)).
+- Added a [WordCount](...) example demonstrating a streaming map-reduce application with exactly-once processing.
+- Added a `CancellationToken` parameter to the `ProduceAsync` methods.
+- Uncaught exceptions thrown in handlers are now propagated to the initiating function, or ignored. Previously, they would cause the application to terminate.
+
+## Fixes
 
 
 # 1.3.0
