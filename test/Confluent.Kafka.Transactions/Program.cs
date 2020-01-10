@@ -24,7 +24,6 @@ namespace Confluent.Kafka.Transactions
                 randomSeedBase: 1, // 0 causes consumer hang.
                 maxRunLength: 10,
                 maxPause: 0.2,
-                probability_producerStateChange: 0.5,
                 probability_abort: 0.4);
 
             var tasks = new List<Task>();

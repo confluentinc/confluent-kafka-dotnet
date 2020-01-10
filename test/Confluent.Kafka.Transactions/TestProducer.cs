@@ -41,15 +41,16 @@ namespace Confluent.Kafka.Transactions
 
             for (int i=0; i<conf.MessageCount;)
             {
+                Console.Write($"+{i}");
+                Console.Out.Flush();
+
                 // finalize previous state.
                 switch (currentState)
                 {
                     case ProducerState.MakingMessagesToAbort:
-                        // Console.WriteLine("Aborting");
                         producer.AbortTransaction(DefaultTimeout);
                         break;
                     case ProducerState.MakingMessagesToCommit:
-                        // Console.WriteLine("Committing");
                         producer.CommitTransaction(DefaultTimeout);
                         break;
                     default:
@@ -67,7 +68,6 @@ namespace Confluent.Kafka.Transactions
                 for (int j=0; j<runLength && i < conf.MessageCount; ++j, ++i)
                 {
                     int val = currentState == ProducerState.MakingMessagesToCommit ? lastMessageValue++ : -1;
-                    // Console.WriteLine(currentState + " " + val);
                     Thread.Sleep((int)(1000 * conf.MaxPauseSeconds));
                     producer.Produce(conf.Topic, new Message<int, int> { Key = id, Value = val });
                 }

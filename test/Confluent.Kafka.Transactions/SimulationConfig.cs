@@ -9,7 +9,6 @@ namespace Confluent.Kafka.Transactions
             int randomSeedBase,
             int maxRunLength,
             double maxPause,
-            double probability_producerStateChange,
             double probability_abort)
         {
             Topic = topic;
