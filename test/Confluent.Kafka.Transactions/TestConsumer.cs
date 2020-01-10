@@ -24,7 +24,8 @@ namespace Confluent.Kafka.Transactions
                 BootstrapServers = bootstrapServers,
                 GroupId = Guid.NewGuid().ToString(),
                 AutoOffsetReset = AutoOffsetReset.Earliest,
-                IsolationLevel = IsolationLevel.ReadCommitted
+                IsolationLevel = IsolationLevel.ReadCommitted,
+            //    Debug = "all"
             };
 
             var lasts = new Dictionary<int, int>();
@@ -38,6 +39,7 @@ namespace Confluent.Kafka.Transactions
                 while (true)
                 {
                     var cr = consumer.Consume();
+
                     if (!lasts.ContainsKey(cr.Key)) { lasts.Add(cr.Key, -1); }
                     if (cr.Value == lasts[cr.Key] + 1) { Console.Write("."); }
                     else { Console.Write($"[producer {cr.Key} expected seq {lasts[cr.Key]+1} but got {cr.Value}]"); break; }
@@ -56,7 +58,6 @@ namespace Confluent.Kafka.Transactions
                     consumer.Close();
                     consumer.Dispose();
                 }
-                Console.WriteLine("#################### !!!!!!!!!!!!!!!!!!!! ################ !!!!!!!!!!!!!!!!!!!");
                 Console.WriteLine("Consume loop exited...");
             }
         }
