@@ -654,10 +654,7 @@ namespace Confluent.Kafka
         }
 
 
-        private ConsumeResult<K, V> ConsumeImpl<K,V>(
-            int millisecondsTimeout,
-            IDeserializer<K> keyDeserializer,
-            IDeserializer<V> valueDeserializer)
+        private ConsumeResult<TKey, TValue> ConsumeImpl(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -680,7 +677,7 @@ namespace Confluent.Kafka
 
                 if (msg.err == ErrorCode.Local_PartitionEOF)
                 {
-                    return new ConsumeResult<K, V>
+                    return new ConsumeResult<TKey, TValue>
                     {
                         TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                         Message = null,
@@ -740,7 +737,7 @@ namespace Confluent.Kafka
                         kafkaHandle.CreatePossiblyFatalError(msg.err, null));
                 }
 
-                K key;
+                TKey key;
                 try
                 {
                     unsafe
@@ -772,7 +769,7 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                V val;
+                TValue val;
                 try
                 {
                     unsafe
@@ -804,10 +801,10 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                return new ConsumeResult<K, V> 
+                return new ConsumeResult<TKey, TValue> 
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
-                    Message = new Message<K, V>
+                    Message = new Message<TKey, TValue>
                     {
                         Timestamp = timestamp,
                         Headers = headers,
@@ -834,7 +831,7 @@ namespace Confluent.Kafka
                 // Note: An alternative to throwing on cancellation is to return null,
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
-                ConsumeResult<TKey, TValue> result = ConsumeImpl<TKey, TValue>(cancellationDelayMaxMs, keyDeserializer, valueDeserializer);
+                ConsumeResult<TKey, TValue> result = ConsumeImpl(cancellationDelayMaxMs);
                 if (result == null)
                 {
                     continue;
@@ -848,6 +845,6 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(TimeSpan)" />
         /// </summary>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
-            => ConsumeImpl<TKey, TValue>(timeout.TotalMillisecondsAsInt(), keyDeserializer, valueDeserializer);
+            => ConsumeImpl(timeout.TotalMillisecondsAsInt());
     }
 }
