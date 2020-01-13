@@ -664,7 +664,7 @@ namespace Confluent.Kafka
             {
                 if (enableDeliveryReports)
                 {
-                    var handler = new TypedTaskDeliveryHandlerShim<TKey, TValue>(
+                    var handler = new TypedTaskDeliveryHandlerShim(
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
@@ -789,7 +789,7 @@ namespace Confluent.Kafka
                     keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                     message.Timestamp, topicPartition.Partition, 
                     message.Headers,
-                    new TypedDeliveryHandlerShim_Action<TKey, TValue>(
+                    new TypedDeliveryHandlerShim_Action(
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue),
@@ -807,9 +807,9 @@ namespace Confluent.Kafka
             }
         }
 
-        private class TypedTaskDeliveryHandlerShim<K, V> : TaskCompletionSource<DeliveryResult<K, V>>, IDeliveryHandler
+        private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<DeliveryResult<TKey, TValue>>, IDeliveryHandler
         {
-            public TypedTaskDeliveryHandlerShim(string topic, K key, V val)
+            public TypedTaskDeliveryHandlerShim(string topic, TKey key, TValue val)
 #if !NET45
                 : base(TaskCreationOptions.RunContinuationsAsynchronously)
 #endif
@@ -821,9 +821,9 @@ namespace Confluent.Kafka
 
             public string Topic;
 
-            public K Key;
+            public TKey Key;
 
-            public V Value;
+            public TValue Value;
 
             public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
             {
@@ -837,11 +837,11 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                var dr = new DeliveryResult<K, V>
+                var dr = new DeliveryResult<TKey, TValue>
                 {
                     TopicPartitionOffset = deliveryReport.TopicPartitionOffset,
                     Status = deliveryReport.Status,
-                    Message = new Message<K, V>
+                    Message = new Message<TKey, TValue>
                     {
                         Key = Key,
                         Value = Value,
@@ -856,7 +856,7 @@ namespace Confluent.Kafka
 #if NET45
                 if (deliveryReport.Error.IsError)
                 {
-                    System.Threading.Tasks.Task.Run(() => SetException(new ProduceException<K, V>(deliveryReport.Error, dr)));
+                    System.Threading.Tasks.Task.Run(() => SetException(new ProduceException<TKey, TValue>(deliveryReport.Error, dr)));
                 }
                 else
                 {
@@ -865,7 +865,7 @@ namespace Confluent.Kafka
 #else
                 if (deliveryReport.Error.IsError)
                 {
-                    TrySetException(new ProduceException<K, V>(deliveryReport.Error, dr));
+                    TrySetException(new ProduceException<TKey, TValue>(deliveryReport.Error, dr));
                 }
                 else
                 {
@@ -875,9 +875,9 @@ namespace Confluent.Kafka
             }
         }
 
-        private class TypedDeliveryHandlerShim_Action<K, V> : IDeliveryHandler
+        private class TypedDeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public TypedDeliveryHandlerShim_Action(string topic, K key, V val, Action<DeliveryReport<K, V>> handler)
+            public TypedDeliveryHandlerShim_Action(string topic, TKey key, TValue val, Action<DeliveryReport<TKey, TValue>> handler)
             {
                 Topic = topic;
                 Key = key;
@@ -887,11 +887,11 @@ namespace Confluent.Kafka
 
             public string Topic;
 
-            public K Key;
+            public TKey Key;
 
-            public V Value;
+            public TValue Value;
 
-            public Action<DeliveryReport<K, V>> Handler;
+            public Action<DeliveryReport<TKey, TValue>> Handler;
 
             public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
             {
@@ -900,11 +900,11 @@ namespace Confluent.Kafka
                     return;
                 }
 
-                var dr = new DeliveryReport<K, V>
+                var dr = new DeliveryReport<TKey, TValue>
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
                     Status = deliveryReport.Status,
-                    Message = new Message<K, V> 
+                    Message = new Message<TKey, TValue> 
                     {
                         Key = Key,
                         Value = Value,
