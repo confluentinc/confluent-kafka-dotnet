@@ -30,6 +30,32 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Poll for new messages / events. Blocks
         ///     until a consume result is available or the
+        ///     timeout period has elapsed.
+        /// </summary>
+        /// <param name="millisecondsTimeout">
+        ///     The maximum period of time (in milliseconds)
+        ///     the call may block.
+        /// </param>
+        /// <returns>
+        ///     The consume result.
+        /// </returns>
+        /// <remarks>
+        ///     The partitions assigned/revoked and offsets
+        ///     committed handlers may be invoked as a
+        ///     side-effect of calling this method (on the
+        ///     same thread).
+        /// </remarks>
+        /// <exception cref="ConsumeException">
+        ///     Thrown
+        ///     when a call to this method is unsuccessful
+        ///     for any reason. Inspect the Error property
+        ///     of the exception for detailed information.
+        /// </exception>
+        ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout);
+
+        /// <summary>
+        ///     Poll for new messages / events. Blocks
+        ///     until a consume result is available or the
         ///     operation has been cancelled.
         /// </summary>
         /// <param name="cancellationToken">
