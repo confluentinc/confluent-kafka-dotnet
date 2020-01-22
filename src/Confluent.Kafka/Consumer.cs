@@ -654,7 +654,10 @@ namespace Confluent.Kafka
         }
 
 
-        private ConsumeResult<TKey, TValue> ConsumeImpl(int millisecondsTimeout)
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(int)" />
+        /// </summary>
+        public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
             if (msgPtr == IntPtr.Zero)
@@ -831,7 +834,7 @@ namespace Confluent.Kafka
                 // Note: An alternative to throwing on cancellation is to return null,
                 // but that would be problematic downstream (require null checks).
                 cancellationToken.ThrowIfCancellationRequested();
-                ConsumeResult<TKey, TValue> result = ConsumeImpl(cancellationDelayMaxMs);
+                ConsumeResult<TKey, TValue> result = Consume(cancellationDelayMaxMs);
                 if (result == null)
                 {
                     continue;
@@ -845,6 +848,6 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(TimeSpan)" />
         /// </summary>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
-            => ConsumeImpl(timeout.TotalMillisecondsAsInt());
+            => Consume(timeout.TotalMillisecondsAsInt());
     }
 }
