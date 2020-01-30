@@ -1012,7 +1012,14 @@ namespace Confluent.Kafka.Impl
         }
 
         internal GroupInfo ListGroup(string group, int millisecondsTimeout)
-            =>  ListGroupsImpl(group, millisecondsTimeout).FirstOrDefault();
+        {
+            if (group == null)
+            {
+                throw new ArgumentNullException("group", "Argument 'group' must not be null.");
+            }
+
+            return ListGroupsImpl(group, millisecondsTimeout).FirstOrDefault();
+        }
 
         internal List<GroupInfo> ListGroups(int millisecondsTimeout)
             => ListGroupsImpl(null, millisecondsTimeout);
@@ -1020,11 +1027,6 @@ namespace Confluent.Kafka.Impl
         private List<GroupInfo> ListGroupsImpl(string group, int millisecondsTimeout)
         {
             ThrowIfHandleClosed();
-
-            if (group == null)
-            {
-                throw new ArgumentNullException("group", "Argument 'group' must not be null.");
-            }
 
             ErrorCode err = Librdkafka.list_groups(handle, group, out IntPtr grplistPtr, (IntPtr)millisecondsTimeout);
             if (err == ErrorCode.NoError)
