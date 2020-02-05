@@ -7,7 +7,7 @@
   - Static group membership ([@rnpridgeon](https://github.com/rnpridgeon)).
 - Added a [WordCount](...) example demonstrating a streaming map-reduce application with exactly-once processing.
 - Added a `CancellationToken` parameter to the `ProduceAsync` methods.
-- Uncaught exceptions thrown in handlers are now propagated to the initiating function, or ignored. Previously, they would cause the application to terminate.
+- Uncaught exceptions thrown in handler methods are now propagated to the initiating function, or in the case of error or log events, ignored. Previously, they would cause the application to terminate.
 
 ## Fixes
 
