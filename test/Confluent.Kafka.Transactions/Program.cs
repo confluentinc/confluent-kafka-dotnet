@@ -13,7 +13,7 @@ namespace Confluent.Kafka.Transactions
     ///     message key:     producer id.
     ///     message value:   an incrementing id for messages in committed transactions, -1 otherwise.
     ///
-    ///     output:
+    ///     stdout:
     ///       +n  - a message that will be in a committed transaction was produced with this seq number.
     ///       .   - a message was consumed, and the seq number was as expected.
     /// </summary>
@@ -32,7 +32,7 @@ namespace Confluent.Kafka.Transactions
 
             var conf = new SimulationConfig(
                 topic: Guid.NewGuid().ToString(),
-                messageCount: 1000000,
+                messageCount: 10000,
                 randomSeedBase: 1,
                 maxRunLength: 10,  // maximum number of messages in any aborted or committed transaction.
                 maxPause: 0.05, // maximum time to pause (seconds) between producing each message (per producer).

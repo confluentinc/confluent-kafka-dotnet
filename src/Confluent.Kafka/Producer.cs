@@ -318,9 +318,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Poll(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int Poll(TimeSpan timeout)
         {
             if (manualPoll)
@@ -342,9 +340,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Flush(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int Flush(TimeSpan timeout)
         {
             var result = KafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
@@ -358,9 +354,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Flush(CancellationToken)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Flush(CancellationToken cancellationToken)
         {
             while (true)
@@ -386,9 +380,7 @@ namespace Confluent.Kafka
         }
 
         
-        /// <summary>
-        ///     Releases all resources used by this <see cref="Producer{TKey,TValue}" />.
-        /// </summary>
+        /// <inheritdoc/>
         public void Dispose()
         {
             Dispose(true);
@@ -451,23 +443,17 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     <see cref="IClient.Name" />
-        /// </summary>
+        /// <inheritdoc/>
         public string Name
             => KafkaHandle.Name;
 
 
-        /// <summary>
-        ///     <see cref="IClient.AddBrokers(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => KafkaHandle.AddBrokers(brokers);
 
 
-        /// <summary>
-        ///     <see cref="IClient.Handle" />
-        /// </summary>
+        /// <inheritdoc/>
         public Handle Handle 
         {
             get
@@ -672,9 +658,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.ProduceAsync(TopicPartition, Message{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
@@ -772,9 +756,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.ProduceAsync(string, Message{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
             Message<TKey, TValue> message,
@@ -782,9 +764,7 @@ namespace Confluent.Kafka
             => ProduceAsync(new TopicPartition(topic, Partition.Any), message, cancellationToken);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Produce(
             string topic,
             Message<TKey, TValue> message,
@@ -793,9 +773,7 @@ namespace Confluent.Kafka
             => Produce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Produce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
@@ -988,18 +966,23 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <inheritdoc/>
         public void InitTransactions(TimeSpan timeout)
             => KafkaHandle.InitTransactions(timeout.TotalMillisecondsAsInt());
 
+        /// <inheritdoc/>
         public void BeginTransaction()
             => KafkaHandle.BeginTransaction();
 
+        /// <inheritdoc/>
         public void CommitTransaction(TimeSpan timeout)
             => KafkaHandle.CommitTransaction(timeout.TotalMillisecondsAsInt());
         
+        /// <inheritdoc/>
         public void AbortTransaction(TimeSpan timeout)
             => KafkaHandle.AbortTransaction(timeout.TotalMillisecondsAsInt());
 
+        /// <inheritdoc/>
         public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, TimeSpan timeout)
             => KafkaHandle.SendOffsetsToTransaction(offsets, group, timeout.TotalMillisecondsAsInt());
     }

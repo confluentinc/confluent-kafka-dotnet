@@ -25,7 +25,6 @@ namespace Confluent.Kafka.Transactions
                 GroupId = Guid.NewGuid().ToString(),
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 IsolationLevel = IsolationLevel.ReadCommitted,
-            //    Debug = "all"
             };
 
             var lasts = new Dictionary<int, int>();

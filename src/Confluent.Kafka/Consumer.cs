@@ -273,60 +273,44 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assignment" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Subscription" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Subscribe(IEnumerable{string})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Subscribe(IEnumerable<string> topics)
         {
             kafkaHandle.Subscribe(topics);
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Subscribe(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Subscribe(string topic)
             => Subscribe(new[] { topic });
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Unsubscribe" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Unsubscribe()
             => kafkaHandle.Unsubscribe();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(TopicPartition partition)
             => Assign(new List<TopicPartition> { partition });
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(TopicPartitionOffset)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(TopicPartitionOffset partition)
             => Assign(new List<TopicPartitionOffset> { partition });
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(IEnumerable{TopicPartitionOffset})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
@@ -334,9 +318,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(IEnumerable<TopicPartition> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
@@ -344,9 +326,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Unassign" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Unassign()
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
@@ -354,16 +334,12 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.StoreOffset(ConsumeResult{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void StoreOffset(ConsumeResult<TKey, TValue> result)
             => StoreOffset(new TopicPartitionOffset(result.TopicPartition, result.Offset + 1));
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.StoreOffset(TopicPartitionOffset)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void StoreOffset(TopicPartitionOffset offset)
         {
             try
@@ -377,25 +353,19 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Commit()" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> Commit()
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(null);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Commit(IEnumerable{TopicPartitionOffset})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Commit(IEnumerable<TopicPartitionOffset> offsets)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(offsets);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Commit(ConsumeResult{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Commit(ConsumeResult<TKey, TValue> result)
         {
             if (result.Message == null)
@@ -407,46 +377,34 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Seek(TopicPartitionOffset)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Seek(TopicPartitionOffset tpo)
             => kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, -1);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Pause(IEnumerable{TopicPartition})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Pause(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Pause(partitions);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Resume(IEnumerable{TopicPartition})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Resume(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Resume(partitions);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Committed(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> Committed(TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Committed(Assignment, (IntPtr)timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Committed(IEnumerable{TopicPartition}, TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Committed(partitions, (IntPtr)timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Position(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public Offset Position(TopicPartition partition)
         {
             try
@@ -460,61 +418,43 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.OffsetsForTimes(IEnumerable{TopicPartitionTimestamp}, TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.GetWatermarkOffsets(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.QueryWatermarkOffsets(TopicPartition, TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.MemberId" />
-        /// </summary>
+        /// <inheritdoc/>
         public string MemberId
             => kafkaHandle.MemberId;
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
-        /// </summary>
+        /// <inheritdoc/>
         public string Name
             => kafkaHandle.Name;
 
 
-        /// <summary>
-        ///     An opaque reference to the underlying librdkafka client instance.
-        ///     This can be used to construct an AdminClient that utilizes the same
-        ///     underlying librdkafka client as this Consumer instance.
-        /// </summary>
+        /// <inheritdoc/>
         public Handle Handle
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Close" />.
-        /// </summary>
+        /// <inheritdoc/>
         public void Close()
         {
             // commits offsets and unsubscribes.
@@ -893,9 +833,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(CancellationToken)" />
-        /// </summary>
+        /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
             while (true)
@@ -913,9 +851,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => Consume(timeout.TotalMillisecondsAsInt());
     }

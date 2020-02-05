@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
-//
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
@@ -107,7 +105,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     // propagate the exception unless the error was that one or more of the topics didn't exist.
                     if (e.Results.Select(r => r.Error.Code).Where(el => el != ErrorCode.UnknownTopicOrPart && el != ErrorCode.NoError).Count() > 0)
                     {
-                        throw;
+                        throw new Exception("Unable to delete topics", e);
                     }
                 }
             }
@@ -127,7 +125,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     Name = Topic_Counts,
                     ReplicationFactor = 1,
                     NumPartitions = NumPartitions,
-                    // this topic backs a kv (word -> count) state store, so we can make it compacted.
+                    // this topic backs a kv (word -> count) state store, so it can be compacted.
                     Configs = new Dictionary<string, string> { { "cleanup.policy", "compact" } }
                 };
                 
@@ -154,7 +152,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     // propagate the exception unless the error was that one or more of the topics already exists.
                     if (ex.Results.Select(r => r.Error.Code).Where(el => el != ErrorCode.TopicAlreadyExists && el != ErrorCode.NoError).Count() > 0)
                     {
-                        throw;
+                        throw new Exception("Unable to create topics", ex);
                     }
                 }
             }
@@ -162,7 +160,7 @@ namespace Confluent.Kafka.Examples.WordCount
 
 
         /// <summary>
-        ///     Generate line input data (using the C# consumer source code on github as the source).
+        ///     Generate example line input data (using the C# consumer source code on github as the source).
         /// </summary>
         static async Task Generator_LineInputData(string brokerList, CancellationToken ct)
         {
@@ -192,7 +190,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     }
                 }
 
-                producer.Flush(ct); // Note: There is no async Flush() method yet.
+                producer.Flush(ct);
             }
 
             Console.WriteLine("Generator_LineInputData: Wrote all input lines to Kafka");
