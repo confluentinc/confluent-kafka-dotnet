@@ -17,6 +17,7 @@
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -27,11 +28,21 @@ using System.Collections.Generic;
 using RocksDbSharp;
 
 
-namespace Confluent.Kafka.Examples.WordCount
+namespace Confluent.Kafka.Examples.Transactions
 {
+    /// <summary>
+    ///     For exactly-once processing, it's necessary
+    ///     to use a different producer instance per
+    ///     partition being consumed from. Instances of
+    ///     ProducerState are used to track these producer
+    ///     instances and the offset of the last message
+    ///     consumed from the corresponding input
+    ///     partition.
+    /// </summary>
     public class ProducerState<K,V>
     {
         public IProducer<K,V> Producer { get; set; }
+
         public Offset Offset { get; set; }
     }
 
@@ -46,7 +57,7 @@ namespace Confluent.Kafka.Examples.WordCount
         ///     Timeout to use after a cancellation request when attempting to
         ///     cleanly finalize a transaction.
         /// </summary>
-        static TimeSpan DuringCancellationTimeout = TimeSpan.FromSeconds(2);
+        static TimeSpan DuringCancellationTimeout = TimeSpan.FromSeconds(5);
 
         /// <summary>
         ///     The numer of partitions we'll use for each topic.
@@ -54,11 +65,11 @@ namespace Confluent.Kafka.Examples.WordCount
         const int NumPartitions = 12;
 
         /// <summary>
-        ///     The name of the Kafka topic containing the input lines of text to count the words in.
+        ///     The name of the input Kafka topic containing the lines of text to count the words in.
         ///         * key = null
         ///         * value = a line of text (type: string)
         /// </summary>
-        const string Topic_InputLines = "line-input";
+        const string Topic_InputLines = "lines";
 
         /// <summary>
         ///     The name of the Kafka topic containing the stream of words to count.
@@ -75,8 +86,15 @@ namespace Confluent.Kafka.Examples.WordCount
         const string Topic_Counts = "counts";
 
 
+        /// <summary>
+        ///     The transactional id of the word splitting processor.
+        /// </summary>
         const string TransactionalId_MapWords = "map-words-transaction-id";
 
+
+        /// <summary>
+        ///     The transactional id of the word count processor.
+        /// </summary>
         const string TransactionalId_Aggregate = "aggregator-transaction-id";
 
 
@@ -123,6 +141,7 @@ namespace Confluent.Kafka.Examples.WordCount
                 var countsTopicSpec = new TopicSpecification
                 {
                     Name = Topic_Counts,
+                    // note: in production, you should generally use a replication factor of 3.
                     ReplicationFactor = 1,
                     NumPartitions = NumPartitions,
                     // this topic backs a kv (word -> count) state store, so it can be compacted.
@@ -160,12 +179,12 @@ namespace Confluent.Kafka.Examples.WordCount
 
 
         /// <summary>
-        ///     Generate example line input data (using the C# consumer source code on github as the source).
+        ///     Generate example line input data (using the source code of this example as the source!).
         /// </summary>
         static async Task Generator_LineInputData(string brokerList, CancellationToken ct)
         {
             var client = new HttpClient();
-            var r = await client.GetAsync("https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/src/Confluent.Kafka/Consumer.cs", ct);
+            var r = await client.GetAsync("https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/examples/Transactions/Program.cs", ct);
             r.EnsureSuccessStatusCode();
             var content = await r.Content.ReadAsStringAsync();
             var lines = content.Split('\n');
@@ -227,7 +246,7 @@ namespace Confluent.Kafka.Examples.WordCount
             var producerState = new Dictionary<TopicPartition, ProducerState<string, Null>>();
 
             using (var consumer = new ConsumerBuilder<Null, string>(cConfig)
-                .SetPartitionsAssignedHandler((c, partitions) => {
+                .SetPartitionsRevokedHandler((c, partitions) => {
                     // Note: All handlers (except the log handler) are executed
                     // as a side-effect of, and on the same thread as the Consume
                     // or Close methods. Any exception thrown in a handler (with
@@ -238,12 +257,7 @@ namespace Confluent.Kafka.Examples.WordCount
                     // consume loop and handler and handled by the try/catch block
                     // there.
 
-                    Console.WriteLine(
-                        "** MapWords consumer group rebalanced. Partition assignment: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "]");
-
-                    // First abort any outstanding transactions on & dispose producers 
+                    // Abort any outstanding transactions & dispose producers 
                     // corresponding to the previous generation of the consumer group.
                     var tasks = new List<Task>();
                     foreach (var p in producerState.Values)
@@ -256,13 +270,21 @@ namespace Confluent.Kafka.Examples.WordCount
                     if (tasks.Count > 0)
                     {
                         Console.WriteLine("Aborting current MapWords transactions.");
+                        Task.WaitAll(tasks.ToArray());
                     }
-                    Task.WaitAll(tasks.ToArray());
                     producerState.Clear();
-                    
+                })
+                .SetPartitionsAssignedHandler((c, partitions) => {
+                    Console.WriteLine(
+                        "** MapWords consumer group rebalanced. Partition assignment: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "]");
+
+                    Trace.Assert(producerState.Count == 0, "Unexpected producer state.");
+
                     // Then create a new set of producers for then new partition assignment
                     // and initialize.
-                    tasks.Clear();
+                    var tasks = new List<Task>();
                     foreach (var tp in partitions)
                     {
                         tasks.Add(Task.Run(() => {
@@ -310,29 +332,34 @@ namespace Confluent.Kafka.Examples.WordCount
                         var words = Regex.Split(cr.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
                         foreach (var w in words)
                         {
-                            try
+                            while (true)
                             {
-                                producerState[cr.TopicPartition].Producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
-                                // Note: when using transactions, there is no need to check for errors of individual
-                                // produce calls because if the transaction commits successfully, you can be sure that
-                                // all the constituent messages were delivered successfully and in order.
-
-                                wCount += 1;
-                            }
-                            catch (KafkaException e)
-                            {
-                                // An immediate failure of the produce call is most often caused by the
-                                // local message queue being full, and appropriate response to that is 
-                                // to retry.
-                                if (e.Error.Code == ErrorCode.Local_QueueFull)
+                                try
                                 {
-                                    Thread.Sleep(TimeSpan.FromSeconds(1000));
-                                    continue;
+                                    producerState[cr.TopicPartition].Producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
+                                    // Note: when using transactions, there is no need to check for errors of individual
+                                    // produce call delivery reports because if the transaction commits successfully, you
+                                    // can be sure that all the constituent messages were delivered successfully and in order.
+
+                                    wCount += 1;
                                 }
-                                throw;
+                                catch (KafkaException e)
+                                {
+                                    // An immediate failure of the produce call is most often caused by the
+                                    // local message queue being full, and appropriate response to that is 
+                                    // to retry.
+                                    if (e.Error.Code == ErrorCode.Local_QueueFull)
+                                    {
+                                        Thread.Sleep(TimeSpan.FromSeconds(1000));
+                                        continue;
+                                    }
+                                    throw;
+                                }
+                                break;
                             }
                         }
 
+                        // Commit transactions every TxnCommitPeriod
                         if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
                         {
                             // Execute the transaction commits for each producer in parallel.
@@ -366,7 +393,7 @@ namespace Confluent.Kafka.Examples.WordCount
                             lCount = 0;
                         }
                     }
-                    catch (OperationCanceledException)
+                    catch (Exception)
                     {
                         // On cancallation, try to cleanly abort the transaction with a short timeout. If this fails,
                         // the transaction will abort automatically, but this will take longer.
@@ -380,11 +407,9 @@ namespace Confluent.Kafka.Examples.WordCount
                             state.Value.Producer.AbortTransaction(DuringCancellationTimeout); // Note: Not cancellable yet.
                             state.Value.Producer.Dispose();
                         }
-                    }
-                    catch (KafkaException)
-                    {
-                        // Attempt to cleanly leave the group.
+                    
                         consumer.Close();
+                        break;
                     }
 
                     // To simplify error handling, we assume the presence of a supervisor
@@ -433,7 +458,7 @@ namespace Confluent.Kafka.Examples.WordCount
                 }
             }
 
-            Console.WriteLine($"Finished materializing word counts state. Backed by {msgCount} messages in Kafka");
+            Console.WriteLine($"Finished materializing word counts state. Backed by {msgCount} messages in Kafka topic '{Topic_Counts}'");
         }
 
 
@@ -469,12 +494,7 @@ namespace Confluent.Kafka.Examples.WordCount
             var producerState = new Dictionary<TopicPartition, ProducerState<string, int>>();
 
             using (var consumer = new ConsumerBuilder<string, Null>(cConfig)
-                .SetPartitionsAssignedHandler((c, partitions) => {
-                    Console.WriteLine(
-                        "** AggregateWords consumer group rebalanced. Partition assignment: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "]");
-
+                .SetPartitionsRevokedHandler((c, partitions) => {
                     // clear rocksdb state.
                     db.DropColumnFamily("counts");
                     db.CreateColumnFamily(new ColumnFamilyOptions(), "counts");
@@ -493,8 +513,16 @@ namespace Confluent.Kafka.Examples.WordCount
                     }
                     Task.WaitAll(tasks.ToArray());
                     producerState.Clear();
+                })
+                .SetPartitionsAssignedHandler((c, partitions) => {
+                    Console.WriteLine(
+                        "** AggregateWords consumer group rebalanced. Partition assignment: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "]");
 
-                    tasks.Clear();
+                    Trace.Assert(producerState.Count == 0, "Unexpected producer state");
+
+                    var tasks = new List<Task>();
                     foreach (var tp in partitions)
                     {
                         tasks.Add(Task.Run(() => {
@@ -587,7 +615,7 @@ namespace Confluent.Kafka.Examples.WordCount
                             wCount = 0;
                         }
                     }
-                    catch (OperationCanceledException)
+                    catch (Exception)
                     {
                         foreach (var state in producerState)
                         {
@@ -599,10 +627,9 @@ namespace Confluent.Kafka.Examples.WordCount
                             state.Value.Producer.AbortTransaction(DuringCancellationTimeout); // Note: Not cancellable yet.
                             state.Value.Producer.Dispose();
                         }
-                    }
-                    catch (KafkaException)
-                    {
+
                         consumer.Close();
+                        break;
                     }
                 }
             }
@@ -638,7 +665,7 @@ namespace Confluent.Kafka.Examples.WordCount
         {
             if (args.Length != 2 && args.Length != 3)
             {
-                Console.WriteLine("Usage: .. brokerList [gen|proc|del] [client-id]");
+                Console.WriteLine("Usage: .. <brokerList> gen|proc|del [client-id]");
                 Console.WriteLine("   del:  delete all Kafka topics created by this example application.");
                 Console.WriteLine("   gen:  generate line data (don't supply client-id)");
                 Console.WriteLine("   proc: process line data. run multiple instances specifying different client-id's.");

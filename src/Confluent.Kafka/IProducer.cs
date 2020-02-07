@@ -308,10 +308,10 @@ namespace Confluent.Kafka
         ///     Upon successful return from this function the application has to perform at
         ///     least one of the following operations within TransactionalTimeoutMs to
         ///     avoid timing out the transaction on the broker:
-        ///         * rd_kafka_produce() (et.al)
-        ///         * rd_kafka_send_offsets_to_transaction()
-        ///         * rd_kafka_commit_transaction()
-        ///         * rd_kafka_abort_transaction()
+        ///         * ProduceAsync (et.al)
+        ///         * SendOffsetsToTransaction
+        ///         * CommitTransaction
+        ///         * AbortTransaction
         /// </summary>
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
