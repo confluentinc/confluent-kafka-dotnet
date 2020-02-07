@@ -214,7 +214,7 @@ dotnet tool install -g Confluent.Apache.Avro.AvroGen
 Usage:
 
 ```
-avrogen -s your_schema.asvc .
+avrogen -s your_schema.avsc .
 ```
 
 For more information about working with Avro in .NET, refer to the the blog post [Decoupling Systems with Apache Kafka, Schema Registry and Avro](https://www.confluent.io/blog/decoupling-systems-with-apache-kafka-schema-registry-and-avro/)
