@@ -54,12 +54,6 @@ namespace Confluent.Kafka.Examples.Transactions
         static TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
-        ///     Timeout to use after a cancellation request when attempting to
-        ///     cleanly finalize a transaction.
-        /// </summary>
-        static TimeSpan DuringCancellationTimeout = TimeSpan.FromSeconds(5);
-
-        /// <summary>
         ///     The numer of partitions we'll use for each topic.
         /// </summary>
         const int NumPartitions = 12;
@@ -395,19 +389,7 @@ namespace Confluent.Kafka.Examples.Transactions
                     }
                     catch (Exception)
                     {
-                        // On cancallation, try to cleanly abort the transaction with a short timeout. If this fails,
-                        // the transaction will abort automatically, but this will take longer.
-                        foreach (var state in producerState)
-                        {
-                            if (state.Value.Offset == Offset.Unset)
-                            {
-                                continue;
-                            }
-
-                            state.Value.Producer.AbortTransaction(DuringCancellationTimeout); // Note: Not cancellable yet.
-                            state.Value.Producer.Dispose();
-                        }
-                    
+                        // Note: transactions are aborted in the partitions revoked handler during close.
                         consumer.Close();
                         break;
                     }
@@ -617,17 +599,6 @@ namespace Confluent.Kafka.Examples.Transactions
                     }
                     catch (Exception)
                     {
-                        foreach (var state in producerState)
-                        {
-                            if (state.Value.Offset == Offset.Unset)
-                            {
-                                continue;
-                            }
-
-                            state.Value.Producer.AbortTransaction(DuringCancellationTimeout); // Note: Not cancellable yet.
-                            state.Value.Producer.Dispose();
-                        }
-
                         consumer.Close();
                         break;
                     }

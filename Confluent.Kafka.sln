@@ -51,7 +51,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protobuf", "examples\Protob
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.SyncOverAsync", "test\Confluent.Kafka.SyncOverAsync\Confluent.Kafka.SyncOverAsync.csproj", "{07E3455B-9CDF-4124-854E-8AC9B8950B1A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions", "examples\ExactlyOnceProcessing\Transactions.csproj", "{C44F96F6-4711-4DB9-A00E-9FA6456513B9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions", "examples\Transactions\Transactions.csproj", "{C44F96F6-4711-4DB9-A00E-9FA6456513B9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.Transactions", "test\Confluent.Kafka.Transactions\Confluent.Kafka.Transactions.csproj", "{2A6D1D58-4F02-480E-8A9C-F2A0D0BC911C}"
 EndProject
