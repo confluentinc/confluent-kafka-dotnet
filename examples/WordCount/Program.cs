@@ -310,11 +310,27 @@ namespace Confluent.Kafka.Examples.WordCount
                         var words = Regex.Split(cr.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
                         foreach (var w in words)
                         {
-                            producerState[cr.TopicPartition].Producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
-                            // Note: when using transactions, there is no need to check for errors of individual
-                            // produce calls because if the transaction commits successfully, you can be sure that
-                            // all the constituent messages were delivered successfully and in order.
-                            wCount += 1;
+                            try
+                            {
+                                producerState[cr.TopicPartition].Producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
+                                // Note: when using transactions, there is no need to check for errors of individual
+                                // produce calls because if the transaction commits successfully, you can be sure that
+                                // all the constituent messages were delivered successfully and in order.
+
+                                wCount += 1;
+                            }
+                            catch (KafkaException e)
+                            {
+                                // An immediate failure of the produce call is most often caused by the
+                                // local message queue being full, and appropriate response to that is 
+                                // to retry.
+                                if (e.Error.Code == ErrorCode.Local_QueueFull)
+                                {
+                                    Thread.Sleep(TimeSpan.FromSeconds(1000));
+                                    continue;
+                                }
+                                throw;
+                            }
                         }
 
                         if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
@@ -344,7 +360,7 @@ namespace Confluent.Kafka.Examples.WordCount
                             }
                             Task.WaitAll(tasks.ToArray(), ct);
 
-                            Console.WriteLine($"Committed MapWords transaction comprising {wCount} words from {lCount} lines.");
+                            Console.WriteLine($"Committed MapWords transaction(s) comprising {wCount} words from {lCount} lines.");
                             lastTxnCommit = DateTime.Now;
                             wCount = 0;
                             lCount = 0;
@@ -531,9 +547,6 @@ namespace Confluent.Kafka.Examples.WordCount
                             }
                             catch (KafkaException e)
                             {
-                                // An immediate failure of the produce call is most often caused by the
-                                // local message queue being full, and appropriate response to that is 
-                                // to retry.
                                 if (e.Error.Code == ErrorCode.Local_QueueFull)
                                 {
                                     Thread.Sleep(TimeSpan.FromSeconds(1000));
@@ -569,7 +582,7 @@ namespace Confluent.Kafka.Examples.WordCount
                             }
                             Task.WaitAll(tasks.ToArray(), ct);
 
-                            Console.WriteLine($"Committed AggregateWords transaction comprising updates to {wCount} words.");
+                            Console.WriteLine($"Committed AggregateWords transaction(s) comprising updates to {wCount} words.");
                             lastTxnCommit = DateTime.Now;
                             wCount = 0;
                         }

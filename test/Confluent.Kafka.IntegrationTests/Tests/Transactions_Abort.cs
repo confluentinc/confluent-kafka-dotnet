@@ -24,7 +24,7 @@ using Xunit;
 namespace Confluent.Kafka.IntegrationTests
 {
     /// <summary>
-    ///     
+    ///     Tests related to aborted transactions.
     /// </summary>
     public partial class Tests
     {
