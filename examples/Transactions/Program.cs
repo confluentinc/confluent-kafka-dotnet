@@ -375,6 +375,15 @@ namespace Confluent.Kafka.Examples.Transactions
                                         ConsumerGroup_MapWords, DefaultTimeout); // Note: Not cancellable yet.
 
                                     state.Value.Producer.CommitTransaction(DefaultTimeout);  // Note: Not cancellable yet.
+
+                                    // Note: Exceptions thrown by SendOffsetsToTransaction and
+                                    // CommitTransaction that are not marked as fatal can be
+                                    // recovered from. However, in order to keep this example
+                                    // short(er), the additional bookkeeping/logic required to
+                                    // achieve this has been omitted. Since this should happen
+                                    // only rarely, requiring a process restart in this case
+                                    // isn't a huge compromise.
+
                                     state.Value.Offset = Offset.Unset;
                                     state.Value.Producer.BeginTransaction();
                                 }));
