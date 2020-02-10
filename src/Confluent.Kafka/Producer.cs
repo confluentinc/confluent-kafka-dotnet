@@ -90,6 +90,11 @@ namespace Confluent.Kafka
                         {
                             ct.ThrowIfCancellationRequested();
                             int eventsServedCount_ = ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
+                            if (this.handlerException != null)
+                            {
+                                errorHandler?.Invoke(new Error(ErrorCode.Local_Application, handlerException.ToString()));
+                                this.handlerException = null;
+                            }
 
                             // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
                             if (eventsServedCount_ > 0)
@@ -106,13 +111,26 @@ namespace Confluent.Kafka
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
+        // .NET Exceptions are not propagated through native code, so we need to
+        // do this book keeping explicitly.
+        private Exception handlerException = null;
+
+
         private Action<Error> errorHandler;
         private Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return; }
-            errorHandler?.Invoke(KafkaHandle.CreatePossiblyFatalError(err, reason));
+
+            try
+            {
+                errorHandler?.Invoke(KafkaHandle.CreatePossiblyFatalError(err, reason));
+            }
+            catch (Exception)
+            {
+                // Eat any exception thrown by user log handler code.
+            }
         }
 
 
@@ -122,7 +140,16 @@ namespace Confluent.Kafka
         {
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return 0; }
-            statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+
+            try
+            {
+                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
+
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -135,7 +162,14 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             // Note: kafkaHandle can be null if the callback is during construction (in that case, we want the delegate to run).
             if (ownedKafkaHandle != null && ownedKafkaHandle.IsClosed) { return; }
-            logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            try
+            {
+                logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            }
+            catch (Exception)
+            {
+                // Eat any exception thrown by user log handler code.
+            }
         }
 
         private Librdkafka.DeliveryReportDelegate DeliveryReportCallback;
@@ -145,73 +179,80 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (ownedKafkaHandle.IsClosed) { return; }
 
-            var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(rkmessage);
-
-            // the msg._private property has dual purpose. Here, it is an opaque pointer set
-            // by Topic.Produce to be an IDeliveryHandler. When Consuming, it's for internal
-            // use (hence the name).
-            if (msg._private == IntPtr.Zero)
+            try
             {
-                // Note: this can occur if the ProduceAsync overload that accepts a DeliveryHandler
-                // was used and the delivery handler was set to null.
-                return;
-            }
+                var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(rkmessage);
 
-            var gch = GCHandle.FromIntPtr(msg._private);
-            var deliveryHandler = (IDeliveryHandler) gch.Target;
-            gch.Free();
-
-            Headers headers = null;
-            if (this.enableDeliveryReportHeaders) 
-            {
-                headers = new Headers();
-                Librdkafka.message_headers(rkmessage, out IntPtr hdrsPtr);
-                if (hdrsPtr != IntPtr.Zero)
+                // the msg._private property has dual purpose. Here, it is an opaque pointer set
+                // by Topic.Produce to be an IDeliveryHandler. When Consuming, it's for internal
+                // use (hence the name).
+                if (msg._private == IntPtr.Zero)
                 {
-                    for (var i=0; ; ++i)
+                    // Note: this can occur if the ProduceAsync overload that accepts a DeliveryHandler
+                    // was used and the delivery handler was set to null.
+                    return;
+                }
+
+                var gch = GCHandle.FromIntPtr(msg._private);
+                var deliveryHandler = (IDeliveryHandler) gch.Target;
+                gch.Free();
+
+                Headers headers = null;
+                if (this.enableDeliveryReportHeaders) 
+                {
+                    headers = new Headers();
+                    Librdkafka.message_headers(rkmessage, out IntPtr hdrsPtr);
+                    if (hdrsPtr != IntPtr.Zero)
                     {
-                        var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
-                        if (err != ErrorCode.NoError)
+                        for (var i=0; ; ++i)
                         {
-                            break;
+                            var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
+                            if (err != ErrorCode.NoError)
+                            {
+                                break;
+                            }
+                            var headerName = Util.Marshal.PtrToStringUTF8(namep);
+                            byte[] headerValue = null;
+                            if (valuep != IntPtr.Zero)
+                            {
+                                headerValue = new byte[(int)sizep];
+                                Marshal.Copy(valuep, headerValue, 0, (int)sizep);
+                            }
+                            headers.Add(headerName, headerValue);
                         }
-                        var headerName = Util.Marshal.PtrToStringUTF8(namep);
-                        byte[] headerValue = null;
-                        if (valuep != IntPtr.Zero)
-                        {
-                            headerValue = new byte[(int)sizep];
-                            Marshal.Copy(valuep, headerValue, 0, (int)sizep);
-                        }
-                        headers.Add(headerName, headerValue);
                     }
                 }
-            }
 
-            IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
-            long timestamp = 0;
-            if (enableDeliveryReportTimestamp)
-            {
-                timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
-            }
-
-            PersistenceStatus messageStatus = PersistenceStatus.PossiblyPersisted;
-            if (enableDeliveryReportPersistedStatus)
-            {
-                messageStatus = Librdkafka.message_status(rkmessage);
-            }
-
-            deliveryHandler.HandleDeliveryReport(
-                new DeliveryReport<Null, Null>
+                IntPtr timestampType = (IntPtr)TimestampType.NotAvailable;
+                long timestamp = 0;
+                if (enableDeliveryReportTimestamp)
                 {
-                    // Topic is not set here in order to avoid the marshalling cost.
-                    // Instead, the delivery handler is expected to cache the topic string.
-                    Partition = msg.partition, 
-                    Offset = msg.offset, 
-                    Error = KafkaHandle.CreatePossiblyFatalError(msg.err, null),
-                    Status = messageStatus,
-                    Message = new Message<Null, Null> { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
+                    timestamp = Librdkafka.message_timestamp(rkmessage, out timestampType);
                 }
-            );
+
+                PersistenceStatus messageStatus = PersistenceStatus.PossiblyPersisted;
+                if (enableDeliveryReportPersistedStatus)
+                {
+                    messageStatus = Librdkafka.message_status(rkmessage);
+                }
+
+                deliveryHandler.HandleDeliveryReport(
+                    new DeliveryReport<Null, Null>
+                    {
+                        // Topic is not set here in order to avoid the marshalling cost.
+                        // Instead, the delivery handler is expected to cache the topic string.
+                        Partition = msg.partition, 
+                        Offset = msg.offset, 
+                        Error = KafkaHandle.CreatePossiblyFatalError(msg.err, null),
+                        Status = messageStatus,
+                        Message = new Message<Null, Null> { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
+                    }
+                );
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
         }
 
         private void ProduceImpl(
@@ -277,9 +318,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Poll(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int Poll(TimeSpan timeout)
         {
             if (manualPoll)
@@ -301,21 +340,33 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Flush(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int Flush(TimeSpan timeout)
-            => KafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+        {
+            var result = KafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
+            if (this.handlerException != null)
+            {
+                errorHandler?.Invoke(new Error(ErrorCode.Local_Application, handlerException.ToString()));
+                var ex = this.handlerException;
+                this.handlerException = null;
+            }
+            return result;
+        }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Flush(CancellationToken)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Flush(CancellationToken cancellationToken)
         {
             while (true)
             {
                 int result = KafkaHandle.Flush(100);
+                if (this.handlerException != null)
+                {
+                    errorHandler?.Invoke(new Error(ErrorCode.Local_Application, handlerException.ToString()));
+                    var ex = this.handlerException;
+                    this.handlerException = null;
+                }
+
                 if (result == 0)
                 {
                     return;
@@ -329,9 +380,7 @@ namespace Confluent.Kafka
         }
 
         
-        /// <summary>
-        ///     Releases all resources used by this <see cref="Producer{TKey,TValue}" />.
-        /// </summary>
+        /// <inheritdoc/>
         public void Dispose()
         {
             Dispose(true);
@@ -394,23 +443,17 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     <see cref="IClient.Name" />
-        /// </summary>
+        /// <inheritdoc/>
         public string Name
             => KafkaHandle.Name;
 
 
-        /// <summary>
-        ///     <see cref="IClient.AddBrokers(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => KafkaHandle.AddBrokers(brokers);
 
 
-        /// <summary>
-        ///     <see cref="IClient.Handle" />
-        /// </summary>
+        /// <inheritdoc/>
         public Handle Handle 
         {
             get
@@ -615,12 +658,11 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.ProduceAsync(TopicPartition, Message{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public async Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            Message<TKey, TValue> message)
+            Message<TKey, TValue> message,
+            CancellationToken cancellationToken)
         {
             byte[] keyBytes;
             try
@@ -676,6 +718,11 @@ namespace Confluent.Kafka
                         message.Timestamp, topicPartition.Partition, message.Headers,
                         handler);
 
+                    if (cancellationToken != null && cancellationToken.CanBeCanceled)
+                    {
+                        cancellationToken.Register(() => handler.TrySetCanceled());
+                    }
+
                     return await handler.Task.ConfigureAwait(false);
                 }
                 else
@@ -709,19 +756,15 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.ProduceAsync(string, Message{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            Message<TKey, TValue> message
-        )
-            => ProduceAsync(new TopicPartition(topic, Partition.Any), message);
+            Message<TKey, TValue> message,
+            CancellationToken cancellationToken)
+            => ProduceAsync(new TopicPartition(topic, Partition.Any), message, cancellationToken);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(string, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Produce(
             string topic,
             Message<TKey, TValue> message,
@@ -730,9 +773,7 @@ namespace Confluent.Kafka
             => Produce(new TopicPartition(topic, Partition.Any), message, deliveryHandler);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IProducer{TKey,TValue}.Produce(TopicPartition, Message{TKey, TValue}, Action{DeliveryReport{TKey, TValue}})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Produce(
             TopicPartition topicPartition,
             Message<TKey, TValue> message,
@@ -924,5 +965,25 @@ namespace Confluent.Kafka
                 }
             }
         }
+
+        /// <inheritdoc/>
+        public void InitTransactions(TimeSpan timeout)
+            => KafkaHandle.InitTransactions(timeout.TotalMillisecondsAsInt());
+
+        /// <inheritdoc/>
+        public void BeginTransaction()
+            => KafkaHandle.BeginTransaction();
+
+        /// <inheritdoc/>
+        public void CommitTransaction(TimeSpan timeout)
+            => KafkaHandle.CommitTransaction(timeout.TotalMillisecondsAsInt());
+        
+        /// <inheritdoc/>
+        public void AbortTransaction(TimeSpan timeout)
+            => KafkaHandle.AbortTransaction(timeout.TotalMillisecondsAsInt());
+
+        /// <inheritdoc/>
+        public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, TimeSpan timeout)
+            => KafkaHandle.SendOffsetsToTransaction(offsets, group, timeout.TotalMillisecondsAsInt());
     }
 }

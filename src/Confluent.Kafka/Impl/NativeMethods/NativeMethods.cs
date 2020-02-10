@@ -214,6 +214,27 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr rkt, int partition);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_init_transactions(
+                IntPtr rk, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_begin_transaction(
+                IntPtr rk, StringBuilder errstr, UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_commit_transaction(
+                IntPtr rk, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_abort_transaction(
+                IntPtr rk, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_send_offsets_to_transaction(
+                IntPtr rk, IntPtr offsets, string consumer_group,
+                int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern SafeKafkaHandle rd_kafka_new(
                 RdKafkaType type, IntPtr conf,
                 StringBuilder errstr,

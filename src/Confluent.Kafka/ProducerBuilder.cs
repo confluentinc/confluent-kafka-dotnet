@@ -102,11 +102,15 @@ namespace Confluent.Kafka
         /// </summary>
         /// <remarks>
         ///     You can enable statistics and set the statistics interval
-        ///     using the statistics.interval.ms configuration parameter
+        ///     using the StatisticsIntervalMs configuration property
         ///     (disabled by default).
         ///
         ///     Executes on the poll thread (by default, a background thread managed by
         ///     the producer).
+        ///
+        ///     Exceptions: Any exception thrown by your statistics handler
+        ///     will be devivered to your error handler, if set, else they will be
+        ///     silently ignored.
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<IProducer<TKey, TValue>, string> statisticsHandler)
         {
@@ -127,6 +131,9 @@ namespace Confluent.Kafka
         /// <remarks>
         ///     Executes on the poll thread (by default, a background thread managed by
         ///     the producer).
+        ///
+        ///     Exceptions: Any exception thrown by your error handler will be silently
+        ///     ignored.
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<IProducer<TKey, TValue>, Error> errorHandler)
         {
@@ -147,12 +154,15 @@ namespace Confluent.Kafka
         ///     By default not many log messages are generated.
         ///
         ///     For more verbose logging, specify one or more debug contexts
-        ///     using the 'debug' configuration property.
+        ///     using the Debug configuration property.
         ///
         ///     Warning: Log handlers are called spontaneously from internal
         ///     librdkafka threads and the application must not call any
         ///     Confluent.Kafka APIs from within a log handler or perform any
         ///     prolonged operations.
+        ///
+        ///     Exceptions: Any exception thrown by your log handler will be
+        ///     silently ignored.
         /// </remarks>
         public ProducerBuilder<TKey, TValue> SetLogHandler(Action<IProducer<TKey, TValue>, LogMessage> logHandler)
         {
@@ -167,6 +177,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize keys.
         /// </summary>
+        /// <remarks>
+        ///     If your key serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_KeySerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(ISerializer<TKey> serializer)
         {
             if (this.KeySerializer != null || this.AsyncKeySerializer != null)
@@ -180,6 +196,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize values.
         /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(ISerializer<TValue> serializer)
         {
             if (this.ValueSerializer != null || this.AsyncValueSerializer != null)
@@ -193,6 +215,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize keys.
         /// </summary>
+        /// <remarks>
+        ///     If your key serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_KeySerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
         public ProducerBuilder<TKey, TValue> SetKeySerializer(IAsyncSerializer<TKey> serializer)
         {
             if (this.KeySerializer != null || this.AsyncKeySerializer != null)
@@ -206,6 +234,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The serializer to use to serialize values.
         /// </summary>
+        /// <remarks>
+        ///     If your value serializer throws an exception, this will be
+        ///     wrapped in a ProduceException with ErrorCode
+        ///     Local_ValueSerialization and thrown by the initiating call to
+        ///     Produce or ProduceAsync.
+        /// </remarks>
         public ProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
             if (this.ValueSerializer != null || this.AsyncValueSerializer != null)

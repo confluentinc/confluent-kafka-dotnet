@@ -490,6 +490,58 @@ namespace Confluent.Kafka.Impl
             return Librdkafka.poll_set_consumer(handle);
         }
 
+        internal void InitTransactions(int millisecondsTimeout)
+        {
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var errorCode = Librdkafka.init_transactions(this.handle, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+            }
+        }
+
+        internal void BeginTransaction()
+        {
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var errorCode = Librdkafka.begin_transaction(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+            }
+        }
+
+        internal void CommitTransaction(int millisecondsTimeout)
+        {
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var errorCode = Librdkafka.commit_transaction(this.handle, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+            }
+        }
+
+        internal void AbortTransaction(int millisecondsTimeout)
+        {
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var errorCode = Librdkafka.abort_transaction(this.handle, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+            }
+        }
+
+        internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, int millisecondsTimeout)
+        {
+            IntPtr offsetsPtr = GetCTopicPartitionList(offsets);
+
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var errorCode = Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, group, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));                
+            }
+        }
+
         internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)
         {
             ThrowIfHandleClosed();
@@ -992,6 +1044,11 @@ namespace Confluent.Kafka.Impl
 
             foreach (var p in offsets)
             {
+                if (p.Topic == null)
+                {
+                    Librdkafka.topic_partition_list_destroy(list);
+                    throw new ArgumentException("Cannot create offsets list because one or more topics is null.");
+                }
                 IntPtr ptr = Librdkafka.topic_partition_list_add(list, p.Topic, p.Partition);
                 Marshal.WriteInt64(ptr, (int)Util.Marshal.OffsetOf<rd_kafka_topic_partition>("offset"), p.Offset);
             }

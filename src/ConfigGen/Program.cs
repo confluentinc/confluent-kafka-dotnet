@@ -249,6 +249,7 @@ namespace ConfigGen
             if (type == "float") { return "double"; }
             if (type == "pointer") { return "pointer"; }
             if (type == "") { return "pointer"; }
+            if (type == "see dedicated API") { return "pointer"; }
             throw new Exception($"unknown type '{type}'");
         }
 

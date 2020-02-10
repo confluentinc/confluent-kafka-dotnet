@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.3.0 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.4.0-PRE6 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -890,7 +890,7 @@ namespace Confluent.Kafka
         public int? RequestTimeoutMs { get { return GetInt("request.timeout.ms"); } set { this.SetObject("request.timeout.ms", value); } }
 
         /// <summary>
-        ///     Local message timeout. This value is only enforced locally and limits the time a produced message waits for successful delivery. A time of 0 is infinite. This is the maximum time librdkafka may use to deliver a message (including retries). Delivery error occurs when either the retry count or the message timeout are exceeded.
+        ///     Local message timeout. This value is only enforced locally and limits the time a produced message waits for successful delivery. A time of 0 is infinite. This is the maximum time librdkafka may use to deliver a message (including retries). Delivery error occurs when either the retry count or the message timeout are exceeded. The message timeout is automatically adjusted to `transaction.timeout.ms` if `transactional.id` is configured.
         ///
         ///     default: 300000
         ///     importance: high
@@ -912,6 +912,22 @@ namespace Confluent.Kafka
         ///     importance: medium
         /// </summary>
         public int? CompressionLevel { get { return GetInt("compression.level"); } set { this.SetObject("compression.level", value); } }
+
+        /// <summary>
+        ///     Enables the transactional producer. The transactional.id is used to identify the same transactional producer instance across process restarts. It allows the producer to guarantee that transactions corresponding to earlier instances of the same producer have been finalized prior to starting any new transactions, and that any zombie instances are fenced off. If no transactional.id is provided, then the producer is limited to idempotent delivery (if enable.idempotence is set). Requires broker version >= 0.11.0.
+        ///
+        ///     default: ''
+        ///     importance: high
+        /// </summary>
+        public string TransactionalId { get { return Get("transactional.id"); } set { this.SetObject("transactional.id", value); } }
+
+        /// <summary>
+        ///     The maximum amount of time in milliseconds that the transaction coordinator will wait for a transaction status update from the producer before proactively aborting the ongoing transaction. If this value is larger than the `transaction.max.timeout.ms` setting in the broker, the init_transactions() call will fail with ERR_INVALID_TRANSACTION_TIMEOUT. The transaction timeout automatically adjusts `message.timeout.ms` and `socket.timeout.ms`, unless explicitly configured in which case they must not exceed the transaction timeout (`socket.timeout.ms` must be at least 100ms lower than `transaction.timeout.ms`).
+        ///
+        ///     default: 60000
+        ///     importance: medium
+        /// </summary>
+        public int? TransactionTimeoutMs { get { return GetInt("transaction.timeout.ms"); } set { this.SetObject("transaction.timeout.ms", value); } }
 
         /// <summary>
         ///     When set to `true`, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: `max.in.flight.requests.per.connection=5` (must be less than or equal to 5), `retries=INT32_MAX` (must be greater than 0), `acks=all`, `queuing.strategy=fifo`. Producer instantation will fail if user-supplied configuration is incompatible.

@@ -293,6 +293,27 @@ namespace Confluent.Kafka
         /// </summary>
         Local_MaxPollExceeded = -147,
 
+        /// <summary>
+        ///     Unknown broker
+        /// </summary>
+        Local_UnknownBroker = -146,
+
+        /// <summary>
+        ///     Functionality not configured
+        /// </summary>
+        Local_NotConfigured = -145,
+
+        /// <summary>
+        ///     Instance has been fenced
+        /// </summary>
+        Local_Fenced = -144,
+
+        /// <summary>
+        ///     Application generated exception.
+        /// </summary>
+        Local_Application = -143,
+
+
 
         /// <summary>
         ///     Unknown broker error

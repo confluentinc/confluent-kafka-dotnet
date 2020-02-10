@@ -78,22 +78,44 @@ namespace Confluent.Kafka
 
         private SafeKafkaHandle kafkaHandle;
 
+        // .NET Exceptions are not propagated through native code, so we need to
+        // do this book keeping explicitly.
+        private Exception handlerException = null;
+
         private Action<Error> errorHandler;
         private Librdkafka.ErrorDelegate errorCallbackDelegate;
         private void ErrorCallback(IntPtr rk, ErrorCode err, string reason, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
-            errorHandler?.Invoke(kafkaHandle.CreatePossiblyFatalError(err, reason));
+            try
+            {
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                errorHandler?.Invoke(kafkaHandle.CreatePossiblyFatalError(err, reason));
+            }
+            catch (Exception)
+            {
+                // Eat any exception thrown by user error handler code. Although these could be 
+                // exposed to the application via the initiating function call easily enough,
+                // they aren't for consistency with the producer (where the poll method is called)
+                // on a background thread.
+            }
         }
 
         private Action<string> statisticsHandler;
         private Librdkafka.StatsDelegate statisticsCallbackDelegate;
         private int StatisticsCallback(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return 0; }
-            statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            try
+            {
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
+            
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -102,10 +124,17 @@ namespace Confluent.Kafka
         private Librdkafka.LogDelegate logCallbackDelegate;
         private void LogCallback(IntPtr rk, SyslogLevel level, string fac, string buf)
         {
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
             if (kafkaHandle != null && kafkaHandle.IsClosed) { return; }
-            logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            try
+            {
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                // Note: kafkaHandle can be null if the callback is during construction (in that case the delegate should be called).
+                logHandler?.Invoke(new LogMessage(Util.Marshal.PtrToStringUTF8(Librdkafka.name(rk)), level, fac, buf));
+            }
+            catch (Exception)
+            {
+                // Eat any exception thrown by user log handler code.
+            }
         }
 
         private Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
@@ -117,77 +146,84 @@ namespace Confluent.Kafka
             IntPtr partitions,
             IntPtr opaque)
         {
-            var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
-
-            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-            if (kafkaHandle.IsClosed)
-            { 
-                // The RebalanceCallback should never be invoked as a side effect of Dispose.
-                // If for some reason flow of execution gets here, something is badly wrong. 
-                // (and we have a closed librdkafka handle that is expecting an assign call...)
-                throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
-            }
-
-            if (err == ErrorCode.Local_AssignPartitions)
+            try
             {
-                if (partitionsAssignedHandler == null)
+                var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
+
+                // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+                if (kafkaHandle.IsClosed)
+                { 
+                    // The RebalanceCallback should never be invoked as a side effect of Dispose.
+                    // If for some reason flow of execution gets here, something is badly wrong. 
+                    // (and we have a closed librdkafka handle that is expecting an assign call...)
+                    throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
+                }
+
+                if (err == ErrorCode.Local_AssignPartitions)
                 {
-                    Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                    if (partitionsAssignedHandler == null)
+                    {
+                        Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                        return;
+                    }
+
+                    lock (assignCallCountLockObj) { assignCallCount = 0; }
+                    var assignTo = partitionsAssignedHandler(partitionAssignment);
+                    lock (assignCallCountLockObj)
+                    {
+                        if (assignCallCount > 0)
+                        {
+                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
+                        }
+                    }
+                    Assign(assignTo);
                     return;
                 }
-
-                lock (assignCallCountLockObj) { assignCallCount = 0; }
-                var assignTo = partitionsAssignedHandler(partitionAssignment);
-                lock (assignCallCountLockObj)
+                
+                if (err == ErrorCode.Local_RevokePartitions)
                 {
-                    if (assignCallCount > 0)
+                    if (partitionsRevokedHandler == null)
                     {
-                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
+                        Unassign();
+                        return;
                     }
-                }
-                Assign(assignTo);
-                return;
-            }
-            
-            if (err == ErrorCode.Local_RevokePartitions)
-            {
-                if (partitionsRevokedHandler == null)
-                {
-                    Unassign();
+
+                    var assignmentWithPositions = new List<TopicPartitionOffset>();
+                    foreach (var tp in partitionAssignment)
+                    {
+                        try
+                        {
+                            assignmentWithPositions.Add(new TopicPartitionOffset(tp, Position(tp)));
+                        }
+                        catch
+                        {
+                            assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
+                        }
+                    }
+
+                    lock (assignCallCountLockObj) { assignCallCount = 0; }
+                    var assignTo = partitionsRevokedHandler(assignmentWithPositions);
+                    lock (assignCallCountLockObj)
+                    {
+                        if (assignCallCount > 0)
+                        {
+                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
+                        }
+                    }
+
+                    // This distinction is important because calling Assign whilst the consumer is being
+                    // closed (which will generally trigger this callback) is disallowed.
+                    if (assignTo.Count() > 0) { Assign(assignTo); }
+                    else { Unassign(); }
                     return;
                 }
-
-                var assignmentWithPositions = new List<TopicPartitionOffset>();
-                foreach (var tp in partitionAssignment)
-                {
-                    try
-                    {
-                        assignmentWithPositions.Add(new TopicPartitionOffset(tp, Position(tp)));
-                    }
-                    catch
-                    {
-                        assignmentWithPositions.Add(new TopicPartitionOffset(tp, Offset.Unset));
-                    }
-                }
-
-                lock (assignCallCountLockObj) { assignCallCount = 0; }
-                var assignTo = partitionsRevokedHandler(assignmentWithPositions);
-                lock (assignCallCountLockObj)
-                {
-                    if (assignCallCount > 0)
-                    {
-                        throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
-                    }
-                }
-
-                // This distinction is important because calling Assign whilst the consumer is being
-                // closed (which will generally trigger this callback) is disallowed.
-                if (assignTo.Count() > 0) { Assign(assignTo); }
-                else { Unassign(); }
-                return;
+                
+                throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
             }
-            
-            throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
         }
 
         private Action<CommittedOffsets> offsetsCommittedHandler;
@@ -201,10 +237,17 @@ namespace Confluent.Kafka
             // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
             if (kafkaHandle.IsClosed) { return; }
 
-            offsetsCommittedHandler?.Invoke(new CommittedOffsets(
-                SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
-                kafkaHandle.CreatePossiblyFatalError(err, null)
-            ));
+            try
+            {
+                offsetsCommittedHandler?.Invoke(new CommittedOffsets(
+                    SafeKafkaHandle.GetTopicPartitionOffsetErrorList(offsets),
+                    kafkaHandle.CreatePossiblyFatalError(err, null)
+                ));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
         }
 
         private static byte[] KeyAsByteArray(rd_kafka_message msg)
@@ -230,60 +273,44 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assignment" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartition> Assignment
             => kafkaHandle.GetAssignment();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Subscription" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<string> Subscription
             => kafkaHandle.GetSubscription();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Subscribe(IEnumerable{string})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Subscribe(IEnumerable<string> topics)
         {
             kafkaHandle.Subscribe(topics);
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Subscribe(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Subscribe(string topic)
             => Subscribe(new[] { topic });
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Unsubscribe" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Unsubscribe()
             => kafkaHandle.Unsubscribe();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(TopicPartition partition)
             => Assign(new List<TopicPartition> { partition });
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(TopicPartitionOffset)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(TopicPartitionOffset partition)
             => Assign(new List<TopicPartitionOffset> { partition });
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(IEnumerable{TopicPartitionOffset})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(IEnumerable<TopicPartitionOffset> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
@@ -291,9 +318,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Assign(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Assign(IEnumerable<TopicPartition> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
@@ -301,9 +326,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Unassign" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Unassign()
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
@@ -311,16 +334,12 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.StoreOffset(ConsumeResult{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void StoreOffset(ConsumeResult<TKey, TValue> result)
             => StoreOffset(new TopicPartitionOffset(result.TopicPartition, result.Offset + 1));
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.StoreOffset(TopicPartitionOffset)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void StoreOffset(TopicPartitionOffset offset)
         {
             try
@@ -334,25 +353,19 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Commit()" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> Commit()
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(null);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Commit(IEnumerable{TopicPartitionOffset})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Commit(IEnumerable<TopicPartitionOffset> offsets)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Commit(offsets);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Commit(ConsumeResult{TKey, TValue})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Commit(ConsumeResult<TKey, TValue> result)
         {
             if (result.Message == null)
@@ -364,38 +377,34 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Seek(TopicPartitionOffset)" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Seek(TopicPartitionOffset tpo)
             => kafkaHandle.Seek(tpo.Topic, tpo.Partition, tpo.Offset, -1);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Pause(IEnumerable{TopicPartition})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Pause(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Pause(partitions);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Resume(IEnumerable{TopicPartition})" />
-        /// </summary>
+        /// <inheritdoc/>
         public void Resume(IEnumerable<TopicPartition> partitions)
             => kafkaHandle.Resume(partitions);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Committed(IEnumerable{TopicPartition}, TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
+        public List<TopicPartitionOffset> Committed(TimeSpan timeout)
+            // TODO: use a librdkafka queue for this.
+            => kafkaHandle.Committed(Assignment, (IntPtr)timeout.TotalMillisecondsAsInt());
+
+
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> Committed(IEnumerable<TopicPartition> partitions, TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.Committed(partitions, (IntPtr)timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Position(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public Offset Position(TopicPartition partition)
         {
             try
@@ -409,65 +418,53 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.OffsetsForTimes(IEnumerable{TopicPartitionTimestamp}, TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public List<TopicPartitionOffset> OffsetsForTimes(IEnumerable<TopicPartitionTimestamp> timestampsToSearch, TimeSpan timeout)
             // TODO: use a librdkafka queue for this.
             => kafkaHandle.OffsetsForTimes(timestampsToSearch, timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.GetWatermarkOffsets(TopicPartition)" />
-        /// </summary>
+        /// <inheritdoc/>
         public WatermarkOffsets GetWatermarkOffsets(TopicPartition topicPartition)
             => kafkaHandle.GetWatermarkOffsets(topicPartition.Topic, topicPartition.Partition);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.QueryWatermarkOffsets(TopicPartition, TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public WatermarkOffsets QueryWatermarkOffsets(TopicPartition topicPartition, TimeSpan timeout)
             => kafkaHandle.QueryWatermarkOffsets(topicPartition.Topic, topicPartition.Partition, timeout.TotalMillisecondsAsInt());
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.MemberId" />
-        /// </summary>
+        /// <inheritdoc/>
         public string MemberId
             => kafkaHandle.MemberId;
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.AddBrokers(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
-        /// </summary>
+        /// <inheritdoc/>
         public string Name
             => kafkaHandle.Name;
 
 
-        /// <summary>
-        ///     An opaque reference to the underlying librdkafka client instance.
-        ///     This can be used to construct an AdminClient that utilizes the same
-        ///     underlying librdkafka client as this Consumer instance.
-        /// </summary>
+        /// <inheritdoc/>
         public Handle Handle
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey,TValue}.Close" />.
-        /// </summary>
+        /// <inheritdoc/>
         public void Close()
         {
             // commits offsets and unsubscribes.
             kafkaHandle.ConsumerClose();
+            if (this.handlerException != null)
+            {
+                var ex = this.handlerException;
+                this.handlerException = null;
+                throw ex;
+            }
 
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -660,6 +657,18 @@ namespace Confluent.Kafka
         public ConsumeResult<TKey, TValue> Consume(int millisecondsTimeout)
         {
             var msgPtr = kafkaHandle.ConsumerPoll((IntPtr)millisecondsTimeout);
+
+            if (this.handlerException != null)
+            {
+                var ex = this.handlerException;
+                this.handlerException = null;
+                if (msgPtr != IntPtr.Zero)
+                {
+                    Librdkafka.message_destroy(msgPtr);
+                }
+                throw ex;
+            }
+
             if (msgPtr == IntPtr.Zero)
             {
                 return null;
@@ -824,9 +833,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(CancellationToken)" />
-        /// </summary>
+        /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(CancellationToken cancellationToken = default(CancellationToken))
         {
             while (true)
@@ -844,9 +851,7 @@ namespace Confluent.Kafka
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IConsumer{TKey, TValue}.Consume(TimeSpan)" />
-        /// </summary>
+        /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => Consume(timeout.TotalMillisecondsAsInt());
     }
