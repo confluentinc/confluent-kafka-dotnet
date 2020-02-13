@@ -37,10 +37,14 @@ namespace Confluent.Kafka
         /// <param name="topic">
         ///     The topic the data is being written to or read from.
         /// </param>
-        public SerializationContext(MessageComponentType component, string topic)
+        /// <param name="headers">
+        ///     The headers associated with the message being processed.
+        /// </param>
+        public SerializationContext(MessageComponentType component, string topic, Headers headers)
         {
             Component = component;
             Topic = topic;
+            Headers = headers;
         }
 
         /// <summary>
@@ -52,5 +56,15 @@ namespace Confluent.Kafka
         ///     The component of the message the serialization operation relates to.
         /// </summary>
         public MessageComponentType Component { get; private set; }
+
+        /// <summary>
+        ///     The headers associated with the message being processed. This
+        ///     property will be null during serialization if the message being
+        ///     produced did not set a value for the Headers property. It will
+        ///     also be null during deserialization if ConsumeResultFields does
+        ///     not include the "headers" field.
+        /// </summary>
+        public Headers Headers { get; private set; }
+
     }
 }
