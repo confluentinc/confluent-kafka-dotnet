@@ -14,7 +14,7 @@
     <Title>Confluent.SchemaRegistry.Serdes</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes</AssemblyName>
     <VersionPrefix>1.4.0-RC1</VersionPrefix>
-    <TargetFrameworks>netstandard2.0;net452;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
@@ -22,8 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Apache.Avro" Version="1.7.7.7" />
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="Apache.Avro" Version="1.9.2" />
   </ItemGroup>
 
   <ItemGroup>
