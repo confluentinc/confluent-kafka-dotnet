@@ -16,9 +16,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Web;
 using System.Net.Http;
 using Xunit;
+using Confluent.Kafka;
 
 
 namespace Confluent.SchemaRegistry.IntegrationTests
@@ -51,7 +51,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             using (var sr = new CachedSchemaRegistryClient(conf))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructValueSubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ToDelegate()(new SerializationContext(MessageComponentType.Value, topicName), null);
                 var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
                 var schema = sr.GetLatestSchemaAsync(subject).Result;
                 Assert.Equal(schema.Id, id);
@@ -66,7 +66,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             using (var sr = new CachedSchemaRegistryClient(conf2))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructValueSubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
                 var schema = sr.GetLatestSchemaAsync(subject).Result;
                 Assert.Equal(schema.Id, id);
@@ -83,7 +83,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 }))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructValueSubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
                 var schema = sr.GetLatestSchemaAsync(subject).Result;
                 Assert.Equal(schema.Id, id);
@@ -97,7 +97,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             using (var sr = new CachedSchemaRegistryClient(conf3))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructValueSubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
                 var schema = sr.GetLatestSchemaAsync(subject).Result;
                 Assert.Equal(schema.Id, id);
@@ -113,7 +113,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "SASL_INHERIT" },
                     { "schema.registry.basic.auth.user.info", $"{config.Username:config.Password}" }
-                }); 
+                });
             });
 
             Assert.Throws<ArgumentException>(() =>
@@ -122,7 +122,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 { 
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "UBUTE_SOURCE" }
-                }); 
+                });
             });
 
             Assert.Throws<ArgumentException>(() =>
@@ -132,7 +132,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                     { "schema.registry.url", config.ServerWithAuth },
                     { "schema.registry.basic.auth.credentials.source", "NONE" },
                     { "schema.registry.basic.auth.user.info", $"{config.Username:config.Password}" }
-                }); 
+                });
             });
 
             // connect to authenticating without credentials. shouldn't work.
@@ -140,7 +140,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             { 
                 var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithAuth });
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructValueSubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 try
                 {
                     var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;

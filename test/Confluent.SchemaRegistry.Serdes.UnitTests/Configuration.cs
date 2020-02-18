@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+﻿// Copyright 2018-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,21 +33,22 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
-            schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic, null)).Returns($"{testTopic}-value");
-            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
+            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync(testTopic + "-value", It.IsAny<string>())).ReturnsAsync(
                 (string topic, string schema) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
-            schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>())).ReturnsAsync((int id) => store.Where(x => x.Value == id).First().Key);
+            schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(
+                (int id) => new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro)
+            );
             schemaRegistryClient = schemaRegistryMock.Object;
         }
 
         [Fact]
         public void SerializerConfigure()
         {
-            var config = new Dictionary<string, string>
+            var config = new AvroSerializerConfig
             {
-                { "avro.serializer.buffer.bytes", "42" },
-                { "avro.serializer.auto.register.schemas", "false" }
+                BufferBytes = 42,
+                AutoRegisterSchemas = false
             };
 
             // should not throw.
@@ -81,8 +82,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             {
                 { "some.random.config.param", "false" }
             };
+            var config_ = new AvroSerializerConfig(config);
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config_); });
         }
 
         [Fact]
@@ -94,8 +96,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 { "avro.serializer.auto.register.schemas", "false" },
                 { "avro.unknown", "70" }
             };
+            var config_ = new AvroSerializerConfig(config);
 
-            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config); });
+            Assert.Throws<ArgumentException>(() => { var avroSerializer = new AvroSerializer<int>(null, config_); });
         }
 
         [Fact]

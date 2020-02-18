@@ -41,7 +41,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
-            var subject = sr.ConstructValueSubjectName(topicName);
+            var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
             var id1 = sr.RegisterSchemaAsync(subject, testSchema1).Result;
             var id2 = sr.RegisterSchemaAsync(subject, testSchema2).Result;
 

@@ -36,6 +36,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void InvalidSubjectNameStrategy()
         {
             var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
@@ -44,6 +45,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructKeySubjectName_Topic1()
         {
             var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
@@ -52,6 +54,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructKeySubjectName_Topic2()
         {
             var config = new SchemaRegistryConfig
@@ -64,6 +67,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructKeySubjectName_Record()
         {
             var config = new SchemaRegistryConfig
@@ -76,6 +80,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructKeySubjectName_TopicRecord()
         {
             var config = new SchemaRegistryConfig
@@ -88,6 +93,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructValueSubjectName_Topic1()
         {
             var config = new SchemaRegistryConfig { Url = "irrelevanthost:8081" };
@@ -96,6 +102,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructValueSubjectName_Topic2()
         {
             var config = new SchemaRegistryConfig
@@ -108,6 +115,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructValueSubjectName_Record()
         {
             var config = new SchemaRegistryConfig
@@ -120,6 +128,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         }
 
         [Fact]
+        [Obsolete]
         public void ConstructValueSubjectName_TopicRecord()
         {
             var config = new SchemaRegistryConfig

@@ -30,9 +30,9 @@ namespace  Confluent.SchemaRegistry
         /// </summary>
         private SchemaString() { }
 
-        public SchemaString(string schemaString)
+        public SchemaString(string schema)
         {
-            Schema = schemaString;
+            Schema = schema;
         }
     }
 }
