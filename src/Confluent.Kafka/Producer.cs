@@ -664,14 +664,18 @@ namespace Confluent.Kafka
             Message<TKey, TValue> message,
             CancellationToken cancellationToken)
         {
-            Headers headers = message.Headers ?? new Headers();
+            Headers headers = message.Headers;
 
             byte[] keyBytes;
             try
             {
+                SerializationContext context = new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers);
+
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers)).ConfigureAwait(false);
+                    ? keySerializer.Serialize(message.Key, context)
+                    : await asyncKeySerializer.SerializeAsync(message.Key, context).ConfigureAwait(false);
+
+                headers = message.Headers ?? context.Headers;
             }
             catch (Exception ex)
             {
@@ -688,9 +692,13 @@ namespace Confluent.Kafka
             byte[] valBytes;
             try
             {
+                SerializationContext context = new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers);
+
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers)).ConfigureAwait(false);
+                    ? valueSerializer.Serialize(message.Value, context)
+                    : await asyncValueSerializer.SerializeAsync(message.Value, context).ConfigureAwait(false);
+
+                headers = message.Headers ?? context.Headers;
             }
             catch (Exception ex)
             {
@@ -786,14 +794,18 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("A delivery handler was specified, but delivery reports are disabled.");
             }
 
-            Headers headers = message.Headers ?? new Headers();
+            Headers headers = message.Headers;
 
             byte[] keyBytes;
             try
             {
+                SerializationContext context = new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers);
+
                 keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
+                    ? keySerializer.Serialize(message.Key, context)
                     : throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
+
+                headers = message.Headers ?? context.Headers;
             }
             catch (Exception ex)
             {
@@ -810,9 +822,13 @@ namespace Confluent.Kafka
             byte[] valBytes;
             try
             {
+                SerializationContext context = new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers);
+
                 valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
+                    ? valueSerializer.Serialize(message.Value, context)
                     : throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
+
+                headers = message.Headers ?? context.Headers;
             }
             catch (Exception ex)
             {
