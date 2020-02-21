@@ -540,9 +540,8 @@ namespace Confluent.Kafka
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
             }
 
-            var modifiedConfig = config
-                .Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields)
-                .Concat(Library.NameAndVersionConfig)
+            var modifiedConfig = Library.NameAndVersionConfig
+                .Concat(config.Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields))
                 .ToList();
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;

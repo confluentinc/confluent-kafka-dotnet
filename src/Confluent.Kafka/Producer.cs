@@ -552,12 +552,12 @@ namespace Confluent.Kafka
 
             Librdkafka.Initialize(null);
 
-            var modifiedConfig = config
-                .Where(prop => 
-                    prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
-                    prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
-                    prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields)
-                .Concat(Library.NameAndVersionConfig)
+            var modifiedConfig = Library.NameAndVersionConfig
+                .Concat(config
+                    .Where(prop =>
+                        prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
+                        prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
+                        prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields))
                 .ToList();
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
