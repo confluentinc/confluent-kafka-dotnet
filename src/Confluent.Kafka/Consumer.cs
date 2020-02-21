@@ -541,7 +541,9 @@ namespace Confluent.Kafka
             }
 
             var modifiedConfig = config
-                .Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields);
+                .Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields)
+                .Concat(Library.NameAndVersionConfig)
+                .ToList();
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)
@@ -571,10 +573,10 @@ namespace Confluent.Kafka
             }
 
             var configHandle = SafeConfigHandle.Create();
-            modifiedConfig
-                .ToList()
-                .ForEach((kvp) => {
-                    if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
+
+            modifiedConfig.ForEach((kvp) =>
+                {
+                    if (kvp.Value == null) { throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null."); }
                     configHandle.Set(kvp.Key, kvp.Value);
                 });
 

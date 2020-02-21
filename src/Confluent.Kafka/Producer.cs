@@ -556,7 +556,9 @@ namespace Confluent.Kafka
                 .Where(prop => 
                     prop.Key != ConfigPropertyNames.Producer.EnableBackgroundPoll &&
                     prop.Key != ConfigPropertyNames.Producer.EnableDeliveryReports &&
-                    prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields);
+                    prop.Key != ConfigPropertyNames.Producer.DeliveryReportFields)
+                .Concat(Library.NameAndVersionConfig)
+                .ToList();
 
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
@@ -612,10 +614,11 @@ namespace Confluent.Kafka
 
             var configHandle = SafeConfigHandle.Create();
 
-            modifiedConfig.ToList().ForEach((kvp) => {
-                if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
-                configHandle.Set(kvp.Key, kvp.Value);
-            });
+            modifiedConfig.ForEach((kvp) =>
+                {
+                    if (kvp.Value == null) { throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null."); }
+                    configHandle.Set(kvp.Key, kvp.Value);
+                });
 
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
