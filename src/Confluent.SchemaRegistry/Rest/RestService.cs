@@ -23,13 +23,14 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
 
 
 namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publicly, but this is not
-    ///     required by the Avro serializers, so we will keep this internal 
+    ///     required by the Avro serializers, so we will keep this internal
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
     internal class RestService : IRestService
@@ -51,7 +52,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password)
+        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates)
         {
             var authorizationHeader = username != null && password != null
                 ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
@@ -62,7 +63,16 @@ namespace Confluent.SchemaRegistry
                 .Select(SanitizeUri)// need http or https - use http if not present.
                 .Select(uri =>
                 {
-                    var client = new HttpClient { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    HttpClient client;
+                    if (certificates.Count == 0)
+                    {
+                        client = new HttpClient(CreateHandler(certificates)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    }
+                    else
+                    {
+                        client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    }
+
                     if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
                     return client;
                 })
@@ -75,16 +85,32 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
+        #if NET452
+        private static WebRequestHandler CreateHandler(List<X509Certificate2> certificates)
+        {
+            var handler = new WebRequestHandler();
+            certificates.ForEach(c => handler.ClientCertificates.Add(c));
+            return handler;
+        }
+        #else
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates)
+        {
+            var handler = new HttpClientHandler();
+            certificates.ForEach(c => handler.ClientCertificates.Add(c));
+            return handler;
+        }
+        #endif
+
         #region Base Requests
 
         private async Task<HttpResponseMessage> ExecuteOnOneInstanceAsync(Func<HttpRequestMessage> createRequest)
         {
             // There may be many base urls - roll until one is found that works.
             //
-            // Start with the last client that was used by this method, which only gets set on 
+            // Start with the last client that was used by this method, which only gets set on
             // success, so it's probably going to work.
             //
-            // Otherwise, try every client until a successful call is made (true even under 
+            // Otherwise, try every client until a successful call is made (true even under
             // concurrent access).
 
             string aggregatedErrorMessage = null;

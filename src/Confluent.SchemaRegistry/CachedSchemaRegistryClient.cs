@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using System.Threading;
-
+using System.Security.Cryptography.X509Certificates;
 
 namespace Confluent.SchemaRegistry
 {
@@ -174,13 +174,16 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificateLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificatePassword)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config));
         }
 
         /// <remarks>
@@ -205,6 +208,31 @@ namespace Confluent.SchemaRegistry
             return false;
         }
 
+        /// <summary>
+        ///     Add certificates for SSL handshake.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var certificates = new List<X509Certificate2>();
+
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificateLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificatePassword).Value ?? "";
+            if (!String.IsNullOrEmpty(certificateLocation))
+            {
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+            }
+
+            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
+            if (!String.IsNullOrEmpty(caLocation))
+            {
+                certificates.Add(new X509Certificate2(caLocation));
+            }
+
+            return certificates;
+        }
 
         /// <summary>
         ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaIdAsync(string, string)" />

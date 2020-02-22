@@ -100,14 +100,14 @@ namespace Confluent.SchemaRegistry
             ///     USER_INFO: Credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
             ///                If `schema.registry.basic.auth.user.info` is not set, authentication is disabled.
             ///     SASL_INHERIT: Credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
-            /// 
+            ///
             ///     default: USER_INFO
             /// </summary>
             public const string SchemaRegistryBasicAuthCredentialsSource = "schema.registry.basic.auth.credentials.source";
 
             /// <summary>
             ///     Basic auth credentials in the form {username}:{password}.
-            /// 
+            ///
             ///     default: "" (no authentication).
             /// </summary>
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
@@ -121,6 +121,21 @@ namespace Confluent.SchemaRegistry
             ///     Value subject name strategy.
             /// </summary>
             public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
+
+            /// <summary>
+            ///     File path to CA certificate(s) for verifying the schema registry's key.
+            /// </summary>
+            public const string SslCaLocation = "schema.registry.ssl.ca.location";
+
+            /// <summary>
+            ///     Ssl certificate location.
+            /// </summary>
+            public const string SslCertificateLocation = "schema.registry.ssl.certificate.location";
+
+            /// <summary>
+            ///     Ssl certificate password.
+            /// </summary>
+            public const string SslCertificatePassword = "schema.registry.ssl.certificate.password";
         }
 
         /// <summary>
@@ -162,7 +177,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string Url
         {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); } 
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value); }
         }
 
@@ -180,7 +195,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
-        /// 
+        ///
         ///     default: 30000
         /// </summary>
         public int? RequestTimeoutMs
@@ -189,9 +204,45 @@ namespace Confluent.SchemaRegistry
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
         }
 
+        /// <summary>
+        ///     File or directory path to CA certificate(s) for verifying the schema registry's key.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCaLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCaLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Path to client's certificate (PKCS#12) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCertificateLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificateLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificateLocation, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Client's certificate (PKCS#12) password.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCertificatePassword
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificatePassword); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificatePassword, value.ToString()); }
+        }
+
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
-        /// 
+        ///
         ///     default: 30000
         /// </summary>
         [Obsolete("This property will be removed in a future version of this library in favor of the RequestTimeoutMs property")]
@@ -205,7 +256,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
         ///     should cache locally.
-        /// 
+        ///
         ///     default: 1000
         /// </summary>
         public int? MaxCachedSchemas
@@ -217,7 +268,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
         ///     should cache locally.
-        /// 
+        ///
         ///     default: 1000
         /// </summary>
         [Obsolete("This property will be removed in a future version of this library in favor of the MaxCachedSchemas property")]
@@ -250,7 +301,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Key subject name strategy.
-        ///     
+        ///
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
         public SubjectNameStrategy? KeySubjectNameStrategy
@@ -278,7 +329,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Key subject name strategy.
-        ///     
+        ///
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
         [Obsolete("This property will be removed in a future version of this library in favor of the KeySubjectNameStrategy property")]
@@ -319,7 +370,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Value subject name strategy.
-        ///     
+        ///
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
         [Obsolete("This property will be removed in a future version of this library in favor of the ValueSubjectNameStrategy property")]
@@ -357,7 +408,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Gets a configuration property value given a key. Returns null if 
+        ///     Gets a configuration property value given a key. Returns null if
         ///     the property has not been set.
         /// </summary>
         /// <param name="key">
@@ -374,7 +425,7 @@ namespace Confluent.SchemaRegistry
             }
             return null;
         }
-        
+
         /// <summary>
         ///     Gets a configuration property int? value given a key.
         /// </summary>
@@ -406,7 +457,7 @@ namespace Confluent.SchemaRegistry
             if (result == null) { return null; }
             return bool.Parse(result);
         }
-        
+
         /// <summary>
         ///     The configuration properties.
         /// </summary>
