@@ -64,7 +64,7 @@ namespace Confluent.SchemaRegistry
                 .Select(uri =>
                 {
                     HttpClient client;
-                    if (certificates.Count == 0)
+                    if (certificates.Count > 0)
                     {
                         client = new HttpClient(CreateHandler(certificates)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
                     }
@@ -89,6 +89,7 @@ namespace Confluent.SchemaRegistry
         private static WebRequestHandler CreateHandler(List<X509Certificate2> certificates)
         {
             var handler = new WebRequestHandler();
+            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             certificates.ForEach(c => handler.ClientCertificates.Add(c));
             return handler;
         }
@@ -96,6 +97,7 @@ namespace Confluent.SchemaRegistry
         private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates)
         {
             var handler = new HttpClientHandler();
+            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             certificates.ForEach(c => handler.ClientCertificates.Add(c));
             return handler;
         }
