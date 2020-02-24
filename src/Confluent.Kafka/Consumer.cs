@@ -540,8 +540,9 @@ namespace Confluent.Kafka
                 throw new ArgumentException("'group.id' configuration parameter is required and was not specified.");
             }
 
-            var modifiedConfig = config
-                .Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields);
+            var modifiedConfig = Library.NameAndVersionConfig
+                .Concat(config.Where(prop => prop.Key != ConfigPropertyNames.Consumer.ConsumeResultFields))
+                .ToList();
 
             var enabledFieldsObj = config.FirstOrDefault(prop => prop.Key == ConfigPropertyNames.Consumer.ConsumeResultFields).Value;
             if (enabledFieldsObj != null)
@@ -571,10 +572,10 @@ namespace Confluent.Kafka
             }
 
             var configHandle = SafeConfigHandle.Create();
-            modifiedConfig
-                .ToList()
-                .ForEach((kvp) => {
-                    if (kvp.Value == null) throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null.");
+
+            modifiedConfig.ForEach((kvp) =>
+                {
+                    if (kvp.Value == null) { throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null."); }
                     configHandle.Set(kvp.Key, kvp.Value);
                 });
 
