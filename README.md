@@ -208,7 +208,7 @@ You can use the Avro serializer and deserializer with the `GenericRecord` class 
 using the `avrogen` tool, available via Nuget (.NET Core 2.1 required):
 
 ```
-dotnet tool install -g Confluent.Apache.Avro.AvroGen
+dotnet tool install --global Apache.Avro.Tools
 ```
 
 Usage:

@@ -7,6 +7,18 @@
 - Added a [WordCount](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Transactions) example demonstrating a streaming map-reduce application with exactly-once processing.
 - Added a `CancellationToken` parameter to the `ProduceAsync` methods.
 - Uncaught exceptions thrown in handler methods are now propagated to the initiating function, or in the case of error or log events, ignored. Previously, they would cause the application to terminate.
+- Provides client name and version to brokers (KIP-511).
+- Switched to the official Apache Avro [nuget package](https://www.nuget.org/packages/Confluent.Apache.Avro/), which includes support for [logical types](https://avro.apache.org/docs/current/spec.html#Logical+Types), and all fixes from the [Confluent fork](https://github.com/confluentinc/avro/tree/confluent-fork), which has now been discontinued.
+
+
+## Changes
+
+- Some internal improvements to the `Consmer` (thanks to [@andypook](https://github.com/AndyPook)).
+- BREAKING CHANGE: `net452` is no longer a target framework of `Confluent.SchemaRegistry` or `Confluent.SchemaRegistry.Serdes` due to the switch to the official Apache Avro package which only targets `netstandard2.0`. 
+
+## Fixes
+
+- Fixed an `ArgumentNullException` regression in `ListGroups` (thanks to [@andypook](https://github.com/AndyPook)).
 
 
 # 1.3.0
