@@ -96,7 +96,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
 
-                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Value.favorite_color}");
+                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Value.favorite_color}, hourly_rate: {consumeResult.Value.hourly_rate}");
                             }
                             catch (ConsumeException e)
                             {
@@ -124,7 +124,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { name = text, favorite_color = "green", favorite_number = i++ };
+                    User user = new User { name = text, favorite_color = "green", favorite_number = i++, hourly_rate = new Avro.AvroDecimal(67.99) };
                     await producer
                         .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user})
                         .ContinueWith(task => task.IsFaulted
