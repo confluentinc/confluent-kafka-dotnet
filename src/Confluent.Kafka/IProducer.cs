@@ -396,8 +396,8 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Sends a list of topic partition offsets to the consumer group
-        ///     coordinator for <paramref name="group" />, and marks the offsets as part
-        ///     part of the current transaction.
+        ///     coordinator for <paramref name="groupMetadata" />, and marks
+        ///     the offsets as part part of the current transaction.
         ///     These offsets will be considered committed only if the transaction is
         ///     committed successfully.
         ///
@@ -425,12 +425,13 @@ namespace Confluent.Kafka
         ///     successful commit of the transaction. Offsets should be
         ///     the next message to consume, e.g., last processed message + 1.
         /// </param>
-        /// <param name="group">
-        ///     The group id of the consumer group.
+        /// <param name="groupMetadata">
+        ///     The consumer group metadata acquired via
+        ///     <see cref="IConsumer{K,V}.ConsumerGroupMetadata" />
         /// </param>
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, TimeSpan timeout);
+        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout);
     }
 }

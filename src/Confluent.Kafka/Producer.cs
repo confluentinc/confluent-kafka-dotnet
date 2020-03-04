@@ -986,7 +986,7 @@ namespace Confluent.Kafka
             => KafkaHandle.AbortTransaction(timeout.TotalMillisecondsAsInt());
 
         /// <inheritdoc/>
-        public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, TimeSpan timeout)
-            => KafkaHandle.SendOffsetsToTransaction(offsets, group, timeout.TotalMillisecondsAsInt());
+        public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout)
+            => KafkaHandle.SendOffsetsToTransaction(offsets, groupMetadata, timeout.TotalMillisecondsAsInt());
     }
 }

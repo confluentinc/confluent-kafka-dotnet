@@ -372,7 +372,7 @@ namespace Confluent.Kafka.Examples.Transactions
                                         // message consumed, so we need to add one to the last consumed offset
                                         // values here.
                                         new List<TopicPartitionOffset> { new TopicPartitionOffset(state.Key, state.Value.Offset + 1) },
-                                        ConsumerGroup_MapWords, DefaultTimeout); // Note: Not cancellable yet.
+                                        consumer.ConsumerGroupMetadata, DefaultTimeout); // Note: Not cancellable yet.
 
                                     state.Value.Producer.CommitTransaction(DefaultTimeout);  // Note: Not cancellable yet.
 
@@ -593,7 +593,7 @@ namespace Confluent.Kafka.Examples.Transactions
                                 {
                                     state.Value.Producer.SendOffsetsToTransaction(
                                         new List<TopicPartitionOffset> { new TopicPartitionOffset(state.Key, state.Value.Offset + 1) },
-                                        ConsumerGroup_Aggregate, DefaultTimeout);
+                                        consumer.ConsumerGroupMetadata, DefaultTimeout);
                                     state.Value.Producer.CommitTransaction(DefaultTimeout);
                                     state.Value.Offset = Offset.Unset;
                                     state.Value.Producer.BeginTransaction();
