@@ -83,8 +83,8 @@ namespace Confluent.Kafka
             Code = code;
             reason = null;
             IsFatal = code == ErrorCode.Local_Fatal;
-            IsRetriable = !IsFatal;
-            IsTxnAbortable = !IsFatal;
+            IsRetriable = false;
+            IsTxnAbortable = false;
         }
 
         /// <summary>
@@ -113,8 +113,8 @@ namespace Confluent.Kafka
             Code = code;
             this.reason = reason;
             IsFatal = isFatal;
-            IsRetriable = !isFatal;
-            IsTxnAbortable = !isFatal;
+            IsRetriable = false;
+            IsTxnAbortable = false;
         }
 
         /// <summary>
@@ -135,8 +135,8 @@ namespace Confluent.Kafka
             Code = code;
             this.reason = reason;
             IsFatal = code == ErrorCode.Local_Fatal;
-            IsRetriable = !IsFatal;
-            IsTxnAbortable = !IsFatal;
+            IsRetriable = false;
+            IsTxnAbortable = false;
         }
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Whether or not the operation that caused the error is retriable.
         /// </summary>
-        public bool IsRetriable { get; }
+        internal bool IsRetriable { get; }
 
         /// <summary>
         ///     Whether or not the current transaction is abortable
@@ -162,7 +162,7 @@ namespace Confluent.Kafka
         ///     This is only relevant for the transactional producer
         ///     API.
         /// </remarks>
-        public bool IsTxnAbortable { get; }
+        internal bool IsTxnAbortable { get; }
 
         private readonly string reason;
 
