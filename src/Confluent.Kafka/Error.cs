@@ -150,14 +150,18 @@ namespace Confluent.Kafka
         public bool IsFatal { get; }
 
         /// <summary>
-        ///     Whether or not the error is retriable.
+        ///     Whether or not the operation that caused the error is retriable.
         /// </summary>
         public bool IsRetriable { get; }
 
         /// <summary>
-        ///     Whether or not an open transaction is abortable
+        ///     Whether or not the current transaction is abortable
         ///     following the error.
         /// </summary>
+        /// <remarks>
+        ///     This is only relevant for the transactional producer
+        ///     API.
+        /// </remarks>
         public bool IsTxnAbortable { get; }
 
         private readonly string reason;
