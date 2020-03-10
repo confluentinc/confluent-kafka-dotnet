@@ -19,8 +19,14 @@ build_script:
   - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION%)
   - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry/Confluent.SchemaRegistry.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
   
-  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION%)
-  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes/Confluent.SchemaRegistry.Serdes.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Avro/Confluent.SchemaRegistry.Serdes.Avro.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Protobuf/Confluent.SchemaRegistry.Serdes.Protobuf.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
+
+  - cmd: IF "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c %CONFIGURATION%)
+  - cmd: IF NOT "%APPVEYOR_REPO_TAG%" == "true" (dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c %CONFIGURATION% --version-suffix ci-%APPVEYOR_BUILD_NUMBER%)
 
   - docfx doc/docfx.json
 
@@ -34,7 +40,9 @@ test_script:
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
-  - path: ./src/Confluent.SchemaRegistry.Serdes/bin*/Release/*.nupkg
+  - path: ./src/Confluent.SchemaRegistry.Serdes.Avro/bin*/Release/*.nupkg
+  - path: ./src/Confluent.SchemaRegistry.Serdes.Protobuf/bin*/Release/*.nupkg
+  - path: ./src/Confluent.SchemaRegistry.Serdes.Json/bin*/Release/*.nupkg
   - path: ./src/Confluent.SchemaRegistry/bin*/Release/*.nupkg
   - path: ./docs*.zip
     name: docs
