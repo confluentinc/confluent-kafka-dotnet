@@ -54,8 +54,8 @@ namespace Confluent.Kafka
                 Code = ErrorCode.NoError;
                 reason = null;
                 IsFatal = false;
-                IsRetriable = true;
-                IsTxnAbortable = true;
+                IsRetriable = false;
+                IsTxnAbortable = false;
                 return;
             }
             
