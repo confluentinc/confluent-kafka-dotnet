@@ -23,16 +23,16 @@ namespace Confluent.Kafka
     ///     Represents an error that occured during an interaction
     ///     with the Producer's transactional API.
     /// </summary>
-    public class TransactionRequiresAbortException : KafkaException
+    public class KafkaTxnRequiresAbortException : KafkaException
     {
         /// <summary>
-        ///     Initialize a new instance of KafkaTransactionException
+        ///     Initialize a new instance of KafkaTxnRequiresAbortException
         ///     based on an existing Error instance.
         /// </summary>
         /// <param name="error">
         ///     The Error instance.
         /// </param>
-        public TransactionRequiresAbortException(Error error)
+        public KafkaTxnRequiresAbortException(Error error)
             : base(error)
         {
         }

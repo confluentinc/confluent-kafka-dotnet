@@ -506,7 +506,7 @@ namespace Confluent.Kafka.Impl
             {
                 if (error.TxnRequiresAbort)
                 {
-                    throw new TransactionRequiresAbortException(error);
+                    throw new KafkaTxnRequiresAbortException(error);
                 }
                 throw new KafkaException(error);
             }
@@ -519,7 +519,7 @@ namespace Confluent.Kafka.Impl
             {
                 if (error.TxnRequiresAbort)
                 {
-                    throw new TransactionRequiresAbortException(error);
+                    throw new KafkaTxnRequiresAbortException(error);
                 }
                 throw new KafkaException(error);
             }
@@ -551,7 +551,7 @@ namespace Confluent.Kafka.Impl
                 {
                     if (error.TxnRequiresAbort)
                     {
-                        throw new TransactionRequiresAbortException(error);
+                        throw new KafkaTxnRequiresAbortException(error);
                     }
                     throw new KafkaException(error);
                 }

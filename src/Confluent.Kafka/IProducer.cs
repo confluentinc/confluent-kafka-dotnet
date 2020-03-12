@@ -339,7 +339,7 @@ namespace Confluent.Kafka
         ///     Any produce call outside an on-going transaction, or for a failed
         ///     transaction, will fail.
         /// </remark>
-        /// <exception cref="TransactionRequiresAbortException">
+        /// <exception cref="KafkaTxnRequiresAbortException">
         ///     Thrown if the application must call AbortTransaction and
         ///     start a new transaction with BeginTransaction if it
         ///     wishes to proceed with transactions.
@@ -378,7 +378,7 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        /// <exception cref="TransactionRequiresAbortException">
+        /// <exception cref="KafkaTxnRequiresAbortException">
         ///     Thrown if the application must call AbortTransaction and
         ///     start a new transaction with BeginTransaction if it
         ///     wishes to proceed with transactions.
@@ -407,7 +407,7 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        /// <exception>
+        /// <exception cref="KafkaException">
         ///     Thrown on all errors.
         /// </exception>
         void AbortTransaction(TimeSpan timeout);
@@ -454,7 +454,7 @@ namespace Confluent.Kafka
         /// <exception cref="ArgumentException">
         ///     Thrown if group metadata is invalid.
         /// </exception>
-        /// <exception cref="TransactionRequiresAbortException">
+        /// <exception cref="KafkaTxnRequiresAbortException">
         ///     Thrown if the application must call AbortTransaction and
         ///     start a new transaction with BeginTransaction if it
         ///     wishes to proceed with transactions.
