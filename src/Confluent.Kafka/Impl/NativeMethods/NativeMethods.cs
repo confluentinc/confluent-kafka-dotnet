@@ -756,7 +756,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_error_is_retriable(IntPtr error);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_error_is_txn_abortable(IntPtr error);
+        internal static extern IntPtr rd_kafka_error_txn_requires_abort(IntPtr error);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_error_destroy(IntPtr error);

@@ -39,7 +39,7 @@ namespace Confluent.Kafka
             this.reason = error.Reason;
             this.IsFatal = error.IsFatal;
             this.IsRetriable = error.IsRetriable;
-            this.IsTxnAbortable = error.IsTxnAbortable;
+            this.TxnRequiresAbort = error.TxnRequiresAbort;
             this.Code = error.Code;
         }
 
@@ -55,13 +55,13 @@ namespace Confluent.Kafka
                 reason = null;
                 IsFatal = false;
                 IsRetriable = false;
-                IsTxnAbortable = false;
+                TxnRequiresAbort = false;
                 return;
             }
             
             Code = Librdkafka.error_code(error);
             IsFatal = Librdkafka.error_is_fatal(error);
-            IsTxnAbortable = Librdkafka.error_is_txn_abortable(error);
+            TxnRequiresAbort = Librdkafka.error_txn_requires_abort(error);
             IsRetriable = Librdkafka.error_is_retriable(error);
             reason = Librdkafka.error_string(error);
             Librdkafka.error_destroy(error);
@@ -84,7 +84,7 @@ namespace Confluent.Kafka
             reason = null;
             IsFatal = code == ErrorCode.Local_Fatal;
             IsRetriable = false;
-            IsTxnAbortable = false;
+            TxnRequiresAbort = false;
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Confluent.Kafka
             this.reason = reason;
             IsFatal = isFatal;
             IsRetriable = false;
-            IsTxnAbortable = false;
+            TxnRequiresAbort = false;
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Confluent.Kafka
             this.reason = reason;
             IsFatal = code == ErrorCode.Local_Fatal;
             IsRetriable = false;
-            IsTxnAbortable = false;
+            TxnRequiresAbort = false;
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace Confluent.Kafka
         ///     This is only relevant for the transactional producer
         ///     API.
         /// </remarks>
-        internal bool IsTxnAbortable { get; }
+        internal bool TxnRequiresAbort { get; }
 
         private readonly string reason;
 

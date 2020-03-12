@@ -339,6 +339,14 @@ namespace Confluent.Kafka
         ///     Any produce call outside an on-going transaction, or for a failed
         ///     transaction, will fail.
         /// </remark>
+        /// <exception cref="TransactionRequiresAbortException">
+        ///     Thrown if the application must call AbortTransaction and
+        ///     start a new transaction with BeginTransaction if it
+        ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void BeginTransaction();
 
 
@@ -370,6 +378,14 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="TransactionRequiresAbortException">
+        ///     Thrown if the application must call AbortTransaction and
+        ///     start a new transaction with BeginTransaction if it
+        ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void CommitTransaction(TimeSpan timeout);
         
 
@@ -391,6 +407,9 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception>
+        ///     Thrown on all errors.
+        /// </exception>
         void AbortTransaction(TimeSpan timeout);
 
 
@@ -432,6 +451,17 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if group metadata is invalid.
+        /// </exception>
+        /// <exception cref="TransactionRequiresAbortException">
+        ///     Thrown if the application must call AbortTransaction and
+        ///     start a new transaction with BeginTransaction if it
+        ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout);
     }
 }

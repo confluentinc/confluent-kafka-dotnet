@@ -504,6 +504,10 @@ namespace Confluent.Kafka.Impl
             var error = new Error(Librdkafka.begin_transaction(this.handle));
             if (error.Code != ErrorCode.NoError)
             {
+                if (error.TxnRequiresAbort)
+                {
+                    throw new TransactionRequiresAbortException(error);
+                }
                 throw new KafkaException(error);
             }
         }
@@ -513,6 +517,10 @@ namespace Confluent.Kafka.Impl
             var error = new Error(Librdkafka.commit_transaction(this.handle, (IntPtr)millisecondsTimeout));
             if (error.Code != ErrorCode.NoError)
             {
+                if (error.TxnRequiresAbort)
+                {
+                    throw new TransactionRequiresAbortException(error);
+                }
                 throw new KafkaException(error);
             }
         }
@@ -541,6 +549,10 @@ namespace Confluent.Kafka.Impl
                 var error = new Error(Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, cgmdPtr, (IntPtr)millisecondsTimeout));
                 if (error.Code != ErrorCode.NoError)
                 {
+                    if (error.TxnRequiresAbort)
+                    {
+                        throw new TransactionRequiresAbortException(error);
+                    }
                     throw new KafkaException(error);
                 }
             }

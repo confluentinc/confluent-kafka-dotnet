@@ -306,7 +306,7 @@ namespace Confluent.Kafka.Impl
             _error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _error_is_fatal = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_is_fatal").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _error_is_retriable = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_is_retriable").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _error_is_txn_abortable = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_is_txn_abortable").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _error_txn_requires_abort = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_txn_requires_abort").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _error_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_destroy").CreateDelegate(typeof(Action<IntPtr>));
 
             try
@@ -1292,9 +1292,9 @@ namespace Confluent.Kafka.Impl
         internal static bool error_is_retriable(IntPtr error)
             => _error_is_retriable(error) != IntPtr.Zero;
 
-        private static Func<IntPtr, IntPtr> _error_is_txn_abortable;
-        internal static bool error_is_txn_abortable(IntPtr error)
-            => _error_is_txn_abortable(error) != IntPtr.Zero;
+        private static Func<IntPtr, IntPtr> _error_txn_requires_abort;
+        internal static bool error_txn_requires_abort(IntPtr error)
+            => _error_txn_requires_abort(error) != IntPtr.Zero;
 
         private static Action<IntPtr> _error_destroy;
         internal static void error_destroy(IntPtr error)
