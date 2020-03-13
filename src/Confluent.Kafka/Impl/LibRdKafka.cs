@@ -180,11 +180,15 @@ namespace Confluent.Kafka.Impl
             _topic_conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set").CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
             _topic_partition_available = (Func<IntPtr, int, bool>)methods.Single(m => m.Name == "rd_kafka_topic_partition_available").CreateDelegate(typeof(Func<IntPtr, int, bool>));
-            _init_transactions = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_init_transactions").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
-            _begin_transaction = (Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_begin_transaction").CreateDelegate(typeof(Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>));
-            _commit_transaction = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_commit_transaction").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
-            _abort_transaction = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_abort_transaction").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
-            _send_offsets_to_transaction = (Func<IntPtr, IntPtr, string, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_send_offsets_to_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr, string, int, StringBuilder, UIntPtr, ErrorCode>));
+            _init_transactions = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_init_transactions").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _begin_transaction = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_begin_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _commit_transaction = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_commit_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _abort_transaction = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_abort_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _send_offsets_to_transaction = (Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_send_offsets_to_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr>));
+            _rd_kafka_consumer_group_metadata = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_consumer_group_metadata").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _rd_kafka_consumer_group_metadata_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_consumer_group_metadata_destroy").CreateDelegate(typeof(Action<IntPtr>));
+            _rd_kafka_consumer_group_metadata_write = (ConsumerGroupMetadataWriteDelegate)methods.Single(m => m.Name == "rd_kafka_consumer_group_metadata_write").CreateDelegate(typeof(ConsumerGroupMetadataWriteDelegate));
+            _rd_kafka_consumer_group_metadata_read = (ConsumerGroupMetadataReadDelegate)methods.Single(m => m.Name == "rd_kafka_consumer_group_metadata_read").CreateDelegate(typeof(ConsumerGroupMetadataReadDelegate));
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Single(m => m.Name == "rd_kafka_new").CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
             _name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_memberid").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -297,6 +301,13 @@ namespace Confluent.Kafka.Impl
 
             _destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _destroy_flags = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_destroy_flags").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+
+            _error_code = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_error_code").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
+            _error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _error_is_fatal = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_is_fatal").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _error_is_retriable = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_is_retriable").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _error_txn_requires_abort = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_txn_requires_abort").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _error_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_error_destroy").CreateDelegate(typeof(Action<IntPtr>));
 
             try
             {
@@ -683,26 +694,45 @@ namespace Confluent.Kafka.Impl
         internal static bool topic_partition_available(IntPtr rkt, int partition)
             => _topic_partition_available(rkt, partition);
 
-        private static Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode> _init_transactions;
-        internal static ErrorCode init_transactions(IntPtr rk, int timeout, StringBuilder errstr, UIntPtr errstr_size)
-            => _init_transactions(rk, timeout, errstr, errstr_size);
+        private static Func<IntPtr, IntPtr, IntPtr> _init_transactions;
+        internal static IntPtr init_transactions(IntPtr rk, IntPtr timeout)
+            => _init_transactions(rk, timeout);
 
-        private static Func<IntPtr, StringBuilder, UIntPtr, ErrorCode> _begin_transaction;
-        internal static ErrorCode begin_transaction(IntPtr rk, StringBuilder errstr, UIntPtr errstr_size)
-            => _begin_transaction(rk, errstr, errstr_size);
+        private static Func<IntPtr, IntPtr> _begin_transaction;
+        internal static IntPtr begin_transaction(IntPtr rk)
+            => _begin_transaction(rk);
 
-        private static Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode> _commit_transaction;
-        internal static ErrorCode commit_transaction(IntPtr rk, int timeout, StringBuilder errstr, UIntPtr errstr_size)
-            => _commit_transaction(rk, timeout, errstr, errstr_size);
+        private static Func<IntPtr, IntPtr, IntPtr> _commit_transaction;
+        internal static IntPtr commit_transaction(IntPtr rk, IntPtr timeout)
+            => _commit_transaction(rk, timeout);
 
-        private static Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode> _abort_transaction;
-        internal static ErrorCode abort_transaction(IntPtr rk, int timeout, StringBuilder errstr, UIntPtr errstr_size)
-            => _abort_transaction(rk, timeout, errstr, errstr_size);
+        private static Func<IntPtr, IntPtr, IntPtr> _abort_transaction;
+        internal static IntPtr abort_transaction(IntPtr rk, IntPtr timeout)
+            => _abort_transaction(rk, timeout);
 
-        private static Func<IntPtr, IntPtr, string, int, StringBuilder, UIntPtr, ErrorCode> _send_offsets_to_transaction;
-        internal static ErrorCode send_offsets_to_transaction(
-                IntPtr rk, IntPtr offsets, string consumer_group, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size)
-            => _send_offsets_to_transaction(rk, offsets, consumer_group, timeout_ms, errstr, errstr_size);
+        private static Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr> _send_offsets_to_transaction;
+        internal static IntPtr send_offsets_to_transaction(IntPtr rk, IntPtr offsets, IntPtr consumer_group_metadata, IntPtr timeout_ms)
+            => _send_offsets_to_transaction(rk, offsets, consumer_group_metadata, timeout_ms);
+
+        private static Func<IntPtr, IntPtr> _rd_kafka_consumer_group_metadata;
+        internal static IntPtr consumer_group_metadata(IntPtr rk)
+            => _rd_kafka_consumer_group_metadata(rk);
+
+        private static Action<IntPtr> _rd_kafka_consumer_group_metadata_destroy;
+        internal static void consumer_group_metadata_destroy(IntPtr rk)
+            => _rd_kafka_consumer_group_metadata_destroy(rk);
+
+        [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
+        private delegate IntPtr ConsumerGroupMetadataWriteDelegate(IntPtr cgmd, out IntPtr data, out IntPtr dataSize);
+        private static ConsumerGroupMetadataWriteDelegate _rd_kafka_consumer_group_metadata_write;
+        internal static IntPtr consumer_group_metadata_write(IntPtr cgmd, out IntPtr data, out IntPtr dataSize)
+            => _rd_kafka_consumer_group_metadata_write(cgmd, out data, out dataSize);
+
+        [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
+        private delegate IntPtr ConsumerGroupMetadataReadDelegate(out IntPtr cgmd, byte[] data, IntPtr dataSize);
+        private static ConsumerGroupMetadataReadDelegate _rd_kafka_consumer_group_metadata_read;
+        internal static IntPtr consumer_group_metadata_read(out IntPtr cgmd, byte[] data, IntPtr dataSize)
+            => _rd_kafka_consumer_group_metadata_read(out cgmd, data, dataSize);
 
         private static Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle> _new;
         internal static SafeKafkaHandle kafka_new(RdKafkaType type, IntPtr conf,
@@ -1240,5 +1270,34 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _event_topic_partition_list;
         internal static IntPtr event_topic_partition_list(IntPtr rkev)
             => _event_topic_partition_list(rkev);
+
+
+        //
+        // error_t
+        //
+
+        private static Func<IntPtr, ErrorCode> _error_code;
+        internal static ErrorCode error_code(IntPtr error)
+            => _error_code(error);
+
+        private static Func<IntPtr, IntPtr> _error_string;
+        internal static string error_string(IntPtr error)
+            => Util.Marshal.PtrToStringUTF8(_error_string(error));
+
+        private static Func<IntPtr, IntPtr> _error_is_fatal;
+        internal static bool error_is_fatal(IntPtr error)
+            => _error_is_fatal(error) != IntPtr.Zero;
+
+        private static Func<IntPtr, IntPtr> _error_is_retriable;
+        internal static bool error_is_retriable(IntPtr error)
+            => _error_is_retriable(error) != IntPtr.Zero;
+
+        private static Func<IntPtr, IntPtr> _error_txn_requires_abort;
+        internal static bool error_txn_requires_abort(IntPtr error)
+            => _error_txn_requires_abort(error) != IntPtr.Zero;
+
+        private static Action<IntPtr> _error_destroy;
+        internal static void error_destroy(IntPtr error)
+            => error_destroy(error);
     }
 }

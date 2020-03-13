@@ -492,54 +492,119 @@ namespace Confluent.Kafka.Impl
 
         internal void InitTransactions(int millisecondsTimeout)
         {
-            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var errorCode = Librdkafka.init_transactions(this.handle, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-            if (errorCode != ErrorCode.NoError)
+            var error = new Error(Librdkafka.init_transactions(this.handle, (IntPtr)millisecondsTimeout));
+            if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+                if (error.IsRetriable)
+                {
+                    throw new KafkaRetriableException(error);
+                }
+                throw new KafkaException(error);
             }
         }
 
         internal void BeginTransaction()
         {
-            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var errorCode = Librdkafka.begin_transaction(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-            if (errorCode != ErrorCode.NoError)
+            var error = new Error(Librdkafka.begin_transaction(this.handle));
+            if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+                throw new KafkaException(error);
             }
         }
 
         internal void CommitTransaction(int millisecondsTimeout)
         {
-            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var errorCode = Librdkafka.commit_transaction(this.handle, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-            if (errorCode != ErrorCode.NoError)
+            var error = new Error(Librdkafka.commit_transaction(this.handle, (IntPtr)millisecondsTimeout));
+            if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+                if (error.TxnRequiresAbort)
+                {
+                    throw new KafkaTxnRequiresAbortException(error);
+                }
+                if (error.IsRetriable)
+                {
+                    throw new KafkaRetriableException(error);
+                }
+                throw new KafkaException(error);
             }
         }
 
         internal void AbortTransaction(int millisecondsTimeout)
         {
-            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var errorCode = Librdkafka.abort_transaction(this.handle, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-            if (errorCode != ErrorCode.NoError)
+            var error = new Error(Librdkafka.abort_transaction(this.handle, (IntPtr)millisecondsTimeout));
+            if (error.Code != ErrorCode.NoError)
             {
-                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+                if (error.IsRetriable)
+                {
+                    throw new KafkaRetriableException(error);
+                }
+                throw new KafkaException(error);
             }
         }
 
-        internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, int millisecondsTimeout)
+        internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, int millisecondsTimeout)
         {
             IntPtr offsetsPtr = GetCTopicPartitionList(offsets);
 
-            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-            var errorCode = Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, group, millisecondsTimeout, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-            if (errorCode != ErrorCode.NoError)
+            if (!(groupMetadata is ConsumerGroupMetadata))
             {
-                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));                
+                throw new ArgumentException("groupMetadata object must be a value acquired via Consumer.ConsumerGroupMetadata.");
             }
+            var serializedMetadata = ((ConsumerGroupMetadata)groupMetadata).serializedMetadata;
+            var cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
+            try
+            {
+                var error = new Error(Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, cgmdPtr, (IntPtr)millisecondsTimeout));
+                if (error.Code != ErrorCode.NoError)
+                {
+                    if (error.IsRetriable)
+                    {
+                        throw new KafkaRetriableException(error);
+                    }
+                    if (error.TxnRequiresAbort)
+                    {
+                        throw new KafkaTxnRequiresAbortException(error);
+                    }
+                    throw new KafkaException(error);
+                }
+            }
+            finally
+            {
+                this.DestroyConsumerGroupMetadata(cgmdPtr);
+            }
+        }
+
+        internal IntPtr GetConsumerGroupMetadata()
+            => Librdkafka.consumer_group_metadata(this.handle);
+
+        internal void DestroyConsumerGroupMetadata(IntPtr consumerGroupMetadata)
+            => Librdkafka.consumer_group_metadata_destroy(consumerGroupMetadata);
+
+        internal unsafe byte[] SerializeConsumerGroupMetadata(IntPtr consumerGroupMetadata)
+        {
+            var error = new Error(Librdkafka.consumer_group_metadata_write(consumerGroupMetadata, out IntPtr buffer, out IntPtr dataSize));
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+            var result = new byte[(int)dataSize];
+            byte* pIter = (byte*)buffer;
+            for (int i=0; i<(int)dataSize; ++i)
+            {
+                result[i] = *pIter++;
+            }
+            Librdkafka.mem_free(IntPtr.Zero, buffer);
+            return result;
+        }
+
+        internal IntPtr DeserializeConsumerGroupMetadata(byte[] buffer)
+        {
+            var error = new Error(Librdkafka.consumer_group_metadata_read(out IntPtr cgmd, buffer, (IntPtr)buffer.Length));
+            if (error.Code != ErrorCode.NoError)
+            {
+                throw new KafkaException(error);
+            }
+            return cgmd;
         }
 
         internal WatermarkOffsets QueryWatermarkOffsets(string topic, int partition, int millisecondsTimeout)

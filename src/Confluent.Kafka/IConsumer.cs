@@ -621,5 +621,15 @@ namespace Confluent.Kafka
         ///     Thrown if the operation fails.
         /// </exception>
         void Close();
+
+
+        /// <summary>
+        ///     The current consumer group metadata associated with this consumer,
+        ///     or null if a GroupId has not been specified for the consumer.
+        ///     This metadata object should be passed to the transactional producer's
+        ///     <see cref="IProducer{K,V}.SendOffsetsToTransaction(IEnumerable{TopicPartitionOffset},IConsumerGroupMetadata,TimeSpan)"/>
+        ///     method.
+        /// </summary>
+        IConsumerGroupMetadata ConsumerGroupMetadata { get; }
     }
 }

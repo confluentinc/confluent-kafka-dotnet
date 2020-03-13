@@ -214,25 +214,41 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr rkt, int partition);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_init_transactions(
-                IntPtr rk, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+        internal static extern IntPtr rd_kafka_init_transactions(
+                IntPtr rk, IntPtr timeout_ms);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_begin_transaction(
-                IntPtr rk, StringBuilder errstr, UIntPtr errstr_size);
+        internal static extern IntPtr rd_kafka_begin_transaction(IntPtr rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_commit_transaction(
-                IntPtr rk, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+        internal static extern IntPtr rd_kafka_commit_transaction(
+                IntPtr rk, IntPtr timeout_ms);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_abort_transaction(
-                IntPtr rk, int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+        internal static extern IntPtr rd_kafka_abort_transaction(
+                IntPtr rk, IntPtr timeout_ms);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_send_offsets_to_transaction(
-                IntPtr rk, IntPtr offsets, string consumer_group,
-                int timeout_ms, StringBuilder errstr, UIntPtr errstr_size);
+        internal static extern IntPtr rd_kafka_send_offsets_to_transaction(
+                IntPtr rk, IntPtr offsets, IntPtr consumer_group_metadata,
+                IntPtr timeout_ms);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_consumer_group_metadata(IntPtr rk);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_consumer_group_metadata_destroy(IntPtr rk);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_consumer_group_metadata_write(
+                /* rd_kafka_consumer_group_metadata_t * */IntPtr cgmd,
+                /* const void ** */ out IntPtr valuep,
+                /* size_t * */ out IntPtr sizep);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_consumer_group_metadata_read(
+                /* rd_kafka_consumer_group_metadata_t ** */ out IntPtr cgmdp,
+                byte[] buffer, IntPtr size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern SafeKafkaHandle rd_kafka_new(
@@ -700,7 +716,6 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_queue_poll(IntPtr rkqu, IntPtr timeout_ms);
 
 
-
         //
         // Events
         //
@@ -722,5 +737,29 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_event_topic_partition_list(IntPtr rkev);
+
+
+        //
+        // error_t
+        //
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_error_code(IntPtr error);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_error_string(IntPtr error);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_error_is_fatal(IntPtr error);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_error_is_retriable(IntPtr error);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_error_txn_requires_abort(IntPtr error);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_error_destroy(IntPtr error);
+
     }
 }

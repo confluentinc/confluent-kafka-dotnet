@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using Confluent.Kafka.Impl;
 
 
 namespace Confluent.Kafka
@@ -33,7 +34,38 @@ namespace Confluent.Kafka
         /// <param name="error">
         ///     The error object to initialize from.
         /// </param>
-        public Error(Error error) : this(error.Code, error.Reason, error.IsFatal) { }
+        public Error(Error error)
+        {
+            this.reason = error.Reason;
+            this.IsFatal = error.IsFatal;
+            this.IsRetriable = error.IsRetriable;
+            this.TxnRequiresAbort = error.TxnRequiresAbort;
+            this.Code = error.Code;
+        }
+
+        /// <summary>
+        ///     Initialize a new Error instance from a native pointer to
+        ///     a rd_kafka_error_t object, then destroy the native object.
+        /// </summary>
+        internal Error(IntPtr error)
+        {
+            if (error == IntPtr.Zero)
+            {
+                Code = ErrorCode.NoError;
+                reason = null;
+                IsFatal = false;
+                IsRetriable = false;
+                TxnRequiresAbort = false;
+                return;
+            }
+            
+            Code = Librdkafka.error_code(error);
+            IsFatal = Librdkafka.error_is_fatal(error);
+            TxnRequiresAbort = Librdkafka.error_txn_requires_abort(error);
+            IsRetriable = Librdkafka.error_is_retriable(error);
+            reason = Librdkafka.error_string(error);
+            Librdkafka.error_destroy(error);
+        }
 
         /// <summary>
         ///     Initialize a new Error instance from a particular
@@ -51,6 +83,8 @@ namespace Confluent.Kafka
             Code = code;
             reason = null;
             IsFatal = code == ErrorCode.Local_Fatal;
+            IsRetriable = false;
+            TxnRequiresAbort = false;
         }
 
         /// <summary>
@@ -79,6 +113,8 @@ namespace Confluent.Kafka
             Code = code;
             this.reason = reason;
             IsFatal = isFatal;
+            IsRetriable = false;
+            TxnRequiresAbort = false;
         }
 
         /// <summary>
@@ -99,6 +135,8 @@ namespace Confluent.Kafka
             Code = code;
             this.reason = reason;
             IsFatal = code == ErrorCode.Local_Fatal;
+            IsRetriable = false;
+            TxnRequiresAbort = false;
         }
 
         /// <summary>
@@ -110,6 +148,21 @@ namespace Confluent.Kafka
         ///     Whether or not the error is fatal.
         /// </summary>
         public bool IsFatal { get; }
+
+        /// <summary>
+        ///     Whether or not the operation that caused the error is retriable.
+        /// </summary>
+        internal bool IsRetriable { get; }
+
+        /// <summary>
+        ///     Whether or not the current transaction is abortable
+        ///     following the error.
+        /// </summary>
+        /// <remarks>
+        ///     This is only relevant for the transactional producer
+        ///     API.
+        /// </remarks>
+        internal bool TxnRequiresAbort { get; }
 
         private readonly string reason;
 

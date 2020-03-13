@@ -316,6 +316,12 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void InitTransactions(TimeSpan timeout);
 
 
@@ -339,6 +345,9 @@ namespace Confluent.Kafka
         ///     Any produce call outside an on-going transaction, or for a failed
         ///     transaction, will fail.
         /// </remark>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all errors.
+        /// </exception>
         void BeginTransaction();
 
 
@@ -370,6 +379,17 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="KafkaTxnRequiresAbortException">
+        ///     Thrown if the application must call AbortTransaction and
+        ///     start a new transaction with BeginTransaction if it
+        ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void CommitTransaction(TimeSpan timeout);
         
 
@@ -391,13 +411,19 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void AbortTransaction(TimeSpan timeout);
 
 
         /// <summary>
         ///     Sends a list of topic partition offsets to the consumer group
-        ///     coordinator for <paramref name="group" />, and marks the offsets as part
-        ///     part of the current transaction.
+        ///     coordinator for <paramref name="groupMetadata" />, and marks
+        ///     the offsets as part part of the current transaction.
         ///     These offsets will be considered committed only if the transaction is
         ///     committed successfully.
         ///
@@ -425,12 +451,27 @@ namespace Confluent.Kafka
         ///     successful commit of the transaction. Offsets should be
         ///     the next message to consume, e.g., last processed message + 1.
         /// </param>
-        /// <param name="group">
-        ///     The group id of the consumer group.
+        /// <param name="groupMetadata">
+        ///     The consumer group metadata acquired via
+        ///     <see cref="IConsumer{K,V}.ConsumerGroupMetadata" />
         /// </param>
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
-        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, string group, TimeSpan timeout);
+        /// <exception cref="ArgumentException">
+        ///     Thrown if group metadata is invalid.
+        /// </exception>
+        /// <exception cref="KafkaTxnRequiresAbortException">
+        ///     Thrown if the application must call AbortTransaction and
+        ///     start a new transaction with BeginTransaction if it
+        ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
+        void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout);
     }
 }

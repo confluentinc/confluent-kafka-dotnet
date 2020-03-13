@@ -855,5 +855,23 @@ namespace Confluent.Kafka
         /// <inheritdoc/>
         public ConsumeResult<TKey, TValue> Consume(TimeSpan timeout)
             => Consume(timeout.TotalMillisecondsAsInt());
+
+
+        /// <inheritdoc/>
+        public IConsumerGroupMetadata ConsumerGroupMetadata
+        {
+            get
+            {
+                var cgmd = this.kafkaHandle.GetConsumerGroupMetadata();
+                try
+                {
+                    return new ConsumerGroupMetadata { serializedMetadata = this.kafkaHandle.SerializeConsumerGroupMetadata(cgmd) };
+                }
+                finally
+                {
+                    this.kafkaHandle.DestroyConsumerGroupMetadata(cgmd);
+                }
+            }
+        }
     }
 }
