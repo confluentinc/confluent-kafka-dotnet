@@ -40,7 +40,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             // case 1: record specified.
             var topicName = Guid.NewGuid().ToString();
-            var subject = sr.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
+            var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, "Confluent.Kafka.Examples.AvroSpecific.User");
 
             sr.RegisterSchemaAsync(subject, testSchema1).Wait();
 
@@ -50,7 +50,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             // case 2: record not specified.
             topicName = Guid.NewGuid().ToString();
-            subject = sr.ConstructKeySubjectName(topicName);
+            subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
 
             sr.RegisterSchemaAsync(subject, testSchema1).Wait();
 

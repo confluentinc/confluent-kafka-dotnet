@@ -1,4 +1,4 @@
-// Copyright 20 Confluent Inc.
+// Copyright 2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
-            var subject = sr.ConstructValueSubjectName(topicName);
+            var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
             var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var schema = sr.GetLatestSchemaAsync(subject).Result;

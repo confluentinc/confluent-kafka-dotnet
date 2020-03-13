@@ -14,6 +14,9 @@
 //
 // Refer to LICENSE for more information.
 
+// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
+#pragma warning disable CS0618
+
 using Moq;
 using Xunit;
 using System.Collections.Generic;
@@ -38,7 +41,9 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
                 (string topic, string schema) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
-            schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>())).ReturnsAsync((int id) => store.Where(x => x.Value == id).First().Key);
+            schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(
+                (int id, string format) => new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro)
+            );
             schemaRegistryClient = schemaRegistryMock.Object;   
         }
 

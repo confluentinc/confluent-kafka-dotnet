@@ -1,4 +1,4 @@
-﻿// Copyright 2016-2018 Confluent Inc.
+﻿// Copyright 2016-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,29 +14,55 @@
 //
 // Refer to LICENSE for more information.
 
+// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
+#pragma warning disable CS0618
+#pragma warning disable CS0612
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
 using System.Threading;
+using Confluent.Kafka;
 
 
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
     ///     A caching Schema Registry client.
+    ///
+    ///     The following method calls cache results:
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, Schema)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaAsync(int, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema)" />
+    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
+    ///
+    ///     The following method calls do NOT cache results:
+    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, Schema)" />
+    ///      - <see cref="CachedSchemaRegistryClient.IsCompatibleAsync(string, string)" />
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
+        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
+
         private IRestService restService;
-        private readonly int identityMapCapacity;
-        private readonly Dictionary<int, string> schemaById = new Dictionary<int, string>();
+        private int identityMapCapacity;
+        private readonly Dictionary<int, Schema> schemaById = new Dictionary<int, Schema>();
+
         private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
-        private readonly Dictionary<string /*subject*/, Dictionary<int, string>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, string>>();
+        private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+
         private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
 
-        private readonly SubjectNameStrategy KeySubjectNameStrategy = DefaultKeySubjectNameStrategy;
-        private readonly SubjectNameStrategy ValueSubjectNameStrategy = DefaultValueSubjectNameStrategy;
+        private SubjectNameStrategyDelegate keySubjectNameStrategy;
+        private SubjectNameStrategyDelegate valueSubjectNameStrategy;
+
 
         /// <summary>
         ///     The default timeout value for Schema Registry REST API calls.
@@ -58,14 +84,13 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.MaxCachedSchemas" />
-        /// </summary>
+        /// <inheritdoc />
         public int MaxCachedSchemas
             => identityMapCapacity;
 
 
-        private static SubjectNameStrategy GetKeySubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
+        [Obsolete]
+        private static SubjectNameStrategyDelegate GetKeySubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
         {
             var keySubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy).Value ?? "";
             SubjectNameStrategy keySubjectNameStrategy = SubjectNameStrategy.Topic;
@@ -74,10 +99,12 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentException($"Unknown KeySubjectNameStrategy: {keySubjectNameStrategyString}");
             }
-            return keySubjectNameStrategy;
+            return keySubjectNameStrategy.ToDelegate();
         }
 
-        private static SubjectNameStrategy GetValueSubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
+
+        [Obsolete]
+        private static SubjectNameStrategyDelegate GetValueSubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
         {
             var valueSubjectNameStrategyString = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy).Value ?? "";
             SubjectNameStrategy valueSubjectNameStrategy = SubjectNameStrategy.Topic;
@@ -86,7 +113,7 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentException($"Unknown ValueSubjectNameStrategy: {valueSubjectNameStrategyString}");
             }
-            return valueSubjectNameStrategy;
+            return valueSubjectNameStrategy.ToDelegate();
         }
 
         /// <summary>
@@ -101,6 +128,9 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentNullException("config properties must be specified.");
             }
+
+            keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
+            valueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
 
             var schemaRegistryUrisMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
             if (schemaRegistryUrisMaybe.Value == null) { throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl} configuration property must be specified."); }
@@ -158,9 +188,6 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
-            KeySubjectNameStrategy = GetKeySubjectNameStrategy(config);
-            ValueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
-
             foreach (var property in config)
             {
                 if (!property.Key.StartsWith("schema.registry."))
@@ -182,6 +209,7 @@ namespace Confluent.SchemaRegistry
 
             this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password);
         }
+
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
@@ -206,10 +234,13 @@ namespace Confluent.SchemaRegistry
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaIdAsync(string, string)" />
-        /// </summary>
-        public async Task<int> GetSchemaIdAsync(string subject, string schema)
+        /// <inheritdoc/>
+        public Task<int> GetSchemaIdAsync(string subject, string avroSchema)
+            => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
+
+        
+        /// <inheritdoc/>
+        public async Task<int> GetSchemaIdAsync(string subject, Schema schema)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
@@ -220,17 +251,19 @@ namespace Confluent.SchemaRegistry
                     this.idBySchemaBySubject.Add(subject, idBySchema);
                 }
 
-                // TODO: This could be optimized in the usual case where idBySchema only
-                // contains very few elements and the schema string passed in is always
-                // the same instance.
+                // TODO: The following could be optimized in the usual case where idBySchema only
+                // contains very few elements and the schema string passed in is always the same
+                // instance.
 
-                if (!idBySchema.TryGetValue(schema, out int schemaId))
+                if (!idBySchema.TryGetValue(schema.SchemaString, out int schemaId))
                 {
                     CleanCacheIfFull();
 
-                    schemaId = (await restService.CheckSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false)).Id;
-                    idBySchema[schema] = schemaId;
-                    schemaById[schemaId] = schema;
+                    // throws SchemaRegistryException if schema is not known.
+                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
+                    idBySchema[schema.SchemaString] = registeredSchema.Id;
+                    schemaById[schemaId] = registeredSchema.Schema;
+                    schemaId = registeredSchema.Id;
                 }
 
                 return schemaId;
@@ -242,10 +275,8 @@ namespace Confluent.SchemaRegistry
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.RegisterSchemaAsync(string, string)" />
-        /// </summary>
-        public async Task<int> RegisterSchemaAsync(string subject, string schema)
+        /// <inheritdoc/>
+        public async Task<int> RegisterSchemaAsync(string subject, Schema schema)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
@@ -260,13 +291,12 @@ namespace Confluent.SchemaRegistry
                 // contains very few elements and the schema string passed in is always
                 // the same instance.
 
-                if (!idBySchema.TryGetValue(schema, out int schemaId))
+                if (!idBySchema.TryGetValue(schema.SchemaString, out int schemaId))
                 {
                     CleanCacheIfFull();
 
                     schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
-                    idBySchema[schema] = schemaId;
-                    schemaById[schemaId] = schema;
+                    idBySchema[schema.SchemaString] = schemaId;
                 }
 
                 return schemaId;
@@ -278,19 +308,59 @@ namespace Confluent.SchemaRegistry
         }
 
 
+        /// <inheritdoc/>
+        public Task<int> RegisterSchemaAsync(string subject, string avroSchema)
+            => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
+    
+
         /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaAsync(int)" />
+        ///     Check if the given schema string matches a given format name.
         /// </summary>
-        public async Task<string> GetSchemaAsync(int id)
+        private bool checkSchemaMatchesFormat(string format, string schemaString)
+        {
+            // if a format isn't specified, then assume text is desired.
+            if (format == null)
+            {
+                try { Convert.FromBase64String(schemaString); }
+                catch (Exception)
+                {
+                    return true; // Base64 conversion failed, infer the schemaString format is text.
+                }
+
+                return false; // Base64 conversion succeeded, so infer the schamaString format is base64.
+            }
+            else
+            {
+                if (format != "serialized")
+                {
+                    throw new ArgumentException($"Invalid schema format was specified: {format}.");
+                }
+
+                try { Convert.FromBase64String(schemaString); }
+                catch (Exception)
+                {
+                    return false;
+                }
+                return true;
+            }
+        }
+
+
+        /// <inheritdoc/>
+        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas)
+            => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas);
+
+
+        /// <inheritdoc/>
+        public async Task<Schema> GetSchemaAsync(int id, string format = null)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
-                if (!this.schemaById.TryGetValue(id, out string schema))
+                if (!this.schemaById.TryGetValue(id, out Schema schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
                 {
                     CleanCacheIfFull();
-
-                    schema = await restService.GetSchemaAsync(id).ConfigureAwait(continueOnCapturedContext: false);
+                    schema = (await restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false));
                     schemaById[id] = schema;
                 }
 
@@ -303,31 +373,28 @@ namespace Confluent.SchemaRegistry
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSchemaAsync(string, int)" />
-        /// </summary>
-        public async Task<string> GetSchemaAsync(string subject, int version)
+        /// <inheritdoc/>
+        public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 CleanCacheIfFull();
 
-                if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, string> schemaByVersion))
+                if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, RegisteredSchema> schemaByVersion))
                 {
-                    schemaByVersion = new Dictionary<int, string>();
+                    schemaByVersion = new Dictionary<int, RegisteredSchema>();
                     schemaByVersionBySubject[subject] = schemaByVersion;
                 }
 
-                if (!schemaByVersion.TryGetValue(version, out string schemaString))
+                if (!schemaByVersion.TryGetValue(version, out RegisteredSchema schema))
                 {
-                    var schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
-                    schemaString = schema.SchemaString;
-                    schemaByVersion[version] = schemaString;
-                    schemaById[schema.Id] = schemaString;
+                    schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
+                    schemaByVersion[version] = schema;
+                    schemaById[schema.Id] = schema.Schema;
                 }
 
-                return schemaString;
+                return schema;
             }
             finally
             {
@@ -336,80 +403,47 @@ namespace Confluent.SchemaRegistry
         }
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetLatestSchemaAsync(string)" />
-        /// </summary>
-        public async Task<Schema> GetLatestSchemaAsync(string subject)
+        /// <inheritdoc/>
+        [Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
+        public async Task<string> GetSchemaAsync(string subject, int version)
+            => (await GetRegisteredSchemaAsync(subject, version)).SchemaString;
+
+
+        /// <inheritdoc/>
+        public async Task<RegisteredSchema> GetLatestSchemaAsync(string subject)
             => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
 
 
-
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetAllSubjectsAsync" />
-        /// </summary>
+        /// <inheritdoc/>
         public Task<List<string>> GetAllSubjectsAsync()
             => restService.GetSubjectsAsync();
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.GetSubjectVersionsAsync(string)" />
-        /// </summary>
+        /// <inheritdoc/>
         public async Task<List<int>> GetSubjectVersionsAsync(string subject)
             => await restService.GetSubjectVersionsAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.IsCompatibleAsync(string, string)" />
-        /// </summary>
-        public async Task<bool> IsCompatibleAsync(string subject, string schema)
+        /// <inheritdoc/>
+        public async Task<bool> IsCompatibleAsync(string subject, Schema schema)
             => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
 
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructKeySubjectName(string,string)" />
-        /// </summary>
+        /// <inheritdoc/>
+        public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
+            => await restService.TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc />
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
-        {
-            if (KeySubjectNameStrategy != SubjectNameStrategy.Topic && recordType == null)
-            {
-                throw new ArgumentNullException($"recordType must not be null for KeySubjectNameStrategy: {KeySubjectNameStrategy}");
-            }
+            => keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
 
-            switch (KeySubjectNameStrategy)
-            {
-                case SubjectNameStrategy.Record:
-                    return $"{recordType}";
-                case SubjectNameStrategy.TopicRecord:
-                    return $"{topic}-{recordType}";
-                case SubjectNameStrategy.Topic:
-                    return $"{topic}-key";
-                default:
-                    throw new InvalidOperationException($"Unknown SubjectNameStrategy: {KeySubjectNameStrategy}");
-            }
-        }
 
-        /// <summary>
-        ///     Refer to <see cref="Confluent.SchemaRegistry.ISchemaRegistryClient.ConstructValueSubjectName(string,string)" />
-        /// </summary>
+        /// <inheritdoc />
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructValueSubjectName(string topic, string recordType = null)
-        {
-            if (ValueSubjectNameStrategy != SubjectNameStrategy.Topic && recordType == null)
-            {
-                throw new ArgumentNullException($"recordType must not be null for ValueSubjectNameStrategy: {ValueSubjectNameStrategy}");
-            }
-
-            switch (ValueSubjectNameStrategy)
-            {
-                case SubjectNameStrategy.Record:
-                    return $"{recordType}";
-                case SubjectNameStrategy.TopicRecord:
-                    return $"{topic}-{recordType}";
-                case SubjectNameStrategy.Topic:
-                    return $"{topic}-value";
-                default:
-                    throw new InvalidOperationException($"Unknown SubjectNameStrategy: {ValueSubjectNameStrategy}");
-            }
-        }
+            => valueSubjectNameStrategy(new SerializationContext(MessageComponentType.Value, topic), recordType);
 
 
         /// <summary>
@@ -420,7 +454,6 @@ namespace Confluent.SchemaRegistry
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
 
         /// <summary>
         ///     Releases the unmanaged resources used by this object
@@ -437,5 +470,6 @@ namespace Confluent.SchemaRegistry
                 restService.Dispose();
             }
         }
+
     }
 }

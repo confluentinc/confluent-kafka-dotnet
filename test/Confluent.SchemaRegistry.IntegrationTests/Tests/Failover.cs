@@ -35,7 +35,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = $"{config.Server},http://localhost:65432" }))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructKeySubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
                 var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
                 var id2 = sr.GetSchemaIdAsync(subject, testSchema).Result;
                 Assert.Equal(id, id2);
@@ -44,7 +44,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = $"http://localhost:65432,{config.Server}" }))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructKeySubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
                 var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
                 var id2 = sr.GetSchemaIdAsync(subject, testSchema).Result;
                 Assert.Equal(id, id2);
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             using (var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = $"http://localhost:65432,http://localhost:65431" }))
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructKeySubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
                 
                 Assert.Throws<HttpRequestException>(() => 
                 {

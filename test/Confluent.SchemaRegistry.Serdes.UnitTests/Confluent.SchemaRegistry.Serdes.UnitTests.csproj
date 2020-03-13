@@ -12,10 +12,16 @@
     <PackageReference Include="Moq" Version="4.7.99" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.11.3" />
+    <PackageReference Include="Apache.Avro" Version="1.9.2" />
+    <PackageReference Include="System.Runtime" Version="4.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes\Confluent.SchemaRegistry.Serdes.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Avro\Confluent.SchemaRegistry.Serdes.Avro.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Json\Confluent.SchemaRegistry.Serdes.Json.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Protobuf\Confluent.SchemaRegistry.Serdes.Protobuf.csproj" />
   </ItemGroup>
 
   <ItemGroup>

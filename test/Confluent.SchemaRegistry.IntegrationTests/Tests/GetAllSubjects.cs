@@ -37,7 +37,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var subjectsBefore = sr.GetAllSubjectsAsync().Result;
 
-            var subject = sr.ConstructKeySubjectName(topicName);
+            var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
             var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
 
             var subjectsAfter = sr.GetAllSubjectsAsync().Result;

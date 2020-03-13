@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+﻿// Copyright 2018-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,87 +12,112 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
-//
 // Refer to LICENSE for more information.
 
-using Confluent.Kafka;
-using Google.Protobuf;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 
 /// <summary>
-///     A simple example demonstrating how to produce and consume protobuf serialized data.
-///     Note: Does not demonstrate integration with Schema Registry which currently only supports Avro.
+///     An example of working with protobuf serialized data and
+///     Confluent Schema Registry (v5.5 or later required for
+///     Protobuf schema support).
 /// </summary>
 namespace Confluent.Kafka.Examples.Protobuf
 {
-    /// <summary>
-    ///     protobuf serializer
-    /// </summary>
-    public class ProtobufSerializer<T> : ISerializer<T> where T : IMessage<T>, new()
-    {
-        public byte[] Serialize(T data, SerializationContext context)
-            => data.ToByteArray();
-    }
-
-    /// <summary>
-    ///     protobuf deserializer
-    /// </summary>
-    public class ProtobufDeserializer<T> : IDeserializer<T> where T : IMessage<T>, new()
-    {
-        private MessageParser<T> parser;
-
-        public ProtobufDeserializer()
-        {
-            parser = new MessageParser<T>(() => new T());
-        }
-
-        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
-            => parser.ParseFrom(data.ToArray());
-    }
-
     class Program
     {
         static async Task Main(string[] args)
         {
-            var consumerConfig = new ConsumerConfig
+            if (args.Length != 3)
             {
-                BootstrapServers = args[0],
-                GroupId = "protobuf-example",
-                AutoOffsetReset = AutoOffsetReset.Latest
+                Console.WriteLine("Usage: .. bootstrapServers schemaRegistryUrl topicName");
+                return;
+            }
+
+            string bootstrapServers = args[0];
+            string schemaRegistryUrl = args[1];
+            string topicName = args[2];
+
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = bootstrapServers
             };
 
+            var schemaRegistryConfig = new SchemaRegistryConfig
+            {
+                // Note: you can specify more than one schema registry url using the
+                // schema.registry.url property for redundancy (comma separated list). 
+                // The property name is not plural to follow the convention set by
+                // the Java implementation.
+                Url = schemaRegistryUrl,
+            };
+
+            var consumerConfig = new ConsumerConfig
+            {
+                BootstrapServers = bootstrapServers,
+                GroupId = "protobuf-example-consumer-group"
+            };
+
+            CancellationTokenSource cts = new CancellationTokenSource();
             var consumeTask = Task.Run(() =>
             {
-                // consume a single message then exit.
                 using (var consumer =
-                    new ConsumerBuilder<int, User>(consumerConfig)
-                        .SetValueDeserializer(new ProtobufDeserializer<User>())
+                    new ConsumerBuilder<string, User>(consumerConfig)
+                        .SetValueDeserializer(new ProtobufDeserializer<User>().AsSyncOverAsync())
+                        .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
-                    consumer.Subscribe("protobuf-test-topic");
-                    var cr = consumer.Consume();
-                    Console.WriteLine($"User: [id: {cr.Key}, favorite color: {cr.Message.Value.FavoriteColor}]");
+                    consumer.Subscribe(topicName);
+
+                    try
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                var consumeResult = consumer.Consume(cts.Token);
+                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Value.FavoriteColor}");
+                            }
+                            catch (ConsumeException e)
+                            {
+                                Console.WriteLine($"Consume error: {e.Error.Reason}");
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        consumer.Close();
+                    }
                 }
             });
 
-            // wait a bit so the consumer is ready to consume messages before producing one.
-            await Task.Delay(TimeSpan.FromSeconds(10));
-
-            var producerConfig = new ProducerConfig { BootstrapServers = args[0] };
-
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
-                new ProducerBuilder<int, User>(producerConfig)
-                    .SetValueSerializer(new ProtobufSerializer<User>())
+                new ProducerBuilder<string, User>(producerConfig)
+                    .SetValueSerializer(new ProtobufSerializer<User>(schemaRegistry))
                     .Build())
             {
-                await producer.ProduceAsync("protobuf-test-topic", new Message<int, User> { Key = 0, Value = new User { FavoriteColor = "green" } });
+                Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
+
+                int i = 0;
+                string text;
+                while ((text = Console.ReadLine()) != "q")
+                {
+                    User user = new User { Name = text, FavoriteColor = "green", FavoriteNumber = i++ };
+                    await producer
+                        .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
+                        .ContinueWith(task => task.IsFaulted
+                            ? $"error producing message: {task.Exception.Message}"
+                            : $"produced to: {task.Result.TopicPartitionOffset}");
+                }
             }
 
-            await consumeTask;
+            cts.Cancel();
         }
     }
 }

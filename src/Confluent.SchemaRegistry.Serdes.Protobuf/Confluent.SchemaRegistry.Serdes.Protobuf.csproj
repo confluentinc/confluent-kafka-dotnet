@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <Authors>Confluent Inc.</Authors>
+    <Description>Provides a Protobuf Serializer and Deserializer for use with Confluent.Kafka with Confluent Schema Registry integration</Description>
+    <Copyright>Copyright 2020 Confluent Inc.</Copyright>
+    <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent_logo.png</PackageIconUrl>
+    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
+    <PackageTags>Kafka;Confluent;Schema Registry;Protobuf</PackageTags>
+    <PackageId>Confluent.SchemaRegistry.Serdes.Protobuf</PackageId>
+    <Title>Confluent.SchemaRegistry.Serdes.Protobuf</Title>
+    <AssemblyName>Confluent.SchemaRegistry.Serdes.Protobuf</AssemblyName>
+    <VersionPrefix>1.4.0-RC4</VersionPrefix>
+    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Serdes.Protobuf.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Confluent.Kafka\Confluent.Kafka.csproj" />
+    <ProjectReference Include="..\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

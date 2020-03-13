@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <AssemblyName>JsonSerialization</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="1.4.0-RC4" /> -->
+    <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj" />
+  </ItemGroup>
+
+</Project>
