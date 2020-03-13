@@ -53,7 +53,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions", "examples\Tr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.Kafka.Transactions", "test\Confluent.Kafka.Transactions\Confluent.Kafka.Transactions.csproj", "{2A6D1D58-4F02-480E-8A9C-F2A0D0BC911C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonSerialization", "examples\JsonJsonSerialization\JsonJsonSerialization.csproj", "{C1F8EBEB-8F2D-44A1-BAAD-AE9337512FA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonSerialization", "examples\JsonSerialization\JsonSerialization.csproj", "{C1F8EBEB-8F2D-44A1-BAAD-AE9337512FA6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Confluent.SchemaRegistry.Serdes.Avro", "src\Confluent.SchemaRegistry.Serdes.Avro\Confluent.SchemaRegistry.Serdes.Avro.csproj", "{1B2C48B7-FD1D-4457-9E5B-80EBB7A28104}"
 EndProject
