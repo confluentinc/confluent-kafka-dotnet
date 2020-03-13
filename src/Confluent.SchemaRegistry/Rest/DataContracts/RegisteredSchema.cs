@@ -35,6 +35,8 @@ namespace Confluent.SchemaRegistry
     [DataContract]
     public class RegisteredSchema : Schema, IComparable<RegisteredSchema>, IEquatable<RegisteredSchema>
     {
+        private int? hashCode;
+
         /// <summary>
         ///     The subject the schema is registered against.
         /// </summary>
@@ -121,7 +123,7 @@ namespace Confluent.SchemaRegistry
         ///     A string that represents the object.
         /// </returns>
         public override string ToString()
-            => $"{{chars={SchemaString.Length}, subject={Subject}, version={Version}, id={Id}, type={SchemaType}, dependencies={References.Count}}}";
+            => $"{{length={SchemaString.Length}, subject={Subject}, version={Version}, id={Id}, type={SchemaType}, dependencies={References.Count}}}";
 
         /// <summary>
         ///     Returns a hash code for this Schema.
@@ -131,15 +133,19 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public override int GetHashCode()
         {
-            int result = Subject.GetHashCode();
-            result = 31 * result + Version;
-            result = 31 * result + Id;
-            result = 31 * result + SchemaString.GetHashCode();
-            return result;
+            if (this.hashCode == null)
+            {
+                int h = Subject.GetHashCode();
+                h = 31 * h + Version;
+                h = 31 * h + Id;
+                h = 31 * h + SchemaString.GetHashCode();
+                this.hashCode = h;
+            }
+            return this.hashCode.Value;
         }
 
         /// <summary>
-        ///     Compares this instance with a specified Schema object and indicates whether this 
+        ///     Compares this instance with a specified RegisteredSchema object and indicates whether this 
         ///     instance precedes, follows, or appears in the same position in the sort order as
         ///     the specified schema.
         /// </summary>
@@ -155,11 +161,6 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public int CompareTo(RegisteredSchema other)
         {
-            if (other == null)
-            {
-                throw new ArgumentException("Cannot compare object of type Schema with null.");
-            }
-
             int result = string.Compare(Subject, other.Subject, StringComparison.Ordinal);
             if (result == 0)
             {
@@ -169,8 +170,7 @@ namespace Confluent.SchemaRegistry
             return result;
 
             // If the schema strings + version are equal and any of the other properties are not,
-            // then this is a logical error. Assume that this prevented/handled elsewhere.
-            
+            // then this is a logical error. Assume that this prevented/handled elsewhere.   
         }
 
         /// <summary>

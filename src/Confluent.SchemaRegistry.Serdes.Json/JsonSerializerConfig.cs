@@ -55,6 +55,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "json.serializer.subject.name.strategy";
         }

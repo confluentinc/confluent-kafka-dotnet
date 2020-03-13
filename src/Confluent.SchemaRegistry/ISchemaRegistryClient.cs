@@ -45,6 +45,7 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///     A unique id identifying the schema.
         /// </returns>
+        [Obsolete("Superseded by RegisterSchemaAsync(string, Schema)")]
         Task<int> RegisterSchemaAsync(string subject, string avroSchema);
 
 
@@ -79,6 +80,7 @@ namespace Confluent.SchemaRegistry
         /// <exception cref="SchemaRegistryException">
         ///   Thrown if the schema is not registered against the subject.
         /// </exception>
+        [Obsolete("Superseded by GetSchemaIdAsync(string, Schema)")]
         Task<int> GetSchemaIdAsync(string subject, string avroSchema);
 
 
@@ -156,7 +158,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     DEPRECIATED. Superseeded by GetRegisteredSchemaAsync(string subject, int version)
+        ///     DEPRECATED. Superseded by GetRegisteredSchemaAsync(string subject, int version)
         ///     Gets a schema given a <paramref name="subject" /> and <paramref name="version" /> number.
         /// </summary>
         /// <param name="subject">
@@ -168,7 +170,7 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
         /// </returns>
-        [Obsolete("Superseeded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
+        [Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
         Task<string> GetSchemaAsync(string subject, int version);
 
 
@@ -219,6 +221,7 @@ namespace Confluent.SchemaRegistry
         ///     true if <paramref name="avroSchema" /> is compatible with the latest version 
         ///     registered against a specified subject, false otherwise.
         /// </returns>
+        [Obsolete("Superseded by IsCompatibleAsync(string, Schema)")]
         Task<bool> IsCompatibleAsync(string subject, string avroSchema);
 
 
@@ -240,7 +243,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     DEPRECIATED. SubjectNameStrategy should now be specified via serializer configuration.
+        ///     DEPRECATED. SubjectNameStrategy should now be specified via serializer configuration.
         ///     Returns the schema registry key subject name given a topic name.
         /// </summary>
         /// <param name="topic">
@@ -258,7 +261,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
-        ///     DEPRECIATED. SubjectNameStrategy should now be specified via serializer configuration.
+        ///     DEPRECATED. SubjectNameStrategy should now be specified via serializer configuration.
         ///     Returns the schema registry value subject name given a topic name.
         /// </summary>
         /// <param name="topic">

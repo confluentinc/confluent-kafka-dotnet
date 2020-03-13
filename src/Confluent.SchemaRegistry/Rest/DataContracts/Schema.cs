@@ -30,25 +30,25 @@ namespace  Confluent.SchemaRegistry
         #region API backwards-compatibility hack
 
         /// <summary>
-        ///     DEPRECIATED. The subject the schema is registered against.
+        ///     DEPRECATED. The subject the schema is registered against.
         /// </summary>
         [Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema instead. This property will be removed in a future version of the library.")]
         public string Subject { get; set; }
 
         /// <summary>
-        ///     DEPRECIATED. The schema version.
+        ///     DEPRECATED. The schema version.
         /// </summary>
         [Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema instead. This property will be removed in a future version of the library.")]
         public int Version { get; set; }
 
         /// <summary>
-        ///     DEPRECIATED. Unique identifier of the schema.
+        ///     DEPRECATED. Unique identifier of the schema.
         /// </summary>
         [Obsolete("Included to maintain API backwards compatibility only. Use RegisteredSchema instead. This property will be removed in a future version of the library.")]
         public int Id { get; set; }
 
         /// <summary>
-        ///     DEPRECIATED. Initializes a new instance of the Schema class.
+        ///     DEPRECATED. Initializes a new instance of the Schema class.
         /// </summary>
         /// <param name="subject">
         ///     The subject the schema is registered against.
@@ -252,11 +252,6 @@ namespace  Confluent.SchemaRegistry
         /// </remarks>
         public int CompareTo(Schema other)
         {
-            if (other == null)
-            {
-                throw new ArgumentException("Cannot compare object of type UnregisteredSchema with null.");
-            }
-
             return SchemaString.CompareTo(other.SchemaString);
 
             // If the schema strings are equal and any of the other properties are not,
@@ -270,13 +265,13 @@ namespace  Confluent.SchemaRegistry
         ///     A string that represents the object.
         /// </returns>
         public override string ToString()
-            => $"{{chars={SchemaString.Length}, type={SchemaType}, references={References.Count}}}";
+            => $"{{length={SchemaString.Length}, type={SchemaType}, references={References.Count}}}";
 
 
         /// <summary>
-        ///     implicity cast to string.
+        ///     implicit cast to string.
         /// </summary>
-        [Obsolete("Added to avoid breaking change. This method will be removed in a future release.")]
+        [Obsolete("Included to maintain API backwards compatibility only. This method will be removed in a future release.")]
         public static implicit operator string(Schema s) => s.SchemaString;
     }
 }

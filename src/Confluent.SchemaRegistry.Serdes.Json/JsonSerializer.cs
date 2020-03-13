@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
 using System;
@@ -31,7 +32,7 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     Json Serializer.
+    ///     JSON Serializer.
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -125,6 +126,13 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             if (value == null) { return null; }
 
+            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value);
+            var validationResult = validator.Validate(serializedString, this.schema);
+            if (validationResult.Count > 0)
+            {
+                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path) + "]"));
+            }
+
             try
             {
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
@@ -133,7 +141,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     string subject = this.subjectNameStrategy != null
                         // use the subject name strategy specified in the serializer config if available.
                         ? this.subjectNameStrategy(context, this.schemaFullname)
-                        // else fall back to the depreciated config from (or default as currently supplied by) SchemaRegistry.
+                        // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
                         : context.Component == MessageComponentType.Key
                             ? schemaRegistryClient.ConstructKeySubjectName(context.Topic, this.schemaFullname)
                             : schemaRegistryClient.ConstructValueSubjectName(context.Topic, this.schemaFullname);
@@ -142,8 +150,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         // first usage: register/get schema to check compatibility
                         schemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json)).ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json)).ConfigureAwait(continueOnCapturedContext: false);
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
                         // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
 
@@ -153,13 +163,6 @@ namespace Confluent.SchemaRegistry.Serdes
                 finally
                 {
                     serializeMutex.Release();
-                }
-
-                var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value);
-                var validationResult = validator.Validate(serializedString, this.schema);
-                if (validationResult.Count > 0)
-                {
-                    throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path) + "]"));
                 }
                 
                 using (var stream = new MemoryStream(initialBufferSize))

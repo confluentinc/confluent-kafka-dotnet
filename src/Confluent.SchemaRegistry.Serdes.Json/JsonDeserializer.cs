@@ -26,7 +26,7 @@ using Confluent.Kafka;
 namespace Confluent.SchemaRegistry.Serdes
 {
     /// <summary>
-    ///     (async) Json deserializer.
+    ///     (async) JSON deserializer.
     /// </summary>
     /// <remarks>
     ///     Serialization format:
@@ -37,8 +37,8 @@ namespace Confluent.SchemaRegistry.Serdes
     ///                         big endian.
     ///       following bytes:  The JSON data (utf8)
     ///
-    ///     Internally, Newtonsoft.Json for deserialization. Currently,
-    ///     no explicity validation of the data is done against the
+    ///     Internally, uses Newtonsoft.Json for deserialization. Currently,
+    ///     no explicit validation of the data is done against the
     ///     schema stored in Schema Registry.
     ///
     ///     Note: Off-the-shelf libraries do not yet exist to enable
@@ -47,7 +47,7 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class JsonDeserializer<T> : IAsyncDeserializer<T> where T : class, new()
     {
-        private readonly int headerSize =  sizeof(int) + 1;
+        private readonly int headerSize =  sizeof(int) + sizeof(byte);
 
         /// <summary>
         ///     Initialize a new JsonDeserializer instance.
@@ -90,9 +90,15 @@ namespace Confluent.SchemaRegistry.Serdes
             try
             {
                 var array = data.ToArray();
+
+                if (array.Length < 5)
+                {
+                    throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
+                }
+
                 if (array[0] != Constants.MagicByte)
                 {
-                    throw new InvalidDataException($"Expecting magic byte to be {Constants.MagicByte}, not {array[0]}");
+                    throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
                 }
 
                 // A schema is not required to deserialize json messages.

@@ -74,7 +74,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     Assert.True(cr.Message.Value.Length > 1 + 4 + 4 + 1);
                     // magic byte
                     Assert.Equal(0, cr.Message.Value[0]);
-                    // array index (special value as an optimization)
+                    // index array.
                     Assert.Equal(3, cr.Message.Value[5]);
                     Assert.Equal(2, cr.Message.Value[6]);
                     Assert.Equal(1, cr.Message.Value[7]);

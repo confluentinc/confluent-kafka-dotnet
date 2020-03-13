@@ -55,7 +55,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Initialize a new instance of the AvroSerializer class.
         /// </summary>
-        [Obsolete("Superseeded by AvroSerializer(ISchemaRegistryClient, AvroSerializerConfig)")]
+        [Obsolete("Superseded by AvroSerializer(ISchemaRegistryClient, AvroSerializerConfig)")]
         public AvroSerializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config)
         {}
 

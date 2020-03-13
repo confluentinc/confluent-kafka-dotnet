@@ -23,7 +23,7 @@ namespace Confluent.SchemaRegistry.Serdes
     internal static class Utils
     {
         /// <remarks>
-        ///     Copied from: https://github.com/apache/kafka/blob/2.5/clients/src/main/java/org/apache/kafka/common/utils/ByteUtils.java#L284
+        ///     Inspired by: https://github.com/apache/kafka/blob/2.5/clients/src/main/java/org/apache/kafka/common/utils/ByteUtils.java#L284
         /// </remarks>
         public static void WriteUnsignedVarint(this Stream stream, uint value)
         {
@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
         /// <remarks>
-        ///     Copied from: https://github.com/apache/kafka/blob/2.5/clients/src/main/java/org/apache/kafka/common/utils/ByteUtils.java#L142
+        ///     Inspired by: https://github.com/apache/kafka/blob/2.5/clients/src/main/java/org/apache/kafka/common/utils/ByteUtils.java#L142
         /// </remarks>
         public static uint ReadUnsignedVarint(this Stream stream)
         {
@@ -45,13 +45,13 @@ namespace Confluent.SchemaRegistry.Serdes
             int b;
             while (true) {
                 b = stream.ReadByte();
-                if (b == -1) throw new InvalidOperationException("Unexpected end of stream.");
+                if (b == -1) throw new InvalidOperationException("Unexpected end of stream reading varint.");
                 if ((b & 0x80) == 0) { break; }
                 value |= (b & 0x7f) << i;
                 i += 7;
                 if (i > 28)
                 {
-                    throw new InvalidOperationException($"Unexpected value reading varint: {value}");
+                    throw new OverflowException($"Encoded varint is larger than uint.MaxValue");
                 }
             }
             value |= b << i;

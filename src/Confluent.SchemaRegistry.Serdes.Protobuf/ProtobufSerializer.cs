@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
 using System;
@@ -223,20 +224,20 @@ namespace Confluent.SchemaRegistry.Serdes
 
             try
             {
+                if (this.indexArray == null)
+                {
+                    this.indexArray = createIndexArray(value.Descriptor);
+                }
+
+                string fullname = value.Descriptor.FullName;
+
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    if (this.indexArray == null)
-                    {
-                        this.indexArray = createIndexArray(value.Descriptor);
-                    }
-
-                    string fullname = value.Descriptor.FullName;
-
                     string subject = this.subjectNameStrategy != null
                         // use the subject name strategy specified in the serializer config if available.
                         ? this.subjectNameStrategy(context, fullname)
-                        // else fall back to the depreciated config from (or default as currently supplied by) SchemaRegistry.
+                        // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
                         : context.Component == MessageComponentType.Key
                             ? schemaRegistryClient.ConstructKeySubjectName(context.Topic, fullname)
                             : schemaRegistryClient.ConstructValueSubjectName(context.Topic, fullname);
@@ -248,8 +249,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     
                         // first usage: register/get schema to check compatibility
                         schemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(value.Descriptor.File.SerializedData.ToBase64(), references, SchemaType.Protobuf)).ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(value.Descriptor.File.SerializedData.ToBase64(), references, SchemaType.Protobuf)).ConfigureAwait(continueOnCapturedContext: false);
+                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(value.Descriptor.File.SerializedData.ToBase64(), references, SchemaType.Protobuf))
+                                .ConfigureAwait(continueOnCapturedContext: false)
+                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(value.Descriptor.File.SerializedData.ToBase64(), references, SchemaType.Protobuf))
+                                .ConfigureAwait(continueOnCapturedContext: false);
 
                         // note: different values for schemaId should never be seen here.
                         // TODO: but fail fast may be better here.

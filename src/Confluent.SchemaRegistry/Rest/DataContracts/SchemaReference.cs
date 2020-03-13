@@ -118,11 +118,6 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public int CompareTo(SchemaReference other)
         {
-            if (other == null)
-            {
-                throw new ArgumentException("Cannot compare object of type SchemaReference with null.");
-            }
-
             int result = string.Compare(Name, other.Name, StringComparison.Ordinal);
             if (result != 0)
             {

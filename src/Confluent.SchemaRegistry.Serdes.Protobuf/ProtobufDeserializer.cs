@@ -89,15 +89,21 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             if (isNull) { return Task.FromResult<T>(null); }
 
+            var array = data.ToArray();
+            if (array.Length < 6)
+            {
+                throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
+            }
+
             try
             {
-                using (var stream = new MemoryStream(data.ToArray()))
+                using (var stream = new MemoryStream(array))
                 using (var reader = new BinaryReader(stream))
                 {
                     var magicByte = reader.ReadByte();
                     if (magicByte != Constants.MagicByte)
                     {
-                        throw new InvalidDataException($"Expecting magic byte to be {Constants.MagicByte}, not {magicByte}");
+                        throw new InvalidDataException($"Expecting message {context.Component.ToString()} with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
                     }
 
                     // A schema is not required to deserialize protobuf messages since the

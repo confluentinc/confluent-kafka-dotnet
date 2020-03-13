@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
 using System;
@@ -121,7 +122,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     string subject = this.subjectNameStrategy != null
                         // use the subject name strategy specified in the serializer config if available.
                         ? this.subjectNameStrategy(new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic), data.Schema.Fullname)
-                        // else fall back to the depreciated config from (or default as currently supplied by) SchemaRegistry.
+                        // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
                         : isKey
                             ? schemaRegistryClient.ConstructKeySubjectName(topic, data.Schema.Fullname)
                             : schemaRegistryClient.ConstructValueSubjectName(topic, data.Schema.Fullname);

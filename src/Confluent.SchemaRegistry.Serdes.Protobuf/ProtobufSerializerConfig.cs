@@ -55,11 +55,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
             public const string SubjectNameStrategy = "protobuf.serializer.subject.name.strategy";
 
             /// <summary>
             ///     The subject name strategy to use for registration / lookup of referenced schemas
+            ///     Possible values: <see cref="Confluent.SchemaRegistry.ReferenceSubjectNameStrategy" />
             /// </summary>
             public const string ReferenceSubjectNameStrategy = "protobuf.serializer.reference.subject.name.strategy";
         }

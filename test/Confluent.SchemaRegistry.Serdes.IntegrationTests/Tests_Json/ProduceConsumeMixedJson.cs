@@ -137,7 +137,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                         {
                             new CarPoco
                             {
-                                Name = "Tesla",
+                                Name = "Volvo",
                                 Manufacturer = new CompanyPoco
                                 {
                                     Name = "Confluent"

@@ -104,13 +104,18 @@ namespace Confluent.SchemaRegistry.Serdes
                 // Note: topic is not necessary for deserialization (or knowing if it's a key 
                 // or value) only the schema id is needed.
 
+                if (array.Length < 5)
+                {
+                    throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {array.Length} bytes");
+                }
+
                 using (var stream = new MemoryStream(array))
                 using (var reader = new BinaryReader(stream))
                 {
                     var magicByte = reader.ReadByte();
                     if (magicByte != Constants.MagicByte)
                     {
-                        throw new InvalidDataException($"Expecting magic byte to be {Constants.MagicByte}, not {magicByte}");
+                        throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {array[0]}, expecting {Constants.MagicByte}");
                     }
                     var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 

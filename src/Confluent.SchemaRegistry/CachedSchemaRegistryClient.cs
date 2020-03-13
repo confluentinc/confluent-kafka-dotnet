@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
+// Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 #pragma warning disable CS0612
 
@@ -257,8 +259,8 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    // Note: throws SchemaRegistryException if schema is not known.
-                    var registeredSchema = (await restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false));
+                    // throws SchemaRegistryException if schema is not known.
+                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema.SchemaString] = registeredSchema.Id;
                     schemaById[schemaId] = registeredSchema.Schema;
                     schemaId = registeredSchema.Id;
@@ -311,6 +313,9 @@ namespace Confluent.SchemaRegistry
             => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
     
 
+        /// <summary>
+        ///     Check if the given schema string matches a given format name.
+        /// </summary>
         private bool checkSchemaMatchesFormat(string format, string schemaString)
         {
             // if a format isn't specified, then assume text is desired.
@@ -328,7 +333,7 @@ namespace Confluent.SchemaRegistry
             {
                 if (format != "serialized")
                 {
-                    throw new ArgumentException($"Invalid schema format was specified {format}.");
+                    throw new ArgumentException($"Invalid schema format was specified: {format}.");
                 }
 
                 try { Convert.FromBase64String(schemaString); }
@@ -399,7 +404,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        [Obsolete("Superseeded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
+        [Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
         public async Task<string> GetSchemaAsync(string subject, int version)
             => (await GetRegisteredSchemaAsync(subject, version)).SchemaString;
 

@@ -33,7 +33,7 @@ namespace  Confluent.SchemaRegistry
         Protobuf,
 
         /// <summary>
-        ///     Json
+        ///     JSON
         /// </summary>
         Json
     }
