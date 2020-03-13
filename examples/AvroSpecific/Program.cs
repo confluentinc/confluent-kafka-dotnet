@@ -49,10 +49,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 // schema.registry.url property for redundancy (comma separated list). 
                 // The property name is not plural to follow the convention set by
                 // the Java implementation.
-                Url = schemaRegistryUrl,
-                // optional schema registry client properties:
-                RequestTimeoutMs = 5000,
-                MaxCachedSchemas = 10
+                Url = schemaRegistryUrl
             };
 
             var consumerConfig = new ConsumerConfig
@@ -64,8 +61,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             var avroSerializerConfig = new AvroSerializerConfig
             {
                 // optional Avro serializer properties:
-                BufferBytes = 100,
-                AutoRegisterSchemas = true
+                BufferBytes = 100
             };
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -88,7 +84,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                             try
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
-
                                 Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Value.favorite_color}, hourly_rate: {consumeResult.Value.hourly_rate}");
                             }
                             catch (ConsumeException e)

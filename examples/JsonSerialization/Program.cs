@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
-//
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka;
@@ -29,9 +27,10 @@ using Newtonsoft.Json;
 
 /// <summary>
 ///     An example of working with JSON data, Apache Kafka and 
-///     Confluent Schema Registry.
+///     Confluent Schema Registry (v5.5 or later required for
+///     JSON schema support).
 /// </summary>
-namespace Confluent.Kafka.Examples.Json
+namespace Confluent.Kafka.Examples.JsonSerialization
 {
     /// <summary>
     ///     A POCO class corresponding to the JSON data written
@@ -39,7 +38,7 @@ namespace Confluent.Kafka.Examples.Json
     ///     the class properties and their attributes.
     /// </summary>
     /// <remarks>
-    ///     Internally, the Json serializer uses Newtonsoft.Json for
+    ///     Internally, the JSON serializer uses Newtonsoft.Json for
     ///     serialization and NJsonSchema for schema creation and
     ///     validation. You can use any property annotations recognised
     ///     by these libraries.
@@ -88,10 +87,7 @@ namespace Confluent.Kafka.Examples.Json
                 // schema.registry.url property for redundancy (comma separated list). 
                 // The property name is not plural to follow the convention set by
                 // the Java implementation.
-                Url = schemaRegistryUrl,
-                // Optional Schema Registry client properties:
-                RequestTimeoutMs = 5000,
-                MaxCachedSchemas = 10
+                Url = schemaRegistryUrl
             };
 
             var consumerConfig = new ConsumerConfig
@@ -103,8 +99,7 @@ namespace Confluent.Kafka.Examples.Json
             // Note: Specifying json serializer configuration is optional.
             var jsonSerializerConfig = new JsonSerializerConfig
             {
-                BufferBytes = 100,
-                AutoRegisterSchemas = true
+                BufferBytes = 100
             };
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -152,7 +147,7 @@ namespace Confluent.Kafka.Examples.Json
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    Person person = new Person { FirstName = text, LastName = "lastname", Age = i++ };
+                    Person person = new Person { FirstName = text, LastName = "lastname", Age = i++ % 150 };
                     await producer
                         .ProduceAsync(topicName, new Message<Null, Person> { Value = person })
                         .ContinueWith(task => task.IsFaulted

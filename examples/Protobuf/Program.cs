@@ -1,4 +1,4 @@
-﻿// Copyright 2020 Confluent Inc.
+﻿// Copyright 2018-2020 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Derived from: rdkafka-dotnet, licensed under the 2-clause BSD License.
-//
 // Refer to LICENSE for more information.
 
 using Confluent.Kafka.SyncOverAsync;
@@ -26,7 +24,8 @@ using System.Threading.Tasks;
 
 /// <summary>
 ///     An example of working with protobuf serialized data and
-///     Confluent Schema Registry.
+///     Confluent Schema Registry (v5.5 or later required for
+///     Protobuf schema support).
 /// </summary>
 namespace Confluent.Kafka.Examples.Protobuf
 {
@@ -56,22 +55,12 @@ namespace Confluent.Kafka.Examples.Protobuf
                 // The property name is not plural to follow the convention set by
                 // the Java implementation.
                 Url = schemaRegistryUrl,
-                // optional schema registry client properties:
-                RequestTimeoutMs = 5000,
-                MaxCachedSchemas = 10
             };
 
             var consumerConfig = new ConsumerConfig
             {
                 BootstrapServers = bootstrapServers,
                 GroupId = "protobuf-example-consumer-group"
-            };
-
-            var protobufSerializerConfig = new ProtobufSerializerConfig
-            {
-                // Optional Protobuf serializer properties:
-                BufferBytes = 100,
-                AutoRegisterSchemas = true
             };
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -110,7 +99,7 @@ namespace Confluent.Kafka.Examples.Protobuf
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetValueSerializer(new ProtobufSerializer<User>(schemaRegistry, protobufSerializerConfig))
+                    .SetValueSerializer(new ProtobufSerializer<User>(schemaRegistry))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
