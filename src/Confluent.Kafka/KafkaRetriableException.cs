@@ -20,19 +20,19 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents an error that caused the current transaction
-    ///     to fail and enter the abortable state.
+    ///     Represents an error where the operation that caused it
+    ///     may be retried.
     /// </summary>
-    public class KafkaTxnRequiresAbortException : KafkaException
+    public class KafkaRetriableException : KafkaException
     {
         /// <summary>
-        ///     Initialize a new instance of KafkaTxnRequiresAbortException
+        ///     Initialize a new instance of KafkaRetriableException
         ///     based on an existing Error instance.
         /// </summary>
         /// <param name="error">
         ///     The Error instance.
         /// </param>
-        public KafkaTxnRequiresAbortException(Error error)
+        public KafkaRetriableException(Error error)
             : base(error)
         {
         }

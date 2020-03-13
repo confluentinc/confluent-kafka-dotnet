@@ -316,6 +316,12 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
         void InitTransactions(TimeSpan timeout);
 
 
@@ -339,13 +345,8 @@ namespace Confluent.Kafka
         ///     Any produce call outside an on-going transaction, or for a failed
         ///     transaction, will fail.
         /// </remark>
-        /// <exception cref="KafkaTxnRequiresAbortException">
-        ///     Thrown if the application must call AbortTransaction and
-        ///     start a new transaction with BeginTransaction if it
-        ///     wishes to proceed with transactions.
-        /// </exception>
         /// <exception cref="KafkaException">
-        ///     Thrown on all other errors.
+        ///     Thrown on all errors.
         /// </exception>
         void BeginTransaction();
 
@@ -383,6 +384,9 @@ namespace Confluent.Kafka
         ///     start a new transaction with BeginTransaction if it
         ///     wishes to proceed with transactions.
         /// </exception>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
         /// </exception>
@@ -407,8 +411,11 @@ namespace Confluent.Kafka
         /// <param name="timeout">
         ///     The maximum length of time this method may block.
         /// </param>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
         /// <exception cref="KafkaException">
-        ///     Thrown on all errors.
+        ///     Thrown on all other errors.
         /// </exception>
         void AbortTransaction(TimeSpan timeout);
 
@@ -458,6 +465,9 @@ namespace Confluent.Kafka
         ///     Thrown if the application must call AbortTransaction and
         ///     start a new transaction with BeginTransaction if it
         ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
