@@ -244,8 +244,8 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     consumer.Assign(new List<TopicPartitionOffset> { new TopicPartitionOffset(nullTopic, 0, 0) });
                     var result8 = consumer.Consume(TimeSpan.FromSeconds(10));
-                    Assert.Null(result8.Key);
-                    Assert.Null(result8.Value);
+                    Assert.Null(result8.Message.Key);
+                    Assert.Null(result8.Message.Value);
                 }
             }
         }

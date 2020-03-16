@@ -79,7 +79,7 @@ namespace ConfluentCloudExample
                 try
                 {
                     var consumeResult = consumer.Consume();
-                    Console.WriteLine($"consumed: {consumeResult.Value}");
+                    Console.WriteLine($"consumed: {consumeResult.Message.Value}");
                 }
                 catch (ConsumeException e)
                 {

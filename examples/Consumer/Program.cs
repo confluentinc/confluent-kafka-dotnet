@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                                 continue;
                             }
 
-                            Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Value}");
+                            Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Message.Value}");
 
                             if (consumeResult.Offset % commitPeriod == 0)
                             {
@@ -163,7 +163,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                             // Note: End of partition notification has not been enabled, so
                             // it is guaranteed that the ConsumeResult instance corresponds
                             // to a Message, and not a PartitionEOF event.
-                            Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Value}");
+                            Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: ${consumeResult.Message.Value}");
                         }
                         catch (ConsumeException e)
                         {

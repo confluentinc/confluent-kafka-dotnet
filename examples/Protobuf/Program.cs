@@ -81,7 +81,7 @@ namespace Confluent.Kafka.Examples.Protobuf
                             try
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
-                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Value.FavoriteColor}");
+                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Message.Value.FavoriteColor}");
                             }
                             catch (ConsumeException e)
                             {

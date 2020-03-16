@@ -63,7 +63,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(dr.TopicPartition, dr.Offset) });
                 var cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 consumer.Commit();
-                Assert.Equal(cr.Value, testString);
+                Assert.Equal(cr.Message.Value, testString);
                 
                 // Determine offset to consume from automatically.
                 consumer.Assign(new List<TopicPartition>() { dr.TopicPartition });
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Assign(new TopicPartitionOffset(dr.TopicPartition, dr3.Offset));
                 cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 consumer.Commit();
-                Assert.Equal(cr.Value, testString3);
+                Assert.Equal(cr.Message.Value, testString3);
 
                 // Determine offset to consume from automatically.
                 consumer.Assign(dr.TopicPartition);

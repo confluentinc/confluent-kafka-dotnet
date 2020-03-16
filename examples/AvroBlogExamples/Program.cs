@@ -123,7 +123,7 @@ namespace AvroBlogExample
 
                             Console.WriteLine(
                                 consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
-                                + $": [{consumeResult.Value.Severity}] {consumeResult.Value.Message}");
+                                + $": [{consumeResult.Message.Value.Severity}] {consumeResult.Message.Value.Message}");
                         }
                         catch (ConsumeException e)
                         {

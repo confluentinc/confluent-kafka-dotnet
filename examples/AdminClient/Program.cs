@@ -17,10 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
 
