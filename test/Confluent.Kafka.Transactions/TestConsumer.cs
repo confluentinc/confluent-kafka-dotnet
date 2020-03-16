@@ -39,11 +39,11 @@ namespace Confluent.Kafka.Transactions
                 {
                     var cr = consumer.Consume();
 
-                    if (!lasts.ContainsKey(cr.Key)) { lasts.Add(cr.Key, -1); }
-                    if (cr.Value == lasts[cr.Key] + 1) { Console.Write("."); }
-                    else { Console.Write($"[producer {cr.Key} expected seq {lasts[cr.Key]+1} but got {cr.Value}]"); break; }
+                    if (!lasts.ContainsKey(cr.Message.Key)) { lasts.Add(cr.Message.Key, -1); }
+                    if (cr.Message.Value == lasts[cr.Message.Key] + 1) { Console.Write("."); }
+                    else { Console.Write($"[producer {cr.Message.Key} expected seq {lasts[cr.Message.Key]+1} but got {cr.Message.Value}]"); break; }
                     Console.Out.Flush();
-                    lasts[cr.Key] = cr.Value;
+                    lasts[cr.Message.Key] = cr.Message.Value;
                 }
             }
             catch (Exception e)

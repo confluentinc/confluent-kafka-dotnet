@@ -84,7 +84,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                             try
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
-                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Value.favorite_color}, hourly_rate: {consumeResult.Value.hourly_rate}");
+                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Message.Value.favorite_color}, hourly_rate: {consumeResult.Message.Value.hourly_rate}");
                             }
                             catch (ConsumeException e)
                             {

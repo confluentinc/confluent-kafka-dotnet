@@ -323,7 +323,7 @@ namespace Confluent.Kafka.Examples.Transactions
 
                         producerState[cr.TopicPartition].Offset = cr.Offset;
 
-                        var words = Regex.Split(cr.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
+                        var words = Regex.Split(cr.Message.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
                         foreach (var w in words)
                         {
                             while (true)
@@ -444,7 +444,7 @@ namespace Confluent.Kafka.Examples.Transactions
                     else
                     {
                         msgCount += 1;
-                        db.Put(Encoding.UTF8.GetBytes(cr.Key), BitConverter.GetBytes(cr.Value), columnFamily);
+                        db.Put(Encoding.UTF8.GetBytes(cr.Message.Key), BitConverter.GetBytes(cr.Message.Value), columnFamily);
                     }
                 }
             }
@@ -550,7 +550,7 @@ namespace Confluent.Kafka.Examples.Transactions
                         var cr = consumer.Consume(ct);
                         producerState[cr.TopicPartition].Offset = cr.Offset;
 
-                        var kBytes = Encoding.UTF8.GetBytes(cr.Key);
+                        var kBytes = Encoding.UTF8.GetBytes(cr.Message.Key);
                         var vBytes = db.Get(kBytes, columnFamily);
                         var v = vBytes == null ? 0 : BitConverter.ToInt32(vBytes);
                         var updatedV = v+1;
@@ -562,7 +562,7 @@ namespace Confluent.Kafka.Examples.Transactions
                             try
                             {
                                 producerState[cr.TopicPartition].Producer.Produce(
-                                    Topic_Counts, new Message<string, int> { Key = cr.Key, Value = updatedV });
+                                    Topic_Counts, new Message<string, int> { Key = cr.Message.Key, Value = updatedV });
                             }
                             catch (KafkaException e)
                             {

@@ -73,10 +73,10 @@ namespace Confluent.Kafka.IntegrationTests
 
                 ConsumeResult<Ignore, byte[]> record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
-                Assert.Null(record.Key);
-                Assert.NotNull(record.Value);
-                Assert.Equal(42, record.Value[0]);
-                Assert.Equal(240, record.Value[1]);
+                Assert.Null(record.Message.Key);
+                Assert.NotNull(record.Message.Value);
+                Assert.Equal(42, record.Message.Value[0]);
+                Assert.Equal(240, record.Message.Value[1]);
             }
 
             Assert.Equal(0, Library.HandleCount);

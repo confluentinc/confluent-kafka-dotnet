@@ -64,8 +64,8 @@ namespace Confluent.Kafka.IntegrationTests
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Null(record.Message.Headers);
-                Assert.NotEqual(TimestampType.NotAvailable, record.Timestamp.Type);
-                Assert.NotEqual(0, record.Timestamp.UnixTimestampMs);
+                Assert.NotEqual(TimestampType.NotAvailable, record.Message.Timestamp.Type);
+                Assert.NotEqual(0, record.Message.Timestamp.UnixTimestampMs);
             }
 
             Assert.Equal(0, Library.HandleCount);

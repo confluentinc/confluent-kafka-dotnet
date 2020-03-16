@@ -76,7 +76,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
 
-                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
+                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Message.Value}");
                             }
                             catch (ConsumeException e)
                             {
