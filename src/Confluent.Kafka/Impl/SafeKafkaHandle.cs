@@ -284,7 +284,7 @@ namespace Confluent.Kafka.Impl
         {
             var headersPtr = IntPtr.Zero;
 
-            if (headers != null)
+            if (headers != null && headers.Any())
             {
                 headersPtr = Librdkafka.headers_new((IntPtr) headers.Count());
                 if (headersPtr == IntPtr.Zero)
