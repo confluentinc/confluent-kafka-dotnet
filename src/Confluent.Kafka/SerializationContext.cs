@@ -42,7 +42,7 @@ namespace Confluent.Kafka
         ///      empty list are equivalent. The order of headers is maintained, and
         ///     duplicate header keys are allowed.
         /// </param>       
-        public SerializationContext(MessageComponentType component, string topic, Headers headers = null)
+        public SerializationContext(MessageComponentType component, string topic, Headers headers)
         {
             Component = component;
             Topic = topic;
