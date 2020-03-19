@@ -38,11 +38,11 @@ namespace Confluent.Kafka
         ///     The topic the data is being written to or read from.
         /// </param>
         /// <param name="headers">
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
+        ///     The collection of message headers (or null). Specifying null or an
+        ///     empty list are equivalent. The order of headers is maintained, and
         ///     duplicate header keys are allowed.
         /// </param>       
-        public SerializationContext(MessageComponentType component, string topic, Headers headers)
+        public SerializationContext(MessageComponentType component, string topic, Headers headers = null)
         {
             Component = component;
             Topic = topic;
