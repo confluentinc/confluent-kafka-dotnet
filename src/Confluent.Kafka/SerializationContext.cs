@@ -60,8 +60,8 @@ namespace Confluent.Kafka
         public MessageComponentType Component { get; private set; }
 
         /// <summary>
-        ///     The collection of message headers (or null). Specifying null or an 
-        ///      empty list are equivalent. The order of headers is maintained, and
+        ///     The collection of message headers (or null). Specifying null or an
+        ///     empty list are equivalent. The order of headers is maintained, and
         ///     duplicate header keys are allowed.
         /// </summary>
         public Headers Headers { get; private set; }
