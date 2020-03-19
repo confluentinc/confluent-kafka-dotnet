@@ -64,6 +64,6 @@ namespace Confluent.Kafka
         ///      empty list are equivalent. The order of headers is maintained, and
         ///     duplicate header keys are allowed.
         /// </summary>
-        public Headers Headers { get; set; }
+        public Headers Headers { get; private set; }
     }
 }
