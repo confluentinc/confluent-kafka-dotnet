@@ -760,7 +760,7 @@ namespace Confluent.Kafka
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.key.ToPointer(), (int)msg.key_len),
                             msg.key == IntPtr.Zero,
-                            new SerializationContext(MessageComponentType.Key, topic));
+                            new SerializationContext(MessageComponentType.Key, topic, headers));
                     }
                 }
                 catch (Exception ex)
@@ -792,7 +792,7 @@ namespace Confluent.Kafka
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(msg.val.ToPointer(), (int)msg.len),
                             msg.val == IntPtr.Zero,
-                            new SerializationContext(MessageComponentType.Value, topic));
+                            new SerializationContext(MessageComponentType.Value, topic, headers));
                     }
                 }
                 catch (Exception ex)

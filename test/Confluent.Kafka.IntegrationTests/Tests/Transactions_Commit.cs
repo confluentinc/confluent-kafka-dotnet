@@ -38,32 +38,43 @@ namespace Confluent.Kafka.IntegrationTests
             var defaultTimeout = TimeSpan.FromSeconds(30);
 
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
-            using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
             {
-                var wm = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), defaultTimeout);
-                consumer.Assign(new TopicPartitionOffset(topic.Name, 0, wm.High));
+                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
+                using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
+                {
+                    var wm = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), defaultTimeout);
+                    consumer.Assign(new TopicPartitionOffset(topic.Name, 0, wm.High));
 
-                producer.InitTransactions(defaultTimeout);
-                producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" });
-                producer.CommitTransaction(defaultTimeout);
-                producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" });
-                producer.CommitTransaction(defaultTimeout);
+                    producer.InitTransactions(defaultTimeout);
+                    producer.BeginTransaction();
+                    producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" });
+                    producer.CommitTransaction(defaultTimeout);
+                    producer.BeginTransaction();
+                    producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" });
+                    producer.CommitTransaction(defaultTimeout);
 
-                var cr1 = consumer.Consume();
-                var cr2 = consumer.Consume();
-                var cr3 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
-                Assert.Equal(wm.High, cr1.Offset);
-                Assert.Equal(wm.High+2, cr2.Offset); // there should be a skipped offset due to a commit marker in the log.
-                Assert.Null(cr3); // control message should not be exposed to application.
-                
-                // Test that the committed offset accounts for the final ctrl message.
-                consumer.Commit();
-                var committed = consumer.Committed(defaultTimeout);
-                wm = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), defaultTimeout);
-                Assert.Equal(wm.High, committed[0].Offset);
+                    var cr1 = consumer.Consume();
+                    var cr2 = consumer.Consume();
+                    var cr3 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
+                    Assert.Equal(wm.High, cr1.Offset);
+                    Assert.Equal(wm.High+2, cr2.Offset); // there should be a skipped offset due to a commit marker in the log.
+                    Assert.Null(cr3); // control message should not be exposed to application.
+
+                    // Test that the committed offset accounts for the final ctrl message.
+                    consumer.Commit();
+                }
+
+                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
+                using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, AutoOffsetReset=AutoOffsetReset.Latest }).Build())
+                {
+                    consumer.Assign(new TopicPartition(topic.Name, 0));
+
+                    // call InitTransactions to prevent a race conidtion between a slow txn commit and a quick offset request.
+                    producer.InitTransactions(defaultTimeout);
+                    var committed = consumer.Committed(defaultTimeout);
+                    var wm = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), defaultTimeout);
+                    Assert.Equal(wm.High, committed[0].Offset);
+                }
             }
 
             Assert.Equal(0, Library.HandleCount);
