@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -55,7 +56,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
                 Assert.Empty(result);
                 
-                // Getting the offset for the first produced message timestamp
+                // Getting the offset for the first produced message timestamp.
                 result = consumer.OffsetsForTimes(
                         new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
                         timeout)
@@ -73,24 +74,39 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(result);
                 Assert.Equal(result[0].Offset, lastMessage.Offset);
 
-                // Getting the offset for the timestamp that is very far in the past
+                // Getting the offset for a timestamp that is very far in the past.
                 var unixTimeEpoch = Timestamp.UnixTimeEpoch;
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(unixTimeEpoch, TimestampType.CreateTime)) },
+                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(100, TimestampType.CreateTime)) },
                         timeout)
                     .ToList();
-
                 Assert.Single(result);
+                // According to the Java documentation which states: "The returned offset for each partition is
+                // the earliest offset whose timestamp is greater than or equal to the given timestamp in the
+                // corresponding partition." this is technically incorrect, but this is what is returned by the
+                // broker.
                 Assert.Equal(0, result[0].Offset);
 
-                // Getting the offset for the timestamp that very far in the future
+                // Getting the offset for an timestamp that is very far in the future.
                 result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(int.MaxValue, TimestampType.CreateTime)) },
+                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(long.MaxValue, TimestampType.CreateTime)) },
                         timeout)
                     .ToList();
 
                 Assert.Single(result);
-                Assert.Equal(0, result[0].Offset);
+                Assert.Equal(Offset.End, result[0].Offset); // Offset.End == -1
+            }
+
+            // Empty topic case
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            {
+                var result = consumer.OffsetsForTimes(
+                    new List<TopicPartitionTimestamp> { new TopicPartitionTimestamp(topic.Name, 0, new Timestamp(10000, TimestampType.CreateTime)) },
+                    TimeSpan.FromSeconds(30));
+
+                Assert.Single(result);
+                Assert.Equal(Offset.End, result[0].Offset); // Offset.End == -1
             }
 
             Assert.Equal(0, Library.HandleCount);
@@ -101,10 +117,11 @@ namespace Confluent.Kafka.IntegrationTests
         {
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
+            var baseTime = 100000;
             var messages = new DeliveryResult<byte[], byte[]>[count];
             using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
             {
-                for (var index = 0; index < count; index++)
+                for (var index = 0; index < count; ++index)
                 {
                     var message = producer.ProduceAsync(
                         new TopicPartition(topic, partition),
@@ -112,7 +129,7 @@ namespace Confluent.Kafka.IntegrationTests
                         { 
                             Key = Serializers.Utf8.Serialize($"test key {index}", SerializationContext.Empty),
                             Value = Serializers.Utf8.Serialize($"test val {index}", SerializationContext.Empty),
-                            Timestamp = Timestamp.Default, 
+                            Timestamp = new Timestamp(baseTime + index*1000, TimestampType.CreateTime),
                             Headers = null
                         }
                     ).Result;

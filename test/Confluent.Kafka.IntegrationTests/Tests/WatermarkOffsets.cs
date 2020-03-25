@@ -40,7 +40,6 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryResult<Null, string> dr;
             using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            using (var adminClient = new DependentAdminClientBuilder(producer.Handle).Build())
             {
                 dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
@@ -67,6 +66,16 @@ namespace Confluent.Kafka.IntegrationTests
                 var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
                 Assert.NotEqual(queryOffsets.Low, Offset.Unset);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
+            }
+
+            // Test empty topic case
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
+            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            {
+                var wo = consumer.QueryWatermarkOffsets(new TopicPartition(topic.Name, 0), TimeSpan.FromSeconds(30));
+                // Refer to WatermarkOffsets class documentation for more information.
+                Assert.Equal(0, wo.Low);
+                Assert.Equal(0, wo.High);
             }
 
             Assert.Equal(0, Library.HandleCount);
