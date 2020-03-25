@@ -519,9 +519,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Look up the offsets for the given partitions
         ///     by timestamp. The returned offset for each
-        ///     partition is the earliest offset whose
-        ///     timestamp is greater than or equal to the
-        ///     given timestamp in the corresponding partition.
+        ///     partition is the earliest offset for which
+        ///     the timestamp is greater than or equal to
+        ///     the given timestamp. If the provided
+        ///     timestamp exceeds that of the last message
+        ///     in the partition, a value of Offset.End (-1)
+        ///     will be returned.
         /// </summary>
         /// <remarks>
         ///     The consumer does not need to be assigned to
