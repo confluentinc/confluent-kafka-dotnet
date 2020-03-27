@@ -2,19 +2,22 @@
 
 ## Enhancements
 
-- References librdkafka v1.4.0-RC4. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.4.0) for more information. Headline features:
-  - Producer support for transactions ([@edenhill](https://github.com/edenhill)). This is the final piece in the puzzle required to enable exactly once stream processing (EOS) in .NET.
-- Added a [WordCount](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Transactions) example demonstrating a streaming map-reduce application with exactly-once processing.
+- References librdkafka v1.4.0-RC5. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.4.0) for more information. Headline features:
+  - KIP-98: Producer support for transactions ([@edenhill](https://github.com/edenhill)). This is the final piece in the puzzle required to enable exactly once stream processing (EOS) in .NET.
+  - KIP-345: Static consumer group membership ([@rnpridgeon](https://github.com/rnpridgeon)).
+  - KIP-511: Client name and version are now provided to brokers.
+- Added Protobuf and JSON serdes including integration with Schema Registry.
+- Switched to the official Apache Avro [nuget package](https://www.nuget.org/packages/Confluent.Apache.Avro/), which includes support for [logical types](https://avro.apache.org/docs/current/spec.html#Logical+Types), and all fixes from the [Confluent fork](https://github.com/confluentinc/avro/tree/confluent-fork), which has now been discontinued.
+- Message headers are now exposed to serdes via `SerializationContext` ([@pascalconfluent](https://github.com/pascalconfluent)).
 - Added a `CancellationToken` parameter to the `ProduceAsync` methods.
 - Uncaught exceptions thrown in handler methods are now propagated to the initiating function, or in the case of error or log events, ignored. Previously, they would cause the application to terminate.
-- Provides client name and version to brokers (KIP-511).
-- Switched to the official Apache Avro [nuget package](https://www.nuget.org/packages/Confluent.Apache.Avro/), which includes support for [logical types](https://avro.apache.org/docs/current/spec.html#Logical+Types), and all fixes from the [Confluent fork](https://github.com/confluentinc/avro/tree/confluent-fork), which has now been discontinued.
-
+- Added a [WordCount](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Transactions) example demonstrating a streaming map-reduce application with exactly-once processing.
 
 ## Changes
 
 - Some internal improvements to the `Consmer` (thanks to [@andypook](https://github.com/AndyPook)).
 - BREAKING CHANGE: `net452` is no longer a target framework of `Confluent.SchemaRegistry` or `Confluent.SchemaRegistry.Serdes` due to the switch to the official Apache Avro package which only targets `netstandard2.0`. 
+- Marked properties on `ConsumeResult` that simply delegate to the corresponding properties on `ConsumeResult.Message` as obsolete.
 
 ## Fixes
 
