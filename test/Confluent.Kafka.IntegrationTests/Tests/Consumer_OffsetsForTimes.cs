@@ -38,63 +38,66 @@ namespace Confluent.Kafka.IntegrationTests
             const int N = 10;
             const int Partition = 0;
 
-            var messages = ProduceMessages(bootstrapServers, singlePartitionTopic, Partition, N);
-
             var consumerConfig = new ConsumerConfig
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers
             };
 
-            var firstMessage = messages[0];
-            var lastMessage = messages[N - 1];
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                var timeout = TimeSpan.FromSeconds(10);
+                var messages = ProduceMessages(bootstrapServers, topic.Name, Partition, N);
 
-                // If empty request, expect empty result.
-                var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
-                Assert.Empty(result);
-                
-                // Getting the offset for the first produced message timestamp.
-                result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
-                        timeout)
-                    .ToList();
+                var firstMessage = messages[0];
+                var lastMessage = messages[N - 1];
+                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                {
+                    var timeout = TimeSpan.FromSeconds(10);
 
-                Assert.Single(result);
-                Assert.Equal(result[0].Offset, firstMessage.Offset);
+                    // If empty request, expect empty result.
+                    var result = consumer.OffsetsForTimes(new TopicPartitionTimestamp[0], timeout).ToList();
+                    Assert.Empty(result);
+                    
+                    // Getting the offset for the first produced message timestamp.
+                    result = consumer.OffsetsForTimes(
+                            new[] { new TopicPartitionTimestamp(firstMessage.TopicPartition, firstMessage.Timestamp) },
+                            timeout)
+                        .ToList();
 
-                // Getting the offset for the last produced message timestamp
-                result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Timestamp) },
-                        timeout)
-                    .ToList();
+                    Assert.Single(result);
+                    Assert.Equal(result[0].Offset, firstMessage.Offset);
 
-                Assert.Single(result);
-                Assert.Equal(result[0].Offset, lastMessage.Offset);
+                    // Getting the offset for the last produced message timestamp
+                    result = consumer.OffsetsForTimes(
+                            new[] { new TopicPartitionTimestamp(lastMessage.TopicPartition, lastMessage.Timestamp) },
+                            timeout)
+                        .ToList();
 
-                // Getting the offset for a timestamp that is very far in the past.
-                var unixTimeEpoch = Timestamp.UnixTimeEpoch;
-                result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(100, TimestampType.CreateTime)) },
-                        timeout)
-                    .ToList();
-                Assert.Single(result);
-                // According to the Java documentation which states: "The returned offset for each partition is
-                // the earliest offset whose timestamp is greater than or equal to the given timestamp in the
-                // corresponding partition." this is technically incorrect, but this is what is returned by the
-                // broker.
-                Assert.Equal(0, result[0].Offset);
+                    Assert.Single(result);
+                    Assert.Equal(result[0].Offset, lastMessage.Offset);
 
-                // Getting the offset for an timestamp that is very far in the future.
-                result = consumer.OffsetsForTimes(
-                        new[] { new TopicPartitionTimestamp(new TopicPartition(singlePartitionTopic, Partition), new Timestamp(long.MaxValue, TimestampType.CreateTime)) },
-                        timeout)
-                    .ToList();
+                    // Getting the offset for a timestamp that is very far in the past.
+                    var unixTimeEpoch = Timestamp.UnixTimeEpoch;
+                    result = consumer.OffsetsForTimes(
+                            new[] { new TopicPartitionTimestamp(new TopicPartition(topic.Name, Partition), new Timestamp(100, TimestampType.CreateTime)) },
+                            timeout)
+                        .ToList();
+                    Assert.Single(result);
+                    // According to the Java documentation which states: "The returned offset for each partition is
+                    // the earliest offset whose timestamp is greater than or equal to the given timestamp in the
+                    // corresponding partition." this is technically incorrect, but this is what is returned by the
+                    // broker.
+                    Assert.Equal(0, result[0].Offset);
 
-                Assert.Single(result);
-                Assert.Equal(Offset.End, result[0].Offset); // Offset.End == -1
+                    // Getting the offset for an timestamp that is very far in the future.
+                    result = consumer.OffsetsForTimes(
+                            new[] { new TopicPartitionTimestamp(new TopicPartition(topic.Name, Partition), new Timestamp(long.MaxValue, TimestampType.CreateTime)) },
+                            timeout)
+                        .ToList();
+
+                    Assert.Single(result);
+                    Assert.Equal(Offset.End, result[0].Offset); // Offset.End == -1
+                }
             }
 
             // Empty topic case

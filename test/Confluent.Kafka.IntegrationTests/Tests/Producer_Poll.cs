@@ -47,7 +47,8 @@ namespace Confluent.Kafka.IntegrationTests
                 // call to Poll (or if the poll method hasn't been called, over
                 // the lifetime of the producer).
                 Assert.True(producer.Poll(TimeSpan.FromMilliseconds(500)) >= 1);
-                Assert.True(sw.ElapsedMilliseconds < 1);
+                var elapsed = sw.ElapsedMilliseconds;
+                Assert.True(elapsed < 2);
                 Assert.Equal(0, producer.Poll(TimeSpan.FromMilliseconds(500)));
                 Assert.True(sw.ElapsedMilliseconds >= 500);
 
