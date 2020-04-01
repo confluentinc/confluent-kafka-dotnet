@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-- References librdkafka v1.4.0-RC5. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.4.0) for more information. Headline features:
+- References librdkafka v1.4.0-RC6. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.4.0) for more information. Headline features:
   - KIP-98: Producer support for transactions ([@edenhill](https://github.com/edenhill)). This is the final piece in the puzzle required to enable exactly once stream processing (EOS) in .NET.
   - KIP-345: Static consumer group membership ([@rnpridgeon](https://github.com/rnpridgeon)).
   - KIP-511: Client name and version are now provided to brokers.
