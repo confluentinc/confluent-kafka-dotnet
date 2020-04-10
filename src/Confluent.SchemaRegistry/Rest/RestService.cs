@@ -255,7 +255,9 @@ namespace Confluent.SchemaRegistry
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));
-                request.Content = new StringContent(stringContent, System.Text.Encoding.UTF8, Versions.SchemaRegistry_V1_JSON);
+                var content = new StringContent(stringContent, System.Text.Encoding.UTF8, Versions.SchemaRegistry_V1_JSON);
+                content.Headers.ContentType.CharSet = string.Empty;
+                request.Content = content;
             }
             return request;
         }
