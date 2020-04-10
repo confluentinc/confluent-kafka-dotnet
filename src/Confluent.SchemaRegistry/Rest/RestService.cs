@@ -29,7 +29,7 @@ namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publicly, but this is not
-    ///     required by the Avro serializers, so we will keep this internal 
+    ///     required by the Avro serializers, so we will keep this internal
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
     internal class RestService : IRestService
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates)
+        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool sslVerify)
         {
             var authorizationHeader = username != null && password != null
                 ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
@@ -67,7 +67,7 @@ namespace Confluent.SchemaRegistry
                     HttpClient client;
                     if (certificates.Count > 0)
                     {
-                        client = new HttpClient(CreateHandler(certificates)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                        client = new HttpClient(CreateHandler(certificates, sslVerify)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
                     }
                     else
                     {
@@ -86,13 +86,19 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
-        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates)
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool sslVerify)
         {
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+
+            if (!sslVerify)
+            {
+                handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => { return true; };
+            }
+
             certificates.ForEach(c => handler.ClientCertificates.Add(c));
             return handler;
-        }        
+        }
 
         private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
         {
@@ -138,10 +144,10 @@ namespace Confluent.SchemaRegistry
         {
             // There may be many base urls - roll until one is found that works.
             //
-            // Start with the last client that was used by this method, which only gets set on 
+            // Start with the last client that was used by this method, which only gets set on
             // success, so it's probably going to work.
             //
-            // Otherwise, try every client until a successful call is made (true even under 
+            // Otherwise, try every client until a successful call is made (true even under
             // concurrent access).
 
             string aggregatedErrorMessage = null;

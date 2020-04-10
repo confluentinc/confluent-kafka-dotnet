@@ -76,6 +76,11 @@ namespace Confluent.SchemaRegistry
         public const int DefaultMaxCachedSchemas = 1000;
 
         /// <summary>
+        ///     The default ssl verify for Schema Registry REST API calls.
+        /// </summary>
+        public const bool DefaultSslVerify = true;
+
+        /// <summary>
         ///     The default key subject name strategy.
         /// </summary>
         public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Topic;
@@ -205,22 +210,28 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslVerify)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config));
+            var sslVerifyMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslVerify);
+            bool sslVerify;
+            try { sslVerify = sslVerifyMaybe.Value == null ? DefaultSslVerify : bool.Parse(sslVerifyMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SslVerify} must be a bool."); }
+
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
         }
 
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
-        /// 
-        ///     It's behavior is pretty extreme - remove everything and start again if the 
+        ///
+        ///     It's behavior is pretty extreme - remove everything and start again if the
         ///     cache gets full. However, in practical situations this is not expected.
-        /// 
+        ///
         ///     TODO: Implement an LRU Cache here or something instead.
         /// </remarks>
         private bool CleanCacheIfFull()
@@ -267,7 +278,7 @@ namespace Confluent.SchemaRegistry
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema)
             => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
 
-        
+
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema)
         {
@@ -340,7 +351,7 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public Task<int> RegisterSchemaAsync(string subject, string avroSchema)
             => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
-    
+
 
         /// <summary>
         ///     Check if the given schema string matches a given format name.

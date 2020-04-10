@@ -95,6 +95,11 @@ namespace Confluent.SchemaRegistry
             ///     Ssl keystore password.
             /// </summary>
             public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
+
+            /// <summary>
+            ///     Ssl verify
+            /// </summary>
+            public const string SslVerify = "schema.registry.ssl.verify";
         }
 
         /// <summary>
@@ -176,6 +181,18 @@ namespace Confluent.SchemaRegistry
         {
             get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
             set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Enable/Disable ssl verify
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public bool? SslVerify
+        {
+            get { return GetBool(SchemaRegistryConfig.PropertyNames.SslVerify); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslVerify, value); }
         }
 
         /// <summary>
