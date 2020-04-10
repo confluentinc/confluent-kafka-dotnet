@@ -23,24 +23,23 @@ namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publicly, but this is not
-    ///     required by the Avro serializers, so we will keep this internal 
+    ///     required by the serializers, so we will keep this internal 
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
     internal interface IRestService : IDisposable
     {
-        Task<Schema> CheckSchemaAsync(string subject, string schema);
-        Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas);
         Task<Compatibility> GetCompatibilityAsync(string subject);
         Task<Compatibility> GetGlobalCompatibilityAsync();
-        Task<Schema> GetLatestSchemaAsync(string subject);
-        Task<string> GetSchemaAsync(int id);
-        Task<Schema> GetSchemaAsync(string subject, int version);
+        Task<RegisteredSchema> GetLatestSchemaAsync(string subject);
+        Task<Schema> GetSchemaAsync(int id, string format = null);
+        Task<RegisteredSchema> GetSchemaAsync(string subject, int version);
         Task<List<string>> GetSubjectsAsync();
         Task<List<int>> GetSubjectVersionsAsync(string subject);
-        Task<int> RegisterSchemaAsync(string subject, string schema);
+        Task<int> RegisterSchemaAsync(string subject, Schema schema);
         Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility);
         Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility);
-        Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema);
-        Task<bool> TestLatestCompatibilityAsync(string subject, string avroSchema);
+        Task<bool> TestCompatibilityAsync(string subject, int versionId, Schema schema);
+        Task<bool> TestLatestCompatibilityAsync(string subject, Schema schema);
+        Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas);
     }
 }

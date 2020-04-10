@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -71,6 +73,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message Key.
         /// </summary>
+        [Obsolete("Please access the message Key via .Message.Key.")]
         public TKey Key
         {
             get
@@ -87,6 +90,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message Value.
         /// </summary>
+        [Obsolete("Please access the message Value via .Message.Value.")]
         public TValue Value
         {
             get
@@ -103,6 +107,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message timestamp.
         /// </summary>
+        [Obsolete("Please access the message Timestamp via .Message.Timestamp.")]
         public Timestamp Timestamp
         {
             get
@@ -119,6 +124,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The Kafka message headers.
         /// </summary>
+        [Obsolete("Please access the message Headers via .Message.Headers.")]
         public Headers Headers
         {
             get

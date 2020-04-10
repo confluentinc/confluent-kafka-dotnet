@@ -51,7 +51,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             for (int i = 0; i < registerCount; ++i)
             {
                 var topicName = Guid.NewGuid().ToString();
-                var subject = sr.ConstructValueSubjectName(topicName);
+                var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 subjects.Add(subject);
 
                 var id = sr.RegisterSchemaAsync(subject, testSchema).Result;

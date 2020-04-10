@@ -20,7 +20,6 @@ using Confluent.Kafka.SyncOverAsync;
 using Confluent.SchemaRegistry.Serdes;
 using Confluent.SchemaRegistry;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -77,7 +76,7 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
 
-                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Value}");
+                                Console.WriteLine($"Key: {consumeResult.Message.Key}\nValue: {consumeResult.Message.Value}");
                             }
                             catch (ConsumeException e)
                             {

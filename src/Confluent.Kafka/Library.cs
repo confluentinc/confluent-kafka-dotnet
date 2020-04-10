@@ -17,6 +17,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Confluent.Kafka.Internal;
 using Confluent.Kafka.Impl;
@@ -125,5 +126,17 @@ namespace Confluent.Kafka
         /// </summary>
         public static int HandleCount
             => kafkaHandleCreateCount - kafkaHandleDestroyCount;
+
+        internal static List<KeyValuePair<string, string>> NameAndVersionConfig
+        {
+            get
+            {
+                return new List<KeyValuePair<string, string>>
+                {
+                    new KeyValuePair<string, string>( "client.software.name", "confluent-kafka-dotnet"),
+                    new KeyValuePair<string, string>( "client.software.version", VersionString )
+                };
+            }
+        }
     }
 }

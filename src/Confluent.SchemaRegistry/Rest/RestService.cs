@@ -25,16 +25,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
 
-
 namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publicly, but this is not
-    ///     required by the Avro serializers, so we will keep this internal
+    ///     required by the Avro serializers, so we will keep this internal 
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
     internal class RestService : IRestService
     {
+        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
+
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
         /// <summary>
@@ -85,23 +86,51 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
-        #if NET452
-        private static WebRequestHandler CreateHandler(List<X509Certificate2> certificates)
-        {
-            var handler = new WebRequestHandler();
-            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-            certificates.ForEach(c => handler.ClientCertificates.Add(c));
-            return handler;
-        }
-        #else
         private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates)
         {
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             certificates.ForEach(c => handler.ClientCertificates.Add(c));
             return handler;
+        }        
+
+        private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
+        {
+            if (schema.References == null)
+            {
+                // The JSON responses from Schema Registry does not include
+                // a references list if there are no references, which means
+                // schema.References will be null here in that case. It's
+                // semantically better if this is an empty list however, so
+                // expose that.
+                schema.References = EmptyReferencesList;
+            }
+
+            return schema;
         }
-        #endif
+
+        private Schema SanitizeSchema(Schema schema)
+        {
+            if (schema.References == null)
+            {
+                // The JSON response from Schema Registry does not include
+                // a references list if there are no references, which means
+                // schema.References will be null here in that case. It's
+                // semantically better if this is an empty list however, so
+                // expose that.
+                schema.References = EmptyReferencesList;
+            }
+
+            if (schema.SchemaType_String == null)
+            {
+                // The JSON response from Schema Registry does not include
+                // schemaType in the avro case (only).
+                schema.SchemaType = SchemaType.Avro;
+            }
+
+            return schema;
+        }
+
 
         #region Base Requests
 
@@ -109,10 +138,10 @@ namespace Confluent.SchemaRegistry
         {
             // There may be many base urls - roll until one is found that works.
             //
-            // Start with the last client that was used by this method, which only gets set on
+            // Start with the last client that was used by this method, which only gets set on 
             // success, so it's probably going to work.
             //
-            // Otherwise, try every client until a successful call is made (true even under
+            // Otherwise, try every client until a successful call is made (true even under 
             // concurrent access).
 
             string aggregatedErrorMessage = null;
@@ -252,9 +281,9 @@ namespace Confluent.SchemaRegistry
 
         #region Schemas
 
-        public async Task<string> GetSchemaAsync(int id)
-            => (await RequestAsync<SchemaString>($"schemas/ids/{id}", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false)).Schema;
+        public async Task<Schema> GetSchemaAsync(int id, string format)
+            => SanitizeSchema((await RequestAsync<Schema>($"schemas/ids/{id}{(format != null ? "?format=" + format : "")}", HttpMethod.Get)
+                        .ConfigureAwait(continueOnCapturedContext: false)));
 
         #endregion Schemas
 
@@ -268,36 +297,50 @@ namespace Confluent.SchemaRegistry
             => await RequestListOfAsync<int>($"subjects/{subject}/versions", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
-        public async Task<Schema> GetSchemaAsync(string subject, int version)
-            => await RequestAsync<Schema>($"subjects/{subject}/versions/{version}", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public async Task<RegisteredSchema> GetSchemaAsync(string subject, int version)
+            => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{subject}/versions/{version}", HttpMethod.Get)
+                        .ConfigureAwait(continueOnCapturedContext: false));
 
-        public async Task<Schema> GetLatestSchemaAsync(string subject)
-            => await RequestAsync<Schema>($"subjects/{subject}/versions/latest", HttpMethod.Get)
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        public async Task<RegisteredSchema> GetLatestSchemaAsync(string subject)
+            => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{subject}/versions/latest", HttpMethod.Get)
+                        .ConfigureAwait(continueOnCapturedContext: false));
 
-        public async Task<int> RegisterSchemaAsync(string subject, string schema)
-            => (await RequestAsync<SchemaId>($"subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema))
+        public async Task<int> RegisterSchemaAsync(string subject, Schema schema)
+            => schema.SchemaType == SchemaType.Avro
+                // In the avro case, just send the schema string to maintain backards compatibility.
+                ? (await RequestAsync<SchemaId>($"subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                        .ConfigureAwait(continueOnCapturedContext: false)).Id
+                : (await RequestAsync<SchemaId>($"subjects/{subject}/versions", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).Id;
 
-        public async Task<Schema> CheckSchemaAsync(string subject, string schema, bool ignoreDeletedSchemas)
-            => await RequestAsync<Schema>($"subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false);
-
-        public async Task<Schema> CheckSchemaAsync(string subject, string schema)
-            => await RequestAsync<Schema>($"subjects/{subject}", HttpMethod.Post, new SchemaString(schema))
-                        .ConfigureAwait(continueOnCapturedContext: false);
+        // Checks whether a schema has been registered under a given subject.
+        public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas)
+            => SanitizeRegisteredSchema(schema.SchemaType == SchemaType.Avro
+                // In the avro case, just send the schema string to maintain backards compatibility.
+                ? await RequestAsync<RegisteredSchema>($"subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                : await RequestAsync<RegisteredSchema>($"subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, schema)
+                        .ConfigureAwait(continueOnCapturedContext: false));
 
         #endregion Subjects
 
         #region Compatibility
 
-        public async Task<bool> TestCompatibilityAsync(string subject, int versionId, string schema)
-            => (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema))
+        public async Task<bool> TestCompatibilityAsync(string subject, int versionId, Schema schema)
+            => schema.SchemaType == SchemaType.Avro
+                // In the avro case, just send the schema string to maintain backards compatibility.
+                ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                        .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible
+                : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
-        public async Task<bool> TestLatestCompatibilityAsync(string subject, string schema)
-            => (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema))
+
+        public async Task<bool> TestLatestCompatibilityAsync(string subject, Schema schema)
+            => schema.SchemaType == SchemaType.Avro
+                // In the avro case, just send the schema string to maintain backards compatibility.
+                ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                        .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible
+                : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
         #endregion Compatibility

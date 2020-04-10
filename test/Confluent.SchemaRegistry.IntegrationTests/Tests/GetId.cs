@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 
@@ -35,7 +34,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
-            var subject = sr.ConstructKeySubjectName(topicName);
+            var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
             var id = sr.RegisterSchemaAsync(subject, testSchema1).Result;
             var id2 = sr.GetSchemaIdAsync(subject, testSchema1).Result;
 

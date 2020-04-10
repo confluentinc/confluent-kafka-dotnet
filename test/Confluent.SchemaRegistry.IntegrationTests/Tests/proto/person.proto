@@ -1,0 +1,9 @@
+syntax = "proto3";
+import "person_name.proto";
+
+package confluent.kafka.examples.protobuf;
+
+message Person {
+    PersonName Name = 1;
+    int32 Age = 2;
+}

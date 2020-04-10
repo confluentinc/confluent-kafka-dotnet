@@ -19,10 +19,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Confluent.Kafka\Confluent.Kafka.csproj" />
-    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes\Confluent.SchemaRegistry.Serdes.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry\Confluent.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Avro\Confluent.SchemaRegistry.Serdes.Avro.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Json\Confluent.SchemaRegistry.Serdes.Json.csproj" />
+    <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Protobuf\Confluent.SchemaRegistry.Serdes.Protobuf.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Apache.Avro" Version="1.9.2" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="xunit" Version="2.3.1" />

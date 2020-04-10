@@ -123,8 +123,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 c.Assign(dr.TopicPartitionOffset);
                 var cr = c.Consume(TimeSpan.FromSeconds(10));
-                Assert.Equal("abc", cr.Key);
-                Assert.Equal("123", cr.Value);
+                Assert.Equal("abc", cr.Message.Key);
+                Assert.Equal("123", cr.Message.Value);
             }
 
             using (var c = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
@@ -132,8 +132,8 @@ namespace Confluent.Kafka.IntegrationTests
                 c.Assign(dr.TopicPartitionOffset);
                 var cr = c.Consume(TimeSpan.FromSeconds(10));
                 // check that each character is serialized into 4 bytes.
-                Assert.Equal(3*4, cr.Key.Length);
-                Assert.Equal(3*4, cr.Value.Length);
+                Assert.Equal(3*4, cr.Message.Key.Length);
+                Assert.Equal(3*4, cr.Message.Value.Length);
             }
 
             Assert.Equal(0, Library.HandleCount);

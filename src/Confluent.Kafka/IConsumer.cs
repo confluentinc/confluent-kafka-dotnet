@@ -440,6 +440,35 @@ namespace Confluent.Kafka
         void Resume(IEnumerable<TopicPartition> partitions);
 
 
+
+        /// <summary>
+        ///     Retrieve current committed offsets for the
+        ///     current assignment.
+        ///
+        ///     The offset field of each requested partition
+        ///     will be set to the offset of the last consumed
+        ///     message, or Offset.Unset in case there was no
+        ///     previous message, or, alternately a partition
+        ///     specific error may also be returned.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The maximum period of time the call
+        ///     may block.
+        /// </param>
+        /// <exception cref="Confluent.Kafka.KafkaException">
+        ///     Thrown if the request failed.
+        /// </exception>
+        /// <exception cref="Confluent.Kafka.TopicPartitionOffsetException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the
+        ///     <see cref="Confluent.Kafka.TopicPartitionOffsetException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        List<TopicPartitionOffset> Committed(TimeSpan timeout);
+
+
         /// <summary>
         ///     Retrieve current committed offsets for the
         ///     specified topic partitions.
@@ -490,9 +519,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Look up the offsets for the given partitions
         ///     by timestamp. The returned offset for each
-        ///     partition is the earliest offset whose
-        ///     timestamp is greater than or equal to the
-        ///     given timestamp in the corresponding partition.
+        ///     partition is the earliest offset for which
+        ///     the timestamp is greater than or equal to
+        ///     the given timestamp. If the provided
+        ///     timestamp exceeds that of the last message
+        ///     in the partition, a value of Offset.End (-1)
+        ///     will be returned.
         /// </summary>
         /// <remarks>
         ///     The consumer does not need to be assigned to
@@ -592,5 +624,15 @@ namespace Confluent.Kafka
         ///     Thrown if the operation fails.
         /// </exception>
         void Close();
+
+
+        /// <summary>
+        ///     The current consumer group metadata associated with this consumer,
+        ///     or null if a GroupId has not been specified for the consumer.
+        ///     This metadata object should be passed to the transactional producer's
+        ///     <see cref="IProducer{K,V}.SendOffsetsToTransaction(IEnumerable{TopicPartitionOffset},IConsumerGroupMetadata,TimeSpan)"/>
+        ///     method.
+        /// </summary>
+        IConsumerGroupMetadata ConsumerGroupMetadata { get; }
     }
 }

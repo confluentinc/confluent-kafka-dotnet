@@ -318,7 +318,7 @@ namespace Confluent.Kafka.IntegrationTests
                 consumer.Assign(new TopicPartitionOffset(singlePartitionTopic, 0, nulldr.Offset));
                 var cr = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr?.Message);
-                Assert.Single(cr.Headers);
+                Assert.Single(cr.Message.Headers);
                 Assert.Equal("my-header", cr.Message.Headers[0].Key);
                 Assert.Null(cr.Message.Headers[0].GetValueBytes());
             }

@@ -33,6 +33,23 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Register an Avro schema or get the schema id if it's already 
+        ///     registered.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to register the schema against.
+        /// </param>
+        /// <param name="avroSchema">
+        ///     The schema to register.
+        /// </param>
+        /// <returns>
+        ///     A unique id identifying the schema.
+        /// </returns>
+        [Obsolete("Superseded by RegisterSchemaAsync(string, Schema)")]
+        Task<int> RegisterSchemaAsync(string subject, string avroSchema);
+
+
+        /// <summary>
         ///     Register a schema or get the schema id if it's already 
         ///     registered.
         /// </summary>
@@ -45,7 +62,26 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///     A unique id identifying the schema.
         /// </returns>
-        Task<int> RegisterSchemaAsync(string subject, string schema);
+        Task<int> RegisterSchemaAsync(string subject, Schema schema);
+
+        /// <summary>
+        ///   Get the unique id of the specified avro schema registered against 
+        ///   the specified subject.
+        /// </summary>
+        /// <param name="subject">
+        ///   The subject the schema is registered against.
+        /// </param>
+        /// <param name="avroSchema">
+        ///   The schema to get the id for.
+        /// </param>
+        /// <returns>
+        ///   The unique id identifying the schema.
+        /// </returns>
+        /// <exception cref="SchemaRegistryException">
+        ///   Thrown if the schema is not registered against the subject.
+        /// </exception>
+        [Obsolete("Superseded by GetSchemaIdAsync(string, Schema)")]
+        Task<int> GetSchemaIdAsync(string subject, string avroSchema);
 
 
         /// <summary>
@@ -64,7 +100,7 @@ namespace Confluent.SchemaRegistry
         /// <exception cref="SchemaRegistryException">
         ///   Thrown if the schema is not registered against the subject.
         /// </exception>
-        Task<int> GetSchemaIdAsync(string subject, string schema);
+        Task<int> GetSchemaIdAsync(string subject, Schema schema);
 
 
         /// <summary>
@@ -73,10 +109,37 @@ namespace Confluent.SchemaRegistry
         /// <param name="id">
         ///     The unique id of schema to get.
         /// </param>
+        /// <param name="format">
+        ///     The format of the schema to get. Currently, the only supported
+        ///     value is "serialized", and this is only valid for protobuf
+        ///     schemas. If 'serialized', the SchemaString property of the returned
+        ///     value will be a base64 encoded protobuf file descriptor. If null,
+        ///     SchemaString will be human readable text.
+        /// </param>
         /// <returns>
         ///     The schema identified by <paramref name="id" />.
         /// </returns>
-        Task<string> GetSchemaAsync(int id);
+        Task<Schema> GetSchemaAsync(int id, string format = null);
+
+
+        /// <summary>
+        ///     Get the registered schema details (including version and id)
+        ///     given a subject name and schema, or throw an exception if
+        ///     the schema is not registered against the subject.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject name the schema is registered against.
+        /// </param>
+        /// <param name="schema">
+        ///     The schema to lookup.
+        /// </param>
+        /// <param name="ignoreDeletedSchemas">
+        ///     Whether or not to ignore deleted schemas.
+        /// </param>
+        /// <returns>
+        ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="schema" />.
+        /// </returns>
+        Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas);
 
 
         /// <summary>
@@ -91,6 +154,23 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
         /// </returns>
+        Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version);
+
+
+        /// <summary>
+        ///     DEPRECATED. Superseded by GetRegisteredSchemaAsync(string subject, int version)
+        ///     Gets a schema given a <paramref name="subject" /> and <paramref name="version" /> number.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to get the schema for.
+        /// </param>
+        /// <param name="version">
+        ///     The version number of schema to get.
+        /// </param>
+        /// <returns>
+        ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="version" />.
+        /// </returns>
+        [Obsolete("Superseded by GetRegisteredSchemaAsync(string subject, int version). This method will be removed in a future release.")]
         Task<string> GetSchemaAsync(string subject, int version);
 
 
@@ -103,7 +183,7 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///     The latest schema registered against <paramref name="subject" />.
         /// </returns>
-        Task<Schema> GetLatestSchemaAsync(string subject);
+        Task<RegisteredSchema> GetLatestSchemaAsync(string subject);
 
 
         /// <summary>
@@ -128,6 +208,24 @@ namespace Confluent.SchemaRegistry
 
 
         /// <summary>
+        ///     Check if an avro schema is compatible with latest version registered against a 
+        ///     specified subject.
+        /// </summary>
+        /// <param name="subject">
+        ///     The subject to check.
+        /// </param>
+        /// <param name="avroSchema">
+        ///     The schema to check.
+        /// </param>
+        /// <returns>
+        ///     true if <paramref name="avroSchema" /> is compatible with the latest version 
+        ///     registered against a specified subject, false otherwise.
+        /// </returns>
+        [Obsolete("Superseded by IsCompatibleAsync(string, Schema)")]
+        Task<bool> IsCompatibleAsync(string subject, string avroSchema);
+
+
+        /// <summary>
         ///     Check if a schema is compatible with latest version registered against a 
         ///     specified subject.
         /// </summary>
@@ -141,38 +239,42 @@ namespace Confluent.SchemaRegistry
         ///     true if <paramref name="schema" /> is compatible with the latest version 
         ///     registered against a specified subject, false otherwise.
         /// </returns>
-        Task<bool> IsCompatibleAsync(string subject, string schema);
+        Task<bool> IsCompatibleAsync(string subject, Schema schema);
 
 
         /// <summary>
+        ///     DEPRECATED. SubjectNameStrategy should now be specified via serializer configuration.
         ///     Returns the schema registry key subject name given a topic name.
         /// </summary>
         /// <param name="topic">
         ///     The topic name.
         /// </param>
         /// <param name="recordType">
-        ///     The fully qualified Avro record type or null if the key is not
-        ///     an Avro record type.
+        ///     The fully qualified record type. May be null if not required by
+        ///     the configured subject naming strategy.
         /// </param>
         /// <returns>
         ///     The key subject name given a topic name.
         /// </returns>
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         string ConstructKeySubjectName(string topic, string recordType = null);
 
 
         /// <summary>
+        ///     DEPRECATED. SubjectNameStrategy should now be specified via serializer configuration.
         ///     Returns the schema registry value subject name given a topic name.
         /// </summary>
         /// <param name="topic">
         ///     The topic name.
         /// </param>
         /// <param name="recordType">
-        ///     The fully qualified Avro record type or null if the value is not
-        ///     an Avro record type.
+        ///     The fully qualified record type. May be null if not required by
+        ///     the configured subject naming strategy.
         /// </param>
         /// <returns>
         ///     The value subject name given a topic name.
         /// </returns>
+        [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         string ConstructValueSubjectName(string topic, string recordType = null);
     }
 }
