@@ -87,14 +87,14 @@ namespace Confluent.SchemaRegistry
             public const string SslCaLocation = "schema.registry.ssl.ca.location";
 
             /// <summary>
-            ///     Ssl certificate location.
+            ///     Ssl keystore location.
             /// </summary>
-            public const string SslCertificateLocation = "schema.registry.ssl.certificate.location";
+            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
 
             /// <summary>
-            ///     Ssl certificate password.
+            ///     Ssl keystore password.
             /// </summary>
-            public const string SslCertificatePassword = "schema.registry.ssl.certificate.password";
+            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
         }
 
         /// <summary>
@@ -155,27 +155,27 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Path to client's certificate (PKCS#12) used for authentication.
+        ///     Path to client's keystore (PKCS#12) used for authentication.
         ///
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public string SslCertificateLocation
+        public string SslKeystoreLocation
         {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificateLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificateLocation, value.ToString()); }
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value.ToString()); }
         }
 
         /// <summary>
-        ///     Client's certificate (PKCS#12) password.
+        ///     Client's keystore (PKCS#12) password.
         ///
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public string SslCertificatePassword
+        public string SslKeystorePassword
         {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslCertificatePassword); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCertificatePassword, value.ToString()); }
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
         }
 
         /// <summary>

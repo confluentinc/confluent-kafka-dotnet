@@ -204,8 +204,8 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificateLocation &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslCertificatePassword)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
@@ -247,8 +247,8 @@ namespace Confluent.SchemaRegistry
         {
             var certificates = new List<X509Certificate2>();
 
-            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificateLocation).Value ?? "";
-            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCertificatePassword).Value ?? "";
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
             if (!String.IsNullOrEmpty(certificateLocation))
             {
                 certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
