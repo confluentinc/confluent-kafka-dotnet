@@ -196,19 +196,6 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Specifies the timeout for requests to Confluent Schema Registry.
-        ///
-        ///     default: 30000
-        /// </summary>
-        [Obsolete("This property will be removed in a future version of this library in favor of the RequestTimeoutMs property")]
-        public int? SchemaRegistryRequestTimeoutMs
-        {
-            get => RequestTimeoutMs;
-            set { RequestTimeoutMs = value; }
-        }
-
-
-        /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
         ///     should cache locally.
         ///
