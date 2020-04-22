@@ -7,5 +7,5 @@
   "keystore_location": "./secrets/schema-registry.keystore.jks",
   "keystore_password": "cnf123",
   "ca_location": "./secrets/schema-registry-ca.cer",
-  "ssl_verify": "false"
+  "enable_ssl_certificate_verification": "false"
 }

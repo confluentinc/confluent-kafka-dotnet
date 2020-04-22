@@ -42,7 +42,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 SslKeystoreLocation = config.KeystoreLocation,
                 SslKeystorePassword = config.KeystorePassword,
                 SslCaLocation = config.CaLocation,
-                SslVerify = bool.Parse(config.SslVerify),
+                EnableSslCertificateVerification = bool.Parse(config.EnableSslCertificateVerification),
             };
 
             // some sanity checking of strongly typed config property name mappings.

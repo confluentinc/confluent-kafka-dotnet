@@ -99,7 +99,7 @@ namespace Confluent.SchemaRegistry
             /// <summary>
             ///     Ssl verify
             /// </summary>
-            public const string SslVerify = "schema.registry.ssl.verify";
+            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
         }
 
         /// <summary>
@@ -184,15 +184,15 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Enable/Disable ssl verify
+        ///     Enable/Disable SSL certificate verification
         ///
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public bool? SslVerify
+        public bool? EnableSslCertificateVerification
         {
-            get { return GetBool(SchemaRegistryConfig.PropertyNames.SslVerify); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslVerify, value); }
+            get { return GetBool(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification, value); }
         }
 
         /// <summary>

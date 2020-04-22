@@ -78,7 +78,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     The default ssl verify for Schema Registry REST API calls.
         /// </summary>
-        public const bool DefaultSslVerify = true;
+        public const bool DefaultEnableSslCertificateVerification = true;
 
         /// <summary>
         ///     The default key subject name strategy.
@@ -211,16 +211,16 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SslVerify)
+                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            var sslVerifyMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslVerify);
+            var sslVerificationMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification);
             bool sslVerify;
-            try { sslVerify = sslVerifyMaybe.Value == null ? DefaultSslVerify : bool.Parse(sslVerifyMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SslVerify} must be a bool."); }
+            try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
             this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
         }

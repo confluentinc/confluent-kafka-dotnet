@@ -10,6 +10,6 @@ namespace Confluent.SchemaRegistry.IntegrationTests
         public string KeystoreLocation { get; set; }
         public string KeystorePassword { get; set; }
         public string CaLocation { get; set; }
-        public string SslVerify { get; set; }
+        public string EnableSslCertificateVerification { get; set; }
     }
 }

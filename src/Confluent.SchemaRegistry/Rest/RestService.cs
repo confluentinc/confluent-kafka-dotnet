@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool sslVerify)
+        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
             var authorizationHeader = username != null && password != null
                 ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
@@ -67,7 +67,7 @@ namespace Confluent.SchemaRegistry
                     HttpClient client;
                     if (certificates.Count > 0)
                     {
-                        client = new HttpClient(CreateHandler(certificates, sslVerify)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
                     }
                     else
                     {
@@ -86,12 +86,12 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
-        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool sslVerify)
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
-            if (!sslVerify)
+            if (!enableSslCertificateVerification)
             {
                 handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => { return true; };
             }
