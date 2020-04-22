@@ -50,9 +50,9 @@ namespace Confluent.Kafka.IntegrationTests
                     Util.ProduceNullStringMessages(bootstrapServers, topic.Name, 1, N);
                     consumer.Resume(new List<TopicPartition> { new TopicPartition(topic.Name, 0) });
                     var cr3 = consumer.Consume(TimeSpan.FromSeconds(10));
-                    Assert.Equal(5, cr3.Offset);
+                    Assert.Equal(N, cr3.Offset);
                     var p = consumer.Position(new TopicPartition(topic.Name, 0));
-                    Assert.Equal(6, p.Value);
+                    Assert.Equal(N+1, p.Value);
                     consumer.Assign(new TopicPartitionOffset(topic.Name, 0, Offset.Beginning));
                     var cr4 = consumer.Consume(TimeSpan.FromSeconds(10));
                     Assert.Equal(0, cr4.Offset);
@@ -63,9 +63,8 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = bootstrapServers,
-                SessionTimeoutMs = 6000,
                 EnableAutoCommit = false,
-                AutoOffsetReset = AutoOffsetReset.Earliest
+                AutoOffsetReset = AutoOffsetReset.Error
             };
 
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
