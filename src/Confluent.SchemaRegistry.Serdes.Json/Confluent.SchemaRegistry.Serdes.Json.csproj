@@ -13,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Json</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Json</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Json</AssemblyName>
-    <VersionPrefix>1.4.0</VersionPrefix>
+    <VersionPrefix>1.4.2-RC2</VersionPrefix>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
