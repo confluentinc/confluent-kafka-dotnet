@@ -33,7 +33,7 @@ client. Thanks Andreas!
 
 ## Referencing
 
-confluent-kafka-dotnet is distributed via NuGet. We provide three packages:
+confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
 
 - [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3, netstandard2.0]* - The core client library.
 - [Confluent.SchemaRegistry.Serdes.Avro](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Avro/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
@@ -200,11 +200,14 @@ class Program
 }
 ```
 
-### Working with Apache Avro
+### Schema Registry Integration
 
-The `Confluent.SchemaRegistry.Serdes` nuget package provides an Avro serializer and deserializer that integrate with [Confluent
-Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html). The `Confluent.SchemaRegistry` 
-nuget package provides a client for interfacing with Schema Registry's REST API.
+The three "Serdes" packages provide serializers and deserializers for Avro, Protobuf and JSON with [Confluent Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html) integration. The `Confluent.SchemaRegistry` nuget package provides a client for interfacing with
+Schema Registry's REST API.
+
+**Note:** All three serialization formats are supported across Confluent Platform. They each make different tradeoffs, and you should use the one that best matches to your requirements. Avro is well suited to the streaming data use-case, but the maturity of the non-Java implementations lags that of Java - this is an important consideration. Protobuf and JSON both have great support in .NET.
+
+#### Avro
 
 You can use the Avro serializer and deserializer with the `GenericRecord` class or with specific classes generated
 using the `avrogen` tool, available via Nuget (.NET Core 2.1 required):
