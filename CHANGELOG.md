@@ -1,3 +1,11 @@
+# 1.4.2
+
+## Fixes
+
+- Maintenance release. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.4.2) for more information.
+- Fixed incorrect content-type header in Schema Registry HTTP requests ([@jeremy001181](https://github.com/jeremy001181)).
+
+
 # 1.4.0
 
 ## Enhancements
