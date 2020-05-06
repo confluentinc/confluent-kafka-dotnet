@@ -13,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Avro</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Avro</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Avro</AssemblyName>
-    <VersionPrefix>1.4.2-RC3</VersionPrefix>
+    <VersionPrefix>1.4.2</VersionPrefix>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
