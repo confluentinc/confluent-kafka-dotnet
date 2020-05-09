@@ -17,6 +17,8 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -28,86 +30,133 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Produce(string bootstrapServers)
+        [Theory]
+        [MemberData(nameof(KafkaParameters))]
+        public void Producer_Produce_WithInstrumentation(string bootstrapServers)
+        {
+            Producer_Produce(bootstrapServers, true);
+        }
+
+        [Theory]
+        [MemberData(nameof(KafkaParameters))]
+        public void Producer_Produce(string bootstrapServers, bool instrument = false)
         {
             LogToFile("start Producer_Produce");
 
-            var producerConfig = new ProducerConfig
-            { 
-                BootstrapServers = bootstrapServers,
-                EnableIdempotence = true,
-                LingerMs = 1.5
-            };
+            var diagnosticObserver = instrument ? new EventObserverAndRecorder(Diagnostics.DiagnosticListenerName) : null;
 
-
-            // serializer case.
-
-            int count = 0;
-            Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
+            try
             {
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
-                Assert.Equal((Partition)0, dr.Partition);
-                Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.True(dr.Offset >= 0);
-                Assert.Equal($"test key {count}", dr.Message.Key);
-                Assert.Equal($"test val {count}", dr.Message.Value);
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                count += 1;
-            };
+                var producerConfig = new ProducerConfig
+                {
+                    BootstrapServers = bootstrapServers,
+                    EnableIdempotence = true,
+                    LingerMs = 1.5
+                };
 
-            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
+
+                // serializer case.
+
+                int count = 0;
+                Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
+                {
+                    Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                    Assert.Equal(PersistenceStatus.Persisted, dr.Status);
+                    Assert.Equal((Partition)0, dr.Partition);
+                    Assert.Equal(singlePartitionTopic, dr.Topic);
+                    Assert.True(dr.Offset >= 0);
+                    Assert.Equal($"test key {count}", dr.Message.Key);
+                    Assert.Equal($"test val {count}", dr.Message.Value);
+                    Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                    Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                    count += 1;
+                };
+
+                using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
+                {
+                    producer.Produce(
+                        new TopicPartition(singlePartitionTopic, 0),
+                        new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
+
+                    producer.Produce(
+                        singlePartitionTopic,
+                        new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
+
+                    producer.Flush(TimeSpan.FromSeconds(10));
+                }
+
+                Assert.Equal(2, count);
+
+                if (instrument)
+                {
+                    Assert.Equal(4, diagnosticObserver.Records.Count);
+                    Assert.Equal(2, diagnosticObserver.Records.Count(rec => rec.Key.EndsWith("Start")));
+                    Assert.Equal(2, diagnosticObserver.Records.Count(rec => rec.Key.EndsWith("Stop")));
+
+                    Assert.True(diagnosticObserver.Records.TryDequeue(out KeyValuePair<string, object> startEvent));
+                    Assert.Equal(Diagnostics.Producer.StartName, startEvent.Key);
+
+                    Assert.Equal(singlePartitionTopic, EventObserverAndRecorder.ReadPublicProperty<string>(startEvent.Value, "Topic"));
+                    Message<string, string> message = EventObserverAndRecorder.ReadPublicProperty<Message<string, string>>(startEvent.Value, "Message");
+                    Assert.NotNull(message);
+                    Assert.Equal("test key 0", message.Key);
+                    Assert.Equal("test val 0", message.Value);
+
+                    string startTraceId = message.Headers?.Where(h => h.Key == Diagnostics.TraceParentHeaderName).Select(h => Encoding.UTF8.GetString(h.GetValueBytes())).FirstOrDefault();
+                    Assert.NotNull(startTraceId);
+
+                    KeyValuePair<string, object> stopEvent = diagnosticObserver.Records.FirstOrDefault(r => r.Key == Diagnostics.Producer.StopName);
+                    Assert.Equal(singlePartitionTopic, EventObserverAndRecorder.ReadPublicProperty<string>(stopEvent.Value, "Topic"));
+                    DeliveryResult<string, string> deliveryResult = EventObserverAndRecorder.ReadPublicProperty<DeliveryResult<string, string>>(stopEvent.Value, "DeliveryResult");
+                    Assert.NotNull(deliveryResult);
+                    Assert.Equal(PersistenceStatus.Persisted, deliveryResult.Status);
+                    Assert.Equal("test key 0", deliveryResult.Key);
+                    Assert.Equal("test val 0", deliveryResult.Value);
+
+                    string stopTraceId = deliveryResult.Headers?.Where(h => h.Key == Diagnostics.TraceParentHeaderName).Select(h => Encoding.UTF8.GetString(h.GetValueBytes())).FirstOrDefault();
+                    Assert.Equal(startTraceId, stopTraceId);
+                }
+
+                // byte[] case.
+
+                count = 0;
+                Action<DeliveryReport<byte[], byte[]>> dh2 = (DeliveryReport<byte[], byte[]> dr) =>
+                {
+                    Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                    Assert.Equal(PersistenceStatus.Persisted, dr.Status);
+                    Assert.Equal((Partition)0, dr.Partition);
+                    Assert.Equal(singlePartitionTopic, dr.Topic);
+                    Assert.True(dr.Offset >= 0);
+                    Assert.Equal($"test key {count + 42}", Encoding.UTF8.GetString(dr.Message.Key));
+                    Assert.Equal($"test val {count + 42}", Encoding.UTF8.GetString(dr.Message.Value));
+                    Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                    Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                    count += 1;
+                };
+
+                using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+                {
+                    producer.Produce(
+                        new TopicPartition(singlePartitionTopic, 0),
+                        new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 42"), Value = Encoding.UTF8.GetBytes("test val 42") }, dh2);
+
+                    producer.Produce(
+                        singlePartitionTopic,
+                        new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 43"), Value = Encoding.UTF8.GetBytes("test val 43") }, dh2);
+
+                    producer.Flush(TimeSpan.FromSeconds(10));
+                }
+
+                Assert.Equal(2, count);
+
+
+                Assert.Equal(0, Library.HandleCount);
+            }
+            finally
             {
-                producer.Produce(
-                    new TopicPartition(singlePartitionTopic, 0), 
-                    new Message<string, string> { Key = "test key 0", Value = "test val 0" }, dh);
-
-                producer.Produce(
-                    singlePartitionTopic,
-                    new Message<string, string> { Key = "test key 1", Value = "test val 1" }, dh);
-
-                producer.Flush(TimeSpan.FromSeconds(10));
+                diagnosticObserver?.Dispose();
             }
 
-            Assert.Equal(2, count);
-
-
-            // byte[] case.
-
-            count = 0;
-            Action<DeliveryReport<byte[], byte[]>> dh2 = (DeliveryReport<byte[], byte[]> dr) =>
-            {
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
-                Assert.Equal((Partition)0, dr.Partition);
-                Assert.Equal(singlePartitionTopic, dr.Topic);
-                Assert.True(dr.Offset >= 0);
-                Assert.Equal($"test key {count + 42}", Encoding.UTF8.GetString(dr.Message.Key));
-                Assert.Equal($"test val {count + 42}", Encoding.UTF8.GetString(dr.Message.Value));
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-                count += 1;
-            };
-
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
-            {
-                producer.Produce(
-                    new TopicPartition(singlePartitionTopic, 0), 
-                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 42"), Value = Encoding.UTF8.GetBytes("test val 42") }, dh2);
-
-                producer.Produce(
-                    singlePartitionTopic, 
-                    new Message<byte[], byte[]> { Key = Encoding.UTF8.GetBytes("test key 43"), Value = Encoding.UTF8.GetBytes("test val 43") }, dh2);
-
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
-
-            Assert.Equal(2, count);
-
-
-            Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_Produce");
         }
     }

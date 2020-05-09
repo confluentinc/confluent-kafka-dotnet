@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -71,7 +72,7 @@ namespace Confluent.Kafka
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
-            => ownedKafkaHandle != null 
+            => ownedKafkaHandle != null
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
 
@@ -96,7 +97,7 @@ namespace Confluent.Kafka
                                 this.handlerException = null;
                             }
 
-                            // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
+                            // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit
                             if (eventsServedCount_ > 0)
                             {
                                 lock (pollSyncObj)
@@ -107,7 +108,7 @@ namespace Confluent.Kafka
                             }
                         }
                     }
-                    catch (OperationCanceledException) {}
+                    catch (OperationCanceledException) { }
                 }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
@@ -194,17 +195,17 @@ namespace Confluent.Kafka
                 }
 
                 var gch = GCHandle.FromIntPtr(msg._private);
-                var deliveryHandler = (IDeliveryHandler) gch.Target;
+                var deliveryHandler = (IDeliveryHandler)gch.Target;
                 gch.Free();
 
                 Headers headers = null;
-                if (this.enableDeliveryReportHeaders) 
+                if (this.enableDeliveryReportHeaders)
                 {
                     headers = new Headers();
                     Librdkafka.message_headers(rkmessage, out IntPtr hdrsPtr);
                     if (hdrsPtr != IntPtr.Zero)
                     {
-                        for (var i=0; ; ++i)
+                        for (var i = 0; ; ++i)
                         {
                             var err = Librdkafka.header_get_all(hdrsPtr, (IntPtr)i, out IntPtr namep, out IntPtr valuep, out IntPtr sizep);
                             if (err != ErrorCode.NoError)
@@ -241,8 +242,8 @@ namespace Confluent.Kafka
                     {
                         // Topic is not set here in order to avoid the marshalling cost.
                         // Instead, the delivery handler is expected to cache the topic string.
-                        Partition = msg.partition, 
-                        Offset = msg.offset, 
+                        Partition = msg.partition,
+                        Offset = msg.offset,
                         Error = KafkaHandle.CreatePossiblyFatalError(msg.err, null),
                         Status = messageStatus,
                         Message = new Message<Null, Null> { Timestamp = new Timestamp(timestamp, (TimestampType)timestampType), Headers = headers }
@@ -379,7 +380,7 @@ namespace Confluent.Kafka
             }
         }
 
-        
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -401,7 +402,7 @@ namespace Confluent.Kafka
         {
             // Calling Dispose a second or subsequent time should be a no-op.
             lock (disposeHasBeenCalledLockObj)
-            { 
+            {
                 if (disposeHasBeenCalled) { return; }
                 disposeHasBeenCalled = true;
             }
@@ -454,7 +455,7 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
-        public Handle Handle 
+        public Handle Handle
         {
             get
             {
@@ -462,7 +463,7 @@ namespace Confluent.Kafka
                 {
                     return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle };
                 }
-                
+
                 return borrowedHandle;
             }
         }
@@ -539,7 +540,7 @@ namespace Confluent.Kafka
             var baseConfig = builder.ConstructBaseConfig(this);
 
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
-            // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
+            // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks
             //       that never complete are never created when this is set to true.
 
             this.statisticsHandler = baseConfig.statisticsHandler;
@@ -563,8 +564,8 @@ namespace Confluent.Kafka
             if (modifiedConfig.Where(obj => obj.Key == "delivery.report.only.error").Count() > 0)
             {
                 // A managed object is kept alive over the duration of the produce request. If there is no
-                // delivery report generated, there will be a memory leak. We could possibly support this 
-                // property by keeping track of delivery reports in managed code, but this seems like 
+                // delivery report generated, there will be a memory leak. We could possibly support this
+                // property by keeping track of delivery reports in managed code, but this seems like
                 // more trouble than it's worth.
                 throw new ArgumentException("The 'delivery.report.only.error' property is not supported by this client");
             }
@@ -604,8 +605,9 @@ namespace Confluent.Kafka
                                 case "timestamp": this.enableDeliveryReportTimestamp = true; break;
                                 case "headers": this.enableDeliveryReportHeaders = true; break;
                                 case "status": this.enableDeliveryReportPersistedStatus = true; break;
-                                default: throw new ArgumentException(
-                                    $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
+                                default:
+                                    throw new ArgumentException(
+                               $"Unknown delivery report field name '{part}' in config value '{ConfigPropertyNames.Producer.DeliveryReportFields}'.");
                             }
                         }
                     }
@@ -667,7 +669,9 @@ namespace Confluent.Kafka
             Message<TKey, TValue> message,
             CancellationToken cancellationToken)
         {
-            Headers headers = message.Headers ?? new Headers();
+            Headers headers = message.Headers == null
+                ? message.Headers = new Headers()
+                : message.Headers;
 
             byte[] keyBytes;
             try
@@ -716,27 +720,45 @@ namespace Confluent.Kafka
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
 
+                    Activity activity = Diagnostics.Producer.Start(topicPartition.Topic, message);
+
+                    try
+                    {
+                        ProduceImpl(
+                            topicPartition.Topic,
+                            valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                            keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                            message.Timestamp, topicPartition.Partition, headers,
+                            handler);
+
+                        if (cancellationToken != null && cancellationToken.CanBeCanceled)
+                        {
+                            cancellationToken.Register(() => handler.TrySetCanceled());
+                        }
+
+                        var deliveryResult = await handler.Task.ConfigureAwait(false);
+
+                        Diagnostics.Producer.Stop(topicPartition.Topic, deliveryResult);
+
+                        return deliveryResult;
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostics.Producer.Exception(topicPartition.Topic, message, ex);
+                        throw;
+                    }
+                    finally
+                    {
+                        activity?.Stop();
+                    }
+                }
+                else
+                {
                     ProduceImpl(
                         topicPartition.Topic,
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
                         message.Timestamp, topicPartition.Partition, headers,
-                        handler);
-
-                    if (cancellationToken != null && cancellationToken.CanBeCanceled)
-                    {
-                        cancellationToken.Register(() => handler.TrySetCanceled());
-                    }
-
-                    return await handler.Task.ConfigureAwait(false);
-                }
-                else
-                {
-                    ProduceImpl(
-                        topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers, 
                         null);
 
                     var result = new DeliveryResult<TKey, TValue>
@@ -759,7 +781,6 @@ namespace Confluent.Kafka
                     });
             }
         }
-
 
         /// <inheritdoc/>
         public Task<DeliveryResult<TKey, TValue>> ProduceAsync(
@@ -789,7 +810,9 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("A delivery handler was specified, but delivery reports are disabled.");
             }
 
-            Headers headers = message.Headers ?? new Headers();
+            Headers headers = message.Headers == null
+                ? message.Headers = new Headers()
+                : message.Headers;
 
             byte[] keyBytes;
             try
@@ -829,29 +852,36 @@ namespace Confluent.Kafka
                 );
             }
 
+            Activity activity = Diagnostics.Producer.Start(topicPartition.Topic, message);
+
             try
             {
                 ProduceImpl(
                     topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                    message.Timestamp, topicPartition.Partition, 
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    message.Timestamp, topicPartition.Partition,
                     headers,
                     new TypedDeliveryHandlerShim_Action(
                         topicPartition.Topic,
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue),
+                        activity,
                         deliveryHandler));
             }
             catch (KafkaException ex)
             {
+                Diagnostics.Producer.Exception(topicPartition.Topic, message, ex);
+
+                activity?.Stop();
+
                 throw new ProduceException<TKey, TValue>(
                     ex.Error,
                     new DeliveryReport<TKey, TValue>
-                        {
-                            Message = message,
-                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                        });
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    });
             }
         }
 
@@ -897,7 +927,7 @@ namespace Confluent.Kafka
                         Headers = deliveryReport.Message.Headers
                     }
                 };
-                // topic is cached in this object, not set in the deliveryReport to avoid the 
+                // topic is cached in this object, not set in the deliveryReport to avoid the
                 // cost of marshalling it.
                 dr.Topic = Topic;
 
@@ -925,11 +955,12 @@ namespace Confluent.Kafka
 
         private class TypedDeliveryHandlerShim_Action : IDeliveryHandler
         {
-            public TypedDeliveryHandlerShim_Action(string topic, TKey key, TValue val, Action<DeliveryReport<TKey, TValue>> handler)
+            public TypedDeliveryHandlerShim_Action(string topic, TKey key, TValue val, Activity activity, Action<DeliveryReport<TKey, TValue>> handler)
             {
                 Topic = topic;
                 Key = key;
                 Value = val;
+                Activity = activity;
                 Handler = handler;
             }
 
@@ -938,6 +969,8 @@ namespace Confluent.Kafka
             public TKey Key;
 
             public TValue Value;
+
+            public Activity Activity;
 
             public Action<DeliveryReport<TKey, TValue>> Handler;
 
@@ -952,24 +985,25 @@ namespace Confluent.Kafka
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
                     Status = deliveryReport.Status,
-                    Message = new Message<TKey, TValue> 
+                    Message = new Message<TKey, TValue>
                     {
                         Key = Key,
                         Value = Value,
-                        Timestamp = deliveryReport.Message == null 
-                            ? new Timestamp(0, TimestampType.NotAvailable) 
+                        Timestamp = deliveryReport.Message == null
+                            ? new Timestamp(0, TimestampType.NotAvailable)
                             : deliveryReport.Message.Timestamp,
                         Headers = deliveryReport.Message?.Headers
                     }
                 };
-                // topic is cached in this object, not set in the deliveryReport to avoid the 
+                // topic is cached in this object, not set in the deliveryReport to avoid the
                 // cost of marshalling it.
                 dr.Topic = Topic;
 
-                if (Handler != null)
-                {
-                    Handler(dr);
-                }
+                Diagnostics.Producer.StopOrException(Topic, dr);
+
+                Activity?.Stop();
+
+                Handler?.Invoke(dr);
             }
         }
 
@@ -984,7 +1018,7 @@ namespace Confluent.Kafka
         /// <inheritdoc/>
         public void CommitTransaction(TimeSpan timeout)
             => KafkaHandle.CommitTransaction(timeout.TotalMillisecondsAsInt());
-        
+
         /// <inheritdoc/>
         public void AbortTransaction(TimeSpan timeout)
             => KafkaHandle.AbortTransaction(timeout.TotalMillisecondsAsInt());

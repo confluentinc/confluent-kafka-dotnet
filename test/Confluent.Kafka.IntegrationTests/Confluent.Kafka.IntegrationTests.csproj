@@ -6,6 +6,8 @@
     <AssemblyName>Confluent.Kafka.IntegrationTests</AssemblyName>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>Confluent.Kafka.IntegrationTests.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
