@@ -716,17 +716,18 @@ namespace Confluent.Kafka
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
 
+                    if (cancellationToken != null && cancellationToken.CanBeCanceled)
+                    {
+                        handler.CancellationTokenRegistration
+                            = cancellationToken.Register(() => handler.TrySetCanceled());
+                    }
+
                     ProduceImpl(
                         topicPartition.Topic,
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length,
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
                         message.Timestamp, topicPartition.Partition, headers,
                         handler);
-
-                    if (cancellationToken != null && cancellationToken.CanBeCanceled)
-                    {
-                        cancellationToken.Register(() => handler.TrySetCanceled());
-                    }
 
                     return await handler.Task.ConfigureAwait(false);
                 }
@@ -867,6 +868,8 @@ namespace Confluent.Kafka
                 Value = val;
             }
 
+            public CancellationTokenRegistration CancellationTokenRegistration;
+
             public string Topic;
 
             public TKey Key;
@@ -875,6 +878,11 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
             {
+                if (CancellationTokenRegistration != null)
+                {
+                    CancellationTokenRegistration.Dispose();
+                }
+
                 if (deliveryReport == null)
                 {
 #if NET45
