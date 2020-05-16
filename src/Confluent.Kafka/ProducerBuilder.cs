@@ -44,6 +44,11 @@ namespace Confluent.Kafka
         ///     The configured statistics handler.
         /// </summary>
         internal protected Action<IProducer<TKey, TValue>, string> StatisticsHandler { get; set; }
+
+        /// <summary>
+        ///     The configured OauthBearer Token Refresh handler.
+        /// </summary>
+        internal protected Action<IProducer<TKey, TValue>, string> OauthBearerTokenRefreshHandler { get; set; }
         
 
         /// <summary>
@@ -68,7 +73,7 @@ namespace Confluent.Kafka
 
         internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
-            return new Producer<TKey,TValue>.Config
+            return new Producer<TKey, TValue>.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null
@@ -79,7 +84,10 @@ namespace Confluent.Kafka
                     : logMessage => this.LogHandler(producer, logMessage),
                 statisticsHandler = this.StatisticsHandler == null
                     ? default(Action<string>)
-                    : stats => this.StatisticsHandler(producer, stats)
+                    : stats => this.StatisticsHandler(producer, stats),
+                oauthBearerTokenRefreshHandler = this.OauthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oauthbearer_config => this.OauthBearerTokenRefreshHandler(producer, oauthbearer_config)
             };
         }
 
@@ -171,6 +179,16 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Log handler may not be specified more than once.");
             }
             this.LogHandler = logHandler;
+            return this;
+        }
+
+        public ProducerBuilder<TKey, TValue> SetOauthBearerTokenRefreshHandler(Action<IProducer<TKey, TValue>, string> oauthBearerTokenRefreshHandler)
+        {
+            if (this.OauthBearerTokenRefreshHandler != null)
+            {
+                throw new InvalidOperationException("OauthBearer token refresh handler may not be specified more than once.");
+            }
+            this.OauthBearerTokenRefreshHandler = oauthBearerTokenRefreshHandler;
             return this;
         }
 
