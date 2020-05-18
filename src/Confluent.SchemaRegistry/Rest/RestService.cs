@@ -279,32 +279,32 @@ namespace Confluent.SchemaRegistry
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<List<int>> GetSubjectVersionsAsync(string subject)
-            => await RequestListOfAsync<int>($"subjects/{subject}/versions", HttpMethod.Get)
+            => await RequestListOfAsync<int>($"subjects/{WebUtility.UrlEncode(subject)}/versions", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<RegisteredSchema> GetSchemaAsync(string subject, int version)
-            => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{subject}/versions/{version}", HttpMethod.Get)
+            => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}/versions/{version}", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false));
 
         public async Task<RegisteredSchema> GetLatestSchemaAsync(string subject)
-            => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{subject}/versions/latest", HttpMethod.Get)
+            => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false));
 
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema)
             => schema.SchemaType == SchemaType.Avro
                 // In the avro case, just send the schema string to maintain backards compatibility.
-                ? (await RequestAsync<SchemaId>($"subjects/{subject}/versions", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                ? (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).Id
-                : (await RequestAsync<SchemaId>($"subjects/{subject}/versions", HttpMethod.Post, schema)
+                : (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).Id;
 
         // Checks whether a schema has been registered under a given subject.
         public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas)
             => SanitizeRegisteredSchema(schema.SchemaType == SchemaType.Avro
                 // In the avro case, just send the schema string to maintain backards compatibility.
-                ? await RequestAsync<RegisteredSchema>($"subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                ? await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)
-                : await RequestAsync<RegisteredSchema>($"subjects/{subject}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, schema)
+                : await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false));
 
         #endregion Subjects
@@ -314,18 +314,18 @@ namespace Confluent.SchemaRegistry
         public async Task<bool> TestCompatibilityAsync(string subject, int versionId, Schema schema)
             => schema.SchemaType == SchemaType.Avro
                 // In the avro case, just send the schema string to maintain backards compatibility.
-                ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/{versionId}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible
-                : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/{versionId}", HttpMethod.Post, schema)
+                : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/{versionId}", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
 
         public async Task<bool> TestLatestCompatibilityAsync(string subject, Schema schema)
             => schema.SchemaType == SchemaType.Avro
                 // In the avro case, just send the schema string to maintain backards compatibility.
-                ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                ? (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible
-                : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{subject}/versions/latest", HttpMethod.Post, schema)
+                : (await RequestAsync<CompatibilityCheck>($"compatibility/subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).IsCompatible;
 
         #endregion Compatibility
@@ -337,7 +337,7 @@ namespace Confluent.SchemaRegistry
                         .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
         public async Task<Compatibility> GetCompatibilityAsync(string subject)
-            => (await RequestAsync<Config>($"config/{subject}", HttpMethod.Get)
+            => (await RequestAsync<Config>($"config/{WebUtility.UrlEncode(subject)}", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false)).CompatibilityLevel;
 
         public async Task<Config> SetGlobalCompatibilityAsync(Compatibility compatibility)
@@ -345,7 +345,7 @@ namespace Confluent.SchemaRegistry
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         public async Task<Config> SetCompatibilityAsync(string subject, Compatibility compatibility)
-            => await RequestAsync<Config>($"config/{subject}", HttpMethod.Put, new Config(compatibility))
+            => await RequestAsync<Config>($"config/{WebUtility.UrlEncode(subject)}", HttpMethod.Put, new Config(compatibility))
                         .ConfigureAwait(continueOnCapturedContext: false);
 
         #endregion Config
