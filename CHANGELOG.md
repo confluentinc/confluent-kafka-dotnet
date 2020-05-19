@@ -1,3 +1,11 @@
+# 1.4.3
+
+## Fixes
+
+- Subject names are now URL encoded when used in Schema Registry URLs.
+- Fixed a memory leak that occured when passing a `CancellationToken` to `Producer.ProduceAsync`.
+
+
 # 1.4.2
 
 ## Fixes
