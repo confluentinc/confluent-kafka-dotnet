@@ -102,6 +102,11 @@ namespace ConfigGen
         ///     SCRAM-SHA-512
         /// </summary>
         ScramSha512
+
+        /// <summary>
+        ///     OAUTHBEARER
+        /// </summary>
+        OauthBearer
     }
 ";
 

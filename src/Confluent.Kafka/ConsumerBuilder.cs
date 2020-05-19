@@ -52,6 +52,11 @@ namespace Confluent.Kafka
         internal protected Action<IConsumer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
         /// <summary>
+        ///     The configured OauthBearer Token Refresh handler.
+        /// </summary>
+        internal protected Action<IConsumer<TKey, TValue>, string> OauthBearerTokenRefreshHandler { get; set; }
+
+        /// <summary>
         ///     The configured key deserializer.
         /// </summary>
         internal protected IDeserializer<TKey> KeyDeserializer { get; set; }
@@ -78,7 +83,7 @@ namespace Confluent.Kafka
 
         internal Consumer<TKey,TValue>.Config ConstructBaseConfig(Consumer<TKey, TValue> consumer)
         {
-            return new Consumer<TKey,TValue>.Config
+            return new Consumer<TKey, TValue>.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null
@@ -93,6 +98,9 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
+                oauthBearerTokenRefreshHandler = this.OauthBearerTokenRefreshHandler == null
+                    ? default(Action<string>)
+                    : oauthbearer_config => this.OauthBearerTokenRefreshHandler(consumer, oauthbearer_config),
                 partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>>)
                     : partitions => this.PartitionsAssignedHandler(consumer, partitions),
@@ -197,6 +205,16 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Log handler may not be specified more than once.");
             }
             this.LogHandler = logHandler;
+            return this;
+        }
+
+        public ConsumerBuilder<TKey, TValue> SetOauthBearerTokenRefreshHandler(Action<IConsumer<TKey, TValue>, string> oauthBearerTokenRefreshHandler)
+        {
+            if (this.OauthBearerTokenRefreshHandler != null)
+            {
+                throw new InvalidOperationException("OauthBearer token refresh handler may not be specified more than once.");
+            }
+            this.OauthBearerTokenRefreshHandler = oauthBearerTokenRefreshHandler;
             return this;
         }
 

@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Confluent.Kafka.Impl;
 
 
 namespace Confluent.Kafka
