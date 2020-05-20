@@ -484,6 +484,14 @@ namespace Confluent.Kafka
                 return borrowedHandle;
             }
         }
+        
+        /// <inheritdoc/>
+        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions)
+            => KafkaHandle.OauthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
+        
+        /// <inheritdoc/>
+        public void OauthBearerSetTokenFailure(string errstr)
+            => KafkaHandle.OauthBearerSetTokenFailure(errstr);
 
         private void InitializeSerializers(
             ISerializer<TKey> keySerializer,
@@ -1024,11 +1032,5 @@ namespace Confluent.Kafka
         /// <inheritdoc/>
         public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout)
             => KafkaHandle.SendOffsetsToTransaction(offsets, groupMetadata, timeout.TotalMillisecondsAsInt());
-
-        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions)
-            => KafkaHandle.OauthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
-
-        public void OauthBearerSetTokenFailure(string errstr)
-            => KafkaHandle.OauthBearerSetTokenFailure(errstr);
     }
 }

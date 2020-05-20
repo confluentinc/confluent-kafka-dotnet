@@ -183,6 +183,19 @@ namespace Confluent.Kafka
             return this;
         }
 
+        /// <summary>
+        /// Set SASL/OAUTHBEARER token refresh callback in provided conf object.
+        /// The SASL/OAUTHBEARER token refresh callback is triggered via rd_kafka_poll() whenever OAUTHBEARER is the SASL mechanism and a token needs to be retrieved, typically based on the configuration defined in sasl.oauthbearer.config.
+        /// The callback should invoke <see cref="IClient.OauthBearerSetToken"/> or <see cref="IClient.OauthBearerSetToken"/> to indicate success or failure, respectively.
+        ///
+        /// An unsecured JWT refresh handler is provided by librdkafka for development and testing purposes,
+        /// it is enabled by setting the enable.sasl.oauthbearer.unsecure.jwt property to true and is mutually exclusive to using a refresh callback.
+        /// </summary>
+        /// <param name="oauthBearerTokenRefreshHandler">
+        /// the callback to set; callback function arguments:
+        ///     IProducer - instance of the producer which should be used to set token or token failure
+        ///     string - Value of configuration property sasl.oauthbearer.config
+        /// </param>
         public ProducerBuilder<TKey, TValue> SetOauthBearerTokenRefreshHandler(Action<IProducer<TKey, TValue>, string> oauthBearerTokenRefreshHandler)
         {
             if (this.OauthBearerTokenRefreshHandler != null)

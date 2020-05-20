@@ -634,9 +634,5 @@ namespace Confluent.Kafka
         ///     method.
         /// </summary>
         IConsumerGroupMetadata ConsumerGroupMetadata { get; }
-
-        void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions);
-
-        void OauthBearerSetTokenFailure(string errstr);
     }
 }

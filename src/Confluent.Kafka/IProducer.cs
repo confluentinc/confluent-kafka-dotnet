@@ -473,9 +473,5 @@ namespace Confluent.Kafka
         ///     Thrown on all other errors.
         /// </exception>
         void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout);
-        
-        void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions);
-
-        void OauthBearerSetTokenFailure(string errstr);
     }
 }
