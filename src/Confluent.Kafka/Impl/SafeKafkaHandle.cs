@@ -1574,6 +1574,9 @@ namespace Confluent.Kafka.Impl
 
         internal void OauthBearerSetTokenFailure(string errstr)
         {
+            if (errstr == null) throw new ArgumentNullException(nameof(errstr));
+            if (string.IsNullOrEmpty(errstr)) throw new ArgumentException($"Argument '{nameof(errstr)}' must be a non-empty string");
+
             var errorCode = Librdkafka.oauthbearer_set_token_failure(handle, errstr);
 
             if (errorCode != ErrorCode.NoError)
