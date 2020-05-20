@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry
 
             /// <summary>
             ///     Specifies the timeout for requests to Confluent Schema Registry.
-            /// 
+            ///
             ///     default: 30000
             /// </summary>
             public const string SchemaRegistryRequestTimeoutMs = "schema.registry.request.timeout.ms";
@@ -139,7 +139,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Specifies the timeout for requests to Confluent Schema Registry.
-        ///
+        /// 
         ///     default: 30000
         /// </summary>
         public int? RequestTimeoutMs
