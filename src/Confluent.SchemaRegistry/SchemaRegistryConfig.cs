@@ -39,7 +39,7 @@ namespace Confluent.SchemaRegistry
 
             /// <summary>
             ///     Specifies the timeout for requests to Confluent Schema Registry.
-            ///
+            /// 
             ///     default: 30000
             /// </summary>
             public const string SchemaRegistryRequestTimeoutMs = "schema.registry.request.timeout.ms";
@@ -57,14 +57,14 @@ namespace Confluent.SchemaRegistry
             ///     USER_INFO: Credentials are specified via the `schema.registry.basic.auth.user.info` config property in the form username:password.
             ///                If `schema.registry.basic.auth.user.info` is not set, authentication is disabled.
             ///     SASL_INHERIT: Credentials are specified via the `sasl.username` and `sasl.password` configuration properties.
-            ///
+            /// 
             ///     default: USER_INFO
             /// </summary>
             public const string SchemaRegistryBasicAuthCredentialsSource = "schema.registry.basic.auth.credentials.source";
 
             /// <summary>
             ///     Basic auth credentials in the form {username}:{password}.
-            ///
+            /// 
             ///     default: "" (no authentication).
             /// </summary>
             public const string SchemaRegistryBasicAuthUserInfo = "schema.registry.basic.auth.user.info";
@@ -82,22 +82,23 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
 
             /// <summary>
-            ///     File path to CA certificate(s) for verifying the schema registry's key.
+            ///     File path to CA certificate(s) for verifying the schema registry's key. it will use system CA certs if not provided
             /// </summary>
             public const string SslCaLocation = "schema.registry.ssl.ca.location";
 
             /// <summary>
-            ///     Ssl keystore location.
+            ///     SSL keystore (PKCS#12) location.
             /// </summary>
             public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
 
             /// <summary>
-            ///     Ssl keystore password.
+            ///     SSL keystore (PKCS#12) password.
             /// </summary>
             public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
 
             /// <summary>
-            ///     Ssl verify
+            ///     In scenarios of using a private and untrusted CA or in case of impossibility to add a private CA as trusted in system CA certs,
+            ///     it is possible to disable SSL verification but it only could be done in test/dev environments.
             /// </summary>
             public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
         }
@@ -131,7 +132,7 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string Url
         {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); }
+            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); } 
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value); }
         }
 
@@ -184,7 +185,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Enable/Disable SSL certificate verification
+        ///     Enable/Disable SSL server certificate verification. Only use in contained test/dev environments.
         ///
         ///     default: ''
         ///     importance: low
@@ -198,7 +199,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
         ///     should cache locally.
-        ///
+        /// 
         ///     default: 1000
         /// </summary>
         public int? MaxCachedSchemas
@@ -220,7 +221,7 @@ namespace Confluent.SchemaRegistry
 
         /// <summary>
         ///     Key subject name strategy.
-        ///
+        ///     
         ///     default: SubjectNameStrategy.Topic
         /// </summary>
         [Obsolete("Subject name strategies should now be configured using the serializer's configuration. In the future, this configuration property will be removed from SchemaRegistryConfig")]
@@ -305,7 +306,7 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Gets a configuration property value given a key. Returns null if
+        ///     Gets a configuration property value given a key. Returns null if 
         ///     the property has not been set.
         /// </summary>
         /// <param name="key">
@@ -322,7 +323,7 @@ namespace Confluent.SchemaRegistry
             }
             return null;
         }
-
+        
         /// <summary>
         ///     Gets a configuration property int? value given a key.
         /// </summary>
@@ -354,7 +355,7 @@ namespace Confluent.SchemaRegistry
             if (result == null) { return null; }
             return bool.Parse(result);
         }
-
+        
         /// <summary>
         ///     The configuration properties.
         /// </summary>

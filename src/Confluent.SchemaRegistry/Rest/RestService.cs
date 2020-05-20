@@ -93,7 +93,7 @@ namespace Confluent.SchemaRegistry
 
             if (!enableSslCertificateVerification)
             {
-                handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => { return true; };
+                handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => { return true; };
             }
 
             certificates.ForEach(c => handler.ClientCertificates.Add(c));
@@ -144,10 +144,10 @@ namespace Confluent.SchemaRegistry
         {
             // There may be many base urls - roll until one is found that works.
             //
-            // Start with the last client that was used by this method, which only gets set on
+            // Start with the last client that was used by this method, which only gets set on 
             // success, so it's probably going to work.
             //
-            // Otherwise, try every client until a successful call is made (true even under
+            // Otherwise, try every client until a successful call is made (true even under 
             // concurrent access).
 
             string aggregatedErrorMessage = null;

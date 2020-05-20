@@ -35,7 +35,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             // 1. valid configuration cases
 
-            // 1.1. using ssl valid certificate.
+            // 1.1. using SSL valid certificate.
             var conf = new SchemaRegistryConfig
             {
                 Url = config.ServerWithSsl,
@@ -57,10 +57,10 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 Assert.Equal(schema.Id, id);
             }
 
-            // connect to authenticating with invalid ssl config. shouldn't work.
+            // try to connect with invalid SSL config. shouldn't work.
             Assert.Throws<HttpRequestException>(() =>
             {
-                var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithAuth });
+                var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithSsl });
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName, null);
                 try

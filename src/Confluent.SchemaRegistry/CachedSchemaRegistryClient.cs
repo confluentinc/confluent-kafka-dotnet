@@ -76,7 +76,7 @@ namespace Confluent.SchemaRegistry
         public const int DefaultMaxCachedSchemas = 1000;
 
         /// <summary>
-        ///     The default ssl verify for Schema Registry REST API calls.
+        ///     The default SSL server certificate verification for Schema Registry REST API calls.
         /// </summary>
         public const bool DefaultEnableSslCertificateVerification = true;
 
@@ -228,10 +228,10 @@ namespace Confluent.SchemaRegistry
 
         /// <remarks>
         ///     This is to make sure memory doesn't explode in the case of incorrect usage.
-        ///
-        ///     It's behavior is pretty extreme - remove everything and start again if the
+        /// 
+        ///     It's behavior is pretty extreme - remove everything and start again if the 
         ///     cache gets full. However, in practical situations this is not expected.
-        ///
+        /// 
         ///     TODO: Implement an LRU Cache here or something instead.
         /// </remarks>
         private bool CleanCacheIfFull()
@@ -278,7 +278,7 @@ namespace Confluent.SchemaRegistry
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema)
             => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
 
-
+        
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema)
         {
@@ -351,7 +351,7 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public Task<int> RegisterSchemaAsync(string subject, string avroSchema)
             => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
-
+    
 
         /// <summary>
         ///     Check if the given schema string matches a given format name.
