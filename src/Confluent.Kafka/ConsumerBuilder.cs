@@ -218,7 +218,7 @@ namespace Confluent.Kafka
         /// </summary>
         /// <param name="oauthBearerTokenRefreshHandler">
         /// the callback to set; callback function arguments:
-        ///     IConsumer - instance of the producer which should be used to set token or token failure
+        ///     IConsumer - instance of the consumer which should be used to set token or token failure
         ///     string - Value of configuration property sasl.oauthbearer.config
         /// </param>
         public ConsumerBuilder<TKey, TValue> SetOauthBearerTokenRefreshHandler(Action<IConsumer<TKey, TValue>, string> oauthBearerTokenRefreshHandler)
