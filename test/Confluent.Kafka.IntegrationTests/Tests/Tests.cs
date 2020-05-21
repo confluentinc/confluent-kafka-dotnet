@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -89,6 +90,12 @@ namespace Confluent.Kafka.IntegrationTests
                 // File.AppendAllLines("/tmp/test.txt", new [] { msg });
             }
         }
+
+        private void LogToFileStartTest([CallerMemberName] string callerMemberName = null)
+            => LogToFile($"start {callerMemberName}");
+
+        private void LogToFileEndTest([CallerMemberName] string callerMemberName = null)
+            => LogToFile($"end   {callerMemberName}");
 
         public Tests(GlobalFixture globalFixture)
         {
