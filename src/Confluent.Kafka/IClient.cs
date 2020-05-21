@@ -87,9 +87,7 @@ namespace Confluent.Kafka
         /// <param name="lifetimeMs">when the token expires, in terms of the number of milliseconds since the epoch.</param>
         /// <param name="principalName">the mandatory Kafka principal name associated with the token.</param>
         /// <param name="extensions">
-        /// optional SASL extensions key-value array with extensions_size elements (number of keys * 2),
-        /// where [i] is the key and [i+1] is the key's value, to be communicated to the broker as additional key-value pairs during the initial client response as per https://tools.ietf.org/html/rfc7628#section-3.1.
-        /// The key-value pairs are copied.
+        /// optional SASL extensions dictionary, to be communicated to the broker as additional key-value pairs during the initial client response as per https://tools.ietf.org/html/rfc7628#section-3.1.
         /// </param>
         /// 
         /// <seealso cref="OauthBearerSetTokenFailure"/>
