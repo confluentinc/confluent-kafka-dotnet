@@ -91,7 +91,7 @@ namespace Confluent.Kafka
         /// </param>
         /// 
         /// <seealso cref="OauthBearerSetTokenFailure"/>
-        void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = default);
+        void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = null);
 
         /// <summary>
         /// SASL/OAUTHBEARER token refresh failure indicator.
