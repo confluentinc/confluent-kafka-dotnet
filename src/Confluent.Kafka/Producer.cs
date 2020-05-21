@@ -484,11 +484,11 @@ namespace Confluent.Kafka
                 return borrowedHandle;
             }
         }
-        
+
         /// <inheritdoc/>
-        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions)
+        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
             => KafkaHandle.OauthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
-        
+
         /// <inheritdoc/>
         public void OauthBearerSetTokenFailure(string errstr)
             => KafkaHandle.OauthBearerSetTokenFailure(errstr);

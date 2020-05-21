@@ -1556,14 +1556,15 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
-        internal void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions)
+        internal void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
         {
             if (tokenValue == null) throw new ArgumentNullException(nameof(tokenValue));
 
+            var extensionsArray = extensions.ToStringArray();
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
             var errorCode = Librdkafka.oauthbearer_set_token(handle,
                 tokenValue, lifetimeMs, principalName,
-                extensions, (UIntPtr) (extensions?.Length ?? 0),
+                extensionsArray, (UIntPtr) (extensionsArray?.Length ?? 0),
                 errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
 
             if (errorCode != ErrorCode.NoError)

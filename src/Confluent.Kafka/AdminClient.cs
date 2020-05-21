@@ -502,9 +502,9 @@ namespace Confluent.Kafka
             => kafkaHandle.AddBrokers(brokers);
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IClient.OauthBearerSetToken(string, long, string, string[])" />
+        ///     Refer to <see cref="Confluent.Kafka.IClient.OauthBearerSetToken(string, long, string, IDictionary{string, string})" />
         /// </summary>
-        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions)
+        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
             => kafkaHandle.OauthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
         
         /// <summary>

@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 
 
 namespace Confluent.Kafka
@@ -92,7 +93,7 @@ namespace Confluent.Kafka
         /// </param>
         /// 
         /// <seealso cref="OauthBearerSetTokenFailure"/>
-        void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, string[] extensions);
+        void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = default);
 
         /// <summary>
         /// SASL/OAUTHBEARER token refresh failure indicator.
