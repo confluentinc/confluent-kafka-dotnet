@@ -937,6 +937,18 @@ namespace Confluent.Kafka
             }
         }
 
+        private Partition CallCustomPartitioner(string topic, IPartitioner partitioner, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque)
+        {
+            try
+            {
+                return partitioner.Partition(topic, keydata, keylen, partition_cnt, rkt_opaque, msg_opaque);
+            }
+            catch
+            {
+                return Partition.Any;
+            }
+        }
+
         private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<DeliveryResult<TKey, TValue>>, IDeliveryHandler
         {
             public TypedTaskDeliveryHandlerShim(string topic, TKey key, TValue val)

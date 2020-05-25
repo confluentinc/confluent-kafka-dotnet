@@ -49,7 +49,8 @@ namespace Confluent.Kafka
         ///     The configured OAuthBearer Token Refresh handler.
         /// </summary>
         internal protected Action<IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
-        
+
+        /// <summary>        
         ///     The custom partitioners.
         /// </summary>
         internal protected Dictionary<string, IPartitioner> Partitioners { get; set; } = new Dictionary<string, IPartitioner>();
@@ -90,7 +91,7 @@ namespace Confluent.Kafka
                     : stats => this.StatisticsHandler(producer, stats),
                 oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
                     ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
                 partitioners = this.Partitioners,
             };
         }
