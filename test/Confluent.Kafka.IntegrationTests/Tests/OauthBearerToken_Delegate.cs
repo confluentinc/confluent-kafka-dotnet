@@ -8,7 +8,7 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Tests that token refresh callback is called when <see cref="ClientConfig.SaslMechanism"/> is set to <see cref="SaslMechanism.OauthBearer"/>.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, MemberData(nameof(OauthBearerKafkaParameters))]
         public void OauthBearerToken_Delegate(string bootstrapServers)
         {
             LogToFileStartTest();

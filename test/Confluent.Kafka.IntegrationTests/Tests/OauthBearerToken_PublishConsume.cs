@@ -7,15 +7,15 @@ namespace Confluent.Kafka.IntegrationTests
 {
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, MemberData(nameof(OauthBearerKafkaParameters))]
         public void OauthBearerToken_PublishConsume(string bootstrapServers)
         {
             LogToFileStartTest();
             
             const string principal = "IntegrationTests";
             var issuedAt = DateTimeOffset.UtcNow;
-            var expiresAt = issuedAt.AddSeconds(5);
-            var token = GetUnsecuredToken(principal, issuedAt, expiresAt);
+            var expiresAt = issuedAt.AddMinutes(5);
+            var token = Util.GetUnsecuredJwt(principal, issuedAt, expiresAt);
 
             void Callback(IClient client, string cfg)
             {
@@ -32,8 +32,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 BootstrapServers = bootstrapServers,
                 SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.OauthBearer,
-                EnableSaslOauthbearerUnsecureJwt = true
+                SaslMechanism = SaslMechanism.OauthBearer
             };
             var producerConfig = new ProducerConfig(config);
             var consumerConfig = new ConsumerConfig(config)
@@ -53,16 +52,17 @@ namespace Confluent.Kafka.IntegrationTests
             producer.Flush(TimeSpan.FromSeconds(5));
             consumer.Subscribe(partitionedTopic);
             var received = consumer.Consume(TimeSpan.FromSeconds(5));
-            consumer.Commit(received);
             
             Assert.NotNull(received);
+            consumer.Commit(received);
+            
             Assert.Equal(message.Key, received.Message.Key);
             Assert.Equal(message.Value, received.Message.Value);
 
             LogToFileEndTest();
         }
 
-        [Theory, MemberData(nameof(KafkaParameters))]
+        [Theory, MemberData(nameof(OauthBearerKafkaParameters))]
         public void OauthBearerToken_PublishConsume_SetFailure(string bootstrapServers)
         {
             LogToFileStartTest();
@@ -123,34 +123,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(ErrorCode.Local_Authentication, error.Code);
                 Assert.EndsWith(errorMessage, error.Reason);
             }
-        }
-
-        private static string GetUnsecuredToken(string aud, DateTimeOffset iat, DateTimeOffset exp)
-        {
-            var header = new
-            {
-                alg = "none",
-                typ = "JWT"
-            };
-            var payload = new
-            {
-                iat = iat.ToUnixTimeSeconds(),
-                exp = exp.ToUnixTimeSeconds(),
-                typ = "Bearer",
-                sub = "Tester",
-                aud
-            };
-
-            var headerJson = JsonConvert.SerializeObject(header);
-            var payloadJson = JsonConvert.SerializeObject(payload);
-
-            var jwt = ToTrimmedBase64(headerJson) + '.' +
-                      ToTrimmedBase64(payloadJson) + '.';
-
-            return jwt;
-            
-            string ToTrimmedBase64(string s)
-                => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=');
         }
     }
 }

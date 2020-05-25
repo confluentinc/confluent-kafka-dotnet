@@ -19,6 +19,7 @@ using System.Text;
 using System.Collections.Generic;
 using Xunit;
 using Confluent.Kafka.Admin;
+using Newtonsoft.Json;
 
 
 namespace Confluent.Kafka.IntegrationTests
@@ -64,5 +65,31 @@ namespace Confluent.Kafka.IntegrationTests
 
             return firstDeliveryReport.TopicPartitionOffset;
         }
+
+        public static string GetUnsecuredJwt(string aud, DateTimeOffset iat, DateTimeOffset exp)
+        {
+            var header = new
+            {
+                alg = "none",
+                typ = "JWT"
+            };
+            var payload = new
+            {
+                iat = iat.ToUnixTimeSeconds(),
+                exp = exp.ToUnixTimeSeconds(),
+                typ = "Bearer",
+                sub = "Tester",
+                aud
+            };
+
+            var headerJson = JsonConvert.SerializeObject(header);
+            var payloadJson = JsonConvert.SerializeObject(payload);
+
+            var jwt = $"{headerJson.ToTrimmedBase64()}.{payloadJson.ToTrimmedBase64()}.";
+            return jwt;
+        }
+
+        private static string ToTrimmedBase64(this string s)
+            => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=');
     }
 }
