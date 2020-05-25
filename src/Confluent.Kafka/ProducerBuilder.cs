@@ -50,6 +50,9 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected Action<IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
         
+        ///     The custom partitioners.
+        /// </summary>
+        internal protected Dictionary<string, IPartitioner> Partitioners { get; set; } = new Dictionary<string, IPartitioner>();
 
         /// <summary>
         ///     The configured key serializer.
@@ -88,6 +91,7 @@ namespace Confluent.Kafka
                 oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
                     ? default(Action<string>)
                     : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig)
+                partitioners = this.Partitioners,
             };
         }
 
@@ -127,6 +131,31 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Statistics handler may not be specified more than once.");
             }
             this.StatisticsHandler = statisticsHandler;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set the partitioner to be called when a <seealso cref="Partition"/> needs to be determined for a <seealso cref="Message{TKey, TValue}"/>.
+        /// </summary>
+        /// <remarks>
+        ///     This handler is only called when the <seealso cref="Message{TKey, TValue}"/>'s partition is set to <seealso cref="Partition.Any"/>.
+        /// </remarks>
+        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, IPartitioner partitioner)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentNullException(nameof(topic));
+            }
+
+            if (this.Partitioners.ContainsKey(topic))
+            {
+                this.Partitioners[topic] = partitioner;
+            }
+            else
+            {
+                this.Partitioners.Add(topic, partitioner);
+            }
+
             return this;
         }
 
