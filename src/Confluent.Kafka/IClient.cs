@@ -78,27 +78,45 @@ namespace Confluent.Kafka
         int AddBrokers(string brokers);
 
         /// <summary>
-        /// Set SASL/OAUTHBEARER token and metadata.
-        /// The SASL/OAUTHBEARER token refresh callback or event handler should invoke this method upon success.
-        /// The extension keys must not include the reserved key "`auth`", and all extension keys and values must conform to the required format as per https://tools.ietf.org/html/rfc7628#section-3.1:
-        /// </summary>
-        /// 
-        /// <param name="tokenValue">the mandatory token value to set, often (but not necessarily) a JWS compact serialization as per https://tools.ietf.org/html/rfc7515#section-3.1.</param>
-        /// <param name="lifetimeMs">when the token expires, in terms of the number of milliseconds since the epoch.</param>
-        /// <param name="principalName">the mandatory Kafka principal name associated with the token.</param>
-        /// <param name="extensions">
-        /// optional SASL extensions dictionary, to be communicated to the broker as additional key-value pairs during the initial client response as per https://tools.ietf.org/html/rfc7628#section-3.1.
+        ///     Set SASL/OAUTHBEARER token and metadata.
+        ///     The SASL/OAUTHBEARER token refresh callback or
+        ///     event handler should invoke this method upon
+        ///     success. The extension keys must not include
+        ///     the reserved key "`auth`", and all extension
+        ///     keys and values must conform to the required
+        ///     format as per https://tools.ietf.org/html/rfc7628#section-3.1:
+        /// </summary> 
+        /// <param name="tokenValue">
+        ///     the mandatory token value to set, often (but
+        ///     not necessarily) a JWS compact serialization
+        ///     as per https://tools.ietf.org/html/rfc7515#section-3.1.
         /// </param>
-        /// 
+        /// <param name="lifetimeMs">
+        ///     when the token expires, in terms of the number
+        ///     of milliseconds since the epoch.
+        /// </param>
+        /// <param name="principalName">
+        ///     the mandatory Kafka principal name associated
+        ///     with the token.
+        /// </param>
+        /// <param name="extensions">
+        ///     optional SASL extensions dictionary, to be
+        ///     communicated to the broker as additional key-value
+        ///     pairs during the initial client response as per
+        ///     https://tools.ietf.org/html/rfc7628#section-3.1.
+        /// </param> 
         /// <seealso cref="OauthBearerSetTokenFailure"/>
         void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = null);
 
         /// <summary>
-        /// SASL/OAUTHBEARER token refresh failure indicator.
-        /// The SASL/OAUTHBEARER token refresh callback or event handler should invoke this method upon failure.
-        /// </summary>
-        /// 
-        /// <param name="errstr">mandatory human readable error reason for failing to acquire a token.</param>
+        ///     SASL/OAUTHBEARER token refresh failure indicator.
+        ///     The SASL/OAUTHBEARER token refresh callback or
+        ///     event handler should invoke this method upon failure.
+        /// </summary> 
+        /// <param name="errstr">
+        ///     mandatory human readable error reason for failing
+        ///     to acquire a token.
+        /// </param>
         void OauthBearerSetTokenFailure(string errstr);
     }
 }
