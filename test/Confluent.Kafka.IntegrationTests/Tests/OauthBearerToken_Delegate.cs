@@ -6,10 +6,10 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Tests that token refresh callback is called when <see cref="ClientConfig.SaslMechanism"/> is set to <see cref="SaslMechanism.OauthBearer"/>.
+        ///     Tests that token refresh callback is called when <see cref="ClientConfig.SaslMechanism"/> is set to <see cref="SaslMechanism.OAuthBearer"/>.
         /// </summary>
-        [Theory, MemberData(nameof(OauthBearerKafkaParameters))]
-        public void OauthBearerToken_Delegate(string bootstrapServers)
+        [Theory, MemberData(nameof(OAuthBearerKafkaParameters))]
+        public void OAuthBearerToken_Delegate(string bootstrapServers)
         {
             LogToFileStartTest();
 
@@ -17,7 +17,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 BootstrapServers = bootstrapServers,
                 SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.OauthBearer,
+                SaslMechanism = SaslMechanism.OAuthBearer,
                 SaslOauthbearerConfig = $"{Guid.NewGuid()}"
             };
 
@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
             var consumerCallsCount = 0;
             var consumer = new ConsumerBuilder<string, string>(consumerConfig)
-                .SetOauthBearerTokenRefreshHandler((client, cfg) =>
+                .SetOAuthBearerTokenRefreshHandler((client, cfg) =>
                 {
                     Assert.Equal(config.SaslOauthbearerConfig, cfg);
                     consumerCallsCount++;
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig(config);            
             var producerCallsCount = 0;
             var producer = new ProducerBuilder<string, string>(producerConfig)
-                .SetOauthBearerTokenRefreshHandler((client, cfg) =>
+                .SetOAuthBearerTokenRefreshHandler((client, cfg) =>
                 {
                     Assert.Equal(config.SaslOauthbearerConfig, cfg);
                     producerCallsCount++;

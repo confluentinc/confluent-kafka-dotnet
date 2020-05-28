@@ -79,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
         private string partitionedTopic;
 
         private static List<object[]> kafkaParameters;
-        private static List<object[]> oauthBearerKafkaParameters;
+        private static List<object[]> oAuthBearerKafkaParameters;
 
         private object logLockObj = new object();
         private void LogToFile(string msg)
@@ -126,20 +126,20 @@ namespace Confluent.Kafka.IntegrationTests
             return kafkaParameters;
         }
 
-        public static IEnumerable<object[]> OauthBearerKafkaParameters()
+        public static IEnumerable<object[]> OAuthBearerKafkaParameters()
         {
-            if (oauthBearerKafkaParameters == null)
+            if (oAuthBearerKafkaParameters == null)
             {
                 var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
                 var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
                 var jsonPath = Path.Combine(assemblyDirectory, "testconf.json");
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
-                oauthBearerKafkaParameters = new List<object[]>
+                oAuthBearerKafkaParameters = new List<object[]>
                 {
                     new object[] {json["oauthbearerBootstrapServers"].ToString()}
                 };
             }
-            return oauthBearerKafkaParameters;
+            return oAuthBearerKafkaParameters;
         }
     }
 }

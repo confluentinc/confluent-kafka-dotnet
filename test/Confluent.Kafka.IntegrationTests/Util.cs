@@ -85,11 +85,11 @@ namespace Confluent.Kafka.IntegrationTests
             var headerJson = JsonConvert.SerializeObject(header);
             var payloadJson = JsonConvert.SerializeObject(payload);
 
-            var jwt = $"{headerJson.ToTrimmedBase64()}.{payloadJson.ToTrimmedBase64()}.";
+            var jwt = $"{headerJson.ToUnpaddedBase64()}.{payloadJson.ToUnpaddedBase64()}.";
             return jwt;
         }
 
-        private static string ToTrimmedBase64(this string s)
+        private static string ToUnpaddedBase64(this string s)
             => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=');
     }
 }

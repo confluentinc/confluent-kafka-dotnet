@@ -1556,7 +1556,7 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
-        internal void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
+        internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
         {
             if (tokenValue == null) throw new ArgumentNullException(nameof(tokenValue));
 
@@ -1573,7 +1573,7 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void OauthBearerSetTokenFailure(string errstr)
+        internal void OAuthBearerSetTokenFailure(string errstr)
         {
             if (errstr == null) throw new ArgumentNullException(nameof(errstr));
             if (string.IsNullOrEmpty(errstr)) throw new ArgumentException($"Argument '{nameof(errstr)}' must be a non-empty string");

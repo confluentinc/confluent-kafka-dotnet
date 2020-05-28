@@ -1,14 +1,12 @@
 using System;
-using System.Text;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace Confluent.Kafka.IntegrationTests
 {
     public partial class Tests
     {
-        [Theory, MemberData(nameof(OauthBearerKafkaParameters))]
-        public void OauthBearerToken_PublishConsume(string bootstrapServers)
+        [Theory, MemberData(nameof(OAuthBearerKafkaParameters))]
+        public void OAuthBearerToken_PublishConsume(string bootstrapServers)
         {
             LogToFileStartTest();
             
@@ -19,7 +17,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             void Callback(IClient client, string cfg)
             {
-                client.OauthBearerSetToken(token, expiresAt.ToUnixTimeMilliseconds(), principal);
+                client.OAuthBearerSetToken(token, expiresAt.ToUnixTimeMilliseconds(), principal);
             }
 
             var message = new Message<string, string>
@@ -32,7 +30,7 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 BootstrapServers = bootstrapServers,
                 SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.OauthBearer
+                SaslMechanism = SaslMechanism.OAuthBearer
             };
             var producerConfig = new ProducerConfig(config);
             var consumerConfig = new ConsumerConfig(config)
@@ -42,10 +40,10 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             var producer = new ProducerBuilder<string, string>(producerConfig)
-                .SetOauthBearerTokenRefreshHandler(Callback)
+                .SetOAuthBearerTokenRefreshHandler(Callback)
                 .Build();
             var consumer = new ConsumerBuilder<string, string>(consumerConfig)
-                .SetOauthBearerTokenRefreshHandler(Callback)
+                .SetOAuthBearerTokenRefreshHandler(Callback)
                 .Build();
 
             producer.Produce(partitionedTopic, message);
@@ -62,15 +60,15 @@ namespace Confluent.Kafka.IntegrationTests
             LogToFileEndTest();
         }
 
-        [Theory, MemberData(nameof(OauthBearerKafkaParameters))]
-        public void OauthBearerToken_PublishConsume_SetFailure(string bootstrapServers)
+        [Theory, MemberData(nameof(OAuthBearerKafkaParameters))]
+        public void OAuthBearerToken_PublishConsume_SetFailure(string bootstrapServers)
         {
             LogToFileStartTest();
 
             var errorMessage = $"{Guid.NewGuid()}";
             void TokenCallback(IClient client, string cfg)
             {
-                client.OauthBearerSetTokenFailure(errorMessage);
+                client.OAuthBearerSetTokenFailure(errorMessage);
             }
 
             var message = new Message<string, string>
@@ -83,14 +81,14 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 BootstrapServers = bootstrapServers,
                 SecurityProtocol = SecurityProtocol.SaslPlaintext,
-                SaslMechanism = SaslMechanism.OauthBearer
+                SaslMechanism = SaslMechanism.OAuthBearer
             };
 
             // test Producer
             var producerConfig = new ProducerConfig(config);
             Error producerError = null;
             var producer = new ProducerBuilder<string, string>(producerConfig)
-                .SetOauthBearerTokenRefreshHandler(TokenCallback)
+                .SetOAuthBearerTokenRefreshHandler(TokenCallback)
                 .SetErrorHandler((p, e) => producerError = e)
                 .Build();
             producer.Produce(singlePartitionTopic, message);
@@ -104,7 +102,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
             Error consumerError = null;
             var consumer = new ConsumerBuilder<string, string>(consumerConfig)
-                .SetOauthBearerTokenRefreshHandler(TokenCallback)
+                .SetOAuthBearerTokenRefreshHandler(TokenCallback)
                 .SetErrorHandler((c, e) => consumerError = e)
                 .Build();
             consumer.Subscribe(singlePartitionTopic);

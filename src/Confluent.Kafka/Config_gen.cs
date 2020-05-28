@@ -230,7 +230,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     OAUTHBEARER
         /// </summary>
-        OauthBearer
+        OAuthBearer
     }
 
     /// <summary>
@@ -292,7 +292,7 @@ namespace Confluent.Kafka
                 if (r == "PLAIN") { return Confluent.Kafka.SaslMechanism.Plain; }
                 if (r == "SCRAM-SHA-256") { return Confluent.Kafka.SaslMechanism.ScramSha256; }
                 if (r == "SCRAM-SHA-512") { return Confluent.Kafka.SaslMechanism.ScramSha512; }
-                if (r == "OAUTHBEARER") { return Confluent.Kafka.SaslMechanism.OauthBearer; }
+                if (r == "OAUTHBEARER") { return Confluent.Kafka.SaslMechanism.OAuthBearer; }
                 throw new ArgumentException($"Unknown sasl.mechanism value {r}");
             }
             set
@@ -302,7 +302,7 @@ namespace Confluent.Kafka
                 else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
-                else if (value == Confluent.Kafka.SaslMechanism.OauthBearer) { this.properties["sasl.mechanism"] = "OAUTHBEARER"; }
+                else if (value == Confluent.Kafka.SaslMechanism.OAuthBearer) { this.properties["sasl.mechanism"] = "OAUTHBEARER"; }
                 else throw new ArgumentException($"Unknown sasl.mechanism value {value}");
             }
         }

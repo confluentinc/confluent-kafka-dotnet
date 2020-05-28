@@ -158,7 +158,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern void rd_kafka_conf_set_log_cb(IntPtr conf, Librdkafka.LogDelegate log_cb);
         
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern void rd_kafka_conf_set_oauthbearer_token_refresh_cb(IntPtr conf, Librdkafka.OauthBearerTokenRefreshDelegate oauthbearer_token_refresh_cb);
+        internal static extern void rd_kafka_conf_set_oauthbearer_token_refresh_cb(IntPtr conf, Librdkafka.OAuthBearerTokenRefreshDelegate oauthbearer_token_refresh_cb);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_oauthbearer_set_token(

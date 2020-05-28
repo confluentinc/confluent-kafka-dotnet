@@ -17,11 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Confluent.Kafka.Impl;
-using Confluent.Kafka.Internal;
 
 
 namespace Confluent.Kafka
@@ -52,9 +47,9 @@ namespace Confluent.Kafka
         internal protected Action<IConsumer<TKey, TValue>, string> StatisticsHandler { get; set; }
 
         /// <summary>
-        ///     The configured OauthBearer Token Refresh handler.
+        ///     The configured OAuthBearer Token Refresh handler.
         /// </summary>
-        internal protected Action<IConsumer<TKey, TValue>, string> OauthBearerTokenRefreshHandler { get; set; }
+        internal protected Action<IConsumer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
 
         /// <summary>
         ///     The configured key deserializer.
@@ -98,9 +93,9 @@ namespace Confluent.Kafka
                 offsetsCommittedHandler = this.OffsetsCommittedHandler == null
                     ? default(Action<CommittedOffsets>)
                     : offsets => this.OffsetsCommittedHandler(consumer, offsets),
-                oauthBearerTokenRefreshHandler = this.OauthBearerTokenRefreshHandler == null
+                oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
                     ? default(Action<string>)
-                    : oauthbearer_config => this.OauthBearerTokenRefreshHandler(consumer, oauthbearer_config),
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(consumer, oAuthBearerConfig),
                 partitionsAssignedHandler = this.PartitionsAssignedHandler == null
                     ? default(Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>>)
                     : partitions => this.PartitionsAssignedHandler(consumer, partitions),
@@ -209,26 +204,35 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        /// Set SASL/OAUTHBEARER token refresh callback in provided conf object.
-        /// The SASL/OAUTHBEARER token refresh callback is triggered via <see cref="IProducer{TKey,TValue}.Poll"/> or <see cref="IConsumer{TKey,TValue}.Consume(int)"/> (or any of its overloads)
-        /// whenever OAUTHBEARER is the SASL mechanism and a token needs to be retrieved, typically based on the configuration defined in sasl.oauthbearer.config.
-        /// The callback should invoke <see cref="IClient.OauthBearerSetToken"/> or <see cref="IClient.OauthBearerSetTokenFailure"/> to indicate success or failure, respectively.
+        ///     Set SASL/OAUTHBEARER token refresh callback in provided
+        ///     conf object. The SASL/OAUTHBEARER token refresh callback
+        ///     is triggered via <see cref="IConsumer{TKey,TValue}.Consume(int)"/>
+        ///     (or any of its overloads) whenever OAUTHBEARER is the SASL
+        ///     mechanism and a token needs to be retrieved, typically
+        ///     based on the configuration defined in
+        ///     sasl.oauthbearer.config. The callback should invoke
+        ///     <see cref="ClientExtensions.OAuthBearerSetToken"/>
+        ///     or <see cref="ClientExtensions.OAuthBearerSetTokenFailure"/>
+        ///     to indicate success or failure, respectively.
         ///
-        /// An unsecured JWT refresh handler is provided by librdkafka for development and testing purposes,
-        /// it is enabled by setting the enable.sasl.oauthbearer.unsecure.jwt property to true and is mutually exclusive to using a refresh callback.
+        ///     An unsecured JWT refresh handler is provided by librdkafka
+        ///     for development and testing purposes, it is enabled by
+        ///     setting the enable.sasl.oauthbearer.unsecure.jwt property
+        ///     to true and is mutually exclusive to using a refresh callback.
         /// </summary>
-        /// <param name="oauthBearerTokenRefreshHandler">
-        /// the callback to set; callback function arguments:
-        ///     IConsumer - instance of the consumer which should be used to set token or token failure
-        ///     string - Value of configuration property sasl.oauthbearer.config
+        /// <param name="oAuthBearerTokenRefreshHandler">
+        ///     the callback to set; callback function arguments:
+        ///     IConsumer - instance of the consumer which should be used to
+        ///     set token or token failure string - Value of configuration
+        ///     property sasl.oauthbearer.config
         /// </param>
-        public ConsumerBuilder<TKey, TValue> SetOauthBearerTokenRefreshHandler(Action<IConsumer<TKey, TValue>, string> oauthBearerTokenRefreshHandler)
+        public ConsumerBuilder<TKey, TValue> SetOAuthBearerTokenRefreshHandler(Action<IConsumer<TKey, TValue>, string> oAuthBearerTokenRefreshHandler)
         {
-            if (this.OauthBearerTokenRefreshHandler != null)
+            if (this.OAuthBearerTokenRefreshHandler != null)
             {
-                throw new InvalidOperationException("OauthBearer token refresh handler may not be specified more than once.");
+                throw new InvalidOperationException("OAuthBearer token refresh handler may not be specified more than once.");
             }
-            this.OauthBearerTokenRefreshHandler = oauthBearerTokenRefreshHandler;
+            this.OAuthBearerTokenRefreshHandler = oAuthBearerTokenRefreshHandler;
             return this;
         }
 
