@@ -472,15 +472,6 @@ namespace Confluent.Kafka
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
         /// <inheritdoc/>
-        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
-            => kafkaHandle.OauthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
-        
-        /// <inheritdoc/>
-        public void OauthBearerSetTokenFailure(string errstr)
-            => kafkaHandle.OauthBearerSetTokenFailure(errstr);
-
-
-        /// <inheritdoc/>
         public void Close()
         {
             // commits offsets and unsubscribes.

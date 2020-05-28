@@ -485,14 +485,6 @@ namespace Confluent.Kafka
             }
         }
 
-        /// <inheritdoc/>
-        public void OauthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
-            => KafkaHandle.OauthBearerSetToken(tokenValue, lifetimeMs, principalName, extensions);
-
-        /// <inheritdoc/>
-        public void OauthBearerSetTokenFailure(string errstr)
-            => KafkaHandle.OauthBearerSetTokenFailure(errstr);
-
         private void InitializeSerializers(
             ISerializer<TKey> keySerializer,
             ISerializer<TValue> valueSerializer,
