@@ -10,7 +10,7 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFileStartTest();
             
-            const string principal = "IntegrationTests";
+            const string principal = "admin";
             var issuedAt = DateTimeOffset.UtcNow;
             var expiresAt = issuedAt.AddMinutes(5);
             var token = Util.GetUnsecuredJwt(principal, issuedAt, expiresAt);
@@ -45,11 +45,11 @@ namespace Confluent.Kafka.IntegrationTests
             var consumer = new ConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .Build();
-
-            producer.Produce(partitionedTopic, message);
-            producer.Flush(TimeSpan.FromSeconds(5));
+            
             consumer.Subscribe(partitionedTopic);
-            var received = consumer.Consume(TimeSpan.FromSeconds(5));
+            producer.Produce(partitionedTopic, message);
+            producer.Flush(TimeSpan.FromSeconds(30));
+            var received = consumer.Consume(TimeSpan.FromSeconds(30));
             
             Assert.NotNull(received);
             consumer.Commit(received);

@@ -1,4 +1,4 @@
 {
-  "bootstrapServers": "127.0.0.1:9092",
-  "oauthbearerBootstrapServers": "127.0.0.1:9093"
+  "bootstrapServers": "localhost:9092",
+  "oauthbearerBootstrapServers": "SASL_PLAINTEXT://localhost:53486,SASL_PLAINTEXT://localhost:53490,SASL_PLAINTEXT://localhost:53494"
 }

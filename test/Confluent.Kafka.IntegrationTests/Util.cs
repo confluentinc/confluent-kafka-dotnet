@@ -78,8 +78,9 @@ namespace Confluent.Kafka.IntegrationTests
                 iat = iat.ToUnixTimeSeconds(),
                 exp = exp.ToUnixTimeSeconds(),
                 typ = "Bearer",
-                sub = "Tester",
-                aud
+                sub = "admin",
+                aud,
+                scope = "requiredScope"
             };
 
             var headerJson = JsonConvert.SerializeObject(header);
