@@ -66,7 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
             return firstDeliveryReport.TopicPartitionOffset;
         }
 
-        public static string GetUnsecuredJwt(string aud, DateTimeOffset iat, DateTimeOffset exp)
+        public static string GetUnsecuredJwt(string aud, string scope, DateTimeOffset iat, DateTimeOffset exp)
         {
             var header = new
             {
@@ -78,9 +78,9 @@ namespace Confluent.Kafka.IntegrationTests
                 iat = iat.ToUnixTimeSeconds(),
                 exp = exp.ToUnixTimeSeconds(),
                 typ = "Bearer",
-                sub = "admin",
+                sub = "Tester",
                 aud,
-                scope = "requiredScope"
+                scope
             };
 
             var headerJson = JsonConvert.SerializeObject(header);
