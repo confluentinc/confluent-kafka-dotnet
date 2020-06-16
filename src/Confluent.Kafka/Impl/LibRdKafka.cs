@@ -1298,6 +1298,6 @@ namespace Confluent.Kafka.Impl
 
         private static Action<IntPtr> _error_destroy;
         internal static void error_destroy(IntPtr error)
-            => error_destroy(error);
+            => _error_destroy(error);
     }
 }
