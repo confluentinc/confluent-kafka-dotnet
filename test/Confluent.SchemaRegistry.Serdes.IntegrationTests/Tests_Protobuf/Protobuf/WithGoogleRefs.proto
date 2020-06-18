@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+ 
+option csharp_namespace = "Confluent.WithGoogleRefs";
+ 
+message TheRecord {
+      google.protobuf.Timestamp ReceivedTime = 1;
+      google.protobuf.Int32Value ListType = 2;
+}
