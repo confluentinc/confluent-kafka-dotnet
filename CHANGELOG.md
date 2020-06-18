@@ -1,3 +1,10 @@
+# 1.4.4
+
+## Fixes
+
+- Resolved a stack overflow exception issue in `Error(IntPtr error)` [#1249](https://github.com/confluentinc/confluent-kafka-dotnet/issues/1249) (@[midnightriot](https://github.com/midnightriot))
+- References librdkafka 1.4.4. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.4.4) for more information.
+
 # 1.4.3
 
 ## Fixes
