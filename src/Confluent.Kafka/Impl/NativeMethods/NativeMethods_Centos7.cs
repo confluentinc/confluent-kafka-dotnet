@@ -55,6 +55,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_err2str(ErrorCode err);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_message_errstr(IntPtr rkmessage);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_last_error();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

@@ -732,8 +732,15 @@ namespace Confluent.Kafka
                     }
                 }
 
+                // TODO: remove. here for manual testing purposes.
+                var errStrPtr1 = Librdkafka.message_errstr(msgPtr);
+                var errStr1 = Util.Marshal.PtrToStringUTF8(errStrPtr1);
+
                 if (msg.err != ErrorCode.NoError)
                 {
+                    var errStrPtr = Librdkafka.message_errstr(msgPtr);
+                    var errStr = Util.Marshal.PtrToStringUTF8(errStrPtr);
+
                     throw new ConsumeException(
                         new ConsumeResult<byte[], byte[]>
                         {
@@ -747,7 +754,7 @@ namespace Confluent.Kafka
                             },
                             IsPartitionEOF = false
                         },
-                        kafkaHandle.CreatePossiblyFatalError(msg.err, null));
+                        kafkaHandle.CreatePossiblyFatalError(msg.err, errStr));
                 }
 
                 TKey key;

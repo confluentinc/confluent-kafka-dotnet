@@ -145,6 +145,7 @@ namespace Confluent.Kafka.Impl
             _version_str = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_version_str").CreateDelegate(typeof(Func<IntPtr>));
             _get_debug_contexts = (Func<IntPtr>)methods.Single(m => m.Name == "rd_kafka_get_debug_contexts").CreateDelegate(typeof(Func<IntPtr>));
             _err2str = (Func<ErrorCode, IntPtr>)methods.Single(m => m.Name == "rd_kafka_err2str").CreateDelegate(typeof(Func<ErrorCode, IntPtr>));
+            _message_errstr = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_message_errstr").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _last_error = (Func<ErrorCode>)methods.Single(m => m.Name == "rd_kafka_last_error").CreateDelegate(typeof(Func<ErrorCode>));
             _fatal_error = (Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_fatal_error").CreateDelegate(typeof(Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _topic_partition_list_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -538,6 +539,9 @@ namespace Confluent.Kafka.Impl
 
         private static Func<ErrorCode, IntPtr> _err2str;
         internal static IntPtr err2str(ErrorCode err) => _err2str(err);
+
+        private static Func<IntPtr, IntPtr> _message_errstr;
+        internal static IntPtr message_errstr(IntPtr rkmessage) => _message_errstr(rkmessage);
 
         private static Func<IntPtr, IntPtr> _topic_partition_list_new;
         internal static IntPtr topic_partition_list_new(IntPtr size)
