@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.4.0-RC6c *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.5.0-RC1 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -419,6 +419,14 @@ namespace Confluent.Kafka
         public bool? TopicMetadataRefreshSparse { get { return GetBool("topic.metadata.refresh.sparse"); } set { this.SetObject("topic.metadata.refresh.sparse", value); } }
 
         /// <summary>
+        ///     Apache Kafka topic creation is asynchronous and it takes some time for a new topic to propagate throughout the cluster to all brokers. If a client requests topic metadata after manual topic creation but before the topic has been fully propagated to the broker the client is requesting metadata from, the topic will seem to be non-existent and the client will mark the topic as such, failing queued produced messages with `ERR__UNKNOWN_TOPIC`. This setting delays marking a topic as non-existent until the configured propagation max time has passed. The maximum propagation time is calculated from the time the topic is first referenced in the client, e.g., on produce().
+        ///
+        ///     default: 30000
+        ///     importance: low
+        /// </summary>
+        public int? TopicMetadataPropagationMaxMs { get { return GetInt("topic.metadata.propagation.max.ms"); } set { this.SetObject("topic.metadata.propagation.max.ms", value); } }
+
+        /// <summary>
         ///     Topic blacklist, a comma-separated list of regular expressions for matching topic names that should be ignored in broker metadata information as if the topics did not exist.
         ///
         ///     default: ''
@@ -537,6 +545,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public bool? LogThreadName { get { return GetBool("log.thread.name"); } set { this.SetObject("log.thread.name", value); } }
+
+        /// <summary>
+        ///     If enabled librdkafka will initialize the POSIX PRNG with srand(current_time.milliseconds) on the first invocation of rd_kafka_new(). If disabled the application must call srand() prior to calling rd_kafka_new().
+        ///
+        ///     default: true
+        ///     importance: low
+        /// </summary>
+        public bool? EnableRandomSeed { get { return GetBool("enable.random.seed"); } set { this.SetObject("enable.random.seed", value); } }
 
         /// <summary>
         ///     Log broker disconnects. It might be useful to turn this off when interacting with 0.9 brokers with an aggressive `connection.max.idle.ms` value.
@@ -659,7 +675,7 @@ namespace Confluent.Kafka
         public string SslCertificatePem { get { return Get("ssl.certificate.pem"); } set { this.SetObject("ssl.certificate.pem", value); } }
 
         /// <summary>
-        ///     File or directory path to CA certificate(s) for verifying the broker's key.
+        ///     File or directory path to CA certificate(s) for verifying the broker's key. Defaults: On Windows the system's CA certificates are automatically looked up in the Windows Root certificate store. On Mac OSX it is recommended to install openssl using Homebrew, to provide CA certificates. On Linux install the distribution's ca-certificates package. If OpenSSL is statically linked or `ssl.ca.location` is set to `probe` a list of standard paths will be probed and the first one found will be used as the default CA certificate location path. If OpenSSL is dynamically linked the OpenSSL library's default path will be used (see `OPENSSLDIR` in `openssl version -a`).
         ///
         ///     default: ''
         ///     importance: low
@@ -1002,12 +1018,20 @@ namespace Confluent.Kafka
         public CompressionType? CompressionType { get { return (CompressionType?)GetEnum(typeof(CompressionType), "compression.type"); } set { this.SetObject("compression.type", value); } }
 
         /// <summary>
-        ///     Maximum number of messages batched in one MessageSet. The total MessageSet size is also limited by message.max.bytes.
+        ///     Maximum number of messages batched in one MessageSet. The total MessageSet size is also limited by batch.size and message.max.bytes.
         ///
         ///     default: 10000
         ///     importance: medium
         /// </summary>
         public int? BatchNumMessages { get { return GetInt("batch.num.messages"); } set { this.SetObject("batch.num.messages", value); } }
+
+        /// <summary>
+        ///     Maximum size (in bytes) of all messages batched in one MessageSet, including protocol framing overhead. This limit is applied after the first message has been added to the batch, regardless of the first message's size, this is to ensure that messages that exceed batch.size are produced. The total MessageSet size is also limited by batch.num.messages and message.max.bytes.
+        ///
+        ///     default: 1000000
+        ///     importance: medium
+        /// </summary>
+        public int? BatchSize { get { return GetInt("batch.size"); } set { this.SetObject("batch.size", value); } }
 
     }
 
@@ -1156,17 +1180,17 @@ namespace Confluent.Kafka
         public int? QueuedMinMessages { get { return GetInt("queued.min.messages"); } set { this.SetObject("queued.min.messages", value); } }
 
         /// <summary>
-        ///     Maximum number of kilobytes per topic+partition in the local consumer queue. This value may be overshot by fetch.message.max.bytes. This property has higher priority than queued.min.messages.
+        ///     Maximum number of kilobytes of queued pre-fetched messages in the local consumer queue. If using the high-level consumer this setting applies to the single consumer queue, regardless of the number of partitions. When using the legacy simple consumer or when separate partition queues are used this setting applies per partition. This value may be overshot by fetch.message.max.bytes. This property has higher priority than queued.min.messages.
         ///
-        ///     default: 1048576
+        ///     default: 65536
         ///     importance: medium
         /// </summary>
         public int? QueuedMaxMessagesKbytes { get { return GetInt("queued.max.messages.kbytes"); } set { this.SetObject("queued.max.messages.kbytes", value); } }
 
         /// <summary>
-        ///     Maximum time the broker may wait to fill the response with fetch.min.bytes.
+        ///     Maximum time the broker may wait to fill the Fetch response with fetch.min.bytes of messages.
         ///
-        ///     default: 100
+        ///     default: 500
         ///     importance: low
         /// </summary>
         public int? FetchWaitMaxMs { get { return GetInt("fetch.wait.max.ms"); } set { this.SetObject("fetch.wait.max.ms", value); } }
@@ -1226,6 +1250,14 @@ namespace Confluent.Kafka
         ///     importance: medium
         /// </summary>
         public bool? CheckCrcs { get { return GetBool("check.crcs"); } set { this.SetObject("check.crcs", value); } }
+
+        /// <summary>
+        ///     Allow automatic topic creation on the broker when subscribing to or assigning non-existent topics. The broker must also be configured with `auto.create.topics.enable=true` for this configuraiton to take effect. Note: The default value (false) is different from the Java consumer (true). Requires broker version >= 0.11.0.0, for older broker versions only the broker configuration applies.
+        ///
+        ///     default: false
+        ///     importance: low
+        /// </summary>
+        public bool? AllowAutoCreateTopics { get { return GetBool("allow.auto.create.topics"); } set { this.SetObject("allow.auto.create.topics", value); } }
 
     }
 
