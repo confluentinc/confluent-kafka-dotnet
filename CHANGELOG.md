@@ -1,3 +1,10 @@
+# 1.5.0
+
+## Enhancements
+
+- References librdkafka 1.5.0 which brings many small improvements and bug fixes (and no new large features). Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.5.0) for more information.
+
+
 # 1.4.4
 
 ## Fixes
