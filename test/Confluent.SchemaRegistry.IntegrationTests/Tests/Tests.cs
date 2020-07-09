@@ -47,8 +47,13 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                 var config = new Config();
                 config.Server = json["server"].ToString();
                 config.ServerWithAuth = json["server_with_auth"].ToString();
+                config.ServerWithSsl = json["server_with_ssl"].ToString();
                 config.Username = json["username"].ToString();
                 config.Password = json["password"].ToString();
+                config.KeystoreLocation = json["keystore_location"].ToString();
+                config.KeystorePassword = json["keystore_password"].ToString();
+                config.CaLocation = json["ca_location"].ToString();
+                config.EnableSslCertificateVerification = json["enable_ssl_certificate_verification"].ToString();
                 schemaRegistryParameters = new List<object[]> { new object[] { config } };
             }
             return schemaRegistryParameters;

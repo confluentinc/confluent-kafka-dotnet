@@ -80,6 +80,27 @@ namespace Confluent.SchemaRegistry
             /// </summary>
             [Obsolete("Subject name strategies should now be configured using the serializer's configuration. In the future, this configuration property will be removed from SchemaRegistryConfig")]
             public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
+
+            /// <summary>
+            ///     File path to CA certificate(s) for verifying the schema registry's key. it will use system CA certs if not provided
+            /// </summary>
+            public const string SslCaLocation = "schema.registry.ssl.ca.location";
+
+            /// <summary>
+            ///     SSL keystore (PKCS#12) location.
+            /// </summary>
+            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
+
+            /// <summary>
+            ///     SSL keystore (PKCS#12) password.
+            /// </summary>
+            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
+
+            /// <summary>
+            ///     In scenarios of using a private and untrusted CA or in case of impossibility to add a private CA as trusted in system CA certs,
+            ///     it is possible to disable SSL verification but it only could be done in test/dev environments.
+            /// </summary>
+            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
         }
 
         /// <summary>
@@ -127,6 +148,53 @@ namespace Confluent.SchemaRegistry
             set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
         }
 
+        /// <summary>
+        ///     File or directory path to CA certificate(s) for verifying the schema registry's key.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCaLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslCaLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Path to client's keystore (PKCS#12) used for authentication.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeystoreLocation
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Client's keystore (PKCS#12) password.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslKeystorePassword
+        {
+            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
+        }
+
+        /// <summary>
+        ///     Enable/Disable SSL server certificate verification. Only use in contained test/dev environments.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public bool? EnableSslCertificateVerification
+        {
+            get { return GetBool(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification); }
+            set { SetObject(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification, value); }
+        }
 
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient

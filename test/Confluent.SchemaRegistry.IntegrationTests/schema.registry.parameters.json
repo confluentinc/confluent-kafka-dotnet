@@ -1,6 +1,11 @@
 {
   "server": "localhost:8081",
   "server_with_auth": "localhost:8082",
+  "server_with_ssl": "https://localhost:8083",
   "username": "ckp_tester",
-  "password": "test_secret"
+  "password": "test_secret",
+  "keystore_location": "./secrets/schema-registry.keystore.jks",
+  "keystore_password": "cnf123",
+  "ca_location": "./secrets/schema-registry-ca.cer",
+  "enable_ssl_certificate_verification": "false"
 }

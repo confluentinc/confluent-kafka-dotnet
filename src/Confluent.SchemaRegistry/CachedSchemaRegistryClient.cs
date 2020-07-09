@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using System.Threading;
+using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
 
 
@@ -73,6 +74,11 @@ namespace Confluent.SchemaRegistry
         ///     The default maximum capacity of the local schema cache.
         /// </summary>
         public const int DefaultMaxCachedSchemas = 1000;
+
+        /// <summary>
+        ///     The default SSL server certificate verification for Schema Registry REST API calls.
+        /// </summary>
+        public const bool DefaultEnableSslCertificateVerification = true;
 
         /// <summary>
         ///     The default key subject name strategy.
@@ -201,13 +207,22 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password);
+            var sslVerificationMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification);
+            bool sslVerify;
+            try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
+
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
         }
 
 
@@ -233,6 +248,31 @@ namespace Confluent.SchemaRegistry
             return false;
         }
 
+        /// <summary>
+        ///     Add certificates for SSL handshake.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var certificates = new List<X509Certificate2>();
+
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
+            if (!String.IsNullOrEmpty(certificateLocation))
+            {
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+            }
+
+            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
+            if (!String.IsNullOrEmpty(caLocation))
+            {
+                certificates.Add(new X509Certificate2(caLocation));
+            }
+
+            return certificates;
+        }
 
         /// <inheritdoc/>
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema)
