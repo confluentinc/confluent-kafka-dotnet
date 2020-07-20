@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry
             public const string SchemaRegistryValueSubjectNameStrategy = "schema.registry.value.subject.name.strategy";
 
             /// <summary>
-            ///     File path to CA certificate(s) for verifying the schema registry's key. it will use system CA certs if not provided
+            ///     File path to CA certificate(s) for verifying the Schema Registry's key. System CA certs will be used if not specified.
             /// </summary>
             public const string SslCaLocation = "schema.registry.ssl.ca.location";
 
@@ -97,8 +97,10 @@ namespace Confluent.SchemaRegistry
             public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
 
             /// <summary>
-            ///     In scenarios of using a private and untrusted CA or in case of impossibility to add a private CA as trusted in system CA certs,
-            ///     it is possible to disable SSL verification but it only could be done in test/dev environments.
+            ///     Enable SSL verification. Disabling SSL verification is insecure and should only be done for reasons
+            ///     of convenience in test/dev environments.
+            ///
+            ///     default: true
             /// </summary>
             public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
         }
