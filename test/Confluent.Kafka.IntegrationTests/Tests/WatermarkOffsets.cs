@@ -59,12 +59,12 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.NotNull(record.Message);
 
                 var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
-                Assert.Equal(getOffsets.Low, Offset.Unset);
+                Assert.Equal(0, getOffsets.Low);
                 // the offset of the next message to be read.
-                Assert.Equal(getOffsets.High, dr.Offset + 1);
+                Assert.Equal(dr.Offset + 1, getOffsets.High);
 
                 var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
-                Assert.NotEqual(queryOffsets.Low, Offset.Unset);
+                Assert.NotEqual(Offset.Unset, queryOffsets.Low);
                 Assert.Equal(getOffsets.High, queryOffsets.High);
             }
 
