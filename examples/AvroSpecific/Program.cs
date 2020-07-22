@@ -26,7 +26,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             if (args.Length != 3)
             {
@@ -113,11 +113,23 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { name = text, favorite_color = "green", favorite_number = i++, hourly_rate = new Avro.AvroDecimal(67.99) };
-                    await producer
+                    producer
                         .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
-                        .ContinueWith(task => task.IsFaulted
-                            ? $"error producing message: {task.Exception.Message}"
-                            : $"produced to: {task.Result.TopicPartitionOffset}");
+                        .ContinueWith(task =>
+                            {
+                                if (!task.IsFaulted)
+                                {
+                                    Console.WriteLine($"produced to: {task.Result.TopicPartitionOffset}");
+                                }
+
+                                // Task.Exception is of type AggregateException. Use the InnerException property
+                                // to get the underlying ProduceException. In some cases (notably Schema Registry
+                                // connectivity issues), the InnerException of the ProduceException will contain
+                                // additional information pertaining to the root cause of the problem. Note: this
+                                // information is automatically included in the output of the ToString() method of
+                                // the ProduceException which is called implicitly in the below.
+                                Console.WriteLine($"error producing message: {task.Exception.InnerException}");
+                            });
                 }
             }
 

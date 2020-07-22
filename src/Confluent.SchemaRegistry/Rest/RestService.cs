@@ -23,13 +23,13 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Security.Cryptography.X509Certificates;
 
 namespace Confluent.SchemaRegistry
 {
     /// <remarks>
     ///     It may be useful to expose this publicly, but this is not
-    ///     required by the Avro serializers, so we will keep this internal 
+    ///     required by the Avro serializers, so we will keep this internal
     ///     for now to minimize documentation / risk of API change etc.
     /// </remarks>
     internal class RestService : IRestService
@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password)
+        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
             var authorizationHeader = username != null && password != null
                 ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
@@ -64,7 +64,16 @@ namespace Confluent.SchemaRegistry
                 .Select(SanitizeUri)// need http or https - use http if not present.
                 .Select(uri =>
                 {
-                    var client = new HttpClient { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    HttpClient client;
+                    if (certificates.Count > 0)
+                    {
+                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    }
+                    else
+                    {
+                        client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
+                    }
+
                     if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
                     return client;
                 })
@@ -75,6 +84,20 @@ namespace Confluent.SchemaRegistry
         {
             var sanitized = uri.StartsWith("http", StringComparison.Ordinal) ? uri : $"http://{uri}";
             return $"{sanitized.TrimEnd('/')}/";
+        }
+
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        {
+            var handler = new HttpClientHandler();
+            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+
+            if (!enableSslCertificateVerification)
+            {
+                handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => { return true; };
+            }
+
+            certificates.ForEach(c => handler.ClientCertificates.Add(c));
+            return handler;
         }
 
         private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
