@@ -14,7 +14,6 @@
     <Title>Confluent.SchemaRegistry.Serdes.Protobuf</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Protobuf</AssemblyName>
     <VersionPrefix>1.5.0</VersionPrefix>
-    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>

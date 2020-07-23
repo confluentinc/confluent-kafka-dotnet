@@ -28,19 +28,19 @@ namespace Confluent.Kafka.Impl.NativeMethods
     ///     for the DllName const.
     /// </summary>
     /// <remarks>
-    ///     This copy/pasting is required because DllName must be const. 
+    ///     This copy/pasting is required because DllName must be const.
     ///     TODO: generate the NativeMethods classes at runtime (compile C# code) rather
     ///     than copy/paste.
-    /// 
-    ///     Alternatively, we could have used dlopen to load the native library, but to 
+    ///
+    ///     Alternatively, we could have used dlopen to load the native library, but to
     ///     do that we need to know the absolute path of the native libraries because the
-    ///     dlopen call does not know .NET runtime library storage conventions. Unfortunately 
+    ///     dlopen call does not know .NET runtime library storage conventions. Unfortunately
     ///     these are relatively complex, so we prefer to go with the copy/paste solution
     ///     which is relatively simple.
     /// </remarks>
     internal class NativeMethods
     {
-        public const string DllName = "librdkafka";
+        public const string DllName = @"librdkafka";
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_version();
@@ -370,7 +370,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr rk, IntPtr partitions);
 
         // note: producev signature is rd_kafka_producev(rk, ...)
-        // we are keeping things simple with one binding for now, but it 
+        // we are keeping things simple with one binding for now, but it
         // will be worth benchmarking the overload with no timestamp, opaque,
         // partition, etc
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -540,7 +540,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewPartitions_new(
-                [MarshalAs(UnmanagedType.LPStr)] string topic, 
+                [MarshalAs(UnmanagedType.LPStr)] string topic,
                 UIntPtr new_total_cnt,
                 StringBuilder errstr, UIntPtr errstr_size);
 
@@ -627,13 +627,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_ConfigResource_add_config(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
-                [MarshalAs(UnmanagedType.LPStr)] string name, 
+                [MarshalAs(UnmanagedType.LPStr)] string name,
                 [MarshalAs(UnmanagedType.LPStr)] string value);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_ConfigResource_set_config(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
-                [MarshalAs(UnmanagedType.LPStr)] string name, 
+                [MarshalAs(UnmanagedType.LPStr)] string name,
                 [MarshalAs(UnmanagedType.LPStr)] string value);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
