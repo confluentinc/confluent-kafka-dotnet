@@ -95,7 +95,7 @@ namespace Confluent.Kafka
             }
             catch (Exception)
             {
-                // Eat any exception thrown by user error handler code. Although these could be 
+                // Eat any exception thrown by user error handler code. Although these could be
                 // exposed to the application via the initiating function call easily enough,
                 // they aren't for consistency with the producer (where the poll method is called)
                 // on a background thread.
@@ -116,7 +116,7 @@ namespace Confluent.Kafka
             {
                 handlerException = e;
             }
-            
+
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
@@ -170,9 +170,9 @@ namespace Confluent.Kafka
 
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
                 if (kafkaHandle.IsClosed)
-                { 
+                {
                     // The RebalanceCallback should never be invoked as a side effect of Dispose.
-                    // If for some reason flow of execution gets here, something is badly wrong. 
+                    // If for some reason flow of execution gets here, something is badly wrong.
                     // (and we have a closed librdkafka handle that is expecting an assign call...)
                     throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
                 }
@@ -197,7 +197,7 @@ namespace Confluent.Kafka
                     Assign(assignTo);
                     return;
                 }
-                
+
                 if (err == ErrorCode.Local_RevokePartitions)
                 {
                     if (partitionsRevokedHandler == null)
@@ -235,7 +235,7 @@ namespace Confluent.Kafka
                     else { Unassign(); }
                     return;
                 }
-                
+
                 throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
             }
             catch (Exception e)
@@ -491,13 +491,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Releases all resources used by this Consumer without
         ///     committing offsets and without alerting the group coordinator
-        ///     that the consumer is exiting the group. If you do not call 
+        ///     that the consumer is exiting the group. If you do not call
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" /> or
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Unsubscribe" />
-        ///     prior to Dispose, the group will rebalance after a timeout 
+        ///     prior to Dispose, the group will rebalance after a timeout
         ///     specified by group's `session.timeout.ms`.
-        ///     You should commit offsets / unsubscribe from the group before 
-        ///     calling this method (typically by calling 
+        ///     You should commit offsets / unsubscribe from the group before
+        ///     calling this method (typically by calling
         ///     <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close()" />).
         /// </summary>
         public void Dispose()
@@ -520,7 +520,7 @@ namespace Confluent.Kafka
         {
             // Calling Dispose a second or subsequent time should be a no-op.
             lock (disposeHasBeenCalledLockObj)
-            { 
+            {
                 if (disposeHasBeenCalled) { return; }
                 disposeHasBeenCalled = true;
             }
@@ -837,7 +837,7 @@ namespace Confluent.Kafka
                         ex);
                 }
 
-                return new ConsumeResult<TKey, TValue> 
+                return new ConsumeResult<TKey, TValue>
                 {
                     TopicPartitionOffset = new TopicPartitionOffset(topic, msg.partition, msg.offset),
                     Message = new Message<TKey, TValue>

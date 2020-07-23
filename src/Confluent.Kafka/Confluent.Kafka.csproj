@@ -27,12 +27,8 @@
     <PackageReference Include="System.Memory" Version="4.5.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
-    <PackageReference Include="System.Console" Version="4.3.0" />
-    <PackageReference Include="System.Linq" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
-    <PackageReference Include="System.Threading" Version="4.3.0" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\librdkafka\win32\librdkafka.vcxproj" />
   </ItemGroup>
 
 </Project>
