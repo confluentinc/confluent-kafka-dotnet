@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Benchmark
             var headerCount = 0;
             if (args.Length > 2)
             {
-                if (int.TryParse(args.Last(), out headerCount))
+                if (int.TryParse(args[2], out headerCount) || int.TryParse(args[3], out headerCount))
                 {
                     Console.WriteLine($"Parsed header count as {headerCount}");
                 }
