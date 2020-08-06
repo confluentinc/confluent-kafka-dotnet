@@ -152,7 +152,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     RoundRobin
         /// </summary>
-        RoundRobin
+        RoundRobin,
+
+        /// <summary>
+        ///     CooperativeSticky
+        /// </summary>
+        CooperativeSticky,
     }
 
     /// <summary>

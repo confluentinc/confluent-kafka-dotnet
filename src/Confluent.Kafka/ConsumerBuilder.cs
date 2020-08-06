@@ -72,6 +72,17 @@ namespace Confluent.Kafka
         internal protected Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> PartitionsRevokedHandler { get; set; }
 
         /// <summary>
+        ///     Whether or not the user configured either the configured PartitionsRevokedHandler or PartitionsLostHandler
+        ///     are a Func (as opposed to Action).
+        /// </summary>
+        internal protected bool RevokedOrLostHandlerIsFunc = false;
+
+        /// <summary>
+        ///     The configured partitions lost handler.
+        /// </summary>
+        internal protected Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> PartitionsLostHandler { get; set; }
+
+        /// <summary>
         ///     The configured offsets committed handler.
         /// </summary>
         internal protected Action<IConsumer<TKey, TValue>, CommittedOffsets> OffsetsCommittedHandler { get; set; }
@@ -101,7 +112,11 @@ namespace Confluent.Kafka
                     : partitions => this.PartitionsAssignedHandler(consumer, partitions),
                 partitionsRevokedHandler = this.PartitionsRevokedHandler == null
                     ? default(Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>>)
-                    : partitions => this.PartitionsRevokedHandler(consumer, partitions)
+                    : partitions => this.PartitionsRevokedHandler(consumer, partitions),
+                partitionsLostHandler = this.PartitionsLostHandler == null
+                    ? default(Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>>)
+                    : partitions => this.PartitionsLostHandler(consumer, partitions),
+                revokedOrLostHandlerIsFunc = this.RevokedOrLostHandlerIsFunc
             };
         }
 
@@ -275,11 +290,9 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     This handler is called when a new consumer group partition assignment has been received
-        ///     by this consumer.
-        ///     
-        ///     Note: corresponding to every call to this handler there will be a corresponding call to
-        ///     the partitions revoked handler (if one has been set using SetPartitionsRevokedHandler).
+        ///     Specify the handler that will be called when a new consumer group partition assignment has
+        ///     been received by this consumer. The partitions the consumer is fetching from will be updated
+        ///     after execution of this handler completes.
         ///
         ///     The actual partitions to consume from and start offsets are specified by the return value
         ///     of the handler. This set of partitions is not required to match the assignment provided
@@ -287,11 +300,28 @@ namespace Confluent.Kafka
         ///     special value (Beginning, End or Unset). If Unset, consumption will resume from the
         ///     last committed offset for each partition, or if there is no committed offset, in accordance
         ///     with the `auto.offset.reset` configuration property.
+        ///
+        ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
+        ///     COOPERATIVE (sticky-cooperative assignor).
+        ///
+        ///     ## EAGER Rebalancing
+        ///
+        ///     Partitions passed to (and returned from) the handler represent the entire set of
+        ///     partitions to consume from. There will be exactly one call to the partitions
+        ///     revoked or partitions lost handler (if they have been set using SetPartitionsRevokedHandler
+        ///     / SetPartitionsLostHandler) corresponding to a call to this handler. Note: this behavior
+        ///     differs from that of the Java consumer.
+        ///
+        ///     ## COOPERATIVE Rebalancing
+        ///
+        ///     Partitions passed to (and returned from) the handler are an incremental assignment -
+        ///     the additional set of partitions to consume from in addition to those already being consumed
+        ///     from.
         /// </summary>
         /// <remarks>
-        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
         ///     
-        ///     Assign/Unassign must not be called in the handler.
+        ///     (Incremental)Assign/Unassign must not be called in the handler.
         ///
         ///     Exceptions: Any exception thrown by your partitions assigned handler
         ///     will be wrapped in a ConsumeException with ErrorCode
@@ -311,24 +341,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     This handler is called when a new consumer group partition assignment has been received
-        ///     by this consumer.
-        ///     
-        ///     Note: corresponding to every call to this handler there will be a corresponding call to
-        ///     the partitions revoked handler (if one has been set using SetPartitionsRevokedHandler").
-        ///
-        ///     Consumption will resume from the last committed offset for each partition, or if there is
-        ///     no committed offset, in accordance with the `auto.offset.reset` configuration property.
+        ///     TODO
         /// </summary>
-        /// <remarks>
-        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
-        ///     
-        ///     Assign/Unassign must not be called in the handler.
-        ///
-        ///     Exceptions: Any exception thrown by your partitions assigned handler
-        ///     will be wrapped in a ConsumeException with ErrorCode
-        ///     ErrorCode.Local_Application and thrown by the initiating call to Consume.
-        /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
         {
@@ -352,15 +366,21 @@ namespace Confluent.Kafka
         ///     revoked. The second parameter provides the set of partitions the consumer is 
         ///     currently assigned to, and the current position of the consumer on each of these
         ///     partitions.
+        ///
+        ///     The return value of the handler specifies the partitions/offsets the consumer
+        ///     should be assigned to following completion of this method (typically empty).
         /// </summary>
         /// <remarks>
-        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
         ///     
-        ///     Assign/Unassign must not be called in the handler.
+        ///     (Incremental)Assign/Unassign must not be called in the handler.
         ///
         ///     Exceptions: Any exception thrown by your partitions revoked handler
         ///     will be wrapped in a ConsumeException with ErrorCode
         ///     ErrorCode.Local_Application and thrown by the initiating call to Consume/Close.
+        ///
+        ///     PartitionsRevoked handlers that return a set of partitions are not supported in
+        ///     the COOPERATIVE case.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler)
@@ -371,19 +391,18 @@ namespace Confluent.Kafka
             }
 
             this.PartitionsRevokedHandler = partitionsRevokedHandler;
-            
+            this.RevokedOrLostHandlerIsFunc = true;
+
             return this;
         }
 
 
         /// <summary>
+        ///     MH: Update text..
         ///     This handler is called immediately prior to a group partition assignment being
         ///     revoked. The second parameter provides the set of partitions the consumer is 
         ///     currently assigned to, and the current position of the consumer on each of these
         ///     partitions.
-        ///
-        ///     The return value of the handler specifies the partitions/offsets the consumer 
-        ///     should be assigned to following completion of this method (typically empty).
         /// </summary>
         /// <remarks>
         ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
@@ -405,6 +424,46 @@ namespace Confluent.Kafka
             this.PartitionsRevokedHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartitionOffset> partitions) =>
             {
                 partitionsRevokedHandler(consumer, partitions);
+                return new List<TopicPartitionOffset>();
+            };
+
+            return this;
+        }
+
+        /// <summary>
+        ///     TODO
+        /// </summary>
+        /// <remarks>
+        ///     Not supported in cooperative case.
+        /// </remarks>
+        public ConsumerBuilder<TKey, TValue> SetPartitionsLostHandler(
+            Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsLostHandler)
+        {
+            if (this.PartitionsLostHandler != null)
+            {
+                throw new InvalidOperationException("The partitions lost handler may not be specified more than once.");
+            }
+
+            this.PartitionsLostHandler = partitionsLostHandler;
+            this.RevokedOrLostHandlerIsFunc = true;
+
+            return this;
+        }
+
+        /// <summary>
+        ///     TODO
+        /// </summary>
+        public ConsumerBuilder<TKey, TValue> SetPartitionsLostHandler(
+            Action<IConsumer<TKey, TValue>, List<TopicPartitionOffset>> partitionsLostHandler)
+        {
+            if (this.PartitionsLostHandler != null)
+            {
+                throw new InvalidOperationException("The partitions lost handler may not be specified more than once.");
+            }
+
+            this.PartitionsLostHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartitionOffset> partitions) =>
+            {
+                partitionsLostHandler(consumer, partitions);
                 return new List<TopicPartitionOffset>();
             };
 

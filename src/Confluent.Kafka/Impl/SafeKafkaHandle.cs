@@ -35,6 +35,13 @@ namespace Confluent.Kafka.Impl
         Consumer
     }
 
+    internal enum RebalanceProtocol
+    {
+        None = 0x0,
+        Eager = 0x1,
+        Cooperative = 0x2
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     struct rd_kafka_message
     {
@@ -752,7 +759,7 @@ namespace Confluent.Kafka.Impl
             return ret;
         }
 
-        internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
+        private void AssignImpl(IEnumerable<TopicPartitionOffset> partitions, Func<IntPtr, IntPtr, ErrorCode> assignMethod)
         {
             ThrowIfHandleClosed();
 
@@ -769,7 +776,7 @@ namespace Confluent.Kafka.Impl
                     if (partition.Topic == null)
                     {
                         Librdkafka.topic_partition_list_destroy(list);
-                        throw new ArgumentException("Cannot assign partitions because one or more have a null topic.");
+                        throw new ArgumentException("Partition topic must not be null");
                     }
 
                     IntPtr ptr = Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
@@ -780,7 +787,7 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            ErrorCode err = Librdkafka.assign(handle, list);
+            ErrorCode err = assignMethod(handle, list);
             if (list != IntPtr.Zero)
             {
                 Librdkafka.topic_partition_list_destroy(list);
@@ -791,6 +798,32 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
+            => AssignImpl(partitions, Librdkafka.assign);
+
+        internal void IncrementalAssign(IEnumerable<TopicPartitionOffset> partitions)
+            => AssignImpl(partitions, Librdkafka.incremental_assign);
+
+        internal void IncrementalUnassign(IEnumerable<TopicPartitionOffset> partitions)
+            => AssignImpl(partitions, Librdkafka.incremental_unassign);
+
+        internal bool AssignmentLost
+        {
+            get
+            {
+                ThrowIfHandleClosed();
+                return (Librdkafka.assignment_lost(handle) != IntPtr.Zero);
+            }
+        }
+
+        internal RebalanceProtocol RebalanceProtocol
+        {
+            get
+            {
+                ThrowIfHandleClosed();
+                return (RebalanceProtocol)Librdkafka.rebalance_protocol(handle);
+            }
+        }
 
         internal void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {

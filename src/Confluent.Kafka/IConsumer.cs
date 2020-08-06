@@ -272,6 +272,42 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///
+        /// </summary>
+        void IncrementalAssign(TopicPartition partition);
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        void IncrementalAssign(TopicPartitionOffset partition);
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        void IncrementalAssign(IEnumerable<TopicPartitionOffset> partitions);
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        void IncrementalAssign(IEnumerable<TopicPartition> partitions);
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        void IncrementalUnassign(IEnumerable<TopicPartition> partitions);
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        void IncrementalUnassign(TopicPartition partition);
+
+
+        /// <summary>
         ///     Remove the current set of assigned partitions
         ///     and stop consumption.
         /// </summary>
