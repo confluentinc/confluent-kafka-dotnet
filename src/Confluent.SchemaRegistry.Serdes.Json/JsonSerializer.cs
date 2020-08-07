@@ -25,6 +25,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using NJsonSchema;
+using NJsonSchema.Generation;
 using NJsonSchema.Validation;
 using Confluent.Kafka;
 
@@ -60,6 +61,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
+        private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
@@ -80,11 +82,17 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Initialize a new instance of the JsonSerializer class.
         /// </summary>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null)
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     JSON schema generator settings.
+        /// </param>
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
-            this.schema = NJsonSchema.JsonSchema.FromType<T>();
+            this.schema = this.jsonSchemaGeneratorSettings == null
+                ? NJsonSchema.JsonSchema.FromType<T>()
+                : NJsonSchema.JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
             this.schemaFullname = schema.Title;
             this.schemaText = schema.ToJson();
 
@@ -126,7 +134,7 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             if (value == null) { return null; }
 
-            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value);
+            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
             var validationResult = validator.Validate(serializedString, this.schema);
             if (validationResult.Count > 0)
             {
