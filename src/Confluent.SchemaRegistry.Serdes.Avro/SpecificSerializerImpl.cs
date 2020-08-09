@@ -67,7 +67,13 @@ namespace Confluent.SchemaRegistry.Serdes
             Type writerType = typeof(T);
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
             {
-                writerSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+                var schemaField = typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static);
+                if (schemaField is null)
+                {
+                    throw new ArgumentException("Deserializable type must have public static field with name '_SCHEMA'.");
+                }
+
+                writerSchema = (global::Avro.Schema)schemaField.GetValue(null);
             }
             else if (writerType.Equals(typeof(int)))
             {
