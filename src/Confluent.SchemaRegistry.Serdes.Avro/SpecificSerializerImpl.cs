@@ -70,7 +70,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 var schemaField = typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static);
                 if (schemaField is null)
                 {
-                    throw new ArgumentException("Deserializable type must have public static field with name '_SCHEMA'.");
+                    throw new ArgumentException("Serializable type must have public static field with name '_SCHEMA'.");
                 }
 
                 writerSchema = (global::Avro.Schema)schemaField.GetValue(null);
