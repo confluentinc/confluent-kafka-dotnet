@@ -759,7 +759,9 @@ namespace Confluent.Kafka.Impl
             return ret;
         }
 
-        private void AssignImpl(IEnumerable<TopicPartitionOffset> partitions, Func<IntPtr, IntPtr, ErrorCode> assignMethod)
+        private void AssignImpl(IEnumerable<TopicPartitionOffset> partitions,
+                                Func<IntPtr, IntPtr, ErrorCode> assignMethodErr,
+                                Func<IntPtr, IntPtr, IntPtr> assgnMethodError)
         {
             ThrowIfHandleClosed();
 
@@ -787,15 +789,19 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            ErrorCode err = assignMethod(handle, list);
+            ErrorCode err = Errorcode.NoError;
+            Error error = null;
+
+            if (assignMethodErr) { err = assignMethodErr(handle, list); }
+            if (assignMethodError) { error = new Error(assignMethodError(handle, list)); }
+
             if (list != IntPtr.Zero)
             {
                 Librdkafka.topic_partition_list_destroy(list);
             }
-            if (err != ErrorCode.NoError)
-            {
-                throw new KafkaException(CreatePossiblyFatalError(err, null));
-            }
+
+            if (err != ErrorCode.NoError) { throw new KafkaException(CreatePossiblyFatalError(err, null)); }
+            if (error != null && error.Code != ErrorCode.NoError) { throw new KafkaException(error); }
         }
 
         internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
