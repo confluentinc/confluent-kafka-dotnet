@@ -182,7 +182,7 @@ namespace Confluent.Kafka
                 if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative &&
                     this.revokedOrLostHandlerIsFunc)
                 {
-                    throw new InvalidOperationException("Neither revoked or lost partition handlers may return a value when a COOPERATIVE assignor is in use");
+                    throw new InvalidOperationException("Neither revoked nor lost partition handlers may return a value when a COOPERATIVE assignor is in use");
                 }
 
                 var partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr).Select(p => p.TopicPartition).ToList();
@@ -208,12 +208,26 @@ namespace Confluent.Kafka
                     {
                         if (assignCallCount > 0)
                         {
-                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler");
+                            throw new InvalidOperationException("(Incremental)Assign/Unassign must not be called in the partitions assigned handler");
                         }
                     }
 
                     if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative)
                     {
+                        if (assignTo.Count() != partitions.Count())
+                        {
+                            throw new InvalidOperationException("Partitions assigned handler must not return a different set of topic partitions than it was provided");
+                        }
+
+                        int i = 0;
+                        foreach (var p in assignTo)
+                        {
+                            if (p.TopicPartition != partitions[i++].TopicPartition)
+                            {
+                                throw new InvalidOperationException("Partitions assigned handler must not return a different set of topic partitions than it was provided");
+                            }
+                        }
+
                         IncrementalAssign(assignTo);
                     }
                     else
@@ -254,7 +268,9 @@ namespace Confluent.Kafka
                     }
 
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    var assignTo = partitionsRevokedHandler(assignmentWithPositions);
+                    var assignTo = kafkaHandle.AssignmentLost
+                        ? partitionsLostHandler(assignmentWithPositions)
+                        : partitionsRevokedHandler(assignmentWithPositions);
                     lock (assignCallCountLockObj)
                     {
                         if (assignCallCount > 0)

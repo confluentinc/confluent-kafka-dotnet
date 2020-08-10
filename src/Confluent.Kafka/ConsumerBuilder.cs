@@ -72,8 +72,8 @@ namespace Confluent.Kafka
         internal protected Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> PartitionsRevokedHandler { get; set; }
 
         /// <summary>
-        ///     Whether or not the user configured either the configured PartitionsRevokedHandler or PartitionsLostHandler
-        ///     are a Func (as opposed to Action).
+        ///     Whether or not the user configured either PartitionsRevokedHandler or PartitionsLostHandler
+        ///     as a Func (as opposed to an Action).
         /// </summary>
         internal protected bool RevokedOrLostHandlerIsFunc = false;
 
@@ -309,13 +309,13 @@ namespace Confluent.Kafka
         ///     Partitions passed to (and returned from) the handler represent the entire set of
         ///     partitions to consume from. There will be exactly one call to the partitions
         ///     revoked or partitions lost handler (if they have been set using SetPartitionsRevokedHandler
-        ///     / SetPartitionsLostHandler) corresponding to a call to this handler. Note: this behavior
+        ///     / SetPartitionsLostHandler) corresponding to every call to this handler. Note: this behavior
         ///     differs from that of the Java consumer.
         ///
         ///     ## COOPERATIVE Rebalancing
         ///
         ///     Partitions passed to (and returned from) the handler are an incremental assignment -
-        ///     the additional set of partitions to consume from in addition to those already being consumed
+        ///     are an additional set of partitions to consume from in addition to those already being consumed
         ///     from.
         /// </summary>
         /// <remarks>
