@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 HeartbeatIntervalMs = 2000,
-                SessionTimeoutMs = 6000, // minimum allowed by kafka.
+                SessionTimeoutMs = 6000, // minimum allowed by the broker.
                 MaxPollIntervalMs = 6500,
             };
 
@@ -53,12 +53,8 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic1 = new TemporaryTopic(bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(bootstrapServers, 1))
             using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig)
-                .SetPartitionsAssignedHandler((c, p) => {
-                    assignCount += 1;
-                })
-                .SetPartitionsRevokedHandler((c, p) => {
-                    revokeCount += 1;
-                })
+                .SetPartitionsAssignedHandler((c, p) => { assignCount += 1; })
+                .SetPartitionsRevokedHandler((c, p) => { revokeCount += 1; })
                 .Build())
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 1, 1);

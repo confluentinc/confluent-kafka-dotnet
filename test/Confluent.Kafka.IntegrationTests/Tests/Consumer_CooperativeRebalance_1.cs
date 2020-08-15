@@ -27,7 +27,8 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test sticky-cooperative assignor.
+        ///     Test sticky-cooperative assignor and various aspects
+        ///     of the .net incremental rebalancing API.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_CooperativeRebalance_1(string bootstrapServers)
@@ -42,8 +43,8 @@ namespace Confluent.Kafka.IntegrationTests
                 EnableAutoCommit = false,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 HeartbeatIntervalMs = 2000,
-                SessionTimeoutMs = 10000,
-                MaxPollIntervalMs = 10000,
+                SessionTimeoutMs = 6000,
+                MaxPollIntervalMs = 6500,
             };
 
             int assignCount = 0;
@@ -78,7 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(cr2.Message.Value);
 
                 // Exceed MaxPollIntervalMs => lost partitions.
-                Thread.Sleep(15);
+                Thread.Sleep(8);
 
                 consumer.Close();
             }
