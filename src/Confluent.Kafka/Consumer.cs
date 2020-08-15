@@ -182,7 +182,7 @@ namespace Confluent.Kafka
                 if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative &&
                     this.revokedOrLostHandlerIsFunc)
                 {
-                    throw new InvalidOperationException("Neither revoked nor lost partition handlers may return an updated assignment set when a COOPERATIVE assignor is in use");
+                    throw new InvalidOperationException("Neither revoked nor lost partition handlers may return an updated assignment when a COOPERATIVE assignor is in use");
                 }
 
                 var partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr).Select(p => p.TopicPartition).ToList();
@@ -216,7 +216,7 @@ namespace Confluent.Kafka
                     {
                         if (assignTo.Count() != partitions.Count())
                         {
-                            throw new InvalidOperationException("Partitions assigned handler must not return a different set of topic partitions than it was provided");
+                            throw new InvalidOperationException("The partitions assigned handler must not return a different set of topic partitions than it was provided");
                         }
 
                         int i = 0;
@@ -224,7 +224,9 @@ namespace Confluent.Kafka
                         {
                             if (p.TopicPartition != partitions[i++])
                             {
-                                throw new InvalidOperationException("Partitions assigned handler must not return a different set of topic partitions than it was provided");
+                                // Enforcing ordering is overly constrained, but simple and efficient and in practice handler implementations will not likely change
+                                // ordering of partitions from that provided.
+                                throw new InvalidOperationException("The partitions assigned handler must not return a different set of topic partitions than it was provided");
                             }
                         }
 
