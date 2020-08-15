@@ -182,7 +182,7 @@ namespace Confluent.Kafka
                 if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative &&
                     this.revokedOrLostHandlerIsFunc)
                 {
-                    throw new InvalidOperationException("Neither revoked nor lost partition handlers may return a value when a COOPERATIVE assignor is in use");
+                    throw new InvalidOperationException("Neither revoked nor lost partition handlers may return an updated assignment set when a COOPERATIVE assignor is in use");
                 }
 
                 var partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr).Select(p => p.TopicPartition).ToList();

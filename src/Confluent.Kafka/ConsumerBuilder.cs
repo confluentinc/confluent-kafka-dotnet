@@ -290,9 +290,8 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Specify the handler that will be called when a new consumer group partition assignment has
-        ///     been received by this consumer. The partitions the consumer is fetching from will be updated
-        ///     after execution of this handler completes.
+        ///     Specify a handler that will be called when a new consumer group partition assignment has
+        ///     been received by this consumer.
         ///
         ///     The actual partitions to consume from and start offsets are specified by the return value
         ///     of the handler. This set of partitions is not required to match the assignment provided
@@ -302,30 +301,30 @@ namespace Confluent.Kafka
         ///     with the `auto.offset.reset` configuration property.
         ///
         ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
-        ///     COOPERATIVE (sticky-cooperative assignor).
+        ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
         ///
         ///     ## EAGER Rebalancing
         ///
         ///     Partitions passed to (and returned from) the handler represent the entire set of
-        ///     partitions to consume from. There will be exactly one call to the partitions
-        ///     revoked or partitions lost handler (if they have been set using SetPartitionsRevokedHandler
-        ///     / SetPartitionsLostHandler) corresponding to every call to this handler. Note: this behavior
-        ///     differs from that of the Java consumer.
+        ///     partitions to consume from. There will be exactly one call to the partitions revoked
+        ///     or partitions lost handler (if they have been set using SetPartitionsRevokedHandler
+        ///     / SetPartitionsLostHandler) corresponding to every call to this handler. Note: this
+        ///     behavior differs from that of the Java consumer.
         ///
-        ///     ## COOPERATIVE Rebalancing
+        ///     ## COOPERATIVE (Incremental) Rebalancing
         ///
         ///     Partitions passed to (and returned from) the handler are an incremental assignment -
-        ///     are an additional set of partitions to consume from in addition to those already being consumed
-        ///     from.
+        ///     are an additional set of partitions to consume from in addition to those already being
+        ///     consumed from.
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
         ///     
         ///     (Incremental)Assign/Unassign must not be called in the handler.
         ///
-        ///     Exceptions: Any exception thrown by your partitions assigned handler
-        ///     will be wrapped in a ConsumeException with ErrorCode
-        ///     ErrorCode.Local_Application and thrown by the initiating call to Consume.
+        ///     Exceptions: Any exception thrown by your partitions assigned handler will be wrapped
+        ///     in a ConsumeException with ErrorCode ErrorCode.Local_Application and thrown by the
+        ///     initiating call to Consume.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler)
@@ -341,8 +340,38 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     TODO
+        ///     Specify a handler that will be called when a new consumer group partition assignment has
+        ///     been received by this consumer.
+        ///
+        ///     Following execution of the handler, consumption will resume from the last committed offset
+        ///     for each partition, or if there is no committed offset, in accordance with the
+        ///     `auto.offset.reset` configuration property.
+        ///
+        ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
+        ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
+        ///
+        ///     ## EAGER Rebalancing
+        ///
+        ///     Partitions passed to the handler represent the entire set of partitions to consume from.
+        ///     There will be exactly one call to the partitions revoked or partitions lost handler (if
+        ///     they have been set using SetPartitionsRevokedHandler / SetPartitionsLostHandler)
+        ///     corresponding to every call to this handler. Note: this behavior differs from that of the
+        ///     Java consumer.
+        ///
+        ///     ## COOPERATIVE (Incremental) Rebalancing
+        ///
+        ///     Partitions passed to the handler are an incremental assignment - are an additional set
+        ///     of partitions to consume from in addition to those already being consumed from.
         /// </summary>
+        /// <remarks>
+        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
+        ///
+        ///     (Incremental)Assign/Unassign must not be called in the handler.
+        ///
+        ///     Exceptions: Any exception thrown by your partitions assigned handler will be wrapped
+        ///     in a ConsumeException with ErrorCode ErrorCode.Local_Application and thrown by the
+        ///     initiating call to Consume.
+        /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsAssignedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartition>> partitionAssignmentHandler)
         {
@@ -362,25 +391,27 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     This handler is called immediately prior to a group partition assignment being
-        ///     revoked. The second parameter provides the set of partitions the consumer is 
-        ///     currently assigned to, and the current position of the consumer on each of these
-        ///     partitions.
+        ///     Specify a handler that will be called immediately prior to the consumer's current assignment
+        ///     being revoked, allowing the application to take action (e.g. offsets committed to a custom
+        ///     store) before the consumer gives up ownership of the partitions.
         ///
-        ///     The return value of the handler specifies the partitions/offsets the consumer
-        ///     should be assigned to following completion of this method (typically empty).
+        ///     The value returned from your handler specifies the partitions/offsets the consumer should
+        ///     be assigned to read from following completion of this method (most typically empty). This
+        ///     partitions revoked handler variant may not be specified when incremental rebalancing is in use
+        ///     - in that case, the set of partitions the consumer is reading from may never deviate from
+        ///     the set that it has been assigned by the group.
+        ///
+        ///     The second parameter provided to the handler provides the set of partitions the consumer is
+        ///     currently assigned to, and the current position of the consumer on each of these partitions.
         /// </summary>
         /// <remarks>
-        ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
-        ///     
+        ///     Executes as a side-effect of the Consumer.Consume/Close/Dispose call (on the same thread).
+        ///
         ///     (Incremental)Assign/Unassign must not be called in the handler.
         ///
-        ///     Exceptions: Any exception thrown by your partitions revoked handler
-        ///     will be wrapped in a ConsumeException with ErrorCode
-        ///     ErrorCode.Local_Application and thrown by the initiating call to Consume/Close.
-        ///
-        ///     PartitionsRevoked handlers that return a set of partitions are not supported in
-        ///     the COOPERATIVE case.
+        ///     Exceptions: Any exception thrown by your partitions revoked handler will be wrapped in a
+        ///     ConsumeException with ErrorCode ErrorCode.Local_Application and thrown by the initiating call
+        ///     to Consume/Close.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler)
@@ -396,22 +427,38 @@ namespace Confluent.Kafka
             return this;
         }
 
-
         /// <summary>
-        ///     MH: Update text..
-        ///     This handler is called immediately prior to a group partition assignment being
-        ///     revoked. The second parameter provides the set of partitions the consumer is 
-        ///     currently assigned to, and the current position of the consumer on each of these
-        ///     partitions.
+        ///     Specify a handler that will be called immediately prior to partitions being revoked
+        ///     from the consumer's current assignment, allowing the application to take action
+        ///     (e.g. offsets committed to a custom store) before the consumer gives up ownership of
+        ///     the partitions.
+        ///
+        ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
+        ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
+        ///
+        ///     ## EAGER Rebalancing
+        ///
+        ///     The second parameter provides the entire set of partitions the consumer is currently
+        ///     assigned to, and the current position of the consumer on each of these partitions.
+        ///     The consumer will stop consuming from all partitions following execution of this
+        ///     handler.
+        ///
+        ///     ## COOPERATIVE (Incremental) Rebalancing
+        ///
+        ///     The second parameter provides the subset of the partitions assigned to the consumer
+        ///     which are being revoked, and the current position of the consumer on each of these
+        ///     partitions. The consumer will stop consuming from this set of partitions following
+        ///     execution of this handler, and continue reading from any remaining partitions.
         /// </summary>
         /// <remarks>
-        ///     May execute as a side-effect of the Consumer.Consume call (on the same thread).
-        ///     
-        ///     Assign/Unassign must not be called in the handler.
+        ///     May execute as a side-effect of the Consumer.Consume/Close/Dispose call (on the same
+        ///     thread).
         ///
-        ///     Exceptions: Any exception thrown by your partitions revoked handler
-        ///     will be wrapped in a ConsumeException with ErrorCode
-        ///     ErrorCode.Local_Application and thrown by the initiating call to Consume.
+        ///     (Incremental)Assign/Unassign must not be called in the handler.
+        ///
+        ///     Exceptions: Any exception thrown by your partitions revoked handler will be wrapped
+        ///     in a ConsumeException with ErrorCode ErrorCode.Local_Application and thrown by the
+        ///     initiating call to Consume.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsRevokedHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartitionOffset>> partitionsRevokedHandler)
@@ -431,10 +478,32 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     TODO
+        ///     Specify a handler that will be called when the consumer detects that it has lost ownership
+        ///     of its partition assignment (fallen out of the group). The application should not commit
+        ///     offsets in this case, since the partitions will likely be owned by other consumers in the
+        ///     group (offset commits to Kafka will likely fail).
+        ///
+        ///     The value returned from your handler specifies the partitions/offsets the consumer should
+        ///     be assigned to read from following completion of this method (most typically empty). This
+        ///     partitions lost handler variant may not be specified when incremental rebalancing is in use
+        ///     - in that case, the set of partitions the consumer is reading from may never deviate from
+        ///     the set that it has been assigned by the group.
+        ///
+        ///     The second parameter provided to the handler provides the set of all partitions the consumer
+        ///     is currently assigned to, and the current position of the consumer on each of these partitions.
+        ///
+        ///     If this handler is not specified, the partitions revoked handler (if specified) will be called
+        ///     instead if partitions are lost.
         /// </summary>
         /// <remarks>
-        ///     Not supported in cooperative case.
+        ///     May execute as a side-effect of the Consumer.Consume/Close/Dispose call (on the same
+        ///     thread).
+        ///
+        ///     (Incremental)Assign/Unassign must not be called in the handler.
+        ///
+        ///     Exceptions: Any exception thrown by your partitions revoked handler will be wrapped
+        ///     in a ConsumeException with ErrorCode ErrorCode.Local_Application and thrown by the
+        ///     initiating call to Consume.
         /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsLostHandler(
             Func<IConsumer<TKey, TValue>, List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsLostHandler)
@@ -451,8 +520,27 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     TODO
+        ///     Specify a handler that will be called when the consumer detects that it has lost ownership
+        ///     of its partition assignment (fallen out of the group). The application should not commit
+        ///     offsets in this case, since the partitions will likely be owned by other consumers in the
+        ///     group (offset commits to Kafka will likely fail).
+        ///
+        ///     The second parameter provided to the handler provides the set of all partitions the consumer
+        ///     is currently assigned to, and the current position of the consumer on each of these partitions.
+        ///
+        ///     If this handler is not specified, the partitions revoked handler (if specified) will be called
+        ///     instead if partitions are lost.
         /// </summary>
+        /// <remarks>
+        ///     May execute as a side-effect of the Consumer.Consume/Close/Dispose call (on the same
+        ///     thread).
+        ///
+        ///     (Incremental)Assign/Unassign must not be called in the handler.
+        ///
+        ///     Exceptions: Any exception thrown by your partitions revoked handler will be wrapped
+        ///     in a ConsumeException with ErrorCode ErrorCode.Local_Application and thrown by the
+        ///     initiating call to Consume.
+        /// </remarks>
         public ConsumerBuilder<TKey, TValue> SetPartitionsLostHandler(
             Action<IConsumer<TKey, TValue>, List<TopicPartitionOffset>> partitionsLostHandler)
         {
