@@ -29,7 +29,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test <see cref="Consumer.IncrementalAssign" /> and <see cref="Consumer.IncrementalUnassign" />.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_Incremental_1(string bootstrapServers)
+        public void Consumer_IncrementalAssign(string bootstrapServers)
         {
             LogToFile("start Consumer_Incremental_1");
 
@@ -65,30 +65,30 @@ namespace Confluent.Kafka.IntegrationTests
 
                 consumer.IncrementalUnassign(new TopicPartition(topic1.Name, 0));
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 2, 1);
-                var cr4 = consumer.Consume(TimeSpan.FromSeconds(2));
-                Assert.Null(cr4);
+                var cr3 = consumer.Consume(TimeSpan.FromSeconds(2));
+                Assert.Null(cr3);
 
                 Util.ProduceNullStringMessages(bootstrapServers, topic2.Name, 3, 1);
+                var cr4 = consumer.Consume(TimeSpan.FromSeconds(10));
+                Assert.NotNull(cr4);
+                Assert.Equal(1, cr4.Offset);
+                Assert.Equal(topic2.Name, cr4.Topic);
+                Assert.Equal(0, (int)cr4.Partition);
+                Assert.Equal(3, cr4.Message.Value.Length);
+
+                consumer.IncrementalAssign(new TopicPartition(topic1.Name, 0));
                 var cr5 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr5);
                 Assert.Equal(1, cr5.Offset);
-                Assert.Equal(topic2.Name, cr5.Topic);
+                Assert.Equal(topic1.Name, cr5.Topic);
                 Assert.Equal(0, (int)cr5.Partition);
-                Assert.Equal(3, cr5.Message.Value.Length);
-
-                consumer.IncrementalAssign(new TopicPartition(topic1.Name, 0));
-                var cr6 = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.NotNull(cr1);
-                Assert.Equal(1, cr1.Offset);
-                Assert.Equal(topic1.Name, cr1.Topic);
-                Assert.Equal(0, (int)cr1.Partition);
 
                 consumer.IncrementalUnassign(new TopicPartition(topic1.Name, 0));
                 consumer.Unassign();
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_Incremental_1");
+            LogToFile("end   Consumer_IncrementalAssign");
         }
     }
 }

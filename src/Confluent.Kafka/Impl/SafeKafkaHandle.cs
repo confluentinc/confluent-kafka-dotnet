@@ -761,7 +761,7 @@ namespace Confluent.Kafka.Impl
 
         private void AssignImpl(IEnumerable<TopicPartitionOffset> partitions,
                                 Func<IntPtr, IntPtr, ErrorCode> assignMethodErr,
-                                Func<IntPtr, IntPtr, IntPtr> assgnMethodError)
+                                Func<IntPtr, IntPtr, IntPtr> assignMethodError)
         {
             ThrowIfHandleClosed();
 
@@ -789,11 +789,11 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            ErrorCode err = Errorcode.NoError;
+            ErrorCode err = ErrorCode.NoError;
             Error error = null;
 
-            if (assignMethodErr) { err = assignMethodErr(handle, list); }
-            if (assignMethodError) { error = new Error(assignMethodError(handle, list)); }
+            if (assignMethodErr != null) { err = assignMethodErr(handle, list); }
+            if (assignMethodError != null) { error = new Error(assignMethodError(handle, list)); }
 
             if (list != IntPtr.Zero)
             {
@@ -805,13 +805,13 @@ namespace Confluent.Kafka.Impl
         }
 
         internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
-            => AssignImpl(partitions, Librdkafka.assign);
+            => AssignImpl(partitions, Librdkafka.assign, null);
 
         internal void IncrementalAssign(IEnumerable<TopicPartitionOffset> partitions)
-            => AssignImpl(partitions, Librdkafka.incremental_assign);
+            => AssignImpl(partitions, null, Librdkafka.incremental_assign);
 
         internal void IncrementalUnassign(IEnumerable<TopicPartitionOffset> partitions)
-            => AssignImpl(partitions, Librdkafka.incremental_unassign);
+            => AssignImpl(partitions, null, Librdkafka.incremental_unassign);
 
         internal bool AssignmentLost
         {

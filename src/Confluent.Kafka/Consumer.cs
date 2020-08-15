@@ -222,7 +222,7 @@ namespace Confluent.Kafka
                         int i = 0;
                         foreach (var p in assignTo)
                         {
-                            if (p.TopicPartition != partitions[i++].TopicPartition)
+                            if (p.TopicPartition != partitions[i++])
                             {
                                 throw new InvalidOperationException("Partitions assigned handler must not return a different set of topic partitions than it was provided");
                             }
@@ -269,7 +269,9 @@ namespace Confluent.Kafka
 
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
                     var assignTo = kafkaHandle.AssignmentLost
-                        ? partitionsLostHandler(assignmentWithPositions)
+                        ? (partitionsLostHandler != null
+                            ? partitionsLostHandler(assignmentWithPositions)
+                            : partitionsRevokedHandler(assignmentWithPositions))
                         : partitionsRevokedHandler(assignmentWithPositions);
                     lock (assignCallCountLockObj)
                     {
