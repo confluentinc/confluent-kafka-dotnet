@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
+
 #pragma warning disable CS0618
 
 using System;
@@ -64,56 +65,7 @@ namespace Confluent.SchemaRegistry.Serdes
             this.initialBufferSize = initialBufferSize;
             this.subjectNameStrategy = subjectNameStrategy;
 
-            Type writerType = typeof(T);
-            if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
-            {
-                writerSchema = (global::Avro.Schema)typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
-            }
-            else if (writerType.Equals(typeof(int)))
-            {
-                writerSchema = global::Avro.Schema.Parse("int");
-            }
-            else if (writerType.Equals(typeof(bool)))
-            {
-                writerSchema = global::Avro.Schema.Parse("boolean");
-            }
-            else if (writerType.Equals(typeof(double)))
-            {
-                writerSchema = global::Avro.Schema.Parse("double");
-            }
-            else if (writerType.Equals(typeof(string)))
-            {
-                // Note: It would arguably be better to make this a union with null, to
-                // exactly match the .NET string type, however we don't for consistency
-                // with the Java Avro serializer.
-                writerSchema = global::Avro.Schema.Parse("string");
-            }
-            else if (writerType.Equals(typeof(float)))
-            {
-                writerSchema = global::Avro.Schema.Parse("float");
-            }
-            else if (writerType.Equals(typeof(long)))
-            {
-                writerSchema = global::Avro.Schema.Parse("long");
-            }
-            else if (writerType.Equals(typeof(byte[])))
-            {
-                // Note: It would arguably be better to make this a union with null, to
-                // exactly match the .NET byte[] type, however we don't for consistency
-                // with the Java Avro serializer.
-                writerSchema = global::Avro.Schema.Parse("bytes");
-            }
-            else if (writerType.Equals(typeof(Null)))
-            {
-                writerSchema = global::Avro.Schema.Parse("null");
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"AvroSerializer only accepts type parameters of int, bool, double, string, float, " +
-                    "long, byte[], instances of ISpecificRecord and subclasses of SpecificFixed."
-                );
-            }
+            writerSchema = TypeExtensions.GetSchema<T>();
 
             avroWriter = new SpecificWriter<T>(writerSchema);
             writerSchemaString = writerSchema.ToString();
@@ -127,9 +79,9 @@ namespace Confluent.SchemaRegistry.Serdes
                 try
                 {
                     string fullname = null;
-                    if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is Avro.RecordSchema)
+                    if (data is ISpecificRecord && ((ISpecificRecord) data).Schema is Avro.RecordSchema)
                     {
-                        fullname = ((Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
+                        fullname = ((Avro.RecordSchema) ((ISpecificRecord) data).Schema).Fullname;
                     }
 
                     string subject = this.subjectNameStrategy != null
