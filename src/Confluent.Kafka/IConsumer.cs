@@ -287,7 +287,8 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Incrementally add <paramref name="partition" />
-        ///     to the current assignment.
+        ///     to the current assignment, starting consumption
+        ///     from the specified offset.
         /// </summary>
         /// <param name="partition">
         ///     The additional partition to consume from.
@@ -302,7 +303,8 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Incrementally add <paramref name="partitions" />
-        ///     to the current assignment.
+        ///     to the current assignment, starting consumption
+        ///     from the specified offsets.
         /// </summary>
         /// <param name="partitions">
         ///     The set of additional partitions to consume from.

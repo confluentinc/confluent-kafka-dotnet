@@ -294,28 +294,28 @@ namespace Confluent.Kafka
         ///     been received by this consumer.
         ///
         ///     The actual partitions to consume from and start offsets are specified by the return value
-        ///     of the handler. This set of partitions is not required to match the assignment provided
-        ///     by the consumer group, but typically will. Partition offsets may be a specific offset, or
-        ///     special value (Beginning, End or Unset). If Unset, consumption will resume from the
-        ///     last committed offset for each partition, or if there is no committed offset, in accordance
-        ///     with the `auto.offset.reset` configuration property.
+        ///     of the handler. Partition offsets may be a specific offset, or special value (Beginning, End
+        ///     or Unset). If Unset, consumption will resume from the last committed offset for each
+        ///     partition, or if there is no committed offset, in accordance with the `auto.offset.reset`
+        ///     configuration property.
         ///
         ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
         ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
         ///
         ///     ## EAGER Rebalancing
         ///
-        ///     Partitions passed to (and returned from) the handler represent the entire set of
-        ///     partitions to consume from. There will be exactly one call to the partitions revoked
-        ///     or partitions lost handler (if they have been set using SetPartitionsRevokedHandler
-        ///     / SetPartitionsLostHandler) corresponding to every call to this handler. Note: this
-        ///     behavior differs from that of the Java consumer.
+        ///     The set of partitions returned from your handler may differ from that provided by the
+        ///     group (though they should typically be the same). These partitions are the
+        ///     entire set of partitions to consume from. There will be exactly one call to the
+        ///     partitions revoked or partitions lost handler (if they have been set using
+        ///     SetPartitionsRevokedHandler / SetPartitionsLostHandler) corresponding to every call to
+        ///     this handler.
         ///
         ///     ## COOPERATIVE (Incremental) Rebalancing
         ///
-        ///     Partitions passed to (and returned from) the handler are an incremental assignment -
-        ///     are an additional set of partitions to consume from in addition to those already being
-        ///     consumed from.
+        ///     The set of partitions returned from your handler must match that provided by the
+        ///     group. These partitions are an incremental assignment - are in additional to those
+        ///     already being consumed from.
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
@@ -355,13 +355,12 @@ namespace Confluent.Kafka
         ///     Partitions passed to the handler represent the entire set of partitions to consume from.
         ///     There will be exactly one call to the partitions revoked or partitions lost handler (if
         ///     they have been set using SetPartitionsRevokedHandler / SetPartitionsLostHandler)
-        ///     corresponding to every call to this handler. Note: this behavior differs from that of the
-        ///     Java consumer.
+        ///     corresponding to every call to this handler.
         ///
         ///     ## COOPERATIVE (Incremental) Rebalancing
         ///
-        ///     Partitions passed to the handler are an incremental assignment - are an additional set
-        ///     of partitions to consume from in addition to those already being consumed from.
+        ///     Partitions passed to the handler are an incremental assignment - are in additional to those
+        ///     already being consumed from.
         /// </summary>
         /// <remarks>
         ///     Executes as a side-effect of the Consumer.Consume call (on the same thread).
@@ -393,7 +392,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Specify a handler that will be called immediately prior to the consumer's current assignment
         ///     being revoked, allowing the application to take action (e.g. offsets committed to a custom
-        ///     store) before the consumer gives up ownership of the partitions.
+        ///     store) before the consumer gives up ownership of the partitions. The Func partitions revoked
+        ///     handler variant is not supported in the incremental rebalancing case.
         ///
         ///     The value returned from your handler specifies the partitions/offsets the consumer should
         ///     be assigned to read from following completion of this method (most typically empty). This
@@ -430,7 +430,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Specify a handler that will be called immediately prior to partitions being revoked
         ///     from the consumer's current assignment, allowing the application to take action
-        ///     (e.g. offsets committed to a custom store) before the consumer gives up ownership of
+        ///     (e.g. commit offsets to a custom store) before the consumer gives up ownership of
         ///     the partitions.
         ///
         ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
@@ -491,6 +491,7 @@ namespace Confluent.Kafka
         ///
         ///     The second parameter provided to the handler provides the set of all partitions the consumer
         ///     is currently assigned to, and the current position of the consumer on each of these partitions.
+        ///     Following completion of this handler, the consumer will stop consuming from all partitions.
         ///
         ///     If this handler is not specified, the partitions revoked handler (if specified) will be called
         ///     instead if partitions are lost.
