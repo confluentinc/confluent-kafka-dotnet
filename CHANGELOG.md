@@ -1,3 +1,10 @@
+# 1.5.1
+
+## Enhancements
+
+- Added support for OAuth Authentication via SASL/OAUTHBEARER (KIP-255) ([thtp](https://github.com/thtp)).
+
+
 # 1.5.0
 
 ## Enhancements

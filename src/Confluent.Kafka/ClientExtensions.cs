@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         ///     communicated to the broker as additional key-value
         ///     pairs during the initial client response as per
         ///     https://tools.ietf.org/html/rfc7628#section-3.1.
-        /// </param> 
+        /// </param>
         /// <seealso cref="OAuthBearerSetTokenFailure"/>
         public static void OAuthBearerSetToken(this IClient client, string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions = null)
         {
@@ -46,7 +46,7 @@ namespace Confluent.Kafka
         ///     The SASL/OAUTHBEARER token refresh callback or
         ///     event handler should invoke this method upon failure.
         /// </summary>
-        /// <param name="client"> 
+        /// <param name="client">
         ///     the instance of a <see cref="IClient"/>
         /// </param>
         /// <param name="error">
