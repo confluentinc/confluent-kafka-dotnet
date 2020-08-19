@@ -1556,5 +1556,34 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
+        internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
+        {
+            if (tokenValue == null) throw new ArgumentNullException(nameof(tokenValue));
+
+            var extensionsArray = extensions.ToStringArray();
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var errorCode = Librdkafka.oauthbearer_set_token(handle,
+                tokenValue, lifetimeMs, principalName,
+                extensionsArray, (UIntPtr) (extensionsArray?.Length ?? 0),
+                errorStringBuilder, (UIntPtr) errorStringBuilder.Capacity);
+
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(CreatePossiblyFatalError(errorCode, errorStringBuilder.ToString()));
+            }
+        }
+
+        internal void OAuthBearerSetTokenFailure(string errstr)
+        {
+            if (errstr == null) throw new ArgumentNullException(nameof(errstr));
+            if (string.IsNullOrEmpty(errstr)) throw new ArgumentException($"Argument '{nameof(errstr)}' must be a non-empty string");
+
+            var errorCode = Librdkafka.oauthbearer_set_token_failure(handle, errstr);
+
+            if (errorCode != ErrorCode.NoError)
+            {
+                throw new KafkaException(errorCode);
+            }
+        }
     }
 }
