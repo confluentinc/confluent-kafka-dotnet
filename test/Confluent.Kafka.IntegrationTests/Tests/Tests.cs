@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -78,6 +79,7 @@ namespace Confluent.Kafka.IntegrationTests
         private string partitionedTopic;
 
         private static List<object[]> kafkaParameters;
+        private static List<object[]> oAuthBearerKafkaParameters;
 
         private object logLockObj = new object();
         private void LogToFile(string msg)
@@ -89,6 +91,12 @@ namespace Confluent.Kafka.IntegrationTests
                 // File.AppendAllLines("/tmp/test.txt", new [] { msg });
             }
         }
+
+        private void LogToFileStartTest([CallerMemberName] string callerMemberName = null)
+            => LogToFile($"start {callerMemberName}");
+
+        private void LogToFileEndTest([CallerMemberName] string callerMemberName = null)
+            => LogToFile($"end   {callerMemberName}");
 
         public Tests(GlobalFixture globalFixture)
         {
@@ -112,10 +120,26 @@ namespace Confluent.Kafka.IntegrationTests
                 var json = JObject.Parse(File.ReadAllText(jsonPath));
                 kafkaParameters = new List<object[]>
                 {
-                    new object[] { json["bootstrapServers"].ToString() }
+                    new object[] {json["bootstrapServers"].ToString()}
                 };
             }
             return kafkaParameters;
+        }
+
+        public static IEnumerable<object[]> OAuthBearerKafkaParameters()
+        {
+            if (oAuthBearerKafkaParameters == null)
+            {
+                var assemblyPath = typeof(Tests).GetTypeInfo().Assembly.Location;
+                var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
+                var jsonPath = Path.Combine(assemblyDirectory, "testconf.json");
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                oAuthBearerKafkaParameters = new List<object[]>
+                {
+                    new object[] {json["oauthbearerBootstrapServers"].ToString()}
+                };
+            }
+            return oAuthBearerKafkaParameters;
         }
     }
 }

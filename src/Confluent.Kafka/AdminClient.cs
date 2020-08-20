@@ -501,7 +501,6 @@ namespace Confluent.Kafka
         public int AddBrokers(string brokers)
             => kafkaHandle.AddBrokers(brokers);
 
-
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IClient.Name" />
         /// </summary>

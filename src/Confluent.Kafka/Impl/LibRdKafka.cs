@@ -168,6 +168,9 @@ namespace Confluent.Kafka.Impl
             _conf_set_offset_commit_cb = (Action<IntPtr, CommitDelegate>)methods.Single(m => m.Name == "rd_kafka_conf_set_offset_commit_cb").CreateDelegate(typeof(Action<IntPtr, CommitDelegate>));
             _conf_set_log_cb = (Action<IntPtr, LogDelegate>)methods.Single(m => m.Name == "rd_kafka_conf_set_log_cb").CreateDelegate(typeof(Action<IntPtr, LogDelegate>));
             _conf_set_stats_cb = (Action<IntPtr, StatsDelegate>)methods.Single(m => m.Name == "rd_kafka_conf_set_stats_cb").CreateDelegate(typeof(Action<IntPtr, StatsDelegate>));
+            _conf_set_oauthbearer_token_refresh_cb = (Action<IntPtr, OAuthBearerTokenRefreshDelegate>)methods.Single(m => m.Name == "rd_kafka_conf_set_oauthbearer_token_refresh_cb").CreateDelegate(typeof(Action<IntPtr, OAuthBearerTokenRefreshDelegate>));
+            _oauthbearer_set_token = (Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_oauthbearer_set_token").CreateDelegate(typeof(Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>));
+            _oauthbearer_set_token_failure = (Func<IntPtr, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_oauthbearer_set_token_failure").CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
             _conf_set_default_topic_conf = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_set_default_topic_conf").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _conf_get = (ConfGet)methods.Single(m => m.Name == "rd_kafka_conf_get").CreateDelegate(typeof(ConfGet));
             _topic_conf_get = (ConfGet)methods.Single(m => m.Name == "rd_kafka_topic_conf_get").CreateDelegate(typeof(ConfGet));
@@ -518,6 +521,9 @@ namespace Confluent.Kafka.Impl
         internal delegate int StatsDelegate(IntPtr rk, IntPtr json, UIntPtr json_len, IntPtr opaque);
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
+        internal delegate void OAuthBearerTokenRefreshDelegate(IntPtr rk, IntPtr oauthbearer_config, IntPtr opaque);
+
+        [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
         internal delegate int PartitionerDelegate(
             /* const rd_kafka_topic_t * */ IntPtr rkt,
             IntPtr keydata,
@@ -641,6 +647,20 @@ namespace Confluent.Kafka.Impl
         private static Action<IntPtr, StatsDelegate> _conf_set_stats_cb;
         internal static void conf_set_stats_cb(IntPtr conf, StatsDelegate stats_cb)
             => _conf_set_stats_cb(conf, stats_cb);
+
+        private static Action<IntPtr, OAuthBearerTokenRefreshDelegate> _conf_set_oauthbearer_token_refresh_cb;
+        internal static void conf_set_oauthbearer_token_refresh_cb(IntPtr conf, OAuthBearerTokenRefreshDelegate oauthbearer_token_refresh_cb)
+            => _conf_set_oauthbearer_token_refresh_cb(conf, oauthbearer_token_refresh_cb);
+
+        private static Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode> _oauthbearer_set_token;
+        internal static ErrorCode oauthbearer_set_token(IntPtr rk,
+            string token_value, long md_lifetime_ms, string md_principal_name, string[] extensions, UIntPtr extensions_size,
+            StringBuilder errstr, UIntPtr errstr_size)
+            => _oauthbearer_set_token(rk, token_value, md_lifetime_ms, md_principal_name, extensions, extensions_size, errstr, errstr_size);
+
+        private static Func<IntPtr, string, ErrorCode> _oauthbearer_set_token_failure;
+        internal static ErrorCode oauthbearer_set_token_failure(IntPtr rk, string errstr)
+            => _oauthbearer_set_token_failure(rk, errstr);
 
         private static Action<IntPtr, IntPtr> _conf_set_default_topic_conf;
         internal static void conf_set_default_topic_conf(IntPtr conf, IntPtr tconf)
