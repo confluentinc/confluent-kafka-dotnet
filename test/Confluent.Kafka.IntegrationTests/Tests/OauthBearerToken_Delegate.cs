@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(consumerCallsCount > 0);
 
             // test Producer
-            var producerConfig = new ProducerConfig(config);            
+            var producerConfig = new ProducerConfig(config);
             var producerCallsCount = 0;
             var producer = new ProducerBuilder<string, string>(producerConfig)
                 .SetOAuthBearerTokenRefreshHandler((client, cfg) =>

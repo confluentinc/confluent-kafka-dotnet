@@ -9,7 +9,7 @@ namespace Confluent.Kafka.IntegrationTests
         public void OAuthBearerToken_PublishConsume(string bootstrapServers)
         {
             LogToFileStartTest();
-            
+
             const string principal = "Tester";
             var issuedAt = DateTimeOffset.UtcNow;
             var expiresAt = issuedAt.AddMinutes(5);
@@ -45,26 +45,26 @@ namespace Confluent.Kafka.IntegrationTests
             var consumer = new ConsumerBuilder<string, string>(consumerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .Build();
-            
+
             consumer.Subscribe(partitionedTopic);
             producer.Produce(partitionedTopic, message);
             producer.Flush(TimeSpan.FromSeconds(30));
             var received = consumer.Consume(TimeSpan.FromSeconds(30));
-            
+
             Assert.NotNull(received);
             consumer.Commit(received);
-            
+
             Assert.Equal(message.Key, received.Message.Key);
             Assert.Equal(message.Value, received.Message.Value);
 
             LogToFileEndTest();
         }
-        
+
         [Theory, MemberData(nameof(OAuthBearerKafkaParameters))]
         public void OAuthBearerToken_PublishConsume_InvalidScope(string bootstrapServers)
         {
             LogToFileStartTest();
-            
+
             const string principal = "Tester";
             var issuedAt = DateTimeOffset.UtcNow;
             var expiresAt = issuedAt.AddMinutes(5);
@@ -93,7 +93,7 @@ namespace Confluent.Kafka.IntegrationTests
                 GroupId = $"{Guid.NewGuid()}",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
-            
+
             Error producerError = null;
             var producer = new ProducerBuilder<string, string>(producerConfig)
                 .SetOAuthBearerTokenRefreshHandler(Callback)
@@ -104,7 +104,7 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetOAuthBearerTokenRefreshHandler(Callback)
                 .SetErrorHandler((c, e) => consumerError = e)
                 .Build();
-            
+
             consumer.Subscribe(partitionedTopic);
             producer.Produce(partitionedTopic, message);
             producer.Flush(TimeSpan.FromSeconds(5));
