@@ -2,6 +2,9 @@
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    ///     IClient extension methods
+    /// </summary>
     public static class ClientExtensions
     {
         /// <summary>
