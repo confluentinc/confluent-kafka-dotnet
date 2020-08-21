@@ -20,6 +20,7 @@ using Avro.Generic;
 using Confluent.Kafka;
 using System;
 using System.Linq;
+using Avro.Specific;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -59,13 +60,13 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config == null) { return; }
 
             var nonAvroConfig = config.Where(item => !item.Key.StartsWith("avro."));
-            if (nonAvroConfig.Count() > 0)
+            if (nonAvroConfig.Any())
             {
                 throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {nonAvroConfig.First().Key}.");
             }
 
             var avroConfig = config.Where(item => item.Key.StartsWith("avro."));
-            if (avroConfig.Count() != 0)
+            if (avroConfig.Any())
             {
                 throw new ArgumentException($"AvroDeserializer: unknown configuration parameter {avroConfig.First().Key}");
             }
