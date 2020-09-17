@@ -122,7 +122,7 @@ namespace AvroBlogExample
                             var consumeResult = consumer.Consume(cts.Token);
 
                             Console.WriteLine(
-                                consumeResult.Message.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                                consumeResult.Message.Timestamp.DateTimeOffset.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")
                                 + $": [{consumeResult.Message.Value.Severity}] {consumeResult.Message.Value.Message}");
                         }
                         catch (ConsumeException e)

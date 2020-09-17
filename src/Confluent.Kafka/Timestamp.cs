@@ -41,9 +41,21 @@ namespace Confluent.Kafka
         ///     the number of seconds past this UTC time, excluding 
         ///     leap seconds.
         /// </summary>
-        public static readonly DateTime UnixTimeEpoch 
-            = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        [Obsolete("Use UnixTimeEpochDateTimeOffset instead")]
+        public static DateTime UnixTimeEpoch 
+            => UnixTimeEpochDateTimeOffset.UtcDateTime;
 
+        /// <summary>
+        ///     Unix epoch as a DateTimeOffset. Unix time is defined as 
+        ///     the number of seconds past this UTC time, excluding 
+        ///     leap seconds.
+        /// </summary>
+        public static readonly DateTimeOffset UnixTimeEpochDateTimeOffset
+#if (!NETCOREAPP2_1)
+            = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+#else
+            = DateTimeOffset.UnixEpoch;
+#endif
         private const long UnixTimeEpochMilliseconds 
             = 62135596800000; // = UnixTimeEpoch.TotalMiliseconds
 
@@ -74,11 +86,29 @@ namespace Confluent.Kafka
         /// <param name="type">
         ///     The type of the timestamp.
         /// </param>
+        [Obsolete("Use constructor with DateTimeOffset instead")]
         public Timestamp(DateTime dateTime, TimestampType type)
         {
             Type = type;
             UnixTimestampMs = DateTimeToUnixTimestampMs(dateTime);
         }
+
+        /// <summary>
+        ///     Initializes a new instance of the Timestamp structure.
+        /// </summary>
+        /// <param name="dateTimeOffset">
+        ///     The DateTimeOffset value corresponding to the timestamp.
+        /// </param>
+        /// <param name="type">
+        ///     The type of the timestamp.
+        /// </param>
+        public Timestamp(DateTimeOffset dateTimeOffset, TimestampType type)
+        {
+            Type = type;
+            UnixTimestampMs = DateTimeOffsetToUnixTimestampMs(dateTimeOffset);
+        }
+
+
 
         /// <summary>
         ///     Initializes a new instance of the Timestamp structure.
@@ -89,6 +119,7 @@ namespace Confluent.Kafka
         /// <param name="dateTime">
         ///     The DateTime value corresponding to the timestamp.
         /// </param>
+        [Obsolete("Use constructor with DateTimeOffset instead")]
         public Timestamp(DateTime dateTime)
             : this(dateTime, TimestampType.CreateTime) 
         {}
@@ -101,7 +132,7 @@ namespace Confluent.Kafka
         ///     The DateTimeOffset value corresponding to the timestamp.
         /// </param>
         public Timestamp(DateTimeOffset dateTimeOffset)
-            : this(dateTimeOffset.UtcDateTime, TimestampType.CreateTime) 
+            : this(dateTimeOffset, TimestampType.CreateTime) 
         {}
 
         /// <summary>
@@ -117,8 +148,15 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Gets the UTC DateTime corresponding to the <see cref="UnixTimestampMs"/>.
         /// </summary>
+        [Obsolete("Use the DateTimeOffset property instead")]
         public DateTime UtcDateTime
             => UnixTimestampMsToDateTime(UnixTimestampMs);
+
+        /// <summary>
+        ///     Gets the DateTimeOffset corresponding to the <see cref="UnixTimestampMs"/>.
+        /// </summary>
+        public DateTimeOffset DateTimeOffset
+            => UnixTimestampMsToDateTimeOffset(UnixTimestampMs);
 
         /// <summary>
         ///     Determines whether two Timestamps have the same value.
@@ -205,9 +243,26 @@ namespace Confluent.Kafka
         ///     The milliseconds unix timestamp corresponding to <paramref name="dateTime"/>
         ///     rounded down to the previous millisecond.
         /// </returns>
+        [Obsolete("Use DateTimeOffsetToUnixTimestampMs instead")]
         public static long DateTimeToUnixTimestampMs(DateTime dateTime)
-            => dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond - UnixTimeEpochMilliseconds;
+            => DateTimeOffsetToUnixTimestampMs(dateTime);
 
+        /// <summary>
+        ///     Convert a DateTimeOffset instance to a milliseconds unix timestamp.
+        /// </summary>
+        /// <param name="dateTimeOffset">
+        ///     The DateTimeOffset value to convert.
+        /// </param>
+        /// <returns>
+        ///     The milliseconds unix timestamp corresponding to <paramref name="dateTimeOffset"/>
+        ///     rounded down to the previous millisecond.
+        /// </returns>
+        public static long DateTimeOffsetToUnixTimestampMs(DateTimeOffset dateTimeOffset)
+#if NET45
+            => dateTimeOffset.UtcTicks / TimeSpan.TicksPerMillisecond - UnixTimeEpochMilliseconds;
+#else
+            => dateTimeOffset.ToUnixTimeMilliseconds();
+#endif
         /// <summary>
         ///     Convert a milliseconds unix timestamp to a DateTime value.
         /// </summary>
@@ -217,7 +272,24 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The DateTime value associated with <paramref name="unixMillisecondsTimestamp"/> with Utc Kind.
         /// </returns>
+        [Obsolete("Use UnixTimestampMsToDateTimeOffset instead")]
         public static DateTime UnixTimestampMsToDateTime(long unixMillisecondsTimestamp)
-            => UnixTimeEpoch + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+            => UnixTimestampMsToDateTimeOffset(unixMillisecondsTimestamp).UtcDateTime;
+
+        /// <summary>
+        ///     Convert a milliseconds unix timestamp to a DateTimeOffset value.
+        /// </summary>
+        /// <param name="unixMillisecondsTimestamp">
+        ///     The milliseconds unix timestamp to convert.
+        /// </param>
+        /// <returns>
+        ///     The DateTimeOffset value associated with <paramref name="unixMillisecondsTimestamp"/>.
+        /// </returns>
+        public static DateTimeOffset UnixTimestampMsToDateTimeOffset(long unixMillisecondsTimestamp)
+#if NET45
+            => UnixTimeEpochDateTimeOffset + TimeSpan.FromMilliseconds(unixMillisecondsTimestamp);
+#else
+            => DateTimeOffset.FromUnixTimeMilliseconds(unixMillisecondsTimestamp);
+#endif
     }
 }

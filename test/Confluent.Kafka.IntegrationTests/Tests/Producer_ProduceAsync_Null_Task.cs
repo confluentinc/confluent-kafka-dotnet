@@ -59,7 +59,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(dr.Message.Key);
                 Assert.Null(dr.Message.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.True(Math.Abs((DateTimeOffset.UtcNow - dr.Message.Timestamp.DateTimeOffset).TotalMinutes) < 1.0);
             }
 
             Assert.Equal((Partition)0, drs[0].Result.Partition);
@@ -84,7 +84,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Null(dr.Message.Key);
                 Assert.Null(dr.Message.Value);
                 Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                Assert.True(Math.Abs((DateTimeOffset.UtcNow - dr.Message.Timestamp.DateTimeOffset).TotalMinutes) < 1.0);
             }
             
             Assert.Equal((Partition)1, drs2[0].Result.Partition);

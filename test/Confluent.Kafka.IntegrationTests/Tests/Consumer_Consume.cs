@@ -64,7 +64,7 @@ namespace Confluent.Kafka.IntegrationTests
                     if (record.IsPartitionEOF) { break; }
 
                     Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                    Assert.True(Math.Abs((DateTime.UtcNow - record.Message.Timestamp.UtcDateTime).TotalMinutes) < 10.0);
+                    Assert.True(Math.Abs((DateTimeOffset.UtcNow - record.Message.Timestamp.DateTimeOffset).TotalMinutes) < 10.0);
                     msgCnt += 1;
                 }
 

@@ -64,12 +64,12 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
 
-                var startTime = DateTime.MinValue;
-                while (startTime == DateTime.MinValue || DateTime.Now - startTime < TimeSpan.FromSeconds(6))
+                var startTime = DateTimeOffset.MinValue;
+                while (startTime == DateTimeOffset.MinValue || DateTimeOffset.Now - startTime < TimeSpan.FromSeconds(6))
                 {
                     var cr = consumer.Consume(TimeSpan.FromMilliseconds(100));
                     if (cr == null) { continue; }
-                    if (startTime == DateTime.MinValue) { startTime = DateTime.Now; }
+                    if (startTime == DateTimeOffset.MinValue) { startTime = DateTimeOffset.Now; }
                 }
 
                 Assert.True(committedCount > 0);

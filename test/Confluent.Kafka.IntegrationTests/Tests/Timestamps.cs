@@ -61,7 +61,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<Null, string> 
                     { 
                         Value = "test-value", 
-                        Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc))
+                        Timestamp = new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero))
                     }).Result);
 
                 // TimestampType: CreateTime (default)
@@ -76,7 +76,7 @@ namespace Confluent.Kafka.IntegrationTests
                         new Message<Null, string>
                         {
                             Value = "test-value", 
-                            Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) 
+                            Timestamp = new Timestamp(DateTimeOffset.Now, TimestampType.LogAppendTime) 
                         }).Result);
 
                 // TimestampType: NotAvailable
@@ -105,7 +105,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<Null, string> 
                     { 
                         Value = "test-value", 
-                        Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc))
+                        Timestamp = new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero))
                     },
                     dh);
 
@@ -121,7 +121,7 @@ namespace Confluent.Kafka.IntegrationTests
                     new Message<Null, string> 
                     { 
                         Value = "test-value", 
-                        Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime)
+                        Timestamp = new Timestamp(DateTimeOffset.Now, TimestampType.LogAppendTime)
                     }, 
                     dh));
 
@@ -151,7 +151,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // TimestampType: CreateTime
                 drs2_task.Add(producer.ProduceAsync(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) }).Result);
+                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero)) }).Result);
 
                 // TimestampType: CreateTime (default)
                 drs2_task.Add(producer.ProduceAsync(
@@ -162,7 +162,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Throws<AggregateException>(() =>
                     producer.ProduceAsync(
                         singlePartitionTopic,
-                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }).Result);
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTimeOffset.Now, TimestampType.LogAppendTime) }).Result);
 
                 // TimestampType: NotAvailable
                 Assert.Throws<AggregateException>(() =>
@@ -181,7 +181,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // TimestampType: CreateTime
                 producer.Produce(
                     singlePartitionTopic,
-                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)) },
+                    new Message<byte[], byte[]> { Timestamp = new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero)) },
                     dh);
 
                 // TimestampType: CreateTime (default)
@@ -193,7 +193,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Throws<ArgumentException>(() =>
                     producer.Produce(
                         singlePartitionTopic,
-                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTime.Now, TimestampType.LogAppendTime) }, dh));
+                        new Message<byte[], byte[]> { Timestamp = new Timestamp(DateTimeOffset.Now, TimestampType.LogAppendTime) }, dh));
 
                 // TimestampType: NotAvailable
                 Assert.Throws<ArgumentException>(() =>
@@ -213,7 +213,7 @@ namespace Confluent.Kafka.IntegrationTests
                 var record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero)));
 
                 assertCloseToNow(consumer, drs_task[2].TopicPartitionOffset);
 
@@ -225,7 +225,7 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero)));
 
                 assertCloseToNow(consumer, drs_produce[2].TopicPartitionOffset);
             }
@@ -242,7 +242,7 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero)));
 
                 assertCloseToNow_byte(consumer, drs2_task[2].TopicPartitionOffset);
 
@@ -254,7 +254,7 @@ namespace Confluent.Kafka.IntegrationTests
                 record = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(record.Message);
                 Assert.Equal(TimestampType.CreateTime, record.Message.Timestamp.Type);
-                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTime(2008, 11, 12, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.Equal(record.Message.Timestamp, new Timestamp(new DateTimeOffset(2008, 11, 12, 0, 0, 0, TimeSpan.Zero)));
 
                 assertCloseToNow_byte(consumer, drs2_produce[2].TopicPartitionOffset);
             }
@@ -269,7 +269,7 @@ namespace Confluent.Kafka.IntegrationTests
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));
             Assert.NotNull(cr.Message);
             Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
-            Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
+            Assert.True(Math.Abs((cr.Message.Timestamp.DateTimeOffset - DateTimeOffset.UtcNow).TotalSeconds) < 120);
         }
 
         private static void assertCloseToNow_byte(IConsumer<byte[], byte[]> consumer, TopicPartitionOffset tpo)
@@ -278,7 +278,7 @@ namespace Confluent.Kafka.IntegrationTests
             var cr = consumer.Consume(TimeSpan.FromSeconds(10));
             Assert.NotNull(cr.Message);
             Assert.Equal(TimestampType.CreateTime, cr.Message.Timestamp.Type);
-            Assert.True(Math.Abs((cr.Message.Timestamp.UtcDateTime - DateTime.UtcNow).TotalSeconds) < 120);
+            Assert.True(Math.Abs((cr.Message.Timestamp.DateTimeOffset - DateTimeOffset.UtcNow).TotalSeconds) < 120);
         }
     }
 }

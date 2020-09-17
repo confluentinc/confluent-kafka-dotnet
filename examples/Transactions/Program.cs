@@ -230,7 +230,7 @@ namespace Confluent.Kafka.Examples.Transactions
 
             var TxnCommitPeriod = TimeSpan.FromSeconds(10);
 
-            var lastTxnCommit = DateTime.Now;
+            var lastTxnCommit = DateTimeOffset.Now;
             
             // Due to limitations outlined in KIP-447 (which KIP-447 overcomes), it is
             // currently necessary to use a separate producer per input partition. The
@@ -354,7 +354,7 @@ namespace Confluent.Kafka.Examples.Transactions
                         }
 
                         // Commit transactions every TxnCommitPeriod
-                        if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
+                        if (DateTimeOffset.Now > lastTxnCommit + TxnCommitPeriod)
                         {
                             // Execute the transaction commits for each producer in parallel.
                             var tasks = new List<Task>();
@@ -391,7 +391,7 @@ namespace Confluent.Kafka.Examples.Transactions
                             Task.WaitAll(tasks.ToArray(), ct);
 
                             Console.WriteLine($"Committed MapWords transaction(s) comprising {wCount} words from {lCount} lines.");
-                            lastTxnCommit = DateTime.Now;
+                            lastTxnCommit = DateTimeOffset.Now;
                             wCount = 0;
                             lCount = 0;
                         }
@@ -480,7 +480,7 @@ namespace Confluent.Kafka.Examples.Transactions
 
             ColumnFamilyHandle columnFamily = null;
             
-            var lastTxnCommit = DateTime.Now;
+            var lastTxnCommit = DateTimeOffset.Now;
 
             var producerState = new Dictionary<TopicPartition, ProducerState<string, int>>();
 
@@ -578,7 +578,7 @@ namespace Confluent.Kafka.Examples.Transactions
 
                         wCount += 1;
 
-                        if (DateTime.Now > lastTxnCommit + TxnCommitPeriod)
+                        if (DateTimeOffset.Now > lastTxnCommit + TxnCommitPeriod)
                         {
                             // Execute the transaction commits for each producer in parallel.
                             var tasks = new List<Task>();
@@ -602,7 +602,7 @@ namespace Confluent.Kafka.Examples.Transactions
                             Task.WaitAll(tasks.ToArray(), ct);
 
                             Console.WriteLine($"Committed AggregateWords transaction(s) comprising updates to {wCount} words.");
-                            lastTxnCommit = DateTime.Now;
+                            lastTxnCommit = DateTimeOffset.Now;
                             wCount = 0;
                         }
                     }

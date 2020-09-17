@@ -36,7 +36,7 @@ namespace Confluent.Kafka
         /// </summary>
         public static void ConsoleLogger(LogMessage logInfo)
         {
-            var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var now = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             Console.Error.WriteLine($"{logInfo.Level}|{now}|{logInfo.Name}|{logInfo.Facility}| {logInfo.Message}");
         }
     }

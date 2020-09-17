@@ -41,12 +41,13 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(TimestampType.CreateTime, ts1.Type);
             Assert.Equal(TimestampType.LogAppendTime, ts2.Type);
         }
-
+#pragma warning disable CS0618 // Type or member is obsolete
         [Fact]
         public void ConstructorDateTime()
         {
             var dt1 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Local);
             var dt2 = new DateTime(2008, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
 
             var ts1 = new Timestamp(dt1, TimestampType.CreateTime);
             var ts2 = new Timestamp(dt2, TimestampType.LogAppendTime);
@@ -64,6 +65,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(ts3.UnixTimestampMs + utcOffsetMs, ts4.UnixTimestampMs);
         }
 
+
         [Fact]
         public void ConstructorDateTimeOffset()
         {
@@ -80,6 +82,7 @@ namespace Confluent.Kafka.UnitTests
             Assert.Equal(ts3.UnixTimestampMs, ts2.UnixTimestampMs);
         }
 
+#pragma warning restore CS0618 // Type or member is obsolete
         [Fact]
         public void Equality()
         {
@@ -108,27 +111,41 @@ namespace Confluent.Kafka.UnitTests
         public void Conversion()
         {
             // check is to millisecond accuracy.
-            var ts = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
-            var unixTime = Timestamp.DateTimeToUnixTimestampMs(ts);
-            var ts2 = Timestamp.UnixTimestampMsToDateTime(unixTime);
+            var ts = new DateTimeOffset(2012, 5, 6, 12, 4, 3, 220, TimeSpan.Zero);
+            var unixTime = Timestamp.DateTimeOffsetToUnixTimestampMs(ts);
+            var ts2 = Timestamp.UnixTimestampMsToDateTimeOffset(unixTime);
             Assert.Equal(1336305843220, unixTime);
             Assert.Equal(ts, ts2);
-            Assert.Equal(DateTimeKind.Utc, ts2.Kind);
         }
 
         [Fact]
         public void UnixTimeEpoch()
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.Equal(0, Timestamp.DateTimeToUnixTimestampMs(Timestamp.UnixTimeEpoch));
-            Assert.Equal(DateTimeKind.Utc, Timestamp.UnixTimeEpoch.Kind);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
-        
+
+        [Fact]
+        public void UnixTimeEpochDateTimeOffset()
+        {
+            Assert.Equal(0, Timestamp.DateTimeOffsetToUnixTimestampMs(Timestamp.UnixTimeEpochDateTimeOffset));
+        }
+
         [Fact]
         public void DateTimeProperties()
         {
-            var ts = new Timestamp(1, TimestampType.CreateTime);            
-            Assert.Equal(DateTimeKind.Utc, ts.UtcDateTime.Kind);
+            var ts = new Timestamp(1, TimestampType.CreateTime);
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.Equal(1, (ts.UtcDateTime - Timestamp.UnixTimeEpoch).TotalMilliseconds);
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void DateTimeOffsetProperties()
+        {
+            var ts = new Timestamp(1, TimestampType.CreateTime);
+            Assert.Equal(1, (ts.DateTimeOffset - Timestamp.UnixTimeEpochDateTimeOffset).TotalMilliseconds);
         }
 
         [Fact]
@@ -136,17 +153,17 @@ namespace Confluent.Kafka.UnitTests
         {
             // check is to millisecond accuracy, rounding down the value
             
-            var dateTimeAfterEpoch = new DateTime(2012, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
-            var dateTimeBeforeEpoch = new DateTime(1950, 5, 6, 12, 4, 3, 220, DateTimeKind.Utc);
+            var dateTimeAfterEpoch = new DateTimeOffset(2012, 5, 6, 12, 4, 3, 220, TimeSpan.Zero);
+            var dateTimeBeforeEpoch = new DateTimeOffset(1950, 5, 6, 12, 4, 3, 220, TimeSpan.Zero);
 
             foreach (var datetime in new[] { dateTimeAfterEpoch, dateTimeBeforeEpoch })
             {
-                var unixTime1 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(1));
-                var unixTime2 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond - 1));
-                var unixTime3 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond));
-                var unixTime4 = Timestamp.DateTimeToUnixTimestampMs(datetime.AddTicks(-1));
+                var unixTime1 = Timestamp.DateTimeOffsetToUnixTimestampMs(datetime.AddTicks(1));
+                var unixTime2 = Timestamp.DateTimeOffsetToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond - 1));
+                var unixTime3 = Timestamp.DateTimeOffsetToUnixTimestampMs(datetime.AddTicks(TimeSpan.TicksPerMillisecond));
+                var unixTime4 = Timestamp.DateTimeOffsetToUnixTimestampMs(datetime.AddTicks(-1));
 
-                var expectedUnixTime = Timestamp.DateTimeToUnixTimestampMs(datetime);
+                var expectedUnixTime = Timestamp.DateTimeOffsetToUnixTimestampMs(datetime);
                 
                 Assert.Equal(expectedUnixTime, unixTime1);
                 Assert.Equal(expectedUnixTime, unixTime2);
