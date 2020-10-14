@@ -196,7 +196,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     string fullname = null;
                     if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is Avro.RecordSchema)
                     {
-                        fullname = ((Avro.RecordSchema) ((ISpecificRecord) data).Schema).Fullname;
+                        fullname = ((Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
                     }
 
                     string subject = this.subjectNameStrategy != null
