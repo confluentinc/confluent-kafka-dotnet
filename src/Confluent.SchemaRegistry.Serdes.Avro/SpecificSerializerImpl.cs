@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry.Serdes
 {
     internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T>
     {
-        internal class SpecificSerializerSchemaData
+        internal class SerializerSchemaData
         {
             private string writerSchemaString;
             private global::Avro.Schema writerSchema;
@@ -82,12 +82,14 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
-        private bool _isMultipleSchemas = false;
         private int initialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy;
 
-        private Dictionary<Type, SpecificSerializerSchemaData> schemaData =
-            new Dictionary<Type, SpecificSerializerSchemaData>();
+        private Dictionary<Type, SerializerSchemaData> multiSchemaData =
+            new Dictionary<Type, SerializerSchemaData>();
+
+        private SerializerSchemaData onlySingleSchemaData = null;
+        
 
 
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
@@ -104,62 +106,56 @@ namespace Confluent.SchemaRegistry.Serdes
             this.subjectNameStrategy = subjectNameStrategy;
 
             Type writerType = typeof(T);
-            if (writerType == typeof(ISpecificRecord))
+            if (writerType != typeof(ISpecificRecord))
             {
-                _isMultipleSchemas = true;
-            }
-            else
-            {
-                schemaData.Add(writerType, ExtractSchemaData(writerType));
+                onlySingleSchemaData = ExtractSchemaData(writerType);
             }
         }
 
-        private static SpecificSerializerSchemaData ExtractSchemaData(Type writerType)
+        private static SerializerSchemaData ExtractSchemaData(Type writerType)
         {
-            SpecificSerializerSchemaData specificSerializerSchemaData = new SpecificSerializerSchemaData();
+            SerializerSchemaData serializerSchemaData = new SerializerSchemaData();
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
             {
-                specificSerializerSchemaData.WriterSchema =
-                    (global::Avro.Schema) writerType.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static)
-                        .GetValue(null);
+                serializerSchemaData.WriterSchema = (global::Avro.Schema) writerType.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
             }
             else if (writerType.Equals(typeof(int)))
             {
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("int");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("int");
             }
             else if (writerType.Equals(typeof(bool)))
             {
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("boolean");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("boolean");
             }
             else if (writerType.Equals(typeof(double)))
             {
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("double");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("double");
             }
             else if (writerType.Equals(typeof(string)))
             {
                 // Note: It would arguably be better to make this a union with null, to
                 // exactly match the .NET string type, however we don't for consistency
                 // with the Java Avro serializer.
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("string");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("string");
             }
             else if (writerType.Equals(typeof(float)))
             {
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("float");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("float");
             }
             else if (writerType.Equals(typeof(long)))
             {
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("long");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("long");
             }
             else if (writerType.Equals(typeof(byte[])))
             {
                 // Note: It would arguably be better to make this a union with null, to
                 // exactly match the .NET byte[] type, however we don't for consistency
                 // with the Java Avro serializer.
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("bytes");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("bytes");
             }
             else if (writerType.Equals(typeof(Null)))
             {
-                specificSerializerSchemaData.WriterSchema = global::Avro.Schema.Parse("null");
+                serializerSchemaData.WriterSchema = global::Avro.Schema.Parse("null");
             }
             else
             {
@@ -169,45 +165,43 @@ namespace Confluent.SchemaRegistry.Serdes
                 );
             }
 
-            specificSerializerSchemaData.AvroWriter = new SpecificWriter<T>(specificSerializerSchemaData.WriterSchema);
-            specificSerializerSchemaData.WriterSchemaString = specificSerializerSchemaData.WriterSchema.ToString();
-            return specificSerializerSchemaData;
+            serializerSchemaData.AvroWriter = new SpecificWriter<T>(serializerSchemaData.WriterSchema);
+            serializerSchemaData.WriterSchemaString = serializerSchemaData.WriterSchema.ToString();
+            return serializerSchemaData;
         }
 
         public async Task<byte[]> Serialize(string topic, T data, bool isKey)
         {
             try
             {   
-                SpecificSerializerSchemaData currentSchemaData;
+                SerializerSchemaData currentSchemaData;
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    if (_isMultipleSchemas)
+                    if (onlySingleSchemaData == null)
                     {
                         var key = data.GetType();
-                        if (!schemaData.TryGetValue(key, out currentSchemaData))
+                        if (!multiSchemaData.TryGetValue(key, out currentSchemaData))
                         {
                             currentSchemaData = ExtractSchemaData(key);
-                            schemaData[key] = currentSchemaData;
+                            multiSchemaData[key] = currentSchemaData;
                         }
                     }
                     else
                     {
-                        currentSchemaData = schemaData.Values.First();
+                        currentSchemaData = onlySingleSchemaData;
                     }
                     
                     
                     string fullname = null;
-                    if (data is ISpecificRecord && ((ISpecificRecord) data).Schema is Avro.RecordSchema)
+                    if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is Avro.RecordSchema)
                     {
                         fullname = ((Avro.RecordSchema) ((ISpecificRecord) data).Schema).Fullname;
                     }
 
                     string subject = this.subjectNameStrategy != null
                         // use the subject name strategy specified in the serializer config if available.
-                        ? this.subjectNameStrategy(
-                            new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value,
-                                topic), fullname)
+                        ? this.subjectNameStrategy(new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic), fullname)
                         // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
                         : isKey
                             ? schemaRegistryClient.ConstructKeySubjectName(topic, fullname)
