@@ -88,7 +88,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private Dictionary<Type, SerializerSchemaData> multiSchemaData =
             new Dictionary<Type, SerializerSchemaData>();
 
-        private SerializerSchemaData onlySingleSchemaData = null;
+        private SerializerSchemaData singleSchemaData = null;
         
 
 
@@ -108,7 +108,7 @@ namespace Confluent.SchemaRegistry.Serdes
             Type writerType = typeof(T);
             if (writerType != typeof(ISpecificRecord))
             {
-                onlySingleSchemaData = ExtractSchemaData(writerType);
+                singleSchemaData = ExtractSchemaData(writerType);
             }
         }
 
@@ -178,7 +178,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    if (onlySingleSchemaData == null)
+                    if (singleSchemaData == null)
                     {
                         var key = data.GetType();
                         if (!multiSchemaData.TryGetValue(key, out currentSchemaData))
@@ -189,7 +189,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
                     else
                     {
-                        currentSchemaData = onlySingleSchemaData;
+                        currentSchemaData = singleSchemaData;
                     }
                     
                     
