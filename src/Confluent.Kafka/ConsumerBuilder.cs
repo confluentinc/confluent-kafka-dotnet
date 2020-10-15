@@ -393,7 +393,7 @@ namespace Confluent.Kafka
         ///     Specify a handler that will be called immediately prior to the consumer's current assignment
         ///     being revoked, allowing the application to take action (e.g. offsets committed to a custom
         ///     store) before the consumer gives up ownership of the partitions. The Func partitions revoked
-        ///     handler variant is not supported in the incremental rebalancing case.
+        ///     handler variant is not supported in the incremental rebalancing (COOPERATIVE) case.
         ///
         ///     The value returned from your handler specifies the partitions/offsets the consumer should
         ///     be assigned to read from following completion of this method (most typically empty). This

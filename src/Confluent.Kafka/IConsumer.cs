@@ -347,7 +347,7 @@ namespace Confluent.Kafka
         ///     Incrementally remove <paramref name="partition" />
         ///     to the current assignment.
         /// </summary>
-        /// <param name="partitions">
+        /// <param name="partition">
         ///     The partition to remove from the current
         ///     assignment.
         /// </param>

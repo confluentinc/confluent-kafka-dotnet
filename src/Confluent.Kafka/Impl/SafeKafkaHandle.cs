@@ -35,12 +35,6 @@ namespace Confluent.Kafka.Impl
         Consumer
     }
 
-    internal enum RebalanceProtocol
-    {
-        None = 0x0,
-        Eager = 0x1,
-        Cooperative = 0x2
-    }
 
     [StructLayout(LayoutKind.Sequential)]
     struct rd_kafka_message
@@ -822,12 +816,12 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal RebalanceProtocol RebalanceProtocol
+        internal string RebalanceProtocol
         {
             get
             {
                 ThrowIfHandleClosed();
-                return (RebalanceProtocol)Librdkafka.rebalance_protocol(handle);
+                return Util.Marshal.PtrToStringUTF8(Librdkafka.rebalance_protocol(handle));
             }
         }
 

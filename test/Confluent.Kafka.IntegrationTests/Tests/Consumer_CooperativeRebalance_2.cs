@@ -65,14 +65,11 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Single(cr1.Message.Value);
                 Assert.Equal(1, assignCount);
 
-                // Exceed MaxPollIntervalMs => lost partitions.
+                // Exceed MaxPollIntervalMs
                 Thread.Sleep(TimeSpan.FromSeconds(8));
 
-                // Trigger revoked handler.
-                // TODO: Test this for non-incremental case as well.
-                // MH: This actually throws an exception, and does not trigger the revoked handler.
-                //     The next consume will trigger the handler. I don't think these errors should
-                //     be exposed here.
+                // The first call to Consume after MaxPollExceeded should result in an
+                // exception reporting the problem.
                 try
                 {
                     consumer.Consume(TimeSpan.FromSeconds(1));
@@ -82,6 +79,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(ErrorCode.Local_MaxPollExceeded, e.Error.Code);
                 }
 
+                // The second call should trigger the revoked handler (because a lost
+                // handler has not been specified).
                 consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Equal(1, revokeCount);
 

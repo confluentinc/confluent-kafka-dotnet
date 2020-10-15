@@ -179,7 +179,7 @@ namespace Confluent.Kafka
                     throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
                 }
 
-                if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative &&
+                if (kafkaHandle.RebalanceProtocol == "COOPERATIVE" &&
                     this.revokedOrLostHandlerIsFunc)
                 {
                     throw new InvalidOperationException("Neither revoked nor lost partition handlers may return an updated assignment when a COOPERATIVE assignor is in use");
@@ -191,7 +191,7 @@ namespace Confluent.Kafka
                 {
                     if (partitionsAssignedHandler == null)
                     {
-                        if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative)
+                        if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
                         {
                             IncrementalAssign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
                         }
@@ -212,7 +212,7 @@ namespace Confluent.Kafka
                         }
                     }
 
-                    if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative)
+                    if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
                     {
                         if (assignTo.Count() != partitions.Count())
                         {
@@ -245,7 +245,7 @@ namespace Confluent.Kafka
                     if (partitionsRevokedHandler == null &&
                         (!kafkaHandle.AssignmentLost || partitionsLostHandler == null))
                     {
-                        if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative)
+                        if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
                         {
                             IncrementalUnassign(partitions);
                         }
@@ -283,7 +283,7 @@ namespace Confluent.Kafka
                         }
                     }
 
-                    if (kafkaHandle.RebalanceProtocol == RebalanceProtocol.Cooperative)
+                    if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
                     {
                         // assignTo is always empty, not used in the COOPERATIVE case.
                         IncrementalUnassign(partitions);

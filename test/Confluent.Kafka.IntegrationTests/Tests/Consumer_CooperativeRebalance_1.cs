@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
     {
         /// <summary>
         ///     Test sticky-cooperative assignor and various aspects
-        ///     of the .net incremental rebalancing API.
+        ///     of the .NET incremental rebalancing API.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
         public void Consumer_CooperativeRebalance_1(string bootstrapServers)
@@ -87,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.Equal(2, assignCount);
             Assert.Equal(1, lostCount);
             Assert.Equal(0, revokeCount);
-            
+
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_CooperativeRebalance_1");
         }
