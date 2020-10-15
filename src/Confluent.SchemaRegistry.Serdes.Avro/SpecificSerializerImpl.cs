@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes
             private int? writerSchemaId;
 
             private SpecificWriter<T> avroWriter;
-            
+
             private HashSet<string> subjectsRegistered = new HashSet<string>();
 
             public HashSet<string> SubjectsRegistered
@@ -89,7 +89,7 @@ namespace Confluent.SchemaRegistry.Serdes
             new Dictionary<Type, SerializerSchemaData>();
 
         private SerializerSchemaData singleSchemaData = null;
-        
+
 
 
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
@@ -173,7 +173,7 @@ namespace Confluent.SchemaRegistry.Serdes
         public async Task<byte[]> Serialize(string topic, T data, bool isKey)
         {
             try
-            {   
+            {
                 SerializerSchemaData currentSchemaData;
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
@@ -191,8 +191,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         currentSchemaData = singleSchemaData;
                     }
-                    
-                    
+
                     string fullname = null;
                     if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is Avro.RecordSchema)
                     {

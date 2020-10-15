@@ -148,7 +148,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
         }
-        
+
         [Fact]
         public void Multiple_ISpecificRecords()
         {
@@ -162,7 +162,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 favorite_number = 100,
                 name = "awesome"
             };
-            
+
             var car = new Car
             {
                 color = "blue",
@@ -176,15 +176,14 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, resultUser.name);
             Assert.Equal(user.favorite_color, resultUser.favorite_color);
             Assert.Equal(user.favorite_number, resultUser.favorite_number);
-            
+
             var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
-            
+
             Assert.NotNull(resultCar);
             Assert.Equal(car.name, resultCar.name);
             Assert.Equal(car.color, resultCar.color);
         }
-        
 
         [Fact]
         public void Poco_Serialize()
