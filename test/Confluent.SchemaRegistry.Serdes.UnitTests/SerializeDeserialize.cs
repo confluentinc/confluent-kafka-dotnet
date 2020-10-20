@@ -21,6 +21,7 @@ using Moq;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
+using Avro.Specific;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
 
@@ -146,6 +147,42 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void Multiple_ISpecificRecords()
+        {
+            var serializer = new AvroSerializer<ISpecificRecord>(schemaRegistryClient);
+            var deserializerUser = new AvroDeserializer<User>(schemaRegistryClient);
+            var deserializerCar = new AvroDeserializer<Car>(schemaRegistryClient);
+
+            var user = new User
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            var car = new Car
+            {
+                color = "blue",
+                name = "great_brand"
+            };
+
+            var bytesUser = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var resultUser = deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
+
+            Assert.NotNull(resultUser);
+            Assert.Equal(user.name, resultUser.name);
+            Assert.Equal(user.favorite_color, resultUser.favorite_color);
+            Assert.Equal(user.favorite_number, resultUser.favorite_number);
+
+            var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
+
+            Assert.NotNull(resultCar);
+            Assert.Equal(car.name, resultCar.name);
+            Assert.Equal(car.color, resultCar.color);
         }
 
         [Fact]

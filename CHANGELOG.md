@@ -1,3 +1,11 @@
+# 1.5.2
+
+## Enhancements
+
+- References librdkafka 1.5.2. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.5.2) for more information.
+- Avro serializer now supports generic parameter `ISpecificRecord`. In this case, data is serialized according to the per-message concrete type (@[ni-mi](https://github.com/ni-mi)).
+
+
 # 1.5.1
 
 ## Enhancements
