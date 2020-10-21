@@ -44,7 +44,7 @@ namespace Confluent.Kafka.IntegrationTests
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 HeartbeatIntervalMs = 2000,
                 SessionTimeoutMs = 6000, // minimum allowed by the broker.
-                MaxPollIntervalMs = 6500,
+                MaxPollIntervalMs = 6500
             };
 
             int assignCount = 0;
@@ -81,14 +81,12 @@ namespace Confluent.Kafka.IntegrationTests
 
                 // The second call should trigger the revoked handler (because a lost
                 // handler has not been specified).
+                Assert.Equal(0, revokeCount);
                 consumer.Consume(TimeSpan.FromSeconds(1));
                 Assert.Equal(1, revokeCount);
 
                 consumer.Close();
             }
-
-            Assert.Equal(1, assignCount);
-            Assert.Equal(1, revokeCount);
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Consumer_CooperativeRebalance_2");

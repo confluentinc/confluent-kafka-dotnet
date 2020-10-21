@@ -272,36 +272,6 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Incrementally add <paramref name="partition" />
-        ///     to the current assignment.
-        /// </summary>
-        /// <param name="partition">
-        ///     The additional partition to consume from.
-        ///     Consumption will resume from the last committed
-        ///     offset, or according to the 'auto.offset.reset'
-        ///     configuration parameter if no offsets have been
-        ///     committed yet.
-        /// </param>
-        void IncrementalAssign(TopicPartition partition);
-
-
-        /// <summary>
-        ///     Incrementally add <paramref name="partition" />
-        ///     to the current assignment, starting consumption
-        ///     from the specified offset.
-        /// </summary>
-        /// <param name="partition">
-        ///     The additional partition to consume from.
-        ///     If an offset value of Offset.Unset (-1001) is
-        ///     specified, consumption will resume from the last
-        ///     committed offset, or according to the
-        ///     'auto.offset.reset' configuration parameter if
-        ///     no offsets have been committed yet.
-        /// </param>
-        void IncrementalAssign(TopicPartitionOffset partition);
-
-
-        /// <summary>
         ///     Incrementally add <paramref name="partitions" />
         ///     to the current assignment, starting consumption
         ///     from the specified offsets.
@@ -341,17 +311,6 @@ namespace Confluent.Kafka
         ///     assignment.
         /// </param>
         void IncrementalUnassign(IEnumerable<TopicPartition> partitions);
-
-
-        /// <summary>
-        ///     Incrementally remove <paramref name="partition" />
-        ///     to the current assignment.
-        /// </summary>
-        /// <param name="partition">
-        ///     The partition to remove from the current
-        ///     assignment.
-        /// </param>
-        void IncrementalUnassign(TopicPartition partition);
 
 
         /// <summary>

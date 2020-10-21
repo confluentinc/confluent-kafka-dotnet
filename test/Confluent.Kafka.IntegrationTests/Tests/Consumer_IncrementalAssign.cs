@@ -48,7 +48,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 1, 1);
                 Util.ProduceNullStringMessages(bootstrapServers, topic2.Name, 1, 1);
         
-                consumer.IncrementalAssign(new TopicPartitionOffset(topic1.Name, 0, Offset.Beginning));
+                consumer.IncrementalAssign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic1.Name, 0, Offset.Beginning) });
                 var cr1 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr1);
                 Assert.Equal(0, cr1.Offset);
@@ -56,14 +56,14 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, (int)cr1.Partition);
                 consumer.Commit(cr1);
 
-                consumer.IncrementalAssign(new TopicPartitionOffset(topic2.Name, 0, Offset.Beginning));
+                consumer.IncrementalAssign(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic2.Name, 0, Offset.Beginning) });
                 var cr2 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr2);
                 Assert.Equal(0, cr2.Offset);
                 Assert.Equal(topic2.Name, cr2.Topic);
                 Assert.Equal(0, (int)cr2.Partition);
 
-                consumer.IncrementalUnassign(new TopicPartition(topic1.Name, 0));
+                consumer.IncrementalUnassign(new List<TopicPartition> { new TopicPartition(topic1.Name, 0) });
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 2, 1);
                 var cr3 = consumer.Consume(TimeSpan.FromSeconds(2));
                 Assert.Null(cr3);
@@ -76,14 +76,14 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, (int)cr4.Partition);
                 Assert.Equal(3, cr4.Message.Value.Length);
 
-                consumer.IncrementalAssign(new TopicPartition(topic1.Name, 0));
+                consumer.IncrementalAssign(new List<TopicPartition> { new TopicPartition(topic1.Name, 0) });
                 var cr5 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr5);
                 Assert.Equal(1, cr5.Offset);
                 Assert.Equal(topic1.Name, cr5.Topic);
                 Assert.Equal(0, (int)cr5.Partition);
 
-                consumer.IncrementalUnassign(new TopicPartition(topic1.Name, 0));
+                consumer.IncrementalUnassign(new List<TopicPartition> { new TopicPartition(topic1.Name, 0) });
                 consumer.Unassign();
             }
 

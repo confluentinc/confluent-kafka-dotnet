@@ -300,9 +300,10 @@ namespace Confluent.Kafka
         ///     configuration property.
         ///
         ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
-        ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
+        ///     COOPERATIVE (incremental) (cooperative-sticky assignor). Use the PartitionAssignmentStrategy
+        ///     configuration property to specify which assignor to use.
         ///
-        ///     ## EAGER Rebalancing
+        ///     ## EAGER Rebalancing (range, roundrobin)
         ///
         ///     The set of partitions returned from your handler may differ from that provided by the
         ///     group (though they should typically be the same). These partitions are the
@@ -314,7 +315,7 @@ namespace Confluent.Kafka
         ///     ## COOPERATIVE (Incremental) Rebalancing
         ///
         ///     The set of partitions returned from your handler must match that provided by the
-        ///     group. These partitions are an incremental assignment - are in additional to those
+        ///     group. These partitions are an incremental assignment - are in addition to those
         ///     already being consumed from.
         /// </summary>
         /// <remarks>
@@ -348,9 +349,10 @@ namespace Confluent.Kafka
         ///     `auto.offset.reset` configuration property.
         ///
         ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
-        ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
+        ///     COOPERATIVE (incremental) (cooperative-sticky assignor). Use the PartitionAssignmentStrategy
+        ///     configuration property to specify which assignor to use.
         ///
-        ///     ## EAGER Rebalancing
+        ///     ## EAGER Rebalancing (range, roundrobin)
         ///
         ///     Partitions passed to the handler represent the entire set of partitions to consume from.
         ///     There will be exactly one call to the partitions revoked or partitions lost handler (if
@@ -359,7 +361,7 @@ namespace Confluent.Kafka
         ///
         ///     ## COOPERATIVE (Incremental) Rebalancing
         ///
-        ///     Partitions passed to the handler are an incremental assignment - are in additional to those
+        ///     Partitions passed to the handler are an incremental assignment - are in addition to those
         ///     already being consumed from.
         /// </summary>
         /// <remarks>
@@ -378,7 +380,7 @@ namespace Confluent.Kafka
             {
                 throw new InvalidOperationException("The partitions assigned handler may not be specified more than once.");
             }
-            
+
             this.PartitionsAssignedHandler = (IConsumer<TKey, TValue> consumer, List<TopicPartition> partitions) =>
             {
                 partitionAssignmentHandler(consumer, partitions);
@@ -434,9 +436,10 @@ namespace Confluent.Kafka
         ///     the partitions.
         ///
         ///     Kafka supports two rebalance protocols: EAGER (range and roundrobin assignors) and
-        ///     COOPERATIVE ("incremental") (sticky-cooperative assignor).
+        ///     COOPERATIVE (incremental) (cooperative-sticky assignor). Use the PartitionAssignmentStrategy
+        ///     configuration property to specify which assignor to use.
         ///
-        ///     ## EAGER Rebalancing
+        ///     ## EAGER Rebalancing (range, roundrobin)
         ///
         ///     The second parameter provides the entire set of partitions the consumer is currently
         ///     assigned to, and the current position of the consumer on each of these partitions.

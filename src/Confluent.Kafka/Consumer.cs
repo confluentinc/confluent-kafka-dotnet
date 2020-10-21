@@ -219,18 +219,20 @@ namespace Confluent.Kafka
                             throw new InvalidOperationException("The partitions assigned handler must not return a different set of topic partitions than it was provided");
                         }
 
-                        int i = 0;
-                        foreach (var p in assignTo)
+                        var sortedPartitions = partitions.OrderBy(p => p).ToList();
+                        var sortedAssignTo = assignTo.OrderBy(p => p.TopicPartition);
+
+                        var partitionsIter = sortedPartitions.GetEnumerator();
+                        foreach (var p in sortedAssignTo)
                         {
-                            if (p.TopicPartition != partitions[i++])
+                            partitionsIter.MoveNext();
+                            if (p.TopicPartition != partitionsIter.Current)
                             {
-                                // Enforcing ordering is overly constrained, but simple and efficient and in practice handler implementations will not likely change
-                                // ordering of partitions from that provided.
                                 throw new InvalidOperationException("The partitions assigned handler must not return a different set of topic partitions than it was provided");
                             }
                         }
 
-                        IncrementalAssign(assignTo);
+                        IncrementalAssign(sortedAssignTo);
                     }
                     else
                     {
@@ -290,10 +292,7 @@ namespace Confluent.Kafka
                     }
                     else
                     {
-                        // This distinction is important because calling Assign whilst the consumer is being
-                        // closed (which will generally trigger this callback) is disallowed.
-                        if (assignTo.Count() > 0) { Assign(assignTo); }
-                        else { Unassign(); }
+                        Unassign();
                     }
                     return;
                 }
@@ -420,26 +419,11 @@ namespace Confluent.Kafka
 
 
         /// <inheritdoc/>
-        public void IncrementalAssign(TopicPartitionOffset partition)
-            => IncrementalAssign(new List<TopicPartitionOffset> { partition });
-
-
-        /// <inheritdoc/>
-        public void IncrementalAssign(TopicPartition partition)
-            => IncrementalAssign(new List<TopicPartition> { partition });
-
-
-        /// <inheritdoc/>
         public void IncrementalUnassign(IEnumerable<TopicPartition> partitions)
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
             kafkaHandle.IncrementalUnassign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)).ToList());
         }
-
-
-        /// <inheritdoc/>
-        public void IncrementalUnassign(TopicPartition partition)
-            => IncrementalUnassign(new List<TopicPartition> { partition });
 
 
         /// <inheritdoc/>

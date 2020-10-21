@@ -27,7 +27,7 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test sticky-cooperative assignor and various aspects
+        ///     Test cooperative-sticky assignor and various aspects
         ///     of the .NET incremental rebalancing API.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
@@ -77,6 +77,10 @@ namespace Confluent.Kafka.IntegrationTests
                 var cr2 = consumer.Consume(TimeSpan.FromSeconds(10));
                 Assert.NotNull(cr2);
                 Assert.Single(cr2.Message.Value);
+
+                Assert.Equal(2, assignCount);
+                Assert.Equal(0, lostCount);
+                Assert.Equal(0, revokeCount);
 
                 // Exceed MaxPollIntervalMs => lost partitions.
                 Thread.Sleep(8);

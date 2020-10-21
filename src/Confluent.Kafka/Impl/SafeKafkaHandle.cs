@@ -786,8 +786,18 @@ namespace Confluent.Kafka.Impl
             ErrorCode err = ErrorCode.NoError;
             Error error = null;
 
-            if (assignMethodErr != null) { err = assignMethodErr(handle, list); }
-            if (assignMethodError != null) { error = new Error(assignMethodError(handle, list)); }
+            if (assignMethodErr != null)
+            {
+                err = assignMethodErr(handle, list);
+            }
+            else if (assignMethodError != null)
+            {
+                var errorPtr = assignMethodError(handle, list);
+                if (errorPtr != IntPtr.Zero)
+                {
+                    error = new Error(errorPtr);
+                }
+            }
 
             if (list != IntPtr.Zero)
             {
@@ -795,7 +805,7 @@ namespace Confluent.Kafka.Impl
             }
 
             if (err != ErrorCode.NoError) { throw new KafkaException(CreatePossiblyFatalError(err, null)); }
-            if (error != null && error.Code != ErrorCode.NoError) { throw new KafkaException(error); }
+            else if (error != null) { throw new KafkaException(error); }
         }
 
         internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
@@ -821,7 +831,11 @@ namespace Confluent.Kafka.Impl
             get
             {
                 ThrowIfHandleClosed();
-                return Util.Marshal.PtrToStringUTF8(Librdkafka.rebalance_protocol(handle));
+                var rebalanceProtocolPtr = Librdkafka.rebalance_protocol(handle);
+                if (rebalanceProtocolPtr == IntPtr.Zero) {
+                    return null;
+                }
+                return Util.Marshal.PtrToStringUTF8(rebalanceProtocolPtr);
             }
         }
 
