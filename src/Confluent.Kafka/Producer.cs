@@ -37,6 +37,7 @@ namespace Confluent.Kafka
             public Action<Error> errorHandler;
             public Action<LogMessage> logHandler;
             public Action<string> statisticsHandler;
+            public Action<string> oAuthBearerTokenRefreshHandler;
         }
 
         private ISerializer<TKey> keySerializer;
@@ -151,6 +152,23 @@ namespace Confluent.Kafka
             }
 
             return 0; // instruct librdkafka to immediately free the json ptr.
+        }
+
+        private Action<string> oAuthBearerTokenRefreshHandler;
+        private Librdkafka.OAuthBearerTokenRefreshDelegate oAuthBearerTokenRefreshCallbackDelegate;
+        private void OAuthBearerTokenRefreshCallback(IntPtr rk, IntPtr oauthbearer_config, IntPtr opaque)
+        {
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            if (ownedKafkaHandle.IsClosed) { return; }
+
+            try
+            {
+                oAuthBearerTokenRefreshHandler?.Invoke(Util.Marshal.PtrToStringUTF8(oauthbearer_config));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
         }
 
 
@@ -545,6 +563,7 @@ namespace Confluent.Kafka
             this.statisticsHandler = baseConfig.statisticsHandler;
             this.logHandler = baseConfig.logHandler;
             this.errorHandler = baseConfig.errorHandler;
+            this.oAuthBearerTokenRefreshHandler = baseConfig.oAuthBearerTokenRefreshHandler;
 
             var config = Confluent.Kafka.Config.ExtractCancellationDelayMaxMs(baseConfig.config, out this.cancellationDelayMaxMs);
 
@@ -632,6 +651,7 @@ namespace Confluent.Kafka
             errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
             statisticsCallbackDelegate = StatisticsCallback;
+            oAuthBearerTokenRefreshCallbackDelegate = OAuthBearerTokenRefreshCallback;
 
             if (errorHandler != null)
             {
@@ -644,6 +664,10 @@ namespace Confluent.Kafka
             if (statisticsHandler != null)
             {
                 Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            }
+            if (oAuthBearerTokenRefreshHandler != null)
+            {
+                Librdkafka.conf_set_oauthbearer_token_refresh_cb(configPtr, oAuthBearerTokenRefreshCallbackDelegate);
             }
 
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
