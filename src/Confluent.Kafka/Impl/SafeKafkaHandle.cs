@@ -150,6 +150,7 @@ namespace Confluent.Kafka.Impl
             Library.IncrementKafkaHandleCreateCount();
             return kh;
         }
+
         /// <summary>
         ///     Prevent AccessViolationException when handle has already been closed.
         ///     Should be called at start of every function using the handle,
@@ -179,6 +180,7 @@ namespace Confluent.Kafka.Impl
         protected override bool ReleaseHandle()
         {
             Library.IncrementKafkaHandleDestroyCount();
+
             // Librdkafka.destroy / Librdkafka.destroy_flags is a static
             // object which means at this point we can be sure it hasn't
             // already been GC'd.
@@ -656,6 +658,7 @@ namespace Confluent.Kafka.Impl
                 {
                     throw new KafkaException(CreatePossiblyFatalError(errorCode, null));
                 }
+
                 var result = GetTopicPartitionOffsetErrorList(cOffsets);
 
                 if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
@@ -674,6 +677,7 @@ namespace Confluent.Kafka.Impl
         internal void Subscribe(IEnumerable<string> topics)
         {
             ThrowIfHandleClosed();
+
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) topics.Count());
             if (list == IntPtr.Zero)
             {
@@ -695,6 +699,7 @@ namespace Confluent.Kafka.Impl
         internal void Unsubscribe()
         {
             ThrowIfHandleClosed();
+
             ErrorCode err = Librdkafka.unsubscribe(handle);
             if (err != ErrorCode.NoError)
             {
@@ -713,6 +718,7 @@ namespace Confluent.Kafka.Impl
         internal void ConsumerClose()
         {
             ThrowIfHandleClosed();
+
             ErrorCode err = Librdkafka.consumer_close(handle);
             if (err != ErrorCode.NoError)
             {
@@ -723,6 +729,7 @@ namespace Confluent.Kafka.Impl
         internal List<TopicPartition> GetAssignment()
         {
             ThrowIfHandleClosed();
+
             IntPtr listPtr = IntPtr.Zero;
             ErrorCode err = Librdkafka.assignment(handle, out listPtr);
             if (err != ErrorCode.NoError)
@@ -738,6 +745,7 @@ namespace Confluent.Kafka.Impl
         internal List<string> GetSubscription()
         {
             ThrowIfHandleClosed();
+
             IntPtr listPtr = IntPtr.Zero;
             ErrorCode err = Librdkafka.subscription(handle, out listPtr);
             if (err != ErrorCode.NoError)
@@ -870,6 +878,7 @@ namespace Confluent.Kafka.Impl
             {
                 throw new TopicPartitionOffsetException(result);
             }
+
             return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
@@ -896,6 +905,7 @@ namespace Confluent.Kafka.Impl
             {
                 rkt.DangerousRelease();
             }
+
             if (result != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(result, null));
@@ -911,14 +921,16 @@ namespace Confluent.Kafka.Impl
             {
                 throw new Exception("Failed to create pause partition list");
             }
+
             foreach (var partition in partitions)
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
-
             }
+
             ErrorCode err = Librdkafka.pause_partitions(handle, list);
             var result = GetTopicPartitionErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
+
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
@@ -934,6 +946,7 @@ namespace Confluent.Kafka.Impl
         internal List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
         {
             ThrowIfHandleClosed();
+
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
@@ -944,9 +957,11 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
+
             ErrorCode err = Librdkafka.resume_partitions(handle, list);
             var result = GetTopicPartitionErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
+
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));

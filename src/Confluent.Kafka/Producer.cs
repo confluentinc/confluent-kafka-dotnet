@@ -102,7 +102,7 @@ namespace Confluent.Kafka
                             this.handlerException = null;
                         }
 
-                        // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
+                        // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit
                         if (eventsServedCount_ > 0)
                         {
                             lock (pollSyncObj)

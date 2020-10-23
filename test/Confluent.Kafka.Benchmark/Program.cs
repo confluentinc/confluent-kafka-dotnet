@@ -17,6 +17,7 @@
 using System;
 using System.Linq;
 
+
 namespace Confluent.Kafka.Benchmark
 {
     public class Program

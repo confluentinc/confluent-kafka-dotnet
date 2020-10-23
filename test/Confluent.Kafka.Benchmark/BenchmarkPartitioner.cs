@@ -19,11 +19,11 @@ using System;
 namespace Confluent.Kafka.Benchmark
 {
     /// <summary>
-    /// Partitioner for benchmarking scenarios.
-    /// This Partitioner will assign to Partition 0 by default,
-    /// but can round-robin to all known partitions if configured.
-    /// When Disposed the amount of times this was called will be
-    /// written to the console.
+    ///     Partitioner for benchmarking scenarios.
+    ///     This Partitioner will assign to Partition 0 by default,
+    ///     but can round-robin to all known partitions if configured.
+    ///     When Disposed the amount of times this was called will be
+    ///     written to the console.
     /// </summary>
     internal class BenchmarkPartioner : IPartitioner
     {
