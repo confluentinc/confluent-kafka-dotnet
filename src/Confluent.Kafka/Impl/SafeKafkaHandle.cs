@@ -150,7 +150,7 @@ namespace Confluent.Kafka.Impl
             Library.IncrementKafkaHandleCreateCount();
             return kh;
         }
-
+        
         /// <summary>
         ///     Prevent AccessViolationException when handle has already been closed.
         ///     Should be called at start of every function using the handle,
@@ -180,7 +180,7 @@ namespace Confluent.Kafka.Impl
         protected override bool ReleaseHandle()
         {
             Library.IncrementKafkaHandleDestroyCount();
-
+            
             // Librdkafka.destroy / Librdkafka.destroy_flags is a static
             // object which means at this point we can be sure it hasn't
             // already been GC'd.
@@ -660,7 +660,7 @@ namespace Confluent.Kafka.Impl
                 }
 
                 var result = GetTopicPartitionOffsetErrorList(cOffsets);
-
+                
                 if (result.Where(tpoe => tpoe.Error.Code != ErrorCode.NoError).Count() > 0)
                 {
                     throw new TopicPartitionOffsetException(result);
@@ -677,7 +677,7 @@ namespace Confluent.Kafka.Impl
         internal void Subscribe(IEnumerable<string> topics)
         {
             ThrowIfHandleClosed();
-
+            
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) topics.Count());
             if (list == IntPtr.Zero)
             {
@@ -710,7 +710,7 @@ namespace Confluent.Kafka.Impl
         internal IntPtr ConsumerPoll(IntPtr millisecondsTimeout)
         {
             ThrowIfHandleClosed();
-
+            
             // TODO: There is a newer librdkafka interface for this now. Use that.
             return Librdkafka.consumer_poll(handle, millisecondsTimeout);
         }
@@ -718,7 +718,7 @@ namespace Confluent.Kafka.Impl
         internal void ConsumerClose()
         {
             ThrowIfHandleClosed();
-
+            
             ErrorCode err = Librdkafka.consumer_close(handle);
             if (err != ErrorCode.NoError)
             {
@@ -870,7 +870,7 @@ namespace Confluent.Kafka.Impl
                 Librdkafka.event_destroy(rkev);
                 throw new KafkaException(CreatePossiblyFatalError(errorCode, errorString));
             }
-
+            
             var result = GetTopicPartitionOffsetErrorList(Librdkafka.event_topic_partition_list(rkev));
             Librdkafka.event_destroy(rkev);
 
@@ -905,7 +905,7 @@ namespace Confluent.Kafka.Impl
             {
                 rkt.DangerousRelease();
             }
-
+            
             if (result != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(result, null));
@@ -921,20 +921,21 @@ namespace Confluent.Kafka.Impl
             {
                 throw new Exception("Failed to create pause partition list");
             }
-
+            
             foreach (var partition in partitions)
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
+            
             }
-
             ErrorCode err = Librdkafka.pause_partitions(handle, list);
             var result = GetTopicPartitionErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
-
+            
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
             }
+            
             if (result.Where(tpe => tpe.Error.Code != ErrorCode.NoError).Count() > 0)
             {
                 throw new TopicPartitionException(result);
@@ -946,18 +947,18 @@ namespace Confluent.Kafka.Impl
         internal List<TopicPartitionError> Resume(IEnumerable<TopicPartition> partitions)
         {
             ThrowIfHandleClosed();
-
+            
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) partitions.Count());
             if (list == IntPtr.Zero)
             {
                 throw new Exception("Failed to create resume partition list");
             }
-
+            
             foreach (var partition in partitions)
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
-
+            
             ErrorCode err = Librdkafka.resume_partitions(handle, list);
             var result = GetTopicPartitionErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
@@ -989,11 +990,11 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
-
+            
             ErrorCode err = Librdkafka.committed(handle, list, timeout_ms);
             var result = GetTopicPartitionOffsetErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
-
+            
             if (err != ErrorCode.NoError)
             {
                 throw new KafkaException(CreatePossiblyFatalError(err, null));
@@ -1021,7 +1022,7 @@ namespace Confluent.Kafka.Impl
             {
                 Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
             }
-
+            
             ErrorCode err = Librdkafka.position(handle, list);
             var result = GetTopicPartitionOffsetErrorList(list);
             Librdkafka.topic_partition_list_destroy(list);
@@ -1034,7 +1035,7 @@ namespace Confluent.Kafka.Impl
             {
                 throw new TopicPartitionOffsetException(result);
             }
-
+            
             return result.Select(r => r.TopicPartitionOffset).ToList();
         }
 
@@ -1291,7 +1292,7 @@ namespace Confluent.Kafka.Impl
                     {
                         throw new ArgumentException($"config name must be specified for {resource}");
                     }
-
+                    
                     var errorCode = Librdkafka.ConfigResource_set_config(resourcePtr, rc.Name, rc.Value);
 
                     if (errorCode != ErrorCode.NoError)
@@ -1589,5 +1590,6 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(errorCode);
             }
         }
+
     }
 }
