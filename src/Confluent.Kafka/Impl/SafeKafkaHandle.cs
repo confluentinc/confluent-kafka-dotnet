@@ -97,7 +97,7 @@ namespace Confluent.Kafka.Impl
         private Dictionary<string, SafeTopicHandle> topicHandles
             = new Dictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
-        internal SafeTopicHandle getKafkaTopicHandle(string topic, IntPtr? topicConfig = null)
+        internal SafeTopicHandle newTopic(string topic, IntPtr? topicConfig = null)
         {
             if (!topicConfig.HasValue)
             {
@@ -274,7 +274,13 @@ namespace Confluent.Kafka.Impl
                 Librdkafka.topic_conf_destroy(config);
                 throw new Exception("Failed to create topic (DangerousAddRef failed)");
             }
-            var topicHandle = Librdkafka.topic_new(handle, topic, config);
+            byte[] topicBytes = System.Text.UTF8Encoding.UTF8.GetBytes(topic);
+            byte[] topicBytesNulTerminated = new byte[topicBytes.Length + 1]; // initialized to all 0's.
+            Array.Copy(topicBytes, topicBytesNulTerminated, topicBytes.Length);
+            GCHandle gch = GCHandle.Alloc(topicBytesNulTerminated, GCHandleType.Pinned);
+            SafeTopicHandle topicHandle = Librdkafka.topic_new(handle, gch.AddrOfPinnedObject(), config);
+            gch.Free();
+
             if (topicHandle.IsInvalid)
             {
                 DangerousRelease();
@@ -886,7 +892,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            SafeTopicHandle rkt = getKafkaTopicHandle(topic);
+            SafeTopicHandle rkt = newTopic(topic);
 
             bool success = false;
             rkt.DangerousAddRef(ref success);

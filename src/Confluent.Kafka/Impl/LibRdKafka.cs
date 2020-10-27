@@ -182,6 +182,7 @@ namespace Confluent.Kafka.Impl
             _topic_conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set").CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
+            _topic_conf_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _topic_partition_available = (Func<IntPtr, int, bool>)methods.Single(m => m.Name == "rd_kafka_topic_partition_available").CreateDelegate(typeof(Func<IntPtr, int, bool>));
             _init_transactions = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_init_transactions").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _begin_transaction = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_begin_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -195,7 +196,7 @@ namespace Confluent.Kafka.Impl
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Single(m => m.Name == "rd_kafka_new").CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
             _name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_memberid").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _topic_new = (Func<IntPtr, string, IntPtr, SafeTopicHandle>)methods.Single(m => m.Name == "rd_kafka_topic_new").CreateDelegate(typeof(Func<IntPtr, string, IntPtr, SafeTopicHandle>));
+            _topic_new = (Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>)methods.Single(m => m.Name == "rd_kafka_topic_new").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>));
             _topic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_poll").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
@@ -705,6 +706,11 @@ namespace Confluent.Kafka.Impl
                 string value, StringBuilder errstr, UIntPtr errstr_size)
             => _topic_conf_set(conf, name, value, errstr, errstr_size);
 
+        private static Action<IntPtr, IntPtr> _topic_conf_set_opaque;
+        internal static void topic_conf_set_opaque(
+                IntPtr topic_conf, IntPtr opaque)
+            => _topic_conf_set_opaque(topic_conf, opaque);
+
         private static Action<IntPtr, PartitionerDelegate> _topic_conf_set_partitioner_cb;
         internal static void topic_conf_set_partitioner_cb(
                 IntPtr topic_conf, PartitionerDelegate partitioner_cb)
@@ -771,8 +777,8 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _memberid;
         internal static IntPtr memberid(IntPtr rk) => _memberid(rk);
 
-        private static Func<IntPtr, string, IntPtr, SafeTopicHandle> _topic_new;
-        internal static SafeTopicHandle topic_new(IntPtr rk, string topic, IntPtr conf)
+        private static Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle> _topic_new;
+        internal static SafeTopicHandle topic_new(IntPtr rk, IntPtr topic, IntPtr conf)
             => _topic_new(rk, topic, conf);
 
         private static Action<IntPtr> _topic_destroy;

@@ -17,7 +17,6 @@
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
-using Confluent.Kafka.Internal;
 using Confluent.Kafka.Admin;
 
 
@@ -223,6 +222,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_topic_conf_set_opaque(
+                IntPtr topic_conf, IntPtr opaque);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_topic_conf_set_partitioner_cb(
                 IntPtr topic_conf, Librdkafka.PartitionerDelegate partitioner_cb);
 
@@ -287,8 +290,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern SafeTopicHandle rd_kafka_topic_new(
-                IntPtr rk,
-                [MarshalAs(UnmanagedType.LPStr)] string topic,
+                IntPtr rk, IntPtr topic,
                 /* rd_kafka_topic_conf_t * */ IntPtr conf);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

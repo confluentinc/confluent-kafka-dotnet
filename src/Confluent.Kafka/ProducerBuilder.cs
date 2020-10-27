@@ -21,6 +21,37 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     Calculate a partition number given a <paramref name="topic" />,
+    ///     <paramref name="partitionCount" /> and serialized <paramref name="keyData" />.
+    /// </summary>
+    /// <remarks>
+    ///     A partioner instance may be called in any thread at any time and
+    ///     may be called multiple times for the same message/key.
+    ///
+    ///     A partitioner:
+    ///     - MUST NOT call any method on the producer instance.
+    ///     - MUST NOT block or execute for prolonged periods of time.
+    ///     - MUST return a value between 0 and partition_cnt-1, or the
+    ///       special <seealso cref="Confluent.Kafka.Partition.Any"/> value.
+    ///     - MUST NOT throw any exception.
+    /// </remarks>
+    /// <param name="topic">
+    ///     The topic.
+    /// </param>
+    /// <param name="partitionCount">
+    ///     The number of partitions in <paramref name="topic" />.
+    /// </param>
+    /// <param name="keyData">
+    ///     The serialized key data.
+    /// </param>
+    /// <returns>
+    ///     The calculated <seealso cref="Confluent.Kafka.Partition"/>, possibly
+    ///     <seealso cref="Confluent.Kafka.Partition.Any"/>.
+    /// </returns>
+    public delegate Partition CustomPartitioner(string topic, int partitionCount, ReadOnlySpan<byte> keyData);
+
+
+    /// <summary>
     ///     A builder class for <see cref="IProducer{TKey,TValue}" />.
     /// </summary>
     public class ProducerBuilder<TKey, TValue>
@@ -53,7 +84,7 @@ namespace Confluent.Kafka
         /// <summary>        
         ///     The custom partitioners.
         /// </summary>
-        internal protected Dictionary<string, IPartitioner> Partitioners { get; set; } = new Dictionary<string, IPartitioner>();
+        internal protected Dictionary<string, CustomPartitioner> Partitioners { get; set; } = new Dictionary<string, CustomPartitioner>();
 
         /// <summary>
         ///     The configured key serializer.
@@ -136,27 +167,20 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Set the partitioner to be called when a <seealso cref="Partition"/> needs to be determined for a <seealso cref="Message{TKey, TValue}"/>.
+        ///     Set a custom partitioner to use when producing messages to
+        ///     <paramref name="topic" />.
         /// </summary>
-        /// <remarks>
-        ///     This handler is only called when the <seealso cref="Message{TKey, TValue}"/>'s partition is set to <seealso cref="Partition.Any"/>.
-        /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, IPartitioner partitioner)
+        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, CustomPartitioner partitioner)
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
-                throw new ArgumentNullException(nameof(topic));
+                throw new ArgumentException("topic must not be null or empty");
             }
-
             if (this.Partitioners.ContainsKey(topic))
             {
-                this.Partitioners[topic] = partitioner;
+                throw new ArgumentException($"custom partitioner for {topic} already specified");
             }
-            else
-            {
-                this.Partitioners.Add(topic, partitioner);
-            }
-
+            this.Partitioners.Add(topic, partitioner);
             return this;
         }
 
