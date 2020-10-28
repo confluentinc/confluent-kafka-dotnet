@@ -48,7 +48,7 @@ namespace Web.Controllers
 
             // Important note: DO NOT create a new producer instance every time you
             // need to produce a message (this is a common pattern with relational database
-            // drivers, but it is extremely efficient here). Instead, use a long-lived
+            // drivers, but it is extremely inefficient here). Instead, use a long-lived
             // singleton instance, as per this example.
 
             // Do not delay completion of the page request on the result of produce call.
