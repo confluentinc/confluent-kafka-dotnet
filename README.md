@@ -200,6 +200,13 @@ class Program
 }
 ```
 
+### IHostedService and Web Application Integration
+
+The [Web](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Web) example demonstrates how to integrate
+Apache Kafka with a web application, including how to implement `IHostedService` to realize a long running consumer poll loop, how to
+register a producer as a singleton service, and how to bind configuration from an injected `IConfiguration` instance.
+
+
 ### Schema Registry Integration
 
 The three "Serdes" packages provide serializers and deserializers for Avro, Protobuf and JSON with [Confluent Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html) integration. The `Confluent.SchemaRegistry` nuget package provides a client for interfacing with
