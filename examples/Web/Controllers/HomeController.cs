@@ -26,7 +26,6 @@ namespace Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly Random randomNumberGenerator;
         private string topic;
         private readonly KafkaDependentProducer<Null, string> producer;
         private readonly ILogger logger;
@@ -39,14 +38,13 @@ namespace Web.Controllers
             // interesting, so we just write frivolous messages to demonstrate how to set things up.
             this.topic = config.GetValue<string>("Kafka:FrivolousTopic");
             this.producer = producer;
-            this.randomNumberGenerator = new Random();
             this.logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
             // Simulate a complex request handler by delaying a random amount of time.
-            await Task.Delay((int)(this.randomNumberGenerator.NextDouble()*100));
+            await Task.Delay((int)(new Random((int)DateTime.Now.Ticks).NextDouble()*100));
 
             // Important note: DO NOT create a new producer instance every time you
             // need to produce a message (this is a common pattern with relational database
@@ -61,7 +59,7 @@ namespace Web.Controllers
 
         public async Task<IActionResult> Page1()
         {
-            await Task.Delay((int)(this.randomNumberGenerator.NextDouble()*100));
+            await Task.Delay((int)(new Random((int)DateTime.Now.Ticks).NextDouble()*100));
 
             // Delay completion of the page request on the result of the produce call.
             // An exception will be thrown in the case of an error.
