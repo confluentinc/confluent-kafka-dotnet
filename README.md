@@ -203,7 +203,7 @@ class Program
 ### IHostedService and Web Application Integration
 
 The [Web](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Web) example demonstrates how to integrate
-Kafka with a web application, including how to implement `IHostedService` to realize a long running consumer poll loop, how to
+Apache Kafka with a web application, including how to implement `IHostedService` to realize a long running consumer poll loop, how to
 register a producer as a singleton service, and how to bind configuration from an injected `IConfiguration` instance.
 
 
