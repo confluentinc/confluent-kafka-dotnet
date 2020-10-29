@@ -685,10 +685,11 @@ namespace Confluent.Kafka
                     {
                         unsafe
                         {
-                            var keyBytes = keydata == IntPtr.Zero
+                            var keyIsNull = keydata == IntPtr.Zero;
+                            var keyBytes = keyIsNull
                                 ? ReadOnlySpan<byte>.Empty
                                 : new ReadOnlySpan<byte>(keydata.ToPointer(), (int)keylen);
-                            return partitioners[topic](topic, partition_cnt, keyBytes);
+                            return partitioners[topic](topic, partition_cnt, keyBytes, keyIsNull);
                         }
                     });
 

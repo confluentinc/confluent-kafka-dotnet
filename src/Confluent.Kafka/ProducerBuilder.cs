@@ -44,11 +44,14 @@ namespace Confluent.Kafka
     /// <param name="keyData">
     ///     The serialized key data.
     /// </param>
+    /// <param name="keyIsNull">
+    ///     Whether or not the key is null (distinguishes the null and empty case).
+    /// </param>
     /// <returns>
     ///     The calculated <seealso cref="Confluent.Kafka.Partition"/>, possibly
     ///     <seealso cref="Confluent.Kafka.Partition.Any"/>.
     /// </returns>
-    public delegate Partition PartitionerDelegate(string topic, int partitionCount, ReadOnlySpan<byte> keyData);
+    public delegate Partition PartitionerDelegate(string topic, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull);
 
 
     /// <summary>

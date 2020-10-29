@@ -57,7 +57,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var producer =
                 new ProducerBuilder<string, string>(producerConfig)
-                    .SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData) => {
+                    .SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
                         return createCount++ % partitionCount;
                     })
                 .Build())
