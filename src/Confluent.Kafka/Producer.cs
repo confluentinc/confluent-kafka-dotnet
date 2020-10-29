@@ -38,7 +38,7 @@ namespace Confluent.Kafka
             public Action<LogMessage> logHandler;
             public Action<string> statisticsHandler;
             public Action<string> oAuthBearerTokenRefreshHandler;
-            public Dictionary<string, CustomPartitioner> partitioners;
+            public Dictionary<string, PartitionerDelegate> partitioners;
         }
 
         private ISerializer<TKey> keySerializer;
@@ -481,7 +481,7 @@ namespace Confluent.Kafka
                 {
                     return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle };
                 }
-                
+
                 return borrowedHandle;
             }
         }

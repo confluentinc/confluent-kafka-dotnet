@@ -40,11 +40,10 @@ namespace Confluent.Kafka.Internal
                     byte[] strBytes = System.Text.UTF8Encoding.UTF8.GetBytes(str);
                     byte[] strBytesNulTerminated = new byte[strBytes.Length + 1]; // initialized to all 0's.
                     Array.Copy(strBytes, strBytesNulTerminated, strBytes.Length);
-                    SystemGCHandle gch = SystemGCHandle.Alloc(strBytesNulTerminated, SystemGCHandleType.Pinned);
-                    gch.Free();
+                    this.gch = SystemGCHandle.Alloc(strBytesNulTerminated, SystemGCHandleType.Pinned);
                 }
 
-                public IntPtr Ptr { get => gch.AddrOfPinnedObject(); }
+                public IntPtr Ptr { get => this.gch.AddrOfPinnedObject(); }
 
                 public void Dispose()
                 {

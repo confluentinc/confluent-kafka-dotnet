@@ -48,7 +48,7 @@ namespace Confluent.Kafka
     ///     The calculated <seealso cref="Confluent.Kafka.Partition"/>, possibly
     ///     <seealso cref="Confluent.Kafka.Partition.Any"/>.
     /// </returns>
-    public delegate Partition CustomPartitioner(string topic, int partitionCount, ReadOnlySpan<byte> keyData);
+    public delegate Partition PartitionerDelegate(string topic, int partitionCount, ReadOnlySpan<byte> keyData);
 
 
     /// <summary>
@@ -84,7 +84,7 @@ namespace Confluent.Kafka
         /// <summary>        
         ///     The custom partitioners.
         /// </summary>
-        internal protected Dictionary<string, CustomPartitioner> Partitioners { get; set; } = new Dictionary<string, CustomPartitioner>();
+        internal protected Dictionary<string, PartitionerDelegate> Partitioners { get; set; } = new Dictionary<string, PartitionerDelegate>();
 
         /// <summary>
         ///     The configured key serializer.
@@ -170,7 +170,7 @@ namespace Confluent.Kafka
         ///     Set a custom partitioner to use when producing messages to
         ///     <paramref name="topic" />.
         /// </summary>
-        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, CustomPartitioner partitioner)
+        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, PartitionerDelegate partitioner)
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
