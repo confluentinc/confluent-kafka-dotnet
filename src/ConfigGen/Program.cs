@@ -313,6 +313,7 @@ namespace Confluent.Kafka
             { "consistent_random", "ConsistentRandom" },
             { "murmur2_random", "Murmur2Random"},
             { "roundrobin", "RoundRobin" },
+            { "cooperative-sticky", "CooperativeSticky"},
             { "read_uncommitted", "ReadUncommitted" },
             { "read_committed", "ReadCommitted" }
         };
