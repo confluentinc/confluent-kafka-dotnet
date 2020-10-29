@@ -157,7 +157,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     CooperativeSticky
         /// </summary>
-        CooperativeSticky,
+        CooperativeSticky
     }
 
     /// <summary>
@@ -230,7 +230,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     SCRAM-SHA-512
         /// </summary>
-        ScramSha512
+        ScramSha512,
 
         /// <summary>
         ///     OAUTHBEARER
