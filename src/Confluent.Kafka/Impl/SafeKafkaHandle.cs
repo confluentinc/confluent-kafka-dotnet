@@ -94,13 +94,8 @@ namespace Confluent.Kafka.Impl
         private Dictionary<string, SafeTopicHandle> topicHandles
             = new Dictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
-        internal SafeTopicHandle newTopic(string topic, IntPtr? topicConfig = null)
+        internal SafeTopicHandle newTopic(string topic, IntPtr topicConfigPtr)
         {
-            if (!topicConfig.HasValue)
-            {
-                topicConfig = IntPtr.Zero;
-            }
-
             lock (topicHandlesLock)
             {
                 if (this.topicHandles.ContainsKey(topic))
@@ -108,7 +103,7 @@ namespace Confluent.Kafka.Impl
                     return topicHandles[topic];
                 }
 
-                var topicHandle = this.NewTopic(topic, topicConfig.Value);
+                var topicHandle = this.NewTopic(topic, topicConfigPtr);
                 topicHandles.Add(topic, topicHandle);
                 return topicHandle;
             }
@@ -889,7 +884,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            SafeTopicHandle rkt = newTopic(topic);
+            SafeTopicHandle rkt = newTopic(topic, IntPtr.Zero);
 
             bool success = false;
             rkt.DangerousAddRef(ref success);
