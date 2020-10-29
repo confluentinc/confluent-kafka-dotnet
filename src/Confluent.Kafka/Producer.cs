@@ -85,32 +85,32 @@ namespace Confluent.Kafka
 
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
-            {
-                try
                 {
-                    while (true)
+                    try
                     {
-                        ct.ThrowIfCancellationRequested();
-                        int eventsServedCount_ = ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
-                        if (this.handlerException != null)
+                        while (true)
                         {
-                            errorHandler?.Invoke(new Error(ErrorCode.Local_Application, handlerException.ToString()));
-                            this.handlerException = null;
-                        }
-
-                        // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit
-                        if (eventsServedCount_ > 0)
-                        {
-                            lock (pollSyncObj)
+                            ct.ThrowIfCancellationRequested();
+                            int eventsServedCount_ = ownedKafkaHandle.Poll((IntPtr)cancellationDelayMaxMs);
+                            if (this.handlerException != null)
                             {
-                                this.eventsServedCount += eventsServedCount_;
-                                Monitor.Pulse(pollSyncObj);
+                                errorHandler?.Invoke(new Error(ErrorCode.Local_Application, handlerException.ToString()));
+                                this.handlerException = null;
+                            }
+
+                            // note: lock {} is equivalent to Monitor.Enter then Monitor.Exit 
+                            if (eventsServedCount_ > 0)
+                            {
+                                lock (pollSyncObj)
+                                {
+                                    this.eventsServedCount += eventsServedCount_;
+                                    Monitor.Pulse(pollSyncObj);
+                                }
                             }
                         }
                     }
-                }
-                catch (OperationCanceledException) {}
-            }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    catch (OperationCanceledException) {}
+                }, ct, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
 
         // .NET Exceptions are not propagated through native code, so we need to
@@ -397,7 +397,7 @@ namespace Confluent.Kafka
                 }
             }
         }
-
+        
 
         /// <inheritdoc/>
         public void Dispose()
@@ -773,9 +773,9 @@ namespace Confluent.Kafka
 
                     ProduceImpl(
                         topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers, 
+                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        message.Timestamp, topicPartition.Partition, headers,
                         handler);
 
                     return await handler.Task.ConfigureAwait(false);
@@ -783,7 +783,7 @@ namespace Confluent.Kafka
                 else
                 {
                     ProduceImpl(
-                        topicPartition.Topic,
+                        topicPartition.Topic, 
                         valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
                         keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
                         message.Timestamp, topicPartition.Partition, headers, 
@@ -883,9 +883,9 @@ namespace Confluent.Kafka
             {
                 ProduceImpl(
                     topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                    message.Timestamp, topicPartition.Partition,
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                    message.Timestamp, topicPartition.Partition, 
                     headers,
                     new TypedDeliveryHandlerShim_Action(
                         topicPartition.Topic,
