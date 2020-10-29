@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     integration of System.Text.Json and JSON Schema, so this
     ///     is not yet supported by the serializer.
     /// </remarks>
-    public class JsonSerializer<T> : IAsyncSerializer<T>  where T : new()
+    public class JsonSerializer<T> : IAsyncSerializer<T> where T : class
     {
         private const int DefaultInitialBufferSize = 1024;
 
