@@ -268,7 +268,7 @@ namespace Confluent.Kafka.Impl
             }
 
             SafeTopicHandle topicHandle = null;
-            using (var pinnedString = new Util.Marshal.PinnedString(topic))
+            using (var pinnedString = new Util.Marshal.StringAsPinnedUTF8(topic))
             {
                 topicHandle = Librdkafka.topic_new(handle, pinnedString.Ptr, config);
             }
@@ -1588,6 +1588,5 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(errorCode);
             }
         }
-
     }
 }

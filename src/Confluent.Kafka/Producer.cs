@@ -73,7 +73,7 @@ namespace Confluent.Kafka
         private Handle borrowedHandle;
 
         private SafeKafkaHandle KafkaHandle
-            => ownedKafkaHandle != null
+            => ownedKafkaHandle != null 
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
 
@@ -397,8 +397,8 @@ namespace Confluent.Kafka
                 }
             }
         }
-        
 
+        
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -481,7 +481,7 @@ namespace Confluent.Kafka
                 {
                     return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle };
                 }
-
+                
                 return borrowedHandle;
             }
         }
