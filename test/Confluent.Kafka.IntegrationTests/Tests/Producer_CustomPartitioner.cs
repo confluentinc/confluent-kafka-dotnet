@@ -53,12 +53,12 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
             };
 
-            int createCount = 0;
             using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var producer =
                 new ProducerBuilder<string, string>(producerConfig)
                     .SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
-                        return createCount++ % partitionCount;
+                        var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                        return int.Parse(keyString.Split(" ").Last()) % partitionCount;
                     })
                 .Build())
             {
