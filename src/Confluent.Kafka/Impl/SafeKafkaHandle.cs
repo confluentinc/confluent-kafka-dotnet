@@ -18,12 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
-using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 
@@ -274,12 +271,12 @@ namespace Confluent.Kafka.Impl
                 Librdkafka.topic_conf_destroy(config);
                 throw new Exception("Failed to create topic (DangerousAddRef failed)");
             }
-            byte[] topicBytes = System.Text.UTF8Encoding.UTF8.GetBytes(topic);
-            byte[] topicBytesNulTerminated = new byte[topicBytes.Length + 1]; // initialized to all 0's.
-            Array.Copy(topicBytes, topicBytesNulTerminated, topicBytes.Length);
-            GCHandle gch = GCHandle.Alloc(topicBytesNulTerminated, GCHandleType.Pinned);
-            SafeTopicHandle topicHandle = Librdkafka.topic_new(handle, gch.AddrOfPinnedObject(), config);
-            gch.Free();
+
+            SafeTopicHandle topicHandle = null;
+            using (var pinnedString = new Util.Marshal.PinnedString(topic))
+            {
+                topicHandle = Librdkafka.topic_new(handle, pinnedString.Ptr, config);
+            }
 
             if (topicHandle.IsInvalid)
             {

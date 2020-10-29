@@ -25,13 +25,12 @@ namespace Confluent.Kafka.Benchmark
     public static class BenchmarkProducer
     {
         private static long BenchmarkProducerImpl(
-            string bootstrapServers,
-            string topic,
-            int nMessages,
-            int nTests,
+            string bootstrapServers, 
+            string topic, 
+            int nMessages, 
+            int nTests, 
             int nHeaders,
-            bool useDeliveryHandler,
-            bool usePartitioner = false)
+            bool useDeliveryHandler)
         {
             // mirrors the librdkafka performance test example.
             var config = new ProducerConfig
@@ -39,7 +38,7 @@ namespace Confluent.Kafka.Benchmark
                 BootstrapServers = bootstrapServers,
                 QueueBufferingMaxMessages = 2000000,
                 MessageSendMaxRetries = 3,
-                RetryBackoffMs = 500,
+                RetryBackoffMs = 500 ,
                 LingerMs = 100,
                 DeliveryReportFields = "none"
             };
@@ -56,14 +55,7 @@ namespace Confluent.Kafka.Benchmark
                 }
             }
 
-            var producerBuilder = new ProducerBuilder<Null, byte[]>(config);
-
-            if (usePartitioner)
-            {
-                producerBuilder.SetPartitioner(topic, new BenchmarkPartioner(useAllPartitions: false));
-            }
-
-            using (var producer = producerBuilder.Build())
+            using (var producer = new ProducerBuilder<Null, byte[]>(config).Build())
             {
                 for (var j=0; j<nTests; j += 1)
                 {
@@ -81,7 +73,7 @@ namespace Confluent.Kafka.Benchmark
                     {
                         var autoEvent = new AutoResetEvent(false);
                         var msgCount = nMessages;
-                        Action<DeliveryReport<Null, byte[]>> deliveryHandler = (DeliveryReport<Null, byte[]> deliveryReport) =>
+                        Action<DeliveryReport<Null, byte[]>> deliveryHandler = (DeliveryReport<Null, byte[]> deliveryReport) => 
                         {
                             if (deliveryReport.Error.IsError)
                             {
@@ -172,14 +164,14 @@ namespace Confluent.Kafka.Benchmark
         ///     Producer benchmark masquerading as an integration test.
         ///     Uses Task based produce method.
         /// </summary>
-        public static long TaskProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests, bool usePartitioner)
-            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, useDeliveryHandler: false, usePartitioner: usePartitioner);
+        public static long TaskProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, false);
 
         /// <summary>
         ///     Producer benchmark (with custom delivery handler) masquerading
         ///     as an integration test. Uses Task based produce method.
         /// </summary>
-        public static long DeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests, bool usePartitioner)
-            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, useDeliveryHandler: true, usePartitioner: usePartitioner);
+        public static long DeliveryHandlerProduce(string bootstrapServers, string topic, int nMessages, int nHeaders, int nTests)
+            => BenchmarkProducerImpl(bootstrapServers, topic, nMessages, nTests, nHeaders, true);
     }
 }

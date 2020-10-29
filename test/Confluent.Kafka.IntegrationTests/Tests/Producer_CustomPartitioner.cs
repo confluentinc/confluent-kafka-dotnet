@@ -37,8 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig
             {
-                BootstrapServers = bootstrapServers,
-                Debug = "all"
+                BootstrapServers = bootstrapServers
             };
 
             Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>

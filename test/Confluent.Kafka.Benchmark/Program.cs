@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
 
 
 namespace Confluent.Kafka.Benchmark
@@ -26,28 +25,23 @@ namespace Confluent.Kafka.Benchmark
         {
             if (args.Length != 2 && args.Length != 3)
             {
-                Console.WriteLine($"Usage: .. <broker,broker..> <topic> [use-partitioner] [header-count]");
+                Console.WriteLine($"Usage: .. <broker,broker..> <topic> [header-count]");
                 return;
             }
 
             var bootstrapServers = args[0];
             var topic = args[1];
-            var usePartitioner = args.Any(arg => arg.Contains("use-partitioner"));
-
             var headerCount = 0;
             if (args.Length > 2)
             {
-                if (int.TryParse(args[2], out headerCount) || int.TryParse(args[3], out headerCount))
-                {
-                    Console.WriteLine($"Parsed header count as {headerCount}");
-                }
+                headerCount = int.Parse(args[2]);
             }
 
-            const int NUMBER_OF_MESSAGES = 5_000_000;
+            const int NUMBER_OF_MESSAGES = 5000000;
             const int NUMBER_OF_TESTS = 1;
 
-            BenchmarkProducer.TaskProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS, usePartitioner);
-            var firstMessageOffset = BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS, usePartitioner);
+            BenchmarkProducer.TaskProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
+            var firstMessageOffset = BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topic, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
 
             BenchmarkConsumer.Consume(bootstrapServers, topic, firstMessageOffset, NUMBER_OF_MESSAGES, headerCount, NUMBER_OF_TESTS);
         }
