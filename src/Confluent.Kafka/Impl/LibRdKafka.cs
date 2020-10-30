@@ -34,6 +34,8 @@ namespace Confluent.Kafka.Impl
 {
     internal static class Librdkafka
     {
+        const int RTLD_NOW = 2;
+
         internal enum DestroyFlags
         {
             /*!
@@ -363,69 +365,22 @@ namespace Confluent.Kafka.Impl
                 isInitialized = LoadNetFrameworkDelegates(userSpecifiedPath);
 
 #else
-                const int RTLD_NOW = 2;
-
-                List<Type> nativeMethodTypes;
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
-                        {
-                            // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
-                            // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
-                        }
-                    }
-                    nativeMethodTypes = new List<Type> { typeof(NativeMethods.NativeMethods) };
+                    isInitialized = LoadNetStandardDelegates(userSpecifiedPath);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                        }
-                    }
-
-                    nativeMethodTypes = new List<Type> { typeof(NativeMethods.NativeMethods) };
+                    isInitialized = LoadOSXDelegates(userSpecifiedPath);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                        }
-
-                        nativeMethodTypes = new List<Type> { typeof(NativeMethods.NativeMethods) };
-                    }
-                    else
-                    {
-                        nativeMethodTypes = new List<Type>
-                        {
-                            typeof(NativeMethods.NativeMethods_Centos7),
-                            typeof(NativeMethods.NativeMethods),
-                            typeof(NativeMethods.NativeMethods_Debian9),
-                            typeof(NativeMethods.NativeMethods_Alpine)
-                        };
-                    }
+                    isInitialized = LoadLinuxDelegates(userSpecifiedPath);
                 }
                 else
                 {
                     throw new InvalidOperationException($"Unsupported platform: {RuntimeInformation.OSDescription}");
-                }
-
-                foreach (var t in nativeMethodTypes)
-                {
-                    isInitialized = SetDelegates(t);
-                    if (isInitialized)
-                    {
-                        break;
-                    }
                 }
 
 #endif
@@ -502,7 +457,70 @@ namespace Confluent.Kafka.Impl
 
             return SetDelegates(typeof(NativeMethods.NativeMethods));
         }
+
 #endif
+
+        private static bool TrySetDelegates(List<Type> nativeMethodCandidateTypes)
+        {
+            foreach (var t in nativeMethodCandidateTypes)
+            {
+                if (SetDelegates(t))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool LoadNetStandardDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                {
+                    // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
+                    // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
+                }
+            }
+            return TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+        }
+
+        private static bool LoadOSXDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                }
+            }
+
+            return TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+        }
+
+        private static bool LoadLinuxDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                }
+
+                return TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+            }
+            else
+            {
+                return TrySetDelegates(new List<Type>
+                {
+                    typeof(NativeMethods.NativeMethods_Centos7),
+                    typeof(NativeMethods.NativeMethods),
+                    typeof(NativeMethods.NativeMethods_Debian9),
+                    typeof(NativeMethods.NativeMethods_Alpine)
+                });
+            }
+        }
 
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
