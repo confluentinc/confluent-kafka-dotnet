@@ -24,7 +24,6 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
-using Confluent.Kafka.Impl.NativeMethods;
 using System.Reflection;
 #if NET45 || NET46 || NET47
 using System.ComponentModel;
@@ -77,10 +76,10 @@ namespace Confluent.Kafka.Impl
             DescribeConfigs_Result = 104
         }
 
-        // min librdkafka version, to change when binding to new function are added
-        const long minVersion = 0x000903ff;
+        // Minimum librdkafka version.
+        const long minVersion = 0x01060000;
 
-        // max length for error strings built by librdkafka
+        // Maximum length of error strings built by librdkafka.
         internal const int MaxErrorStringLength = 512;
 
         private static class WindowsNative
@@ -339,6 +338,17 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        /// <summary>
+        ///     Attempt to load librdkafka.
+        /// </summary>
+        /// <returns>
+        ///     true if librdkafka was loaded as a result of this call, false if the
+        ///     library has already been loaded.
+        ///
+        ///     throws DllNotFoundException if librdkafka could not be loaded.
+        ///     throws FileLoadException if the loaded librdkafka version is too low.
+        ///     throws InvalidOperationException on other error.
+        /// </returns>
         public static bool Initialize(string userSpecifiedPath)
         {
             lock (loadLockObj)
@@ -347,8 +357,6 @@ namespace Confluent.Kafka.Impl
                 {
                     return false;
                 }
-
-                isInitialized = false;
 
 #if NET45 || NET46 || NET47
 
@@ -387,7 +395,6 @@ namespace Confluent.Kafka.Impl
 
                     if (!File.Exists(path))
                     {
-
                         path = Path.Combine(baseDirectory, "librdkafka.dll");
                     }
                 }
@@ -484,10 +491,7 @@ namespace Confluent.Kafka.Impl
                     throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
                 }
 
-                isInitialized = true;
-
-
-                return isInitialized;
+                return true;
             }
         }
 

@@ -40,7 +40,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
     /// </remarks>
     internal class NativeMethods_Centos7
     {
+#if NET45 || NET46 || NET47
+         public const string DllName = "centos7-librdkafka.so";
+#else
         public const string DllName = "centos7-librdkafka";
+#endif
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_version();

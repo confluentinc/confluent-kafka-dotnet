@@ -17,7 +17,6 @@
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
-using Confluent.Kafka.Internal;
 using Confluent.Kafka.Admin;
 
 
@@ -40,7 +39,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
     /// </remarks>
     internal class NativeMethods_Debian9
     {
+#if NET45 || NET46 || NET47
+         public const string DllName = "debian9-librdkafka.so";
+#else
         public const string DllName = "debian9-librdkafka";
+#endif
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_version();
