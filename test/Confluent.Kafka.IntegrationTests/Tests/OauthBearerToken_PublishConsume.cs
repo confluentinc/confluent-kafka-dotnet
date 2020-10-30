@@ -10,6 +10,12 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFileStartTest();
 
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                // skip test if oauth enabled broker is not specified.
+                return;
+            }
+
             const string principal = "Tester";
             var issuedAt = DateTimeOffset.UtcNow;
             var expiresAt = issuedAt.AddMinutes(5);
@@ -64,6 +70,12 @@ namespace Confluent.Kafka.IntegrationTests
         public void OAuthBearerToken_PublishConsume_InvalidScope(string bootstrapServers)
         {
             LogToFileStartTest();
+
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                // skip test if oauth enabled broker is not specified.
+                return;
+            }
 
             const string principal = "Tester";
             var issuedAt = DateTimeOffset.UtcNow;
@@ -132,6 +144,12 @@ namespace Confluent.Kafka.IntegrationTests
         public void OAuthBearerToken_PublishConsume_SetFailure(string bootstrapServers)
         {
             LogToFileStartTest();
+
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                // skip test if oauth enabled broker is not specified.
+                return;
+            }
 
             var errorMessage = $"{Guid.NewGuid()}";
             void TokenCallback(IClient client, string cfg)
