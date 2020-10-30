@@ -77,7 +77,7 @@ namespace Confluent.Kafka.Impl
         }
 
         // Minimum librdkafka version.
-        const long minVersion = 0x01060000;
+        const long minVersion = 0x010502ff;
 
         // Maximum length of error strings built by librdkafka.
         internal const int MaxErrorStringLength = 512;
