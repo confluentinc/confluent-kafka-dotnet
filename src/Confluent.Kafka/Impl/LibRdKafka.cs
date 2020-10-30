@@ -362,21 +362,21 @@ namespace Confluent.Kafka.Impl
 
 #if NET45 || NET46 || NET47
 
-                isInitialized = LoadNetFrameworkDelegates(userSpecifiedPath);
+                LoadNetFrameworkDelegates(userSpecifiedPath);
 
 #else
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    isInitialized = LoadNetStandardDelegates(userSpecifiedPath);
+                    LoadNetStandardDelegates(userSpecifiedPath);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    isInitialized = LoadOSXDelegates(userSpecifiedPath);
+                    LoadOSXDelegates(userSpecifiedPath);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    isInitialized = LoadLinuxDelegates(userSpecifiedPath);
+                    LoadLinuxDelegates(userSpecifiedPath);
                 }
                 else
                 {
@@ -385,23 +385,19 @@ namespace Confluent.Kafka.Impl
 
 #endif
 
-                if (!isInitialized)
-                {
-                    throw new DllNotFoundException("Failed to load the librdkafka native library.");
-                }
-
                 if ((long)version() < minVersion)
                 {
                     throw new FileLoadException($"Invalid librdkafka version {(long)version():x}, expected at least {minVersion:x}");
                 }
 
+                isInitialized = true;
                 return true;
             }
         }
 
 
 #if NET45 || NET46 || NET47
-        private static bool LoadNetFrameworkDelegates(string userSpecifiedPath)
+        private static void LoadNetFrameworkDelegates(string userSpecifiedPath)
         {
             string path = userSpecifiedPath;
             if (path == null)
@@ -455,7 +451,10 @@ namespace Confluent.Kafka.Impl
                 throw new InvalidOperationException(additionalMessage, win32Exception);
             }
 
-            return SetDelegates(typeof(NativeMethods.NativeMethods));
+            if (!SetDelegates(typeof(NativeMethods.NativeMethods)))
+            {
+                throw new DllNotFoundException("Failed to load the librdkafka native library.");
+            }
         }
 
 #endif
@@ -469,10 +468,11 @@ namespace Confluent.Kafka.Impl
                     return true;
                 }
             }
-            return false;
+
+            throw new DllNotFoundException("Failed to load the librdkafka native library.");
         }
 
-        private static bool LoadNetStandardDelegates(string userSpecifiedPath)
+        private static void LoadNetStandardDelegates(string userSpecifiedPath)
         {
             if (userSpecifiedPath != null)
             {
@@ -483,10 +483,11 @@ namespace Confluent.Kafka.Impl
                     throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
                 }
             }
-            return TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+
+            TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
         }
 
-        private static bool LoadOSXDelegates(string userSpecifiedPath)
+        private static void LoadOSXDelegates(string userSpecifiedPath)
         {
             if (userSpecifiedPath != null)
             {
@@ -496,10 +497,10 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            return TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+            TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
         }
 
-        private static bool LoadLinuxDelegates(string userSpecifiedPath)
+        private static void LoadLinuxDelegates(string userSpecifiedPath)
         {
             if (userSpecifiedPath != null)
             {
@@ -508,11 +509,11 @@ namespace Confluent.Kafka.Impl
                     throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
                 }
 
-                return TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+                TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
             }
             else
             {
-                return TrySetDelegates(new List<Type>
+                TrySetDelegates(new List<Type>
                 {
                     typeof(NativeMethods.NativeMethods_Centos7),
                     typeof(NativeMethods.NativeMethods),
