@@ -365,7 +365,7 @@ namespace Confluent.Kafka.Impl
 #else
                 const int RTLD_NOW = 2;
 
-                var nativeMethodTypes = new List<Type>();
+                List<Type> nativeMethodTypes;
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
@@ -378,8 +378,7 @@ namespace Confluent.Kafka.Impl
                             throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
                         }
                     }
-
-                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                    nativeMethodTypes = new List<Type> { typeof(NativeMethods.NativeMethods) };
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
@@ -391,7 +390,7 @@ namespace Confluent.Kafka.Impl
                         }
                     }
 
-                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                    nativeMethodTypes = new List<Type> { typeof(NativeMethods.NativeMethods) };
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
@@ -402,14 +401,17 @@ namespace Confluent.Kafka.Impl
                             throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
                         }
 
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                        nativeMethodTypes = new List<Type> { typeof(NativeMethods.NativeMethods) };
                     }
                     else
                     {
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Centos7));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Alpine));
+                        nativeMethodTypes = new List<Type>
+                        {
+                            typeof(NativeMethods.NativeMethods_Centos7),
+                            typeof(NativeMethods.NativeMethods),
+                            typeof(NativeMethods.NativeMethods_Debian9),
+                            typeof(NativeMethods.NativeMethods_Alpine)
+                        };
                     }
                 }
                 else
