@@ -362,7 +362,27 @@ namespace Confluent.Kafka.Impl
 
 #if NET45 || NET46 || NET47
 
-                LoadNetFrameworkDelegates(userSpecifiedPath);
+                if (!MonoSupport.IsMonoRuntime)
+                {
+                    LoadNetFrameworkDelegates(userSpecifiedPath);
+                }
+                else
+                {
+                    if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        LoadLinuxDelegates(userSpecifiedPath);
+                    }
+                    else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    {
+                        LoadOSXDelegates(userSpecifiedPath);
+                    }
+                    else
+                    {
+                        // Assume other PlatformId enum cases are Windows based
+                        // (at the time of implementation, this is the case).
+                        LoadNetFrameworkDelegates(userSpecifiedPath);
+                    }
+                }
 
 #else
 

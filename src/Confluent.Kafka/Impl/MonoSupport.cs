@@ -27,9 +27,6 @@ namespace Confluent.Kafka.Impl
 
         public static bool IsMonoRuntime
             => HasMonoRuntime.Value;
-
-        public static bool IsPlatform(params PlatformID[] platform)
-            => platform.Any(x => x == Environment.OSVersion.Platform);
     }
 #endif
 }
