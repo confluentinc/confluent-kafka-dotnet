@@ -40,7 +40,11 @@ namespace Confluent.Kafka.Impl.NativeMethods
     /// </remarks>
     internal class NativeMethods_Alpine
     {
+#if NET45 || NET46 || NET47
+         public const string DllName = "alpine-librdkafka.so";
+#else
         public const string DllName = "alpine-librdkafka";
+#endif
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_version();
