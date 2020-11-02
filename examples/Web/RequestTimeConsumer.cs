@@ -14,14 +14,12 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Confluent.Kafka;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Threading.Tasks;
-using System.Threading;
-
 
 namespace Web
 {
@@ -29,43 +27,41 @@ namespace Web
     ///     A simple example demonstrating how to set up a Kafka consumer as an
     ///     IHostedService.
     /// </summary>
-    public class RequestTimeConsumer : IHostedService, IDisposable
+    public class RequestTimeConsumer : BackgroundService
     {
-        string topic;
-        ConsumerConfig consumerConfig;
-        IConsumer<string, long> kafkaConsumer;
-        Thread pollThread;
-        CancellationTokenSource cancellationTokenSource;
+        private readonly string topic;
+        private readonly IConsumer<string, long> kafkaConsumer;
 
         public RequestTimeConsumer(IConfiguration config)
         {
-            consumerConfig = new ConsumerConfig();
+            var consumerConfig = new ConsumerConfig();
             config.GetSection("Kafka:ConsumerSettings").Bind(consumerConfig);
             this.topic = config.GetValue<string>("Kafka:RequestTimeTopic");
+            this.kafkaConsumer = new ConsumerBuilder<string, long>(consumerConfig).Build();
         }
 
-        public void Dispose()
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            this.kafkaConsumer.Close(); // Commit offsets and leave the group cleanly.
-            this.kafkaConsumer.Dispose();
-        }
+            new Thread(() => StartConsumerLoop(stoppingToken)).Start();
 
-        private void consumerLoop()
+            return Task.CompletedTask;
+        }
+        
+        private void StartConsumerLoop(CancellationToken cancellationToken)
         {
             kafkaConsumer.Subscribe(this.topic);
 
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    var cr = this.kafkaConsumer.Consume(this.cancellationTokenSource.Token);
+                    var cr = this.kafkaConsumer.Consume(cancellationToken);
 
                     // Handle message...
                     Console.WriteLine($"{cr.Message.Key}: {cr.Message.Value}ms");
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
-                    // StopAsync called.
                     break;
                 }
                 catch (ConsumeException e)
@@ -86,29 +82,13 @@ namespace Web
                 }
             }
         }
-
-        public Task StartAsync(CancellationToken _cancellationToken)
+        
+        public override void Dispose()
         {
-            // The passed in cancellationToken is to allow for cancellation of the StartAsync method.
-            // Our StartAsync implementation executes quickly - has no blocking or async calls, so
-            // this is not needed.
+            this.kafkaConsumer.Close(); // Commit offsets and leave the group cleanly.
+            this.kafkaConsumer.Dispose();
 
-            // Create a cancellation token source to allow the consumer poll loop to be cancelled
-            // by the StopAsync method.
-            this.cancellationTokenSource = new CancellationTokenSource();
-            this.kafkaConsumer = new ConsumerBuilder<string, long>(consumerConfig).Build();
-            this.pollThread = new Thread(consumerLoop);
-            this.pollThread.Start();
-            return Task.CompletedTask;
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            this.cancellationTokenSource.Cancel();
-
-            // Async methods should never block, so block waiting for the poll loop to finish on another
-            // thread and await completion of that.
-            await Task.Run(() => { this.pollThread.Join(); }, cancellationToken);
+            base.Dispose();
         }
     }
 }
