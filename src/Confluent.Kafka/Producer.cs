@@ -39,6 +39,7 @@ namespace Confluent.Kafka
             public Action<string> statisticsHandler;
             public Action<string> oAuthBearerTokenRefreshHandler;
             public Dictionary<string, PartitionerDelegate> partitioners;
+            public PartitionerDelegate defaultPartitioner;
         }
 
         private ISerializer<TKey> keySerializer;
@@ -557,6 +558,7 @@ namespace Confluent.Kafka
         {
             var baseConfig = builder.ConstructBaseConfig(this);
             var partitioners = baseConfig.partitioners;
+            var defaultPartitioner = baseConfig.defaultPartitioner;
 
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
@@ -634,15 +636,45 @@ namespace Confluent.Kafka
             }
 
             var configHandle = SafeConfigHandle.Create();
+            IntPtr configPtr = configHandle.DangerousGetHandle();
+
+            Func<PartitionerDelegate, SafeTopicConfigHandle> createTopicConfigWithPartitioner = (partitioner) => {
+                var topicConfigHandle = SafeTopicConfigHandle.Create();
+                IntPtr topicConfigPtr = topicConfigHandle.DangerousGetHandle();
+                Librdkafka.topic_conf_set_partitioner_cb(topicConfigPtr,
+                    (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque) =>
+                    {
+                        unsafe
+                        {
+                            var topicNamePtr = Librdkafka.topic_name(rkt);
+                            var topic = Util.Marshal.PtrToStringUTF8(topicNamePtr);
+                            var keyIsNull = keydata == IntPtr.Zero;
+                            var keyBytes = keyIsNull
+                                ? ReadOnlySpan<byte>.Empty
+                                : new ReadOnlySpan<byte>(keydata.ToPointer(), (int)keylen);
+                            return partitioner(topic, partition_cnt, keyBytes, keyIsNull);
+                        }
+                    });
+                return topicConfigHandle;
+            };
+
+            // Configure the default custom partitioner, if specified, by creating a new
+            // default topic config object. It's important that this occurs before the
+            // other properties are set, since if any of those were fallthru properties,
+            // their values would get clobbered by the default ones in the topic config
+            // object we create here.
+            if (defaultPartitioner != null)
+            {
+                var defaultTopicConfigHandle = createTopicConfigWithPartitioner(defaultPartitioner);
+                Librdkafka.conf_set_default_topic_conf(configPtr, defaultTopicConfigHandle.DangerousGetHandle());
+                defaultTopicConfigHandle.SetHandleAsInvalid(); // ownership was transferred.
+            }
 
             modifiedConfig.ForEach((kvp) =>
                 {
                     if (kvp.Value == null) { throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null."); }
                     configHandle.Set(kvp.Key, kvp.Value);
                 });
-
-
-            IntPtr configPtr = configHandle.DangerousGetHandle();
 
             if (enableDeliveryReports)
             {
@@ -675,27 +707,11 @@ namespace Confluent.Kafka
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
             configHandle.SetHandleAsInvalid(); // config object ownership was transferred.
 
+            // Per-topic partitioners.
             foreach (var partitioner in partitioners)
             {
-                var topic = partitioner.Key;
-                var topicConfigHandle = SafeTopicConfigHandle.Create();
-                IntPtr topicConfigPtr = topicConfigHandle.DangerousGetHandle();
-                Librdkafka.topic_conf_set_partitioner_cb(topicConfigPtr,
-                    (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque) =>
-                    {
-                        unsafe
-                        {
-                            var keyIsNull = keydata == IntPtr.Zero;
-                            var keyBytes = keyIsNull
-                                ? ReadOnlySpan<byte>.Empty
-                                : new ReadOnlySpan<byte>(keydata.ToPointer(), (int)keylen);
-                            return partitioners[topic](topic, partition_cnt, keyBytes, keyIsNull);
-                        }
-                    });
-
-                // The librdkafka topic handle is not used - it's only created so as to configure it.
-                // ownedKafkaHandle manages the librdkafka topic handle, including disposing of it.
-                this.ownedKafkaHandle.newTopic(topic, topicConfigPtr);
+                var topicConfigHandle = createTopicConfigWithPartitioner(partitioner.Value);
+                this.ownedKafkaHandle.newTopic(partitioner.Key, topicConfigHandle.DangerousGetHandle());
                 topicConfigHandle.SetHandleAsInvalid(); // ownership was transferred.
             }
 

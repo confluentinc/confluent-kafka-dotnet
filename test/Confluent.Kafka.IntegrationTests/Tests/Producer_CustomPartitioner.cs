@@ -40,40 +40,59 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers
             };
 
-            Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
+            for (int j=0; j<2; ++j)
             {
-                Assert.StartsWith($"test key ", dr.Message.Key);
-                Assert.StartsWith($"test val ", dr.Message.Value);
-                var expectedPartition = int.Parse(dr.Message.Key.Split(" ").Last());
-                Assert.Equal(ErrorCode.NoError, dr.Error.Code);
-                Assert.Equal(PersistenceStatus.Persisted, dr.Status);
-                Assert.Equal(expectedPartition, (int)dr.Partition);
-                Assert.True(dr.Offset >= 0);
-                Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
-                Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
-            };
-
-            using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
-            using (var producer =
-                new ProducerBuilder<string, string>(producerConfig)
-                    .SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
-                        var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
-                        return int.Parse(keyString.Split(" ").Last()) % partitionCount;
-                    })
-                .Build())
-            {
-                for (int i=0; i<PARTITION_COUNT; ++i)
+                using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
                 {
-                    producer.Produce(
-                        topic.Name,
-                        new Message<string, string> { Key = $"test key {i}", Value = $"test val {i}" }, dh);
-                }
+                    Action<DeliveryReport<string, string>> dh = (DeliveryReport<string, string> dr) =>
+                    {
+                        Assert.StartsWith($"test key ", dr.Message.Key);
+                        Assert.StartsWith($"test val ", dr.Message.Value);
+                        var expectedPartition = int.Parse(dr.Message.Key.Split(" ").Last());
+                        Assert.Equal(ErrorCode.NoError, dr.Error.Code);
+                        Assert.Equal(PersistenceStatus.Persisted, dr.Status);
+                        Assert.Equal(topic.Name, dr.Topic);
+                        Assert.Equal(expectedPartition, (int)dr.Partition);
+                        Assert.True(dr.Offset >= 0);
+                        Assert.Equal(TimestampType.CreateTime, dr.Message.Timestamp.Type);
+                        Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
+                    };
 
-                producer.Flush(TimeSpan.FromSeconds(10));
+                    var producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                    if (j == 0)
+                    {
+                        producerBuilder.SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
+                            Assert.Equal(topic.Name, topicName);
+                            var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                            return int.Parse(keyString.Split(" ").Last()) % partitionCount;
+                        });
+                    }
+                    else
+                    {
+                        producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
+                            Assert.Equal(topic.Name, topicName);
+                            var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                            return int.Parse(keyString.Split(" ").Last()) % partitionCount;
+                        });
+                    }
+
+                    using (var producer = producerBuilder.Build())
+                    {
+                        for (int i=0; i<PARTITION_COUNT; ++i)
+                        {
+                            producer.Produce(
+                                topic.Name,
+                                new Message<string, string> { Key = $"test key {i}", Value = $"test val {i}" }, dh);
+                        }
+
+                        producer.Flush(TimeSpan.FromSeconds(10));
+                    }
+                }
             }
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_CustomPartitioner");
         }
+
     }
 }

@@ -31,8 +31,7 @@ namespace Confluent.Kafka
     ///     A partitioner:
     ///     - MUST NOT call any method on the producer instance.
     ///     - MUST NOT block or execute for prolonged periods of time.
-    ///     - MUST return a value between 0 and partition_cnt-1, or the
-    ///       special <seealso cref="Confluent.Kafka.Partition.Any"/> value.
+    ///     - MUST return a value between 0 and partitionCnt-1.
     ///     - MUST NOT throw any exception.
     /// </remarks>
     /// <param name="topic">
@@ -85,9 +84,14 @@ namespace Confluent.Kafka
         internal protected Action<IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
 
         /// <summary>        
-        ///     The custom partitioners.
+        ///     The per-topic custom partitioners.
         /// </summary>
         internal protected Dictionary<string, PartitionerDelegate> Partitioners { get; set; } = new Dictionary<string, PartitionerDelegate>();
+
+        /// <summary>
+        ///     The default custom partitioner.
+        /// </summary>
+        internal protected PartitionerDelegate DefaultPartitioner { get; set; } = null;
 
         /// <summary>
         ///     The configured key serializer.
@@ -127,6 +131,7 @@ namespace Confluent.Kafka
                     ? default(Action<string>)
                     : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
                 partitioners = this.Partitioners,
+                defaultPartitioner = this.DefaultPartitioner,
             };
         }
 
@@ -177,13 +182,27 @@ namespace Confluent.Kafka
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
-                throw new ArgumentException("topic must not be null or empty");
+                throw new ArgumentException("Topic must not be null or empty");
             }
             if (this.Partitioners.ContainsKey(topic))
             {
-                throw new ArgumentException($"custom partitioner for {topic} already specified");
+                throw new ArgumentException($"Custom partitioner for {topic} already specified");
             }
             this.Partitioners.Add(topic, partitioner);
+            return this;
+        }
+
+        /// <summary>
+        ///     Set a custom partitioner that will be used for all topics
+        ///     except those for which a partitioner has been explicitly configured.
+        /// </summary>
+        public ProducerBuilder<TKey, TValue> SetDefaultPartitioner(PartitionerDelegate partitioner)
+        {
+            if (this.DefaultPartitioner != null)
+            {
+                throw new ArgumentException("Default custom partitioner may only be specified once");
+            }
+            this.DefaultPartitioner = partitioner;
             return this;
         }
 
