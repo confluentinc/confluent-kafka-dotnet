@@ -831,8 +831,8 @@ namespace Confluent.Kafka
                     {
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                    }
-                );
+                    },
+                    ex);
             }
 
             byte[] valBytes;
@@ -850,8 +850,8 @@ namespace Confluent.Kafka
                     {
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                    }
-                );
+                    },
+                    ex);
             }
 
             try
