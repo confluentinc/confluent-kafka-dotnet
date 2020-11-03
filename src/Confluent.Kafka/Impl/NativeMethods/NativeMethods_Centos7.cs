@@ -129,6 +129,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_conf_dup(IntPtr conf);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_default_topic_conf_dup(IntPtr conf);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ConfRes rd_kafka_conf_set(
                 IntPtr conf,
                 [MarshalAs(UnmanagedType.LPStr)] string name,

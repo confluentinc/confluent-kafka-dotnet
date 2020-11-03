@@ -179,6 +179,7 @@ namespace Confluent.Kafka.Impl
             _conf_dump_free = (Action<IntPtr, UIntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_dump_free").CreateDelegate(typeof(Action<IntPtr, UIntPtr>));
             _topic_conf_new = (Func<SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_topic_conf_new").CreateDelegate(typeof(Func<SafeTopicConfigHandle>));
             _topic_conf_dup = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_dup").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _default_topic_conf_dup = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_default_topic_conf_dup").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set").CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
@@ -697,6 +698,9 @@ namespace Confluent.Kafka.Impl
 
         private static Func<IntPtr, IntPtr> _topic_conf_dup;
         internal static IntPtr topic_conf_dup(IntPtr conf) => _topic_conf_dup(conf);
+
+        private static Func<IntPtr, IntPtr> _default_topic_conf_dup;
+        internal static IntPtr default_topic_conf_dup(IntPtr conf) => _default_topic_conf_dup(conf);
 
         private static Action<IntPtr> _topic_conf_destroy;
         internal static void topic_conf_destroy(IntPtr conf) => _topic_conf_destroy(conf);
