@@ -58,8 +58,12 @@ namespace Confluent.Kafka.IntegrationTests
                     assignCount += 1;
                     Assert.Single(p);
                 })
-                .SetPartitionsRevokedHandler((c, p) => { revokeCount += 1; })
-                .SetPartitionsLostHandler((c, p) => { lostCount += 1; })
+                .SetPartitionsRevokedHandler((c, p) => {
+                    revokeCount += 1;
+                })
+                .SetPartitionsLostHandler((c, p) => {
+                    lostCount += 1;
+                })
                 .Build())
             {
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 1, 1);
@@ -83,7 +87,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, revokeCount);
 
                 // Exceed MaxPollIntervalMs => lost partitions.
-                Thread.Sleep(8);
+                Thread.Sleep(TimeSpan.FromSeconds(8));
 
                 consumer.Close();
             }
