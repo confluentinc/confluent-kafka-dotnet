@@ -42,12 +42,18 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 producer.InitTransactions(defaultTimeout);
                 producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" });
-                producer.SendOffsetsToTransaction(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic.Name, 0, 7324) }, consumer.ConsumerGroupMetadata, TimeSpan.FromSeconds(30));
+                for (int i=0; i<100; ++i)
+                {
+                    producer.Produce(topic.Name, new Message<string, string> { Key = $"test key {i}", Value = $"test val {i}" });
+                }
+                producer.CommitTransaction(defaultTimeout);
+                producer.BeginTransaction();
+                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 100", Value = "test val 100" });
+                producer.SendOffsetsToTransaction(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic.Name, 0, 73) }, consumer.ConsumerGroupMetadata, TimeSpan.FromSeconds(30));
                 producer.CommitTransaction(defaultTimeout);
                 var committed = consumer.Committed(new List<TopicPartition> { new TopicPartition(topic.Name, 0) }, TimeSpan.FromSeconds(30));
                 Assert.Single(committed);
-                Assert.Equal(7324, committed[0].Offset);
+                Assert.Equal(73, committed[0].Offset);
             }
 
             Assert.Equal(0, Library.HandleCount);
