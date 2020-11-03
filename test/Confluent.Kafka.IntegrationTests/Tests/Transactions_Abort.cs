@@ -40,11 +40,16 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 producer.InitTransactions(defaultTimeout);
                 producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" });
+                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" }, (dr) => {
+                    Assert.Equal(0, dr.Offset);
+                });
                 Thread.Sleep(1000); // ensure the abort ctrl message makes it into the log.
                 producer.AbortTransaction(defaultTimeout);
                 producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" });
+                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" }, (dr) => {
+                    // abort marker will be at offset 1.
+                    Assert.Equal(2, dr.Offset);
+                });
                 producer.CommitTransaction(defaultTimeout);
 
                 using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
