@@ -37,23 +37,26 @@ namespace Confluent.Kafka.IntegrationTests
 
             var groupName = Guid.NewGuid().ToString();
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = Guid.NewGuid().ToString() }).Build())
             using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = groupName, EnableAutoCommit = false, Debug="all" }).Build())
             {
-                producer.InitTransactions(defaultTimeout);
-                producer.BeginTransaction();
-                for (int i=0; i<100; ++i)
+                var transactionalId = Guid.NewGuid().ToString();
+                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = transactionalId }).Build())
                 {
-                    producer.Produce(topic.Name, new Message<string, string> { Key = $"test key {i}", Value = $"test val {i}" });
+                    producer.InitTransactions(defaultTimeout);
+                    producer.BeginTransaction();
+                    producer.Produce(topic.Name, new Message<string, string> { Key = "test key 100", Value = "test val 100" });
+                    producer.SendOffsetsToTransaction(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic.Name, 0, 73) }, consumer.ConsumerGroupMetadata, TimeSpan.FromSeconds(30));
+                    producer.CommitTransaction(defaultTimeout);
                 }
-                producer.CommitTransaction(defaultTimeout);
-                producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 100", Value = "test val 100" });
-                producer.SendOffsetsToTransaction(new List<TopicPartitionOffset> { new TopicPartitionOffset(topic.Name, 0, 73) }, consumer.ConsumerGroupMetadata, TimeSpan.FromSeconds(30));
-                producer.CommitTransaction(defaultTimeout);
-                var committed = consumer.Committed(new List<TopicPartition> { new TopicPartition(topic.Name, 0) }, TimeSpan.FromSeconds(30));
-                Assert.Single(committed);
-                Assert.Equal(73, committed[0].Offset);
+                using (var producer = new ProducerBuilder<string, string>(new ProducerConfig { BootstrapServers = bootstrapServers, TransactionalId = transactionalId }).Build())
+                {
+                    // Committing the transaction is not enough to guarantee read after write
+                    // of the previously committed offsets, an init transactions is required.
+                    producer.InitTransactions(defaultTimeout);
+                    var committed = consumer.Committed(new List<TopicPartition> { new TopicPartition(topic.Name, 0) }, TimeSpan.FromSeconds(30));
+                    Assert.Single(committed);
+                    Assert.Equal(73, committed[0].Offset);
+                }
             }
 
             Assert.Equal(0, Library.HandleCount);
