@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
                 {
                     var cr = consumer.Consume(TimeSpan.FromMilliseconds(500));
                     wo2 = consumer.GetWatermarkOffsets(new TopicPartition(topic.Name, 0));
-                    if (wo2.High > 1) { break; }
+                    if (wo2.High == 3) { break; }
                 }
                 Assert.Equal(3, wo2.High);
                 producer.CommitTransaction(TimeSpan.FromSeconds(30));

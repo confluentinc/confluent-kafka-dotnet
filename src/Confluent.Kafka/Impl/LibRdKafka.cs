@@ -211,6 +211,10 @@ namespace Confluent.Kafka.Impl
             _consumer_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_consumer_poll").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _consumer_close = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_consumer_close").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _assign = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_assign").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _incremental_assign = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_incremental_assign").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _incremental_unassign = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_incremental_unassign").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _assignment_lost = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_assignment_lost").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _rebalance_protocol = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_rebalance_protocol").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _assignment = (Assignment)methods.Single(m => m.Name == "rd_kafka_assignment").CreateDelegate(typeof(Assignment));
             _offsets_store = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_offsets_store").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _commit = (Func<IntPtr, IntPtr, bool, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_commit").CreateDelegate(typeof(Func<IntPtr, IntPtr, bool, ErrorCode>));
@@ -884,6 +888,22 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, ErrorCode> _assign;
         internal static ErrorCode assign(IntPtr rk, IntPtr partitions)
             => _assign(rk, partitions);
+
+        private static Func<IntPtr, IntPtr, IntPtr> _incremental_assign;
+        internal static IntPtr incremental_assign(IntPtr rk, IntPtr partitions)
+            => _incremental_assign(rk, partitions);
+
+        private static Func<IntPtr, IntPtr, IntPtr> _incremental_unassign;
+        internal static IntPtr incremental_unassign(IntPtr rk, IntPtr partitions)
+            => _incremental_unassign(rk, partitions);
+
+        private static Func<IntPtr, IntPtr> _assignment_lost;
+        internal static IntPtr assignment_lost(IntPtr rk)
+            => _assignment_lost(rk);
+
+        private static Func<IntPtr, IntPtr> _rebalance_protocol;
+        internal static IntPtr rebalance_protocol(IntPtr rk)
+            => _rebalance_protocol(rk);
 
         private delegate ErrorCode Assignment(IntPtr rk, out IntPtr topics);
         private static Assignment _assignment;

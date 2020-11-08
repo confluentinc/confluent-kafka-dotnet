@@ -35,6 +35,7 @@ namespace Confluent.Kafka.Impl
         Consumer
     }
 
+
     [StructLayout(LayoutKind.Sequential)]
     struct rd_kafka_message
     {
@@ -752,7 +753,9 @@ namespace Confluent.Kafka.Impl
             return ret;
         }
 
-        internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
+        private void AssignImpl(IEnumerable<TopicPartitionOffset> partitions,
+                                Func<IntPtr, IntPtr, ErrorCode> assignMethodErr,
+                                Func<IntPtr, IntPtr, IntPtr> assignMethodError)
         {
             ThrowIfHandleClosed();
 
@@ -769,7 +772,7 @@ namespace Confluent.Kafka.Impl
                     if (partition.Topic == null)
                     {
                         Librdkafka.topic_partition_list_destroy(list);
-                        throw new ArgumentException("Cannot assign partitions because one or more have a null topic.");
+                        throw new ArgumentException("Partition topic must not be null");
                     }
 
                     IntPtr ptr = Librdkafka.topic_partition_list_add(list, partition.Topic, partition.Partition);
@@ -780,17 +783,61 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
-            ErrorCode err = Librdkafka.assign(handle, list);
+            ErrorCode err = ErrorCode.NoError;
+            Error error = null;
+
+            if (assignMethodErr != null)
+            {
+                err = assignMethodErr(handle, list);
+            }
+            else if (assignMethodError != null)
+            {
+                var errorPtr = assignMethodError(handle, list);
+                if (errorPtr != IntPtr.Zero)
+                {
+                    error = new Error(errorPtr);
+                }
+            }
+
             if (list != IntPtr.Zero)
             {
                 Librdkafka.topic_partition_list_destroy(list);
             }
-            if (err != ErrorCode.NoError)
+
+            if (err != ErrorCode.NoError) { throw new KafkaException(CreatePossiblyFatalError(err, null)); }
+            else if (error != null) { throw new KafkaException(error); }
+        }
+
+        internal void Assign(IEnumerable<TopicPartitionOffset> partitions)
+            => AssignImpl(partitions, Librdkafka.assign, null);
+
+        internal void IncrementalAssign(IEnumerable<TopicPartitionOffset> partitions)
+            => AssignImpl(partitions, null, Librdkafka.incremental_assign);
+
+        internal void IncrementalUnassign(IEnumerable<TopicPartitionOffset> partitions)
+            => AssignImpl(partitions, null, Librdkafka.incremental_unassign);
+
+        internal bool AssignmentLost
+        {
+            get
             {
-                throw new KafkaException(CreatePossiblyFatalError(err, null));
+                ThrowIfHandleClosed();
+                return (Librdkafka.assignment_lost(handle) != IntPtr.Zero);
             }
         }
 
+        internal string RebalanceProtocol
+        {
+            get
+            {
+                ThrowIfHandleClosed();
+                var rebalanceProtocolPtr = Librdkafka.rebalance_protocol(handle);
+                if (rebalanceProtocolPtr == IntPtr.Zero) {
+                    return null;
+                }
+                return Util.Marshal.PtrToStringUTF8(rebalanceProtocolPtr);
+            }
+        }
 
         internal void StoreOffsets(IEnumerable<TopicPartitionOffset> offsets)
         {

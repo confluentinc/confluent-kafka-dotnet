@@ -36,15 +36,6 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
-            var testString = "hello world";
-
-            DeliveryResult<Null, string> dr;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
-            {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<Null, string> { Value = testString }).Result;
-                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
-            }
-
             var consumerConfig = new ConsumerConfig
             {
                 GroupId = Guid.NewGuid().ToString(),
@@ -52,20 +43,32 @@ namespace Confluent.Kafka.IntegrationTests
                 SessionTimeoutMs = 6000
             };
 
-            using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+            var testString = "hello world";
+
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
-                var record = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.NotNull(record.Message);
+                DeliveryResult<Null, string> dr;
+                using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+                {
+                    dr = producer.ProduceAsync(topic.Name, new Message<Null, string> { Value = testString }).Result;
+                    Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10))); // this isn't necessary.
+                }
 
-                var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
-                Assert.Equal(0, getOffsets.Low);
-                // the offset of the next message to be read.
-                Assert.Equal(dr.Offset + 1, getOffsets.High);
+                using (var consumer = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                {
+                    consumer.Assign(new List<TopicPartitionOffset>() { dr.TopicPartitionOffset });
+                    var record = consumer.Consume(TimeSpan.FromSeconds(10));
+                    Assert.NotNull(record.Message);
 
-                var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
-                Assert.NotEqual(Offset.Unset, queryOffsets.Low);
-                Assert.Equal(getOffsets.High, queryOffsets.High);
+                    var getOffsets = consumer.GetWatermarkOffsets(dr.TopicPartition);
+                    Assert.Equal(0, getOffsets.Low);
+                    // the offset of the next message to be read.
+                    Assert.Equal(dr.Offset + 1, getOffsets.High);
+
+                    var queryOffsets = consumer.QueryWatermarkOffsets(dr.TopicPartition, TimeSpan.FromSeconds(20));
+                    Assert.NotEqual(Offset.Unset, queryOffsets.Low);
+                    Assert.Equal(getOffsets.High, queryOffsets.High);
+                }
             }
 
             // Test empty topic case

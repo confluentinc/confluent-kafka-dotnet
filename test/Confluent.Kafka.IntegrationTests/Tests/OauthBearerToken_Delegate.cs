@@ -13,6 +13,12 @@ namespace Confluent.Kafka.IntegrationTests
         {
             LogToFileStartTest();
 
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                // skip test if oauth enabled broker is not specified.
+                return;
+            }
+
             var config = new ClientConfig
             {
                 BootstrapServers = bootstrapServers,
