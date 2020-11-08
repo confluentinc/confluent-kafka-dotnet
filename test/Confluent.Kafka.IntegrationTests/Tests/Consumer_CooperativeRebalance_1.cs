@@ -86,6 +86,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(0, lostCount);
                 Assert.Equal(0, revokeCount);
 
+                var cr3 = consumer.Consume(TimeSpan.FromSeconds(1));
+                Assert.Null(cr3);
+
                 // Exceed MaxPollIntervalMs => lost partitions.
                 Thread.Sleep(TimeSpan.FromSeconds(8));
 

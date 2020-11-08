@@ -83,6 +83,9 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(topic1.Name, cr5.Topic);
                 Assert.Equal(0, (int)cr5.Partition);
 
+                var cr6 = consumer.Consume(TimeSpan.FromSeconds(1));
+                Assert.Null(cr6);
+
                 consumer.IncrementalUnassign(new List<TopicPartition> { new TopicPartition(topic1.Name, 0) });
                 consumer.Unassign();
             }
