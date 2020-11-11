@@ -4,7 +4,7 @@
   - KIP-429: Incremental rebalancing.
   - KIP-480: Sticky partitioner.
 - KIP-22: Support for custom partitioners.
-- Librdkafka is no longer prevented from being loaded on Linux or MacOS when targeting `net452` (allows Confluent.Kafka to be used with Mono on these platforms).
+- Confluent.Kafka can now be used with Mono on Linux and MacOS. **Note**: Mono is not a supported runtime.
 - Exceptions thrown by `Producer.Produce` now include an inner exception with additional context on the error ([joostas](https://github.com/joostas)).
 
 
