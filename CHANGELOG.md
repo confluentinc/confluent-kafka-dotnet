@@ -1,8 +1,11 @@
 # 1.6.0-PRE1
 
-- References librdkafka 1.6.0. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
+- References librdkafka 1.6.0-PRE1. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
   - KIP-429: Incremental rebalancing.
   - KIP-480: Sticky partitioner.
+- KIP-22: Support for custom partitioners.
+- Confluent.Kafka can now be used with Mono on Linux and MacOS. **Note**: Mono is not a supported runtime.
+- Exceptions thrown by `Producer.Produce` now include an inner exception with additional context on the error ([joostas](https://github.com/joostas)).
 
 
 # 1.5.2
