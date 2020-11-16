@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
+    <PackageReference Include="Mono.Options" Version="6.6.0.161" />
   </ItemGroup>
 
 </Project>
