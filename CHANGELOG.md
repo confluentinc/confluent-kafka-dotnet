@@ -1,6 +1,6 @@
-# 1.6.0-PRE1
+# 1.6.0-PRE4
 
-- References librdkafka 1.6.0-PRE1. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
+- References librdkafka 1.6.0-PRE4. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
   - KIP-429: Incremental rebalancing.
   - KIP-480: Sticky partitioner.
 - KIP-22: Support for custom partitioners.
