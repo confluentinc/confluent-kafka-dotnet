@@ -37,7 +37,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             var producerConfig = new ProducerConfig
             {
-                BootstrapServers = bootstrapServers
+                BootstrapServers = bootstrapServers,
             };
 
             for (int j=0; j<2; ++j)
@@ -58,22 +58,47 @@ namespace Confluent.Kafka.IntegrationTests
                         Assert.True(Math.Abs((DateTime.UtcNow - dr.Message.Timestamp.UtcDateTime).TotalMinutes) < 1.0);
                     };
 
-                    var producerBuilder = new ProducerBuilder<string, string>(producerConfig);
-                    if (j == 0)
+                    ProducerBuilder<string, string> producerBuilder = null;
+                    switch (j)
                     {
-                        producerBuilder.SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
-                            Assert.Equal(topic.Name, topicName);
-                            var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
-                            return int.Parse(keyString.Split(" ").Last()) % partitionCount;
-                        });
-                    }
-                    else
-                    {
-                        producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
-                            Assert.Equal(topic.Name, topicName);
-                            var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
-                            return int.Parse(keyString.Split(" ").Last()) % partitionCount;
-                        });
+                        case 0:
+                            // Topic level custom partitioner.
+                            producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                            producerBuilder.SetPartitioner(topic.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                            {
+                                Assert.Equal(topic.Name, topicName);
+                                var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                                return int.Parse(keyString.Split(" ").Last()) % partitionCount;
+                            });
+                            break;
+                        case 1:
+                            // Default custom partitioner
+                            producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                            producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                            {
+                                Assert.Equal(topic.Name, topicName);
+                                var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                                return int.Parse(keyString.Split(" ").Last()) % partitionCount;
+                            });
+                            break;
+                        case 2:
+                            // Default custom partitioner in case where default topic config is present due to topic level config in top-level config.
+                            var producerConfig2 = new ProducerConfig
+                            {
+                                BootstrapServers = bootstrapServers
+                            };
+                            producerConfig2.Set("queuing.strategy", "lifo");
+                            producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                            producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                            {
+                                Assert.Equal(topic.Name, topicName);
+                                var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                                return int.Parse(keyString.Split(" ").Last()) % partitionCount;
+                            });
+                            break;
+                        default:
+                            Assert.True(false);
+                            break;
                     }
 
                     using (var producer = producerBuilder.Build())
@@ -88,6 +113,23 @@ namespace Confluent.Kafka.IntegrationTests
                         producer.Flush(TimeSpan.FromSeconds(10));
                     }
                 }
+            }
+
+
+            // Null key
+
+            using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
+            using (var producer = new ProducerBuilder<Null, string>(producerConfig)
+                .SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                {
+                    Assert.True(keyIsNull);
+                    Assert.True(!keyIsNull);
+                    return 0;
+                })
+                .Build())
+            {
+                producer.Produce(topic.Name, new Message<Null, string> { Value = "test value" });
+                producer.Flush(TimeSpan.FromSeconds(10));
             }
 
             Assert.Equal(0, Library.HandleCount);

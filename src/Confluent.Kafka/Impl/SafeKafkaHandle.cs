@@ -1588,5 +1588,9 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(errorCode);
             }
         }
+
+        internal SafeTopicConfigHandle DuplicateDefaultTopicConfig()
+            => Librdkafka.default_topic_conf_dup(this);
+
     }
 }

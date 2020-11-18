@@ -672,13 +672,9 @@ namespace Confluent.Kafka
                 Librdkafka.conf_set_oauthbearer_token_refresh_cb(configPtr, oAuthBearerTokenRefreshCallbackDelegate);
             }
 
-            this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
-            configHandle.SetHandleAsInvalid();  // ownership was transferred.
-                                                // configPtr remains valid over the lifetime of this method.
-
-            Func<PartitionerDelegate, IntPtr> createTopicConfigWithPartitioner = (partitioner) => {
-                var topicConfigPtr = SafeTopicConfigHandle.DuplicateDefaultTopicConfig(configPtr);
-                Librdkafka.topic_conf_set_partitioner_cb(configPtr,
+            Action<SafeTopicConfigHandle, PartitionerDelegate> addPartitionerToTopicConfig = (topicConfigHandle, partitioner) =>
+            {
+                Librdkafka.topic_conf_set_partitioner_cb(topicConfigHandle.DangerousGetHandle(),
                     (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque) =>
                     {
                         unsafe
@@ -692,21 +688,33 @@ namespace Confluent.Kafka
                             return partitioner(topic, partition_cnt, keyBytes, keyIsNull);
                         }
                     });
-                return topicConfigPtr;
             };
 
             // Configure the default custom partitioner.
             if (defaultPartitioner != null)
             {
-                var defaultTopicConfigPtr = createTopicConfigWithPartitioner(defaultPartitioner);
-                Librdkafka.conf_set_default_topic_conf(configPtr, defaultTopicConfigPtr);
+                // The default topic config may have been modified by topic-level
+                // configuraton parameters passed down from the top level config.
+                // If that's the case, duplicate the default topic config to avoid
+                // colobbering any already configured values.
+                var defaultTopicConfigHandle = configHandle.GetDefaultTopicConfig();
+                SafeTopicConfigHandle topicConfigHandle =
+                    defaultTopicConfigHandle.DangerousGetHandle() != IntPtr.Zero
+                        ? defaultTopicConfigHandle.Duplicate()
+                        : SafeTopicConfigHandle.Create();
+                addPartitionerToTopicConfig(topicConfigHandle, defaultPartitioner);
+                Librdkafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
             }
+
+            this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
+            configHandle.SetHandleAsInvalid();  // ownership was transferred.
 
             // Per-topic partitioners.
             foreach (var partitioner in partitioners)
             {
-                var topicConfigPtr = createTopicConfigWithPartitioner(partitioner.Value);
-                this.ownedKafkaHandle.newTopic(partitioner.Key, topicConfigPtr);
+                var topicConfigHandle = this.ownedKafkaHandle.DuplicateDefaultTopicConfig();
+                addPartitionerToTopicConfig(topicConfigHandle, partitioner.Value);
+                this.ownedKafkaHandle.newTopic(partitioner.Key, topicConfigHandle.DangerousGetHandle());
             }
 
             if (!manualPoll)

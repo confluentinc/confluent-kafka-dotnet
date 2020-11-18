@@ -17,7 +17,6 @@
 #pragma warning disable xUnit1026
 
 using System;
-using System.Linq;
 using Xunit;
 
 
@@ -44,16 +43,18 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic2 = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var topic3 = new TemporaryTopic(bootstrapServers, 1))
             using (var producer = new ProducerBuilder<string, Null>(producerConfig)
-                .SetPartitioner(topic1.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
+                .SetPartitioner(topic1.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                {
                     Assert.Equal(topic1.Name, topicName);
                     var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
                     Assert.Equal("hello", keyString);
                     return 8;
                 })
-                .SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) => {
-                    Assert.Equal(topic2.Name, topicName);
+                .SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                {
+                    Assert.True(topic2.Name == topicName || topic3.Name == topicName);
                     var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
-                    Assert.Equal("world", keyString);
+                    Assert.True(keyString == "world" || keyString == "kafka");
                     return 13;
                 })
                 .Build()

@@ -21,8 +21,9 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Calculate a partition number given a <paramref name="topic" />,
-    ///     <paramref name="partitionCount" /> and serialized <paramref name="keyData" />.
+    ///     Calculate a partition number given a <paramref name="partitionCount" />
+    ///     and serialized <paramref name="keyData" />. The <paramref name="topic" />
+    ///     is also provided, but is typically not used.
     /// </summary>
     /// <remarks>
     ///     A partioner instance may be called in any thread at any time and

@@ -129,7 +129,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern IntPtr rd_kafka_conf_dup(IntPtr conf);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_default_topic_conf_dup(IntPtr conf);
+        internal static extern SafeTopicConfigHandle rd_kafka_default_topic_conf_dup(SafeKafkaHandle rk);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ConfRes rd_kafka_conf_set(
@@ -184,6 +184,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr conf, IntPtr tconf);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern SafeTopicConfigHandle rd_kafka_conf_get_default_topic_conf(
+                SafeConfigHandle conf);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ConfRes rd_kafka_conf_get(
                 IntPtr conf,
                 [MarshalAs(UnmanagedType.LPStr)] string name,
@@ -210,8 +214,8 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern SafeTopicConfigHandle rd_kafka_topic_conf_new();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern /* rd_kafka_topic_conf_t * */ IntPtr rd_kafka_topic_conf_dup(
-                /* const rd_kafka_topic_conf_t * */ IntPtr conf);
+        internal static extern SafeTopicConfigHandle rd_kafka_topic_conf_dup(
+                SafeTopicConfigHandle conf);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_topic_conf_destroy(IntPtr conf);

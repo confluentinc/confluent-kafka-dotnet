@@ -172,14 +172,15 @@ namespace Confluent.Kafka.Impl
             _oauthbearer_set_token = (Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_oauthbearer_set_token").CreateDelegate(typeof(Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _oauthbearer_set_token_failure = (Func<IntPtr, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_oauthbearer_set_token_failure").CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
             _conf_set_default_topic_conf = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_set_default_topic_conf").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+            _conf_get_default_topic_conf = (Func<SafeConfigHandle, SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_conf_get_default_topic_conf").CreateDelegate(typeof(Func<SafeConfigHandle, SafeTopicConfigHandle>));
             _conf_get = (ConfGet)methods.Single(m => m.Name == "rd_kafka_conf_get").CreateDelegate(typeof(ConfGet));
             _topic_conf_get = (ConfGet)methods.Single(m => m.Name == "rd_kafka_topic_conf_get").CreateDelegate(typeof(ConfGet));
             _conf_dump = (ConfDump)methods.Single(m => m.Name == "rd_kafka_conf_dump").CreateDelegate(typeof(ConfDump));
             _topic_conf_dump = (ConfDump)methods.Single(m => m.Name == "rd_kafka_topic_conf_dump").CreateDelegate(typeof(ConfDump));
             _conf_dump_free = (Action<IntPtr, UIntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_dump_free").CreateDelegate(typeof(Action<IntPtr, UIntPtr>));
             _topic_conf_new = (Func<SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_topic_conf_new").CreateDelegate(typeof(Func<SafeTopicConfigHandle>));
-            _topic_conf_dup = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_dup").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _default_topic_conf_dup = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_default_topic_conf_dup").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _topic_conf_dup = (Func<SafeTopicConfigHandle, SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_topic_conf_dup").CreateDelegate(typeof(Func<SafeTopicConfigHandle, SafeTopicConfigHandle>));
+            _default_topic_conf_dup = (Func<SafeKafkaHandle, SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_default_topic_conf_dup").CreateDelegate(typeof(Func<SafeKafkaHandle, SafeTopicConfigHandle>));
             _topic_conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set").CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
@@ -668,6 +669,10 @@ namespace Confluent.Kafka.Impl
         internal static void conf_set_default_topic_conf(IntPtr conf, IntPtr tconf)
             => _conf_set_default_topic_conf(conf, tconf);
 
+        private static Func<SafeConfigHandle, SafeTopicConfigHandle> _conf_get_default_topic_conf;
+        internal static SafeTopicConfigHandle conf_get_default_topic_conf(SafeConfigHandle conf)
+            => _conf_get_default_topic_conf(conf);
+
         private delegate ConfRes ConfGet(IntPtr conf, string name, StringBuilder dest,
                 ref UIntPtr dest_size);
         private static ConfGet _conf_get;
@@ -696,11 +701,11 @@ namespace Confluent.Kafka.Impl
         private static Func<SafeTopicConfigHandle> _topic_conf_new;
         internal static SafeTopicConfigHandle topic_conf_new() => _topic_conf_new();
 
-        private static Func<IntPtr, IntPtr> _topic_conf_dup;
-        internal static IntPtr topic_conf_dup(IntPtr conf) => _topic_conf_dup(conf);
+        private static Func<SafeTopicConfigHandle, SafeTopicConfigHandle> _topic_conf_dup;
+        internal static SafeTopicConfigHandle topic_conf_dup(SafeTopicConfigHandle conf) => _topic_conf_dup(conf);
 
-        private static Func<IntPtr, IntPtr> _default_topic_conf_dup;
-        internal static IntPtr default_topic_conf_dup(IntPtr conf) => _default_topic_conf_dup(conf);
+        private static Func<SafeKafkaHandle, SafeTopicConfigHandle> _default_topic_conf_dup;
+        internal static SafeTopicConfigHandle default_topic_conf_dup(SafeKafkaHandle rk) => _default_topic_conf_dup(rk);
 
         private static Action<IntPtr> _topic_conf_destroy;
         internal static void topic_conf_destroy(IntPtr conf) => _topic_conf_destroy(conf);
