@@ -40,7 +40,7 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
             };
 
-            for (int j=0; j<2; ++j)
+            for (int j=0; j<3; ++j)
             {
                 using (var topic = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
                 {
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.IntegrationTests
                                 BootstrapServers = bootstrapServers
                             };
                             producerConfig2.Set("queuing.strategy", "lifo");
-                            producerBuilder = new ProducerBuilder<string, string>(producerConfig);
+                            producerBuilder = new ProducerBuilder<string, string>(producerConfig2);
                             producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                             {
                                 Assert.Equal(topic.Name, topicName);
