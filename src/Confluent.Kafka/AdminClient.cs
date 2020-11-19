@@ -492,7 +492,7 @@ namespace Confluent.Kafka
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.GetMetadata(string, TimeSpan)" />
         /// </summary>
         public Metadata GetMetadata(string topic, TimeSpan timeout)
-            => kafkaHandle.GetMetadata(false, kafkaHandle.getKafkaTopicHandle(topic), timeout.TotalMillisecondsAsInt());
+            => kafkaHandle.GetMetadata(false, kafkaHandle.newTopic(topic, IntPtr.Zero), timeout.TotalMillisecondsAsInt());
 
 
         /// <summary>

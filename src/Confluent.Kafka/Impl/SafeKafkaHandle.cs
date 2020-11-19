@@ -18,12 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
-using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 
@@ -98,7 +95,7 @@ namespace Confluent.Kafka.Impl
         private Dictionary<string, SafeTopicHandle> topicHandles
             = new Dictionary<string, SafeTopicHandle>(StringComparer.Ordinal);
 
-        internal SafeTopicHandle getKafkaTopicHandle(string topic)
+        internal SafeTopicHandle newTopic(string topic, IntPtr topicConfigPtr)
         {
             lock (topicHandlesLock)
             {
@@ -107,7 +104,7 @@ namespace Confluent.Kafka.Impl
                     return topicHandles[topic];
                 }
 
-                var topicHandle = this.NewTopic(topic, IntPtr.Zero);
+                var topicHandle = this.NewTopic(topic, topicConfigPtr);
                 topicHandles.Add(topic, topicHandle);
                 return topicHandle;
             }
@@ -270,7 +267,13 @@ namespace Confluent.Kafka.Impl
                 Librdkafka.topic_conf_destroy(config);
                 throw new Exception("Failed to create topic (DangerousAddRef failed)");
             }
-            var topicHandle = Librdkafka.topic_new(handle, topic, config);
+
+            SafeTopicHandle topicHandle = null;
+            using (var pinnedString = new Util.Marshal.StringAsPinnedUTF8(topic))
+            {
+                topicHandle = Librdkafka.topic_new(handle, pinnedString.Ptr, config);
+            }
+
             if (topicHandle.IsInvalid)
             {
                 DangerousRelease();
@@ -928,7 +931,7 @@ namespace Confluent.Kafka.Impl
         {
             ThrowIfHandleClosed();
 
-            SafeTopicHandle rkt = getKafkaTopicHandle(topic);
+            SafeTopicHandle rkt = newTopic(topic, IntPtr.Zero);
 
             bool success = false;
             rkt.DangerousAddRef(ref success);
@@ -1632,5 +1635,9 @@ namespace Confluent.Kafka.Impl
                 throw new KafkaException(errorCode);
             }
         }
+
+        internal SafeTopicConfigHandle DuplicateDefaultTopicConfig()
+            => Librdkafka.default_topic_conf_dup(this);
+
     }
 }
