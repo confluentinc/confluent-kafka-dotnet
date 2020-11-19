@@ -676,7 +676,17 @@ namespace Confluent.Kafka.Impl
         internal void Subscribe(IEnumerable<string> topics)
         {
             ThrowIfHandleClosed();
-            
+
+            if (topics == null)
+            {
+                throw new ArgumentNullException("Subscription must not be null");
+            }
+
+            if (topics.Any(t => t == null))
+            {
+                throw new ArgumentNullException("Subscribed-to topic must not be null");
+            }
+
             IntPtr list = Librdkafka.topic_partition_list_new((IntPtr) topics.Count());
             if (list == IntPtr.Zero)
             {
