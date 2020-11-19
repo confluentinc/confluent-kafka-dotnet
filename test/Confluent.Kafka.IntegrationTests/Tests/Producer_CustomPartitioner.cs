@@ -85,9 +85,9 @@ namespace Confluent.Kafka.IntegrationTests
                             // Default custom partitioner in case where default topic config is present due to topic level config in top-level config.
                             var producerConfig2 = new ProducerConfig
                             {
-                                BootstrapServers = bootstrapServers
+                                BootstrapServers = bootstrapServers,
+                                MessageTimeoutMs = 10000
                             };
-                            producerConfig2.Set("queuing.strategy", "lifo");
                             producerBuilder = new ProducerBuilder<string, string>(producerConfig2);
                             producerBuilder.SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                             {
@@ -123,7 +123,6 @@ namespace Confluent.Kafka.IntegrationTests
                 .SetDefaultPartitioner((string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                 {
                     Assert.True(keyIsNull);
-                    Assert.True(!keyIsNull);
                     return 0;
                 })
                 .Build())
