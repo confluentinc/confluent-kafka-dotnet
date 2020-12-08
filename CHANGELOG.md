@@ -1,3 +1,10 @@
+# 1.5.3-RC5
+
+## Enhancements
+
+References librdkafka 1.5.3-RC5. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.5.3-RC5) for more information.
+
+
 # 1.5.2
 
 ## Enhancements

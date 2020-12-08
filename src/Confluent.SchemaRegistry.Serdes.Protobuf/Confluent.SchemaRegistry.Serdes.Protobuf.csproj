@@ -13,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Protobuf</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Protobuf</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Protobuf</AssemblyName>
-    <VersionPrefix>1.5.2</VersionPrefix>
+    <VersionPrefix>1.5.3-RC5</VersionPrefix>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
