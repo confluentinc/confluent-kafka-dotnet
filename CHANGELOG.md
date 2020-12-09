@@ -2,7 +2,8 @@
 
 ## Enhancements
 
-References librdkafka 1.5.3-RC5. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.5.3-RC5) for more information.
+- References librdkafka 1.5.3-RC5. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.5.3-RC5) for more information.
+- References Apache.Avro v1.10.1, which adds support for enum defaults [AVRO-2750](https://issues.apache.org/jira/browse/AVRO-2750).
 
 
 # 1.5.2
