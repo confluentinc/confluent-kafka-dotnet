@@ -123,7 +123,7 @@ namespace Confluent.Kafka.Examples.Transactions
             }
         }
 
-        /// <summary> 
+        /// <summary>
         ///     Create all topics used by this example, if they don't already exist.
         /// </summary>
         static async Task CreateTopicsMaybe(string brokerList)
@@ -141,7 +141,7 @@ namespace Confluent.Kafka.Examples.Transactions
                     // this topic backs a kv (word -> count) state store, so it can be compacted.
                     Configs = new Dictionary<string, string> { { "cleanup.policy", "compact" } }
                 };
-                
+
                 var wordsTopicSpec = new TopicSpecification
                 {
                     Name = Topic_Words,
@@ -231,7 +231,7 @@ namespace Confluent.Kafka.Examples.Transactions
             var TxnCommitPeriod = TimeSpan.FromSeconds(10);
 
             var lastTxnCommit = DateTime.Now;
-            
+
             // Due to limitations outlined in KIP-447 (which KIP-447 overcomes), it is
             // currently necessary to use a separate producer per input partition. The
             // producerState dictionary is used to keep track of these, and the current
@@ -251,7 +251,7 @@ namespace Confluent.Kafka.Examples.Transactions
                     // consume loop and handler and handled by the try/catch block
                     // there.
 
-                    // Abort any outstanding transactions & dispose producers 
+                    // Abort any outstanding transactions & dispose producers
                     // corresponding to the previous generation of the consumer group.
                     var tasks = new List<Task>();
                     foreach (var p in producerState.Values)
@@ -301,7 +301,7 @@ namespace Confluent.Kafka.Examples.Transactions
 
                     // The PartitionsAssigned handler is called immediately after a
                     // new assignment set is received from the group coordinator and
-                    // before that set is assigned to be read from. Since we have 
+                    // before that set is assigned to be read from. Since we have
                     // called init transactions already for the partitions relevant
                     // to this consumer, we can be sure that consumption will resume
                     // from the correct offsets (determined after this handler
@@ -340,7 +340,7 @@ namespace Confluent.Kafka.Examples.Transactions
                                 catch (KafkaException e)
                                 {
                                     // An immediate failure of the produce call is most often caused by the
-                                    // local message queue being full, and appropriate response to that is 
+                                    // local message queue being full, and appropriate response to that is
                                     // to retry.
                                     if (e.Error.Code == ErrorCode.Local_QueueFull)
                                     {
@@ -404,7 +404,7 @@ namespace Confluent.Kafka.Examples.Transactions
                     }
 
                     // To simplify error handling, we assume the presence of a supervisor
-                    // process that monitors whether worker processes have died, and restarts 
+                    // process that monitors whether worker processes have died, and restarts
                     // new instances as required. This is typical.
                 }
             }
@@ -454,7 +454,7 @@ namespace Confluent.Kafka.Examples.Transactions
 
 
         /// <summary>
-        ///     A transactional (exactly once) processing loop that reads individual words and updates 
+        ///     A transactional (exactly once) processing loop that reads individual words and updates
         ///     the corresponding total count state.
         ///
         ///     When a rebalance occurs (including on startup), the total count state for all assigned
@@ -479,7 +479,7 @@ namespace Confluent.Kafka.Examples.Transactions
             };
 
             ColumnFamilyHandle columnFamily = null;
-            
+
             var lastTxnCommit = DateTime.Now;
 
             var producerState = new Dictionary<TopicPartition, ProducerState<string, int>>();
@@ -702,7 +702,7 @@ namespace Confluent.Kafka.Examples.Transactions
                         Console.WriteLine(allTasks.Exception.InnerException.ToString());
                     }
                 }
-                
+
                 Console.WriteLine("exiting...");
             }
             finally
