@@ -1,11 +1,15 @@
-# 1.6.0-PRE4
+# 1.6.0-RC1
 
-- References librdkafka 1.6.0-PRE4. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
+## Enhancements
+
+- References librdkafka 1.6.0-RC1. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
   - KIP-429: Incremental rebalancing.
+  - KIP-447: Producer scalability for exactly once semantics.
   - KIP-480: Sticky partitioner.
 - KIP-22: Support for custom partitioners.
 - Confluent.Kafka can now be used with Mono on Linux and MacOS. **Note**: Mono is not a supported runtime.
 - Exceptions thrown by `Producer.Produce` now include an inner exception with additional context on the error ([joostas](https://github.com/joostas)).
+- Added `ConfigureAwait(false)` to async methods in the Avro Serdes.
 
 
 # 1.5.2
