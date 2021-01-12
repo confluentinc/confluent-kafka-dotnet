@@ -65,7 +65,7 @@ namespace Confluent.SchemaRegistry.Serdes
         
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
-        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
+        private readonly SortedSet<SchemaReference> EmptyReferencesList = new SortedSet<SchemaReference>();
 
         private JsonSchemaValidator validator = new JsonSchemaValidator();
 

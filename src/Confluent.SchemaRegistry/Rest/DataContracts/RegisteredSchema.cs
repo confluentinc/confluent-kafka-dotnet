@@ -93,7 +93,7 @@ namespace Confluent.SchemaRegistry
         /// <param name="references">
         ///     A list of schemas referenced by this schema.
         /// </param>
-        public RegisteredSchema(string subject, int version, int id, string schemaString, SchemaType schemaType, List<SchemaReference> references)
+        public RegisteredSchema(string subject, int version, int id, string schemaString, SchemaType schemaType, SortedSet<SchemaReference> references)
         {
             if (string.IsNullOrEmpty(schemaString))
             {

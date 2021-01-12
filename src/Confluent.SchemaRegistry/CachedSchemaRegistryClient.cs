@@ -50,7 +50,7 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public class CachedSchemaRegistryClient : ISchemaRegistryClient, IDisposable
     {
-        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
+        private readonly SortedSet<SchemaReference> EmptyReferencesList = new SortedSet<SchemaReference>();
 
         private IRestService restService;
         private int identityMapCapacity;

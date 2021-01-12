@@ -166,9 +166,9 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <remarks>
         ///     note: protobuf does not support circular file references, so this possibility isn't considered.
         /// </remarks>
-        private async Task<List<SchemaReference>> RegisterOrGetReferences(FileDescriptor fd, SerializationContext context, bool autoRegisterSchema)
+        private async Task<SortedSet<SchemaReference>> RegisterOrGetReferences(FileDescriptor fd, SerializationContext context, bool autoRegisterSchema)
         {
-            var result = new List<SchemaReference>();
+            var result = new SortedSet<SchemaReference>();
 
             var tasks = new Task[fd.Dependencies.Count];
             for (int i=0; i<fd.Dependencies.Count; ++i)
@@ -187,7 +187,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 tasks[i] = t();
             }
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
-
+            
             return result;
         }
 

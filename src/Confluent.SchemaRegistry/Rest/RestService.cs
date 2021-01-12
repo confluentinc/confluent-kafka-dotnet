@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry
     /// </remarks>
     internal class RestService : IRestService
     {
-        private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
+        private readonly SortedSet<SchemaReference> EmptyReferencesList = new SortedSet<SchemaReference>();
 
         private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 

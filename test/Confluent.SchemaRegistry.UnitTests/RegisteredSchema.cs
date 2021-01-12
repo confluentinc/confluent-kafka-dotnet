@@ -25,7 +25,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void Construct()
         {
-            var schema = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.Equal("test-key", schema.Subject);
             Assert.Equal(1, schema.Version);
             Assert.Equal(42, schema.Id);
@@ -37,7 +37,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void Construct2()
         {
-            var schema = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Protobuf, new List<SchemaReference> { new SchemaReference("schema-name", "subj", 4) });
+            var schema = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Protobuf, new SortedSet<SchemaReference> { new SchemaReference("schema-name", "subj", 4) });
             Assert.Equal("test-key", schema.Subject);
             Assert.Equal(1, schema.Version);
             Assert.Equal(42, schema.Id);
@@ -49,7 +49,7 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void ToStringTest()
         {
-            var schema = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.Contains("test-key", schema.ToString());
             Assert.Contains("1", schema.ToString());
             Assert.Contains("42", schema.ToString());
@@ -58,8 +58,8 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void GetHashCodeTest()
         {
-            var schema1 = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Json, new List<SchemaReference> { new SchemaReference("a", "b", 3) });
-            var schema2 = new RegisteredSchema("test-value", 1, 42, "test-schema-string", SchemaType.Json, new List<SchemaReference> { new SchemaReference("a", "b", 3) });
+            var schema1 = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Json, new SortedSet<SchemaReference> { new SchemaReference("a", "b", 3) });
+            var schema2 = new RegisteredSchema("test-value", 1, 42, "test-schema-string", SchemaType.Json, new SortedSet<SchemaReference> { new SchemaReference("a", "b", 3) });
             // (very unlikely)
             Assert.NotEqual(schema1.GetHashCode(), schema2.GetHashCode());
         }
@@ -67,8 +67,8 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void CompareTo_Same()
         {
-            var schema1 = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Protobuf, new List<SchemaReference>());
-            var schema2 = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Protobuf, new List<SchemaReference>());
+            var schema1 = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Protobuf, new SortedSet<SchemaReference>());
+            var schema2 = new RegisteredSchema("test-key", 1, 42, "test-schema-string", SchemaType.Protobuf, new SortedSet<SchemaReference>());
 
             Assert.Equal(0, schema1.CompareTo(schema2));
         }
@@ -79,24 +79,24 @@ namespace Confluent.SchemaRegistry.UnitTests
             // Note: the id and schema strings are not valid, however checking this
             // is considered outside the scope of the CompareTo function.
 
-            var schema1 = new RegisteredSchema("test-a", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
-            var schema2 = new RegisteredSchema("test-b", 2, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema1 = new RegisteredSchema("test-a", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema2 = new RegisteredSchema("test-b", 2, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.True(schema1.CompareTo(schema2) < 0);
             Assert.True(schema2.CompareTo(schema1) > 0);
 
-            var schema3 = new RegisteredSchema("test-c", 4, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
-            var schema4 = new RegisteredSchema("test-d", 3, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema3 = new RegisteredSchema("test-c", 4, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema4 = new RegisteredSchema("test-d", 3, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.True(schema3.CompareTo(schema4) < 0);
             Assert.True(schema4.CompareTo(schema3) > 0);
 
-            var schema5 = new RegisteredSchema("test-b", 2, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema5 = new RegisteredSchema("test-b", 2, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.Equal(0, schema2.CompareTo(schema5));
 
-            var schema6 = new RegisteredSchema("test-a", 2, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema6 = new RegisteredSchema("test-a", 2, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.True(schema1.CompareTo(schema6) < 0);
             Assert.True(schema6.CompareTo(schema1) > 0);
 
-            var schema7 = new RegisteredSchema("test-b", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema7 = new RegisteredSchema("test-b", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
             Assert.True(schema1.CompareTo(schema7) < 0);
             Assert.True(schema7.CompareTo(schema1) > 0);
         }
@@ -104,12 +104,12 @@ namespace Confluent.SchemaRegistry.UnitTests
         [Fact]
         public void EqualsTests()
         {
-            var schema1 = new RegisteredSchema("test-a", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
-            var schema2 = new RegisteredSchema("test-b", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
-            var schema3 = new RegisteredSchema("test-a", 2, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
-            var schema4 = new RegisteredSchema("test-a", 1, 44, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
-            var schema5 = new RegisteredSchema("test-a", 1, 42, "test-schema-string2", SchemaType.Avro, new List<SchemaReference>());
-            var schema6 = new RegisteredSchema("test-a", 1, 42, "test-schema-string", SchemaType.Avro, new List<SchemaReference>());
+            var schema1 = new RegisteredSchema("test-a", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema2 = new RegisteredSchema("test-b", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema3 = new RegisteredSchema("test-a", 2, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema4 = new RegisteredSchema("test-a", 1, 44, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema5 = new RegisteredSchema("test-a", 1, 42, "test-schema-string2", SchemaType.Avro, new SortedSet<SchemaReference>());
+            var schema6 = new RegisteredSchema("test-a", 1, 42, "test-schema-string", SchemaType.Avro, new SortedSet<SchemaReference>());
 
             Assert.NotEqual(schema1, schema2);
             Assert.NotEqual(schema1, schema3);

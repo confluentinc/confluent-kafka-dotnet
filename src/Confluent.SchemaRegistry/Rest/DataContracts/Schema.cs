@@ -102,7 +102,7 @@ namespace  Confluent.SchemaRegistry
         ///     A list of schemas referenced by this schema.
         /// </summary>
         [DataMember(Name = "references")]
-        public List<SchemaReference> References { get; set; }
+        public SortedSet<SchemaReference> References { get; set; }
 
         [DataMember(Name = "schemaType")]
         internal string SchemaType_String { get; set; }
@@ -156,7 +156,7 @@ namespace  Confluent.SchemaRegistry
         /// <param name="references">
         ///     A list of schemas referenced by this schema.
         /// </param>
-        public Schema(string schemaString, List<SchemaReference> references, SchemaType schemaType)
+        public Schema(string schemaString, SortedSet<SchemaReference> references, SchemaType schemaType)
         {
             SchemaString = schemaString;
             References = references;
@@ -175,7 +175,7 @@ namespace  Confluent.SchemaRegistry
         public Schema(string schemaString, SchemaType schemaType)
         {
             SchemaString = schemaString;
-            References = new List<SchemaReference>();
+            References = new SortedSet<SchemaReference>();
             SchemaType = schemaType;
         }
 

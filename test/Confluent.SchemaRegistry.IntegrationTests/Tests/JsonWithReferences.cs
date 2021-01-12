@@ -113,7 +113,7 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             // Test there are no errors (exceptions) registering a schema that references another.
             var id1 = srInitial.RegisterSchemaAsync(subject1, new Schema(S1, SchemaType.Json)).Result;
             var s1 = srInitial.GetLatestSchemaAsync(subject1).Result;
-            var refs = new List<SchemaReference> { new SchemaReference("https://example.com/geographical-location.schema.json", subject1, s1.Version) };
+            var refs = new SortedSet<SchemaReference> { new SchemaReference("https://example.com/geographical-location.schema.json", subject1, s1.Version) };
             var id2 = srInitial.RegisterSchemaAsync(subject2, new Schema(S2, refs, SchemaType.Json)).Result;
 
             // In fact, it seems references are not checked server side.
