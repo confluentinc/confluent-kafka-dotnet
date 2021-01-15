@@ -37,12 +37,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
     ///     these are relatively complex, so we prefer to go with the copy/paste solution
     ///     which is relatively simple.
     /// </remarks>
-    internal class NativeMethods_Debian9
+    internal class NativeMethods_Centos6
     {
 #if NET45 || NET46 || NET47
-         public const string DllName = "debian9-librdkafka.so";
+         public const string DllName = "centos6-librdkafka.so";
 #else
-        public const string DllName = "debian9-librdkafka";
+        public const string DllName = "centos6-librdkafka";
 #endif
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

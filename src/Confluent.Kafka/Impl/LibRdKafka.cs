@@ -544,7 +544,7 @@ namespace Confluent.Kafka.Impl
                 {
                     typeof(NativeMethods.NativeMethods_Centos7),
                     typeof(NativeMethods.NativeMethods),
-                    typeof(NativeMethods.NativeMethods_Debian9),
+                    typeof(NativeMethods.NativeMethods_Centos6),
                     typeof(NativeMethods.NativeMethods_Alpine)
                 });
             }
