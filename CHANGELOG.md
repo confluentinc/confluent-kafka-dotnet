@@ -1,8 +1,8 @@
-# 1.6.0-RC1
+# 1.6.0-RC2
 
 ## Enhancements
 
-- References librdkafka.redist 1.6.0-PRE6. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
+- References librdkafka.redist 1.6.0-RC2. Refer to the [release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.6.0) for more information. Headline features:
   - KIP-429: Incremental rebalancing.
   - KIP-447: Producer scalability for exactly once semantics.
   - KIP-480: Sticky partitioner.
