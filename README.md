@@ -271,3 +271,7 @@ Instructions on building and testing confluent-kafka-dotnet can be found [here](
 Copyright (c) 
 2016-2019 [Confluent Inc.](https://www.confluent.io)
 2015-2016 [Andreas Heider](mailto:andreas@heider.io)
+
+KAFKA is a registered trademark of The Apache Software Foundation and has been licensed for use
+by confluent-kafka-dotnet. confluent-kafka-dotnet has no affiliation with and is not endorsed by
+The Apache Software Foundation.
