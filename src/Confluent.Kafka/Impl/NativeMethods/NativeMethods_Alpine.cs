@@ -583,6 +583,28 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_DeleteRecords_t * */ IntPtr rd_kafka_DeleteRecords_new(
+                /* rd_kafka_topic_partition_list_t * */ IntPtr offsets
+        );
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteRecords_destroy(
+                /* rd_kafka_DeleteRecords_t * */ IntPtr del_topic);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteRecords(
+                /* rd_kafka_t * */ IntPtr rk,
+                /* rd_kafka_DeleteRecords_t ** */ IntPtr[] del_records,
+                UIntPtr del_records_cnt,
+                /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                /* rd_kafka_queue_t * */ IntPtr rkqu);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_topic_partition_list_t * */ IntPtr rd_kafka_DeleteRecords_result_offsets(
+                /* rd_kafka_DeleteRecords_result_t * */ IntPtr result);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewPartitions_new(
                 [MarshalAs(UnmanagedType.LPStr)] string topic, 
                 UIntPtr new_total_cnt,

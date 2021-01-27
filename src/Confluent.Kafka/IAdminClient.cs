@@ -199,6 +199,21 @@ namespace Confluent.Kafka
         ///     Configs for the specified resources.
         /// </returns>
         Task<List<DescribeConfigsResult>> DescribeConfigsAsync(IEnumerable<ConfigResource> resources, DescribeConfigsOptions options = null);
+
+        /// <summary>
+        ///     Delete records (messages) in topic partitions
+        ///     older than the offsets provided.
+        /// </summary>
+        /// <param name="topicPartitionOffsets">
+        ///     The offsets to delete up to.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when deleting records.
+        /// </param>
+        /// <returns>
+        ///     The result of the delete records request.
+        /// </returns>
+        Task<List<DeleteRecordsResult>> DeleteRecordsAsync(IEnumerable<TopicPartitionOffset> topicPartitionOffsets, DeleteRecordsOptions options = null);
     }
 
 }
