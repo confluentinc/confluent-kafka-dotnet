@@ -78,6 +78,8 @@ namespace Confluent.Kafka
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
 
+        private List<GCHandle> partitionerHandles = new List<GCHandle>();
+
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
 
@@ -431,6 +433,12 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
+                // Unpin partitioner functions
+                foreach (var ph in this.partitionerHandles)
+                {
+                    ph.Free();
+                }
+
                 if (!this.manualPoll)
                 {
                     callbackCts.Cancel();
@@ -674,8 +682,7 @@ namespace Confluent.Kafka
 
             Action<SafeTopicConfigHandle, PartitionerDelegate> addPartitionerToTopicConfig = (topicConfigHandle, partitioner) =>
             {
-                Librdkafka.topic_conf_set_partitioner_cb(topicConfigHandle.DangerousGetHandle(),
-                    (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque) =>
+                Librdkafka.PartitionerDelegate librdkafkaPartitioner = (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque) =>
                     {
                         unsafe
                         {
@@ -687,7 +694,9 @@ namespace Confluent.Kafka
                                 : new ReadOnlySpan<byte>(keydata.ToPointer(), (int)keylen);
                             return partitioner(topic, partition_cnt, keyBytes, keyIsNull);
                         }
-                    });
+                    };
+                this.partitionerHandles.Add(GCHandle.Alloc(librdkafkaPartitioner));
+                Librdkafka.topic_conf_set_partitioner_cb(topicConfigHandle.DangerousGetHandle(), librdkafkaPartitioner);
             };
 
             // Configure the default custom partitioner.
