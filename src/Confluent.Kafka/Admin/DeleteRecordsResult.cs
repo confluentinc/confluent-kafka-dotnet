@@ -33,7 +33,7 @@ namespace Confluent.Kafka.Admin
         public Partition Partition { get; set; }
 
         /// <summary>
-        ///     Post-deletion low-watermark (smallest available offset of all
+        ///     Post-deletion low-watermark offset (smallest available offset of all
         ///     live replicas).
         /// </summary>
         public Offset Offset { get; set; }
