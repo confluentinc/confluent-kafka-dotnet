@@ -1481,6 +1481,51 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
+        internal void DeleteRecords(
+            IEnumerable<TopicPartitionOffset> topicPartitionOffsets,
+            DeleteRecordsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            options = options == null ? new DeleteRecordsOptions() : options;
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteTopics);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            IntPtr deleteRecordsPtr = IntPtr.Zero;
+            try
+            {
+                if (topicPartitionOffsets.Where(tpo => tpo.Topic == null).Count() > 0)
+                {
+                    throw new ArgumentException("Cannot delete records because one or more topics were specified as null.");
+                }
+
+                IntPtr cOffsets = GetCTopicPartitionList(topicPartitionOffsets);
+                if (cOffsets == IntPtr.Zero)
+                {
+                    throw new ArgumentNullException("Delete records offsets collection must not be null");
+                }
+                deleteRecordsPtr = Librdkafka.DeleteRecords_new(cOffsets);
+                Librdkafka.topic_partition_list_destroy(cOffsets);
+
+                IntPtr[] deleteRecordsPtrs = new IntPtr[1];
+                deleteRecordsPtrs[0] = deleteRecordsPtr;
+                Librdkafka.DeleteRecords(handle, deleteRecordsPtrs, (UIntPtr)1, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (deleteRecordsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.DeleteRecords_destroy(deleteRecordsPtr);
+                }
+            }
+
+            Librdkafka.AdminOptions_destroy(optionsPtr);
+        }
+
         internal void DeleteTopics(
             IEnumerable<string> deleteTopics,
             DeleteTopicsOptions options,

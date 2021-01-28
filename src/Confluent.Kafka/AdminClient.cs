@@ -39,6 +39,17 @@ namespace Confluent.Kafka
 
         private IntPtr resultQueue = IntPtr.Zero;
 
+        private List<DeleteRecordsReport> extractDeleteRecordsReports(IntPtr resultPtr)
+            => SafeKafkaHandle.GetTopicPartitionOffsetErrorList(resultPtr)
+                    .Select(a => new DeleteRecordsReport
+                    {
+                        Topic = a.Topic,
+                        Partition = a.Partition,
+                        Offset = a.Offset,
+                        Error = a.Error
+                    })
+                    .ToList();
+
         private List<CreateTopicReport> extractTopicResults(IntPtr topicResultsPtr, int topicResultsCount)
         {
             IntPtr[] topicResultsPtrArr = new IntPtr[topicResultsCount];
@@ -184,7 +195,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
@@ -196,13 +207,13 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(
                                                         new DeleteTopicsException(result)));
                                             }
                                             else
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
@@ -212,7 +223,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
@@ -224,13 +235,13 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(
                                                         new CreatePartitionsException(result)));
                                             }
                                             else
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
@@ -240,7 +251,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
@@ -251,14 +262,14 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
                                                         new DescribeConfigsException(result)));
                                             }
                                             else
                                             {
                                                 var nr = result.Select(a => new DescribeConfigsResult { ConfigResource = a.ConfigResource, Entries = a.Entries }).ToList();
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetResult(nr));
                                             }
                                         }
@@ -268,7 +279,7 @@ namespace Confluent.Kafka
                                         {
                                             if (errorCode != ErrorCode.NoError)
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
                                                 return;
@@ -280,14 +291,47 @@ namespace Confluent.Kafka
 
                                             if (result.Any(r => r.Error.IsError))
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(
                                                         new AlterConfigsException(result)));
                                             }
                                             else
                                             {
-                                                Task.Run(() => 
+                                                Task.Run(() =>
                                                     ((TaskCompletionSource<List<AlterConfigsReport>>) adminClientResult).TrySetResult(result));
+                                            }
+                                        }
+                                        break;
+
+                                    case Librdkafka.EventType.DeleteRecords_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteRecordsReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                return;
+                                            }
+
+                                            var result = extractDeleteRecordsReports(Librdkafka.DeleteRecords_result_offsets(eventPtr));
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteRecordsResult>>)adminClientResult).TrySetException(
+                                                        new DeleteRecordsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteRecordsResult>>)adminClientResult).TrySetResult(
+                                                        result.Select(a => new DeleteRecordsResult
+                                                            {
+                                                                Topic = a.Topic,
+                                                                Partition = a.Partition,
+                                                                Offset = a.Offset,
+                                                                Error = a.Error // internal, not exposed in success case.
+                                                            }).ToList()));
                                             }
                                         }
                                         break;
@@ -319,7 +363,8 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.DeleteTopics_Result, typeof(TaskCompletionSource<List<DeleteTopicReport>>) },
             { Librdkafka.EventType.DescribeConfigs_Result, typeof(TaskCompletionSource<List<DescribeConfigsResult>>) },
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
-            { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) }
+            { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
+            { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
         };
 
 
@@ -406,6 +451,20 @@ namespace Confluent.Kafka
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.CreatePartitions(
                 partitionsSpecifications, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteRecordsAsync(IEnumerable{TopicPartitionOffset}, DeleteRecordsOptions)" />
+        /// </summary>
+        public Task<List<DeleteRecordsResult>> DeleteRecordsAsync(
+            IEnumerable<TopicPartitionOffset> topicPartitionOffsets, DeleteRecordsOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<List<DeleteRecordsResult>>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DeleteRecords(
+                topicPartitionOffsets, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }

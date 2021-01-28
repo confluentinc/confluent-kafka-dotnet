@@ -75,7 +75,10 @@ namespace Confluent.Kafka.Impl
             DeleteTopics_Result = 101,
             CreatePartitions_Result = 102,
             AlterConfigs_Result = 103,
-            DescribeConfigs_Result = 104
+            DescribeConfigs_Result = 104,
+            DeleteRecords_Result = 105,
+            DeleteGroups_Result = 106,
+            DeleteConsumerGroupOffsets_Result = 107,
         }
 
         // Minimum librdkafka version.
@@ -268,6 +271,12 @@ namespace Confluent.Kafka.Impl
 
             _DeleteTopics = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteTopics").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DeleteTopics_result_topics = (_DeleteTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteTopics_result_topics").CreateDelegate(typeof(_DeleteTopics_result_topics_delegate));
+
+            _DeleteRecords_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _DeleteRecords_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_destroy").CreateDelegate(typeof(Action<IntPtr>));
+
+            _DeleteRecords = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
+            _DeleteRecords_result_offsets = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_result_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
 
             _NewPartitions_new = (Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_new").CreateDelegate(typeof(Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewPartitions_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -1322,6 +1331,28 @@ namespace Confluent.Kafka.Impl
                 IntPtr result,
                 out UIntPtr cntp) => _DescribeConfigs_result_resources(result, out cntp);
 
+
+        private static Func<IntPtr, IntPtr> _DeleteRecords_new;
+        internal static IntPtr DeleteRecords_new(
+                IntPtr topicPartitionOffsets
+        ) => _DeleteRecords_new(topicPartitionOffsets);
+
+        private static Action<IntPtr> _DeleteRecords_destroy;
+        internal static void DeleteRecords_destroy(
+            IntPtr del_records) => _DeleteRecords_destroy(del_records);
+
+        private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _DeleteRecords;
+        internal static void DeleteRecords(
+            IntPtr rk,
+            IntPtr[] del_records,
+            UIntPtr del_records_cnt,
+            IntPtr options,
+            IntPtr rkqu) => _DeleteRecords(rk, del_records, del_records_cnt, options, rkqu);
+
+        private static Func<IntPtr, IntPtr> _DeleteRecords_result_offsets;
+        internal static IntPtr DeleteRecords_result_offsets(
+            IntPtr result
+        ) => _DeleteRecords_result_offsets(result);
 
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;

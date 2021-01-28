@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+// Copyright 2021 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,18 +18,26 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of a create partitions request for a specific topic.
+    ///     The per-partition result of delete records request.
     /// </summary>
-    public class CreatePartitionsReport
+    public class DeleteRecordsResult
     {
         /// <summary>
-        ///     The topic.
+        ///     The topic name.
         /// </summary>
         public string Topic { get; set; }
 
         /// <summary>
-        ///     The error (or success) of the create partitions request.
+        ///     The partition.
         /// </summary>
-        public Error Error { get; set; }
+        public Partition Partition { get; set; }
+
+        /// <summary>
+        ///     Post-deletion low-watermark offset (smallest available offset of all
+        ///     live replicas).
+        /// </summary>
+        public Offset Offset { get; set; }
+
+        internal Error Error { get; set; }
     }
 }
