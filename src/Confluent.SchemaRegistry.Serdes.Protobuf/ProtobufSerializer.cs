@@ -168,13 +168,10 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </remarks>
         private async Task<List<SchemaReference>> RegisterOrGetReferences(FileDescriptor fd, SerializationContext context, bool autoRegisterSchema)
         {
-            var result = new List<SchemaReference>();
-
-            var tasks = new Task[fd.Dependencies.Count];
+            var tasks = new Task<SchemaReference>[fd.Dependencies.Count];
             for (int i=0; i<fd.Dependencies.Count; ++i)
             {
-                var dependency = fd.Dependencies[i];
-                Func<Task> t = async () => {
+                Func<FileDescriptor, Task<SchemaReference>> t = async (FileDescriptor dependency) => {
                     var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema).ConfigureAwait(continueOnCapturedContext: false);
                     var subject = referenceSubjectNameStrategy(context, dependency.Name);
                     var schema = new Schema(dependency.SerializedData.ToBase64(), dependencyReferences, SchemaType.Protobuf);
@@ -182,13 +179,13 @@ namespace Confluent.SchemaRegistry.Serdes
                         ? await schemaRegistryClient.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false)
                         : await schemaRegistryClient.GetSchemaIdAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
                     var registeredDependentSchema = await schemaRegistryClient.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
-                    result.Add(new SchemaReference(dependency.Name, subject, registeredDependentSchema.Version));
+                    return new SchemaReference(dependency.Name, subject, registeredDependentSchema.Version);
                 };
-                tasks[i] = t();
+                tasks[i] = t(fd.Dependencies[i]);
             }
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
 
-            return result;
+            return tasks.Select(t => t.Result).ToList();
         }
 
 
