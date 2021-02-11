@@ -888,7 +888,7 @@ namespace Confluent.Kafka
                 var cgmd = this.kafkaHandle.GetConsumerGroupMetadata();
                 try
                 {
-                    return new ConsumerGroupMetadata { serializedMetadata = this.kafkaHandle.SerializeConsumerGroupMetadata(cgmd) };
+                    return new ConsumerGroupMetadata(this.kafkaHandle.SerializeConsumerGroupMetadata(cgmd));
                 }
                 finally
                 {

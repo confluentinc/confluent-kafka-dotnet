@@ -546,11 +546,7 @@ namespace Confluent.Kafka.Impl
         {
             IntPtr offsetsPtr = GetCTopicPartitionList(offsets);
 
-            if (!(groupMetadata is ConsumerGroupMetadata))
-            {
-                throw new ArgumentException("groupMetadata object must be a value acquired via Consumer.ConsumerGroupMetadata.");
-            }
-            var serializedMetadata = ((ConsumerGroupMetadata)groupMetadata).serializedMetadata;
+            var serializedMetadata = groupMetadata.Value;
             var cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
             try
             {

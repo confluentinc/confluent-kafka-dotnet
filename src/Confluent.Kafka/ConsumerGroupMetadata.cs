@@ -20,10 +20,22 @@ namespace Confluent.Kafka
     /// <summary>
     ///     The consumer group metadata associated with a consumer.
     /// </summary>
-    public interface IConsumerGroupMetadata { }
+    public interface IConsumerGroupMetadata
+    {
+        byte[] Value { get; }
+    }
 
     internal class ConsumerGroupMetadata : IConsumerGroupMetadata
     {
         internal byte[] serializedMetadata;
+
+
+        internal ConsumerGroupMetadata(byte[] metadata)
+        {
+            Value = metadata;
+        }
+
+
+        public byte[] Value { get => serializedMetadata; private set => serializedMetadata = value; }
     }
 }
