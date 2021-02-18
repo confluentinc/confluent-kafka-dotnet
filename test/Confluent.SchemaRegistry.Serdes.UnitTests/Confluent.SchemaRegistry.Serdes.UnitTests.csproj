@@ -5,6 +5,7 @@
     <TargetFrameworks>netcoreapp2.1;</TargetFrameworks>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Serdes.UnitTests.snk</AssemblyOriginatorKeyFile>
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
