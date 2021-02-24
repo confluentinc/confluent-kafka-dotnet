@@ -24,6 +24,7 @@ using Newtonsoft.Json.Serialization;
 using NJsonSchema.Generation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,6 +38,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public class UInt32Value
         {
             public int Value { get; set; }
+        }
+
+        public class NonNullStringValue
+        {
+#nullable enable
+            public string Value { get; set; } = "";
+#nullable disable
         }
 
         private class UInt32ValueMultiplyConverter : JsonConverter
@@ -173,6 +181,28 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var actual = await jsonDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic));
             Assert.NotNull(actual);
             Assert.Equal(actual.Value, value);
+        }
+
+        [Fact]
+        public async Task ValidationFailureReturnsPath()
+        {
+            var jsonSerializer = new JsonSerializer<NonNullStringValue>(schemaRegistryClient);
+
+            var v = new NonNullStringValue { Value = null };
+
+            try
+            {
+                _ = await jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic));
+                Assert.True(false, "Serialization did not throw an expected exception");
+            }
+            catch (InvalidDataException ex)
+            {
+                Assert.Equal("Schema validation failed for properties: [#/Value]", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Assert.True(false, $"Serialization threw exception of type {ex.GetType().FullName} instead of the expected {typeof(InvalidDataException).FullName}");
+            }
         }
     }
 }

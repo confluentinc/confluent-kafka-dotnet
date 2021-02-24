@@ -53,7 +53,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     integration of System.Text.Json and JSON Schema, so this
     ///     is not yet supported by the serializer.
     /// </remarks>
-    public class JsonSerializer<T> : IAsyncSerializer<T>  where T : new()
+    public class JsonSerializer<T> : IAsyncSerializer<T> where T : new()
     {
         private const int DefaultInitialBufferSize = 1024;
 
@@ -62,7 +62,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
-        
+
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
@@ -138,7 +138,7 @@ namespace Confluent.SchemaRegistry.Serdes
             var validationResult = validator.Validate(serializedString, this.schema);
             if (validationResult.Count > 0)
             {
-                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path) + "]"));
+                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
             }
 
             try
@@ -172,7 +172,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serializeMutex.Release();
                 }
-                
+
                 using (var stream = new MemoryStream(initialBufferSize))
                 using (var writer = new BinaryWriter(stream))
                 {
