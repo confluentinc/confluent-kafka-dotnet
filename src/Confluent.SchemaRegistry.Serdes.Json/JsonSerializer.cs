@@ -82,6 +82,12 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Initialize a new instance of the JsonSerializer class.
         /// </summary>
+        /// <param name="schemaRegistryClient">
+        ///     Confluent Schema Registry client instance.
+        /// </param>
+        /// <param name="config">
+        ///     Serializer configuration.
+        /// </param>
         /// <param name="jsonSchemaGeneratorSettings">
         ///     JSON schema generator settings.
         /// </param>

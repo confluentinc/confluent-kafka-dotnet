@@ -44,13 +44,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.5.3
+Install-Package Confluent.Kafka -Version 1.6.1
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.5.3 Confluent.Kafka
+dotnet add package -v 1.6.1 Confluent.Kafka
 ```
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.
@@ -58,7 +58,7 @@ Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provide
 ### Branch builds
 
 Nuget packages corresponding to all commits to release branches are available from the following nuget package source (Note: this is not a web URL - you 
-should specify it in the nuget package manger):
+should specify it in the nuget package manager):
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
 matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
@@ -206,6 +206,13 @@ The [Web](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/exa
 Apache Kafka with a web application, including how to implement `IHostedService` to realize a long running consumer poll loop, how to
 register a producer as a singleton service, and how to bind configuration from an injected `IConfiguration` instance.
 
+### Exactly Once Processing
+
+The .NET Client has full support for transactions and idempotent message production, allowing you to write horizontally scalable stream
+processing applications with exactly once semantics. The [ExactlyOnce](examples/ExactlyOnce) example demonstrates this capability by way
+of an implementation of the classic "word count" problem, also demonstrating how to use the [FASTER](https://github.com/microsoft/FASTER)
+Key/Value store (similar to RocksDb) to materialize working state that may be larger than available memory, and incremental rebalancing
+to avoid stop-the-world rebalancing operations and unnecessary reloading of state when you add or remove processing nodes.
 
 ### Schema Registry Integration
 
@@ -271,3 +278,7 @@ Instructions on building and testing confluent-kafka-dotnet can be found [here](
 Copyright (c) 
 2016-2019 [Confluent Inc.](https://www.confluent.io)
 2015-2016 [Andreas Heider](mailto:andreas@heider.io)
+
+KAFKA is a registered trademark of The Apache Software Foundation and has been licensed for use
+by confluent-kafka-dotnet. confluent-kafka-dotnet has no affiliation with and is not endorsed by
+The Apache Software Foundation.

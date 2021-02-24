@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.5.0-RC1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.6.1 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -152,7 +152,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     RoundRobin
         /// </summary>
-        RoundRobin
+        RoundRobin,
+
+        /// <summary>
+        ///     CooperativeSticky
+        /// </summary>
+        CooperativeSticky
     }
 
     /// <summary>
@@ -554,7 +559,7 @@ namespace Confluent.Kafka
         public bool? LogThreadName { get { return GetBool("log.thread.name"); } set { this.SetObject("log.thread.name", value); } }
 
         /// <summary>
-        ///     If enabled librdkafka will initialize the POSIX PRNG with srand(current_time.milliseconds) on the first invocation of rd_kafka_new(). If disabled the application must call srand() prior to calling rd_kafka_new().
+        ///     If enabled librdkafka will initialize the PRNG with srand(current_time.milliseconds) on the first invocation of rd_kafka_new() (required only if rand_r() is not available on your platform). If disabled the application must call srand() prior to calling rd_kafka_new().
         ///
         ///     default: true
         ///     importance: low
@@ -682,12 +687,20 @@ namespace Confluent.Kafka
         public string SslCertificatePem { get { return Get("ssl.certificate.pem"); } set { this.SetObject("ssl.certificate.pem", value); } }
 
         /// <summary>
-        ///     File or directory path to CA certificate(s) for verifying the broker's key. Defaults: On Windows the system's CA certificates are automatically looked up in the Windows Root certificate store. On Mac OSX it is recommended to install openssl using Homebrew, to provide CA certificates. On Linux install the distribution's ca-certificates package. If OpenSSL is statically linked or `ssl.ca.location` is set to `probe` a list of standard paths will be probed and the first one found will be used as the default CA certificate location path. If OpenSSL is dynamically linked the OpenSSL library's default path will be used (see `OPENSSLDIR` in `openssl version -a`).
+        ///     File or directory path to CA certificate(s) for verifying the broker's key. Defaults: On Windows the system's CA certificates are automatically looked up in the Windows Root certificate store. On Mac OSX this configuration defaults to `probe`. It is recommended to install openssl using Homebrew, to provide CA certificates. On Linux install the distribution's ca-certificates package. If OpenSSL is statically linked or `ssl.ca.location` is set to `probe` a list of standard paths will be probed and the first one found will be used as the default CA certificate location path. If OpenSSL is dynamically linked the OpenSSL library's default path will be used (see `OPENSSLDIR` in `openssl version -a`).
         ///
         ///     default: ''
         ///     importance: low
         /// </summary>
         public string SslCaLocation { get { return Get("ssl.ca.location"); } set { this.SetObject("ssl.ca.location", value); } }
+
+        /// <summary>
+        ///     Comma-separated list of Windows Certificate stores to load CA certificates from. Certificates will be loaded in the same order as stores are specified. If no certificates can be loaded from any of the specified stores an error is logged and the OpenSSL library's default CA location is used instead. Store names are typically one or more of: MY, Root, Trust, CA.
+        ///
+        ///     default: Root
+        ///     importance: low
+        /// </summary>
+        public string SslCaCertificateStores { get { return Get("ssl.ca.certificate.stores"); } set { this.SetObject("ssl.ca.certificate.stores", value); } }
 
         /// <summary>
         ///     Path to CRL for verifying broker's certificate validity.
@@ -907,7 +920,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
         ///
-        ///     default: 5000
+        ///     default: 30000
         ///     importance: medium
         /// </summary>
         public int? RequestTimeoutMs { get { return GetInt("request.timeout.ms"); } set { this.SetObject("request.timeout.ms", value); } }
@@ -987,7 +1000,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Delay in milliseconds to wait for messages in the producer queue to accumulate before constructing message batches (MessageSets) to transmit to brokers. A higher value allows larger and more effective (less overhead, improved compression) batches of messages to accumulate at the expense of increased message delivery latency.
         ///
-        ///     default: 0.5
+        ///     default: 5
         ///     importance: high
         /// </summary>
         public double? LingerMs { get { return GetDouble("linger.ms"); } set { this.SetObject("linger.ms", value); } }
@@ -995,7 +1008,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     How many times to retry sending a failing Message. **Note:** retrying may cause reordering unless `enable.idempotence` is set to true.
         ///
-        ///     default: 2
+        ///     default: 2147483647
         ///     importance: high
         /// </summary>
         public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
@@ -1040,6 +1053,14 @@ namespace Confluent.Kafka
         /// </summary>
         public int? BatchSize { get { return GetInt("batch.size"); } set { this.SetObject("batch.size", value); } }
 
+        /// <summary>
+        ///     Delay in milliseconds to wait to assign new sticky partitions for each topic. By default, set to double the time of linger.ms. To disable sticky behavior, set to 0. This behavior affects messages with the key NULL in all cases, and messages with key lengths of zero when the consistent_random partitioner is in use. These messages would otherwise be assigned randomly. A higher value allows for more effective batching of these messages.
+        ///
+        ///     default: 10
+        ///     importance: low
+        /// </summary>
+        public int? StickyPartitioningLingerMs { get { return GetInt("sticky.partitioning.linger.ms"); } set { this.SetObject("sticky.partitioning.linger.ms", value); } }
+
     }
 
 
@@ -1083,7 +1104,7 @@ namespace Confluent.Kafka
         public string ConsumeResultFields { set { this.SetObject("dotnet.consumer.consume.result.fields", value); } }
 
         /// <summary>
-        ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error which is retrieved by consuming messages and checking 'message->err'.
+        ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error (ERR__AUTO_OFFSET_RESET) which is retrieved by consuming messages and checking 'message->err'.
         ///
         ///     default: largest
         ///     importance: high
@@ -1107,7 +1128,7 @@ namespace Confluent.Kafka
         public string GroupInstanceId { get { return Get("group.instance.id"); } set { this.SetObject("group.instance.id", value); } }
 
         /// <summary>
-        ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
+        ///     The name of one or more partition assignment strategies. The elected group leader will use a strategy supported by all members of the group to assign partitions to group members. If there is more than one eligible strategy, preference is determined by the order of this list (strategies earlier in the list have higher priority). Cooperative and non-cooperative (eager) strategies must not be mixed. Available strategies: range, roundrobin, cooperative-sticky.
         ///
         ///     default: range,roundrobin
         ///     importance: medium
@@ -1131,7 +1152,7 @@ namespace Confluent.Kafka
         public int? HeartbeatIntervalMs { get { return GetInt("heartbeat.interval.ms"); } set { this.SetObject("heartbeat.interval.ms", value); } }
 
         /// <summary>
-        ///     Group protocol type
+        ///     Group protocol type. NOTE: Currently, the only supported group protocol type is `consumer`.
         ///
         ///     default: consumer
         ///     importance: low

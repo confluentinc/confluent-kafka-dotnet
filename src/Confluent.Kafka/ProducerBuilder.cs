@@ -21,6 +21,40 @@ using System.Collections.Generic;
 namespace Confluent.Kafka
 {
     /// <summary>
+    ///     Calculate a partition number given a <paramref name="partitionCount" />
+    ///     and serialized <paramref name="keyData" />. The <paramref name="topic" />
+    ///     is also provided, but is typically not used.
+    /// </summary>
+    /// <remarks>
+    ///     A partioner instance may be called in any thread at any time and
+    ///     may be called multiple times for the same message/key.
+    ///
+    ///     A partitioner:
+    ///     - MUST NOT call any method on the producer instance.
+    ///     - MUST NOT block or execute for prolonged periods of time.
+    ///     - MUST return a value between 0 and partitionCnt-1.
+    ///     - MUST NOT throw any exception.
+    /// </remarks>
+    /// <param name="topic">
+    ///     The topic.
+    /// </param>
+    /// <param name="partitionCount">
+    ///     The number of partitions in <paramref name="topic" />.
+    /// </param>
+    /// <param name="keyData">
+    ///     The serialized key data.
+    /// </param>
+    /// <param name="keyIsNull">
+    ///     Whether or not the key is null (distinguishes the null and empty case).
+    /// </param>
+    /// <returns>
+    ///     The calculated <seealso cref="Confluent.Kafka.Partition"/>, possibly
+    ///     <seealso cref="Confluent.Kafka.Partition.Any"/>.
+    /// </returns>
+    public delegate Partition PartitionerDelegate(string topic, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull);
+
+
+    /// <summary>
     ///     A builder class for <see cref="IProducer{TKey,TValue}" />.
     /// </summary>
     public class ProducerBuilder<TKey, TValue>
@@ -49,7 +83,16 @@ namespace Confluent.Kafka
         ///     The configured OAuthBearer Token Refresh handler.
         /// </summary>
         internal protected Action<IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
-        
+
+        /// <summary>        
+        ///     The per-topic custom partitioners.
+        /// </summary>
+        internal protected Dictionary<string, PartitionerDelegate> Partitioners { get; set; } = new Dictionary<string, PartitionerDelegate>();
+
+        /// <summary>
+        ///     The default custom partitioner.
+        /// </summary>
+        internal protected PartitionerDelegate DefaultPartitioner { get; set; } = null;
 
         /// <summary>
         ///     The configured key serializer.
@@ -87,7 +130,9 @@ namespace Confluent.Kafka
                     : stats => this.StatisticsHandler(producer, stats),
                 oAuthBearerTokenRefreshHandler = this.OAuthBearerTokenRefreshHandler == null
                     ? default(Action<string>)
-                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig)
+                    : oAuthBearerConfig => this.OAuthBearerTokenRefreshHandler(producer, oAuthBearerConfig),
+                partitioners = this.Partitioners,
+                defaultPartitioner = this.DefaultPartitioner,
             };
         }
 
@@ -127,6 +172,38 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Statistics handler may not be specified more than once.");
             }
             this.StatisticsHandler = statisticsHandler;
+            return this;
+        }
+
+        /// <summary>
+        ///     Set a custom partitioner to use when producing messages to
+        ///     <paramref name="topic" />.
+        /// </summary>
+        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, PartitionerDelegate partitioner)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                throw new ArgumentException("Topic must not be null or empty");
+            }
+            if (this.Partitioners.ContainsKey(topic))
+            {
+                throw new ArgumentException($"Custom partitioner for {topic} already specified");
+            }
+            this.Partitioners.Add(topic, partitioner);
+            return this;
+        }
+
+        /// <summary>
+        ///     Set a custom partitioner that will be used for all topics
+        ///     except those for which a partitioner has been explicitly configured.
+        /// </summary>
+        public ProducerBuilder<TKey, TValue> SetDefaultPartitioner(PartitionerDelegate partitioner)
+        {
+            if (this.DefaultPartitioner != null)
+            {
+                throw new ArgumentException("Default custom partitioner may only be specified once");
+            }
+            this.DefaultPartitioner = partitioner;
             return this;
         }
 

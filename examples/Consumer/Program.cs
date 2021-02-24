@@ -19,9 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 
 /// <summary>
@@ -46,7 +44,10 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnablePartitionEof = true
+                EnablePartitionEof = true,
+                // A good introduction to the CooperativeSticky assignor and incremental rebalancing:
+                // https://www.confluent.io/blog/cooperative-rebalancing-in-kafka-streams-consumer-ksqldb/
+                PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
             };
 
             const int commitPeriod = 5;
@@ -62,15 +63,25 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 .SetStatisticsHandler((_, json) => Console.WriteLine($"Statistics: {json}"))
                 .SetPartitionsAssignedHandler((c, partitions) =>
                 {
-                    Console.WriteLine($"Assigned partitions: [{string.Join(", ", partitions)}]");
-                    // possibly manually specify start offsets or override the partition assignment provided by
-                    // the consumer group by returning a list of topic/partition/offsets to assign to, e.g.:
-                    // 
+                    // Since a cooperative assignor (CooperativeSticky) has been configured, the
+                    // partition assignment is incremental (adds partitions to any existing assignment).
+                    Console.WriteLine($"Incremental partition assignment: [{string.Join(", ", partitions)}]");
+
+                    // Possibly manually specify start offsets by returning a list of topic/partition/offsets
+                    // to assign to, e.g.:
                     // return partitions.Select(tp => new TopicPartitionOffset(tp, externalOffsets[tp]));
                 })
                 .SetPartitionsRevokedHandler((c, partitions) =>
                 {
-                    Console.WriteLine($"Revoking assignment: [{string.Join(", ", partitions)}]");
+                    // Since a cooperative assignor (CooperativeSticky) has been configured, the revoked
+                    // assignment is incremental (may remove only some partitions of the current assignment).
+                    Console.WriteLine($"Incremental partition revokation: [{string.Join(", ", partitions)}]");
+                })
+                .SetPartitionsLostHandler((c, partitions) =>
+                {
+                    // The lost partitions handler is called when the consumer detects that it has lost ownership
+                    // of its assignment (fallen out of the group).
+                    Console.WriteLine($"Partitions were lost: [{string.Join(", ", partitions)}]");
                 })
                 .Build())
             {

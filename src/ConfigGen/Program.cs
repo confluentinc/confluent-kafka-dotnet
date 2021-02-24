@@ -23,7 +23,7 @@ namespace ConfigGen
         /// </remarks>
         internal static Dictionary<string, List<string>> AdditionalEnums => new Dictionary<string, List<string>>
         {
-            { "partition.assignment.strategy", new List<string> { "range", "roundrobin" } },
+            { "partition.assignment.strategy", new List<string> { "range", "roundrobin", "cooperative-sticky" } },
             { "partitioner", new List<string> { "random", "consistent", "consistent_random", "murmur2", "murmur2_random" } }
         };
 
@@ -101,7 +101,7 @@ namespace ConfigGen
         /// <summary>
         ///     SCRAM-SHA-512
         /// </summary>
-        ScramSha512
+        ScramSha512,
 
         /// <summary>
         ///     OAUTHBEARER
@@ -313,6 +313,7 @@ namespace Confluent.Kafka
             { "consistent_random", "ConsistentRandom" },
             { "murmur2_random", "Murmur2Random"},
             { "roundrobin", "RoundRobin" },
+            { "cooperative-sticky", "CooperativeSticky"},
             { "read_uncommitted", "ReadUncommitted" },
             { "read_committed", "ReadCommitted" }
         };

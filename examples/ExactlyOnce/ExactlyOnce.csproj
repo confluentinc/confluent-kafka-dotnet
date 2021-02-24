@@ -2,17 +2,16 @@
 
   <PropertyGroup>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AssemblyName>Transactions</AssemblyName>
+    <AssemblyName>ExactlyOnce</AssemblyName>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.5.3" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.6.1" /> -->
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
-    <PackageReference Include="RocksDbSharp" Version="6.2.2" />
-    <PackageReference Include="RocksDbNative" Version="6.2.2" />
+    <PackageReference Include="Microsoft.FASTER.Core" Version="1.8.0" />
   </ItemGroup>
   
 </Project>

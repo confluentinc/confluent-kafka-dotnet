@@ -40,11 +40,16 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 producer.InitTransactions(defaultTimeout);
                 producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" });
-                Thread.Sleep(1000); // ensure the abort ctrl message makes it into the log.
+                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 0", Value = "test val 0" }, (dr) => {
+                    Assert.Equal(0, dr.Offset);
+                });
+                Thread.Sleep(4000); // ensure the abort ctrl message makes it into the log.
                 producer.AbortTransaction(defaultTimeout);
                 producer.BeginTransaction();
-                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" });
+                producer.Produce(topic.Name, new Message<string, string> { Key = "test key 1", Value = "test val 1" }, (dr) => {
+                    // abort marker will be at offset 1.
+                    Assert.Equal(2, dr.Offset);
+                });
                 producer.CommitTransaction(defaultTimeout);
 
                 using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig { IsolationLevel = IsolationLevel.ReadCommitted, BootstrapServers = bootstrapServers, GroupId = "unimportant", EnableAutoCommit = false, Debug="all" }).Build())
@@ -53,6 +58,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                     var cr1 = consumer.Consume();
                     var cr2 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
+                    Assert.Equal("test val 1", cr1.Message.Value);
                     Assert.Equal(2, cr1.Offset); // there should be skipped offsets due to the aborted txn and commit marker in the log.
                     Assert.Null(cr2); // control message should not be exposed to application.
                 }
@@ -64,11 +70,12 @@ namespace Confluent.Kafka.IntegrationTests
                     var cr1 = consumer.Consume();
                     var cr2 = consumer.Consume();
                     var cr3 = consumer.Consume(TimeSpan.FromMilliseconds(100)); // force the consumer to read over the final control message internally.
+                    Assert.Equal("test val 0", cr1.Message.Value);
                     Assert.Equal(0, cr1.Offset); // the aborted message should not be skipped.
+                    Assert.Equal("test val 1", cr2.Message.Value);
                     Assert.Equal(2, cr2.Offset); // there should be a skipped offset due to a commit marker in the log.
                     Assert.Null(cr3); // control message should not be exposed to application.
                 }
-
             }
 
             Assert.Equal(0, Library.HandleCount);

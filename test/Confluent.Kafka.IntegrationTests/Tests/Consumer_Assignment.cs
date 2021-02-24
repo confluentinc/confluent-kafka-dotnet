@@ -78,11 +78,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+                var r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Single(consumer.Assignment);
                 consumer.Unsubscribe();
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(10));
+                r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Empty(consumer.Assignment);
                 consumer.Close();
             }
@@ -100,12 +100,12 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+                var r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Single(consumer.Assignment);
                 consumer.Unsubscribe();
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(10));
-                Assert.Single(consumer.Assignment);
+                r = consumer.Consume(TimeSpan.FromSeconds(4));
+                Assert.Empty(consumer.Assignment);
                 consumer.Close();
             }
 
@@ -121,11 +121,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+                var r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Single(consumer.Assignment);
                 consumer.Unsubscribe();
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(10));
+                r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Empty(consumer.Assignment);
                 consumer.Close();
             }
@@ -144,11 +144,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+                var r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Empty(consumer.Assignment);
                 consumer.Unsubscribe();
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(10));
+                r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Empty(consumer.Assignment);
                 consumer.Close();
             }
@@ -158,11 +158,11 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 consumer.Subscribe(singlePartitionTopic);
                 // assignment will happen as a side effect of this:
-                var r = consumer.Consume(TimeSpan.FromSeconds(10));
+                var r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Single(consumer.Assignment);
                 consumer.Unsubscribe();
                 // revoke will happen as side effect of this:
-                r = consumer.Consume(TimeSpan.FromSeconds(10));
+                r = consumer.Consume(TimeSpan.FromSeconds(4));
                 Assert.Empty(consumer.Assignment);
                 consumer.Close();
             }
