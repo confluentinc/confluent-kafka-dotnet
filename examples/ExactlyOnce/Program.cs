@@ -74,12 +74,16 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// <summary>
         ///     The name of the Kafka topic containing the stream of words to count.
         ///         * key = individual words (type: string)
-        ///         * value = null
+        ///         * value = null.
+        ///
+        ///     Note: This topic is not compacted, so setting the value to null is appropriate. Be
+        ///           aware that for compacted topics though, null has special meaning - it's a
+        ///           tombstone marker.
         /// </summary>
         const string Topic_Words = "words";
 
         /// <summary>
-        ///     The name of the Kafka topic containing the word count state [should be compacted].
+        ///     The name of the Kafka topic containing the word count state (should be compacted).
         ///         * key = word (type: string)
         ///         * value = count (type: int)
         /// </summary>
@@ -98,10 +102,22 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         const string TransactionalIdPrefix_Aggregate = "aggregator-transaction-id";
 
 
+        /// <summary>
+        ///     Name of the consumer group used in the map phase when consuming
+        ///     from the Topic_InputLines topic.
+        /// </summary>
         const string ConsumerGroup_MapWords = "map-words-consumer-group";
 
+        /// <summary>
+        ///     Name of the consumer group used in the reduce phase when
+        ///     consuming from the Topic_Words topic.
+        /// </summary>
         const string ConsumerGroup_Aggregate = "aggregate-consumer-group";
 
+        /// <summary>
+        ///     Name of the consumer group used when loading count state
+        ///     from Topic_Counts.
+        /// </summary>
         const string ConsumerGroup_LoadState = "load-state-consumer-group";
 
 
@@ -247,7 +263,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 foreach (var l in lines)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1), ct);  // slow down the calls to produce to make the output more interesting to watch.
-                    await producer.ProduceAsync(Topic_InputLines, new Message<Null, string> { Value = l }, ct);
+                    await producer.ProduceAsync(Topic_InputLines, new Message<Null, string> { Value = l }, ct);  // Note: producing synchronously is slow and should generally be avoided.
                     lCount += 1;
                     if (lCount % 10 == 0)
                     {
@@ -350,7 +366,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
                 .SetPartitionsAssignedHandler((c, partitions) => {
                     Console.WriteLine(
-                        "** MapWords consumer group partitions assigned new: [" +
+                        "** MapWords consumer group additional partitions assigned: [" +
                         string.Join(',', partitions.Select(p => p.Partition.Value)) +
                         "], all: [" +
                         string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
@@ -363,10 +379,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 })
                 .Build())
             {
+                consumer.Subscribe(Topic_InputLines);
+
                 producer.InitTransactions(DefaultTimeout);
                 producer.BeginTransaction();
-
-                consumer.Subscribe(Topic_InputLines);
 
                 var wCount = 0;
                 var lCount = 0;
@@ -374,37 +390,43 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 {
                     try
                     {
-                        ConsumeResult<Null, string> cr = consumer.Consume(ct);
+                        ct.ThrowIfCancellationRequested();
 
-                        lCount += 1;
+                        // Do not block on Consume indefinitely to avoid the possibility of a transaction timeout.
+                        var cr = consumer.Consume(TimeSpan.FromSeconds(1));
 
-                        var words = Regex.Split(cr.Message.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
-                        foreach (var w in words)
+                        if (cr != null)
                         {
-                            while (true)
-                            {
-                                try
-                                {
-                                    producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
-                                    // Note: when using transactions, there is no need to check for errors of individual
-                                    // produce call delivery reports because if the transaction commits successfully, you
-                                    // can be sure that all the constituent messages were delivered successfully and in order.
+                            lCount += 1;
 
-                                    wCount += 1;
-                                }
-                                catch (KafkaException e)
+                            var words = Regex.Split(cr.Message.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
+                            foreach (var w in words)
+                            {
+                                while (true)
                                 {
-                                    // An immediate failure of the produce call is most often caused by the
-                                    // local message queue being full, and appropriate response to that is 
-                                    // to wait a bit and retry.
-                                    if (e.Error.Code == ErrorCode.Local_QueueFull)
+                                    try
                                     {
-                                        Thread.Sleep(TimeSpan.FromSeconds(1000));
-                                        continue;
+                                        producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
+                                        // Note: when using transactions, there is no need to check for errors of individual
+                                        // produce call delivery reports because if the transaction commits successfully, you
+                                        // can be sure that all the constituent messages were delivered successfully and in order.
+
+                                        wCount += 1;
                                     }
-                                    throw;
+                                    catch (KafkaException e)
+                                    {
+                                        // An immediate failure of the produce call is most often caused by the
+                                        // local message queue being full, and appropriate response to that is
+                                        // to wait a bit and retry.
+                                        if (e.Error.Code == ErrorCode.Local_QueueFull)
+                                        {
+                                            Thread.Sleep(TimeSpan.FromSeconds(1000));
+                                            continue;
+                                        }
+                                        throw;
+                                    }
+                                    break;
                                 }
-                                break;
                             }
                         }
 
@@ -437,6 +459,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     }
                     catch (Exception e)
                     {
+                        // Attempt to abort the transaction (but ignore any errors) as a measure
+                        // against stalling consumption of Topic_Words.
+                        producer.AbortTransaction();
+
                         Console.WriteLine("Exiting MapWords consume loop due to an exception: " + e);
                         // Note: transactions may be committed / aborted in the partitions
                         // revoked / lost handler as a side effect of the call to close.
@@ -533,8 +559,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 GroupId = ConsumerGroup_Aggregate,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 // This should be greater than the maximum amount of time required to read in
-                // existing count state.
-                MaxPollIntervalMs = 86400000,
+                // existing count state. It should not be too large, since a rebalance may be
+                // blocked for this long.
+                MaxPollIntervalMs = 600000, // 10 minutes.
                 EnableAutoCommit = false,
                 // Enable incremental rebalancing by using the CooperativeSticky
                 // assignor (avoid stop-the-world rebalances). This is particularly important,
@@ -612,10 +639,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 })
                 .Build())
             {
+                consumer.Subscribe(Topic_Words);
+
                 producer.InitTransactions(DefaultTimeout);
                 producer.BeginTransaction();
-
-                consumer.Subscribe(Topic_Words);
 
                 var wCount = 0;
 
@@ -623,16 +650,21 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 {
                     try
                     {
-                        var cr = consumer.Consume(ct);
+                        ct.ThrowIfCancellationRequested();
 
-                        string key = cr.Message.Key;
-                        var (_, count) = WordCountState[cr.Partition].Session.Read(cr.Message.Key);
-                        count += 1;
-                        WordCountState[cr.Partition].Session.Upsert(key, count);
+                        var cr = consumer.Consume(TimeSpan.FromSeconds(1));
 
-                        producer.Produce(Topic_Counts, new Message<string, int> { Key = cr.Message.Key, Value = count });
+                        if (cr != null)
+                        {
+                            string key = cr.Message.Key;
+                            var (_, count) = WordCountState[cr.Partition].Session.Read(cr.Message.Key);
+                            count += 1;
+                            WordCountState[cr.Partition].Session.Upsert(key, count);
 
-                        wCount += 1;
+                            producer.Produce(Topic_Counts, new Message<string, int> { Key = cr.Message.Key, Value = count });
+
+                            wCount += 1;
+                        }
 
                         if (DateTime.Now > lastTxnCommit + txnCommitPeriod)
                         {
@@ -654,6 +686,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     }
                     catch (Exception e)
                     {
+                        producer.AbortTransaction();
+
                         Console.WriteLine("Exiting AggregateWords consume loop due to an exception: " + e);
                         consumer.Close();
                         Console.WriteLine("AggregateWords consumer closed");

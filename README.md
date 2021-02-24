@@ -209,10 +209,10 @@ register a producer as a singleton service, and how to bind configuration from a
 ### Exactly Once Processing
 
 The .NET Client has full support for transactions and idempotent message production, allowing you to write horizontally scalable stream
-processing applications with exactly once semantics. The [ExactlyOnce](examples/ExactlyOnce) example demontrates this capability by way
-of an implementation of the classic "word count" problem, also demonstrating how to use the FASTER Key/Value store (similar to RocksDb)
-to materialize working state that may be larger than available memory, and incremental rebalancing to avoid stop-the-world rebalancing
-operations and unnecessary re-loading of state when you add or remove processing nodes.
+processing applications with exactly once semantics. The [ExactlyOnce](examples/ExactlyOnce) example demonstrates this capability by way
+of an implementation of the classic "word count" problem, also demonstrating how to use the [FASTER](https://github.com/microsoft/FASTER)
+Key/Value store (similar to RocksDb) to materialize working state that may be larger than available memory, and incremental rebalancing
+to avoid stop-the-world rebalancing operations and unnecessary reloading of state when you add or remove processing nodes.
 
 ### Schema Registry Integration
 

@@ -360,7 +360,7 @@ namespace Confluent.Kafka
         ///
         ///     IMPORTANT NOTE: It is currently strongly recommended that the application
         ///     call CommitTransaction without specifying a timeout (which will block up
-        ///     to the configured transaction timeout - ProducerConfig.TransactionTimeoutMs)
+        ///     to the remaining transaction timeout - ProducerConfig.TransactionTimeoutMs)
         ///     because the Transactional Producer's API timeout handling is inconsistent with
         ///     the underlying protocol requests (known issue).
         /// </summary>
@@ -441,7 +441,7 @@ namespace Confluent.Kafka
         ///
         ///     IMPORTANT NOTE: It is currently strongly recommended that the application
         ///     call AbortTransaction without specifying a timeout (which will block up
-        ///     to the configured transaction timeout - ProducerConfig.TransactionTimeoutMs)
+        ///     to the remaining transaction timeout - ProducerConfig.TransactionTimeoutMs)
         ///     because the Transactional Producer's API timeout handling is inconsistent with
         ///     the underlying protocol requests (known issue).
         /// </summary>
