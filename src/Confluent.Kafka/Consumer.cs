@@ -296,11 +296,12 @@ namespace Confluent.Kafka
                     }
                     return;
                 }
-                
+
                 throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
             }
             catch (Exception e)
             {
+                Unassign();
                 handlerException = e;
             }
         }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AssemblyName>Transactions</AssemblyName>
+    <AssemblyName>ExactlyOnceOldBroker</AssemblyName>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Exe</OutputType>
     <LangVersion>7.3</LangVersion>
@@ -14,5 +14,5 @@
     <PackageReference Include="RocksDbSharp" Version="6.2.2" />
     <PackageReference Include="RocksDbNative" Version="6.2.2" />
   </ItemGroup>
-  
+
 </Project>

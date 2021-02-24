@@ -18,11 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using System.Runtime.InteropServices;
-using Confluent.Kafka.Impl;
-using Confluent.Kafka.Internal;
-using System.Collections.Concurrent;
 
 
 namespace Confluent.Kafka
@@ -342,8 +337,8 @@ namespace Confluent.Kafka
         ///     With the transactional producer, ProduceAsync and
         ///     Prodce calls are only allowed during an on-going
         ///     transaction, as started with this function.
-        ///     Any produce call outside an on-going transaction, or for a failed
-        ///     transaction, will fail.
+        ///     Any produce call outside an on-going transaction,
+        ///     or for a failed transaction, will fail.
         /// </remark>
         /// <exception cref="KafkaException">
         ///     Thrown on all errors.
@@ -360,9 +355,14 @@ namespace Confluent.Kafka
         ///
         ///     If any of the outstanding messages fail permanently the current
         ///     transaction will enter the abortable error state, in this case
-        ///     the application
-        ///     must call AbortTransaction before attempting a new
+        ///     the application must call AbortTransaction before attempting a new
         ///     transaction with BeginTransaction.
+        ///
+        ///     IMPORTANT NOTE: It is currently strongly recommended that the application
+        ///     call CommitTransaction without specifying a timeout (which will block up
+        ///     to the remaining transaction timeout - ProducerConfig.TransactionTimeoutMs)
+        ///     because the Transactional Producer's API timeout handling is inconsistent with
+        ///     the underlying protocol requests (known issue).
         /// </summary>
         /// <remark>
         ///      This function will block until all outstanding messages are
@@ -391,15 +391,59 @@ namespace Confluent.Kafka
         ///     Thrown on all other errors.
         /// </exception>
         void CommitTransaction(TimeSpan timeout);
-        
+
+
+        /// <summary>
+        ///     Commit the current transaction (as started with
+        ///     BeginTransaction).
+        ///
+        ///     Any outstanding messages will be flushed (delivered) before actually
+        ///     committing the transaction.
+        ///
+        ///     If any of the outstanding messages fail permanently the current
+        ///     transaction will enter the abortable error state, in this case
+        ///     the application must call AbortTransaction before attempting a new
+        ///     transaction with BeginTransaction.
+        /// </summary>
+        /// <remark>
+        ///     This function will block until all outstanding messages are
+        ///     delivered and the transaction commit request has been successfully
+        ///     handled by the transaction coordinator, or until the transaction
+        ///     times out (ProducerConfig.TransactionTimeoutMs) which ever comes
+        ///     first. On timeout the application may call the function again.
+        /// </remark>
+        /// <remark>
+        ///     Will automatically call Flush to ensure all queued
+        ///     messages are delivered before attempting to commit the
+        ///     transaction.
+        /// </remark>
+        /// <exception cref="KafkaTxnRequiresAbortException">
+        ///     Thrown if the application must call AbortTransaction and
+        ///     start a new transaction with BeginTransaction if it
+        ///     wishes to proceed with transactions.
+        /// </exception>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
+        void CommitTransaction();
+
 
         /// <summary>
         ///     Aborts the ongoing transaction.
-        /// 
+        ///
         ///     This function should also be used to recover from non-fatal abortable
         ///     transaction errors.
         ///
         ///     Any outstanding messages will be purged and fail.
+        ///
+        ///     IMPORTANT NOTE: It is currently strongly recommended that the application
+        ///     call AbortTransaction without specifying a timeout (which will block up
+        ///     to the remaining transaction timeout - ProducerConfig.TransactionTimeoutMs)
+        ///     because the Transactional Producer's API timeout handling is inconsistent with
+        ///     the underlying protocol requests (known issue).
         /// </summary>
         /// <remark>
         ///     This function will block until all outstanding messages are purged
@@ -418,6 +462,30 @@ namespace Confluent.Kafka
         ///     Thrown on all other errors.
         /// </exception>
         void AbortTransaction(TimeSpan timeout);
+
+
+        /// <summary>
+        ///     Aborts the ongoing transaction.
+        ///
+        ///     This function should also be used to recover from non-fatal abortable
+        ///     transaction errors.
+        ///
+        ///     Any outstanding messages will be purged and fail.
+        /// </summary>
+        /// <remark>
+        ///     This function will block until all outstanding messages are purged
+        ///     and the transaction abort request has been successfully
+        ///     handled by the transaction coordinator, or until the transaction
+        ///     times out (ProducerConfig.TransactionTimeoutMs), which ever comes
+        ///     first. On timeout the application may call the function again.
+        /// </remark>
+        /// <exception cref="KafkaRetriableException">
+        ///     Thrown if an error occured, and the operation may be retried.
+        /// </exception>
+        /// <exception cref="KafkaException">
+        ///     Thrown on all other errors.
+        /// </exception>
+        void AbortTransaction();
 
 
         /// <summary>
