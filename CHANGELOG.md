@@ -1,5 +1,4 @@
-
-# 1.6.1
+# 1.6.2
 
 ## Enhancements
 
@@ -17,6 +16,11 @@
 ## Fixes
 
 - Fixed race condition in `ProtobufSerializer` ([yurii-hunter](https://github.com/yurii-hunter)).
+
+
+# 1.6.0, 1.6.1
+
+Version 1.6.0 and 1.6.1 were not released.
 
 
 # 1.5.3
