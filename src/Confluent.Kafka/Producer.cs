@@ -283,7 +283,7 @@ namespace Confluent.Kafka
             ReadOnlySpan<byte> key,
             Timestamp timestamp,
             Partition partition,
-            IEnumerable<IHeader> headers,
+            IReadOnlyCollection<IHeader> headers,
             IDeliveryHandler deliveryHandler)
         {
             if (timestamp.Type != TimestampType.CreateTime)

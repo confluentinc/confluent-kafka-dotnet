@@ -286,13 +286,13 @@ namespace Confluent.Kafka.Impl
             return topicHandle;
         }
 
-        private IntPtr marshalHeaders(IEnumerable<IHeader> headers)
+        private IntPtr marshalHeaders(IReadOnlyCollection<IHeader> headers)
         {
             var headersPtr = IntPtr.Zero;
 
-            if (headers != null && headers.Any())
+            if (headers != null && headers.Count > 0)
             {
-                headersPtr = Librdkafka.headers_new((IntPtr) headers.Count());
+                headersPtr = Librdkafka.headers_new((IntPtr) headers.Count);
                 if (headersPtr == IntPtr.Zero)
                 {
                     throw new Exception("Failed to create headers list.");
@@ -309,15 +309,17 @@ namespace Confluent.Kafka.Impl
                     IntPtr keyPtr = pinnedKey.AddrOfPinnedObject();
                     IntPtr valuePtr = IntPtr.Zero;
                     GCHandle pinnedValue = default(GCHandle);
-                    if (header.GetValueBytes() != null)
+                    byte[] valueBytes = header.GetValueBytes();
+                    
+                    if (valueBytes != null)
                     {
-                        pinnedValue = GCHandle.Alloc(header.GetValueBytes(), GCHandleType.Pinned);
+                        pinnedValue = GCHandle.Alloc(valueBytes, GCHandleType.Pinned);
                         valuePtr = pinnedValue.AddrOfPinnedObject();
                     }
-                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(header.GetValueBytes() == null ? 0 : header.GetValueBytes().Length));
+                    ErrorCode err = Librdkafka.headers_add(headersPtr, keyPtr, (IntPtr)keyBytes.Length, valuePtr, (IntPtr)(valueBytes == null ? 0 : valueBytes.Length));
                     // copies of key and value have been made in headers_list_add - pinned values are no longer referenced.
                     pinnedKey.Free();
-                    if (header.GetValueBytes() != null)
+                    if (valueBytes != null)
                     {
                         pinnedValue.Free();
                     }
@@ -337,7 +339,7 @@ namespace Confluent.Kafka.Impl
             ReadOnlySpan<byte> key,
             int partition,
             long timestamp,
-            IEnumerable<IHeader> headers,
+            IReadOnlyCollection<IHeader> headers,
             IntPtr opaque)
         {
             var pValue = IntPtr.Zero;
