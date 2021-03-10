@@ -510,7 +510,7 @@ namespace Confluent.Kafka
         ///     A comma separated list of fields that may be optionally set in delivery
         ///     reports. Disabling delivery report fields that you do not require will
         ///     improve maximum throughput and reduce memory usage. Allowed values:
-        ///     key, value, timestamp, headers, all, none.
+        ///     key, value, timestamp, headers, status, all, none.
         ///
         ///     default: all
         ///     importance: low
