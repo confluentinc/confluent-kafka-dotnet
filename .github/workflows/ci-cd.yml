@@ -62,12 +62,13 @@ jobs:
           dotnet pack src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj -c Release -o Artifacts/
 
       - if: matrix.os == 'windows-latest'
-        name: Generate docs
+        name: Generate docs archive and move to Artifacts/
         id: gen_docs
         shell: pwsh
         run: |
           docfx doc/docfx.json
-          7z a docs-$env:COMMIT_SHA.zip doc/_site/* -o Artifacts/
+          7z a docs-$env:COMMIT_SHA.zip doc/_site/*
+          Move-Item -Path docs-$env:COMMIT_SHA.zip -Destination Artifacts/
         env:
           COMMIT_SHA: ${{ github.sha }}
 
