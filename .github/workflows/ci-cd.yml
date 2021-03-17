@@ -12,11 +12,12 @@ jobs:
     env:
       SOLUTION_PATH: Confluent.Kafka.sln
     steps:
-      - name: Install DocFX
+      - if: matrix.os == 'windows-latest'
+        name: Install DocFX
         id: install_docfx
         shell: pwsh
         run: |
-          brew install docfx
+          choco install docfx -y
 
       - name: Checkout repository
         id: checkout_repo
