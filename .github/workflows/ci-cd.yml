@@ -32,6 +32,7 @@ jobs:
         id: build_solution
         shell: pwsh
         run: |
+          dotnet add package librdkafka.redist --version 1.6.1
           dotnet build $env:SOLUTION_PATH -c Release
 
       - name: Run unit tests
