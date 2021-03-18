@@ -1,3 +1,10 @@
+# 1.6.3
+
+## Fixes
+
+- References Apache.Avro v1.10.2, which supports large strings [AVRO-3005](https://issues.apache.org/jira/browse/AVRO-3005).
+
+
 # 1.6.2
 
 ## Enhancements
