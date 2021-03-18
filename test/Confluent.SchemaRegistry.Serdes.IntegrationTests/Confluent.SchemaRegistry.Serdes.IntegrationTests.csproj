@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Apache.Avro" Version="1.10.1" />
+    <PackageReference Include="Apache.Avro" Version="1.10.2" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
