@@ -2,7 +2,7 @@
 
 ## Fixes
 
-- References Apache.Avro v1.10.2, which supports large strings [AVRO-3005](https://issues.apache.org/jira/browse/AVRO-3005).
+- References Apache.Avro v1.10.2, which resolves an issue with large string deserialization [AVRO-3005](https://issues.apache.org/jira/browse/AVRO-3005).
 
 
 # 1.6.2
