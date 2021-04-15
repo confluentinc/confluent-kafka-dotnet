@@ -22,9 +22,10 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a low-level Apache Kafka producer client
+    ///     Defines a high-level Apache Kafka producer client
+    ///     that provides key and value serialization.
     /// </summary>
-    public interface IProducer : IClient, ITransactionalProducer
+    public interface IProducer<TKey, TValue> : IClient, ITransactionalProducer
     {
         /// <summary>
         ///     Asynchronously send a single message to a
@@ -58,12 +59,9 @@ namespace Confluent.Kafka
         /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        Task<DeliveryResult> ProduceAsync(
+        Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             string topic,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
+            Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
 
@@ -97,12 +95,9 @@ namespace Confluent.Kafka
         /// <exception cref="ArgumentException">
         ///     Thrown in response to invalid argument values.
         /// </exception>
-        Task<DeliveryResult> ProduceAsync(
+        Task<DeliveryResult<TKey, TValue>> ProduceAsync(
             TopicPartition topicPartition,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
+            Message<TKey, TValue> message,
             CancellationToken cancellationToken = default(CancellationToken));
 
 
@@ -143,11 +138,8 @@ namespace Confluent.Kafka
         /// </exception>
         void Produce(
             string topic,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
-            Action<DeliveryReport> deliveryHandler = null);
+            Message<TKey, TValue> message,
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
 
         /// <summary>
@@ -186,11 +178,8 @@ namespace Confluent.Kafka
         /// </exception>
         void Produce(
             TopicPartition topicPartition,
-            ReadOnlySpan<byte> key,
-            ReadOnlySpan<byte> value,
-            Headers headers = null,
-            Timestamp timestamp = default,
-            Action<DeliveryReport> deliveryHandler = null);
+            Message<TKey, TValue> message,
+            Action<DeliveryReport<TKey, TValue>> deliveryHandler = null);
 
         
         /// <summary>

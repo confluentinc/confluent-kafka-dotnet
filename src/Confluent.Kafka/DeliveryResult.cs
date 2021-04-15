@@ -20,7 +20,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a successful produce request.
     /// </summary>
-    public class DeliveryResult<TKey, TValue>
+    public class DeliveryResult
     {
         /// <summary>
         ///     The topic associated with the message.
@@ -64,7 +64,14 @@ namespace Confluent.Kafka
         ///     The persistence status of the message
         /// </summary>
         public PersistenceStatus Status { get; set; }
-        
+    }
+
+
+    /// <summary>
+    ///     Encapsulates the result of a successful produce request.
+    /// </summary>
+    public class DeliveryResult<TKey, TValue> : DeliveryResult
+    {
         /// <summary>
         ///     The Kafka message.
         /// </summary>

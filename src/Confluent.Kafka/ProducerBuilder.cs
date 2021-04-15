@@ -55,10 +55,12 @@ namespace Confluent.Kafka
 
 
     /// <summary>
-    ///     A builder class for <see cref="IProducer{TKey,TValue}" />.
+    ///     Base producer builder class.
     /// </summary>
-    public class ProducerBuilder<TKey, TValue>
+    public abstract class ProducerBuilderBase<TProducer, TBuilder>
     {
+        protected abstract TBuilder Self { get; }
+
         /// <summary>
         ///     The config dictionary.
         /// </summary>
@@ -67,22 +69,22 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        internal protected Action<IProducer<TKey, TValue>, Error> ErrorHandler { get; set; }
+        internal protected Action<TProducer, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        internal protected Action<IProducer<TKey, TValue>, LogMessage> LogHandler { get; set; }
+        internal protected Action<TProducer, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        internal protected Action<IProducer<TKey, TValue>, string> StatisticsHandler { get; set; }
+        internal protected Action<TProducer, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     The configured OAuthBearer Token Refresh handler.
         /// </summary>
-        internal protected Action<IProducer<TKey, TValue>, string> OAuthBearerTokenRefreshHandler { get; set; }
+        internal protected Action<TProducer, string> OAuthBearerTokenRefreshHandler { get; set; }
 
         /// <summary>        
         ///     The per-topic custom partitioners.
@@ -94,29 +96,10 @@ namespace Confluent.Kafka
         /// </summary>
         internal protected PartitionerDelegate DefaultPartitioner { get; set; } = null;
 
-        /// <summary>
-        ///     The configured key serializer.
-        /// </summary>
-        internal protected ISerializer<TKey> KeySerializer { get; set; }
 
-        /// <summary>
-        ///     The configured value serializer.
-        /// </summary>
-        internal protected ISerializer<TValue> ValueSerializer { get; set; }
-
-        /// <summary>
-        ///     The configured async key serializer.
-        /// </summary>
-        internal protected IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
-
-        /// <summary>
-        ///     The configured async value serializer.
-        /// </summary>
-        internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
-
-        internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
+        internal ProducerBase.Config ConstructBaseConfig(TProducer producer)
         {
-            return new Producer<TKey, TValue>.Config
+            return new ProducerBase.Config
             {
                 config = Config,
                 errorHandler = this.ErrorHandler == null
@@ -136,14 +119,7 @@ namespace Confluent.Kafka
             };
         }
 
-        /// <summary>
-        ///     A collection of librdkafka configuration parameters 
-        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
-        ///     and parameters specific to this client (refer to: 
-        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
-        ///     At a minimum, 'bootstrap.servers' must be specified.
-        /// </summary>
-        public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
+        private protected ProducerBuilderBase(IEnumerable<KeyValuePair<string, string>> config)
         {
             this.Config = config;
         }
@@ -165,21 +141,23 @@ namespace Confluent.Kafka
         ///     will be devivered to your error handler, if set, else they will be
         ///     silently ignored.
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetStatisticsHandler(Action<IProducer<TKey, TValue>, string> statisticsHandler)
+        public TBuilder SetStatisticsHandler(Action<TProducer, string> statisticsHandler)
         {
             if (this.StatisticsHandler != null)
             {
                 throw new InvalidOperationException("Statistics handler may not be specified more than once.");
             }
             this.StatisticsHandler = statisticsHandler;
-            return this;
+
+            return this.Self;
         }
+
 
         /// <summary>
         ///     Set a custom partitioner to use when producing messages to
         ///     <paramref name="topic" />.
         /// </summary>
-        public ProducerBuilder<TKey, TValue> SetPartitioner(string topic, PartitionerDelegate partitioner)
+        public TBuilder SetPartitioner(string topic, PartitionerDelegate partitioner)
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
@@ -190,21 +168,23 @@ namespace Confluent.Kafka
                 throw new ArgumentException($"Custom partitioner for {topic} already specified");
             }
             this.Partitioners.Add(topic, partitioner);
-            return this;
+
+            return this.Self;
         }
 
         /// <summary>
         ///     Set a custom partitioner that will be used for all topics
         ///     except those for which a partitioner has been explicitly configured.
         /// </summary>
-        public ProducerBuilder<TKey, TValue> SetDefaultPartitioner(PartitionerDelegate partitioner)
+        public TBuilder SetDefaultPartitioner(PartitionerDelegate partitioner)
         {
             if (this.DefaultPartitioner != null)
             {
                 throw new ArgumentException("Default custom partitioner may only be specified once");
             }
             this.DefaultPartitioner = partitioner;
-            return this;
+
+            return this.Self;
         }
 
         /// <summary>
@@ -220,14 +200,15 @@ namespace Confluent.Kafka
         ///     Exceptions: Any exception thrown by your error handler will be silently
         ///     ignored.
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetErrorHandler(Action<IProducer<TKey, TValue>, Error> errorHandler)
+        public TBuilder SetErrorHandler(Action<TProducer, Error> errorHandler)
         {
             if (this.ErrorHandler != null)
             {
                 throw new InvalidOperationException("Error handler may not be specified more than once.");
             }
             this.ErrorHandler = errorHandler;
-            return this;
+
+            return this.Self;
         }
 
         /// <summary>
@@ -249,14 +230,15 @@ namespace Confluent.Kafka
         ///     Exceptions: Any exception thrown by your log handler will be
         ///     silently ignored.
         /// </remarks>
-        public ProducerBuilder<TKey, TValue> SetLogHandler(Action<IProducer<TKey, TValue>, LogMessage> logHandler)
+        public TBuilder SetLogHandler(Action<TProducer, LogMessage> logHandler)
         {
             if (this.LogHandler != null)
             {
                 throw new InvalidOperationException("Log handler may not be specified more than once.");
             }
             this.LogHandler = logHandler;
-            return this;
+
+            return this.Self;
         }
 
         /// <summary>
@@ -281,14 +263,85 @@ namespace Confluent.Kafka
         ///     set token or token failure string - Value of configuration
         ///     property sasl.oauthbearer.config
         /// </param>
-        public ProducerBuilder<TKey, TValue> SetOAuthBearerTokenRefreshHandler(Action<IProducer<TKey, TValue>, string> oAuthBearerTokenRefreshHandler)
+        public TBuilder SetOAuthBearerTokenRefreshHandler(Action<TProducer, string> oAuthBearerTokenRefreshHandler)
         {
             if (this.OAuthBearerTokenRefreshHandler != null)
             {
                 throw new InvalidOperationException("OAuthBearer token refresh handler may not be specified more than once.");
             }
             this.OAuthBearerTokenRefreshHandler = oAuthBearerTokenRefreshHandler;
-            return this;
+
+            return this.Self;
+        }
+    }
+
+    /// <summary>
+    ///     A builder class for <see cref="IProducer" />.
+    /// </summary>
+    public class ProducerBuilder : ProducerBuilderBase<IProducer, ProducerBuilder>
+    {
+        protected override ProducerBuilder Self => this;
+
+        /// <summary>
+        ///     A collection of librdkafka configuration parameters 
+        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     and parameters specific to this client (refer to: 
+        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
+        ///     At a minimum, 'bootstrap.servers' must be specified.
+        /// </summary>
+        public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
+            : base(config)
+        {
+        }
+
+
+
+        /// <summary>
+        ///     Build a new IProducer implementation instance.
+        /// </summary>
+        public virtual IProducer Build()
+        {
+            return new Producer(this);
+        }
+    }
+
+    /// <summary>
+    ///     A builder class for <see cref="IProducer{TKey,TValue}" />.
+    /// </summary>
+    public class ProducerBuilder<TKey, TValue> : ProducerBuilderBase<IProducer<TKey, TValue>, ProducerBuilder<TKey, TValue>>
+    {
+        protected override ProducerBuilder<TKey, TValue> Self => this;
+
+        /// <summary>
+        ///     The configured key serializer.
+        /// </summary>
+        internal protected ISerializer<TKey> KeySerializer { get; set; }
+
+        /// <summary>
+        ///     The configured value serializer.
+        /// </summary>
+        internal protected ISerializer<TValue> ValueSerializer { get; set; }
+
+        /// <summary>
+        ///     The configured async key serializer.
+        /// </summary>
+        internal protected IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+
+        /// <summary>
+        ///     The configured async value serializer.
+        /// </summary>
+        internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+
+        /// <summary>
+        ///     A collection of librdkafka configuration parameters 
+        ///     (refer to https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+        ///     and parameters specific to this client (refer to: 
+        ///     <see cref="Confluent.Kafka.ConfigPropertyNames" />).
+        ///     At a minimum, 'bootstrap.servers' must be specified.
+        /// </summary>
+        public ProducerBuilder(IEnumerable<KeyValuePair<string, string>> config)
+            : base(config)
+        {
         }
 
         /// <summary>
