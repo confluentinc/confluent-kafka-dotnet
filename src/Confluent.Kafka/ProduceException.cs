@@ -20,7 +20,7 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents an error that occured whilst producing a message.
+    ///     Represents an error that occurred whilst producing a message.
     /// </summary>
     public class ProduceException : KafkaException
     {
@@ -66,7 +66,7 @@ namespace Confluent.Kafka
     }
 
     /// <summary>
-    ///     Represents an error that occured whilst producing a message.
+    ///     Represents an error that occurred whilst producing a message.
     /// </summary>
     public class ProduceException<TKey, TValue> : KafkaException
     {

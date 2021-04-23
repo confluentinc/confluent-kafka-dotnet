@@ -59,42 +59,45 @@ namespace Confluent.Kafka
     /// </summary>
     public abstract class ProducerBuilderBase<TProducer, TBuilder>
     {
+        /// <summary>
+        ///     Strong-typed reference to 'this'.
+        /// </summary>
         protected abstract TBuilder Self { get; }
 
         /// <summary>
         ///     The config dictionary.
         /// </summary>
-        internal protected IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+        protected internal IEnumerable<KeyValuePair<string, string>> Config { get; set; }
 
         /// <summary>
         ///     The configured error handler.
         /// </summary>
-        internal protected Action<TProducer, Error> ErrorHandler { get; set; }
+        protected internal Action<TProducer, Error> ErrorHandler { get; set; }
 
         /// <summary>
         ///     The configured log handler.
         /// </summary>
-        internal protected Action<TProducer, LogMessage> LogHandler { get; set; }
+        protected internal Action<TProducer, LogMessage> LogHandler { get; set; }
 
         /// <summary>
         ///     The configured statistics handler.
         /// </summary>
-        internal protected Action<TProducer, string> StatisticsHandler { get; set; }
+        protected internal Action<TProducer, string> StatisticsHandler { get; set; }
 
         /// <summary>
         ///     The configured OAuthBearer Token Refresh handler.
         /// </summary>
-        internal protected Action<TProducer, string> OAuthBearerTokenRefreshHandler { get; set; }
+        protected internal Action<TProducer, string> OAuthBearerTokenRefreshHandler { get; set; }
 
         /// <summary>        
         ///     The per-topic custom partitioners.
         /// </summary>
-        internal protected Dictionary<string, PartitionerDelegate> Partitioners { get; set; } = new Dictionary<string, PartitionerDelegate>();
+        protected internal Dictionary<string, PartitionerDelegate> Partitioners { get; set; } = new Dictionary<string, PartitionerDelegate>();
 
         /// <summary>
         ///     The default custom partitioner.
         /// </summary>
-        internal protected PartitionerDelegate DefaultPartitioner { get; set; } = null;
+        protected internal PartitionerDelegate DefaultPartitioner { get; set; } = null;
 
 
         internal ProducerBase.Config ConstructBaseConfig(TProducer producer)
@@ -280,6 +283,7 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerBuilder : ProducerBuilderBase<IProducer, ProducerBuilder>
     {
+        /// <inheritdoc />
         protected override ProducerBuilder Self => this;
 
         /// <summary>
@@ -293,8 +297,6 @@ namespace Confluent.Kafka
             : base(config)
         {
         }
-
-
 
         /// <summary>
         ///     Build a new IProducer implementation instance.
@@ -310,27 +312,28 @@ namespace Confluent.Kafka
     /// </summary>
     public class ProducerBuilder<TKey, TValue> : ProducerBuilderBase<IProducer<TKey, TValue>, ProducerBuilder<TKey, TValue>>
     {
+        /// <inheritdoc />
         protected override ProducerBuilder<TKey, TValue> Self => this;
 
         /// <summary>
         ///     The configured key serializer.
         /// </summary>
-        internal protected ISerializer<TKey> KeySerializer { get; set; }
+        protected internal ISerializer<TKey> KeySerializer { get; set; }
 
         /// <summary>
         ///     The configured value serializer.
         /// </summary>
-        internal protected ISerializer<TValue> ValueSerializer { get; set; }
+        protected internal ISerializer<TValue> ValueSerializer { get; set; }
 
         /// <summary>
         ///     The configured async key serializer.
         /// </summary>
-        internal protected IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
+        protected internal IAsyncSerializer<TKey> AsyncKeySerializer { get; set; }
 
         /// <summary>
         ///     The configured async value serializer.
         /// </summary>
-        internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+        protected internal IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
         /// <summary>
         ///     A collection of librdkafka configuration parameters 

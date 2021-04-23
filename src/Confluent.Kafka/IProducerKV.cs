@@ -47,7 +47,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A Task which will complete with a delivery
         ///     report corresponding to the produce request,
-        ///     or an exception if an error occured.
+        ///     or an exception if an error occurred.
         /// </returns>
         /// <exception cref="ProduceException{TKey,TValue}">
         ///     Thrown in response to any produce request
@@ -83,7 +83,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A Task which will complete with a delivery
         ///     report corresponding to the produce request,
-        ///     or an exception if an error occured.
+        ///     or an exception if an error occurred.
         /// </returns>
         /// <exception cref="ProduceException{TKey,TValue}">
         ///     Thrown in response to any produce request

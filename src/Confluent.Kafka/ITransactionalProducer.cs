@@ -37,7 +37,7 @@ namespace Confluent.Kafka
         ///     The maximum length of time this method may block.
         /// </param>
         /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
+        ///     Thrown if an error occurred, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
@@ -53,14 +53,14 @@ namespace Confluent.Kafka
         ///
         ///     Any messages produced, offsets sent (SendOffsetsToTransaction),
         ///     etc, after the successful return of this function will be part of
-        ///     the transaction and committed or aborted atomatically.
+        ///     the transaction and committed or aborted automatically.
         ///
         ///     Finish the transaction by calling CommitTransaction or
         ///     abort the transaction by calling AbortTransaction.
         /// </summary>
         /// <remark>
         ///     With the transactional producer, ProduceAsync and
-        ///     Prodce calls are only allowed during an on-going
+        ///     Produce calls are only allowed during an on-going
         ///     transaction, as started with this function.
         ///     Any produce call outside an on-going transaction,
         ///     or for a failed transaction, will fail.
@@ -110,7 +110,7 @@ namespace Confluent.Kafka
         ///     wishes to proceed with transactions.
         /// </exception>
         /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
+        ///     Thrown if an error occurred, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
@@ -148,7 +148,7 @@ namespace Confluent.Kafka
         ///     wishes to proceed with transactions.
         /// </exception>
         /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
+        ///     Thrown if an error occurred, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
@@ -181,7 +181,7 @@ namespace Confluent.Kafka
         ///     The maximum length of time this method may block.
         /// </param>
         /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
+        ///     Thrown if an error occurred, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
@@ -205,7 +205,7 @@ namespace Confluent.Kafka
         ///     first. On timeout the application may call the function again.
         /// </remark>
         /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
+        ///     Thrown if an error occurred, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.
@@ -260,7 +260,7 @@ namespace Confluent.Kafka
         ///     wishes to proceed with transactions.
         /// </exception>
         /// <exception cref="KafkaRetriableException">
-        ///     Thrown if an error occured, and the operation may be retried.
+        ///     Thrown if an error occurred, and the operation may be retried.
         /// </exception>
         /// <exception cref="KafkaException">
         ///     Thrown on all other errors.

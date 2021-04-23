@@ -26,9 +26,6 @@ using Confluent.Kafka.Internal;
 
 namespace Confluent.Kafka
 {
-    /// <summary>
-    ///     A high level producer with serialization capability.
-    /// </summary>
     internal abstract class ProducerBase : IClient, ITransactionalProducer
     {
         internal class Config
@@ -323,8 +320,6 @@ namespace Confluent.Kafka
             }
         }
 
-
-        /// <inheritdoc/>
         public int Poll(TimeSpan timeout)
         {
             if (manualPoll)
@@ -345,8 +340,6 @@ namespace Confluent.Kafka
             }
         }
 
-
-        /// <inheritdoc/>
         public int Flush(TimeSpan timeout)
         {
             var result = KafkaHandle.Flush(timeout.TotalMillisecondsAsInt());
@@ -359,8 +352,6 @@ namespace Confluent.Kafka
             return result;
         }
 
-
-        /// <inheritdoc/>
         public void Flush(CancellationToken cancellationToken)
         {
             while (true)
