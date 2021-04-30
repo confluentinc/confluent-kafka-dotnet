@@ -28,8 +28,8 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_DisableDeliveryReports(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_DisableDeliveryReports(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_DisableDeliveryReports");
 
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             // If delivery reports are disabled:
             //   1. delivery handlers may not be specified.
             //   2. tasks should complete immediately.
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig, producerType).Build())
             {
                 Assert.Throws<InvalidOperationException>(() => producer.Produce(
                     singlePartitionTopic,

@@ -30,14 +30,14 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Ensures that awaiting ProduceAsync does not deadlock and
         ///     some other basic things.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_ProduceAsync_Await_Serializing(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_ProduceAsync_Await_Serializing(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_ProduceAsync_Await_Serializing");
 
             Func<Task> mthd = async () => 
             {
-                using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }, producerType).Build())
                 {
                     var dr = await producer.ProduceAsync(
                         singlePartitionTopic,
@@ -57,12 +57,12 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Ensures that awaiting ProduceAsync does not deadlock and
         ///     some other basic things (variant 2).
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public async Task Producer_ProduceAsync_Await_NonSerializing(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public async Task Producer_ProduceAsync_Await_NonSerializing(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_ProduceAsync_Await_NonSerializing");
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(new ProducerConfig { BootstrapServers = bootstrapServers }, producerType).Build())
             {
                 var dr = await producer.ProduceAsync(
                     singlePartitionTopic,
@@ -113,6 +113,44 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Await_Throws");
+        }
+
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public async Task Producer_Binary_ProduceAsync_Await_Throws(string bootstrapServers)
+        {
+            LogToFile("start Producer_Binary_ProduceAsync_Await_Throws");
+
+            using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                await Assert.ThrowsAsync<ProduceException>(
+                    async () =>
+                    {
+                        await producer.ProduceAsync(
+                            new TopicPartition(singlePartitionTopic, 42),
+                            ReadOnlySpan<byte>.Empty, 
+                            Encoding.UTF8.GetBytes("test string"));
+                        throw new Exception("unexpected exception");
+                    });
+            }
+
+            // variation 2
+
+            Func<Task> mthd = async () =>
+            {
+                using (var producer = new ProducerBuilder(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+                {
+                    var dr = await producer.ProduceAsync(
+                        new TopicPartition(singlePartitionTopic, 1001),
+                        ReadOnlySpan<byte>.Empty, 
+                        Encoding.UTF8.GetBytes("test string"));
+                    throw new Exception("unexpected exception.");
+                }
+            };
+
+            Assert.Throws<AggregateException>(() => { mthd().Wait(); });
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Producer_Binary_ProduceAsync_Await_Throws");
         }
     }
 }

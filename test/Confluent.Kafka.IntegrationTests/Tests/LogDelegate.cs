@@ -66,6 +66,17 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(logCount > 0);
 
             logCount = 0;
+            using (var producer =
+                new ProducerBuilder(producerConfig)
+                    .SetLogHandler((_, m) => logCount += 1)
+                    .Build())
+            {
+                _ = producer.ProduceAsync(singlePartitionTopic, ReadOnlySpan<byte>.Empty, Serializers.Utf8.Serialize("test value", SerializationContext.Empty)).Result;
+                producer.Flush(TimeSpan.FromSeconds(10));
+            }
+            Assert.True(logCount > 0);
+
+            logCount = 0;
             using (var consumer =
                 new ConsumerBuilder<byte[], byte[]>(consumerConfig)
                     .SetLogHandler((_, m) => logCount += 1)

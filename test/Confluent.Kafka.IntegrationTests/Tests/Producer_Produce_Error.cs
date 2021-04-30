@@ -27,8 +27,8 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Produce_Error(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_Produce_Error(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_Produce_Error");
 
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
 
             using (var producer =
-                new ProducerBuilder<Null, String>(producerConfig)
+                new TestProducerBuilder<Null, String>(producerConfig, producerType)
                     .SetKeySerializer(Serializers.Null)
                     .SetValueSerializer(Serializers.Utf8)
                     .Build())
@@ -80,7 +80,7 @@ namespace Confluent.Kafka.IntegrationTests
                 count += 1;
             };
 
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig, producerType).Build())
             {
                 producer.Produce(new TopicPartition(singlePartitionTopic, 42), new Message<byte[], byte[]> { Key = new byte[] { 11 }}, dh2);
                 producer.Flush(TimeSpan.FromSeconds(10));

@@ -29,8 +29,8 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Test that null and byte[0] keys and values are produced / consumed
         ///     as expected.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void NullVsEmpty(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void NullVsEmpty(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start NullVsEmpty");
 
@@ -43,7 +43,7 @@ namespace Confluent.Kafka.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             DeliveryResult<byte[], byte[]> dr;
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<byte[], byte[]>(producerConfig, producerType).Build())
             {
                 // Assume that all these produce calls succeed.
                 dr = producer.ProduceAsync(new TopicPartition(singlePartitionTopic, 0), new Message<byte[], byte[]> { Key = null, Value = null }).Result;

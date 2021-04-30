@@ -29,13 +29,13 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Poll(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_Poll(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_Poll");
 
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(new ProducerConfig { BootstrapServers = bootstrapServers }, producerType).Build())
             {
                 var r = producer.ProduceAsync(tempTopic.Name, new Message<Null, string> { Value = "a message" }).Result;
                 Assert.True(r.Status == PersistenceStatus.Persisted);

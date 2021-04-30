@@ -201,6 +201,8 @@ namespace Confluent.Kafka
                 {
                     TopicPartitionOffset = deliveryReport.TopicPartitionOffset,
                     Status = deliveryReport.Status,
+                    Timestamp = deliveryReport.Message.Timestamp,
+                    Headers = deliveryReport.Message.Headers
                 };
                 // topic is cached in this object, not set in the deliveryReport to avoid the 
                 // cost of marshalling it.
@@ -250,7 +252,9 @@ namespace Confluent.Kafka
                 var dr = new DeliveryReport
                 {
                     TopicPartitionOffsetError = deliveryReport.TopicPartitionOffsetError,
-                    Status = deliveryReport.Status
+                    Status = deliveryReport.Status,
+                    Timestamp = deliveryReport.Message.Timestamp,
+                    Headers = deliveryReport.Message.Headers
                 };
                 // topic is cached in this object, not set in the deliveryReport to avoid the 
                 // cost of marshalling it.
