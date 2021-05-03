@@ -66,8 +66,7 @@ namespace Confluent.Kafka.IntegrationTests
             Assert.True(logCount > 0);
 
             logCount = 0;
-            using (var producer =
-                new ProducerBuilder(producerConfig)
+            using (var producer = new ProducerBuilder(producerConfig)
                     .SetLogHandler((_, m) => logCount += 1)
                     .Build())
             {
