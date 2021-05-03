@@ -32,9 +32,9 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_BinaryHandles(string bootstrapServers)
+        public void Producer_Binary_Handles(string bootstrapServers)
         {
-            LogToFile("start Producer_BinaryHandles");
+            LogToFile("start Producer_Binary_Handles");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             const int nativeLength = 12;
@@ -107,7 +107,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Producer_BinaryHandles");
+            LogToFile("end   Producer_Binary_Handles");
         }
     }
 }

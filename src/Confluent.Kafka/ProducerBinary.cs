@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     A high level producer with serialization capability.
+    ///     A low level binary producer.
     /// </summary>
     internal class Producer : ProducerBase, IProducer
     {
