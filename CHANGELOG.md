@@ -1,8 +1,8 @@
-# 1.7.0-RC6
+# 1.7.0-RC8
 
 ## Enhancements
 
-- References librdkafka.redist 1.7.0-RC6. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.7.0-RC6) for a complete
+- References librdkafka.redist 1.7.0-RC8. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.7.0-RC8) for a complete
 list of changes, enhancements, fixes and upgrade considerations.
 
 
