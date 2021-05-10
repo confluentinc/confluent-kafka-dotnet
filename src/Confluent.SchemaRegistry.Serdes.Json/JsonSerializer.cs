@@ -144,7 +144,7 @@ namespace Confluent.SchemaRegistry.Serdes
             var validationResult = validator.Validate(serializedString, this.schema);
             if (validationResult.Count > 0)
             {
-                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path) + "]"));
+                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
             }
 
             try
