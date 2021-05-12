@@ -4,13 +4,13 @@
 
 - References librdkafka.redist 1.7.0-RC9. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.7.0-RC9) for a complete
 list of changes, enhancements, fixes and upgrade considerations.
+- Added OAuth support to AdminClient ([jerive](https://github.com/jerive))
 
 
 ## Fixes
 
 - Resolved a schema caching bug ([#1587](https://github.com/confluentinc/confluent-kafka-dotnet/pull/1587)) in `CachedSchemaRegistryClient.GetSchemaIdAsync` ([jeremy001181](https://github.com/jeremy001181)).
 - Fixed a configuration error in the Web example ([cjgalione](https://github.com/cjgalione)).
-- Fixed an AdminClient authentication bug ([#1608](https://github.com/confluentinc/confluent-kafka-dotnet/pull/1608)) ([jerive](https://github.com/jerive))
 
 
 ## Security
