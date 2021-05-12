@@ -12,7 +12,6 @@ list of changes, enhancements, fixes and upgrade considerations.
 - Resolved a schema caching bug ([#1587](https://github.com/confluentinc/confluent-kafka-dotnet/pull/1587)) in `CachedSchemaRegistryClient.GetSchemaIdAsync` ([jeremy001181](https://github.com/jeremy001181)).
 - Fixed a configuration error in the Web example ([cjgalione](https://github.com/cjgalione)).
 
-
 ## Security
 
 - Updated `System.Net.Http` dependency to v4.3.4 ([CVE-2018-8292](https://github.com/advisories/GHSA-7jgj-8wvc-jh57))
