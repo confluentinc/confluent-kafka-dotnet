@@ -65,7 +65,12 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     // Since a cooperative assignor (CooperativeSticky) has been configured, the
                     // partition assignment is incremental (adds partitions to any existing assignment).
-                    Console.WriteLine($"Incremental partition assignment: [{string.Join(", ", partitions)}]");
+                    Console.WriteLine(
+                        "Partitions incrementally assigned: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "], all: [" +
+                        string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
+                        "]");
 
                     // Possibly manually specify start offsets by returning a list of topic/partition/offsets
                     // to assign to, e.g.:
@@ -75,7 +80,13 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 {
                     // Since a cooperative assignor (CooperativeSticky) has been configured, the revoked
                     // assignment is incremental (may remove only some partitions of the current assignment).
-                    Console.WriteLine($"Incremental partition revokation: [{string.Join(", ", partitions)}]");
+                    var remaining = c.Assignment.Where(atp => partitions.Where(rtp => rtp.TopicPartition == atp).Count() == 0);
+                    Console.WriteLine(
+                        "Partitions incrementally revoked: [" +
+                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
+                        "], remaining: [" +
+                        string.Join(',', remaining.Select(p => p.Partition.Value)) +
+                        "]");
                 })
                 .SetPartitionsLostHandler((c, partitions) =>
                 {

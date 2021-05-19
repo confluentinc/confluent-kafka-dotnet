@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.6.1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.7.0 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -391,14 +391,6 @@ namespace Confluent.Kafka
         public int? MaxInFlight { get { return GetInt("max.in.flight"); } set { this.SetObject("max.in.flight", value); } }
 
         /// <summary>
-        ///     Non-topic request timeout in milliseconds. This is for metadata requests, etc.
-        ///
-        ///     default: 60000
-        ///     importance: low
-        /// </summary>
-        public int? MetadataRequestTimeoutMs { get { return GetInt("metadata.request.timeout.ms"); } set { this.SetObject("metadata.request.timeout.ms", value); } }
-
-        /// <summary>
         ///     Period of time in milliseconds at which topic and broker metadata is refreshed in order to proactively discover any new brokers, topics, partitions or partition leader changes. Use -1 to disable the intervalled refresh (not recommended). If there are no locally referenced topics (no topic objects created, no messages produced, no subscription or no assignment) then only the broker list will be refreshed every interval but no more often than every 10s.
         ///
         ///     default: 300000
@@ -517,6 +509,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public BrokerAddressFamily? BrokerAddressFamily { get { return (BrokerAddressFamily?)GetEnum(typeof(BrokerAddressFamily), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
+
+        /// <summary>
+        ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info).
+        ///
+        ///     default: 0
+        ///     importance: medium
+        /// </summary>
+        public int? ConnectionsMaxIdleMs { get { return GetInt("connections.max.idle.ms"); } set { this.SetObject("connections.max.idle.ms", value); } }
 
         /// <summary>
         ///     The initial time to wait before reconnecting to a broker after the connection has been closed. The time is increased exponentially until `reconnect.backoff.max.ms` is reached. -25% to +50% jitter is applied to each reconnect backoff. A value of 0 disables the backoff and reconnects immediately.
@@ -727,6 +727,22 @@ namespace Confluent.Kafka
         public string SslKeystorePassword { get { return Get("ssl.keystore.password"); } set { this.SetObject("ssl.keystore.password", value); } }
 
         /// <summary>
+        ///     Path to OpenSSL engine library. OpenSSL >= 1.1.0 required.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslEngineLocation { get { return Get("ssl.engine.location"); } set { this.SetObject("ssl.engine.location", value); } }
+
+        /// <summary>
+        ///     OpenSSL engine id is the name used for loading engine.
+        ///
+        ///     default: dynamic
+        ///     importance: low
+        /// </summary>
+        public string SslEngineId { get { return Get("ssl.engine.id"); } set { this.SetObject("ssl.engine.id", value); } }
+
+        /// <summary>
         ///     Enable OpenSSL's builtin broker (server) certificate verification. This verification can be extended by the application by implementing a certificate_verify_cb.
         ///
         ///     default: true
@@ -910,7 +926,7 @@ namespace Confluent.Kafka
         ///     A comma separated list of fields that may be optionally set in delivery
         ///     reports. Disabling delivery report fields that you do not require will
         ///     improve maximum throughput and reduce memory usage. Allowed values:
-        ///     key, value, timestamp, headers, all, none.
+        ///     key, value, timestamp, headers, status, all, none.
         ///
         ///     default: all
         ///     importance: low
@@ -1138,7 +1154,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Client group session and failure detection timeout. The consumer sends periodic heartbeats (heartbeat.interval.ms) to indicate its liveness to the broker. If no hearts are received by the broker for a group member within the session timeout, the broker will remove the consumer from the group and trigger a rebalance. The allowed range is configured with the **broker** configuration properties `group.min.session.timeout.ms` and `group.max.session.timeout.ms`. Also see `max.poll.interval.ms`.
         ///
-        ///     default: 10000
+        ///     default: 45000
         ///     importance: high
         /// </summary>
         public int? SessionTimeoutMs { get { return GetInt("session.timeout.ms"); } set { this.SetObject("session.timeout.ms", value); } }
