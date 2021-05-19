@@ -12,7 +12,7 @@
     <PackageId>Confluent.Kafka</PackageId>
     <Title>Confluent.Kafka</Title>
     <AssemblyName>Confluent.Kafka</AssemblyName>
-    <VersionPrefix>1.7.0-RC9</VersionPrefix>
+    <VersionPrefix>1.7.0</VersionPrefix>
     <TargetFrameworks>net45;net46;netcoreapp2.1;netstandard1.3;netstandard2.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
