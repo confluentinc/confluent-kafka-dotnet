@@ -55,6 +55,8 @@ namespace Confluent.SchemaRegistry.Serdes
         private const int DefaultInitialBufferSize = 1024;
 
         private bool autoRegisterSchema = true;
+        private bool useLatestVersion = false;
+        private bool skipKnownTypes = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy = null;
@@ -93,6 +95,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
@@ -151,10 +155,10 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 else
                 {
-                    result.WriteUnsignedVarint((uint)indices.Count);
+                    result.WriteVarint((uint)indices.Count);
                     for (int i=0; i<indices.Count; ++i)
                     {
-                        result.WriteUnsignedVarint((uint)indices[indices.Count-i-1]);
+                        result.WriteVarint((uint)indices[indices.Count-i-1]);
                     }
                 }
 
@@ -166,13 +170,19 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <remarks>
         ///     note: protobuf does not support circular file references, so this possibility isn't considered.
         /// </remarks>
-        private async Task<List<SchemaReference>> RegisterOrGetReferences(FileDescriptor fd, SerializationContext context, bool autoRegisterSchema)
+        private async Task<List<SchemaReference>> RegisterOrGetReferences(FileDescriptor fd, SerializationContext context, bool autoRegisterSchema, bool skipKnownTypes)
         {
-            var tasks = new Task<SchemaReference>[fd.Dependencies.Count];
+            var tasks = new List<Task<SchemaReference>>();
             for (int i=0; i<fd.Dependencies.Count; ++i)
             {
+                FileDescriptor fileDescriptor = fd.Dependencies[i];
+                if (skipKnownTypes && fileDescriptor.Name.StartsWith("google/protobuf/"))
+                {
+                    continue;
+                }
+                
                 Func<FileDescriptor, Task<SchemaReference>> t = async (FileDescriptor dependency) => {
-                    var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema).ConfigureAwait(continueOnCapturedContext: false);
+                    var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema, skipKnownTypes).ConfigureAwait(continueOnCapturedContext: false);
                     var subject = referenceSubjectNameStrategy(context, dependency.Name);
                     var schema = new Schema(dependency.SerializedData.ToBase64(), dependencyReferences, SchemaType.Protobuf);
                     var schemaId = autoRegisterSchema
@@ -181,7 +191,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     var registeredDependentSchema = await schemaRegistryClient.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
                     return new SchemaReference(dependency.Name, subject, registeredDependentSchema.Version);
                 };
-                tasks[i] = t(fd.Dependencies[i]);
+                tasks.Add(t(fileDescriptor));
             }
             await Task.WhenAll(tasks.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
 
@@ -241,18 +251,32 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        var references = await RegisterOrGetReferences(value.Descriptor.File, context, autoRegisterSchema)
-                                                .ConfigureAwait(continueOnCapturedContext: false);
-                    
-                        // first usage: register/get schema to check compatibility
-                        schemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(value.Descriptor.File.SerializedData.ToBase64(), references, SchemaType.Protobuf))
-                                .ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(value.Descriptor.File.SerializedData.ToBase64(), references, SchemaType.Protobuf))
+                        if (useLatestVersion)
+                        {
+                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
+                            schemaId = latestSchema.Id;
+                        }
+                        else
+                        {
+                            var references =
+                                await RegisterOrGetReferences(value.Descriptor.File, context, autoRegisterSchema, skipKnownTypes)
+                                    .ConfigureAwait(continueOnCapturedContext: false);
 
-                        // note: different values for schemaId should never be seen here.
-                        // TODO: but fail fast may be better here.
+                            // first usage: register/get schema to check compatibility
+                            schemaId = autoRegisterSchema
+                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                        new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
+                                            SchemaType.Protobuf))
+                                    .ConfigureAwait(continueOnCapturedContext: false)
+                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                        new Schema(value.Descriptor.File.SerializedData.ToBase64(), references,
+                                            SchemaType.Protobuf))
+                                    .ConfigureAwait(continueOnCapturedContext: false);
+
+                            // note: different values for schemaId should never be seen here.
+                            // TODO: but fail fast may be better here.
+                        }
 
                         subjectsRegistered.Add(subject);
                     }

@@ -115,10 +115,10 @@ namespace Confluent.SchemaRegistry.Serdes
                     // Read the index array length, then all of the indices. These are not
                     // needed, but parsing them is the easiest way to seek to the start of
                     // the serialized data because they are varints.
-                    var indicesLength = stream.ReadUnsignedVarint();
+                    var indicesLength = stream.ReadVarint();
                     for (int i=0; i<indicesLength; ++i)
                     {
-                        stream.ReadUnsignedVarint();
+                        stream.ReadVarint();
                     }
                     return Task.FromResult(parser.ParseFrom(stream));
                 }

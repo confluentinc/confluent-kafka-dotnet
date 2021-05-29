@@ -38,6 +38,7 @@ namespace Confluent.SchemaRegistry.Serdes
     public class AvroSerializer<T> : IAsyncSerializer<T>
     {
         private bool autoRegisterSchema = true;
+        private bool useLatestVersion = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
 
@@ -109,6 +110,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
         }
 
@@ -136,8 +138,8 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (serializerImpl == null)
                 {
                     serializerImpl = typeof(T) == typeof(GenericRecord)
-                        ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, initialBufferSize, subjectNameStrategy)
-                        : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, initialBufferSize, subjectNameStrategy);
+                        ? (IAvroSerializerImpl<T>)new GenericSerializerImpl(schemaRegistryClient, autoRegisterSchema, useLatestVersion, initialBufferSize, subjectNameStrategy)
+                        : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, useLatestVersion, initialBufferSize, subjectNameStrategy);
                 }
 
                 return await serializerImpl.Serialize(context.Topic, value, context.Component == MessageComponentType.Key).ConfigureAwait(continueOnCapturedContext: false);

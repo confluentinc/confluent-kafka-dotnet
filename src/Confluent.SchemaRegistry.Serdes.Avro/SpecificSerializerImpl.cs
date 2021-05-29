@@ -82,6 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
+        private bool useLatestVersion;
         private int initialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy;
 
@@ -97,11 +98,13 @@ namespace Confluent.SchemaRegistry.Serdes
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             bool autoRegisterSchema,
+            bool useLatestVersion,
             int initialBufferSize,
             SubjectNameStrategyDelegate subjectNameStrategy)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.autoRegisterSchema = autoRegisterSchema;
+            this.useLatestVersion = useLatestVersion;
             this.initialBufferSize = initialBufferSize;
             this.subjectNameStrategy = subjectNameStrategy;
 
@@ -208,13 +211,23 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!currentSchemaData.SubjectsRegistered.Contains(subject))
                     {
-                        // first usage: register/get schema to check compatibility
-                        currentSchemaData.WriterSchemaId = autoRegisterSchema
-                            ? await schemaRegistryClient
-                                .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString)
-                                .ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString)
+                        if (useLatestVersion)
+                        {
+                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
+                            currentSchemaData.WriterSchemaId = latestSchema.Id;
+                        }
+                        else
+                        {
+                            // first usage: register/get schema to check compatibility
+                            currentSchemaData.WriterSchemaId = autoRegisterSchema
+                                ? await schemaRegistryClient
+                                    .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString)
+                                    .ConfigureAwait(continueOnCapturedContext: false)
+                                : await schemaRegistryClient
+                                    .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString)
+                                    .ConfigureAwait(continueOnCapturedContext: false);
+                        }
 
                         currentSchemaData.SubjectsRegistered.Add(subject);
                     }

@@ -54,6 +54,22 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string AutoRegisterSchemas = "protobuf.serializer.auto.register.schemas";
 
             /// <summary>
+            ///     Specifies whether or not the Protobuf serializer should use the latest subject
+            ///     version for serialization.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string UseLatestVersion = "protobuf.serializer.use.latest.version";
+
+            /// <summary>
+            ///     Specifies whether or not the Protobuf serializer should skip known types
+            ///     when resolving dependencies.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string SkipKnownTypes = "protobuf.serializer.skip.known.types";
+
+            /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
@@ -105,6 +121,32 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.AutoRegisterSchemas); }
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
+        }
+        
+
+        /// <summary>
+        ///     Specifies whether or not the Protobuf serializer should use the latest subject
+        ///     version for serialization.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? UseLatestVersion
+        {
+            get { return GetBool(PropertyNames.UseLatestVersion); }
+            set { SetObject(PropertyNames.UseLatestVersion, value); }
+        }
+        
+
+        /// <summary>
+        ///     Specifies whether or not the Protobuf serializer should skip known types
+        ///     when resolving dependencies.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? SkipKnownTypes
+        {
+            get { return GetBool(PropertyNames.SkipKnownTypes); }
+            set { SetObject(PropertyNames.SkipKnownTypes, value); }
         }
         
 
