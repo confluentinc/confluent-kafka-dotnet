@@ -101,6 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes
             foreach (var property in avroConfig)
             {
                 if (property.Key != AvroSerializerConfig.PropertyNames.AutoRegisterSchemas &&
+                    property.Key != AvroSerializerConfig.PropertyNames.UseLatestVersion &&
                     property.Key != AvroSerializerConfig.PropertyNames.BufferBytes &&
                     property.Key != AvroSerializerConfig.PropertyNames.SubjectNameStrategy)
                 {
