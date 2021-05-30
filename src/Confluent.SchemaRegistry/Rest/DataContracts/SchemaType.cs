@@ -14,7 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-
 namespace  Confluent.SchemaRegistry
 {
     /// <summary>

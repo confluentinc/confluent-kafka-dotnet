@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
@@ -35,7 +34,7 @@ namespace Confluent.SchemaRegistry
     [DataContract]
     public class RegisteredSchema : Schema, IComparable<RegisteredSchema>, IEquatable<RegisteredSchema>
     {
-        private int? hashCode;
+        private int? _hashCode;
 
         /// <summary>
         ///     The subject the schema is registered against.
@@ -58,13 +57,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     The unregistered schema corresponding to this schema.
         /// </summary>
-        public Schema Schema
-        {
-            get
-            {
-                return new Schema(SchemaString, References, SchemaType);
-            }
-        }
+        public Schema Schema => new Schema(SchemaString, References, SchemaType);
 
         /// <summary>
         ///     Included to enable API backwards compatibility only, do not use.
@@ -95,7 +88,7 @@ namespace Confluent.SchemaRegistry
         /// </param>
         public RegisteredSchema(string subject, int version, int id, string schemaString, SchemaType schemaType, List<SchemaReference> references)
         {
-            if (string.IsNullOrEmpty(schemaString))
+            if (string.IsNullOrWhiteSpace(schemaString))
             {
                 throw new ArgumentNullException(nameof(schemaString));
             }
@@ -133,15 +126,15 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public override int GetHashCode()
         {
-            if (this.hashCode == null)
+            if (_hashCode == null)
             {
                 int h = Subject.GetHashCode();
                 h = 31 * h + Version;
                 h = 31 * h + Id;
                 h = 31 * h + SchemaString.GetHashCode();
-                this.hashCode = h;
+                _hashCode = h;
             }
-            return this.hashCode.Value;
+            return _hashCode.Value;
         }
 
         /// <summary>

@@ -17,7 +17,6 @@
 using System;
 using System.Runtime.Serialization;
 
-
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
@@ -95,7 +94,7 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public override int GetHashCode()
         {
-            int result = Name.GetHashCode();
+            var result = Name.GetHashCode();
             result = 31 * result + Subject.GetHashCode();
             result = 31 * result + Version;
             return result;
@@ -118,13 +117,15 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public int CompareTo(SchemaReference other)
         {
-            int result = string.Compare(Name, other.Name, StringComparison.Ordinal);
+            var result = string.Compare(Name, other.Name, StringComparison.Ordinal);
+
             if (result != 0)
             {
                 return result;
             }
 
             result = string.Compare(Subject, other.Subject, StringComparison.Ordinal);
+
             if (result != 0)
             {
                 return result;
