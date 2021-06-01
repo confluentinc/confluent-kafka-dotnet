@@ -70,6 +70,14 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string SkipKnownTypes = "protobuf.serializer.skip.known.types";
 
             /// <summary>
+            ///     Specifies whether the Protobuf serializer should serialize message indexes
+            ///     without zig-zag encoding.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string UseDeprecatedFormat = "protobuf.serializer.use.deprecated.format";
+
+            /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
@@ -147,6 +155,19 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.SkipKnownTypes); }
             set { SetObject(PropertyNames.SkipKnownTypes, value); }
+        }
+        
+
+        /// <summary>
+        ///     Specifies whether the Protobuf serializer should serialize message indexes
+        ///     without zig-zag encoding.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? UseDeprecatedFormat
+        {
+            get { return GetBool(PropertyNames.UseDeprecatedFormat); }
+            set { SetObject(PropertyNames.UseDeprecatedFormat, value); }
         }
         
 

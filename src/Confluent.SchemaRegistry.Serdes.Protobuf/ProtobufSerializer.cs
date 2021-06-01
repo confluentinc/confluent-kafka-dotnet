@@ -57,6 +57,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private bool autoRegisterSchema = true;
         private bool useLatestVersion = false;
         private bool skipKnownTypes = false;
+        private bool useDeprecatedFormat = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy = null;
@@ -97,6 +98,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.SkipKnownTypes != null) { this.skipKnownTypes = config.SkipKnownTypes.Value; }
+            if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
@@ -104,7 +106,7 @@ namespace Confluent.SchemaRegistry.Serdes
         }
 
 
-        private static byte[] createIndexArray(MessageDescriptor md)
+        private static byte[] createIndexArray(MessageDescriptor md, bool useDeprecatedFormat)
         {
             var indices = new List<int>();
 
@@ -155,10 +157,24 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
                 else
                 {
-                    result.WriteVarint((uint)indices.Count);
+                    if (useDeprecatedFormat)
+                    {
+                        result.WriteUnsignedVarint((uint)indices.Count);
+                    }
+                    else
+                    {
+                        result.WriteVarint((uint)indices.Count);
+                    }
                     for (int i=0; i<indices.Count; ++i)
                     {
-                        result.WriteVarint((uint)indices[indices.Count-i-1]);
+                        if (useDeprecatedFormat)
+                        {
+                            result.WriteUnsignedVarint((uint)indices[indices.Count-i-1]);
+                        }
+                        else
+                        {
+                            result.WriteVarint((uint)indices[indices.Count-i-1]);
+                        }
                     }
                 }
 
@@ -233,7 +249,7 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 if (this.indexArray == null)
                 {
-                    this.indexArray = createIndexArray(value.Descriptor);
+                    this.indexArray = createIndexArray(value.Descriptor, useDeprecatedFormat);
                 }
 
                 string fullname = value.Descriptor.FullName;
