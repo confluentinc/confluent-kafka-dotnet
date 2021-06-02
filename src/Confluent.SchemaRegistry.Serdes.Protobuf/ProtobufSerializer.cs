@@ -103,6 +103,11 @@ namespace Confluent.SchemaRegistry.Serdes
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
                 ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
                 : config.ReferenceSubjectNameStrategy.Value.ToDelegate();
+
+            if (this.useLatestVersion && this.autoRegisterSchema)
+            {
+                throw new ArgumentException($"ProtobufSerializer: cannot enable both use.latest.version and auto.register.schemas");
+            }
         }
 
 
