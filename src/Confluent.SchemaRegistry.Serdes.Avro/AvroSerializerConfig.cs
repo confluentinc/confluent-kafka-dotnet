@@ -56,6 +56,8 @@ namespace Confluent.SchemaRegistry.Serdes
             /// <summary>
             ///     Specifies whether or not the Avro serializer should use the latest subject
             ///     version for serialization.
+            ///     WARNING: There is no check that the latest schema is backwards compatible
+            ///     with the schema of the object being serialized.
             ///
             ///     default: false
             /// </summary>
@@ -114,6 +116,8 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Specifies whether or not the Avro serializer should use the latest subject
         ///     version for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
         ///
         ///     default: false
         /// </summary>
