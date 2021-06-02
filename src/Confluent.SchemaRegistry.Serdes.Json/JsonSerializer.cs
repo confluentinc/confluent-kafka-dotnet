@@ -58,6 +58,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private const int DefaultInitialBufferSize = 1024;
 
         private bool autoRegisterSchema = true;
+        private bool useLatestVersion = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
@@ -112,7 +113,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+
+            if (this.useLatestVersion && this.autoRegisterSchema)
+            {
+                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
+            }
         }
 
 
@@ -162,14 +169,25 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        // first usage: register/get schema to check compatibility
-                        schemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
-                                .ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                        if (useLatestVersion)
+                        {
+                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
+                            schemaId = latestSchema.Id;
+                        }
+                        else
+                        {
+                            // first usage: register/get schema to check compatibility
+                            schemaId = autoRegisterSchema
+                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                    .ConfigureAwait(continueOnCapturedContext: false)
+                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                    .ConfigureAwait(continueOnCapturedContext: false);
 
-                        // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
+                            // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
+                        }
 
                         subjectsRegistered.Add(subject);
                     }
