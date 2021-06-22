@@ -135,6 +135,17 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
                 }
+
+                // config with avro.serializer.use.latest.version == true should also work now.
+                using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryServers }))
+                using (var producer =
+                    new ProducerBuilder<string, int>(producerConfig)
+                        .SetKeySerializer(new AvroSerializer<string>(schemaRegistry, new AvroSerializerConfig { AutoRegisterSchemas = false, UseLatestVersion = true}))
+                        .SetValueSerializer(new AvroSerializer<int>(schemaRegistry))
+                        .Build())
+                {
+                    producer.ProduceAsync(topic.Name, new Message<string, int> { Key = "test", Value = 112 }).Wait();
+                }
             }
         }
     }

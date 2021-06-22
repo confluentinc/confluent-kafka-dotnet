@@ -38,6 +38,8 @@ namespace Confluent.Kafka
             public Action<LogMessage> logHandler;
             public Action<string> statisticsHandler;
             public Action<string> oAuthBearerTokenRefreshHandler;
+            public Dictionary<string, PartitionerDelegate> partitioners;
+            public PartitionerDelegate defaultPartitioner;
         }
 
         private ISerializer<TKey> keySerializer;
@@ -75,6 +77,8 @@ namespace Confluent.Kafka
             => ownedKafkaHandle != null 
                 ? ownedKafkaHandle
                 : borrowedHandle.LibrdkafkaHandle;
+
+        private List<GCHandle> partitionerHandles = new List<GCHandle>();
 
         private Task callbackTask;
         private CancellationTokenSource callbackCts;
@@ -429,6 +433,12 @@ namespace Confluent.Kafka
 
             if (disposing)
             {
+                // Unpin partitioner functions
+                foreach (var ph in this.partitionerHandles)
+                {
+                    ph.Free();
+                }
+
                 if (!this.manualPoll)
                 {
                     callbackCts.Cancel();
@@ -480,7 +490,7 @@ namespace Confluent.Kafka
                 {
                     return new Handle { Owner = this, LibrdkafkaHandle = ownedKafkaHandle };
                 }
-                
+
                 return borrowedHandle;
             }
         }
@@ -555,6 +565,8 @@ namespace Confluent.Kafka
         internal Producer(ProducerBuilder<TKey, TValue> builder)
         {
             var baseConfig = builder.ConstructBaseConfig(this);
+            var partitioners = baseConfig.partitioners;
+            var defaultPartitioner = baseConfig.defaultPartitioner;
 
             // TODO: Make Tasks auto complete when EnableDeliveryReportsPropertyName is set to false.
             // TODO: Hijack the "delivery.report.only.error" configuration parameter and add functionality to enforce that Tasks 
@@ -632,15 +644,13 @@ namespace Confluent.Kafka
             }
 
             var configHandle = SafeConfigHandle.Create();
+            IntPtr configPtr = configHandle.DangerousGetHandle();
 
             modifiedConfig.ForEach((kvp) =>
                 {
                     if (kvp.Value == null) { throw new ArgumentNullException($"'{kvp.Key}' configuration parameter must not be null."); }
                     configHandle.Set(kvp.Key, kvp.Value);
                 });
-
-
-            IntPtr configPtr = configHandle.DangerousGetHandle();
 
             if (enableDeliveryReports)
             {
@@ -670,8 +680,51 @@ namespace Confluent.Kafka
                 Librdkafka.conf_set_oauthbearer_token_refresh_cb(configPtr, oAuthBearerTokenRefreshCallbackDelegate);
             }
 
+            Action<SafeTopicConfigHandle, PartitionerDelegate> addPartitionerToTopicConfig = (topicConfigHandle, partitioner) =>
+            {
+                Librdkafka.PartitionerDelegate librdkafkaPartitioner = (IntPtr rkt, IntPtr keydata, UIntPtr keylen, int partition_cnt, IntPtr rkt_opaque, IntPtr msg_opaque) =>
+                    {
+                        unsafe
+                        {
+                            var topicNamePtr = Librdkafka.topic_name(rkt);
+                            var topic = Util.Marshal.PtrToStringUTF8(topicNamePtr);
+                            var keyIsNull = keydata == IntPtr.Zero;
+                            var keyBytes = keyIsNull
+                                ? ReadOnlySpan<byte>.Empty
+                                : new ReadOnlySpan<byte>(keydata.ToPointer(), (int)keylen);
+                            return partitioner(topic, partition_cnt, keyBytes, keyIsNull);
+                        }
+                    };
+                this.partitionerHandles.Add(GCHandle.Alloc(librdkafkaPartitioner));
+                Librdkafka.topic_conf_set_partitioner_cb(topicConfigHandle.DangerousGetHandle(), librdkafkaPartitioner);
+            };
+
+            // Configure the default custom partitioner.
+            if (defaultPartitioner != null)
+            {
+                // The default topic config may have been modified by topic-level
+                // configuraton parameters passed down from the top level config.
+                // If that's the case, duplicate the default topic config to avoid
+                // colobbering any already configured values.
+                var defaultTopicConfigHandle = configHandle.GetDefaultTopicConfig();
+                SafeTopicConfigHandle topicConfigHandle =
+                    defaultTopicConfigHandle.DangerousGetHandle() != IntPtr.Zero
+                        ? defaultTopicConfigHandle.Duplicate()
+                        : SafeTopicConfigHandle.Create();
+                addPartitionerToTopicConfig(topicConfigHandle, defaultPartitioner);
+                Librdkafka.conf_set_default_topic_conf(configPtr, topicConfigHandle.DangerousGetHandle());
+            }
+
             this.ownedKafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Producer, configPtr, this);
-            configHandle.SetHandleAsInvalid(); // config object is no longer usable.
+            configHandle.SetHandleAsInvalid();  // ownership was transferred.
+
+            // Per-topic partitioners.
+            foreach (var partitioner in partitioners)
+            {
+                var topicConfigHandle = this.ownedKafkaHandle.DuplicateDefaultTopicConfig();
+                addPartitionerToTopicConfig(topicConfigHandle, partitioner.Value);
+                this.ownedKafkaHandle.newTopic(partitioner.Key, topicConfigHandle.DangerousGetHandle());
+            }
 
             if (!manualPoll)
             {
@@ -831,8 +884,8 @@ namespace Confluent.Kafka
                     {
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                    }
-                );
+                    },
+                    ex);
             }
 
             byte[] valBytes;
@@ -850,8 +903,8 @@ namespace Confluent.Kafka
                     {
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                    }
-                );
+                    },
+                    ex);
             }
 
             try
@@ -1018,8 +1071,16 @@ namespace Confluent.Kafka
             => KafkaHandle.CommitTransaction(timeout.TotalMillisecondsAsInt());
         
         /// <inheritdoc/>
+        public void CommitTransaction()
+            => KafkaHandle.CommitTransaction(-1);
+
+        /// <inheritdoc/>
         public void AbortTransaction(TimeSpan timeout)
             => KafkaHandle.AbortTransaction(timeout.TotalMillisecondsAsInt());
+
+        /// <inheritdoc/>
+        public void AbortTransaction()
+            => KafkaHandle.AbortTransaction(-1);
 
         /// <inheritdoc/>
         public void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, TimeSpan timeout)

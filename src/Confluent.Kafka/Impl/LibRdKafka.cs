@@ -24,7 +24,6 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
-using Confluent.Kafka.Impl.NativeMethods;
 using System.Reflection;
 #if NET45 || NET46 || NET47
 using System.ComponentModel;
@@ -35,6 +34,8 @@ namespace Confluent.Kafka.Impl
 {
     internal static class Librdkafka
     {
+        const int RTLD_NOW = 2;
+
         internal enum DestroyFlags
         {
             /*!
@@ -74,13 +75,16 @@ namespace Confluent.Kafka.Impl
             DeleteTopics_Result = 101,
             CreatePartitions_Result = 102,
             AlterConfigs_Result = 103,
-            DescribeConfigs_Result = 104
+            DescribeConfigs_Result = 104,
+            DeleteRecords_Result = 105,
+            DeleteGroups_Result = 106,
+            DeleteConsumerGroupOffsets_Result = 107,
         }
 
-        // min librdkafka version, to change when binding to new function are added
-        const long minVersion = 0x000903ff;
+        // Minimum librdkafka version.
+        const long minVersion = 0x010502ff;
 
-        // max length for error strings built by librdkafka
+        // Maximum length of error strings built by librdkafka.
         internal const int MaxErrorStringLength = 512;
 
         private static class WindowsNative
@@ -172,16 +176,19 @@ namespace Confluent.Kafka.Impl
             _oauthbearer_set_token = (Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_oauthbearer_set_token").CreateDelegate(typeof(Func<IntPtr, string, long, string, string[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _oauthbearer_set_token_failure = (Func<IntPtr, string, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_oauthbearer_set_token_failure").CreateDelegate(typeof(Func<IntPtr, string, ErrorCode>));
             _conf_set_default_topic_conf = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_set_default_topic_conf").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+            _conf_get_default_topic_conf = (Func<SafeConfigHandle, SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_conf_get_default_topic_conf").CreateDelegate(typeof(Func<SafeConfigHandle, SafeTopicConfigHandle>));
             _conf_get = (ConfGet)methods.Single(m => m.Name == "rd_kafka_conf_get").CreateDelegate(typeof(ConfGet));
             _topic_conf_get = (ConfGet)methods.Single(m => m.Name == "rd_kafka_topic_conf_get").CreateDelegate(typeof(ConfGet));
             _conf_dump = (ConfDump)methods.Single(m => m.Name == "rd_kafka_conf_dump").CreateDelegate(typeof(ConfDump));
             _topic_conf_dump = (ConfDump)methods.Single(m => m.Name == "rd_kafka_topic_conf_dump").CreateDelegate(typeof(ConfDump));
             _conf_dump_free = (Action<IntPtr, UIntPtr>)methods.Single(m => m.Name == "rd_kafka_conf_dump_free").CreateDelegate(typeof(Action<IntPtr, UIntPtr>));
             _topic_conf_new = (Func<SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_topic_conf_new").CreateDelegate(typeof(Func<SafeTopicConfigHandle>));
-            _topic_conf_dup = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_dup").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _topic_conf_dup = (Func<SafeTopicConfigHandle, SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_topic_conf_dup").CreateDelegate(typeof(Func<SafeTopicConfigHandle, SafeTopicConfigHandle>));
+            _default_topic_conf_dup = (Func<SafeKafkaHandle, SafeTopicConfigHandle>)methods.Single(m => m.Name == "rd_kafka_default_topic_conf_dup").CreateDelegate(typeof(Func<SafeKafkaHandle, SafeTopicConfigHandle>));
             _topic_conf_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_conf_set = (Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set").CreateDelegate(typeof(Func<IntPtr, string, string, StringBuilder, UIntPtr, ConfRes>));
             _topic_conf_set_partitioner_cb = (Action<IntPtr, PartitionerDelegate>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_partitioner_cb").CreateDelegate(typeof(Action<IntPtr, PartitionerDelegate>));
+            _topic_conf_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_conf_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
             _topic_partition_available = (Func<IntPtr, int, bool>)methods.Single(m => m.Name == "rd_kafka_topic_partition_available").CreateDelegate(typeof(Func<IntPtr, int, bool>));
             _init_transactions = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_init_transactions").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _begin_transaction = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_begin_transaction").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -195,7 +202,7 @@ namespace Confluent.Kafka.Impl
             _new = (Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>)methods.Single(m => m.Name == "rd_kafka_new").CreateDelegate(typeof(Func<RdKafkaType, IntPtr, StringBuilder, UIntPtr, SafeKafkaHandle>));
             _name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _memberid = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_memberid").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
-            _topic_new = (Func<IntPtr, string, IntPtr, SafeTopicHandle>)methods.Single(m => m.Name == "rd_kafka_topic_new").CreateDelegate(typeof(Func<IntPtr, string, IntPtr, SafeTopicHandle>));
+            _topic_new = (Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>)methods.Single(m => m.Name == "rd_kafka_topic_new").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle>));
             _topic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_poll").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
@@ -210,6 +217,10 @@ namespace Confluent.Kafka.Impl
             _consumer_poll = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_consumer_poll").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
             _consumer_close = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_consumer_close").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _assign = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_assign").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
+            _incremental_assign = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_incremental_assign").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _incremental_unassign = (Func<IntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_incremental_unassign").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr>));
+            _assignment_lost = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_assignment_lost").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _rebalance_protocol = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_rebalance_protocol").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _assignment = (Assignment)methods.Single(m => m.Name == "rd_kafka_assignment").CreateDelegate(typeof(Assignment));
             _offsets_store = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_offsets_store").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _commit = (Func<IntPtr, IntPtr, bool, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_commit").CreateDelegate(typeof(Func<IntPtr, IntPtr, bool, ErrorCode>));
@@ -260,6 +271,12 @@ namespace Confluent.Kafka.Impl
 
             _DeleteTopics = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteTopics").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DeleteTopics_result_topics = (_DeleteTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteTopics_result_topics").CreateDelegate(typeof(_DeleteTopics_result_topics_delegate));
+
+            _DeleteRecords_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _DeleteRecords_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_destroy").CreateDelegate(typeof(Action<IntPtr>));
+
+            _DeleteRecords = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
+            _DeleteRecords_result_offsets = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_result_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
 
             _NewPartitions_new = (Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_new").CreateDelegate(typeof(Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewPartitions_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -339,6 +356,17 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        /// <summary>
+        ///     Attempt to load librdkafka.
+        /// </summary>
+        /// <returns>
+        ///     true if librdkafka was loaded as a result of this call, false if the
+        ///     library has already been loaded.
+        ///
+        ///     throws DllNotFoundException if librdkafka could not be loaded.
+        ///     throws FileLoadException if the loaded librdkafka version is too low.
+        ///     throws InvalidOperationException on other error.
+        /// </returns>
         public static bool Initialize(string userSpecifiedPath)
         {
             lock (loadLockObj)
@@ -348,136 +376,50 @@ namespace Confluent.Kafka.Impl
                     return false;
                 }
 
-                isInitialized = false;
-
 #if NET45 || NET46 || NET47
 
-                string path = userSpecifiedPath;
-                if (path == null)
+                if (!MonoSupport.IsMonoRuntime)
                 {
-                    // in net45, librdkafka.dll is not in the process directory, we have to load it manually
-                    // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
-                    var is64 = IntPtr.Size == 8;
-                    var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
-                    var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
-                    var dllDirectory = Path.Combine(
-                        baseDirectory,
-                        is64
-                            ? Path.Combine("librdkafka", "x64")
-                            : Path.Combine("librdkafka", "x86"));
-                    path = Path.Combine(dllDirectory, "librdkafka.dll");
-
-                    if (!File.Exists(path))
-                    {
-                        dllDirectory = Path.Combine(
-                            baseDirectory,
-                            is64
-                                ? @"runtimes\win-x64\native"
-                                : @"runtimes\win-x86\native");
-                        path = Path.Combine(dllDirectory, "librdkafka.dll");
-                    }
-
-                    if (!File.Exists(path))
-                    {
-                        dllDirectory = Path.Combine(
-                            baseDirectory,
-                            is64 ? "x64" : "x86");
-                        path = Path.Combine(dllDirectory, "librdkafka.dll");
-                    }
-
-                    if (!File.Exists(path))
-                    {
-
-                        path = Path.Combine(baseDirectory, "librdkafka.dll");
-                    }
+                    LoadNetFrameworkDelegates(userSpecifiedPath);
                 }
-
-                if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                else
                 {
-                    // catch the last win32 error by default and keep the associated default message
-                    var win32Exception = new Win32Exception();
-                    var additionalMessage =
-                        $"Error while loading librdkafka.dll or its dependencies from {path}. " +
-                        $"Check the directory exists, if not check your deployment process. " +
-                        $"You can also load the library and its dependencies by yourself " +
-                        $"before any call to Confluent.Kafka";
-
-                    throw new InvalidOperationException(additionalMessage, win32Exception);
-                }
-
-                isInitialized = SetDelegates(typeof(NativeMethods.NativeMethods));
-
-#else
-
-                const int RTLD_NOW = 2;
-
-                var nativeMethodTypes = new List<Type>();
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    if (userSpecifiedPath != null)
+                    if (Environment.OSVersion.Platform == PlatformID.Unix)
                     {
-                        if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
-                        {
-                            // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
-                            // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
-                        }
+                        LoadLinuxDelegates(userSpecifiedPath);
                     }
-
-                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    if (userSpecifiedPath != null)
+                    else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
                     {
-                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                        }
-                    }
-
-                    nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    if (userSpecifiedPath != null)
-                    {
-                        if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
-                        {
-                            throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
-                        }
-
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
+                        LoadOSXDelegates(userSpecifiedPath);
                     }
                     else
                     {
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Centos7));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Debian9));
-                        nativeMethodTypes.Add(typeof(NativeMethods.NativeMethods_Alpine));
+                        // Assume other PlatformId enum cases are Windows based
+                        // (at the time of implementation, this is the case).
+                        LoadNetFrameworkDelegates(userSpecifiedPath);
                     }
+                }
+
+#else
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    LoadNetStandardDelegates(userSpecifiedPath);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    LoadOSXDelegates(userSpecifiedPath);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    LoadLinuxDelegates(userSpecifiedPath);
                 }
                 else
                 {
                     throw new InvalidOperationException($"Unsupported platform: {RuntimeInformation.OSDescription}");
                 }
 
-                foreach (var t in nativeMethodTypes)
-                {
-                    isInitialized = SetDelegates(t);
-                    if (isInitialized)
-                    {
-                        break;
-                    }
-                }
-
 #endif
-
-                if (!isInitialized)
-                {
-                    throw new DllNotFoundException("Failed to load the librdkafka native library.");
-                }
 
                 if ((long)version() < minVersion)
                 {
@@ -485,11 +427,138 @@ namespace Confluent.Kafka.Impl
                 }
 
                 isInitialized = true;
-
-
-                return isInitialized;
+                return true;
             }
         }
+
+
+#if NET45 || NET46 || NET47
+        private static void LoadNetFrameworkDelegates(string userSpecifiedPath)
+        {
+            string path = userSpecifiedPath;
+            if (path == null)
+            {
+                // in net45, librdkafka.dll is not in the process directory, we have to load it manually
+                // and also search in the same folder for its dependencies (LOAD_WITH_ALTERED_SEARCH_PATH)
+                var is64 = IntPtr.Size == 8;
+                var baseUri = new Uri(Assembly.GetExecutingAssembly().GetName().EscapedCodeBase);
+                var baseDirectory = Path.GetDirectoryName(baseUri.LocalPath);
+                var dllDirectory = Path.Combine(
+                    baseDirectory,
+                    is64
+                        ? Path.Combine("librdkafka", "x64")
+                        : Path.Combine("librdkafka", "x86"));
+                path = Path.Combine(dllDirectory, "librdkafka.dll");
+
+                if (!File.Exists(path))
+                {
+                    dllDirectory = Path.Combine(
+                        baseDirectory,
+                        is64
+                            ? @"runtimes\win-x64\native"
+                            : @"runtimes\win-x86\native");
+                    path = Path.Combine(dllDirectory, "librdkafka.dll");
+                }
+
+                if (!File.Exists(path))
+                {
+                    dllDirectory = Path.Combine(
+                        baseDirectory,
+                        is64 ? "x64" : "x86");
+                    path = Path.Combine(dllDirectory, "librdkafka.dll");
+                }
+
+                if (!File.Exists(path))
+                {
+                    path = Path.Combine(baseDirectory, "librdkafka.dll");
+                }
+            }
+
+            if (WindowsNative.LoadLibraryEx(path, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+            {
+                // catch the last win32 error by default and keep the associated default message
+                var win32Exception = new Win32Exception();
+                var additionalMessage =
+                    $"Error while loading librdkafka.dll or its dependencies from {path}. " +
+                    $"Check the directory exists, if not check your deployment process. " +
+                    $"You can also load the library and its dependencies by yourself " +
+                    $"before any call to Confluent.Kafka";
+
+                throw new InvalidOperationException(additionalMessage, win32Exception);
+            }
+
+            if (!SetDelegates(typeof(NativeMethods.NativeMethods)))
+            {
+                throw new DllNotFoundException("Failed to load the librdkafka native library.");
+            }
+        }
+
+#endif
+
+        private static bool TrySetDelegates(List<Type> nativeMethodCandidateTypes)
+        {
+            foreach (var t in nativeMethodCandidateTypes)
+            {
+                if (SetDelegates(t))
+                {
+                    return true;
+                }
+            }
+
+            throw new DllNotFoundException("Failed to load the librdkafka native library.");
+        }
+
+        private static void LoadNetStandardDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (WindowsNative.LoadLibraryEx(userSpecifiedPath, IntPtr.Zero, WindowsNative.LoadLibraryFlags.LOAD_WITH_ALTERED_SEARCH_PATH) == IntPtr.Zero)
+                {
+                    // TODO: The Win32Exception class is not available in .NET Standard, which is the easy way to get the message string corresponding to
+                    // a win32 error. FormatMessage is not straightforward to p/invoke, so leaving this as a job for another day.
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. Win32 error: {Marshal.GetLastWin32Error()}");
+                }
+            }
+
+            TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+        }
+
+        private static void LoadOSXDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                }
+            }
+
+            TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+        }
+
+        private static void LoadLinuxDelegates(string userSpecifiedPath)
+        {
+            if (userSpecifiedPath != null)
+            {
+                if (PosixNative.dlopen(userSpecifiedPath, RTLD_NOW) == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException($"Failed to load librdkafka at location '{userSpecifiedPath}'. dlerror: '{PosixNative.LastError}'.");
+                }
+
+                TrySetDelegates(new List<Type> { typeof(NativeMethods.NativeMethods) });
+            }
+            else
+            {
+                TrySetDelegates(new List<Type>
+                {
+                    typeof(NativeMethods.NativeMethods_Centos7),
+                    typeof(NativeMethods.NativeMethods),
+                    typeof(NativeMethods.NativeMethods_Centos6),
+                    typeof(NativeMethods.NativeMethods_Alpine)
+                });
+            }
+        }
+
 
         [UnmanagedFunctionPointer(callingConvention: CallingConvention.Cdecl)]
         internal delegate void DeliveryReportDelegate(
@@ -666,6 +735,10 @@ namespace Confluent.Kafka.Impl
         internal static void conf_set_default_topic_conf(IntPtr conf, IntPtr tconf)
             => _conf_set_default_topic_conf(conf, tconf);
 
+        private static Func<SafeConfigHandle, SafeTopicConfigHandle> _conf_get_default_topic_conf;
+        internal static SafeTopicConfigHandle conf_get_default_topic_conf(SafeConfigHandle conf)
+            => _conf_get_default_topic_conf(conf);
+
         private delegate ConfRes ConfGet(IntPtr conf, string name, StringBuilder dest,
                 ref UIntPtr dest_size);
         private static ConfGet _conf_get;
@@ -694,8 +767,11 @@ namespace Confluent.Kafka.Impl
         private static Func<SafeTopicConfigHandle> _topic_conf_new;
         internal static SafeTopicConfigHandle topic_conf_new() => _topic_conf_new();
 
-        private static Func<IntPtr, IntPtr> _topic_conf_dup;
-        internal static IntPtr topic_conf_dup(IntPtr conf) => _topic_conf_dup(conf);
+        private static Func<SafeTopicConfigHandle, SafeTopicConfigHandle> _topic_conf_dup;
+        internal static SafeTopicConfigHandle topic_conf_dup(SafeTopicConfigHandle conf) => _topic_conf_dup(conf);
+
+        private static Func<SafeKafkaHandle, SafeTopicConfigHandle> _default_topic_conf_dup;
+        internal static SafeTopicConfigHandle default_topic_conf_dup(SafeKafkaHandle rk) => _default_topic_conf_dup(rk);
 
         private static Action<IntPtr> _topic_conf_destroy;
         internal static void topic_conf_destroy(IntPtr conf) => _topic_conf_destroy(conf);
@@ -704,6 +780,11 @@ namespace Confluent.Kafka.Impl
         internal static ConfRes topic_conf_set(IntPtr conf, string name,
                 string value, StringBuilder errstr, UIntPtr errstr_size)
             => _topic_conf_set(conf, name, value, errstr, errstr_size);
+
+        private static Action<IntPtr, IntPtr> _topic_conf_set_opaque;
+        internal static void topic_conf_set_opaque(
+                IntPtr topic_conf, IntPtr opaque)
+            => _topic_conf_set_opaque(topic_conf, opaque);
 
         private static Action<IntPtr, PartitionerDelegate> _topic_conf_set_partitioner_cb;
         internal static void topic_conf_set_partitioner_cb(
@@ -771,8 +852,8 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr> _memberid;
         internal static IntPtr memberid(IntPtr rk) => _memberid(rk);
 
-        private static Func<IntPtr, string, IntPtr, SafeTopicHandle> _topic_new;
-        internal static SafeTopicHandle topic_new(IntPtr rk, string topic, IntPtr conf)
+        private static Func<IntPtr, IntPtr, IntPtr, SafeTopicHandle> _topic_new;
+        internal static SafeTopicHandle topic_new(IntPtr rk, IntPtr topic, IntPtr conf)
             => _topic_new(rk, topic, conf);
 
         private static Action<IntPtr> _topic_destroy;
@@ -831,6 +912,22 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, ErrorCode> _assign;
         internal static ErrorCode assign(IntPtr rk, IntPtr partitions)
             => _assign(rk, partitions);
+
+        private static Func<IntPtr, IntPtr, IntPtr> _incremental_assign;
+        internal static IntPtr incremental_assign(IntPtr rk, IntPtr partitions)
+            => _incremental_assign(rk, partitions);
+
+        private static Func<IntPtr, IntPtr, IntPtr> _incremental_unassign;
+        internal static IntPtr incremental_unassign(IntPtr rk, IntPtr partitions)
+            => _incremental_unassign(rk, partitions);
+
+        private static Func<IntPtr, IntPtr> _assignment_lost;
+        internal static IntPtr assignment_lost(IntPtr rk)
+            => _assignment_lost(rk);
+
+        private static Func<IntPtr, IntPtr> _rebalance_protocol;
+        internal static IntPtr rebalance_protocol(IntPtr rk)
+            => _rebalance_protocol(rk);
 
         private delegate ErrorCode Assignment(IntPtr rk, out IntPtr topics);
         private static Assignment _assignment;
@@ -1234,6 +1331,28 @@ namespace Confluent.Kafka.Impl
                 IntPtr result,
                 out UIntPtr cntp) => _DescribeConfigs_result_resources(result, out cntp);
 
+
+        private static Func<IntPtr, IntPtr> _DeleteRecords_new;
+        internal static IntPtr DeleteRecords_new(
+                IntPtr topicPartitionOffsets
+        ) => _DeleteRecords_new(topicPartitionOffsets);
+
+        private static Action<IntPtr> _DeleteRecords_destroy;
+        internal static void DeleteRecords_destroy(
+            IntPtr del_records) => _DeleteRecords_destroy(del_records);
+
+        private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _DeleteRecords;
+        internal static void DeleteRecords(
+            IntPtr rk,
+            IntPtr[] del_records,
+            UIntPtr del_records_cnt,
+            IntPtr options,
+            IntPtr rkqu) => _DeleteRecords(rk, del_records, del_records_cnt, options, rkqu);
+
+        private static Func<IntPtr, IntPtr> _DeleteRecords_result_offsets;
+        internal static IntPtr DeleteRecords_result_offsets(
+            IntPtr result
+        ) => _DeleteRecords_result_offsets(result);
 
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;

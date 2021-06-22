@@ -25,6 +25,14 @@ namespace Confluent.Kafka
     /// </summary>
     public class Handle
     {
+        /// <summary>
+        ///     Gets a value indicating whether the encapsulated librdkafka handle is invalid.
+        /// </summary>
+        /// <value>
+        ///     <b>true</b> if the encapsulated librdkafka handle is invalid; otherwise, <b>false</b>.
+        /// </value>
+        public bool IsInvalid => this.LibrdkafkaHandle == null || this.LibrdkafkaHandle.IsInvalid;
+
         internal IClient Owner { get; set; }
 
         internal SafeKafkaHandle LibrdkafkaHandle { get; set; }

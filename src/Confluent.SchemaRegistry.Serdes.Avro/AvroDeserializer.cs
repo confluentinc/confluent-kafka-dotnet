@@ -100,7 +100,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 // TODO: change this interface such that it takes ReadOnlyMemory<byte>, not byte[].
-                return await deserializerImpl.Deserialize(context.Topic, isNull ? null : data.ToArray());
+                return await deserializerImpl.Deserialize(context.Topic, isNull ? null : data.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (AggregateException e)
             {
