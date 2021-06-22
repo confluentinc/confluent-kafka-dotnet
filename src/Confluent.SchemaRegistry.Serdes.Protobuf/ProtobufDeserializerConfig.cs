@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+using System.Linq;
 using Confluent.Kafka;
 
 
@@ -23,5 +25,46 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     <see cref="Confluent.SchemaRegistry.Serdes.ProtobufDeserializer{T}" />
     ///     configuration properties.
     /// </summary>
-    public class ProtobufDeserializerConfig : Config {}
+    public class ProtobufDeserializerConfig : Config
+    {
+        /// <summary>
+        ///     Configuration property names specific to 
+        ///     <see cref="Confluent.SchemaRegistry.Serdes.ProtobufDeserializer{T}" />.
+        /// </summary>
+        public static class PropertyNames
+        {
+            /// <summary>
+            ///     Specifies whether the Protobuf deserializer should deserialize message indexes
+            ///     without zig-zag encoding.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string UseDeprecatedFormat = "protobuf.deserializer.use.deprecated.format";
+        }
+        
+        /// <summary>
+        ///     Initialize a new <see cref="ProtobufDeserializerConfig" />.
+        /// </summary>
+        public ProtobufDeserializerConfig() { }
+
+
+        /// <summary>
+        ///     Initialize a new <see cref="ProtobufDeserializerConfig" /> from the provided
+        ///     key/value pair collection.
+        /// </summary>
+        public ProtobufDeserializerConfig(IEnumerable<KeyValuePair<string, string>> config) : base(config.ToDictionary(v => v.Key, v => v.Value)) { }
+
+
+        /// <summary>
+        ///     Specifies whether the Protobuf deserializer should deserialize message indexes
+        ///     without zig-zag encoding.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? UseDeprecatedFormat
+        {
+            get { return GetBool(PropertyNames.UseDeprecatedFormat); }
+            set { SetObject(PropertyNames.UseDeprecatedFormat, value); }
+        }
+    }
 }

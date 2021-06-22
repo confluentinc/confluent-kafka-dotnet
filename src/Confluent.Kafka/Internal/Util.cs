@@ -17,6 +17,8 @@
 using System;
 using System.Text;
 using SystemMarshal = System.Runtime.InteropServices.Marshal;
+using SystemGCHandle = System.Runtime.InteropServices.GCHandle;
+using SystemGCHandleType = System.Runtime.InteropServices.GCHandleType;
 
 
 namespace Confluent.Kafka.Internal
@@ -25,6 +27,30 @@ namespace Confluent.Kafka.Internal
     {
         internal static class Marshal
         {
+            /// <summary>
+            ///     Convenience class for generating and pinning the UTF8
+            ///     representation of a string.
+            /// </summary>
+            public class StringAsPinnedUTF8 : IDisposable
+            {
+                private SystemGCHandle gch;
+
+                public StringAsPinnedUTF8(string str)
+                {
+                    byte[] strBytes = System.Text.UTF8Encoding.UTF8.GetBytes(str);
+                    byte[] strBytesNulTerminated = new byte[strBytes.Length + 1]; // initialized to all 0's.
+                    Array.Copy(strBytes, strBytesNulTerminated, strBytes.Length);
+                    this.gch = SystemGCHandle.Alloc(strBytesNulTerminated, SystemGCHandleType.Pinned);
+                }
+
+                public IntPtr Ptr { get => this.gch.AddrOfPinnedObject(); }
+
+                public void Dispose()
+                {
+                    gch.Free();
+                }
+            }
+
             /// <summary>
             ///     Interpret a zero terminated c string as UTF-8.
             /// </summary>

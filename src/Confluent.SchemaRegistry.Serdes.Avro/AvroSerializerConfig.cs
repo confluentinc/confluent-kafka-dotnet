@@ -54,6 +54,16 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string AutoRegisterSchemas = "avro.serializer.auto.register.schemas";
 
             /// <summary>
+            ///     Specifies whether or not the Avro serializer should use the latest subject
+            ///     version for serialization.
+            ///     WARNING: There is no check that the latest schema is backwards compatible
+            ///     with the schema of the object being serialized.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string UseLatestVersion = "avro.serializer.use.latest.version";
+
+            /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
@@ -102,6 +112,21 @@ namespace Confluent.SchemaRegistry.Serdes
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
         
+        
+        /// <summary>
+        ///     Specifies whether or not the Avro serializer should use the latest subject
+        ///     version for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? UseLatestVersion
+        {
+            get { return GetBool(PropertyNames.UseLatestVersion); }
+            set { SetObject(PropertyNames.UseLatestVersion, value); }
+        }
+
 
         /// <summary>
         ///     Subject name strategy.

@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.5.0-RC1 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.7.0 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -152,7 +152,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     RoundRobin
         /// </summary>
-        RoundRobin
+        RoundRobin,
+
+        /// <summary>
+        ///     CooperativeSticky
+        /// </summary>
+        CooperativeSticky
     }
 
     /// <summary>
@@ -225,7 +230,12 @@ namespace Confluent.Kafka
         /// <summary>
         ///     SCRAM-SHA-512
         /// </summary>
-        ScramSha512
+        ScramSha512,
+
+        /// <summary>
+        ///     OAUTHBEARER
+        /// </summary>
+        OAuthBearer
     }
 
     /// <summary>
@@ -287,6 +297,7 @@ namespace Confluent.Kafka
                 if (r == "PLAIN") { return Confluent.Kafka.SaslMechanism.Plain; }
                 if (r == "SCRAM-SHA-256") { return Confluent.Kafka.SaslMechanism.ScramSha256; }
                 if (r == "SCRAM-SHA-512") { return Confluent.Kafka.SaslMechanism.ScramSha512; }
+                if (r == "OAUTHBEARER") { return Confluent.Kafka.SaslMechanism.OAuthBearer; }
                 throw new ArgumentException($"Unknown sasl.mechanism value {r}");
             }
             set
@@ -296,6 +307,7 @@ namespace Confluent.Kafka
                 else if (value == Confluent.Kafka.SaslMechanism.Plain) { this.properties["sasl.mechanism"] = "PLAIN"; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha256) { this.properties["sasl.mechanism"] = "SCRAM-SHA-256"; }
                 else if (value == Confluent.Kafka.SaslMechanism.ScramSha512) { this.properties["sasl.mechanism"] = "SCRAM-SHA-512"; }
+                else if (value == Confluent.Kafka.SaslMechanism.OAuthBearer) { this.properties["sasl.mechanism"] = "OAUTHBEARER"; }
                 else throw new ArgumentException($"Unknown sasl.mechanism value {value}");
             }
         }
@@ -377,14 +389,6 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public int? MaxInFlight { get { return GetInt("max.in.flight"); } set { this.SetObject("max.in.flight", value); } }
-
-        /// <summary>
-        ///     Non-topic request timeout in milliseconds. This is for metadata requests, etc.
-        ///
-        ///     default: 60000
-        ///     importance: low
-        /// </summary>
-        public int? MetadataRequestTimeoutMs { get { return GetInt("metadata.request.timeout.ms"); } set { this.SetObject("metadata.request.timeout.ms", value); } }
 
         /// <summary>
         ///     Period of time in milliseconds at which topic and broker metadata is refreshed in order to proactively discover any new brokers, topics, partitions or partition leader changes. Use -1 to disable the intervalled refresh (not recommended). If there are no locally referenced topics (no topic objects created, no messages produced, no subscription or no assignment) then only the broker list will be refreshed every interval but no more often than every 10s.
@@ -507,6 +511,14 @@ namespace Confluent.Kafka
         public BrokerAddressFamily? BrokerAddressFamily { get { return (BrokerAddressFamily?)GetEnum(typeof(BrokerAddressFamily), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
 
         /// <summary>
+        ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info).
+        ///
+        ///     default: 0
+        ///     importance: medium
+        /// </summary>
+        public int? ConnectionsMaxIdleMs { get { return GetInt("connections.max.idle.ms"); } set { this.SetObject("connections.max.idle.ms", value); } }
+
+        /// <summary>
         ///     The initial time to wait before reconnecting to a broker after the connection has been closed. The time is increased exponentially until `reconnect.backoff.max.ms` is reached. -25% to +50% jitter is applied to each reconnect backoff. A value of 0 disables the backoff and reconnects immediately.
         ///
         ///     default: 100
@@ -547,7 +559,7 @@ namespace Confluent.Kafka
         public bool? LogThreadName { get { return GetBool("log.thread.name"); } set { this.SetObject("log.thread.name", value); } }
 
         /// <summary>
-        ///     If enabled librdkafka will initialize the POSIX PRNG with srand(current_time.milliseconds) on the first invocation of rd_kafka_new(). If disabled the application must call srand() prior to calling rd_kafka_new().
+        ///     If enabled librdkafka will initialize the PRNG with srand(current_time.milliseconds) on the first invocation of rd_kafka_new() (required only if rand_r() is not available on your platform). If disabled the application must call srand() prior to calling rd_kafka_new().
         ///
         ///     default: true
         ///     importance: low
@@ -675,12 +687,20 @@ namespace Confluent.Kafka
         public string SslCertificatePem { get { return Get("ssl.certificate.pem"); } set { this.SetObject("ssl.certificate.pem", value); } }
 
         /// <summary>
-        ///     File or directory path to CA certificate(s) for verifying the broker's key. Defaults: On Windows the system's CA certificates are automatically looked up in the Windows Root certificate store. On Mac OSX it is recommended to install openssl using Homebrew, to provide CA certificates. On Linux install the distribution's ca-certificates package. If OpenSSL is statically linked or `ssl.ca.location` is set to `probe` a list of standard paths will be probed and the first one found will be used as the default CA certificate location path. If OpenSSL is dynamically linked the OpenSSL library's default path will be used (see `OPENSSLDIR` in `openssl version -a`).
+        ///     File or directory path to CA certificate(s) for verifying the broker's key. Defaults: On Windows the system's CA certificates are automatically looked up in the Windows Root certificate store. On Mac OSX this configuration defaults to `probe`. It is recommended to install openssl using Homebrew, to provide CA certificates. On Linux install the distribution's ca-certificates package. If OpenSSL is statically linked or `ssl.ca.location` is set to `probe` a list of standard paths will be probed and the first one found will be used as the default CA certificate location path. If OpenSSL is dynamically linked the OpenSSL library's default path will be used (see `OPENSSLDIR` in `openssl version -a`).
         ///
         ///     default: ''
         ///     importance: low
         /// </summary>
         public string SslCaLocation { get { return Get("ssl.ca.location"); } set { this.SetObject("ssl.ca.location", value); } }
+
+        /// <summary>
+        ///     Comma-separated list of Windows Certificate stores to load CA certificates from. Certificates will be loaded in the same order as stores are specified. If no certificates can be loaded from any of the specified stores an error is logged and the OpenSSL library's default CA location is used instead. Store names are typically one or more of: MY, Root, Trust, CA.
+        ///
+        ///     default: Root
+        ///     importance: low
+        /// </summary>
+        public string SslCaCertificateStores { get { return Get("ssl.ca.certificate.stores"); } set { this.SetObject("ssl.ca.certificate.stores", value); } }
 
         /// <summary>
         ///     Path to CRL for verifying broker's certificate validity.
@@ -705,6 +725,22 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public string SslKeystorePassword { get { return Get("ssl.keystore.password"); } set { this.SetObject("ssl.keystore.password", value); } }
+
+        /// <summary>
+        ///     Path to OpenSSL engine library. OpenSSL >= 1.1.0 required.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslEngineLocation { get { return Get("ssl.engine.location"); } set { this.SetObject("ssl.engine.location", value); } }
+
+        /// <summary>
+        ///     OpenSSL engine id is the name used for loading engine.
+        ///
+        ///     default: dynamic
+        ///     importance: low
+        /// </summary>
+        public string SslEngineId { get { return Get("ssl.engine.id"); } set { this.SetObject("ssl.engine.id", value); } }
 
         /// <summary>
         ///     Enable OpenSSL's builtin broker (server) certificate verification. This verification can be extended by the application by implementing a certificate_verify_cb.
@@ -890,7 +926,7 @@ namespace Confluent.Kafka
         ///     A comma separated list of fields that may be optionally set in delivery
         ///     reports. Disabling delivery report fields that you do not require will
         ///     improve maximum throughput and reduce memory usage. Allowed values:
-        ///     key, value, timestamp, headers, all, none.
+        ///     key, value, timestamp, headers, status, all, none.
         ///
         ///     default: all
         ///     importance: low
@@ -900,7 +936,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     The ack timeout of the producer request in milliseconds. This value is only enforced by the broker and relies on `request.required.acks` being != 0.
         ///
-        ///     default: 5000
+        ///     default: 30000
         ///     importance: medium
         /// </summary>
         public int? RequestTimeoutMs { get { return GetInt("request.timeout.ms"); } set { this.SetObject("request.timeout.ms", value); } }
@@ -980,7 +1016,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Delay in milliseconds to wait for messages in the producer queue to accumulate before constructing message batches (MessageSets) to transmit to brokers. A higher value allows larger and more effective (less overhead, improved compression) batches of messages to accumulate at the expense of increased message delivery latency.
         ///
-        ///     default: 0.5
+        ///     default: 5
         ///     importance: high
         /// </summary>
         public double? LingerMs { get { return GetDouble("linger.ms"); } set { this.SetObject("linger.ms", value); } }
@@ -988,7 +1024,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     How many times to retry sending a failing Message. **Note:** retrying may cause reordering unless `enable.idempotence` is set to true.
         ///
-        ///     default: 2
+        ///     default: 2147483647
         ///     importance: high
         /// </summary>
         public int? MessageSendMaxRetries { get { return GetInt("message.send.max.retries"); } set { this.SetObject("message.send.max.retries", value); } }
@@ -1033,6 +1069,14 @@ namespace Confluent.Kafka
         /// </summary>
         public int? BatchSize { get { return GetInt("batch.size"); } set { this.SetObject("batch.size", value); } }
 
+        /// <summary>
+        ///     Delay in milliseconds to wait to assign new sticky partitions for each topic. By default, set to double the time of linger.ms. To disable sticky behavior, set to 0. This behavior affects messages with the key NULL in all cases, and messages with key lengths of zero when the consistent_random partitioner is in use. These messages would otherwise be assigned randomly. A higher value allows for more effective batching of these messages.
+        ///
+        ///     default: 10
+        ///     importance: low
+        /// </summary>
+        public int? StickyPartitioningLingerMs { get { return GetInt("sticky.partitioning.linger.ms"); } set { this.SetObject("sticky.partitioning.linger.ms", value); } }
+
     }
 
 
@@ -1076,7 +1120,7 @@ namespace Confluent.Kafka
         public string ConsumeResultFields { set { this.SetObject("dotnet.consumer.consume.result.fields", value); } }
 
         /// <summary>
-        ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error which is retrieved by consuming messages and checking 'message->err'.
+        ///     Action to take when there is no initial offset in offset store or the desired offset is out of range: 'smallest','earliest' - automatically reset the offset to the smallest offset, 'largest','latest' - automatically reset the offset to the largest offset, 'error' - trigger an error (ERR__AUTO_OFFSET_RESET) which is retrieved by consuming messages and checking 'message->err'.
         ///
         ///     default: largest
         ///     importance: high
@@ -1100,7 +1144,7 @@ namespace Confluent.Kafka
         public string GroupInstanceId { get { return Get("group.instance.id"); } set { this.SetObject("group.instance.id", value); } }
 
         /// <summary>
-        ///     Name of partition assignment strategy to use when elected group leader assigns partitions to group members.
+        ///     The name of one or more partition assignment strategies. The elected group leader will use a strategy supported by all members of the group to assign partitions to group members. If there is more than one eligible strategy, preference is determined by the order of this list (strategies earlier in the list have higher priority). Cooperative and non-cooperative (eager) strategies must not be mixed. Available strategies: range, roundrobin, cooperative-sticky.
         ///
         ///     default: range,roundrobin
         ///     importance: medium
@@ -1110,7 +1154,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Client group session and failure detection timeout. The consumer sends periodic heartbeats (heartbeat.interval.ms) to indicate its liveness to the broker. If no hearts are received by the broker for a group member within the session timeout, the broker will remove the consumer from the group and trigger a rebalance. The allowed range is configured with the **broker** configuration properties `group.min.session.timeout.ms` and `group.max.session.timeout.ms`. Also see `max.poll.interval.ms`.
         ///
-        ///     default: 10000
+        ///     default: 45000
         ///     importance: high
         /// </summary>
         public int? SessionTimeoutMs { get { return GetInt("session.timeout.ms"); } set { this.SetObject("session.timeout.ms", value); } }
@@ -1124,7 +1168,7 @@ namespace Confluent.Kafka
         public int? HeartbeatIntervalMs { get { return GetInt("heartbeat.interval.ms"); } set { this.SetObject("heartbeat.interval.ms", value); } }
 
         /// <summary>
-        ///     Group protocol type
+        ///     Group protocol type. NOTE: Currently, the only supported group protocol type is `consumer`.
         ///
         ///     default: consumer
         ///     importance: low

@@ -41,8 +41,11 @@ namespace Confluent.Kafka
             internal Action<LogMessage> logHandler;
             internal Action<string> statisticsHandler;
             internal Action<CommittedOffsets> offsetsCommittedHandler;
+            internal Action<string> oAuthBearerTokenRefreshHandler;
             internal Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
             internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
+            internal Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsLostHandler;
+            internal bool revokedOrLostHandlerIsFunc;
         }
 
         private IDeserializer<TKey> keyDeserializer;
@@ -119,6 +122,23 @@ namespace Confluent.Kafka
             return 0; // instruct librdkafka to immediately free the json ptr.
         }
 
+        private Action<string> oAuthBearerTokenRefreshHandler;
+        private Librdkafka.OAuthBearerTokenRefreshDelegate oAuthBearerTokenRefreshCallbackDelegate;
+        private void OAuthBearerTokenRefreshCallback(IntPtr rk, IntPtr oauthbearer_config, IntPtr opaque)
+        {
+            // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
+            if (kafkaHandle.IsClosed) { return; }
+
+            try
+            {
+                oAuthBearerTokenRefreshHandler?.Invoke(Util.Marshal.PtrToStringUTF8(oauthbearer_config));
+            }
+            catch (Exception e)
+            {
+                handlerException = e;
+            }
+        }
+
         private Action<LogMessage> logHandler;
         private object loggerLockObj = new object();
         private Librdkafka.LogDelegate logCallbackDelegate;
@@ -139,17 +159,17 @@ namespace Confluent.Kafka
 
         private Func<List<TopicPartition>, IEnumerable<TopicPartitionOffset>> partitionsAssignedHandler;
         private Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsRevokedHandler;
+        private Func<List<TopicPartitionOffset>, IEnumerable<TopicPartitionOffset>> partitionsLostHandler;
+        private bool revokedOrLostHandlerIsFunc;
         private Librdkafka.RebalanceDelegate rebalanceDelegate;
         private void RebalanceCallback(
             IntPtr rk,
             ErrorCode err,
-            IntPtr partitions,
+            IntPtr partitionsPtr,
             IntPtr opaque)
         {
             try
             {
-                var partitionAssignment = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitions).Select(p => p.TopicPartition).ToList();
-
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
                 if (kafkaHandle.IsClosed)
                 { 
@@ -159,37 +179,87 @@ namespace Confluent.Kafka
                     throw new Exception("Unexpected rebalance callback on disposed kafkaHandle");
                 }
 
+                if (kafkaHandle.RebalanceProtocol == "COOPERATIVE" &&
+                    this.revokedOrLostHandlerIsFunc)
+                {
+                    throw new InvalidOperationException("Neither revoked nor lost partition handlers may return an updated assignment when a COOPERATIVE assignor is in use");
+                }
+
+                var partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(partitionsPtr).Select(p => p.TopicPartition).ToList();
+
                 if (err == ErrorCode.Local_AssignPartitions)
                 {
                     if (partitionsAssignedHandler == null)
                     {
-                        Assign(partitionAssignment.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                        if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
+                        {
+                            IncrementalAssign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                        }
+                        else
+                        {
+                            Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+                        }
                         return;
                     }
 
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    var assignTo = partitionsAssignedHandler(partitionAssignment);
+                    var assignTo = partitionsAssignedHandler(partitions);
                     lock (assignCallCountLockObj)
                     {
                         if (assignCallCount > 0)
                         {
-                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions assigned handler.");
+                            throw new InvalidOperationException("(Incremental)Assign/Unassign must not be called in the partitions assigned handler");
                         }
                     }
-                    Assign(assignTo);
+
+                    if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
+                    {
+                        if (assignTo.Count() != partitions.Count())
+                        {
+                            throw new InvalidOperationException("The partitions assigned handler must not return a different set of topic partitions than it was provided");
+                        }
+
+                        var sortedPartitions = partitions.OrderBy(p => p).ToList();
+                        var sortedAssignTo = assignTo.OrderBy(p => p.TopicPartition);
+
+                        var partitionsIter = sortedPartitions.GetEnumerator();
+                        foreach (var p in sortedAssignTo)
+                        {
+                            partitionsIter.MoveNext();
+                            if (p.TopicPartition != partitionsIter.Current)
+                            {
+                                throw new InvalidOperationException("The partitions assigned handler must not return a different set of topic partitions than it was provided");
+                            }
+                        }
+
+                        IncrementalAssign(sortedAssignTo);
+                    }
+                    else
+                    {
+                        Assign(assignTo);
+                    }
                     return;
                 }
-                
+
+
                 if (err == ErrorCode.Local_RevokePartitions)
                 {
-                    if (partitionsRevokedHandler == null)
+                    if (partitionsRevokedHandler == null &&
+                        (!kafkaHandle.AssignmentLost || partitionsLostHandler == null))
                     {
-                        Unassign();
+                        if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
+                        {
+                            IncrementalUnassign(partitions);
+                        }
+                        else
+                        {
+                            Unassign();
+                        }
                         return;
                     }
 
                     var assignmentWithPositions = new List<TopicPartitionOffset>();
-                    foreach (var tp in partitionAssignment)
+                    foreach (var tp in partitions)
                     {
                         try
                         {
@@ -202,26 +272,36 @@ namespace Confluent.Kafka
                     }
 
                     lock (assignCallCountLockObj) { assignCallCount = 0; }
-                    var assignTo = partitionsRevokedHandler(assignmentWithPositions);
+                    var assignTo = kafkaHandle.AssignmentLost
+                        ? (partitionsLostHandler != null
+                            ? partitionsLostHandler(assignmentWithPositions)
+                            : partitionsRevokedHandler(assignmentWithPositions))
+                        : partitionsRevokedHandler(assignmentWithPositions);
                     lock (assignCallCountLockObj)
                     {
                         if (assignCallCount > 0)
                         {
-                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler.");
+                            throw new InvalidOperationException("Assign/Unassign must not be called in the partitions revoked handler");
                         }
                     }
 
-                    // This distinction is important because calling Assign whilst the consumer is being
-                    // closed (which will generally trigger this callback) is disallowed.
-                    if (assignTo.Count() > 0) { Assign(assignTo); }
-                    else { Unassign(); }
+                    if (kafkaHandle.RebalanceProtocol == "COOPERATIVE")
+                    {
+                        // assignTo is always empty, not used in the COOPERATIVE case.
+                        IncrementalUnassign(partitions);
+                    }
+                    else
+                    {
+                        Unassign();
+                    }
                     return;
                 }
-                
+
                 throw new KafkaException(kafkaHandle.CreatePossiblyFatalError(err, null));
             }
             catch (Exception e)
             {
+                Unassign();
                 handlerException = e;
             }
         }
@@ -323,6 +403,27 @@ namespace Confluent.Kafka
         {
             lock (assignCallCountLockObj) { assignCallCount += 1; }
             kafkaHandle.Assign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)).ToList());
+        }
+
+
+        /// <inheritdoc/>
+        public void IncrementalAssign(IEnumerable<TopicPartitionOffset> partitions)
+        {
+            lock (assignCallCountLockObj) { assignCallCount += 1; }
+            kafkaHandle.IncrementalAssign(partitions.ToList());
+        }
+
+
+        /// <inheritdoc/>
+        public void IncrementalAssign(IEnumerable<TopicPartition> partitions)
+            => IncrementalAssign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)));
+
+
+        /// <inheritdoc/>
+        public void IncrementalUnassign(IEnumerable<TopicPartition> partitions)
+        {
+            lock (assignCallCountLockObj) { assignCallCount += 1; }
+            kafkaHandle.IncrementalUnassign(partitions.Select(p => new TopicPartitionOffset(p, Offset.Unset)).ToList());
         }
 
 
@@ -453,7 +554,6 @@ namespace Confluent.Kafka
         public Handle Handle
             => new Handle { Owner = this, LibrdkafkaHandle = kafkaHandle };
 
-
         /// <inheritdoc/>
         public void Close()
         {
@@ -529,8 +629,10 @@ namespace Confluent.Kafka
             this.errorHandler = baseConfig.errorHandler;
             this.partitionsAssignedHandler = baseConfig.partitionsAssignedHandler;
             this.partitionsRevokedHandler = baseConfig.partitionsRevokedHandler;
+            this.partitionsLostHandler = baseConfig.partitionsLostHandler;
             this.offsetsCommittedHandler = baseConfig.offsetsCommittedHandler;
-
+            this.oAuthBearerTokenRefreshHandler = baseConfig.oAuthBearerTokenRefreshHandler;
+            this.revokedOrLostHandlerIsFunc = baseConfig.revokedOrLostHandlerIsFunc;
             Librdkafka.Initialize(null);
 
             var config = Confluent.Kafka.Config.ExtractCancellationDelayMaxMs(baseConfig.config, out this.cancellationDelayMaxMs);
@@ -585,10 +687,11 @@ namespace Confluent.Kafka
             errorCallbackDelegate = ErrorCallback;
             logCallbackDelegate = LogCallback;
             statisticsCallbackDelegate = StatisticsCallback;
+            oAuthBearerTokenRefreshCallbackDelegate = OAuthBearerTokenRefreshCallback;
 
             IntPtr configPtr = configHandle.DangerousGetHandle();
 
-            if (partitionsAssignedHandler != null || partitionsRevokedHandler != null)
+            if (partitionsAssignedHandler != null || partitionsRevokedHandler != null || partitionsLostHandler != null)
             {
                 Librdkafka.conf_set_rebalance_cb(configPtr, rebalanceDelegate);
             }
@@ -608,6 +711,10 @@ namespace Confluent.Kafka
             if (statisticsHandler != null)
             {
                 Librdkafka.conf_set_stats_cb(configPtr, statisticsCallbackDelegate);
+            }
+            if (oAuthBearerTokenRefreshHandler != null)
+            {
+                Librdkafka.conf_set_oauthbearer_token_refresh_cb(configPtr, oAuthBearerTokenRefreshCallbackDelegate);
             }
 
             this.kafkaHandle = SafeKafkaHandle.Create(RdKafkaType.Consumer, configPtr, this);

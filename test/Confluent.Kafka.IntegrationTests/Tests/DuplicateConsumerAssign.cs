@@ -47,31 +47,34 @@ namespace Confluent.Kafka.IntegrationTests
 
             var testString = "hello world";
 
-            DeliveryResult<byte[], byte[]> dr;
-            using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
             {
-                dr = producer.ProduceAsync(singlePartitionTopic, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
-                Assert.NotNull(dr);
-                producer.Flush(TimeSpan.FromSeconds(10));
-            }
+                DeliveryResult<byte[], byte[]> dr;
+                using (var producer = new ProducerBuilder<byte[], byte[]>(producerConfig).Build())
+                {
+                    dr = producer.ProduceAsync(topic.Name, new Message<byte[], byte[]> { Value = Serializers.Utf8.Serialize(testString, SerializationContext.Empty) }).Result;
+                    Assert.NotNull(dr);
+                    producer.Flush(TimeSpan.FromSeconds(10));
+                }
 
-            using (var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            using (var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
-            {
-                consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(singlePartitionTopic, dr.Partition, 0) });
-                ConsumeResult<byte[], byte[]> record;
-                record = consumer1.Consume(TimeSpan.FromSeconds(10));
-                Assert.NotNull(record);
-                Assert.NotNull(record.Message);
-                record = consumer2.Consume(TimeSpan.FromSeconds(10));
-                Assert.NotNull(record);
-                Assert.NotNull(record.Message);
-                
-                // NOTE: two consumers from the same group should never be assigned to the same
-                // topic / partition. This 'test' is here because I was curious to see what happened
-                // in practice if this did occur. Because this is not expected usage, no validation
-                // has been included in this test.
+                using (var consumer1 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                using (var consumer2 = new ConsumerBuilder<byte[], byte[]>(consumerConfig).Build())
+                {
+                    consumer1.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic.Name, dr.Partition, 0) });
+                    consumer2.Assign(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic.Name, dr.Partition, 0) });
+                    ConsumeResult<byte[], byte[]> record;
+                    record = consumer1.Consume(TimeSpan.FromSeconds(10));
+                    Assert.NotNull(record);
+                    Assert.NotNull(record.Message);
+                    record = consumer2.Consume(TimeSpan.FromSeconds(10));
+                    Assert.NotNull(record);
+                    Assert.NotNull(record.Message);
+
+                    // NOTE: two consumers from the same group should never be assigned to the same
+                    // topic / partition. This 'test' is here because I was curious to see what happened
+                    // in practice if this did occur. Because this is not expected usage, no validation
+                    // has been included in this test.
+                }
             }
 
             Assert.Equal(0, Library.HandleCount);

@@ -46,7 +46,7 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     integration of System.Text.Json and JSON Schema, so this
     ///     is not yet supported by the deserializer.
     /// </remarks>
-    public class JsonDeserializer<T> : IAsyncDeserializer<T> where T : class, new()
+    public class JsonDeserializer<T> : IAsyncDeserializer<T> where T : class
     {
         private readonly int headerSize =  sizeof(int) + sizeof(byte);
         

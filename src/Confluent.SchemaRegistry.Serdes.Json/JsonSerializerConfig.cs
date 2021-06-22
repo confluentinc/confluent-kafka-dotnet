@@ -54,6 +54,16 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string AutoRegisterSchemas = "json.serializer.auto.register.schemas";
 
             /// <summary>
+            ///     Specifies whether or not the JSON serializer should use the latest subject
+            ///     version for serialization.
+            ///     WARNING: There is no check that the latest schema is backwards compatible
+            ///     with the schema of the object being serialized.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string UseLatestVersion = "json.serializer.use.latest.version";
+
+            /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
             ///     Possible values: <see cref="Confluent.SchemaRegistry.SubjectNameStrategy" />
             /// </summary>
@@ -75,7 +85,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Specifies the initial size (in bytes) of the buffer used for Protobuf message
+        ///     Specifies the initial size (in bytes) of the buffer used for JSON message
         ///     serialization. Use a value high enough to avoid resizing the buffer, but
         ///     small enough to avoid excessive memory use. Inspect the size of the byte
         ///     array returned by the Serialize method to estimate an appropriate value.
@@ -91,7 +101,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
 
         /// <summary>
-        ///     Specifies whether or not the Protobuf serializer should attempt to auto-register
+        ///     Specifies whether or not the JSON serializer should attempt to auto-register
         ///     unrecognized schemas with Confluent Schema Registry.
         ///
         ///     default: true
@@ -100,6 +110,21 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.AutoRegisterSchemas); }
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
+        }
+        
+
+        /// <summary>
+        ///     Specifies whether or not the JSON serializer should use the latest subject
+        ///     version for serialization.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? UseLatestVersion
+        {
+            get { return GetBool(PropertyNames.UseLatestVersion); }
+            set { SetObject(PropertyNames.UseLatestVersion, value); }
         }
         
 

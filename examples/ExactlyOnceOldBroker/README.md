@@ -1,6 +1,10 @@
 # Exactly Once Processing (WordCount)
 
-This example demonstrates how to count the number of occurrences of each word in a given input set, where the input set can potentially be large enough that the computation needs to be distributed across many machines. This is an example of a streaming [map-reduce](https://en.wikipedia.org/wiki/MapReduce) calculation, with exactly once processing semantics.
+**Note:** This example demonstrates how to achieve exactly once processing prior to KIP-447 (Apache Kafka <= 2.4.0, Confluent.Kafka <= 1.6.0). KIP-447 makes this significantly easier. 
+
+The example demonstrates how to count the number of occurrences of each word in a given input set, where the input set can potentially be large enough that the computation needs to be distributed across many machines. This is an example of a streaming [map-reduce](https://en.wikipedia.org/wiki/MapReduce) calculation, with exactly once processing semantics.
+
+Refer to comments in the code for commentary on the implementation. 
 
 
 ### Running the example:
