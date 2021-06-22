@@ -120,7 +120,7 @@ namespace Confluent.SchemaRegistry.Serdes
             SerializerSchemaData serializerSchemaData = new SerializerSchemaData();
             if (typeof(ISpecificRecord).IsAssignableFrom(writerType))
             {
-                var schemaField = typeof(T).GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static);
+                var schemaField = writerType.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static);
                 if (schemaField is null)
                 {
                     throw new ArgumentException($"ISpecificRecord implementation '{typeof(T).FullName}' must have public static field with name '_SCHEMA'.");
