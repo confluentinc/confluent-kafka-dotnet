@@ -647,7 +647,8 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Commits offsets, alerts the group coordinator
+        ///     Commits offsets (if auto commit is enabled),
+        ///     alerts the group coordinator
         ///     that the consumer is exiting the group then
         ///     releases all resources used by this consumer.
         ///     You should call <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" />

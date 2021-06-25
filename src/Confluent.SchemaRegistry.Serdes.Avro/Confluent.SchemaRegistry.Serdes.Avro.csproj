@@ -13,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Avro</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Avro</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Avro</AssemblyName>
-    <VersionPrefix>1.6.2</VersionPrefix>
+    <VersionPrefix>1.7.0</VersionPrefix>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Apache.Avro" Version="1.10.1" />
+    <PackageReference Include="Apache.Avro" Version="1.10.2" />
   </ItemGroup>
 
   <ItemGroup>
