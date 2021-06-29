@@ -219,25 +219,7 @@ to avoid stop-the-world rebalancing operations and unnecessary reloading of stat
 The three "Serdes" packages provide serializers and deserializers for Avro, Protobuf and JSON with [Confluent Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html) integration. The `Confluent.SchemaRegistry` nuget package provides a client for interfacing with
 Schema Registry's REST API.
 
-**Note:** All three serialization formats are supported across Confluent Platform. They each make different tradeoffs, and you should use the one that best matches to your requirements. Avro is well suited to the streaming data use-case, but the maturity of the non-Java implementations lags that of Java - this is an important consideration. Protobuf and JSON both have great support in .NET.
-
-#### Avro
-
-You can use the Avro serializer and deserializer with the `GenericRecord` class or with specific classes generated
-using the `avrogen` tool, available via Nuget (.NET Core 2.1 required):
-
-```
-dotnet tool install --global Apache.Avro.Tools
-```
-
-Usage:
-
-```
-avrogen -s your_schema.avsc .
-```
-
-For more information about working with Avro in .NET, refer to the the blog post [Decoupling Systems with Apache Kafka, Schema Registry and Avro](https://www.confluent.io/blog/decoupling-systems-with-apache-kafka-schema-registry-and-avro/)
-
+**Note:** All three serialization formats are supported across Confluent Platform. They each make different tradeoffs, and you should use the one that best matches to your requirements. Avro is well suited to the streaming data use-case, but the **quality** and **maturity** of the non-Java implementations lags that of Java - this is an important consideration. Protobuf and JSON both have great support in .NET.
 
 ### Error Handling
 
