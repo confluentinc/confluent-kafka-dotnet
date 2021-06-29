@@ -29,8 +29,8 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Tests that ObjectDisposedException is thrown rather than AccessViolationException
         ///     when Dispose has been called
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_ClosedHandle(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_ClosedHandle(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_ClosedHandle");
 
@@ -39,7 +39,7 @@ namespace Confluent.Kafka.IntegrationTests
                 BootstrapServers = bootstrapServers,
                 EnableBackgroundPoll = false
             };
-            var producer = new ProducerBuilder<Null, Null>(producerConfig).Build();
+            var producer = new TestProducerBuilder<Null, Null>(producerConfig, producerType).Build();
             producer.Poll(TimeSpan.FromMilliseconds(10));
             producer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => producer.Poll(TimeSpan.FromMilliseconds(10)));

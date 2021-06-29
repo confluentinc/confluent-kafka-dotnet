@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -107,6 +108,82 @@ namespace Confluent.Kafka.IntegrationTests
 
             Assert.Equal(0, Library.HandleCount);
             LogToFile("end   Producer_ProduceAsync_Error");
+        }
+
+        [Theory, MemberData(nameof(KafkaParameters))]
+        public void Producer_Binary_ProduceAsync_Error(string bootstrapServers)
+        {
+            LogToFile("start Producer_Binary_ProduceAsync_Error");
+
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
+
+
+            // serialize case
+
+            Task<DeliveryResult> drt;
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            {
+                drt = producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 42),
+                    Encoding.UTF8.GetBytes("test key 0"),
+                    Encoding.UTF8.GetBytes("test val 0"));
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            Assert.Throws<AggregateException>(() => { drt.Wait(); });
+
+            try
+            {
+                var dr = drt.Result;
+            }
+            catch (AggregateException e)
+            {
+                var inner = e.InnerException;
+                Assert.IsType<ProduceException>(inner);
+                var dr = ((ProduceException)inner).DeliveryResult;
+                var err = ((ProduceException)inner).Error;
+
+                Assert.True(err.IsError);
+                Assert.Equal(PersistenceStatus.NotPersisted, dr.Status);
+                Assert.False(err.IsFatal);
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.Equal(Offset.Unset, dr.Offset);
+                Assert.True(dr.Partition == 42);
+            }
+
+            // byte[] case
+
+            Task<DeliveryResult> drt2;
+            using (var producer = new ProducerBuilder(producerConfig).Build())
+            {
+                drt2 = producer.ProduceAsync(
+                    new TopicPartition(partitionedTopic, 42),
+                     new byte[] { 100 },  new byte[] { 101 });
+                Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
+            }
+
+            Assert.Throws<AggregateException>(() => { drt.Wait(); });
+
+            try
+            {
+                var dr = drt2.Result;
+            }
+            catch (AggregateException e)
+            {
+                var inner = e.InnerException;
+                Assert.IsType<ProduceException>(inner);
+                var dr = ((ProduceException)inner).DeliveryResult;
+                var err = ((ProduceException)inner).Error;
+
+                Assert.True(err.IsError);
+                Assert.False(err.IsFatal);
+                Assert.Equal(partitionedTopic, dr.Topic);
+                Assert.Equal(Offset.Unset, dr.Offset);
+                Assert.True(dr.Partition == 42);
+            }
+
+            Assert.Equal(0, Library.HandleCount);
+            LogToFile("end   Producer_Binary_ProduceAsync_Error");
         }
     }
 }

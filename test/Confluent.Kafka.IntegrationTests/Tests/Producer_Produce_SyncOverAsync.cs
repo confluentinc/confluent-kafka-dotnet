@@ -32,8 +32,8 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_Produce_SyncOverAsync(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_Produce_SyncOverAsync(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_Produce_SyncOverAsync");
 
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.IntegrationTests
             };
             
             using (var tempTopic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(pConfig)
+            using (var producer = new TestProducerBuilder<Null, string>(pConfig, producerType)
                 .SetValueSerializer(new SimpleAsyncSerializer().SyncOverAsync())
                 .Build())
             {

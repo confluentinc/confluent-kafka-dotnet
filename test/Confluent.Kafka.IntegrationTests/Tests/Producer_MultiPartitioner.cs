@@ -27,8 +27,8 @@ namespace Confluent.Kafka.IntegrationTests
     /// </summary>
     public partial class Tests
     {
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void Producer_MultiPartitioner(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void Producer_MultiPartitioner(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Producer_MultiPartitioner");
 
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
             using (var topic1 = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var topic2 = new TemporaryTopic(bootstrapServers, PARTITION_COUNT))
             using (var topic3 = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, Null>(producerConfig)
+            using (var producer = new TestProducerBuilder<string, Null>(producerConfig, producerType)
                 .SetPartitioner(topic1.Name, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                 {
                     Assert.Equal(topic1.Name, topicName);

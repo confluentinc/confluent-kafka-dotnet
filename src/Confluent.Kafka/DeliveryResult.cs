@@ -20,7 +20,7 @@ namespace Confluent.Kafka
     /// <summary>
     ///     Encapsulates the result of a successful produce request.
     /// </summary>
-    public class DeliveryResult<TKey, TValue>
+    public class DeliveryResult
     {
         /// <summary>
         ///     The topic associated with the message.
@@ -64,7 +64,24 @@ namespace Confluent.Kafka
         ///     The persistence status of the message
         /// </summary>
         public PersistenceStatus Status { get; set; }
-        
+
+        /// <summary>
+        ///     The Kafka message timestamp.
+        /// </summary>
+        public virtual Timestamp Timestamp { get; set; }
+
+        /// <summary>
+        ///     The Kafka message headers.
+        /// </summary>
+        public virtual Headers Headers { get; set; }
+    }
+
+
+    /// <summary>
+    ///     Encapsulates the result of a successful produce request.
+    /// </summary>
+    public class DeliveryResult<TKey, TValue> : DeliveryResult
+    {
         /// <summary>
         ///     The Kafka message.
         /// </summary>
@@ -88,19 +105,15 @@ namespace Confluent.Kafka
             set { Message.Value = value; }
         }
 
-        /// <summary>
-        ///     The Kafka message timestamp.
-        /// </summary>
-        public Timestamp Timestamp
+        /// <inheritdoc />
+        public override Timestamp Timestamp
         {
             get { return Message.Timestamp; }
             set { Message.Timestamp = value; }
         }
 
-        /// <summary>
-        ///     The Kafka message headers.
-        /// </summary>
-        public Headers Headers
+        /// <inheritdoc />
+        public override Headers Headers
         {
             get { return Message.Headers; }
             set { Message.Headers = value; }

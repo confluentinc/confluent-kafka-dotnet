@@ -20,7 +20,53 @@ using System;
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Represents an error that occured whilst producing a message.
+    ///     Represents an error that occurred whilst producing a message.
+    /// </summary>
+    public class ProduceException : KafkaException
+    {
+        /// <summary>
+        ///     Initialize a new instance of ProduceException based on 
+        ///     an existing Error value.
+        /// </summary>
+        /// <param name="error"> 
+        ///     The error associated with the delivery result.
+        /// </param>
+        /// <param name="deliveryResult">
+        ///     The delivery result associated with the produce request.
+        /// </param>
+        /// <param name="innerException">
+        ///     The exception instance that caused this exception.
+        /// </param>
+        public ProduceException(Error error, DeliveryResult deliveryResult, Exception innerException)
+            : base(error, innerException)
+        {
+            DeliveryResult = deliveryResult;
+        }
+
+        /// <summary>
+        ///     Initialize a new instance of ProduceException based on 
+        ///     an existing Error value.
+        /// </summary>
+        /// <param name="error"> 
+        ///     The error associated with the delivery report.
+        /// </param>
+        /// <param name="deliveryResult">
+        ///     The delivery result associated with the produce request.
+        /// </param>
+        public ProduceException(Error error, DeliveryResult deliveryResult)
+            : base(error)
+        {
+            DeliveryResult = deliveryResult;
+        }
+
+        /// <summary>
+        ///     The delivery result associated with the produce request.
+        /// </summary>
+        public DeliveryResult DeliveryResult { get; }
+    }
+
+    /// <summary>
+    ///     Represents an error that occurred whilst producing a message.
     /// </summary>
     public class ProduceException<TKey, TValue> : KafkaException
     {

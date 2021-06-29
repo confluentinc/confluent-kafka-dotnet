@@ -30,8 +30,8 @@ namespace Confluent.Kafka.IntegrationTests
         ///     A simple test that produces a couple of messages then
         ///     consumes them back.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void SimpleProduceConsume(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void SimpleProduceConsume(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start SimpleProduceConsume");
 
@@ -52,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             DeliveryResult<Null, string> produceResult1;
             DeliveryResult<Null, string> produceResult2;
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig).Build())
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig, producerType).Build())
             {
                 produceResult1 = ProduceMessage(singlePartitionTopic, producer, testString1);
                 produceResult2 = ProduceMessage(singlePartitionTopic, producer, testString2);

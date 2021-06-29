@@ -50,8 +50,8 @@ namespace Confluent.Kafka.IntegrationTests
         /// <summary>
         ///     Test population of Headers property in SerializationContext.
         /// </summary>
-        [Theory, MemberData(nameof(KafkaParameters))]
-        public void HeadersSerializationContext(string bootstrapServers)
+        [Theory, MemberData(nameof(KafkaProducersParameters))]
+        public void HeadersSerializationContext(string bootstrapServers, TestProducerType producerType)
         {
             LogToFile("start Headers_SerializationContext");
 
@@ -71,7 +71,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             // Test Headers property is not null in Serializer, and that header added there is produced.
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<Null, string>(producerConfig)
+            using (var producer = new TestProducerBuilder<Null, string>(producerConfig, producerType)
                 .SetValueSerializer(new TestSerializer())
                 .Build())
             using (var consumer = new ConsumerBuilder<Null, string>(consumerConfig)
@@ -90,7 +90,7 @@ namespace Confluent.Kafka.IntegrationTests
             
             // Test accumulation of headers
             using (var topic = new TemporaryTopic(bootstrapServers, 1))
-            using (var producer = new ProducerBuilder<string, string>(producerConfig)
+            using (var producer = new TestProducerBuilder<string, string>(producerConfig, producerType)
                 .SetKeySerializer(new TestSerializer())
                 .SetValueSerializer(new TestSerializer())
                 .Build())
