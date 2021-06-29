@@ -52,17 +52,17 @@ namespace Confluent.SchemaRegistry
     {
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
 
-        private IRestService restService;
-        private int identityMapCapacity;
-        private readonly Dictionary<int, Schema> schemaById = new Dictionary<int, Schema>();
+        private readonly IRestService _restService;
+        private readonly int _identityMapCapacity;
+        private readonly Dictionary<int, Schema> _schemaById = new Dictionary<int, Schema>();
 
-        private readonly Dictionary<string /*subject*/, Dictionary<string, int>> idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
-        private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> schemaByVersionBySubject = new Dictionary<string, Dictionary<int, RegisteredSchema>>();
+        private readonly Dictionary<string /*subject*/, Dictionary<string, int>> _idBySchemaBySubject = new Dictionary<string, Dictionary<string, int>>();
+        private readonly Dictionary<string /*subject*/, Dictionary<int, RegisteredSchema>> _schemaByVersionBySubject = new Dictionary<string, Dictionary<int, RegisteredSchema>>();
 
-        private readonly SemaphoreSlim cacheMutex = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim _cacheMutex = new SemaphoreSlim(1);
 
-        private SubjectNameStrategyDelegate keySubjectNameStrategy;
-        private SubjectNameStrategyDelegate valueSubjectNameStrategy;
+        private readonly SubjectNameStrategyDelegate _keySubjectNameStrategy;
+        private readonly SubjectNameStrategyDelegate _valueSubjectNameStrategy;
 
 
         /// <summary>
@@ -91,9 +91,7 @@ namespace Confluent.SchemaRegistry
         public const SubjectNameStrategy DefaultValueSubjectNameStrategy = SubjectNameStrategy.Topic;
 
         /// <inheritdoc />
-        public int MaxCachedSchemas
-            => identityMapCapacity;
-
+        public int MaxCachedSchemas => _identityMapCapacity; 
 
         [Obsolete]
         private static SubjectNameStrategyDelegate GetKeySubjectNameStrategy(IEnumerable<KeyValuePair<string, string>> config)
@@ -135,8 +133,8 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentNullException("config properties must be specified.");
             }
 
-            keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
-            valueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
+            _keySubjectNameStrategy = GetKeySubjectNameStrategy(config);
+            _valueSubjectNameStrategy = GetValueSubjectNameStrategy(config);
 
             var schemaRegistryUrisMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl);
             if (schemaRegistryUrisMaybe.Value == null) { throw new ArgumentException($"{SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl} configuration property must be specified."); }
@@ -148,7 +146,7 @@ namespace Confluent.SchemaRegistry
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs} must be an integer."); }
 
             var identityMapCapacityMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas);
-            try { this.identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
+            try { _identityMapCapacity = identityMapCapacityMaybe.Value == null ? DefaultMaxCachedSchemas : Convert.ToInt32(identityMapCapacityMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas} must be an integer."); }
 
             var basicAuthSource = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource).Value ?? "";
@@ -218,11 +216,21 @@ namespace Confluent.SchemaRegistry
             }
 
             var sslVerificationMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification);
-            bool sslVerify;
-            try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
-            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
+            bool sslVerify;
+            if(sslVerificationMaybe.Value == null)
+            {
+                sslVerify = DefaultEnableSslCertificateVerification;
+            }
+            else
+            {
+                if(!bool.TryParse(sslVerificationMaybe.Value, out sslVerify))
+                {
+                    throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool.");
+                }
+            }
+
+            _restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
         }
 
 
@@ -236,12 +244,12 @@ namespace Confluent.SchemaRegistry
         /// </remarks>
         private bool CleanCacheIfFull()
         {
-            if (schemaById.Count >= identityMapCapacity)
+            if (_schemaById.Count >= _identityMapCapacity)
             {
                 // TODO: maybe log something somehow if this happens. Maybe throwing an exception (fail fast) is better.
-                this.schemaById.Clear();
-                this.idBySchemaBySubject.Clear();
-                this.schemaByVersionBySubject.Clear();
+                _schemaById.Clear();
+                _idBySchemaBySubject.Clear();
+                _schemaByVersionBySubject.Clear();
                 return true;
             }
 
@@ -258,15 +266,16 @@ namespace Confluent.SchemaRegistry
         {
             var certificates = new List<X509Certificate2>();
 
-            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
-            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
-            if (!String.IsNullOrEmpty(certificateLocation))
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value;
+
+            if (!string.IsNullOrWhiteSpace(certificateLocation))
             {
-                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+                var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
             }
 
-            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
-            if (!String.IsNullOrEmpty(caLocation))
+            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value;
+            if (!string.IsNullOrWhiteSpace(caLocation))
             {
                 certificates.Add(new X509Certificate2(caLocation));
             }
@@ -282,13 +291,14 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<int> GetSchemaIdAsync(string subject, Schema schema)
         {
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            await _cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+
             try
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                if (!_idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
                 {
                     idBySchema = new Dictionary<string, int>();
-                    this.idBySchemaBySubject.Add(subject, idBySchema);
+                    _idBySchemaBySubject.Add(subject, idBySchema);
                 }
 
                 // TODO: The following could be optimized in the usual case where idBySchema only
@@ -300,9 +310,9 @@ namespace Confluent.SchemaRegistry
                     CleanCacheIfFull();
 
                     // throws SchemaRegistryException if schema is not known.
-                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
+                    var registeredSchema = await _restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema.SchemaString] = registeredSchema.Id;
-                    schemaById[registeredSchema.Id] = registeredSchema.Schema;
+                    _schemaById[registeredSchema.Id] = registeredSchema.Schema;
                     schemaId = registeredSchema.Id;
                 }
 
@@ -310,7 +320,7 @@ namespace Confluent.SchemaRegistry
             }
             finally
             {
-                cacheMutex.Release();
+                _cacheMutex.Release();
             }
         }
 
@@ -318,13 +328,14 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<int> RegisterSchemaAsync(string subject, Schema schema)
         {
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            await _cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+
             try
             {
-                if (!this.idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
+                if (!_idBySchemaBySubject.TryGetValue(subject, out Dictionary<string, int> idBySchema))
                 {
                     idBySchema = new Dictionary<string, int>();
-                    this.idBySchemaBySubject[subject] = idBySchema;
+                    _idBySchemaBySubject[subject] = idBySchema;
                 }
 
                 // TODO: This could be optimized in the usual case where idBySchema only
@@ -335,7 +346,7 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
+                    schemaId = await _restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema.SchemaString] = schemaId;
                 }
 
@@ -343,7 +354,7 @@ namespace Confluent.SchemaRegistry
             }
             finally
             {
-                cacheMutex.Release();
+                _cacheMutex.Release();
             }
         }
 
@@ -356,7 +367,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     Check if the given schema string matches a given format name.
         /// </summary>
-        private bool checkSchemaMatchesFormat(string format, string schemaString)
+        private bool CheckSchemaMatchesFormat(string format, string schemaString)
         {
             // if a format isn't specified, then assume text is desired.
             if (format == null)
@@ -388,27 +399,28 @@ namespace Confluent.SchemaRegistry
 
         /// <inheritdoc/>
         public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas)
-            => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas);
+            => _restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas);
 
 
         /// <inheritdoc/>
         public async Task<Schema> GetSchemaAsync(int id, string format = null)
         {
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            await _cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+
             try
             {
-                if (!this.schemaById.TryGetValue(id, out Schema schema) || !checkSchemaMatchesFormat(format, schema.SchemaString))
+                if (!_schemaById.TryGetValue(id, out Schema schema) || !CheckSchemaMatchesFormat(format, schema.SchemaString))
                 {
                     CleanCacheIfFull();
-                    schema = (await restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false));
-                    schemaById[id] = schema;
+                    schema = (await _restService.GetSchemaAsync(id, format).ConfigureAwait(continueOnCapturedContext: false));
+                    _schemaById[id] = schema;
                 }
 
                 return schema;
             }
             finally
             {
-                cacheMutex.Release();
+                _cacheMutex.Release();
             }
         }
 
@@ -416,29 +428,29 @@ namespace Confluent.SchemaRegistry
         /// <inheritdoc/>
         public async Task<RegisteredSchema> GetRegisteredSchemaAsync(string subject, int version)
         {
-            await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            await _cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
             {
                 CleanCacheIfFull();
 
-                if (!schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, RegisteredSchema> schemaByVersion))
+                if (!_schemaByVersionBySubject.TryGetValue(subject, out Dictionary<int, RegisteredSchema> schemaByVersion))
                 {
                     schemaByVersion = new Dictionary<int, RegisteredSchema>();
-                    schemaByVersionBySubject[subject] = schemaByVersion;
+                    _schemaByVersionBySubject[subject] = schemaByVersion;
                 }
 
                 if (!schemaByVersion.TryGetValue(version, out RegisteredSchema schema))
                 {
-                    schema = await restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
+                    schema = await _restService.GetSchemaAsync(subject, version).ConfigureAwait(continueOnCapturedContext: false);
                     schemaByVersion[version] = schema;
-                    schemaById[schema.Id] = schema.Schema;
+                    _schemaById[schema.Id] = schema.Schema;
                 }
 
                 return schema;
             }
             finally
             {
-                cacheMutex.Release();
+                _cacheMutex.Release();
             }
         }
 
@@ -451,39 +463,39 @@ namespace Confluent.SchemaRegistry
 
         /// <inheritdoc/>
         public async Task<RegisteredSchema> GetLatestSchemaAsync(string subject)
-            => await restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+            => await _restService.GetLatestSchemaAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc/>
         public Task<List<string>> GetAllSubjectsAsync()
-            => restService.GetSubjectsAsync();
+            => _restService.GetSubjectsAsync();
 
 
         /// <inheritdoc/>
         public async Task<List<int>> GetSubjectVersionsAsync(string subject)
-            => await restService.GetSubjectVersionsAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+            => await _restService.GetSubjectVersionsAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, Schema schema)
-            => await restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
+            => await _restService.TestLatestCompatibilityAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc/>
         public async Task<bool> IsCompatibleAsync(string subject, string avroSchema)
-            => await restService.TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
+            => await _restService.TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
 
 
         /// <inheritdoc />
         [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
-            => keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
+            => _keySubjectNameStrategy(new SerializationContext(MessageComponentType.Key, topic), recordType);
 
 
         /// <inheritdoc />
         [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructValueSubjectName(string topic, string recordType = null)
-            => valueSubjectNameStrategy(new SerializationContext(MessageComponentType.Value, topic), recordType);
+            => _valueSubjectNameStrategy(new SerializationContext(MessageComponentType.Value, topic), recordType);
 
 
         /// <summary>
@@ -507,9 +519,8 @@ namespace Confluent.SchemaRegistry
         {
             if (disposing)
             {
-                restService.Dispose();
+                _restService.Dispose();
             }
         }
-
     }
 }

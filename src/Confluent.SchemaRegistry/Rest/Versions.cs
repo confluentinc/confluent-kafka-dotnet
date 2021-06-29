@@ -16,7 +16,6 @@
 
 using System.Collections.Generic;
 
-
 namespace  Confluent.SchemaRegistry
 {
     internal static class Versions

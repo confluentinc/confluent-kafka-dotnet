@@ -18,7 +18,6 @@ using System;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
 
-
 namespace  Confluent.SchemaRegistry
 {
     /// <summary>
@@ -212,8 +211,7 @@ namespace  Confluent.SchemaRegistry
         ///     true if the value of the other parameter is the same as the value of this instance; 
         ///     otherwise, false. If other is null, the method returns false.
         /// </returns>
-        public bool Equals(Schema other)
-            => this.SchemaString == other.SchemaString;
+        public bool Equals(Schema other) => SchemaString == other.SchemaString;
 
         /// <summary>
         ///     Returns a hash code for this instance.
@@ -226,10 +224,7 @@ namespace  Confluent.SchemaRegistry
         ///     since the other properties are effectively derivatives
         ///     of this property.
         /// </remarks>
-        public override int GetHashCode()
-        {
-            return SchemaString.GetHashCode();
-        }
+        public override int GetHashCode() => SchemaString.GetHashCode();
 
         /// <summary>
         ///     Compares this instance with another instance of this object type and indicates whether

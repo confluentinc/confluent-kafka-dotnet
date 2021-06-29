@@ -14,10 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
 using System.Net;
 using System.Net.Http;
-
 
 namespace Confluent.SchemaRegistry
 {

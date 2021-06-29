@@ -16,7 +16,6 @@
 
 using System.Runtime.Serialization;
 
-
 namespace Confluent.SchemaRegistry
 {
     [DataContract]
