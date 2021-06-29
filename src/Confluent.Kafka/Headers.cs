@@ -27,7 +27,7 @@ namespace Confluent.Kafka
     /// <remarks>
     ///     Message headers are supported by v0.11 brokers and above.
     /// </remarks>
-    public class Headers : IEnumerable<IHeader>
+    public class Headers : IReadOnlyCollection<IHeader>
     {
         private readonly List<IHeader> headers = new List<IHeader>();
 
