@@ -474,6 +474,31 @@ namespace Confluent.SchemaRegistry
             => await restService.TestLatestCompatibilityAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro)).ConfigureAwait(continueOnCapturedContext: false);
 
 
+        /// <inheritdoc/>
+        public async Task<bool> IsCompatibleAsync(string subject, int versionId, Schema schema)
+            => await restService.TestCompatibilityAsync(subject, versionId, schema).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<Compatibility> GetCompatibilityAsync(string subject)
+            => await restService.GetCompatibilityAsync(subject).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task UpdateCompatibilityAsync(string subject, Compatibility compatibility)
+            => await restService.SetCompatibilityAsync(subject, compatibility).ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task<Compatibility> GetGlobalCompatibilityAsync()
+            => await restService.GetGlobalCompatibilityAsync().ConfigureAwait(continueOnCapturedContext: false);
+
+
+        /// <inheritdoc/>
+        public async Task UpdateGlobalCompatibilityAsync(Compatibility compatibility)
+            => await restService.SetGlobalCompatibilityAsync(compatibility).ConfigureAwait(continueOnCapturedContext: false);
+
+
         /// <inheritdoc />
         [Obsolete("SubjectNameStrategy should now be specified via serializer configuration. This method will be removed in a future release.")]
         public string ConstructKeySubjectName(string topic, string recordType = null)
