@@ -911,15 +911,17 @@ namespace Confluent.Kafka
             {
                 ProduceImpl(
                     topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                    message.Timestamp, topicPartition.Partition, 
+                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
+                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    message.Timestamp, topicPartition.Partition,
                     headers,
-                    new TypedDeliveryHandlerShim_Action(
-                        topicPartition.Topic,
-                        enableDeliveryReportKey ? message.Key : default(TKey),
-                        enableDeliveryReportValue ? message.Value : default(TValue),
-                        deliveryHandler));
+                    deliveryHandler == null
+                        ? null
+                        : new TypedDeliveryHandlerShim_Action(
+                            topicPartition.Topic,
+                            enableDeliveryReportKey ? message.Key : default(TKey),
+                            enableDeliveryReportValue ? message.Value : default(TValue),
+                            deliveryHandler));
             }
             catch (KafkaException ex)
             {
