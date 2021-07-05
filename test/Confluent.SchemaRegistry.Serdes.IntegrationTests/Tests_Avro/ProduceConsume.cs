@@ -75,19 +75,22 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<ProduceConsumeUser>(schemaRegistry, avroSerializerConfig))
                     .Build())
             {
-                for (int i = 0; i < 100; ++i)
+
+                var user = new ProduceConsumeUser
                 {
-                    var user = new ProduceConsumeUser
-                    {
-                        name = i.ToString(),
-                        favorite_number = i,
-                        favorite_color = "blue"
-                    };
-                    
-                    producer
-                        .ProduceAsync(topic, new Message<string, ProduceConsumeUser> { Key = user.name, Value = user })
-                        .Wait();
-                }
+                    name = "pcuser",
+                    favorite_number = 42,
+                    favorite_color = "blue"
+                };
+
+                producer
+                    .ProduceAsync(topic, new Message<string, ProduceConsumeUser> { Key = user.name, Value = user })
+                    .Wait();
+
+                producer
+                    .ProduceAsync(topic, new Message<string, ProduceConsumeUser> { Key = "null_value", Value = null })
+                    .Wait();
+
                 Assert.Equal(0, producer.Flush(TimeSpan.FromSeconds(10)));
             }
 
@@ -108,10 +111,19 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     if (record == null) { continue; }
                     if (record.IsPartitionEOF) { break; }
 
-                    Assert.Equal(i.ToString(), record.Message.Key);
-                    Assert.Equal(i.ToString(), record.Message.Value.name);
-                    Assert.Equal(i, record.Message.Value.favorite_number);
-                    Assert.Equal("blue", record.Message.Value.favorite_color);
+                    if (i == 0)
+                    {
+                        Assert.Equal("pcuser", record.Message.Key);
+                        Assert.Equal("pcuser", record.Message.Value.name);
+                        Assert.Equal(42, record.Message.Value.favorite_number);
+                        Assert.Equal("blue", record.Message.Value.favorite_color);
+                    }
+                    else
+                    {
+                        Assert.Equal("null_value", record.Message.Key);
+                        Assert.Null(record.Message.Value);
+                    }
+
                     i += 1;
                 }
 

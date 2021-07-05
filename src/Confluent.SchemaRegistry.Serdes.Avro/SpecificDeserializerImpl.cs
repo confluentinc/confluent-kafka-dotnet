@@ -29,7 +29,7 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
-    internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T>
+    internal class SpecificDeserializerImpl<T> : IAvroDeserializerImpl<T> where T : class
     {
         /// <remarks>
         ///     A datum reader cache (one corresponding to each write schema that's been seen) 
@@ -103,6 +103,11 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 // Note: topic is not necessary for deserialization (or knowing if it's a key 
                 // or value) only the schema id is needed.
+
+                if (array == null)
+                {
+                    return null;
+                }
 
                 if (array.Length < 5)
                 {
