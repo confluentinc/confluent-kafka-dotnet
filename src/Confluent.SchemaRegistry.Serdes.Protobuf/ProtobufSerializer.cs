@@ -60,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private bool useDeprecatedFormat = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
-        private ReferenceSubjectNameStrategyDelegate referenceSubjectNameStrategy = null;
+        private IReferenceSubjectNameStrategy referenceSubjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
         
         private HashSet<string> subjectsRegistered = new HashSet<string>();
@@ -84,7 +84,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config == null)
             { 
-                this.referenceSubjectNameStrategy = ReferenceSubjectNameStrategy.ReferenceName.ToDelegate();
+                this.referenceSubjectNameStrategy = new DefaultReferenceSubjectNameStrategy();
                 return;
             }
 
@@ -101,8 +101,8 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.UseDeprecatedFormat != null) { this.useDeprecatedFormat = config.UseDeprecatedFormat.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
             this.referenceSubjectNameStrategy = config.ReferenceSubjectNameStrategy == null
-                ? ReferenceSubjectNameStrategy.ReferenceName.ToDelegate()
-                : config.ReferenceSubjectNameStrategy.Value.ToDelegate();
+                ? new DefaultReferenceSubjectNameStrategy()
+                : Activator.CreateInstance(config.ReferenceSubjectNameStrategy) as IReferenceSubjectNameStrategy;
 
             if (this.useLatestVersion && this.autoRegisterSchema)
             {
@@ -204,7 +204,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 
                 Func<FileDescriptor, Task<SchemaReference>> t = async (FileDescriptor dependency) => {
                     var dependencyReferences = await RegisterOrGetReferences(dependency, context, autoRegisterSchema, skipKnownTypes).ConfigureAwait(continueOnCapturedContext: false);
-                    var subject = referenceSubjectNameStrategy(context, dependency.Name);
+                    var subject = referenceSubjectNameStrategy.GetSubjectName(context, dependency.Name);
                     var schema = new Schema(dependency.SerializedData.ToBase64(), dependencyReferences, SchemaType.Protobuf);
                     var schemaId = autoRegisterSchema
                         ? await schemaRegistryClient.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false)

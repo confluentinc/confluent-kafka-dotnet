@@ -209,26 +209,21 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     
         ///     default: ReferenceSubjectNameStrategy.ReferenceName
         /// </summary>
-        public ReferenceSubjectNameStrategy? ReferenceSubjectNameStrategy
+        public Type ReferenceSubjectNameStrategy
         {
             get
             {
                 var r = Get(PropertyNames.ReferenceSubjectNameStrategy);
-                if (r == null) { return null; }
+                if (r == null) { return typeof(DefaultReferenceSubjectNameStrategy); }
                 else
                 {
-                    ReferenceSubjectNameStrategy result;
-                    if (!Enum.TryParse<ReferenceSubjectNameStrategy>(r, out result))
-                        throw new ArgumentException(
-                            $"Unknown ${PropertyNames.ReferenceSubjectNameStrategy} value: {r}.");
-                    else
-                        return result;
+                    return Type.GetType(r);
                 }
             }
             set
             {
                 if (value == null) { this.properties.Remove(PropertyNames.ReferenceSubjectNameStrategy); }
-                else { this.properties[PropertyNames.ReferenceSubjectNameStrategy] = value.ToString(); }
+                else { this.properties[PropertyNames.ReferenceSubjectNameStrategy] = value.AssemblyQualifiedName; }
             }
         }
 

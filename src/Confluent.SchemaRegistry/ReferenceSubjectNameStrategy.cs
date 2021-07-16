@@ -19,40 +19,16 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry
 {
-    /// <summary>
-    ///     Construct the subject name under which a referenced schema
-    ///     should be registered in Schema Registry.
-    /// </summary>
-    /// <param name="context">
-    ///     The serialization context.
-    /// </param>
-    /// <param name="referenceName">
-    ///     The name used to reference the schema.
-    /// </param>
-    public delegate string ReferenceSubjectNameStrategyDelegate(SerializationContext context, string referenceName);
-
-
-    /// <summary>
-    ///     Subject name strategy for referenced schemas.
-    /// </summary>
-    public enum ReferenceSubjectNameStrategy
+    public interface IReferenceSubjectNameStrategy
     {
-        /// <summary>
-        ///     (default): Use the reference name as the subject name.
-        /// </summary>
-        ReferenceName
+        string GetSubjectName(SerializationContext context, string referenceName);
     }
-    
 
-    /// <summary>
-    ///     Extension methods for the ReferenceSubjectNameStrategy type.
-    /// </summary>
-    public static class ReferenceSubjectNameStrategyExtensions
+    public class DefaultReferenceSubjectNameStrategy : IReferenceSubjectNameStrategy
     {
-        /// <summary>
-        ///     Provide a functional implementation corresponding to the enum value.
-        /// </summary>
-        public static ReferenceSubjectNameStrategyDelegate ToDelegate(this ReferenceSubjectNameStrategy strategy)
-            => (context, referenceName) => referenceName;
+        public string GetSubjectName(SerializationContext context, string referenceName)
+        {
+            return referenceName;
+        }
     }
 }
