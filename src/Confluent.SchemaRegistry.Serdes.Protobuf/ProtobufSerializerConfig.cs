@@ -217,7 +217,13 @@ namespace Confluent.SchemaRegistry.Serdes
                 if (r == null) { return typeof(DefaultReferenceSubjectNameStrategy); }
                 else
                 {
-                    return Type.GetType(r);
+                    var type = Type.GetType(r);
+                    if (typeof(IReferenceSubjectNameStrategy).IsAssignableFrom(type)) { return type; }
+                    else
+                    {
+                        throw new ArgumentException(
+                            $"Provided type for {nameof(ReferenceSubjectNameStrategy)} does not implement interface {nameof(IReferenceSubjectNameStrategy)}");
+                    }
                 }
             }
             set
