@@ -19,13 +19,31 @@ using Confluent.Kafka;
 
 namespace Confluent.SchemaRegistry
 {
+    ///<summary>
+    /// This interface is used by the serializer to determine the subject name under which
+    /// the referenced schema should be registered in the schema registry.
+    /// </summary>
     public interface IReferenceSubjectNameStrategy
     {
+        /// <summary>
+        /// For a given reference name and serialization context, returns the subject name under which the
+        /// referenced schema should be registered in the schema registry.
+        /// </summary>
+        /// <param name="context">Context relevant to the serialization operation.</param>
+        /// <param name="referenceName">The name of the reference.</param>
+        /// <returns></returns>
         string GetSubjectName(SerializationContext context, string referenceName);
     }
 
+    /// <summary>
+    /// The default strategy used by serializer that uses the reference name as the subject name
+    /// under which the referenced schema should be registered in schema registry.
+    /// </summary>
     public class DefaultReferenceSubjectNameStrategy : IReferenceSubjectNameStrategy
     {
+        /// <summary>
+        /// <inheritdoc />
+        /// </summary>
         public string GetSubjectName(SerializationContext context, string referenceName)
         {
             return referenceName;

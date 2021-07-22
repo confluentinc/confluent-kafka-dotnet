@@ -206,8 +206,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
         /// <summary>
         ///     Reference subject name strategy.
-        ///     
-        ///     default: ReferenceSubjectNameStrategy.ReferenceName
+        ///     The provided type must be an implementation of <see cref="IReferenceSubjectNameStrategy" />
+        ///     default: <see cref="DefaultReferenceSubjectNameStrategy" />
         /// </summary>
         public Type ReferenceSubjectNameStrategy
         {
