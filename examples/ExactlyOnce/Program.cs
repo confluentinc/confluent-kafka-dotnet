@@ -420,7 +420,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                                         // to wait a bit and retry.
                                         if (e.Error.Code == ErrorCode.Local_QueueFull)
                                         {
-                                            Thread.Sleep(TimeSpan.FromSeconds(1000));
+                                            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
                                             continue;
                                         }
                                         throw;
