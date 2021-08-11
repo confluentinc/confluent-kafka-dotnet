@@ -138,7 +138,7 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
         public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
-        { 
+        {
             try
             {
                 if (serializerImpl == null)
@@ -152,7 +152,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             catch (AggregateException e)
             {
-                throw e.InnerException;
+                throw e.GetBaseException();
             }
         }
 

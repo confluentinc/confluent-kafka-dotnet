@@ -34,7 +34,7 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </remarks>
         private readonly Dictionary<int, DatumReader<GenericRecord>> datumReaderBySchemaId 
             = new Dictionary<int, DatumReader<GenericRecord>>();
-       
+
         private SemaphoreSlim deserializeMutex = new SemaphoreSlim(1);
 
         private ISchemaRegistryClient schemaRegistryClient;
@@ -97,13 +97,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         deserializeMutex.Release();
                     }
-                    
+
                     return datumReader.Read(default(GenericRecord), new BinaryDecoder(stream));
                 }
             }
             catch (AggregateException e)
             {
-                throw e.InnerException;
+                throw e.GetBaseException();
             }
         }
 

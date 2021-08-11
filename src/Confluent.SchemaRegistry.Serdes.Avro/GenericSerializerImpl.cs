@@ -188,7 +188,7 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             catch (AggregateException e)
             {
-                throw e.InnerException;
+                throw e.GetBaseException();
             }
         }
     }

@@ -142,13 +142,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         deserializeMutex.Release();
                     }
-                    
+
                     return datumReader.Read(default(T), new BinaryDecoder(stream));
                 }
             }
             catch (AggregateException e)
             {
-                throw e.InnerException;
+                throw e.GetBaseException();
             }
         }
 
