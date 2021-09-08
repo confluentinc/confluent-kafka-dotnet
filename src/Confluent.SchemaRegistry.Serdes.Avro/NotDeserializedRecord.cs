@@ -6,6 +6,10 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 {
     public class NotDeserializedRecord : ISpecificRecord
     {
+        public NotDeserializedRecord()
+        {
+        }
+
         public NotDeserializedRecord(global::Avro.Schema schema, int schemaId)
         {
             Schema = schema;
