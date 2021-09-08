@@ -27,7 +27,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             unsupportedSchemaIds = new ConcurrentDictionary<int, NotDeserializedRecord>();
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
             this.avroDeserializerConfig = avroDeserializerConfig ?? new AvroDeserializerConfig();
-            deserializersBySchema = types?.Any() == true && types.All(t => typeof(ISpecificRecord).IsAssignableFrom(t)) ? GetSpecificDeserializers(types, schemaRegistryClient) : throw new ArgumentOutOfRangeException(nameof(types));
+            deserializersBySchema = types?.Count > 0 && types.All(t => typeof(ISpecificRecord).IsAssignableFrom(t)) ? GetSpecificDeserializers(types, schemaRegistryClient) : throw new ArgumentOutOfRangeException(nameof(types));
         }
 
         private Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetSpecificDeserializers(IReadOnlyCollection<Type> specificRecordTypes, ISchemaRegistryClient schemaRegistry)
