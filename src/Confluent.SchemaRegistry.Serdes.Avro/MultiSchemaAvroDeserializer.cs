@@ -120,7 +120,10 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                     };
                 }
 
-                return null;
+                return new NotDeserializedRecord(null, schemaId)
+                {
+                    Data = data
+                };
             };
 
             return await deserializer(data, isNull, context);
