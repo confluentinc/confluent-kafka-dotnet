@@ -29,7 +29,6 @@ using Avro.IO;
 using Avro.Specific;
 using Confluent.Kafka;
 
-
 namespace Confluent.SchemaRegistry.Serdes
 {
     internal class SpecificSerializerImpl<T> : IAvroSerializerImpl<T>
@@ -61,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 set => writerSchemaString = value;
             }
 
-            public Avro.Schema WriterSchema
+            public global::Avro.Schema WriterSchema
             {
                 get => writerSchema;
                 set => writerSchema = value;
@@ -196,9 +195,9 @@ namespace Confluent.SchemaRegistry.Serdes
                     }
 
                     string fullname = null;
-                    if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is Avro.RecordSchema)
+                    if (data is ISpecificRecord && ((ISpecificRecord)data).Schema is global::Avro.RecordSchema)
                     {
-                        fullname = ((Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
+                        fullname = ((global::Avro.RecordSchema)((ISpecificRecord)data).Schema).Fullname;
                     }
 
                     string subject = this.subjectNameStrategy != null

@@ -24,6 +24,7 @@ using System.Linq;
 using Avro.Specific;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
+using Confluent.SchemaRegistry.Serdes.Avro;
 
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
@@ -147,6 +148,29 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void ISpecificRecordMultiSchema()
+        {
+            var serializer = new MultiSchemaAvroSerializer(schemaRegistryClient);
+            var deserializer = new MultiSchemaAvroDeserializer(new []{typeof(User)}, schemaRegistryClient);
+
+            var user = new User
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var resultUser = result as User;
+
+            Assert.NotNull(resultUser);
+            Assert.Equal(user.name, resultUser.name);
+            Assert.Equal(user.favorite_color, resultUser.favorite_color);
+            Assert.Equal(user.favorite_number, resultUser.favorite_number);
         }
 
         [Fact]

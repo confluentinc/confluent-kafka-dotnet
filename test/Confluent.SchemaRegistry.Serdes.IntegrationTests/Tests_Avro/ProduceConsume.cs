@@ -129,7 +129,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     Assert.Equal(2, (int)subjects.Where(s => s.Contains(topic)).Count());
                     Assert.Single(subjects.Where(s => s == $"{topic}-key"));
-                    Assert.Single(subjects.Where(s => s == $"{topic}-{((Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}"));
+                    Assert.Single(subjects.Where(s => s == $"{topic}-{((global::Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}"));
                 }
 
                 if (nameStrategy == SubjectNameStrategy.Topic)
@@ -143,7 +143,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 {
                     Assert.Single(subjects.Where(s => s.Contains(topic))); // the string key.
                     Assert.Single(subjects.Where(s => s == $"{topic}-key"));
-                    Assert.Single(subjects.Where(s => s == $"{((Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}"));
+                    Assert.Single(subjects.Where(s => s == $"{((global::Avro.RecordSchema)ProduceConsumeUser._SCHEMA).Fullname}"));
                 }
             }
         }
