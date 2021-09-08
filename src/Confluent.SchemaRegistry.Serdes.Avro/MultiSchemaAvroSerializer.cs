@@ -29,10 +29,10 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private Func<ISpecificRecord, SerializationContext, Task<byte[]>> GetOrCreateSerializer(Type specificRecordType)
         {
-            return specificSerializers.GetOrAdd(specificRecordType, CreateConverter);
+            return specificSerializers.GetOrAdd(specificRecordType, CreateSerializer);
         }
 
-        private Func<ISpecificRecord, SerializationContext, Task<byte[]>> CreateConverter(Type specificType)
+        private Func<ISpecificRecord, SerializationContext, Task<byte[]>> CreateSerializer(Type specificType)
         {
             var constructedAvroSerializer = typeof(AvroSerializer<>).MakeGenericType(specificType);
             var avroSerializer = Activator.CreateInstance(constructedAvroSerializer, schemaRegistryClient, avroSerializerConfig);
