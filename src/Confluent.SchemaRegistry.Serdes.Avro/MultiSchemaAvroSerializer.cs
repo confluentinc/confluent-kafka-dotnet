@@ -24,7 +24,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         public Task<byte[]> SerializeAsync(ISpecificRecord data, SerializationContext context)
         {
-            return data == null ? null : GetOrCreateSerializer(data.GetType())(data, context);
+            return data == null ? Task.FromResult(Array.Empty<byte>()) : GetOrCreateSerializer(data.GetType())(data, context);
         }
 
         private Func<ISpecificRecord, SerializationContext, Task<byte[]>> GetOrCreateSerializer(Type specificRecordType)
