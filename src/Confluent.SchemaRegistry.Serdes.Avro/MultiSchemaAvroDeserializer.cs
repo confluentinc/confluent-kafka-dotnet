@@ -1,12 +1,11 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avro.Specific;
 using Confluent.Kafka;
@@ -124,7 +123,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 {
                     Data = data
                 };
-            };
+            }
 
             return await deserializer(data, isNull, context);
         }
@@ -138,7 +137,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {firstFiveBytes[0]}, expecting 0");
             }
 
-            var writerSchemaId = IPAddress.NetworkToHostOrder(MemoryMarshal.Read<int>(firstFiveBytes.Slice(1)));
+            var writerSchemaId = BinaryPrimitives.ReadInt32BigEndian(firstFiveBytes.Slice(1));
 
             return writerSchemaId;
         }
