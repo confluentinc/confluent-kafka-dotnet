@@ -13,13 +13,13 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
     {
         private readonly ISchemaRegistryClient schemaRegistryClient;
         private readonly AvroSerializerConfig avroSerializerConfig;
-        private readonly ConcurrentDictionary<Type, Func<ISpecificRecord, SerializationContext, Task<byte[]>>> specificSerializers;
+        private readonly ConcurrentDictionary<Type, Func<ISpecificRecord, SerializationContext, Task<byte[]>>> serializersByType;
 
         public MultiSchemaAvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig avroSerializerConfig = null)
         {
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
             this.avroSerializerConfig = avroSerializerConfig;
-            specificSerializers = new ConcurrentDictionary<Type, Func<ISpecificRecord, SerializationContext, Task<byte[]>>>();
+            serializersByType = new ConcurrentDictionary<Type, Func<ISpecificRecord, SerializationContext, Task<byte[]>>>();
         }
 
         public Task<byte[]> SerializeAsync(ISpecificRecord data, SerializationContext context)
@@ -29,7 +29,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private Func<ISpecificRecord, SerializationContext, Task<byte[]>> GetOrCreateSerializer(Type specificRecordType)
         {
-            return specificSerializers.GetOrAdd(specificRecordType, CreateSerializer);
+            return serializersByType.GetOrAdd(specificRecordType, CreateSerializer);
         }
 
         private Func<ISpecificRecord, SerializationContext, Task<byte[]>> CreateSerializer(Type specificType)
@@ -37,7 +37,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             var constructedAvroSerializer = typeof(AvroSerializer<>).MakeGenericType(specificType);
             var avroSerializer = Activator.CreateInstance(constructedAvroSerializer, schemaRegistryClient, avroSerializerConfig);
 
-            var openGenericMethod = typeof(MultiSchemaAvroSerializer).GetMethod(nameof(SerializeAsync), BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic) ?? throw new MissingMethodException(nameof(MultiSchemaAvroDeserializer), nameof(SerializeAsync));
+            var openGenericMethod = typeof(MultiSchemaAvroSerializer).GetMethod(nameof(SerializeAsync), BindingFlags.Static | BindingFlags.NonPublic) ?? throw new MissingMethodException(nameof(MultiSchemaAvroDeserializer), nameof(SerializeAsync));
             var constructedGenericMethod = openGenericMethod.MakeGenericMethod(specificType);
             var parameters = constructedGenericMethod.GetParameters().Select(x =>
             {
