@@ -56,9 +56,9 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return lambda.Compile();
         }
 
-        private static async Task<byte[]> SerializeAsync<T>(IAsyncSerializer<T> serializer, ISpecificRecord specificRecord, SerializationContext context)
+        private static Task<byte[]> SerializeAsync<T>(IAsyncSerializer<T> serializer, ISpecificRecord specificRecord, SerializationContext context)
         {
-            return await serializer.SerializeAsync((T)specificRecord, context);
+            return serializer.SerializeAsync((T)specificRecord, context);
         }
     }
 }
