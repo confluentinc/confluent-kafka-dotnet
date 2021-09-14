@@ -18,7 +18,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
         public MultiSchemaAvroSerializer(ISchemaRegistryClient schemaRegistryClient, AvroSerializerConfig avroSerializerConfig = null)
         {
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
-            this.avroSerializerConfig = avroSerializerConfig ?? new AvroSerializerConfig();
+            this.avroSerializerConfig = avroSerializerConfig;
             specificSerializers = new ConcurrentDictionary<Type, Func<ISpecificRecord, SerializationContext, Task<byte[]>>>();
         }
 
