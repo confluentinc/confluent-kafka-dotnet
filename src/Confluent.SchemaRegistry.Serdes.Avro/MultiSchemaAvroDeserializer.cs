@@ -80,23 +80,23 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>> CreateSpecificDeserializer(Type specificType, ISchemaRegistryClient schemaRegistryClient)
         {
-            var constructedAvroDeserializer = typeof(AvroDeserializer<>).MakeGenericType(specificType);
-            var avroDeserializer = Activator.CreateInstance(constructedAvroDeserializer, schemaRegistryClient, avroDeserializerConfig);
-            var openGenericMethod = typeof(MultiSchemaAvroDeserializer).GetMethod(nameof(DeserializeAsync), BindingFlags.Static | BindingFlags.NonPublic);
-            var constructedGenericMethod = openGenericMethod.MakeGenericMethod(specificType);
+            var constructedDeserializerType = typeof(AvroDeserializer<>).MakeGenericType(specificType);
+            var deserializerInstance = Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
+            var openGenericDeserializeMethod = typeof(MultiSchemaAvroDeserializer).GetMethod(nameof(DeserializeAsync), BindingFlags.Static | BindingFlags.NonPublic);
+            var constructedDeserializeMethod = openGenericDeserializeMethod.MakeGenericMethod(specificType);
 
-            var parameters = constructedGenericMethod.GetParameters().Select(x =>
+            var parameters = constructedDeserializeMethod.GetParameters().Select(x =>
             {
                 if (x.ParameterType.IsGenericType && x.ParameterType.GetGenericTypeDefinition().IsAssignableFrom(typeof(IAsyncDeserializer<>)))
                 {
-                    return Expression.Constant(avroDeserializer);
+                    return Expression.Constant(deserializerInstance);
                 }
 
                 return (Expression)Expression.Parameter(x.ParameterType, x.Name);
 
             }).ToArray();
 
-            var callExpression = Expression.Call(null, constructedGenericMethod, parameters);
+            var callExpression = Expression.Call(null, constructedDeserializeMethod, parameters);
 
             var lambda = Expression.Lambda<Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>>
                 (

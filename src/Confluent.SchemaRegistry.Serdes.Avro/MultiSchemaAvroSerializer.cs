@@ -34,23 +34,23 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private Func<ISpecificRecord, SerializationContext, Task<byte[]>> CreateSerializer(Type specificType)
         {
-            var constructedAvroSerializer = typeof(AvroSerializer<>).MakeGenericType(specificType);
-            var avroSerializer = Activator.CreateInstance(constructedAvroSerializer, schemaRegistryClient, avroSerializerConfig);
+            var constructedSerializerType = typeof(AvroSerializer<>).MakeGenericType(specificType);
+            var serializerInstance = Activator.CreateInstance(constructedSerializerType, schemaRegistryClient, avroSerializerConfig);
+            var openGenericSerializeMethod = typeof(MultiSchemaAvroSerializer).GetMethod(nameof(SerializeAsync), BindingFlags.Static | BindingFlags.NonPublic) ?? throw new MissingMethodException(nameof(MultiSchemaAvroDeserializer), nameof(SerializeAsync));
+            var constructedSerializeMethod = openGenericSerializeMethod.MakeGenericMethod(specificType);
 
-            var openGenericMethod = typeof(MultiSchemaAvroSerializer).GetMethod(nameof(SerializeAsync), BindingFlags.Static | BindingFlags.NonPublic) ?? throw new MissingMethodException(nameof(MultiSchemaAvroDeserializer), nameof(SerializeAsync));
-            var constructedGenericMethod = openGenericMethod.MakeGenericMethod(specificType);
-            var parameters = constructedGenericMethod.GetParameters().Select(x =>
+            var parameters = constructedSerializeMethod.GetParameters().Select(x =>
             {
                 if (x.ParameterType.IsGenericType && x.ParameterType.GetGenericTypeDefinition().IsAssignableFrom(typeof(IAsyncSerializer<>)))
                 {
-                    return Expression.Constant(avroSerializer);
+                    return Expression.Constant(serializerInstance);
                 }
 
                 return (Expression)Expression.Parameter(x.ParameterType, x.Name);
 
             }).ToArray();
 
-            var callExpression = Expression.Call(null, constructedGenericMethod, parameters);
+            var callExpression = Expression.Call(null, constructedSerializeMethod, parameters);
             var lambda = Expression.Lambda<Func<ISpecificRecord, SerializationContext, Task<byte[]>>>(callExpression, parameters.OfType<ParameterExpression>());
 
             return lambda.Compile();
