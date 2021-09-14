@@ -40,6 +40,34 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 : throw new ArgumentOutOfRangeException(nameof(types));
         }
 
+        public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
+        {
+            if (data.Length < 5)
+                return new NotDeserializedRecord { Data = data };
+
+            var schemaId = GetWriterSchemaId(data);
+
+            var deserializer = await GetSpecificDeserializer(schemaId);
+
+            if (deserializer != null)
+            {
+                return await deserializer(data, isNull, context);
+            }
+
+            if (unsupportedSchemaIds.TryGetValue(schemaId, out var unsupportedSchema))
+            {
+                return new NotDeserializedRecord(unsupportedSchema.Schema, unsupportedSchema.SchemaId)
+                {
+                    Data = data
+                };
+            }
+
+            return new NotDeserializedRecord(null, schemaId)
+            {
+                Data = data
+            };
+        }
+
         private Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetSpecificDeserializers(IReadOnlyCollection<Type> specificRecordTypes, ISchemaRegistryClient schemaRegistry)
         {
             return specificRecordTypes.ToDictionary(x => GetReaderSchema(x).Fullname, x => CreateSpecificDeserializer(x, schemaRegistry));
@@ -79,11 +107,6 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return lambda.Compile();
         }
 
-        private static async Task<ISpecificRecord> DeserializeAsync<TSpecific>(ReadOnlyMemory<byte> message, bool isNull, SerializationContext context, IAsyncDeserializer<TSpecific> deserializer) where TSpecific : ISpecificRecord
-        {
-            return await deserializer.DeserializeAsync(message, isNull, context);
-        }
-
         private async Task<Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetSpecificDeserializer(int schemaId)
         {
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
@@ -111,34 +134,6 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return deserializer;
         }
 
-        public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
-        {
-            if (data.Length < 5)
-                return new NotDeserializedRecord { Data = data };
-
-            var schemaId = GetWriterSchemaId(data);
-
-            var deserializer = await GetSpecificDeserializer(schemaId);
-
-            if (deserializer != null)
-            {
-                return await deserializer(data, isNull, context);
-            }
-
-            if(unsupportedSchemaIds.TryGetValue(schemaId, out var unsupportedSchema))
-            {
-                return new NotDeserializedRecord(unsupportedSchema.Schema, unsupportedSchema.SchemaId)
-                {
-                    Data = data
-                };
-            }
-
-            return new NotDeserializedRecord(null, schemaId)
-            {
-                Data = data
-            };
-        }
-
         private static int GetWriterSchemaId(ReadOnlyMemory<byte> data)
         {
             var firstFiveBytes = data.Span.Slice(0, 5);
@@ -151,6 +146,11 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             var writerSchemaId = BinaryPrimitives.ReadInt32BigEndian(firstFiveBytes.Slice(1));
 
             return writerSchemaId;
+        }
+
+        private static async Task<ISpecificRecord> DeserializeAsync<TSpecific>(IAsyncDeserializer<TSpecific> deserializer, ReadOnlyMemory<byte> message, bool isNull, SerializationContext context) where TSpecific : ISpecificRecord
+        {
+            return await deserializer.DeserializeAsync(message, isNull, context);
         }
     }
 }
