@@ -17,10 +17,12 @@
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
+using System;
 using Moq;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Avro.Specific;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
@@ -164,8 +166,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultUser = result as User;
+            var resultUser = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
 
             Assert.NotNull(resultUser);
             Assert.Equal(user.name, resultUser.name);
@@ -215,11 +216,8 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var serializer = new MultiSchemaAvroSerializer(schemaRegistryClient);
             var deserializerUser = new AvroDeserializer<User>(schemaRegistryClient);
             var deserializerCar = new AvroDeserializer<Car>(schemaRegistryClient);
-            var multiSchemaDeserializer = new MultiSchemaAvroDeserializer(new []
-            {
-                typeof(User), 
-                typeof(Car)
-            }, schemaRegistryClient);
+            IReadOnlyCollection<Type> TypeResolver() => Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(ISpecificRecord).IsAssignableFrom(t)).ToArray();
+            var multiSchemaDeserializer = new MultiSchemaAvroDeserializer(TypeResolver, schemaRegistryClient);
 
             var user = new User
             {
@@ -235,7 +233,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             var bytesUser = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultUser = deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
+            var resultUser = deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
 
             Assert.NotNull(resultUser);
             Assert.Equal(user.name, resultUser.name);
@@ -243,7 +241,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.favorite_number, resultUser.favorite_number);
 
             var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
+            var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
 
             Assert.NotNull(resultCar);
             Assert.Equal(car.name, resultCar.name);
