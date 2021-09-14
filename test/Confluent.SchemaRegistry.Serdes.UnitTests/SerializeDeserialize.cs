@@ -156,7 +156,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public void ISpecificRecord_MultiSchema()
         {
             var serializer = new MultiSchemaAvroSerializer(schemaRegistryClient);
-            var deserializer = new MultiSchemaAvroDeserializer(new []{typeof(User)}, schemaRegistryClient);
+            var deserializer = new MultiSchemaAvroDeserializer(new []{ typeof(User) }, schemaRegistryClient);
 
             var user = new User
             {
