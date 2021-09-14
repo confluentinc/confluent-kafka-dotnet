@@ -238,7 +238,6 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.favorite_color, resultUser.favorite_color);
             Assert.Equal(user.favorite_number, resultUser.favorite_number);
 
-
             var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             var resultCar = multiSchemaDeserializer.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
 
