@@ -155,7 +155,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [Fact]
         public void ISpecificRecord_MultiSchema()
         {
-            var serializer = new MultiSchemaAvroSerializer(schemaRegistryClient);
+            var serializer = new AvroSerializer<ISpecificRecord>(schemaRegistryClient);
             var deserializer = new MultiSchemaAvroDeserializer(new []{ typeof(User) }, schemaRegistryClient);
 
             var user = new User
@@ -213,9 +213,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         [Fact]
         public void Multiple_ISpecificRecords_MultiSchema()
         {
-            var serializer = new MultiSchemaAvroSerializer(schemaRegistryClient);
-            var deserializerUser = new AvroDeserializer<User>(schemaRegistryClient);
-            var deserializerCar = new AvroDeserializer<Car>(schemaRegistryClient);
+            var serializer = new AvroSerializer<ISpecificRecord>(schemaRegistryClient);
             IReadOnlyCollection<Type> TypeResolver() => Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(ISpecificRecord).IsAssignableFrom(t)).ToArray();
             var multiSchemaDeserializer = new MultiSchemaAvroDeserializer(TypeResolver, schemaRegistryClient);
 
@@ -233,28 +231,16 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             };
 
             var bytesUser = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultUser = deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var resultUser = multiSchemaDeserializer.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
 
             Assert.NotNull(resultUser);
             Assert.Equal(user.name, resultUser.name);
             Assert.Equal(user.favorite_color, resultUser.favorite_color);
             Assert.Equal(user.favorite_number, resultUser.favorite_number);
+
 
             var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-            var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
-
-            Assert.NotNull(resultCar);
-            Assert.Equal(car.name, resultCar.name);
-            Assert.Equal(car.color, resultCar.color);
-
-            resultUser = multiSchemaDeserializer.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
-
-            Assert.NotNull(resultUser);
-            Assert.Equal(user.name, resultUser.name);
-            Assert.Equal(user.favorite_color, resultUser.favorite_color);
-            Assert.Equal(user.favorite_number, resultUser.favorite_number);
-
-            resultCar = multiSchemaDeserializer.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
+            var resultCar = multiSchemaDeserializer.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
 
             Assert.NotNull(resultCar);
             Assert.Equal(car.name, resultCar.name);
