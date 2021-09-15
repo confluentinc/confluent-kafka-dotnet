@@ -56,15 +56,18 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
             if (unsupportedSchemasBySchemaId.TryGetValue(writerSchemaId, out var unsupportedSchema))
             {
-                return new NotDeserializedRecord(unsupportedSchema, writerSchemaId)
+                return new NotDeserializedRecord
                 {
-                    Data = data
+                    Data = data,
+                    Schema = unsupportedSchema,
+                    SchemaId = writerSchemaId
                 };
             }
 
-            return new NotDeserializedRecord(null, writerSchemaId)
+            return new NotDeserializedRecord
             {
-                Data = data
+                Data = data,
+                SchemaId = writerSchemaId
             };
         }
 
