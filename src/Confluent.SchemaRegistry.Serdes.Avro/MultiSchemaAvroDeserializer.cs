@@ -19,38 +19,44 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
         private readonly ISchemaRegistryClient schemaRegistryClient;
 
         public MultiSchemaAvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
-            : this(AppDomain.CurrentDomain
+            : this(schemaRegistryClient,
+                  AppDomain.CurrentDomain
                   .GetAssemblies()
                   .SelectMany(a => a.GetTypes())
-                  .Where(t => typeof(ISpecificRecord).IsAssignableFrom(t) && GetSchema(t) != null),
-                   schemaRegistryClient,
-                   avroDeserializerConfig)
+                  .Where(t => t.IsClass && !t.IsAbstract && typeof(ISpecificRecord).IsAssignableFrom(t) && GetSchema(t) != null),
+                   avroDeserializerConfig,
+                   checkTypes: false)
         {
         }
 
-        public MultiSchemaAvroDeserializer(Func<IEnumerable<Type>> typeResolver, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
-            : this((typeResolver ?? throw new ArgumentNullException(nameof(typeResolver)))(),
-                   schemaRegistryClient,
+        public MultiSchemaAvroDeserializer(Func<IEnumerable<Type>> typeProvider, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+            : this(schemaRegistryClient,
+                  (typeProvider ?? throw new ArgumentNullException(nameof(typeProvider)))(),
                    avroDeserializerConfig)
         {
         }
 
         public MultiSchemaAvroDeserializer(IEnumerable<Type> types, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+            :this(schemaRegistryClient, types, avroDeserializerConfig)
+        {   
+        }
+
+        private MultiSchemaAvroDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<Type> types, AvroDeserializerConfig avroDeserializerConfig, bool checkTypes = true)
         {
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
 
             var typeArray = (types ?? throw new ArgumentNullException(nameof(types))).ToArray();
 
-            if(typeArray.Length == 0)
+            if (typeArray.Length == 0)
             {
                 throw new ArgumentException("Type collection must contain at least one item.", nameof(types));
             }
 
-            if (!typeArray.All(t => typeof(ISpecificRecord).IsAssignableFrom(t) && GetSchema(t) != null))
+            if (checkTypes && !typeArray.All(t => t.IsClass && !t.IsAbstract && typeof(ISpecificRecord).IsAssignableFrom(t) && GetSchema(t) != null))
             {
                 throw new ArgumentOutOfRangeException(nameof(types));
             }
-            
+
             deserializersBySchemaId = new ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>>();
             unsupportedSchemasBySchemaId = new ConcurrentDictionary<int, global::Avro.Schema>();
             deserializersBySchemaName = GetDeserializers(typeArray, avroDeserializerConfig);
