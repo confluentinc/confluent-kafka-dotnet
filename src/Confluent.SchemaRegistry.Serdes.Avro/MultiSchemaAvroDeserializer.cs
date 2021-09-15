@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avro.Specific;
@@ -14,8 +13,8 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 {
     public class MultiSchemaAvroDeserializer : IAsyncDeserializer<ISpecificRecord>
     {
-        private readonly Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> deserializersBySchemaName;
-        private readonly ConcurrentDictionary<int, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> deserializersBySchemaId;
+        private readonly Dictionary<string, IAsyncDeserializer<ISpecificRecord>> deserializersBySchemaName;
+        private readonly ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>> deserializersBySchemaId;
         private readonly ConcurrentDictionary<int, global::Avro.Schema> unsupportedSchemasBySchemaId;
         private readonly ISchemaRegistryClient schemaRegistryClient;
 
@@ -28,7 +27,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         public MultiSchemaAvroDeserializer(IReadOnlyCollection<Type> types, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
         {
-            deserializersBySchemaId = new ConcurrentDictionary<int, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>>();
+            deserializersBySchemaId = new ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>>();
             unsupportedSchemasBySchemaId = new ConcurrentDictionary<int, global::Avro.Schema>();
 
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
@@ -49,7 +48,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
             if (deserializer != null)
             {
-                return await deserializer(data, isNull, context);
+                return await deserializer.DeserializeAsync(data, isNull, context);
             }
 
             if (unsupportedSchemasBySchemaId.TryGetValue(writerSchemaId, out var unsupportedSchema))
@@ -69,7 +68,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             };
         }
 
-        private Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetDeserializers(IEnumerable<Type> specificRecordTypes, AvroDeserializerConfig avroDeserializerConfig)
+        private Dictionary<string, IAsyncDeserializer<ISpecificRecord>> GetDeserializers(IEnumerable<Type> specificRecordTypes, AvroDeserializerConfig avroDeserializerConfig)
         {
             return specificRecordTypes.ToDictionary(x => GetReaderSchema(x).Fullname, x => CreateDeserializer(x, avroDeserializerConfig));
         }
@@ -79,36 +78,14 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
         }
 
-        private Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>> CreateDeserializer(Type specificType, AvroDeserializerConfig avroDeserializerConfig)
+        private IAsyncDeserializer<ISpecificRecord> CreateDeserializer(Type specificType, AvroDeserializerConfig avroDeserializerConfig)
         {
-            var constructedDeserializerType = typeof(AvroDeserializer<>).MakeGenericType(specificType);
-            var deserializerInstance = Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
-            var openGenericDeserializeMethod = typeof(MultiSchemaAvroDeserializer).GetMethod(nameof(DeserializeAsync), BindingFlags.Static | BindingFlags.NonPublic);
-            var constructedDeserializeMethod = openGenericDeserializeMethod.MakeGenericMethod(specificType);
-
-            var parameters = constructedDeserializeMethod.GetParameters().Select(x =>
-            {
-                if (x.ParameterType.IsGenericType && x.ParameterType.GetGenericTypeDefinition().IsAssignableFrom(typeof(IAsyncDeserializer<>)))
-                {
-                    return Expression.Constant(deserializerInstance);
-                }
-
-                return (Expression)Expression.Parameter(x.ParameterType, x.Name);
-
-            }).ToArray();
-
-            var callExpression = Expression.Call(null, constructedDeserializeMethod, parameters);
-
-            var lambda = Expression.Lambda<Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>>
-                (
-                    callExpression,
-                    parameters.OfType<ParameterExpression>()
-                );
-
-            return lambda.Compile();
+            var constructedDeserializerType = typeof(DeserializerImpl<>).MakeGenericType(specificType);
+            var deserializerInstance = (IAsyncDeserializer<ISpecificRecord>)Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
+            return deserializerInstance;
         }
 
-        private async Task<Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetDeserializerBySchemaId(int schemaId)
+        private async Task<IAsyncDeserializer<ISpecificRecord>> GetDeserializerBySchemaId(int schemaId)
         {
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
             {
@@ -149,9 +126,19 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return writerSchemaId;
         }
 
-        private static async Task<ISpecificRecord> DeserializeAsync<TSpecific>(IAsyncDeserializer<TSpecific> deserializer, ReadOnlyMemory<byte> message, bool isNull, SerializationContext context) where TSpecific : ISpecificRecord
+        private class DeserializerImpl<T> : IAsyncDeserializer<ISpecificRecord> where T: ISpecificRecord
         {
-            return await deserializer.DeserializeAsync(message, isNull, context);
+            private readonly AvroDeserializer<T> avroDeserializer;
+
+            public DeserializerImpl(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+            {
+                avroDeserializer = new AvroDeserializer<T>(schemaRegistryClient, avroDeserializerConfig);
+            }
+
+            public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
+            {
+                return await avroDeserializer.DeserializeAsync(data, isNull, context);
+            }
         }
     }
 }
