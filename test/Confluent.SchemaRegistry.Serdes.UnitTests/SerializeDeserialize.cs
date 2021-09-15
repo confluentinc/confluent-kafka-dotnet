@@ -156,7 +156,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public void ISpecificRecord_MultiSchemaDeserializer()
         {
             var serializer = new AvroSerializer<ISpecificRecord>(schemaRegistryClient);
-            var deserializer = new MultiSchemaAvroDeserializer(new []{ typeof(User) }, schemaRegistryClient);
+            var deserializer = new MultiSchemaAvroDeserializer(schemaRegistryClient);
 
             var user = new User
             {
@@ -214,8 +214,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public void Multiple_ISpecificRecords_MultiSchemaDeserializer()
         {
             var serializer = new AvroSerializer<ISpecificRecord>(schemaRegistryClient);
-            IReadOnlyCollection<Type> TypeResolver() => Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(ISpecificRecord).IsAssignableFrom(t)).ToArray();
-            var deserializer = new MultiSchemaAvroDeserializer(TypeResolver, schemaRegistryClient);
+            var deserializer = new MultiSchemaAvroDeserializer(schemaRegistryClient);
 
             var user = new User
             {

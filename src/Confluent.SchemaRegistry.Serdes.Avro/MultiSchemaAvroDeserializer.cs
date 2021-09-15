@@ -18,23 +18,42 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
         private readonly ConcurrentDictionary<int, global::Avro.Schema> unsupportedSchemasBySchemaId;
         private readonly ISchemaRegistryClient schemaRegistryClient;
 
-        public MultiSchemaAvroDeserializer(Func<IReadOnlyCollection<Type>> typeResolver, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+        public MultiSchemaAvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+            : this(AppDomain.CurrentDomain
+                  .GetAssemblies()
+                  .SelectMany(a => a.GetTypes())
+                  .Where(t => typeof(ISpecificRecord).IsAssignableFrom(t) && GetSchema(t) != null),
+                   schemaRegistryClient,
+                   avroDeserializerConfig)
+        {
+        }
+
+        public MultiSchemaAvroDeserializer(Func<IEnumerable<Type>> typeResolver, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
             : this((typeResolver ?? throw new ArgumentNullException(nameof(typeResolver)))(),
                    schemaRegistryClient,
                    avroDeserializerConfig)
         {
         }
 
-        public MultiSchemaAvroDeserializer(IReadOnlyCollection<Type> types, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+        public MultiSchemaAvroDeserializer(IEnumerable<Type> types, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
         {
-            deserializersBySchemaId = new ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>>();
-            unsupportedSchemasBySchemaId = new ConcurrentDictionary<int, global::Avro.Schema>();
-
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
 
-            deserializersBySchemaName = types?.Count > 0 && types.All(t => typeof(ISpecificRecord).IsAssignableFrom(t)) 
-                ? GetDeserializers(types, avroDeserializerConfig) 
-                : throw new ArgumentOutOfRangeException(nameof(types));
+            var typeArray = (types ?? throw new ArgumentNullException(nameof(types))).ToArray();
+
+            if(typeArray.Length == 0)
+            {
+                throw new ArgumentException("Type collection must contain at least one item.", nameof(types));
+            }
+
+            if (!typeArray.All(t => typeof(ISpecificRecord).IsAssignableFrom(t) && GetSchema(t) != null))
+            {
+                throw new ArgumentOutOfRangeException(nameof(types));
+            }
+            
+            deserializersBySchemaId = new ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>>();
+            unsupportedSchemasBySchemaId = new ConcurrentDictionary<int, global::Avro.Schema>();
+            deserializersBySchemaName = GetDeserializers(typeArray, avroDeserializerConfig);
         }
 
         public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
@@ -70,12 +89,12 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private Dictionary<string, IAsyncDeserializer<ISpecificRecord>> GetDeserializers(IEnumerable<Type> specificRecordTypes, AvroDeserializerConfig avroDeserializerConfig)
         {
-            return specificRecordTypes.ToDictionary(x => GetReaderSchema(x).Fullname, x => CreateDeserializer(x, avroDeserializerConfig));
+            return specificRecordTypes.ToDictionary(t => GetSchema(t).Fullname, t => CreateDeserializer(t, avroDeserializerConfig));
         }
 
-        private static global::Avro.Schema GetReaderSchema(IReflect type)
+        private static global::Avro.Schema GetSchema(IReflect type)
         {
-            return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+            return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
 
         private IAsyncDeserializer<ISpecificRecord> CreateDeserializer(Type specificType, AvroDeserializerConfig avroDeserializerConfig)
