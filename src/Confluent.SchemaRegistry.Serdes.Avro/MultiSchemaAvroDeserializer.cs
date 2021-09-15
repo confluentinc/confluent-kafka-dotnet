@@ -16,7 +16,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
     {
         private readonly Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> deserializersBySchemaName;
         private readonly ConcurrentDictionary<int, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> deserializersBySchemaId;
-        private readonly ConcurrentDictionary<int, NotDeserializedRecord> unsupportedSchemaIds;
+        private readonly ConcurrentDictionary<int, global::Avro.Schema> unsupportedSchemasBySchemaId;
         private readonly ISchemaRegistryClient schemaRegistryClient;
         private readonly AvroDeserializerConfig avroDeserializerConfig;
 
@@ -30,7 +30,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
         public MultiSchemaAvroDeserializer(IReadOnlyCollection<Type> types, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
         {
             deserializersBySchemaId = new ConcurrentDictionary<int, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>>();
-            unsupportedSchemaIds = new ConcurrentDictionary<int, NotDeserializedRecord>();
+            unsupportedSchemasBySchemaId = new ConcurrentDictionary<int, global::Avro.Schema>();
 
             this.schemaRegistryClient = schemaRegistryClient ?? throw new ArgumentNullException(nameof(schemaRegistryClient));
             this.avroDeserializerConfig = avroDeserializerConfig;
@@ -54,9 +54,9 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 return await deserializer(data, isNull, context);
             }
 
-            if (unsupportedSchemaIds.TryGetValue(schemaId, out var unsupportedSchema))
+            if (unsupportedSchemasBySchemaId.TryGetValue(schemaId, out var unsupportedSchema))
             {
-                return new NotDeserializedRecord(unsupportedSchema.Schema, unsupportedSchema.SchemaId)
+                return new NotDeserializedRecord(unsupportedSchema, schemaId)
                 {
                     Data = data
                 };
@@ -114,7 +114,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 return deserializer;
             }
 
-            if (unsupportedSchemaIds.ContainsKey(schemaId))
+            if (unsupportedSchemasBySchemaId.ContainsKey(schemaId))
             {
                 return null;
             }
@@ -128,7 +128,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             }
             else
             {
-                unsupportedSchemaIds[schemaId] = new NotDeserializedRecord(avroSchema, schemaId);
+                unsupportedSchemasBySchemaId[schemaId] = avroSchema;
             }
 
             return deserializer;
