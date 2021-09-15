@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             this.avroDeserializerConfig = avroDeserializerConfig;
 
             deserializersBySchemaName = types?.Count > 0 && types.All(t => typeof(ISpecificRecord).IsAssignableFrom(t)) 
-                ? GetSpecificDeserializers(types, schemaRegistryClient) 
+                ? GetDeserializers(types, schemaRegistryClient) 
                 : throw new ArgumentOutOfRangeException(nameof(types));
         }
 
@@ -45,32 +45,32 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             if (data.Length < 5)
                 return new NotDeserializedRecord { Data = data };
 
-            var schemaId = GetWriterSchemaId(data);
+            var writerSchemaId = GetWriterSchemaId(data);
 
-            var deserializer = await GetSpecificDeserializer(schemaId);
+            var deserializer = await GetDeserializerBySchemaId(writerSchemaId);
 
             if (deserializer != null)
             {
                 return await deserializer(data, isNull, context);
             }
 
-            if (unsupportedSchemasBySchemaId.TryGetValue(schemaId, out var unsupportedSchema))
+            if (unsupportedSchemasBySchemaId.TryGetValue(writerSchemaId, out var unsupportedSchema))
             {
-                return new NotDeserializedRecord(unsupportedSchema, schemaId)
+                return new NotDeserializedRecord(unsupportedSchema, writerSchemaId)
                 {
                     Data = data
                 };
             }
 
-            return new NotDeserializedRecord(null, schemaId)
+            return new NotDeserializedRecord(null, writerSchemaId)
             {
                 Data = data
             };
         }
 
-        private Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetSpecificDeserializers(IReadOnlyCollection<Type> specificRecordTypes, ISchemaRegistryClient schemaRegistry)
+        private Dictionary<string, Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetDeserializers(IEnumerable<Type> specificRecordTypes, ISchemaRegistryClient schemaRegistry)
         {
-            return specificRecordTypes.ToDictionary(x => GetReaderSchema(x).Fullname, x => CreateSpecificDeserializer(x, schemaRegistry));
+            return specificRecordTypes.ToDictionary(x => GetReaderSchema(x).Fullname, x => CreateDeserializer(x, schemaRegistry));
         }
 
         private static global::Avro.Schema GetReaderSchema(IReflect type)
@@ -78,7 +78,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static).GetValue(null);
         }
 
-        private Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>> CreateSpecificDeserializer(Type specificType, ISchemaRegistryClient schemaRegistryClient)
+        private Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>> CreateDeserializer(Type specificType, ISchemaRegistryClient schemaRegistryClient)
         {
             var constructedDeserializerType = typeof(AvroDeserializer<>).MakeGenericType(specificType);
             var deserializerInstance = Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
@@ -107,7 +107,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return lambda.Compile();
         }
 
-        private async Task<Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetSpecificDeserializer(int schemaId)
+        private async Task<Func<ReadOnlyMemory<byte>, bool, SerializationContext, Task<ISpecificRecord>>> GetDeserializerBySchemaId(int schemaId)
         {
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
             {
