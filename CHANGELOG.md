@@ -1,3 +1,18 @@
+# 1.8.0-RC3
+
+- References librdkafka.redist 1.8.0-RC3. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.8.0-RC3)
+for a complete list of changes, enhancements, fixes and upgrade considerations.
+- Added the `UseLatestVersion` configuration property to the Protobuf, JSON Schema and Avro serdes ([rayokota](https://github.com/jerive)).
+
+## Fixes
+
+- **Breaking Change:** Updated the message framing format used by the Protobuf serdes to be compatible with the Java Protobuf serdes (message
+indices now use zigzag encoding). To disable, set the `UseDeprecatedFormat` configuration property to `true`. ([rayokota](https://github.com/jerive)).
+
+## Security
+
+
+
 # 1.7.0
 
 ## Enhancements
