@@ -1,3 +1,23 @@
+# 1.8.0
+
+- References librdkafka.redist 1.8.0. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.8.0)
+for a complete list of changes, enhancements, fixes and upgrade considerations.
+- Added the `UseLatestVersion` configuration property to the Protobuf, JSON Schema and Avro serdes ([rayokota](https://github.com/rayokota)).
+
+## Fixes
+
+- **Breaking Change:** Updated the message framing format used by the Protobuf serdes (`ProtobufSerializer` and `ProtobufDeserializer`) to be
+compatible with the Java Protobuf serdes (message indices now use zigzag encoding). Note: This framing encodes schema metadata, enabling
+integration with Confluent Schema Registry. To disable, set the `UseDeprecatedFormat` configuration property to `true`.
+([rayokota](https://github.com/rayokota)).
+
+## Security
+
+- Upgraded the bundled zlib version from 1.2.8 to 1.2.11 in the librdkafka.redist NuGet package. The updated zlib version fixes
+CVEs: CVE-2016-9840, CVE-2016-9841, CVE-2016-9842, CVE-2016-9843 See https://github.com/edenhill/librdkafka/issues/2934 for more information.
+
+
+
 # 1.7.0
 
 ## Enhancements
