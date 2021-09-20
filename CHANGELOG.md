@@ -1,3 +1,10 @@
+# 1.8.1
+
+## Enhancements 
+
+- Updated `NJsonSchema` to v10.5.2.
+
+
 # 1.8.0
 
 - References librdkafka.redist 1.8.0. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.8.0)
