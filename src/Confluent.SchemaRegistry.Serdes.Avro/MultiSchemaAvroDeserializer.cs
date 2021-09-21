@@ -82,7 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private IAsyncDeserializer<ISpecificRecord> CreateDeserializer(Type specificType, AvroDeserializerConfig avroDeserializerConfig)
         {
-            var constructedDeserializerType = typeof(DeserializerImpl<>).MakeGenericType(specificType);
+            var constructedDeserializerType = typeof(DeserializerWrapper<>).MakeGenericType(specificType);
             var deserializerInstance = (IAsyncDeserializer<ISpecificRecord>)Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
             return deserializerInstance;
         }
@@ -119,11 +119,11 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return writerSchemaId;
         }
 
-        private class DeserializerImpl<T> : IAsyncDeserializer<ISpecificRecord> where T: ISpecificRecord
+        private class DeserializerWrapper<T> : IAsyncDeserializer<ISpecificRecord> where T: ISpecificRecord
         {
             private readonly AvroDeserializer<T> avroDeserializer;
 
-            public DeserializerImpl(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
+            public DeserializerWrapper(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
             {
                 avroDeserializer = new AvroDeserializer<T>(schemaRegistryClient, avroDeserializerConfig);
             }
