@@ -17,12 +17,10 @@
 // Disable obsolete warnings. ConstructValueSubjectName is still used a an internal implementation detail.
 #pragma warning disable CS0618
 
-using System;
 using Moq;
 using Xunit;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Avro.Specific;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
