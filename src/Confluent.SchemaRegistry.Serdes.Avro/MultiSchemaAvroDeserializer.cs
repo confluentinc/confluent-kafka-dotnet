@@ -57,7 +57,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             }
 
             deserializersBySchemaId = new ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>>();
-            deserializersBySchemaName = GetDeserializers(typeArray, avroDeserializerConfig);
+            deserializersBySchemaName = typeArray.ToDictionary(t => GetSchema(t).Fullname, t => CreateDeserializer(t, avroDeserializerConfig));
         }
 
         public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
@@ -70,26 +70,15 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return deserializer == null ? null : await deserializer.DeserializeAsync(data, isNull, context);
         }
 
-        private Dictionary<string, IAsyncDeserializer<ISpecificRecord>> GetDeserializers(IEnumerable<Type> specificRecordTypes, AvroDeserializerConfig avroDeserializerConfig)
-        {
-            return specificRecordTypes.ToDictionary(t => GetSchema(t).Fullname, t => CreateDeserializer(t, avroDeserializerConfig));
-        }
-
-        private static global::Avro.Schema GetSchema(IReflect type)
-        {
-            return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
-        }
-
         private IAsyncDeserializer<ISpecificRecord> CreateDeserializer(Type specificType, AvroDeserializerConfig avroDeserializerConfig)
         {
             var constructedDeserializerType = typeof(DeserializerWrapper<>).MakeGenericType(specificType);
-            var deserializerInstance = (IAsyncDeserializer<ISpecificRecord>)Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
-            return deserializerInstance;
+            return (IAsyncDeserializer<ISpecificRecord>)Activator.CreateInstance(constructedDeserializerType, schemaRegistryClient, avroDeserializerConfig);
         }
 
         private async Task<IAsyncDeserializer<ISpecificRecord>> GetDeserializer(ReadOnlyMemory<byte> data)
         {
-            var schemaId = GetWriterSchemaId(data);
+            var schemaId = GetSchemaId(data);
 
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
             {
@@ -105,7 +94,12 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return deserializer;
         }
 
-        private static int GetWriterSchemaId(ReadOnlyMemory<byte> data)
+        private static global::Avro.Schema GetSchema(IReflect type)
+        {
+            return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+        }
+
+        private static int GetSchemaId(ReadOnlyMemory<byte> data)
         {
             var firstFiveBytes = data.Span.Slice(0, 5);
 
@@ -114,9 +108,9 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {firstFiveBytes[0]}, expecting 0");
             }
 
-            var writerSchemaId = BinaryPrimitives.ReadInt32BigEndian(firstFiveBytes.Slice(1));
+            var schemaId = BinaryPrimitives.ReadInt32BigEndian(firstFiveBytes.Slice(1));
 
-            return writerSchemaId;
+            return schemaId;
         }
 
         private class DeserializerWrapper<T> : IAsyncDeserializer<ISpecificRecord> where T: ISpecificRecord
