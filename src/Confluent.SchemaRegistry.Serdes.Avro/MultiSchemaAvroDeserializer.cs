@@ -62,9 +62,6 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
         {
-            if (data.Length < 5)
-                return null;
-
             var deserializer = await GetDeserializer(data);
 
             return deserializer == null ? null : await deserializer.DeserializeAsync(data, isNull, context);
@@ -78,6 +75,11 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private async Task<IAsyncDeserializer<ISpecificRecord>> GetDeserializer(ReadOnlyMemory<byte> data)
         {
+            if (data.Length < 5)
+            {
+                throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {data.Length} bytes");
+            }
+
             var schemaId = GetSchemaId(data);
 
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
