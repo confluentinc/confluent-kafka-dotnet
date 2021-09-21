@@ -15,7 +15,6 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
     {
         private readonly Dictionary<string, IAsyncDeserializer<ISpecificRecord>> deserializersBySchemaName;
         private readonly ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>> deserializersBySchemaId;
-        private readonly ConcurrentDictionary<int, global::Avro.Schema> unsupportedSchemasBySchemaId;
         private readonly ISchemaRegistryClient schemaRegistryClient;
 
         public MultiSchemaAvroDeserializer(ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
@@ -58,39 +57,17 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             }
 
             deserializersBySchemaId = new ConcurrentDictionary<int, IAsyncDeserializer<ISpecificRecord>>();
-            unsupportedSchemasBySchemaId = new ConcurrentDictionary<int, global::Avro.Schema>();
             deserializersBySchemaName = GetDeserializers(typeArray, avroDeserializerConfig);
         }
 
         public async Task<ISpecificRecord> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
         {
             if (data.Length < 5)
-                return new NotDeserializedRecord { Data = data };
+                return null;
 
-            var writerSchemaId = GetWriterSchemaId(data);
+            var deserializer = await GetDeserializer(data);
 
-            var deserializer = await GetDeserializerBySchemaId(writerSchemaId);
-
-            if (deserializer != null)
-            {
-                return await deserializer.DeserializeAsync(data, isNull, context);
-            }
-
-            if (unsupportedSchemasBySchemaId.TryGetValue(writerSchemaId, out var unsupportedSchema))
-            {
-                return new NotDeserializedRecord
-                {
-                    Data = data,
-                    Schema = unsupportedSchema,
-                    SchemaId = writerSchemaId
-                };
-            }
-
-            return new NotDeserializedRecord
-            {
-                Data = data,
-                SchemaId = writerSchemaId
-            };
+            return deserializer == null ? null : await deserializer.DeserializeAsync(data, isNull, context);
         }
 
         private Dictionary<string, IAsyncDeserializer<ISpecificRecord>> GetDeserializers(IEnumerable<Type> specificRecordTypes, AvroDeserializerConfig avroDeserializerConfig)
@@ -110,29 +87,20 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return deserializerInstance;
         }
 
-        private async Task<IAsyncDeserializer<ISpecificRecord>> GetDeserializerBySchemaId(int schemaId)
+        private async Task<IAsyncDeserializer<ISpecificRecord>> GetDeserializer(ReadOnlyMemory<byte> data)
         {
+            var schemaId = GetWriterSchemaId(data);
+
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
             {
                 return deserializer;
             }
 
-            if (unsupportedSchemasBySchemaId.ContainsKey(schemaId))
-            {
-                return null;
-            }
-
             var confluentSchema = await schemaRegistryClient.GetSchemaAsync(schemaId);
             var avroSchema = global::Avro.Schema.Parse(confluentSchema.SchemaString);
 
-            if(deserializersBySchemaName.TryGetValue(avroSchema.Fullname, out deserializer))
-            {
-                deserializersBySchemaId[schemaId] = deserializer;
-            }
-            else
-            {
-                unsupportedSchemasBySchemaId[schemaId] = avroSchema;
-            }
+            _ = deserializersBySchemaName.TryGetValue(avroSchema.Fullname, out deserializer);
+            _ = deserializersBySchemaId.TryAdd(schemaId, deserializer);
 
             return deserializer;
         }
