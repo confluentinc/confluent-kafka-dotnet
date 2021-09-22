@@ -80,7 +80,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
                 throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {data.Length} bytes");
             }
 
-            var schemaId = GetSchemaId(data);
+            var schemaId = GetSchemaId(data.Span);
 
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
             {
@@ -101,16 +101,14 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
             return (global::Avro.Schema)type.GetField("_SCHEMA", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
 
-        private static int GetSchemaId(ReadOnlyMemory<byte> data)
+        private static int GetSchemaId(ReadOnlySpan<byte> data)
         {
-            var firstFiveBytes = data.Span.Slice(0, 5);
-
-            if (firstFiveBytes[0] != Constants.MagicByte)
+            if (data[0] != Constants.MagicByte)
             {
-                throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {firstFiveBytes[0]}, expecting 0");
+                throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {data[0]}, expecting 0");
             }
 
-            var schemaId = BinaryPrimitives.ReadInt32BigEndian(firstFiveBytes.Slice(1));
+            var schemaId = BinaryPrimitives.ReadInt32BigEndian(data.Slice(1));
 
             return schemaId;
         }
