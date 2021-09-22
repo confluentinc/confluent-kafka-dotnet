@@ -105,7 +105,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
             if (data[0] != Constants.MagicByte)
             {
-                throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {data[0]}, expecting 0");
+                throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {data[0]}, expecting {Constants.MagicByte}");
             }
 
             var schemaId = BinaryPrimitives.ReadInt32BigEndian(data.Slice(1));
