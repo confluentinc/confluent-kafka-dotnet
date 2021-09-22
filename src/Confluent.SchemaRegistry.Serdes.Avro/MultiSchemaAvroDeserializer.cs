@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
         }
 
         public MultiSchemaAvroDeserializer(IEnumerable<Type> types, ISchemaRegistryClient schemaRegistryClient, AvroDeserializerConfig avroDeserializerConfig = null)
-            :this(schemaRegistryClient, types, avroDeserializerConfig)
+            : this(schemaRegistryClient, types, avroDeserializerConfig)
         {   
         }
 
