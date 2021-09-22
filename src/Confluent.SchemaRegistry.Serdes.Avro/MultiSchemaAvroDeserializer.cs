@@ -75,11 +75,6 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private async Task<IAsyncDeserializer<ISpecificRecord>> GetDeserializer(ReadOnlyMemory<byte> data)
         {
-            if (data.Length < 5)
-            {
-                throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {data.Length} bytes");
-            }
-
             var schemaId = GetSchemaId(data.Span);
 
             if (deserializersBySchemaId.TryGetValue(schemaId, out var deserializer))
@@ -103,6 +98,11 @@ namespace Confluent.SchemaRegistry.Serdes.Avro
 
         private static int GetSchemaId(ReadOnlySpan<byte> data)
         {
+            if (data.Length < 5)
+            {
+                throw new InvalidDataException($"Expecting data framing of length 5 bytes or more but total data size is {data.Length} bytes");
+            }
+
             if (data[0] != Constants.MagicByte)
             {
                 throw new InvalidDataException($"Expecting data with Confluent Schema Registry framing. Magic byte was {data[0]}, expecting 0");
