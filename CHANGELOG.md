@@ -4,6 +4,7 @@
 
 - Updated `NJsonSchema` to v10.5.2.
 
+#hello
 
 # 1.8.0
 
