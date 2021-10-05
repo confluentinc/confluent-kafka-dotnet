@@ -248,6 +248,11 @@ All `Consume` errors will result in a `ConsumeException` with further informatio
 available via the `Error` and `ConsumeResult` fields.
 
 
+### 3rd Party
+
+There are numerous libraries that expand on the capabilities provided by Confluent.Kafka, or use Confluent.Kafka
+to integrate with Kafka. For more information, refer to the [3rd Party Libraries](3RD_PARTY.md) page.
+
 ### Confluent Cloud
 
 The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
