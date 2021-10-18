@@ -551,9 +551,9 @@ namespace Confluent.Kafka.Impl
             {
                 TrySetDelegates(new List<Type>
                 {
-                    typeof(NativeMethods.NativeMethods_Centos7),
-                    typeof(NativeMethods.NativeMethods),
-                    typeof(NativeMethods.NativeMethods_Centos6),
+                    // typeof(NativeMethods.NativeMethods_Centos7),
+                    // typeof(NativeMethods.NativeMethods),
+                    // typeof(NativeMethods.NativeMethods_Centos6),
                     typeof(NativeMethods.NativeMethods_Alpine)
                 });
             }
