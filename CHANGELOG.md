@@ -1,3 +1,12 @@
+# 1.8.2
+
+# Enhancements and Fixes
+
+- References librdkafka.redist 1.8.2. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.8.2)
+for a complete list of changes, enhancements, fixes and upgrade considerations.
+- Added the SslCaPem configuration property to specify a CA certificate using a PEM string.
+
+
 # 1.8.1
 
 ## Enhancements 
