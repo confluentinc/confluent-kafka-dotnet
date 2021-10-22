@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.8.0-RC3 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.8.2-RC5 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -693,6 +693,14 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public string SslCaLocation { get { return Get("ssl.ca.location"); } set { this.SetObject("ssl.ca.location", value); } }
+
+        /// <summary>
+        ///     CA certificate string (PEM format) for verifying the broker's key.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SslCaPem { get { return Get("ssl.ca.pem"); } set { this.SetObject("ssl.ca.pem", value); } }
 
         /// <summary>
         ///     Comma-separated list of Windows Certificate stores to load CA certificates from. Certificates will be loaded in the same order as stores are specified. If no certificates can be loaded from any of the specified stores an error is logged and the OpenSSL library's default CA location is used instead. Store names are typically one or more of: MY, Root, Trust, CA.
