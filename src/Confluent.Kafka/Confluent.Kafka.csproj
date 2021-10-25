@@ -4,10 +4,10 @@
     <Authors>Confluent Inc.;Andreas Heider</Authors>
     <Description>Confluent's .NET Client for Apache Kafka</Description>
     <Copyright>Copyright 2016-2020 Confluent Inc., Andreas Heider</Copyright>
-    <PackageProjectUrl>https://github.com/shurivich/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent_logo.png</PackageIconUrl>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;librdkafka</PackageTags>
     <PackageId>Confluent.Kafka</PackageId>
     <Title>Confluent.Kafka</Title>
@@ -18,7 +18,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.Kafka.snk</AssemblyOriginatorKeyFile>
-    <Version>1.8.1.666</Version>
   </PropertyGroup>
 
   <ItemGroup>
