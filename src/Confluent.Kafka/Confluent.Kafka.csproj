@@ -18,9 +18,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.Kafka.snk</AssemblyOriginatorKeyFile>
-    <Version>1.8.2.777</Version>
-    <AssemblyVersion>1.8.2.777</AssemblyVersion>
-    <FileVersion>1.8.2.777</FileVersion>
+    <Version>1.8.1.666</Version>
   </PropertyGroup>
 
   <ItemGroup>
