@@ -549,13 +549,28 @@ namespace Confluent.Kafka.Impl
             }
             else
             {
-                TrySetDelegates(new List<Type>
+                var delegates = new List<Type>();
+
+                var osName = PlatformApis.GetOSName();
+                if (osName.Equals("centos", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    // typeof(NativeMethods.NativeMethods_Centos7),
-                    // typeof(NativeMethods.NativeMethods),
-                    // typeof(NativeMethods.NativeMethods_Centos6),
-                    typeof(NativeMethods.NativeMethods_Alpine)
-                });
+                    var osVersion = PlatformApis.GetOSVersion();
+                    if (osVersion.Equals("6"))
+                    {
+                        delegates.Add(typeof(NativeMethods.NativeMethods_Centos6));
+                    }
+                    else if (osVersion.Equals("7"))
+                    {
+                        delegates.Add(typeof(NativeMethods.NativeMethods_Centos7));
+                    }
+                }
+                else if (osName.Equals("alpine", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    delegates.Add(typeof(NativeMethods.NativeMethods_Alpine));
+                }
+
+                delegates.Add(typeof(NativeMethods.NativeMethods));
+                TrySetDelegates(delegates);
             }
         }
 
