@@ -552,7 +552,7 @@ namespace Confluent.Kafka.Impl
                 var delegates = new List<Type>();
 
                 var osName = PlatformApis.GetOSName();
-                if (osName.Equals("centos", StringComparison.InvariantCultureIgnoreCase))
+                if (osName.Equals("centos", StringComparison.OrdinalIgnoreCase))
                 {
                     var osVersion = PlatformApis.GetOSVersion();
                     if (osVersion.Equals("6"))
@@ -564,7 +564,7 @@ namespace Confluent.Kafka.Impl
                         delegates.Add(typeof(NativeMethods.NativeMethods_Centos7));
                     }
                 }
-                else if (osName.Equals("alpine", StringComparison.InvariantCultureIgnoreCase))
+                else if (osName.Equals("alpine", StringComparison.OrdinalIgnoreCase))
                 {
                     delegates.Add(typeof(NativeMethods.NativeMethods_Alpine));
                 }
