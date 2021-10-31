@@ -157,7 +157,7 @@ namespace Confluent.Kafka.Impl
             _headers_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_headers_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _headers_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_headers_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _header_add = (Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_header_add").CreateDelegate(typeof(Func<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, ErrorCode>));
-            _header_get_all = (Librdkafka.headerGetAllDelegate)methods.Single(m => m.Name == "rd_kafka_header_get_all").CreateDelegate(typeof(headerGetAllDelegate));
+            _header_get_all = (headerGetAllDelegate)methods.Single(m => m.Name == "rd_kafka_header_get_all").CreateDelegate(typeof(headerGetAllDelegate));
             _message_timestamp = (messageTimestampDelegate)methods.Single(m => m.Name == "rd_kafka_message_timestamp").CreateDelegate(typeof(messageTimestampDelegate));
             _message_headers = (messageHeadersDelegate)methods.Single(m => m.Name == "rd_kafka_message_headers").CreateDelegate(typeof(messageHeadersDelegate));
             _message_status = (Func<IntPtr, PersistenceStatus>)methods.Single(m => m.Name == "rd_kafka_message_status").CreateDelegate(typeof(Func<IntPtr, PersistenceStatus>));
@@ -563,7 +563,6 @@ namespace Confluent.Kafka.Impl
                     delegates.Add(typeof(NativeMethods.NativeMethods_Centos6));
                 }
 
-                delegates.Add(typeof(NativeMethods.NativeMethods));
                 TrySetDelegates(delegates);
             }
         }
