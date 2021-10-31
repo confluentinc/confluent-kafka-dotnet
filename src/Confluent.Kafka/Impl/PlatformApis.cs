@@ -3,6 +3,13 @@ using System.IO;
 
 namespace Confluent.Kafka.Impl
 {
+    /// <summary>
+    /// Based on Internal.Microsoft.DotNet.PlatformAbstractions.Native.PlatformApis
+    /// https://github.com/xunit/visualstudio.xunit/blob/613251df49602256c49001501c71e1f42bc82df9/src/xunit.runner.visualstudio/Utility/AssemblyResolution/Microsoft.DotNet.PlatformAbstractions/Native/PlatformApis.cs
+    /// Code is not consumed directly because this would require adding dependency for Microsoft.DotNet.PlatformAbstractions.
+    /// Support for this package was removed in .Net 5:
+    /// https://docs.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/5.0/platformabstractions-package-removed
+    /// </summary>
     class PlatformApis
     {
         private static readonly Lazy<PlatformApis.DistroInfo> _distroInfo = new Lazy<PlatformApis.DistroInfo>(new Func<PlatformApis.DistroInfo>(PlatformApis.LoadDistroInfo));
