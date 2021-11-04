@@ -48,16 +48,18 @@ namespace Confluent.SchemaRegistry
         ///     HttpClient instances corresponding to each provided schema registry Uri.
         /// </summary>
         private readonly List<HttpClient> clients;
+        /// <summary>
+        ///     HTTP request authenticator
+        /// </summary>
+        private readonly IHttpAuthenticator httpAuthenticator;
 
 
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        public RestService(string schemaRegistryUrl, int timeoutMs, IHttpAuthenticator authenticator, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
-            var authorizationHeader = username != null && password != null
-                ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
-                : null;
+            httpAuthenticator = authenticator;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
@@ -73,8 +75,6 @@ namespace Confluent.SchemaRegistry
                     {
                         client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
                     }
-
-                    if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
                     return client;
                 })
                 .ToList();
@@ -282,6 +282,8 @@ namespace Confluent.SchemaRegistry
                 content.Headers.ContentType.CharSet = string.Empty;
                 request.Content = content;
             }
+            if (httpAuthenticator != null)
+                request.Headers.Authorization = httpAuthenticator.GetAuthenticationHeader();
             return request;
         }
 

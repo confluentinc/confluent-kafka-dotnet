@@ -128,7 +128,12 @@ namespace Confluent.SchemaRegistry
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
+        /// <param name="authenticator">
+        ///     The client authenticator
+        ///
+        ///     default: null
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IHttpAuthenticator authenticator = null)
         {
             if (config == null)
             {
@@ -193,6 +198,9 @@ namespace Confluent.SchemaRegistry
             {
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
+            if (username != null && password != null && authenticator == null)
+                authenticator = new BasicHttpAuthenticator(username, password);
+
 
             foreach (var property in config)
             {
@@ -222,7 +230,7 @@ namespace Confluent.SchemaRegistry
             try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticator, SetSslConfig(config), sslVerify);
         }
 
 
