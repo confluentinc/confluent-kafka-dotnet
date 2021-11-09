@@ -84,17 +84,17 @@ namespace Confluent.SchemaRegistry
             /// <summary>
             ///     File path to CA certificate(s) for verifying the Schema Registry's key. System CA certs will be used if not specified.
             /// </summary>
-            public const string SslCaLocation = "schema.registry.ssl.ca.location";
+            public const string SslCaLocation = "schema.registry.ssl.ca.location";
 
             /// <summary>
             ///     SSL keystore (PKCS#12) location.
             /// </summary>
-            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
+            public const string SslKeystoreLocation = "schema.registry.ssl.keystore.location";
 
             /// <summary>
             ///     SSL keystore (PKCS#12) password.
             /// </summary>
-            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
+            public const string SslKeystorePassword = "schema.registry.ssl.keystore.password";
 
             /// <summary>
             ///     Enable SSL verification. Disabling SSL verification is insecure and should only be done for reasons
@@ -102,7 +102,7 @@ namespace Confluent.SchemaRegistry
             ///
             ///     default: true
             /// </summary>
-            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
+            public const string EnableSslCertificateVerification = "schema.registry.enable.ssl.certificate.verification";
         }
 
         /// <summary>
@@ -120,9 +120,9 @@ namespace Confluent.SchemaRegistry
             }
             set
             {
-                if (value == null) { this.properties.Remove(PropertyNames.SchemaRegistryBasicAuthCredentialsSource); }
-                else if (value == AuthCredentialsSource.UserInfo) { this.properties[PropertyNames.SchemaRegistryBasicAuthCredentialsSource] = "USER_INFO"; }
-                else if (value == AuthCredentialsSource.SaslInherit) { this.properties[PropertyNames.SchemaRegistryBasicAuthCredentialsSource] = "SASL_INHERIT"; }
+                if (value == null) { _properties.Remove(PropertyNames.SchemaRegistryBasicAuthCredentialsSource); }
+                else if (value == AuthCredentialsSource.UserInfo) { _properties[PropertyNames.SchemaRegistryBasicAuthCredentialsSource] = "USER_INFO"; }
+                else if (value == AuthCredentialsSource.SaslInherit) { _properties[PropertyNames.SchemaRegistryBasicAuthCredentialsSource] = "SASL_INHERIT"; }
                 else { throw new NotImplementedException($"Unknown ${PropertyNames.SchemaRegistryBasicAuthCredentialsSource} value: {value}."); }
             }
         }
@@ -134,8 +134,8 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string Url
         {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl); } 
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryUrl, value); }
+            get { return Get(PropertyNames.SchemaRegistryUrl); }
+            set { SetObject(PropertyNames.SchemaRegistryUrl, value); }
         }
 
 
@@ -146,8 +146,8 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public int? RequestTimeoutMs
         {
-            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
+            get { return GetInt(PropertyNames.SchemaRegistryRequestTimeoutMs); }
+            set { SetObject(PropertyNames.SchemaRegistryRequestTimeoutMs, value.ToString()); }
         }
 
         /// <summary>
@@ -156,11 +156,11 @@ namespace Confluent.SchemaRegistry
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public string SslCaLocation
-        {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslCaLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslCaLocation, value.ToString()); }
-        }
+        public string SslCaLocation
+        {
+            get { return Get(PropertyNames.SslCaLocation); }
+            set { SetObject(PropertyNames.SslCaLocation, value.ToString()); }
+        }
 
         /// <summary>
         ///     Path to client's keystore (PKCS#12) used for authentication.
@@ -168,11 +168,11 @@ namespace Confluent.SchemaRegistry
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public string SslKeystoreLocation
-        {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystoreLocation, value.ToString()); }
-        }
+        public string SslKeystoreLocation
+        {
+            get { return Get(PropertyNames.SslKeystoreLocation); }
+            set { SetObject(PropertyNames.SslKeystoreLocation, value.ToString()); }
+        }
 
         /// <summary>
         ///     Client's keystore (PKCS#12) password.
@@ -180,11 +180,11 @@ namespace Confluent.SchemaRegistry
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public string SslKeystorePassword
-        {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SslKeystorePassword); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SslKeystorePassword, value.ToString()); }
-        }
+        public string SslKeystorePassword
+        {
+            get { return Get(PropertyNames.SslKeystorePassword); }
+            set { SetObject(PropertyNames.SslKeystorePassword, value.ToString()); }
+        }
 
         /// <summary>
         ///     Enable/Disable SSL server certificate verification. Only use in contained test/dev environments.
@@ -192,11 +192,11 @@ namespace Confluent.SchemaRegistry
         ///     default: ''
         ///     importance: low
         /// </summary>
-        public bool? EnableSslCertificateVerification
-        {
-            get { return GetBool(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification, value); }
-        }
+        public bool? EnableSslCertificateVerification
+        {
+            get { return GetBool(PropertyNames.EnableSslCertificateVerification); }
+            set { SetObject(PropertyNames.EnableSslCertificateVerification, value); }
+        }
 
         /// <summary>
         ///     Specifies the maximum number of schemas CachedSchemaRegistryClient
@@ -206,8 +206,8 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public int? MaxCachedSchemas
         {
-            get { return GetInt(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryMaxCachedSchemas, value.ToString()); }
+            get { return GetInt(PropertyNames.SchemaRegistryMaxCachedSchemas); }
+            set { SetObject(PropertyNames.SchemaRegistryMaxCachedSchemas, value.ToString()); }
         }
 
 
@@ -216,8 +216,8 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         public string BasicAuthUserInfo
         {
-            get { return Get(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo); }
-            set { SetObject(SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
+            get { return Get(PropertyNames.SchemaRegistryBasicAuthUserInfo); }
+            set { SetObject(PropertyNames.SchemaRegistryBasicAuthUserInfo, value); }
         }
 
 
@@ -232,21 +232,27 @@ namespace Confluent.SchemaRegistry
             get
             {
                 var r = Get(PropertyNames.SchemaRegistryKeySubjectNameStrategy);
-                if (r == null) { return null; }
+                if (r == null)
+                {
+                    return null;
+                }
                 else
                 {
-                    SubjectNameStrategy result;
-                    if (!Enum.TryParse<SubjectNameStrategy>(r, out result))
+                    if (!Enum.TryParse(r, out SubjectNameStrategy result))
+                    {
                         throw new ArgumentException(
                             $"Unknown ${PropertyNames.SchemaRegistryKeySubjectNameStrategy} value: {r}.");
+                    }
                     else
+                    {
                         return result;
+                    }
                 }
             }
             set
             {
-                if (value == null) { this.properties.Remove(PropertyNames.SchemaRegistryKeySubjectNameStrategy); }
-                else { this.properties[PropertyNames.SchemaRegistryKeySubjectNameStrategy] = value.ToString(); }
+                if (value == null) { _properties.Remove(PropertyNames.SchemaRegistryKeySubjectNameStrategy); }
+                else { _properties[PropertyNames.SchemaRegistryKeySubjectNameStrategy] = value.ToString(); }
             }
         }
 
@@ -262,21 +268,27 @@ namespace Confluent.SchemaRegistry
             get
             {
                 var r = Get(PropertyNames.SchemaRegistryValueSubjectNameStrategy);
-                if (r == null) { return null; }
+                if (r == null)
+                {
+                    return null;
+                }
                 else
                 {
-                    SubjectNameStrategy result;
-                    if (!Enum.TryParse<SubjectNameStrategy>(r, out result))
+                    if (!Enum.TryParse(r, out SubjectNameStrategy result))
+                    {
                         throw new ArgumentException(
                             $"Unknown ${PropertyNames.SchemaRegistryValueSubjectNameStrategy} value: {r}.");
+                    }
                     else
+                    {
                         return result;
+                    }
                 }
             }
             set
             {
-                if (value == null) { this.properties.Remove(PropertyNames.SchemaRegistryValueSubjectNameStrategy); }
-                else { this.properties[PropertyNames.SchemaRegistryValueSubjectNameStrategy] = value.ToString(); }
+                if (value == null) { _properties.Remove(PropertyNames.SchemaRegistryValueSubjectNameStrategy); }
+                else { _properties[PropertyNames.SchemaRegistryValueSubjectNameStrategy] = value.ToString(); }
             }
         }
 
@@ -300,11 +312,11 @@ namespace Confluent.SchemaRegistry
         {
             if (val == null)
             {
-                this.properties.Remove(name);
+                _properties.Remove(name);
                 return;
             }
 
-            this.properties[name] = val.ToString();
+            _properties[name] = val.ToString();
         }
 
         /// <summary>
@@ -319,13 +331,13 @@ namespace Confluent.SchemaRegistry
         /// </returns>
         public string Get(string key)
         {
-            if (this.properties.TryGetValue(key, out string val))
+            if (_properties.TryGetValue(key, out string val))
             {
                 return val;
             }
             return null;
         }
-        
+
         /// <summary>
         ///     Gets a configuration property int? value given a key.
         /// </summary>
@@ -357,11 +369,11 @@ namespace Confluent.SchemaRegistry
             if (result == null) { return null; }
             return bool.Parse(result);
         }
-        
+
         /// <summary>
         ///     The configuration properties.
         /// </summary>
-        protected Dictionary<string, string> properties = new Dictionary<string, string>();
+        protected Dictionary<string, string> _properties = new Dictionary<string, string>();
 
         /// <summary>
         ///     	Returns an enumerator that iterates through the property collection.
@@ -369,7 +381,7 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///         An enumerator that iterates through the property collection.
         /// </returns>
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => this.properties.GetEnumerator();
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _properties.GetEnumerator();
 
         /// <summary>
         ///     	Returns an enumerator that iterates through the property collection.
@@ -377,6 +389,6 @@ namespace Confluent.SchemaRegistry
         /// <returns>
         ///         An enumerator that iterates through the property collection.
         /// </returns>
-        IEnumerator IEnumerable.GetEnumerator() => this.properties.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _properties.GetEnumerator();
     }
 }

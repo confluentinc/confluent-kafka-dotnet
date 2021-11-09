@@ -17,7 +17,6 @@
 using System;
 using Confluent.Kafka;
 
-
 namespace Confluent.SchemaRegistry
 {
     /// <summary>

@@ -23,7 +23,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Confluent.SchemaRegistry
 {
@@ -35,46 +35,53 @@ namespace Confluent.SchemaRegistry
     internal class RestService : IRestService
     {
         private readonly List<SchemaReference> EmptyReferencesList = new List<SchemaReference>();
-
-        private static readonly string acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
+        private static readonly string _acceptHeader = string.Join(", ", Versions.PreferredResponseTypes);
 
         /// <summary>
         ///     The index of the last client successfully used (or random if none worked).
         /// </summary>
-        private int lastClientUsed;
-        private object lastClientUsedLock = new object();
+        private int _lastClientUsed;
+        private readonly object _lastClientUsedLock = new object();
 
         /// <summary>
         ///     HttpClient instances corresponding to each provided schema registry Uri.
         /// </summary>
-        private readonly List<HttpClient> clients;
-
+        private readonly List<HttpClient> _clients;
 
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
             var authorizationHeader = username != null && password != null
                 ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
                 : null;
 
-            this.clients = schemaRegistryUrl
+            _clients = schemaRegistryUrl
                 .Split(',')
                 .Select(SanitizeUri)// need http or https - use http if not present.
                 .Select(uri =>
                 {
-                    HttpClient client;
-                    if (certificates.Count > 0)
-                    {
-                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification)) { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                    }
-                    else
-                    {
-                        client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
-                    }
+                    HttpClient client;
+                    if (certificates.Count > 0)
+                    {
+                        client = new HttpClient(CreateHandler(certificates, enableSslCertificateVerification))
+                        {
+                            BaseAddress = new Uri(uri, UriKind.Absolute),
+                            Timeout = TimeSpan.FromMilliseconds(timeoutMs)
+                        };
+                    }
+                    else
+                    {
+                        client = new HttpClient
+                        { 
+                            BaseAddress = new Uri(uri, UriKind.Absolute), 
+                            Timeout = TimeSpan.FromMilliseconds(timeoutMs) 
+                        };
+                    }
 
                     if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
+
                     return client;
                 })
                 .ToList();
@@ -86,18 +93,20 @@ namespace Confluent.SchemaRegistry
             return $"{sanitized.TrimEnd('/')}/";
         }
 
-        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        private static HttpClientHandler CreateHandler(List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
-            var handler = new HttpClientHandler();
-            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+            var handler = new HttpClientHandler
+            {
+                ClientCertificateOptions = ClientCertificateOption.Manual
+            };
 
             if (!enableSslCertificateVerification)
             {
-                handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => { return true; };
+                handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true;
             }
 
-            certificates.ForEach(c => handler.ClientCertificates.Add(c));
-            return handler;
+            certificates.ForEach(certificate => handler.ClientCertificates.Add(certificate));
+            return handler;
         }
 
         private RegisteredSchema SanitizeRegisteredSchema(RegisteredSchema schema)
@@ -155,30 +164,30 @@ namespace Confluent.SchemaRegistry
             bool firstError = true;
 
             int startClientIndex;
-            lock (lastClientUsedLock)
+            lock (_lastClientUsedLock)
             {
-                startClientIndex = this.lastClientUsed;
+                startClientIndex = _lastClientUsed;
             }
 
             int loopIndex = startClientIndex;
             int clientIndex = -1; // prevent uninitialized variable compiler error.
             bool finished = false;
-            for (; loopIndex < clients.Count + startClientIndex && !finished; ++loopIndex)
+            for (; loopIndex < _clients.Count + startClientIndex && !finished; ++loopIndex)
             {
-                clientIndex = loopIndex % clients.Count;
+                clientIndex = loopIndex % _clients.Count;
 
                 try
                 {
-                    response = await clients[clientIndex]
+                    response = await _clients[clientIndex]
                             .SendAsync(createRequest())
                             .ConfigureAwait(continueOnCapturedContext: false);
 
                     if (response.StatusCode == HttpStatusCode.OK ||
                         response.StatusCode == HttpStatusCode.NoContent)
                     {
-                        lock (lastClientUsedLock)
+                        lock (_lastClientUsedLock)
                         {
-                            this.lastClientUsed = clientIndex;
+                            _lastClientUsed = clientIndex;
                         }
 
                         return response;
@@ -192,8 +201,7 @@ namespace Confluent.SchemaRegistry
                     {
                         try
                         {
-                            JObject errorObject = null;
-                            errorObject = JObject.Parse(
+                            var errorObject = JObject.Parse(
                                 await response.Content.ReadAsStringAsync().ConfigureAwait(continueOnCapturedContext: false));
                             message = errorObject.Value<string>("message");
                             errorCode = errorObject.Value<int>("error_code");
@@ -225,10 +233,10 @@ namespace Confluent.SchemaRegistry
                     }
                     catch
                     {
-                        aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode}";
+                        aggregatedErrorMessage += $"[{_clients[clientIndex].BaseAddress}] {response.StatusCode}";
                     }
 
-                    aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
+                    aggregatedErrorMessage += $"[{_clients[clientIndex].BaseAddress}] {response.StatusCode} {errorCode} {message}";
                 }
                 catch (HttpRequestException e)
                 {
@@ -241,7 +249,7 @@ namespace Confluent.SchemaRegistry
                     }
                     firstError = false;
 
-                    aggregatedErrorMessage += $"[{clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
+                    aggregatedErrorMessage += $"[{_clients[clientIndex].BaseAddress}] HttpRequestException: {e.Message}";
                 }
             }
 
@@ -273,12 +281,12 @@ namespace Confluent.SchemaRegistry
 
         private HttpRequestMessage CreateRequest(string endPoint, HttpMethod method, params object[] jsonBody)
         {
-            HttpRequestMessage request = new HttpRequestMessage(method, endPoint);
-            request.Headers.Add("Accept", acceptHeader);
+            var request = new HttpRequestMessage(method, endPoint);
+            request.Headers.Add("Accept", _acceptHeader);
             if (jsonBody.Length != 0)
             {
                 string stringContent = string.Join("\n", jsonBody.Select(x => JsonConvert.SerializeObject(x)));
-                var content = new StringContent(stringContent, System.Text.Encoding.UTF8, Versions.SchemaRegistry_V1_JSON);
+                var content = new StringContent(stringContent, Encoding.UTF8, Versions.SchemaRegistry_V1_JSON);
                 content.Headers.ContentType.CharSet = string.Empty;
                 request.Content = content;
             }
@@ -383,12 +391,11 @@ namespace Confluent.SchemaRegistry
         {
             if (disposing)
             {
-                foreach (var client in this.clients)
+                foreach (var client in _clients)
                 {
                     client.Dispose();
                 }
             }
         }
-
     }
 }
