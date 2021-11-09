@@ -66,7 +66,9 @@ matches the appveyor build number. You can see which commit a particular build n
 
 ## Usage
 
-Take a look in the [examples](examples) directory for example usage. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
+For a step-by-step guide and code samples, see [Getting Started with Apache Kafka and .NET](https://developer.confluent.io/get-started/dotnet/) on [Confluent Developer](https://developer.confluent.io/). 
+
+Take a look in the [examples](examples) directory and at the [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) for further examples. 
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
 
@@ -250,7 +252,9 @@ available via the `Error` and `ConsumeResult` fields.
 
 ### Confluent Cloud
 
-The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
+For a step-by-step guide on using the .NET client with Confluent Cloud see [Getting Started with Apache Kafka and .NET](https://developer.confluent.io/get-started/dotnet/) on [Confluent Developer](https://developer.confluent.io/). 
+
+You can also refer to the [Confluent Cloud example](examples/ConfluentCloud) which demonstrates how to configure the .NET client for use with
 [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
 ### Developer Notes
