@@ -49,17 +49,17 @@ namespace Confluent.SchemaRegistry
         /// </summary>
         private readonly List<HttpClient> clients;
         /// <summary>
-        ///     HTTP request authenticator
+        ///     HTTP request authentication value provider
         /// </summary>
-        private readonly IHttpAuthenticator httpAuthenticator;
+        private readonly IAuthenticationHeaderValueProvider authenticationHeaderValueProvider;
 
 
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, IHttpAuthenticator authenticator, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        public RestService(string schemaRegistryUrl, int timeoutMs, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
-            httpAuthenticator = authenticator;
+            this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
@@ -282,8 +282,10 @@ namespace Confluent.SchemaRegistry
                 content.Headers.ContentType.CharSet = string.Empty;
                 request.Content = content;
             }
-            if (httpAuthenticator != null)
-                request.Headers.Authorization = httpAuthenticator.GetAuthenticationHeader();
+            if (authenticationHeaderValueProvider != null)
+            {
+                request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
+            }
             return request;
         }
 

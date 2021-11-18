@@ -19,26 +19,16 @@ using System.Net.Http.Headers;
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
-    ///     A HTTP authenticator implementing the 'Bearer' scheme
-    ///
-    ///     See: https://datatracker.ietf.org/doc/html/rfc6750
+    ///     An interface defining HTTP client authentication header values.
     /// </summary>
-    public class BearerHttpAuthenticator : IHttpAuthenticator
+    public interface IAuthenticationHeaderValueProvider
     {
-        AuthenticationHeaderValue authenticationHeader;
-
-        /// <inheritdoc/>
-        public AuthenticationHeaderValue GetAuthenticationHeader() => authenticationHeader;
-
         /// <summary>
-        ///     Set the OAuth bearer token
+        ///   Get the authentication header for HTTP requests
         /// </summary>
-        /// <param name="token">
-        ///     The new bearer token
-        /// </param>
-        public void SetBearerToken(string token)
-        {
-            authenticationHeader = new AuthenticationHeaderValue("Bearer", token);
-        }
+        /// <returns>
+        ///   The authentication header for HTTP request messages
+        /// </returns>
+        AuthenticationHeaderValue GetAuthenticationHeader();
     }
 }

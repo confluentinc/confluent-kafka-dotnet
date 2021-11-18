@@ -21,16 +21,16 @@ using System.Text;
 namespace Confluent.SchemaRegistry
 {
     /// <summary>
-    ///     A HTTP authenticator implementing the 'Basic' scheme.
+    ///     A HTTP authentication header value provider implementing the 'Basic' scheme.
     ///
     ///     See: https://datatracker.ietf.org/doc/html/rfc7617
     /// </summary>
-    public class BasicHttpAuthenticator : IHttpAuthenticator
+    public class BasicAuthenticationHeaderValueProvider : IAuthenticationHeaderValueProvider
     {
         readonly AuthenticationHeaderValue authenticationHeader;
 
         /// <summary>
-        ///     Initialize a new instance of the BasicHttpAuthenticator class.
+        ///     Initialize a new instance of the BasicAuthenticationHeaderValueProvider class.
         /// </summary>
         /// <param name="username">
         ///     The username
@@ -38,7 +38,7 @@ namespace Confluent.SchemaRegistry
         /// <param name="password">
         ///     The password
         /// </param>
-        public BasicHttpAuthenticator(string username, string password)
+        public BasicAuthenticationHeaderValueProvider(string username, string password)
         {
             authenticationHeader = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")));
         }
