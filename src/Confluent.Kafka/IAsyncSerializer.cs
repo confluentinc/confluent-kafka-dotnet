@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Threading.Tasks;
 
 
@@ -35,10 +36,13 @@ namespace Confluent.Kafka
         /// <param name="context">
         ///     Context relevant to the serialize operation.
         /// </param>
+        /// <param name="bufferWriter">
+        ///     The <see cref="IBufferWriter{T}"/> to serialize the binary representation to.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that
         ///     completes with the serialized data.
         /// </returns>
-        Task<byte[]> SerializeAsync(T data, SerializationContext context);
+        Task SerializeAsync(T data, SerializationContext context, IBufferWriter<byte> bufferWriter);
     }
 }

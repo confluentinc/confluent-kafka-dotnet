@@ -14,14 +14,20 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Buffers;
-using System.Threading.Tasks;
+#pragma warning disable xUnit1026
 
 
-namespace Confluent.SchemaRegistry.Serdes
+namespace Confluent.Kafka.IntegrationTests
 {
-    internal interface IAvroSerializerImpl<T>
+    public static class SerializationExtensions
     {
-        Task Serialize(string topic, T data, bool isKey, IBufferWriter<byte> bufferWriter);
+        public static byte[] ToByteArray<T>(this ISerializer<T> serializer, T value, SerializationContext serializationContext)
+        {
+            using (var buffer = DefaultSerializationBufferProvider.Instance.Create())
+            {
+                serializer.Serialize(value, serializationContext, buffer);
+                return buffer.GetComitted().ToArray();
+            }
+        }
     }
 }

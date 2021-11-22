@@ -1,4 +1,4 @@
-﻿// Copyright 2018 Confluent Inc.
+﻿// Copyright 2016-2017 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,14 +14,20 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Buffers;
-using System.Threading.Tasks;
+using System.Linq;
 
 
-namespace Confluent.SchemaRegistry.Serdes
+namespace Confluent.Kafka.UnitTests.Serialization
 {
-    internal interface IAvroSerializerImpl<T>
+    public static class SerializationExtensions
     {
-        Task Serialize(string topic, T data, bool isKey, IBufferWriter<byte> bufferWriter);
+        public static byte[] ToByteArray<T>(this ISerializer<T> serializer, T value, SerializationContext serializationContext)
+        {
+            using (var buffer = DefaultSerializationBufferProvider.Instance.Create())
+            {
+                serializer.Serialize(value, serializationContext, buffer);
+                return buffer.GetComitted().ToArray();
+            }
+        }
     }
 }

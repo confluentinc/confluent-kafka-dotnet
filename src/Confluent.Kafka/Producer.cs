@@ -15,7 +15,9 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -46,6 +48,7 @@ namespace Confluent.Kafka
         private ISerializer<TValue> valueSerializer;
         private IAsyncSerializer<TKey> asyncKeySerializer;
         private IAsyncSerializer<TValue> asyncValueSerializer;
+        private ISerializationBufferProvider serializationBufferProvider;
 
         private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
@@ -279,8 +282,8 @@ namespace Confluent.Kafka
 
         private void ProduceImpl(
             string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
+            ArraySegment<byte> valueBuffer,
+            ArraySegment<byte> keyBuffer,
             Timestamp timestamp,
             Partition partition,
             IEnumerable<IHeader> headers,
@@ -308,8 +311,8 @@ namespace Confluent.Kafka
 
                 err = KafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    valueBuffer.Array, valueBuffer.Offset, valueBuffer.Count,
+                    keyBuffer.Array, keyBuffer.Offset, keyBuffer.Count,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -325,8 +328,8 @@ namespace Confluent.Kafka
             {
                 err = KafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    valueBuffer.Array, valueBuffer.Offset, valueBuffer.Count,
+                    keyBuffer.Array, keyBuffer.Offset, keyBuffer.Count,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -495,6 +498,18 @@ namespace Confluent.Kafka
             }
         }
 
+        private void InitializeSerializationBufferProvider(ISerializationBufferProvider serializationBufferProvider)
+        {
+            if (serializationBufferProvider == null)
+            {
+                this.serializationBufferProvider = DefaultSerializationBufferProvider.Instance;
+            }
+            else
+            {
+                this.serializationBufferProvider = serializationBufferProvider;
+            }
+        }
+
         private void InitializeSerializers(
             ISerializer<TKey> keySerializer,
             ISerializer<TValue> valueSerializer,
@@ -560,6 +575,8 @@ namespace Confluent.Kafka
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
                 builder.AsyncKeySerializer, builder.AsyncValueSerializer);
+
+            InitializeSerializationBufferProvider(builder.SerializationBufferProvider);
         }
 
         internal Producer(ProducerBuilder<TKey, TValue> builder)
@@ -735,6 +752,8 @@ namespace Confluent.Kafka
             InitializeSerializers(
                 builder.KeySerializer, builder.ValueSerializer,
                 builder.AsyncKeySerializer, builder.AsyncValueSerializer);
+
+            InitializeSerializationBufferProvider(builder.SerializationBufferProvider);
         }
 
 
@@ -746,95 +765,113 @@ namespace Confluent.Kafka
         {
             Headers headers = message.Headers ?? new Headers();
 
-            byte[] keyBytes;
-            try
+            using (var buffer = this.serializationBufferProvider.Create())
             {
-                keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                    : await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Local_KeySerialization),
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                    },
-                    ex);
-            }
+                ArraySegment<byte> keySegment;
+                ArraySegment<byte> valueSegment;
 
-            byte[] valBytes;
-            try
-            {
-                valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                    : await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Local_ValueSerialization),
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                    },
-                    ex);
-            }
-
-            try
-            {
-                if (enableDeliveryReports)
+                try
                 {
-                    var handler = new TypedTaskDeliveryHandlerShim(
-                        topicPartition.Topic,
-                        enableDeliveryReportKey ? message.Key : default(TKey),
-                        enableDeliveryReportValue ? message.Value : default(TValue));
-
-                    if (cancellationToken != null && cancellationToken.CanBeCanceled)
+                    if (keySerializer != null)
                     {
-                        handler.CancellationTokenRegistration
-                            = cancellationToken.Register(() => handler.TrySetCanceled());
+                        keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers), buffer);
                     }
-
-                    ProduceImpl(
-                        topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
-                        message.Timestamp, topicPartition.Partition, headers,
-                        handler);
-
-                    return await handler.Task.ConfigureAwait(false);
+                    else
+                    {
+                        await asyncKeySerializer.SerializeAsync(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers), buffer).ConfigureAwait(false);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    ProduceImpl(
-                        topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                        message.Timestamp, topicPartition.Partition, headers, 
-                        null);
-
-                    var result = new DeliveryResult<TKey, TValue>
-                    {
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                        Message = message
-                    };
-
-                    return result;
+                    throw new ProduceException<TKey, TValue>(
+                        new Error(ErrorCode.Local_KeySerialization),
+                        new DeliveryResult<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                        },
+                        ex);
                 }
-            }
-            catch (KafkaException ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    ex.Error,
-                    new DeliveryResult<TKey, TValue>
+
+                keySegment = buffer.GetComitted();
+
+                try
+                {
+                    if (valueSerializer != null)
                     {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                    });
+                        valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers), buffer);
+                    }
+                    else
+                    {
+                        await asyncValueSerializer.SerializeAsync(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers), buffer).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ProduceException<TKey, TValue>(
+                        new Error(ErrorCode.Local_ValueSerialization),
+                        new DeliveryResult<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                        },
+                        ex);
+                }
+
+                valueSegment = buffer.GetComitted(offset: keySegment.Count);
+
+                try
+                {
+                    if (enableDeliveryReports)
+                    {
+                        var handler = new TypedTaskDeliveryHandlerShim(
+                            topicPartition.Topic,
+                            enableDeliveryReportKey ? message.Key : default(TKey),
+                            enableDeliveryReportValue ? message.Value : default(TValue));
+
+                        if (cancellationToken != null && cancellationToken.CanBeCanceled)
+                        {
+                            handler.CancellationTokenRegistration
+                                = cancellationToken.Register(() => handler.TrySetCanceled());
+                        }
+
+                        ProduceImpl(
+                            topicPartition.Topic,
+                            valueSegment,
+                            keySegment,
+                            message.Timestamp, topicPartition.Partition, headers,
+                            handler);
+
+                        return await handler.Task.ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        ProduceImpl(
+                            topicPartition.Topic,
+                            valueSegment,
+                            keySegment,
+                            message.Timestamp, topicPartition.Partition, headers,
+                            null);
+
+                        var result = new DeliveryResult<TKey, TValue>
+                        {
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
+                            Message = message
+                        };
+
+                        return result;
+                    }
+                }
+                catch (KafkaException ex)
+                {
+                    throw new ProduceException<TKey, TValue>(
+                        ex.Error,
+                        new DeliveryResult<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                        });
+                }
             }
         }
 
@@ -869,67 +906,85 @@ namespace Confluent.Kafka
 
             Headers headers = message.Headers ?? new Headers();
 
-            byte[] keyBytes;
-            try
+            using (var buffer = this.serializationBufferProvider.Create())
             {
-                keyBytes = (keySerializer != null)
-                    ? keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers))
-                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
-            }
-            catch (Exception ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Local_KeySerialization, ex.ToString()),
-                    new DeliveryResult<TKey, TValue>
-                    {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                    },
-                    ex);
-            }
+                ArraySegment<byte> keySegment;
+                ArraySegment<byte> valueSegment;
 
-            byte[] valBytes;
-            try
-            {
-                valBytes = (valueSerializer != null)
-                    ? valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers))
-                    : throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
-            }
-            catch (Exception ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    new Error(ErrorCode.Local_ValueSerialization, ex.ToString()),
-                    new DeliveryResult<TKey, TValue>
+                try
+                {
+                    if (keySerializer != null)
                     {
-                        Message = message,
-                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
-                    },
-                    ex);
-            }
+                        keySerializer.Serialize(message.Key, new SerializationContext(MessageComponentType.Key, topicPartition.Topic, headers), buffer);
+                    }
+                    else
+                    { 
+                        throw new InvalidOperationException("Produce called with an IAsyncSerializer key serializer configured but an ISerializer is required.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ProduceException<TKey, TValue>(
+                        new Error(ErrorCode.Local_KeySerialization, ex.ToString()),
+                        new DeliveryResult<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
+                        },
+                        ex);
+                }
 
-            try
-            {
-                ProduceImpl(
-                    topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
-                    message.Timestamp, topicPartition.Partition, 
-                    headers,
-                    new TypedDeliveryHandlerShim_Action(
+                keySegment = buffer.GetComitted();
+
+                try
+                {
+                    if (valueSerializer != null)
+                    {
+                        valueSerializer.Serialize(message.Value, new SerializationContext(MessageComponentType.Value, topicPartition.Topic, headers), buffer);
+                    }
+                    else
+                    { 
+                        throw new InvalidOperationException("Produce called with an IAsyncSerializer value serializer configured but an ISerializer is required.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ProduceException<TKey, TValue>(
+                        new Error(ErrorCode.Local_ValueSerialization, ex.ToString()),
+                        new DeliveryResult<TKey, TValue>
+                        {
+                            Message = message,
+                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
+                        },
+                        ex);
+                }
+
+                valueSegment = buffer.GetComitted(offset: keySegment.Count);
+
+                try
+                {
+                    ProduceImpl(
                         topicPartition.Topic,
-                        enableDeliveryReportKey ? message.Key : default(TKey),
-                        enableDeliveryReportValue ? message.Value : default(TValue),
-                        deliveryHandler));
-            }
-            catch (KafkaException ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    ex.Error,
-                    new DeliveryReport<TKey, TValue>
+                        valueSegment,
+                        keySegment,
+                        message.Timestamp, topicPartition.Partition,
+                        headers,
+                        new TypedDeliveryHandlerShim_Action(
+                            topicPartition.Topic,
+                            enableDeliveryReportKey ? message.Key : default(TKey),
+                            enableDeliveryReportValue ? message.Value : default(TValue),
+                            deliveryHandler));
+                }
+                catch (KafkaException ex)
+                {
+                    throw new ProduceException<TKey, TValue>(
+                        ex.Error,
+                        new DeliveryReport<TKey, TValue>
                         {
                             Message = message,
                             TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                         });
+                }
             }
         }
 

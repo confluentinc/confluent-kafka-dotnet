@@ -18,6 +18,7 @@
 #pragma warning disable CS0618
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -173,7 +174,7 @@ namespace Confluent.SchemaRegistry.Serdes
             return serializerSchemaData;
         }
 
-        public async Task<byte[]> Serialize(string topic, T data, bool isKey)
+        public async Task Serialize(string topic, T data, bool isKey, IBufferWriter<byte> bufferWriter)
         {
             try
             {
@@ -237,16 +238,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     serializeMutex.Release();
                 }
 
-                using (var stream = new MemoryStream(initialBufferSize))
+                using (var stream = bufferWriter.AsStream())
                 using (var writer = new BinaryWriter(stream))
                 {
                     stream.WriteByte(Constants.MagicByte);
 
                     writer.Write(IPAddress.HostToNetworkOrder(currentSchemaData.WriterSchemaId.Value));
                     currentSchemaData.AvroWriter.Write(data, new BinaryEncoder(stream));
-
-                    // TODO: maybe change the ISerializer interface so that this copy isn't necessary.
-                    return stream.ToArray();
                 }
             }
             catch (AggregateException e)

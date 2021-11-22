@@ -54,6 +54,10 @@ namespace Confluent.Kafka
         /// </summary>
         public IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
 
+        /// <summary>
+        ///     The configured serialization buffer provider.
+        /// </summary>
+        public ISerializationBufferProvider SerializationBufferProvider { get; set; }
 
         /// <summary>
         ///     An underlying librdkafka client handle that the Producer will use to 
@@ -98,6 +102,15 @@ namespace Confluent.Kafka
         public DependentProducerBuilder<TKey, TValue> SetValueSerializer(IAsyncSerializer<TValue> serializer)
         {
             this.AsyncValueSerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The serialization buffer provider.
+        /// </summary>
+        public DependentProducerBuilder<TKey, TValue> SetSerializationBufferProvider(ISerializationBufferProvider serializationBufferProvider)
+        {
+            this.SerializationBufferProvider = serializationBufferProvider;
             return this;
         }
 

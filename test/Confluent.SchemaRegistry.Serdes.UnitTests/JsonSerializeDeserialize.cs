@@ -32,6 +32,41 @@ using Xunit;
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
+    public static class SerializationExtensions
+    {
+        public static byte[] ToByteArray<T>(this ISerializer<T> serializer, T value, SerializationContext serializationContext)
+        {
+            using (var buffer = DefaultSerializationBufferProvider.Instance.Create())
+            {
+                serializer.Serialize(value, serializationContext, buffer);
+                var comitted = buffer.GetComitted();
+
+                if (comitted.Count == 0)
+                {
+                    return null;
+                }
+
+                return comitted.ToArray();
+            }
+        }
+
+        public static async Task<byte[]> ToByteArray<T>(this IAsyncSerializer<T> serializer, T value, SerializationContext serializationContext)
+        {
+            using (var buffer = DefaultSerializationBufferProvider.Instance.Create())
+            {
+                await serializer.SerializeAsync(value, serializationContext, buffer);
+                var comitted = buffer.GetComitted();
+
+                if (comitted.Count == 0)
+                {
+                    return null;
+                }
+
+                return comitted.ToArray();
+            }
+        }
+    }
+
     public class JsonSerializeDeserialzeTests
     {
         public class UInt32Value
@@ -104,7 +139,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var jsonSerializer = new JsonSerializer<UInt32Value>(schemaRegistryClient);
             var jsonDeserializer = new JsonDeserializer<UInt32Value>();
 
-            var bytes = jsonSerializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = jsonSerializer.ToByteArray(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Null(bytes);
             Assert.Null(jsonDeserializer.DeserializeAsync(bytes, true, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
@@ -117,7 +152,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var jsonDeserializer = new JsonDeserializer<UInt32Value>();
 
             var v = new UInt32Value { Value = 1234 };
-            var bytes = jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = jsonSerializer.ToByteArray(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(v.Value, jsonDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result.Value);
         }
 
@@ -142,7 +177,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var jsonDeserializer = new JsonDeserializer<UInt32Value>(jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings);
 
             var v = new UInt32Value { Value = value };
-            var bytes = await jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic));
+            var bytes = await jsonSerializer.ToByteArray(v, new SerializationContext(MessageComponentType.Value, testTopic));
             Assert.NotNull(bytes);
             Assert.Equal(expectedJson, Encoding.UTF8.GetString(bytes.AsSpan().Slice(5)));
 
@@ -166,7 +201,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var jsonDeserializer = new JsonDeserializer<EnumObject>(jsonSchemaGeneratorSettings: jsonSchemaGeneratorSettings);
 
             var v = new EnumObject { Value = value };
-            var bytes = await jsonSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic));
+            var bytes = await jsonSerializer.ToByteArray(v, new SerializationContext(MessageComponentType.Value, testTopic));
             Assert.NotNull(bytes);
             Assert.Equal(expectedJson, Encoding.UTF8.GetString(bytes.AsSpan().Slice(5)));
 

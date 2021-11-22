@@ -28,7 +28,9 @@ using NJsonSchema;
 using NJsonSchema.Generation;
 using NJsonSchema.Validation;
 using Confluent.Kafka;
-
+using System.Buffers;
+using System.Text;
+using System.Runtime.InteropServices;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
@@ -139,13 +141,16 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="context">
         ///     Context relevant to the serialize operation.
         /// </param>
+        /// <param name="bufferWriter">
+        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
+        public async Task SerializeAsync(T value, SerializationContext context, IBufferWriter<byte> bufferWriter)
         {
-            if (value == null) { return null; }
+            if (value == null) { return; }
 
             var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
             var validationResult = validator.Validate(serializedString, this.schema);
@@ -196,15 +201,19 @@ namespace Confluent.SchemaRegistry.Serdes
                 {
                     serializeMutex.Release();
                 }
-                
-                using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
-                {
-                    stream.WriteByte(Constants.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId.Value));
-                    writer.Write(System.Text.Encoding.UTF8.GetBytes(serializedString));
-                    return stream.ToArray();
-                }
+
+                var targetSize = 1 + 4 + Encoding.UTF8.GetByteCount(serializedString);
+                var buffer = bufferWriter.GetMemory(targetSize);
+                buffer.Span[0] = Constants.MagicByte;
+
+                var schemaIdNumber = IPAddress.HostToNetworkOrder(schemaId.Value);
+                buffer.Span[1] = (byte)schemaIdNumber;
+                buffer.Span[2] = (byte)(schemaIdNumber >> 8);
+                buffer.Span[3] = (byte)(schemaIdNumber >> 16);
+                buffer.Span[4] = (byte)(schemaIdNumber >> 24);
+
+                bufferWriter.Advance(5);
+                Serializers.Utf8.Serialize(serializedString, SerializationContext.Empty, bufferWriter);
             }
             catch (AggregateException e)
             {

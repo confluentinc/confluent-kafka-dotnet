@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+﻿// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,29 +14,25 @@
 //
 // Refer to LICENSE for more information.
 
-
+using System;
 using System.Buffers;
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    /// Defines a buffer used to serialize keys and value. This buffer is disposed when no longer used.
     /// </summary>
-    public interface ISerializer<T>
+    public interface ISerializationBuffer : IBufferWriter<byte>, IDisposable
     {
         /// <summary>
-        ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
-        ///     instance.
+        ///     Gets an <see cref="ArraySegment{Byte}"/> representing the currently comitted memory.
         /// </summary>
-        /// <param name="data">
-        ///     The value to serialize.
+        /// <param name="offset">
+        ///     An optional offset into the comitted memory.
         /// </param>
-        /// <param name="context">
-        ///     Context relevant to the serialize operation.
-        /// </param>
-        /// <param name="bufferWriter">
-        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
-        /// </param>
-        void Serialize(T data, SerializationContext context, IBufferWriter<byte> bufferWriter);
+        /// <returns>
+        ///     Returns a <see cref="ArraySegment{Byte}"/> representing the commited memory with an initial offset as requested.
+        /// </returns>
+        ArraySegment<byte> GetComitted(int offset = 0);
     }
 }

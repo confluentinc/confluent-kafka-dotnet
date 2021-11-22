@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 
 namespace Confluent.Kafka.SyncOverAsync
 {
@@ -66,11 +67,11 @@ namespace Confluent.Kafka.SyncOverAsync
         /// <param name="context">
         ///     Context relevant to the serialize operation.
         /// </param>
-        /// <returns>
-        ///     the serialized data.
-        /// </returns>
-        public byte[] Serialize(T data, SerializationContext context)
-            => asyncSerializer.SerializeAsync(data, context)
+        /// <param name="bufferWriter">
+        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
+        /// </param>
+        public void Serialize(T data, SerializationContext context, IBufferWriter<byte> bufferWriter)
+            => asyncSerializer.SerializeAsync(data, context, bufferWriter)
                 .ConfigureAwait(continueOnCapturedContext: false)
                 .GetAwaiter()
                 .GetResult();
