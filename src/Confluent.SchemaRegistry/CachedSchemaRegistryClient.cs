@@ -123,12 +123,15 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Initialize a new instance of the SchemaRegistryClient class.
+        ///     Initialize a new instance of the SchemaRegistryClient class with a custom <see cref="IAuthenticationHeaderValueProvider"/>
         /// </summary>
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
+        /// <param name="authenticationHeaderValueProvider">
+        ///     The authentication header value provider
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
         {
             if (config == null)
             {
@@ -194,6 +197,29 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
+            if (authenticationHeaderValueProvider != null)
+            {
+                if (username != null || password != null)
+                {
+                    throw new ArgumentException($"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                }
+            }
+            else
+            {
+                if (username != null && password == null)
+                {
+                    throw new ArgumentException($"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
+                }
+                if (username == null && password != null)
+                {
+                    throw new ArgumentException($"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
+                }
+                else if (username != null && password != null)
+                {
+                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
+                }
+            }
+
             foreach (var property in config)
             {
                 if (!property.Key.StartsWith("schema.registry."))
@@ -222,8 +248,21 @@ namespace Confluent.SchemaRegistry
             try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
             catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password, SetSslConfig(config), sslVerify);
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
         }
+
+        /// <summary>
+        ///     Initialize a new instance of the SchemaRegistryClient class.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
+            : this (config, null)
+        {
+
+        }
+
 
 
         /// <remarks>
