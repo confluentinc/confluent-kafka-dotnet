@@ -34,7 +34,7 @@ namespace Confluent.Kafka
         {
             public byte[] Serialize(string data, SerializationContext context)
             {
-                if (data == null)
+                if (string.IsNullOrWhiteSpace(data))
                 {
                     return null;
                 }
