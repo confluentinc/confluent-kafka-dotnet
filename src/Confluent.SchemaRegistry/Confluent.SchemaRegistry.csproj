@@ -4,10 +4,10 @@
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Authors>Confluent Inc.</Authors>
     <Description>A .NET Client for Confluent Schema Registry</Description>
-    <Copyright>Copyright 2017-2020 Confluent Inc.</Copyright>
+    <Copyright>Copyright 2017-2022 Confluent Inc.</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent_logo.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;Schema Registry</PackageTags>
     <PackageId>Confluent.SchemaRegistry</PackageId>
