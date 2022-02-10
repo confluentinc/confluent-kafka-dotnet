@@ -393,7 +393,7 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Group coordinator load in progress
         /// </summary>
-        GroupLoadInProress = 14,
+        GroupLoadInProgress = 14,
 
         /// <summary>
         /// Group coordinator not available
