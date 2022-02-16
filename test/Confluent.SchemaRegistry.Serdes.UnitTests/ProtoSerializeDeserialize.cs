@@ -52,7 +52,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var protoSerializer = new ProtobufSerializer<UInt32Value>(schemaRegistryClient);
             var protoDeserializer = new ProtobufDeserializer<UInt32Value>();
 
-            var bytes = protoSerializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = protoSerializer.ToByteArray(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Null(bytes);
             Assert.Null(protoDeserializer.DeserializeAsync(bytes, true, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
@@ -64,7 +64,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var protoDeserializer = new ProtobufDeserializer<UInt32Value>();
 
             var v = new UInt32Value { Value = 1234 };
-            var bytes = protoSerializer.SerializeAsync(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = protoSerializer.ToByteArray(v, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(v.Value, protoDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result.Value);
         }
 

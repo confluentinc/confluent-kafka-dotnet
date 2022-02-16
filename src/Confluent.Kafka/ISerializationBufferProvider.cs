@@ -14,14 +14,23 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Buffers;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
-
-namespace Confluent.SchemaRegistry.Serdes
+namespace Confluent.Kafka
 {
-    internal interface IAvroSerializerImpl<T>
+    /// <summary>
+    /// Defines a factory for creating a <see cref="IBufferWriter{Byte}"/> used for key and value serialization.
+    /// </summary>
+    public interface ISerializationBufferProvider
     {
-        Task Serialize(string topic, T data, bool isKey, IBufferWriter<byte> bufferWriter);
+        /// <summary>
+        ///     Creates a new <see cref="IBufferWriter{Byte}"/>.
+        /// </summary>
+        /// <returns>
+        ///     Returns a <see cref="IBufferWriter{Byte}"/>.
+        /// </returns>
+        ISerializationBuffer Create();
     }
 }

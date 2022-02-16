@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 
@@ -113,6 +114,11 @@ namespace Confluent.Kafka
         ///     The configured async value serializer.
         /// </summary>
         internal protected IAsyncSerializer<TValue> AsyncValueSerializer { get; set; }
+
+        /// <summary>
+        ///     The configured serialization buffer provider.
+        /// </summary>
+        internal protected ISerializationBufferProvider SerializationBufferProvider { get; set; }
 
         internal Producer<TKey,TValue>.Config ConstructBaseConfig(Producer<TKey, TValue> producer)
         {
@@ -364,6 +370,20 @@ namespace Confluent.Kafka
                 throw new InvalidOperationException("Value serializer may not be specified more than once.");
             }
             this.AsyncValueSerializer = serializer;
+            return this;
+        }
+
+        /// <summary>
+        ///     The <see cref="ISerializationBufferProvider"/> to use to when serializing keys and values.
+        /// </summary>
+        public ProducerBuilder<TKey, TValue> SetSerializationBufferProvider(ISerializationBufferProvider serializationBufferProvider)
+        {
+            if (this.SerializationBufferProvider != null)
+            {
+                throw new InvalidOperationException("Serialization buffer provider may not be specified more than once.");
+            }
+
+            this.SerializationBufferProvider = serializationBufferProvider ?? throw new ArgumentNullException(nameof(serializationBufferProvider));
             return this;
         }
 

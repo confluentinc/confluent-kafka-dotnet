@@ -17,6 +17,7 @@
 #pragma warning disable xUnit1026
 
 using System;
+using System.Buffers;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
@@ -29,11 +30,17 @@ namespace Confluent.Kafka.IntegrationTests
 
         class TestSerializer : IAsyncSerializer<string>
         {
-            public Task<byte[]> SerializeAsync(string data, SerializationContext context)
+            public Task SerializeAsync(string data, SerializationContext context, IBufferWriter<byte> bufferWriter)
             {
                 Assert.NotNull(context.Headers);
                 context.Headers.Add("test_header", new byte[] { 100, 42 });
-                return Task.FromResult(Encoding.UTF8.GetBytes("test_value"));
+
+                var bytes = Encoding.UTF8.GetBytes("test_value");
+                var buffer = bufferWriter.GetSpan(bytes.Length);
+                bytes.CopyTo(buffer);
+                bufferWriter.Advance(bytes.Length);
+
+                return Task.CompletedTask;
             }
         }
 

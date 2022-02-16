@@ -55,7 +55,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<int>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(1234, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(1234, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(1234, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -65,7 +65,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<long>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<long>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(123, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(123, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(123, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -75,7 +75,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<bool>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<bool>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(true, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -85,7 +85,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<string>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<string>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync("abc", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray("abc", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal("abc", avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -95,7 +95,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<double>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<double>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(123d, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(123d, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(123d, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -105,7 +105,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<float>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<float>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(123f, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(123f, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(123f, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -115,7 +115,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<byte[]>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<byte[]>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(new byte[] { 2, 3, 4 }, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(new byte[] { 2, 3, 4 }, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -125,7 +125,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroSerializer = new AvroSerializer<Null>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<Null>(schemaRegistryClient);
             byte[] bytes;
-            bytes = avroSerializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            bytes = avroSerializer.ToByteArray(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Equal(null, avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
 
@@ -142,7 +142,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "awesome"
             };
 
-            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = serializer.ToByteArray(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
 
             Assert.Equal(user.name, result.name);
@@ -219,7 +219,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 name = "great_brand"
             };
 
-            var bytesUser = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytesUser = serializer.ToByteArray(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             var resultUser = deserializerUser.DeserializeAsync(bytesUser, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as User;
 
             Assert.NotNull(resultUser);
@@ -227,7 +227,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.favorite_color, resultUser.favorite_color);
             Assert.Equal(user.favorite_number, resultUser.favorite_number);
 
-            var bytesCar = serializer.SerializeAsync(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytesCar = serializer.ToByteArray(car, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             var resultCar = deserializerCar.DeserializeAsync(bytesCar, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result as Car;
 
             Assert.NotNull(resultCar);
@@ -239,7 +239,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         public void Poco_Serialize()
         {
             var serializer = new AvroSerializer<Dictionary<string, string>>(schemaRegistryClient);
-            Assert.Throws<System.InvalidOperationException>(() => serializer.SerializeAsync(new Dictionary<string, string> { { "cat", "dog" } }, new SerializationContext(MessageComponentType.Key, testTopic)).GetAwaiter().GetResult());
+            Assert.Throws<System.InvalidOperationException>(() => serializer.ToByteArray(new Dictionary<string, string> { { "cat", "dog" } }, new SerializationContext(MessageComponentType.Key, testTopic)).GetAwaiter().GetResult());
         }
 
         [Fact]
@@ -254,7 +254,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
         {
             var avroSerializer = new AvroSerializer<string>(schemaRegistryClient);
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
-            var bytes = avroSerializer.SerializeAsync("hello world", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var bytes = avroSerializer.ToByteArray("hello world", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Throws<System.AggregateException>(() => avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
     }

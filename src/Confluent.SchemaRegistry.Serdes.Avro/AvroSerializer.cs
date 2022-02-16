@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -133,11 +134,14 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="context">
         ///     Context relevant to the serialize operation.
         /// </param>
+        /// <param name="bufferWriter">
+        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
+        public async Task SerializeAsync(T value, SerializationContext context, IBufferWriter<byte> bufferWriter)
         { 
             try
             {
@@ -158,7 +162,7 @@ namespace Confluent.SchemaRegistry.Serdes
                         : new SpecificSerializerImpl<T>(schemaRegistryClient, autoRegisterSchema, useLatestVersion, initialBufferSize, subjectNameStrategy);
                 }
 
-                return await serializerImpl.Serialize(context.Topic, value, context.Component == MessageComponentType.Key).ConfigureAwait(continueOnCapturedContext: false);
+                await serializerImpl.Serialize(context.Topic, value, context.Component == MessageComponentType.Key, bufferWriter).ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (AggregateException e)
             {

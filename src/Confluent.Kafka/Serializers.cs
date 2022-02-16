@@ -15,6 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Text;
 
 
@@ -32,14 +34,18 @@ namespace Confluent.Kafka
         
         private class Utf8Serializer : ISerializer<string>
         {
-            public byte[] Serialize(string data, SerializationContext context)
+            public void Serialize(string data, SerializationContext context, IBufferWriter<byte> bufferWriter)
             {
-                if (data == null)
+                if (data != null)
                 {
-                    return null;
-                }
+                    var size = Encoding.UTF8.GetByteCount(data);
 
-                return Encoding.UTF8.GetBytes(data);
+                    var buffer = bufferWriter.GetMemory(size);
+                    MemoryMarshal.TryGetArray<byte>(buffer, out var arraySegment);
+
+                    Encoding.UTF8.GetBytes(data, 0, data.Length, arraySegment.Array, arraySegment.Offset);
+                    bufferWriter.Advance(size);
+                }
             }
         }
 
@@ -51,8 +57,10 @@ namespace Confluent.Kafka
 
         private class NullSerializer : ISerializer<Null>
         {
-            public byte[] Serialize(Null data, SerializationContext context)
-                => null;
+            public void Serialize(Null data, SerializationContext context, IBufferWriter<byte> bufferWriter)
+            {
+
+            }
         }
 
 
@@ -63,9 +71,9 @@ namespace Confluent.Kafka
 
         private class Int64Serializer : ISerializer<long>
         {
-            public byte[] Serialize(long data, SerializationContext context)
+            public void Serialize(long data, SerializationContext context, IBufferWriter<byte> bufferWriter)
             {
-                var result = new byte[8];
+                var result = bufferWriter.GetSpan(sizeHint: 8);
                 result[0] = (byte)(data >> 56);
                 result[1] = (byte)(data >> 48);
                 result[2] = (byte)(data >> 40);
@@ -74,7 +82,8 @@ namespace Confluent.Kafka
                 result[5] = (byte)(data >> 16);
                 result[6] = (byte)(data >> 8);
                 result[7] = (byte)data;
-                return result;
+
+                bufferWriter.Advance(8);
             }
         }
 
@@ -86,9 +95,9 @@ namespace Confluent.Kafka
 
         private class Int32Serializer : ISerializer<int>
         {
-            public byte[] Serialize(int data, SerializationContext context)
+            public void Serialize(int data, SerializationContext context, IBufferWriter<byte> bufferWriter)
             {
-                var result = new byte[4]; // int is always 32 bits on .NET.
+                var result = bufferWriter.GetSpan(sizeHint: 4); // int is always 32 bits on .NET.
                 // network byte order -> big endian -> most significant byte in the smallest address.
                 // Note: At the IL level, the conv.u1 operator is used to cast int to byte which truncates
                 // the high order bits if overflow occurs.
@@ -97,7 +106,8 @@ namespace Confluent.Kafka
                 result[1] = (byte)(data >> 16); // & 0xff;
                 result[2] = (byte)(data >> 8); // & 0xff;
                 result[3] = (byte)data; // & 0xff;
-                return result;
+
+                bufferWriter.Advance(count: 4);
             }
         }
 
@@ -109,24 +119,35 @@ namespace Confluent.Kafka
 
         private class SingleSerializer : ISerializer<float>
         {
-            public byte[] Serialize(float data, SerializationContext context)
+            public void Serialize(float data, SerializationContext context, IBufferWriter<byte> bufferWriter)
             {
                 if (BitConverter.IsLittleEndian)
                 {
                     unsafe
                     {
-                        byte[] result = new byte[4];
+                        var result = bufferWriter.GetSpan(4);
                         byte* p = (byte*)(&data);
                         result[3] = *p++;
                         result[2] = *p++;
                         result[1] = *p++;
                         result[0] = *p++;
-                        return result;
+
+                        bufferWriter.Advance(4);
                     }
                 }
                 else
                 {
-                    return BitConverter.GetBytes(data);
+                    unsafe
+                    {
+                        var result = bufferWriter.GetSpan(4);
+                        byte* p = (byte*)(&data);
+                        result[0] = *p++;
+                        result[1] = *p++;
+                        result[2] = *p++;
+                        result[3] = *p++;
+
+                        bufferWriter.Advance(4);
+                    }
                 }
             }
         }
@@ -139,13 +160,13 @@ namespace Confluent.Kafka
 
         private class DoubleSerializer : ISerializer<double>
         {
-            public byte[] Serialize(double data, SerializationContext context)
+            public void Serialize(double data, SerializationContext context, IBufferWriter<byte> bufferWriter)
             {
                 if (BitConverter.IsLittleEndian)
                 {
                     unsafe
                     {
-                        byte[] result = new byte[8];
+                        var result = bufferWriter.GetSpan(8);
                         byte* p = (byte*)(&data);
                         result[7] = *p++;
                         result[6] = *p++;
@@ -155,13 +176,26 @@ namespace Confluent.Kafka
                         result[2] = *p++;
                         result[1] = *p++;
                         result[0] = *p++;
-                        return result;
                     }
                 }
                 else
                 {
-                    return BitConverter.GetBytes(data);
+                    unsafe
+                    {
+                        var result = bufferWriter.GetSpan(8);
+                        byte* p = (byte*)(&data);
+                        result[0] = *p++;
+                        result[1] = *p++;
+                        result[2] = *p++;
+                        result[3] = *p++;
+                        result[4] = *p++;
+                        result[5] = *p++;
+                        result[6] = *p++;
+                        result[7] = *p++;
+                    }
                 }
+
+                bufferWriter.Advance(8);
             }
         }
 
@@ -176,8 +210,15 @@ namespace Confluent.Kafka
         
         private class ByteArraySerializer : ISerializer<byte[]>
         {
-            public byte[] Serialize(byte[] data, SerializationContext context)
-                => data;
+            public void Serialize(byte[] data, SerializationContext context, IBufferWriter<byte> bufferWriter)
+            {
+                if (data != null)
+                {
+                    var buffer = bufferWriter.GetSpan(data.Length);
+                    data.CopyTo(buffer);
+                    bufferWriter.Advance(data.Length);
+                }
+            }
         }
     }
 }

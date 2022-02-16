@@ -18,6 +18,7 @@
 #pragma warning disable CS0618
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,25 +32,26 @@ using Google.Protobuf.Reflection;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
-    /// <summary>
-    ///     Protobuf Serializer.
-    /// </summary>
-    /// <remarks>
-    ///     Serialization format:
-    ///       byte 0:           A magic byte that identifies this as a message with
-    ///                         Confluent Platform framing.
-    ///       bytes 1-4:        Unique global id of the Protobuf schema that was used
-    ///                         for encoding (as registered in Confluent Schema Registry),
-    ///                         big endian.
-    ///       following bytes:  1. A size-prefixed array of indices that identify the
-    ///                            specific message type in the schema (a given schema
-    ///                            can contain many message types and they can be nested).
-    ///                            Size and indices are unsigned varints. The common case
-    ///                            where the message type is the first message in the
-    ///                            schema (i.e. index data would be [1,0]) is encoded as
-    ///                            a single 0 byte as an optimization.
-    ///                         2. The protobuf serialized data.
-    /// </remarks>
+
+/// <summary>
+///     Protobuf Serializer.
+/// </summary>
+/// <remarks>
+///     Serialization format:
+///       byte 0:           A magic byte that identifies this as a message with
+///                         Confluent Platform framing.
+///       bytes 1-4:        Unique global id of the Protobuf schema that was used
+///                         for encoding (as registered in Confluent Schema Registry),
+///                         big endian.
+///       following bytes:  1. A size-prefixed array of indices that identify the
+///                            specific message type in the schema (a given schema
+///                            can contain many message types and they can be nested).
+///                            Size and indices are unsigned varints. The common case
+///                            where the message type is the first message in the
+///                            schema (i.e. index data would be [1,0]) is encoded as
+///                            a single 0 byte as an optimization.
+///                         2. The protobuf serialized data.
+/// </remarks>
     public class ProtobufSerializer<T> : IAsyncSerializer<T>  where T : IMessage<T>, new()
     {
         private const int DefaultInitialBufferSize = 1024;
@@ -242,13 +244,16 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="context">
         ///     Context relevant to the serialize operation.
         /// </param>
+        /// <param name="bufferWriter">
+        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
+        /// </param>
         /// <returns>
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
         ///     <paramref name="value" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> SerializeAsync(T value, SerializationContext context)
+        public async Task SerializeAsync(T value, SerializationContext context, IBufferWriter<byte> bufferWriter)
         {
-            if (value == null) { return null; }
+            if (value == null) { return; }
 
             try
             {
@@ -307,14 +312,23 @@ namespace Confluent.SchemaRegistry.Serdes
                     serializeMutex.Release();
                 }
 
-                using (var stream = new MemoryStream(initialBufferSize))
-                using (var writer = new BinaryWriter(stream))
+
+                var targetSize = 1 + 4 + this.indexArray.Length;
+                var buffer = bufferWriter.GetMemory(targetSize);
+                buffer.Span[0] = Constants.MagicByte;
+
+                var schemaIdNumber = IPAddress.HostToNetworkOrder(schemaId.Value);
+                buffer.Span[1] = (byte)schemaIdNumber;
+                buffer.Span[2] = (byte)(schemaIdNumber >> 8);
+                buffer.Span[3] = (byte)(schemaIdNumber >> 16);
+                buffer.Span[4] = (byte)(schemaIdNumber >> 24);
+                this.indexArray.CopyTo(buffer.Span.Slice(start: 5));
+
+                bufferWriter.Advance(5 + this.indexArray.Length);
+
+                using (var stream = bufferWriter.AsStream())
                 {
-                    stream.WriteByte(Constants.MagicByte);
-                    writer.Write(IPAddress.HostToNetworkOrder(schemaId.Value));
-                    writer.Write(this.indexArray);
                     value.WriteTo(stream);
-                    return stream.ToArray();
                 }
             }
             catch (AggregateException e)

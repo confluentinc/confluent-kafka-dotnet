@@ -130,8 +130,8 @@ namespace Confluent.Kafka.IntegrationTests
                         new TopicPartition(topic, partition),
                         new Message<byte[], byte[]>
                         { 
-                            Key = Serializers.Utf8.Serialize($"test key {index}", SerializationContext.Empty),
-                            Value = Serializers.Utf8.Serialize($"test val {index}", SerializationContext.Empty),
+                            Key = Serializers.Utf8.ToByteArray($"test key {index}", SerializationContext.Empty),
+                            Value = Serializers.Utf8.ToByteArray($"test val {index}", SerializationContext.Empty),
                             Timestamp = new Timestamp(baseTime + index*1000, TimestampType.CreateTime),
                             Headers = null
                         }

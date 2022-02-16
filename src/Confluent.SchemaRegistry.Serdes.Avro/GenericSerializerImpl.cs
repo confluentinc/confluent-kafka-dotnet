@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 using Confluent.Kafka;
 using Avro.Generic;
 using Avro.IO;
-
+using System.Buffers;
 
 namespace Confluent.SchemaRegistry.Serdes
 {
@@ -73,10 +73,13 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <param name="isKey">
         ///     whether or not the data represents a message key.
         /// </param>
+        /// <param name="bufferWriter">
+        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
+        /// </param>
         /// <returns>
         ///     <paramref name="data" /> serialized as a byte array.
         /// </returns>
-        public async Task<byte[]> Serialize(string topic, GenericRecord data, bool isKey)
+        public async Task Serialize(string topic, GenericRecord data, bool isKey, IBufferWriter<byte> bufferWriter)
         {
             try
             {
@@ -176,14 +179,13 @@ namespace Confluent.SchemaRegistry.Serdes
                     serializeMutex.Release();
                 }
 
-                using (var stream = new MemoryStream(initialBufferSize))
+                using (var stream =  bufferWriter.AsStream())
                 using (var writer = new BinaryWriter(stream))
                 {
                     stream.WriteByte(Constants.MagicByte);
                     writer.Write(IPAddress.HostToNetworkOrder(schemaId));
                     new GenericWriter<GenericRecord>(writerSchema)
                         .Write(data, new BinaryEncoder(stream));
-                    return stream.ToArray();
                 }
             }
             catch (AggregateException e)

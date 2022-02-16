@@ -1,4 +1,4 @@
-// Copyright 2018 Confluent Inc.
+﻿// Copyright 2018 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,29 +14,30 @@
 //
 // Refer to LICENSE for more information.
 
-
 using System.Buffers;
+
 
 namespace Confluent.Kafka
 {
     /// <summary>
-    ///     Defines a serializer for use with <see cref="Confluent.Kafka.Producer{TKey,TValue}" />.
+    /// The default <see cref="ISerializationBufferProvider"/>. Creates buffers using <see cref="ArrayPool{Byte}"/> internal memory.
     /// </summary>
-    public interface ISerializer<T>
+    public sealed class DefaultSerializationBufferProvider : ISerializationBufferProvider
     {
         /// <summary>
-        ///     Serialize the key or value of a <see cref="Message{TKey,TValue}" />
-        ///     instance.
+        /// Gets a singleton instance of the <see cref="DefaultSerializationBufferProvider "/>
         /// </summary>
-        /// <param name="data">
-        ///     The value to serialize.
-        /// </param>
-        /// <param name="context">
-        ///     Context relevant to the serialize operation.
-        /// </param>
-        /// <param name="bufferWriter">
-        ///     The <see cref="IBufferWriter{Byte}"/> to serialize the binary representation to.
-        /// </param>
-        void Serialize(T data, SerializationContext context, IBufferWriter<byte> bufferWriter);
+        public static DefaultSerializationBufferProvider Instance { get; } = new DefaultSerializationBufferProvider();
+
+        private DefaultSerializationBufferProvider()
+        {
+
+        }
+
+        /// <inheritdoc />
+        public ISerializationBuffer Create()
+        {
+            return new ArrayPoolBufferWriter();
+        }
     }
 }

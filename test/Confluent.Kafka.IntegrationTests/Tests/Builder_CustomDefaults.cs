@@ -20,7 +20,7 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Xunit;
-
+using System.Buffers;
 
 namespace Confluent.Kafka.IntegrationTests
 {
@@ -35,9 +35,11 @@ namespace Confluent.Kafka.IntegrationTests
         {
             class Utf32Serializer : ISerializer<string>
             {
-                public byte[] Serialize(string data, SerializationContext context)
+                public void Serialize(string data, SerializationContext context, IBufferWriter<byte> bufferWriter)
                 {
-                    return Encoding.UTF32.GetBytes(data);
+                    var size = Encoding.UTF32.GetByteCount(data);
+                    var buffer = bufferWriter.GetSpan(size);
+                    Encoding.UTF32.GetBytes(data).CopyTo(buffer);
                 }
             }
 

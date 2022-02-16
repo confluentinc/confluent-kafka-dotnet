@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -23,10 +24,10 @@ namespace Confluent.Kafka.IntegrationTests
 {
     class SimpleAsyncSerializer : IAsyncSerializer<string>
     {
-        public async Task<byte[]> SerializeAsync(string data, SerializationContext context)
+        public async Task SerializeAsync(string data, SerializationContext context, IBufferWriter<byte> bufferWriter)
         {
             await Task.Delay(500).ConfigureAwait(false);
-            return Serializers.Utf8.Serialize(data, context);
+            Serializers.Utf8.Serialize(data, context, bufferWriter);
         }
 
         public ISerializer<string> SyncOverAsync()
@@ -37,10 +38,10 @@ namespace Confluent.Kafka.IntegrationTests
 
     class SimpleSyncSerializer : ISerializer<string>
     {
-        public byte[] Serialize(string data, SerializationContext context)
+        public void Serialize(string data, SerializationContext context, IBufferWriter<byte> bufferWriter)
         {
             Thread.Sleep(500);
-            return Serializers.Utf8.Serialize(data, context);
+            Serializers.Utf8.Serialize(data, context, bufferWriter);
         }
     }
 }
