@@ -16,12 +16,14 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka
 {
     /// <summary>
     ///     Represents a Kafka (topic, partition) tuple.
     /// </summary>
-    public class TopicPartition
+    public class TopicPartition : IComparable
     {
         /// <summary>
         ///     Initializes a new TopicPartition instance.
@@ -123,5 +125,31 @@ namespace Confluent.Kafka
         /// </returns>
         public override string ToString()
             => $"{Topic} [{Partition}]";
+
+        /// <summary>
+        ///     Compares the current instance with another object of the same type and returns
+        ///     an integer that indicates whether the current instance precedes, follows, or
+        ///     occurs in the same position in the sort order as the other object.
+        /// </summary>
+        /// <returns>
+        ///     Less than zero:	This instance precedes obj in the sort order.
+        ///     Zero:	This instance occurs in the same position in the sort order as obj.
+        ///     Greater than zero:	This instance follows obj in the sort order.
+        /// </returns>
+        public int CompareTo(object obj)
+        {
+            if (obj.GetType() != this.GetType())
+            {
+                throw new ArgumentException($"Object of type {obj.GetType()} cannot be compared to object of type {this.GetType()}");
+            }
+
+            var topicCompareResult = this.Topic.CompareTo(((TopicPartition)obj).Topic);
+            if (topicCompareResult != 0)
+            {
+                return topicCompareResult;
+            }
+
+            return this.Partition.Value.CompareTo(((TopicPartition)obj).Partition.Value);
+        }
     }
 }

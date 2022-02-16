@@ -25,6 +25,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using NJsonSchema;
+using NJsonSchema.Generation;
 using NJsonSchema.Validation;
 using Confluent.Kafka;
 
@@ -52,14 +53,16 @@ namespace Confluent.SchemaRegistry.Serdes
     ///     integration of System.Text.Json and JSON Schema, so this
     ///     is not yet supported by the serializer.
     /// </remarks>
-    public class JsonSerializer<T> : IAsyncSerializer<T>  where T : new()
+    public class JsonSerializer<T> : IAsyncSerializer<T> where T : class
     {
         private const int DefaultInitialBufferSize = 1024;
 
         private bool autoRegisterSchema = true;
+        private bool useLatestVersion = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
+        private readonly JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings;
         
         private HashSet<string> subjectsRegistered = new HashSet<string>();
         private SemaphoreSlim serializeMutex = new SemaphoreSlim(1);
@@ -80,11 +83,23 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Initialize a new instance of the JsonSerializer class.
         /// </summary>
-        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null)
+        /// <param name="schemaRegistryClient">
+        ///     Confluent Schema Registry client instance.
+        /// </param>
+        /// <param name="config">
+        ///     Serializer configuration.
+        /// </param>
+        /// <param name="jsonSchemaGeneratorSettings">
+        ///     JSON schema generator settings.
+        /// </param>
+        public JsonSerializer(ISchemaRegistryClient schemaRegistryClient, JsonSerializerConfig config = null, JsonSchemaGeneratorSettings jsonSchemaGeneratorSettings = null)
         {
             this.schemaRegistryClient = schemaRegistryClient;
+            this.jsonSchemaGeneratorSettings = jsonSchemaGeneratorSettings;
 
-            this.schema = NJsonSchema.JsonSchema.FromType<T>();
+            this.schema = this.jsonSchemaGeneratorSettings == null
+                ? NJsonSchema.JsonSchema.FromType<T>()
+                : NJsonSchema.JsonSchema.FromType<T>(this.jsonSchemaGeneratorSettings);
             this.schemaFullname = schema.Title;
             this.schemaText = schema.ToJson();
 
@@ -98,7 +113,13 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
+
+            if (this.useLatestVersion && this.autoRegisterSchema)
+            {
+                throw new ArgumentException($"JsonSerializer: cannot enable both use.latest.version and auto.register.schemas");
+            }
         }
 
 
@@ -126,11 +147,11 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             if (value == null) { return null; }
 
-            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value);
+            var serializedString = Newtonsoft.Json.JsonConvert.SerializeObject(value, this.jsonSchemaGeneratorSettings?.ActualSerializerSettings);
             var validationResult = validator.Validate(serializedString, this.schema);
             if (validationResult.Count > 0)
             {
-                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path) + "]"));
+                throw new InvalidDataException("Schema validation failed for properties: [" + string.Join(", ", validationResult.Select(r => r.Path)) + "]");
             }
 
             try
@@ -148,14 +169,25 @@ namespace Confluent.SchemaRegistry.Serdes
 
                     if (!subjectsRegistered.Contains(subject))
                     {
-                        // first usage: register/get schema to check compatibility
-                        schemaId = autoRegisterSchema
-                            ? await schemaRegistryClient.RegisterSchemaAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
-                                .ConfigureAwait(continueOnCapturedContext: false)
-                            : await schemaRegistryClient.GetSchemaIdAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                        if (useLatestVersion)
+                        {
+                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
+                            schemaId = latestSchema.Id;
+                        }
+                        else
+                        {
+                            // first usage: register/get schema to check compatibility
+                            schemaId = autoRegisterSchema
+                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                    .ConfigureAwait(continueOnCapturedContext: false)
+                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                    .ConfigureAwait(continueOnCapturedContext: false);
 
-                        // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
+                            // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
+                        }
 
                         subjectsRegistered.Add(subject);
                     }

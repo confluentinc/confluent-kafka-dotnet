@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System;
 using System.Threading;
+using System.Security.Cryptography.X509Certificates;
 using Confluent.Kafka;
 
 
@@ -75,6 +76,11 @@ namespace Confluent.SchemaRegistry
         public const int DefaultMaxCachedSchemas = 1000;
 
         /// <summary>
+        ///     The default SSL server certificate verification for Schema Registry REST API calls.
+        /// </summary>
+        public const bool DefaultEnableSslCertificateVerification = true;
+
+        /// <summary>
         ///     The default key subject name strategy.
         /// </summary>
         public const SubjectNameStrategy DefaultKeySubjectNameStrategy = SubjectNameStrategy.Topic;
@@ -117,12 +123,15 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <summary>
-        ///     Initialize a new instance of the SchemaRegistryClient class.
+        ///     Initialize a new instance of the SchemaRegistryClient class with a custom <see cref="IAuthenticationHeaderValueProvider"/>
         /// </summary>
         /// <param name="config">
         ///     Configuration properties.
         /// </param>
-        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
+        /// <param name="authenticationHeaderValueProvider">
+        ///     The authentication header value provider
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider)
         {
             if (config == null)
             {
@@ -188,6 +197,29 @@ namespace Confluent.SchemaRegistry
                 throw new ArgumentException($"Invalid value '{basicAuthSource}' specified for property '{SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource}'");
             }
 
+            if (authenticationHeaderValueProvider != null)
+            {
+                if (username != null || password != null)
+                {
+                    throw new ArgumentException($"Invalid authentication header value provider configuration: Cannot specify both custom provider and username/password");
+                }
+            }
+            else
+            {
+                if (username != null && password == null)
+                {
+                    throw new ArgumentException($"Invalid authentication header value provider configuration: Basic authentication username specified, but password not specified");
+                }
+                if (username == null && password != null)
+                {
+                    throw new ArgumentException($"Invalid authentication header value provider configuration: Basic authentication password specified, but username not specified");
+                }
+                else if (username != null && password != null)
+                {
+                    authenticationHeaderValueProvider = new BasicAuthenticationHeaderValueProvider(username, password);
+                }
+            }
+
             foreach (var property in config)
             {
                 if (!property.Key.StartsWith("schema.registry."))
@@ -201,14 +233,36 @@ namespace Confluent.SchemaRegistry
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthCredentialsSource &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo &&
                     property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryKeySubjectNameStrategy &&
-                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy)
+                    property.Key != SchemaRegistryConfig.PropertyNames.SchemaRegistryValueSubjectNameStrategy &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslCaLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystoreLocation &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.SslKeystorePassword &&
+                    property.Key != SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification)
                 {
                     throw new ArgumentException($"Unknown configuration parameter {property.Key}");
                 }
             }
 
-            this.restService = new RestService(schemaRegistryUris, timeoutMs, username, password);
+            var sslVerificationMaybe = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification);
+            bool sslVerify;
+            try { sslVerify = sslVerificationMaybe.Value == null ? DefaultEnableSslCertificateVerification : bool.Parse(sslVerificationMaybe.Value); }
+            catch (FormatException) { throw new ArgumentException($"Configured value for {SchemaRegistryConfig.PropertyNames.EnableSslCertificateVerification} must be a bool."); }
+
+            this.restService = new RestService(schemaRegistryUris, timeoutMs, authenticationHeaderValueProvider, SetSslConfig(config), sslVerify);
         }
+
+        /// <summary>
+        ///     Initialize a new instance of the SchemaRegistryClient class.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        public CachedSchemaRegistryClient(IEnumerable<KeyValuePair<string, string>> config)
+            : this (config, null)
+        {
+
+        }
+
 
 
         /// <remarks>
@@ -233,6 +287,31 @@ namespace Confluent.SchemaRegistry
             return false;
         }
 
+        /// <summary>
+        ///     Add certificates for SSL handshake.
+        /// </summary>
+        /// <param name="config">
+        ///     Configuration properties.
+        /// </param>
+        private List<X509Certificate2> SetSslConfig(IEnumerable<KeyValuePair<string, string>> config)
+        {
+            var certificates = new List<X509Certificate2>();
+
+            var certificateLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystoreLocation).Value ?? "";
+            var certificatePassword = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslKeystorePassword).Value ?? "";
+            if (!String.IsNullOrEmpty(certificateLocation))
+            {
+                certificates.Add(new X509Certificate2(certificateLocation, certificatePassword));
+            }
+
+            var caLocation = config.FirstOrDefault(prop => prop.Key.ToLower() == SchemaRegistryConfig.PropertyNames.SslCaLocation).Value ?? "";
+            if (!String.IsNullOrEmpty(caLocation))
+            {
+                certificates.Add(new X509Certificate2(caLocation));
+            }
+
+            return certificates;
+        }
 
         /// <inheritdoc/>
         public Task<int> GetSchemaIdAsync(string subject, string avroSchema)
@@ -262,7 +341,7 @@ namespace Confluent.SchemaRegistry
                     // throws SchemaRegistryException if schema is not known.
                     var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema.SchemaString] = registeredSchema.Id;
-                    schemaById[schemaId] = registeredSchema.Schema;
+                    schemaById[registeredSchema.Id] = registeredSchema.Schema;
                     schemaId = registeredSchema.Id;
                 }
 

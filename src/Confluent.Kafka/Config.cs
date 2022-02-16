@@ -34,7 +34,8 @@ namespace Confluent.Kafka
             { "consistentrandom", "consistent_random" },
             { "murmur2random", "murmur2_random" },
             { "readcommitted", "read_committed" },
-            { "readuncommitted", "read_uncommitted" }
+            { "readuncommitted", "read_uncommitted" },
+            { "cooperativesticky", "cooperative-sticky" }
         };
 
         /// <summary>

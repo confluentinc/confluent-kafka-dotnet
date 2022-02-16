@@ -15,6 +15,7 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Collections.Generic;
 
 
 namespace Confluent.Kafka

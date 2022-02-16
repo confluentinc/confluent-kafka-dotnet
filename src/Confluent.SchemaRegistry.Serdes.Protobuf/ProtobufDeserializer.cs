@@ -47,6 +47,8 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </remarks>
     public class ProtobufDeserializer<T> : IAsyncDeserializer<T> where T : class, IMessage<T>, new()
     {
+        private bool useDeprecatedFormat = false;
+        
         private MessageParser<T> parser;
 
         /// <summary>
@@ -62,9 +64,16 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config == null) { return; }
 
-            if (config.Count() > 0)
+            var nonProtobufConfig = config.Where(item => !item.Key.StartsWith("protobuf."));
+            if (nonProtobufConfig.Count() > 0)
             {
-                throw new ArgumentException($"ProtobufDeserializer: unknown configuration parameter {config.First().Key}.");
+                throw new ArgumentException($"ProtobufDeserializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
+            }
+
+            ProtobufDeserializerConfig protobufConfig = new ProtobufDeserializerConfig(config);
+            if (protobufConfig.UseDeprecatedFormat != null)
+            {
+                this.useDeprecatedFormat = protobufConfig.UseDeprecatedFormat.Value;
             }
         }
 
@@ -115,10 +124,17 @@ namespace Confluent.SchemaRegistry.Serdes
                     // Read the index array length, then all of the indices. These are not
                     // needed, but parsing them is the easiest way to seek to the start of
                     // the serialized data because they are varints.
-                    var indicesLength = stream.ReadUnsignedVarint();
+                    var indicesLength = useDeprecatedFormat ? (int)stream.ReadUnsignedVarint() : stream.ReadVarint();
                     for (int i=0; i<indicesLength; ++i)
                     {
-                        stream.ReadUnsignedVarint();
+                        if (useDeprecatedFormat)
+                        {
+                            stream.ReadUnsignedVarint();
+                        }
+                        else
+                        {
+                            stream.ReadVarint();
+                        }
                     }
                     return Task.FromResult(parser.ParseFrom(stream));
                 }

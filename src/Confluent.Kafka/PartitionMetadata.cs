@@ -56,7 +56,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Gets ths id of the partition this metadata relates to.
+        ///     Gets the id of the partition this metadata relates to.
         /// </summary>
         public int PartitionId { get; }
 

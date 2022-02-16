@@ -8,6 +8,10 @@ services:
     image: confluentinc/cp-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+  zookeeper_3:
+    image: confluentinc/cp-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
   kafka:
     image: confluentinc/cp-kafka
     depends_on:
@@ -27,6 +31,16 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_2:9092, PLAINTEXT_HOST://localhost:29092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper_2:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  kafka_3:
+    image: confluentinc/cp-kafka
+    depends_on:
+      - zookeeper_3
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_3:9092, PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_3:2181
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
   schema-registry:
     image: confluentinc/cp-schema-registry
@@ -58,3 +72,24 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka_2:9092
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper_2:2181
+  schema-registry_3:
+    image: confluentinc/cp-schema-registry
+    depends_on:
+      - zookeeper_3
+      - kafka_3
+    ports:
+      - 8083:8083
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka_3:9092
+      SCHEMA_REGISTRY_LISTENERS: https://0.0.0.0:8083
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper_3:2181
+      SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/schema-registry/secrets/schema-registry.keystore.jks
+      SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: cnf123
+      SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/schema-registry/secrets/schema-registry.truststore.jks
+      SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: cnf123
+      SCHEMA_REGISTRY_SSL_KEY_PASSWORD: cnf123
+      SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: https
+      SCHEMA_REGISTRY_SSL_CLIENT_AUTH: 'true'
+    volumes:
+      - ./secrets:/etc/schema-registry/secrets

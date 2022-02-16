@@ -272,6 +272,48 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     Incrementally add <paramref name="partitions" />
+        ///     to the current assignment, starting consumption
+        ///     from the specified offsets.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of additional partitions to consume from.
+        ///     If an offset value of Offset.Unset (-1001) is
+        ///     specified for a partition, consumption will
+        ///     resume from the last committed offset on that
+        ///     partition, or according to the
+        ///     'auto.offset.reset' configuration parameter if
+        ///     no offsets have been committed yet.
+        /// </param>
+        void IncrementalAssign(IEnumerable<TopicPartitionOffset> partitions);
+
+
+        /// <summary>
+        ///     Incrementally add <paramref name="partitions" />
+        ///     to the current assignment.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of additional partitions to consume from.
+        ///     Consumption will resume from the last committed
+        ///     offset on each partition, or according to the
+        ///     'auto.offset.reset' configuration parameter if
+        ///     no offsets have been committed yet.
+        /// </param>
+        void IncrementalAssign(IEnumerable<TopicPartition> partitions);
+
+
+        /// <summary>
+        ///     Incrementally remove <paramref name="partitions" />
+        ///     to the current assignment.
+        /// </summary>
+        /// <param name="partitions">
+        ///     The set of partitions to remove from the current
+        ///     assignment.
+        /// </param>
+        void IncrementalUnassign(IEnumerable<TopicPartition> partitions);
+
+
+        /// <summary>
         ///     Remove the current set of assigned partitions
         ///     and stop consumption.
         /// </summary>
@@ -605,7 +647,8 @@ namespace Confluent.Kafka
 
 
         /// <summary>
-        ///     Commits offsets, alerts the group coordinator
+        ///     Commits offsets (if auto commit is enabled),
+        ///     alerts the group coordinator
         ///     that the consumer is exiting the group then
         ///     releases all resources used by this consumer.
         ///     You should call <see cref="Confluent.Kafka.Consumer{TKey,TValue}.Close" />

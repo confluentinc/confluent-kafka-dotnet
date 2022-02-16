@@ -3,7 +3,7 @@ Confluent's .NET Client for Apache Kafka<sup>TM</sup>
 
 [![Travis Build Status](https://travis-ci.org/confluentinc/confluent-kafka-dotnet.svg?branch=master)](https://travis-ci.org/confluentinc/confluent-kafka-dotnet)
 [![Build status](https://ci.appveyor.com/api/projects/status/kux83eykufuv16cn/branch/master?svg=true)](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/branch/master)
-[![Chat on Slack](https://img.shields.io/badge/chat-on%20slack-7A5979.svg)](https://confluentcommunity.slack.com/messages/clients)
+[![Chat on Slack](https://img.shields.io/badge/chat-on%20slack-7A5979.svg)](https://launchpass.com/confluentcommunity)
 
 **confluent-kafka-dotnet** is Confluent's .NET client for [Apache Kafka](http://kafka.apache.org/) and the
 [Confluent Platform](https://www.confluent.io/product/).
@@ -44,13 +44,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.4.4
+Install-Package Confluent.Kafka -Version 1.8.2
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.4.4 Confluent.Kafka
+dotnet add package -v 1.8.2 Confluent.Kafka
 ```
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.
@@ -58,7 +58,7 @@ Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provide
 ### Branch builds
 
 Nuget packages corresponding to all commits to release branches are available from the following nuget package source (Note: this is not a web URL - you 
-should specify it in the nuget package manger):
+should specify it in the nuget package manager):
 [https://ci.appveyor.com/nuget/confluent-kafka-dotnet](https://ci.appveyor.com/nuget/confluent-kafka-dotnet). The version suffix of these nuget packages 
 matches the appveyor build number. You can see which commit a particular build number corresponds to by looking at the 
 [AppVeyor build history](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/history)
@@ -66,7 +66,9 @@ matches the appveyor build number. You can see which commit a particular build n
 
 ## Usage
 
-Take a look in the [examples](examples) directory for example usage. The [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) also serve as good examples.
+For a step-by-step guide and code samples, see [Getting Started with Apache Kafka and .NET](https://developer.confluent.io/get-started/dotnet/) on [Confluent Developer](https://developer.confluent.io/). 
+
+Take a look in the [examples](examples) directory and at the [integration tests](test/Confluent.Kafka.IntegrationTests/Tests) for further examples. 
 
 For an overview of configuration properties, refer to the [librdkafka documentation](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md). 
 
@@ -200,30 +202,26 @@ class Program
 }
 ```
 
+### IHostedService and Web Application Integration
+
+The [Web](https://github.com/confluentinc/confluent-kafka-dotnet/tree/master/examples/Web) example demonstrates how to integrate
+Apache Kafka with a web application, including how to implement `IHostedService` to realize a long running consumer poll loop, how to
+register a producer as a singleton service, and how to bind configuration from an injected `IConfiguration` instance.
+
+### Exactly Once Processing
+
+The .NET Client has full support for transactions and idempotent message production, allowing you to write horizontally scalable stream
+processing applications with exactly once semantics. The [ExactlyOnce](examples/ExactlyOnce) example demonstrates this capability by way
+of an implementation of the classic "word count" problem, also demonstrating how to use the [FASTER](https://github.com/microsoft/FASTER)
+Key/Value store (similar to RocksDb) to materialize working state that may be larger than available memory, and incremental rebalancing
+to avoid stop-the-world rebalancing operations and unnecessary reloading of state when you add or remove processing nodes.
+
 ### Schema Registry Integration
 
 The three "Serdes" packages provide serializers and deserializers for Avro, Protobuf and JSON with [Confluent Schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html) integration. The `Confluent.SchemaRegistry` nuget package provides a client for interfacing with
 Schema Registry's REST API.
 
-**Note:** All three serialization formats are supported across Confluent Platform. They each make different tradeoffs, and you should use the one that best matches to your requirements. Avro is well suited to the streaming data use-case, but the maturity of the non-Java implementations lags that of Java - this is an important consideration. Protobuf and JSON both have great support in .NET.
-
-#### Avro
-
-You can use the Avro serializer and deserializer with the `GenericRecord` class or with specific classes generated
-using the `avrogen` tool, available via Nuget (.NET Core 2.1 required):
-
-```
-dotnet tool install --global Apache.Avro.Tools
-```
-
-Usage:
-
-```
-avrogen -s your_schema.avsc .
-```
-
-For more information about working with Avro in .NET, refer to the the blog post [Decoupling Systems with Apache Kafka, Schema Registry and Avro](https://www.confluent.io/blog/decoupling-systems-with-apache-kafka-schema-registry-and-avro/)
-
+**Note:** All three serialization formats are supported across Confluent Platform. They each make different tradeoffs, and you should use the one that best matches to your requirements. Avro is well suited to the streaming data use-case, but the **quality** and **maturity** of the non-Java implementations lags that of Java - this is an important consideration. Protobuf and JSON both have great support in .NET.
 
 ### Error Handling
 
@@ -252,9 +250,16 @@ All `Consume` errors will result in a `ConsumeException` with further informatio
 available via the `Error` and `ConsumeResult` fields.
 
 
+### 3rd Party
+
+There are numerous libraries that expand on the capabilities provided by Confluent.Kafka, or use Confluent.Kafka
+to integrate with Kafka. For more information, refer to the [3rd Party Libraries](3RD_PARTY.md) page.
+
 ### Confluent Cloud
 
-The [Confluent Cloud example](examples/ConfluentCloud) demonstrates how to configure the .NET client for use with
+For a step-by-step guide on using the .NET client with Confluent Cloud see [Getting Started with Apache Kafka and .NET](https://developer.confluent.io/get-started/dotnet/) on [Confluent Developer](https://developer.confluent.io/). 
+
+You can also refer to the [Confluent Cloud example](examples/ConfluentCloud) which demonstrates how to configure the .NET client for use with
 [Confluent Cloud](https://www.confluent.io/confluent-cloud/).
 
 ### Developer Notes
@@ -264,3 +269,7 @@ Instructions on building and testing confluent-kafka-dotnet can be found [here](
 Copyright (c) 
 2016-2019 [Confluent Inc.](https://www.confluent.io)
 2015-2016 [Andreas Heider](mailto:andreas@heider.io)
+
+KAFKA is a registered trademark of The Apache Software Foundation and has been licensed for use
+by confluent-kafka-dotnet. confluent-kafka-dotnet has no affiliation with and is not endorsed by
+The Apache Software Foundation.
