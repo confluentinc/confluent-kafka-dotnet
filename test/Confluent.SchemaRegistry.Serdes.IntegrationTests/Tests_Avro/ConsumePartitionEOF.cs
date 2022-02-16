@@ -51,7 +51,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new AvroSerializer<User>(schemaRegistry))
                     .Build())
             {
-                producer.ProduceAsync(topic.Name, new Message<Null, User> { Value = new User { name = "test" } });
+                producer.ProduceAsync(topic.Name, new Message<Null, User> { Value = new User { name = "test" } }).Wait();
 
                 var consumerConfig = new ConsumerConfig
                 {
