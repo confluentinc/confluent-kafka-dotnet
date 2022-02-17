@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -389,6 +391,12 @@ namespace Confluent.Kafka
         ///     Broker disconnected before response received
         /// </summary>
         NetworkException = 13,
+
+        /// <summary>
+        ///     Group coordinator load in progress
+        /// </summary>
+        [Obsolete("Superseded by GroupLoadInProgress")]
+        GroupLoadInProress = 14,
 
         /// <summary>
         ///     Group coordinator load in progress
