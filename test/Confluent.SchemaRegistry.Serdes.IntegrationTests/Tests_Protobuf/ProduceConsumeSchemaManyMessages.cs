@@ -63,25 +63,6 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     var cr = consumer.Consume();
                     Assert.Equal(u.Value, cr.Message.Value.Value);
                 }
-
-                // Check the pre-data bytes are as expected.
-                using (var consumer = new ConsumerBuilder<string, byte[]>(consumerConfig).Build())
-                {
-                    consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
-                    // magic byte + schema id + expected array index length + at least one data byte.
-                    Assert.True(cr.Message.Value.Length >= 1 + 4 + 1 + 2 + 1);
-                    // magic byte
-                    Assert.Equal(0, cr.Message.Value[0]);
-                    // index array length
-                    Assert.Equal(1, cr.Message.Value[5]);
-                    // there are 231 messages in the schema. message 230 has index 230. varint is 2 bytes:
-                    // in binary: 11100110.
-                    // -> &7f |80 -> 11100110 = 230
-                    Assert.Equal(230, cr.Message.Value[6]);
-                    // >>7 -> 00000001
-                    Assert.Equal(1, cr.Message.Value[7]);
-                }
             }
         }
     }
