@@ -793,7 +793,7 @@ namespace Confluent.Kafka
                         enableDeliveryReportKey ? message.Key : default(TKey),
                         enableDeliveryReportValue ? message.Value : default(TValue));
 
-                    if (cancellationToken != null && cancellationToken.CanBeCanceled)
+                    if (cancellationToken.CanBeCanceled)
                     {
                         handler.CancellationTokenRegistration
                             = cancellationToken.Register(() => handler.TrySetCanceled());
@@ -955,10 +955,7 @@ namespace Confluent.Kafka
 
             public void HandleDeliveryReport(DeliveryReport<Null, Null> deliveryReport)
             {
-                if (CancellationTokenRegistration != null)
-                {
-                    CancellationTokenRegistration.Dispose();
-                }
+                CancellationTokenRegistration.Dispose();
 
                 if (deliveryReport == null)
                 {
