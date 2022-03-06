@@ -103,7 +103,7 @@ namespace Confluent.Kafka.IntegrationTests
                                 break;
                             }
                         }
-                        for (int i=numMessagesPerPartition; i<numPartitions; ++i)
+                        for (int i=numPartitionsWithCommittedOffsets; i<numPartitions; ++i)
                         {
                             if (!messageCounts.ContainsKey(i) || messageCounts[i] < numMessagesPerPartition)
                             {
