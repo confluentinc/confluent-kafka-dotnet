@@ -230,7 +230,7 @@ namespace Confluent.Kafka.Impl
             _resume_partitions = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_resume_partitions").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
             _seek = (Func<IntPtr, int, long, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_seek").CreateDelegate(typeof(Func<IntPtr, int, long, IntPtr, ErrorCode>));
             _position = (Func<IntPtr, IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_position").CreateDelegate(typeof(Func<IntPtr, IntPtr, ErrorCode>));
-            _producev = (Producev)methods.Single(m => m.Name == "rd_kafka_producev").CreateDelegate(typeof(Producev));
+            _produceva = (Produceva)methods.Single(m => m.Name == "rd_kafka_produceva").CreateDelegate(typeof(Produceva));
             _flush = (Flush)methods.Single(m => m.Name == "rd_kafka_flush").CreateDelegate(typeof(Flush));
             _metadata = (Metadata)methods.Single(m => m.Name == "rd_kafka_metadata").CreateDelegate(typeof(Metadata));
             _metadata_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_metadata_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -966,57 +966,48 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, ErrorCode> _position;
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
+        
+        private delegate IntPtr Produceva(IntPtr rk,
+            rd_kafka_vu[] vus,
+            IntPtr size);
+        
+        private static Produceva _produceva;
 
-        /// <summary>
-        ///     Var-arg tag types, used in producev
-        /// </summary>
-        internal enum ProduceVarTag
-        {
-            End,       // va-arg sentinel
-            Topic,     // (const char *) Topic name
-            Rkt,       // (rd_kafka_topic_t *) Topic handle
-            Partition, // (int32_t) Partition
-            Value,     // (void *, size_t) Message value (payload)
-            Key,       // (void *, size_t) Message key
-            Opaque,    // (void *) Application opaque
-            MsgFlags,  // (int) RD_KAFKA_MSG_F_.. flags
-            Timestamp, // (int64_t) Milliseconds since epoch UTC
-            Header,    // (const char *, const void *, ssize_t) Message Header
-            Headers,   // (rd_kafka_headers_t *) Headers list
-        }
-
-        private delegate ErrorCode Producev(IntPtr rk,
-                ProduceVarTag topicTag, string topic,
-                ProduceVarTag partitionTag, int partition,
-                ProduceVarTag vaTag, IntPtr val, UIntPtr len,
-                ProduceVarTag keyTag, IntPtr key, UIntPtr keylen,
-                ProduceVarTag msgflagsTag, IntPtr msgflags,
-                ProduceVarTag msg_opaqueTag, IntPtr msg_opaque,
-                ProduceVarTag timestampTag, long timestamp,
-                ProduceVarTag headersTag, IntPtr headers,
-                ProduceVarTag endTag);
-        private static Producev _producev;
         internal static ErrorCode producev(
-                IntPtr rk,
-                string topic,
-                int partition,
-                IntPtr msgflags,
-                IntPtr val, UIntPtr len,
-                IntPtr key, UIntPtr keylen,
-                long timestamp,
-                IntPtr headers,
-                IntPtr msg_opaque)
-            => _producev(rk,
-                    ProduceVarTag.Topic, topic,
-                    ProduceVarTag.Partition, partition,
-                    ProduceVarTag.Value, val, len,
-                    ProduceVarTag.Key, key, keylen,
-                    ProduceVarTag.Opaque, msg_opaque,
-                    ProduceVarTag.MsgFlags, msgflags,
-                    ProduceVarTag.Timestamp, timestamp,
-                    ProduceVarTag.Headers, headers,
-                    ProduceVarTag.End);
-
+            IntPtr rk,
+            string topic,
+            int partition,
+            IntPtr msgflags,
+            IntPtr val, UIntPtr len,
+            IntPtr key, UIntPtr keylen,
+            long timestamp,
+            IntPtr headers,
+            IntPtr msg_opaque)
+        {
+            IntPtr topicStrPtr = Marshal.StringToCoTaskMemAnsi(topic);
+            rd_kafka_vu[] vus =
+            {
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Topic,     data  = new rd_kafka_vu_data() {topic = topicStrPtr}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Partition, data  = new rd_kafka_vu_data() {partition = partition}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.MsgFlags,  data  = new rd_kafka_vu_data() {msgflags = msgflags}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Value,     data  = new rd_kafka_vu_data() {val = new rd_kafka_key_val() {data = val, size = len}}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Key,       data  = new rd_kafka_vu_data() {val = new rd_kafka_key_val() {data = key, size = keylen}}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Timestamp, data  = new rd_kafka_vu_data() {timestamp = timestamp}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Headers,   data  = new rd_kafka_vu_data() {headers = headers}},
+                new rd_kafka_vu() {vt = rd_kafka_vtype.Opaque,    data  = new rd_kafka_vu_data() {opaque = msg_opaque}},
+            };
+            try
+            {
+                return new Error(_produceva(rk,
+                    vus,
+                    new IntPtr(vus.Length))).Code;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(topicStrPtr);
+            }
+        }
+        
         private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
         private static Flush _flush;
         internal static ErrorCode flush(IntPtr rk, IntPtr timeout_ms)
