@@ -966,7 +966,7 @@ namespace Confluent.Kafka.Impl
         private static Func<IntPtr, IntPtr, ErrorCode> _position;
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
-        
+
         private delegate IntPtr Produceva(IntPtr rk,
             rd_kafka_vu[] vus,
             IntPtr size);
