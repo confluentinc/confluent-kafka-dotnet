@@ -279,11 +279,11 @@ namespace Confluent.Kafka
 
         private void ProduceImpl(
             string topic,
-            byte[] val, int valOffset, int valLength,
-            byte[] key, int keyOffset, int keyLength,
+            ReadOnlySpan<byte> val,
+            ReadOnlySpan<byte> key,
             Timestamp timestamp,
             Partition partition,
-            IEnumerable<IHeader> headers,
+            IReadOnlyCollection<IHeader> headers,
             IDeliveryHandler deliveryHandler)
         {
             if (timestamp.Type != TimestampType.CreateTime)
@@ -308,8 +308,8 @@ namespace Confluent.Kafka
 
                 err = KafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    val,
+                    key,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -325,8 +325,8 @@ namespace Confluent.Kafka
             {
                 err = KafkaHandle.Produce(
                     topic,
-                    val, valOffset, valLength,
-                    key, keyOffset, keyLength,
+                    val,
+                    key,
                     partition.Value,
                     timestamp.UnixTimestampMs,
                     headers,
@@ -801,8 +801,8 @@ namespace Confluent.Kafka
 
                     ProduceImpl(
                         topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        valBytes,
+                        keyBytes,
                         message.Timestamp, topicPartition.Partition, headers,
                         handler);
 
@@ -812,8 +812,8 @@ namespace Confluent.Kafka
                 {
                     ProduceImpl(
                         topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                        valBytes,
+                        keyBytes,
                         message.Timestamp, topicPartition.Partition, headers, 
                         null);
 
@@ -911,8 +911,8 @@ namespace Confluent.Kafka
             {
                 ProduceImpl(
                     topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                    valBytes,
+                    keyBytes,
                     message.Timestamp, topicPartition.Partition, 
                     headers,
                     new TypedDeliveryHandlerShim_Action(
