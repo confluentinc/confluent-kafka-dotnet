@@ -109,7 +109,7 @@ namespace Confluent.Kafka.Impl
     [StructLayout(LayoutKind.Sequential)]
     struct ptr_and_size
     {
-        public IntPtr data;
+        public IntPtr ptr;
         public UIntPtr size;
     }
 
