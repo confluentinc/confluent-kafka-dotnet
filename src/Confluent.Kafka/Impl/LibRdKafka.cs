@@ -973,7 +973,7 @@ namespace Confluent.Kafka.Impl
         
         private static Produceva _produceva;
 
-        internal static ErrorCode producev(
+        internal static ErrorCode produceva(
             IntPtr rk,
             string topic,
             int partition,
@@ -984,30 +984,25 @@ namespace Confluent.Kafka.Impl
             IntPtr headers,
             IntPtr msg_opaque)
         {
-            IntPtr topicStrPtr = Marshal.StringToCoTaskMemAnsi(topic);
-            rd_kafka_vu[] vus =
+            using (var topicStrPinned = new Util.Marshal.StringAsPinnedUTF8(topic))
             {
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Topic,     data  = new rd_kafka_vu_data() {topic = topicStrPtr}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Partition, data  = new rd_kafka_vu_data() {partition = partition}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.MsgFlags,  data  = new rd_kafka_vu_data() {msgflags = msgflags}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Value,     data  = new rd_kafka_vu_data() {val = new rd_kafka_key_val() {data = val, size = len}}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Key,       data  = new rd_kafka_vu_data() {val = new rd_kafka_key_val() {data = key, size = keylen}}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Timestamp, data  = new rd_kafka_vu_data() {timestamp = timestamp}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Headers,   data  = new rd_kafka_vu_data() {headers = headers}},
-                new rd_kafka_vu() {vt = rd_kafka_vtype.Opaque,    data  = new rd_kafka_vu_data() {opaque = msg_opaque}},
-            };
-            try
-            {
+                rd_kafka_vu[] vus =
+                {
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Topic,     data  = new vu_data() {topic = topicStrPinned.Ptr}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Partition, data  = new vu_data() {partition = partition}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.MsgFlags,  data  = new vu_data() {msgflags = msgflags}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Value,     data  = new vu_data() {val = new ptr_and_size() {data = val, size = len}}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Key,       data  = new vu_data() {val = new ptr_and_size() {data = key, size = keylen}}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Timestamp, data  = new vu_data() {timestamp = timestamp}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Headers,   data  = new vu_data() {headers = headers}},
+                    new rd_kafka_vu() {vt = rd_kafka_vtype.Opaque,    data  = new vu_data() {opaque = msg_opaque}},
+                };
                 return new Error(_produceva(rk,
                     vus,
                     new IntPtr(vus.Length))).Code;
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(topicStrPtr);
-            }
+            } 
         }
-        
+
         private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
         private static Flush _flush;
         internal static ErrorCode flush(IntPtr rk, IntPtr timeout_ms)

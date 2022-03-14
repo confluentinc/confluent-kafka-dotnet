@@ -374,7 +374,7 @@ namespace Confluent.Kafka.Impl
 
             try
             {
-                var errorCode = Librdkafka.producev(
+                var errorCode = Librdkafka.produceva(
                     handle,
                     topic,
                     partition,

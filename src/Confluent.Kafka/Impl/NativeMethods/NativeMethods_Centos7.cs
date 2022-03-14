@@ -413,10 +413,6 @@ namespace Confluent.Kafka.Impl.NativeMethods
         internal static extern ErrorCode rd_kafka_position(
                 IntPtr rk, IntPtr partitions);
 
-        // note: producev signature is rd_kafka_producev(rk, ...)
-        // we are keeping things simple with one binding for now, but it 
-        // will be worth benchmarking the overload with no timestamp, opaque,
-        // partition, etc
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_produceva(
                 IntPtr rk,

@@ -107,14 +107,14 @@ namespace Confluent.Kafka.Impl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_key_val
+    struct ptr_and_size
     {
         public IntPtr data;
         public UIntPtr size;
     }
-    
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    struct rd_kafka_vu_data
+    struct vu_data
     {
         [FieldOffset(0)]
         public IntPtr topic;
@@ -123,10 +123,10 @@ namespace Confluent.Kafka.Impl
         public int partition;
 
         [FieldOffset(0)]
-        public rd_kafka_key_val key;
+        public ptr_and_size key;
 
         [FieldOffset(0)]
-        public rd_kafka_key_val val;
+        public ptr_and_size val;
 
         [FieldOffset(0)]
         public IntPtr opaque;
@@ -140,11 +140,11 @@ namespace Confluent.Kafka.Impl
         [FieldOffset(0)]
         public IntPtr headers;
     }
-    
+
     [StructLayout(LayoutKind.Sequential)]
     struct rd_kafka_vu
     {
         public rd_kafka_vtype vt;
-        public rd_kafka_vu_data data;
+        public vu_data data;
     };
 }
