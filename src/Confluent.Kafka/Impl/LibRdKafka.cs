@@ -970,7 +970,7 @@ namespace Confluent.Kafka.Impl
         private delegate IntPtr Produceva(IntPtr rk,
             rd_kafka_vu[] vus,
             IntPtr size);
-        
+
         private static Produceva _produceva;
 
         internal static ErrorCode produceva(
@@ -984,7 +984,9 @@ namespace Confluent.Kafka.Impl
             IntPtr headers,
             IntPtr msg_opaque)
         {
-            using (var topicStrPinned = new Util.Marshal.StringAsPinnedUTF8(topic))
+
+            IntPtr topicStrPtr = Marshal.StringToCoTaskMemAnsi(topic);
+            try
             {
                 rd_kafka_vu[] vus =
                 {
@@ -999,8 +1001,12 @@ namespace Confluent.Kafka.Impl
                 };
                 return new Error(_produceva(rk,
                     vus,
-                    new IntPtr(vus.Length))).Code;
-            } 
+                    new IntPtr(8))).Code;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(topicStrPtr);
+            }
         }
 
         private delegate ErrorCode Flush(IntPtr rk, IntPtr timeout_ms);
