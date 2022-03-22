@@ -7,8 +7,8 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///  Validates consumer able to use API's after
-        ///  MaxPollInterval exceeded.
+        ///  Validates consumer doesn't freeze from log handler when MaxPollInterval exceeded
+        ///  and exceptions are thrown from later poll.
         /// </summary>
         [Theory(Timeout=30000), MemberData(nameof(KafkaParameters))]
         public void Consumer_MaxPollInterval(string bootstrapServers)
