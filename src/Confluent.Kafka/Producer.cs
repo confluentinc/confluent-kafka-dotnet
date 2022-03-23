@@ -807,42 +807,15 @@ namespace Confluent.Kafka
                         message.Timestamp, topicPartition.Partition, headers,
                         handler);
                     
-                    // We can release immediately after calling ProduceImpl which invokes the underlying
-                    // librdkafka method because immediately after that method is invoked it is copied
-                    // to the underlying librdkafka buffer
-                    try
-                    {
-                        if (keySerializer != null)
-                            keySerializer.Release(ref keyBytes);
-                        else
-                            asyncKeySerializer.Release(ref keyBytes);
-                    }
-                    catch (Exception)
-                    {
-                        // If the release fails do not do anything - it was delivered to the hooks as expected
-                    }
-                    
-                    try
-                    {
-                        if (valueSerializer != null)
-                            valueSerializer.Release(ref valBytes);
-                        else
-                            asyncValueSerializer.Release(ref valBytes);
-                    }
-                    catch (Exception)
-                    {
-                        // If the release fails do not do anything - it was delivered to the hooks as expected
-                    }
-
                     return await handler.Task.ConfigureAwait(false);
                 }
                 else
                 {
                     ProduceImpl(
-                        topicPartition.Topic, 
+                        topicPartition.Topic,
                         valBytes.Array, valBytes.Offset, valBytes.Count,
                         keyBytes.Array, keyBytes.Offset, keyBytes.Count,
-                        message.Timestamp, topicPartition.Partition, headers, 
+                        message.Timestamp, topicPartition.Partition, headers,
                         null);
 
                     // We can release immediately after calling ProduceImpl which invokes the underlying
@@ -859,7 +832,7 @@ namespace Confluent.Kafka
                     {
                         // If the release fails do not do anything - it was delivered to the hooks as expected
                     }
-                    
+
                     try
                     {
                         if (valueSerializer != null)
@@ -871,7 +844,7 @@ namespace Confluent.Kafka
                     {
                         // If the release fails do not do anything - it was delivered to the hooks as expected
                     }
-                    
+
                     var result = new DeliveryResult<TKey, TValue>
                     {
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
@@ -890,6 +863,35 @@ namespace Confluent.Kafka
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     });
+            }
+            finally
+            {
+                // We can release immediately after calling ProduceImpl which invokes the underlying
+                // librdkafka method because immediately after that method is invoked it is copied
+                // to the underlying librdkafka buffer
+                try
+                {
+                    if (keySerializer != null)
+                        keySerializer.Release(ref keyBytes);
+                    else
+                        asyncKeySerializer.Release(ref keyBytes);
+                }
+                catch (Exception)
+                {
+                    // If the release fails do not do anything - it was delivered to the hooks as expected
+                }
+                    
+                try
+                {
+                    if (valueSerializer != null)
+                        valueSerializer.Release(ref valBytes);
+                    else
+                        asyncValueSerializer.Release(ref valBytes);
+                }
+                catch (Exception)
+                {
+                    // If the release fails do not do anything - it was delivered to the hooks as expected
+                }
             }
         }
 
@@ -977,7 +979,19 @@ namespace Confluent.Kafka
                             enableDeliveryReportKey ? message.Key : default(TKey),
                             enableDeliveryReportValue ? message.Value : default(TValue),
                             deliveryHandler));
-                
+            }
+            catch (KafkaException ex)
+            {
+                throw new ProduceException<TKey, TValue>(
+                    ex.Error,
+                    new DeliveryReport<TKey, TValue>
+                    {
+                        Message = message,
+                        TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
+                    });
+            }
+            finally
+            {
                 // We can release immediately after calling ProduceImpl which invokes the underlying
                 // librdkafka method because immediately after that method is invoked it is copied
                 // to the underlying librdkafka buffer
@@ -1004,16 +1018,6 @@ namespace Confluent.Kafka
                 {
                     // If the release fails do not do anything - it was delivered to the hooks as expected
                 }
-            }
-            catch (KafkaException ex)
-            {
-                throw new ProduceException<TKey, TValue>(
-                    ex.Error,
-                    new DeliveryReport<TKey, TValue>
-                        {
-                            Message = message,
-                            TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
-                        });
             }
         }
 
