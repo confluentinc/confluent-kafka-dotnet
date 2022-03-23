@@ -42,10 +42,10 @@ namespace Confluent.Kafka
             public PartitionerDelegate defaultPartitioner;
         }
 
-        private ISerializer<TKey> keySerializer;
-        private ISerializer<TValue> valueSerializer;
-        private IAsyncSerializer<TKey> asyncKeySerializer;
-        private IAsyncSerializer<TValue> asyncValueSerializer;
+        private ISegmentSerializer<TKey> keySerializer;
+        private ISegmentSerializer<TValue> valueSerializer;
+        private IAsyncSegmentSerializer<TKey> asyncKeySerializer;
+        private IAsyncSegmentSerializer<TValue> asyncValueSerializer;
 
         private static readonly Dictionary<Type, object> defaultSerializers = new Dictionary<Type, object>
         {
@@ -496,10 +496,11 @@ namespace Confluent.Kafka
         }
 
         private void InitializeSerializers(
-            ISerializer<TKey> keySerializer,
-            ISerializer<TValue> valueSerializer,
-            IAsyncSerializer<TKey> asyncKeySerializer,
-            IAsyncSerializer<TValue> asyncValueSerializer)
+            ISegmentSerializer<TKey> keySerializer,
+            ISegmentSerializer<TValue> valueSerializer,
+            IAsyncSegmentSerializer<TKey> asyncKeySerializer,
+            IAsyncSegmentSerializer<TValue> asyncValueSerializer
+        )
         {
             // setup key serializer.
             if (keySerializer == null && asyncKeySerializer == null)
@@ -509,7 +510,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Key serializer not specified and there is no default serializer defined for type {typeof(TKey).Name}.");
                 }
-                this.keySerializer = (ISerializer<TKey>)serializer;
+                this.keySerializer = (ISegmentSerializer<TKey>)serializer;
             }
             else if (keySerializer == null && asyncKeySerializer != null)
             {
@@ -532,7 +533,7 @@ namespace Confluent.Kafka
                     throw new ArgumentNullException(
                         $"Value serializer not specified and there is no default serializer defined for type {typeof(TValue).Name}.");
                 }
-                this.valueSerializer = (ISerializer<TValue>)serializer;
+                this.valueSerializer = (ISegmentSerializer<TValue>)serializer;
             }
             else if (valueSerializer == null && asyncValueSerializer != null)
             {
@@ -746,7 +747,7 @@ namespace Confluent.Kafka
         {
             Headers headers = message.Headers ?? new Headers();
 
-            byte[] keyBytes;
+            ArraySegment<byte> keyBytes;
             try
             {
                 keyBytes = (keySerializer != null)
@@ -765,7 +766,7 @@ namespace Confluent.Kafka
                     ex);
             }
 
-            byte[] valBytes;
+            ArraySegment<byte> valBytes;
             try
             {
                 valBytes = (valueSerializer != null)
@@ -801,10 +802,37 @@ namespace Confluent.Kafka
 
                     ProduceImpl(
                         topicPartition.Topic,
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                        valBytes.Array, valBytes.Offset, valBytes.Count,
+                        keyBytes.Array, keyBytes.Offset, keyBytes.Count,
                         message.Timestamp, topicPartition.Partition, headers,
                         handler);
+                    
+                    // We can release immediately after calling ProduceImpl which invokes the underlying
+                    // librdkafka method because immediately after that method is invoked it is copied
+                    // to the underlying librdkafka buffer
+                    try
+                    {
+                        if (keySerializer != null)
+                            keySerializer.Release(ref keyBytes);
+                        else
+                            asyncKeySerializer.Release(ref keyBytes);
+                    }
+                    catch (Exception)
+                    {
+                        // If the release fails do not do anything - it was delivered to the hooks as expected
+                    }
+                    
+                    try
+                    {
+                        if (valueSerializer != null)
+                            valueSerializer.Release(ref valBytes);
+                        else
+                            asyncValueSerializer.Release(ref valBytes);
+                    }
+                    catch (Exception)
+                    {
+                        // If the release fails do not do anything - it was delivered to the hooks as expected
+                    }
 
                     return await handler.Task.ConfigureAwait(false);
                 }
@@ -812,11 +840,38 @@ namespace Confluent.Kafka
                 {
                     ProduceImpl(
                         topicPartition.Topic, 
-                        valBytes, 0, valBytes == null ? 0 : valBytes.Length, 
-                        keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length, 
+                        valBytes.Array, valBytes.Offset, valBytes.Count,
+                        keyBytes.Array, keyBytes.Offset, keyBytes.Count,
                         message.Timestamp, topicPartition.Partition, headers, 
                         null);
 
+                    // We can release immediately after calling ProduceImpl which invokes the underlying
+                    // librdkafka method because immediately after that method is invoked it is copied
+                    // to the underlying librdkafka buffer
+                    try
+                    {
+                        if (keySerializer != null)
+                            keySerializer.Release(ref keyBytes);
+                        else
+                            asyncKeySerializer.Release(ref keyBytes);
+                    }
+                    catch (Exception)
+                    {
+                        // If the release fails do not do anything - it was delivered to the hooks as expected
+                    }
+                    
+                    try
+                    {
+                        if (valueSerializer != null)
+                            valueSerializer.Release(ref valBytes);
+                        else
+                            asyncValueSerializer.Release(ref valBytes);
+                    }
+                    catch (Exception)
+                    {
+                        // If the release fails do not do anything - it was delivered to the hooks as expected
+                    }
+                    
                     var result = new DeliveryResult<TKey, TValue>
                     {
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset),
@@ -869,7 +924,7 @@ namespace Confluent.Kafka
 
             Headers headers = message.Headers ?? new Headers();
 
-            byte[] keyBytes;
+            ArraySegment<byte> keyBytes;
             try
             {
                 keyBytes = (keySerializer != null)
@@ -888,7 +943,7 @@ namespace Confluent.Kafka
                     ex);
             }
 
-            byte[] valBytes;
+            ArraySegment<byte> valBytes;
             try
             {
                 valBytes = (valueSerializer != null)
@@ -911,8 +966,8 @@ namespace Confluent.Kafka
             {
                 ProduceImpl(
                     topicPartition.Topic,
-                    valBytes, 0, valBytes == null ? 0 : valBytes.Length,
-                    keyBytes, 0, keyBytes == null ? 0 : keyBytes.Length,
+                    valBytes.Array, valBytes.Offset, valBytes.Count,
+                    keyBytes.Array, keyBytes.Offset, keyBytes.Count,
                     message.Timestamp, topicPartition.Partition,
                     headers,
                     deliveryHandler == null
@@ -922,6 +977,33 @@ namespace Confluent.Kafka
                             enableDeliveryReportKey ? message.Key : default(TKey),
                             enableDeliveryReportValue ? message.Value : default(TValue),
                             deliveryHandler));
+                
+                // We can release immediately after calling ProduceImpl which invokes the underlying
+                // librdkafka method because immediately after that method is invoked it is copied
+                // to the underlying librdkafka buffer
+                try
+                {
+                    if (keySerializer != null)
+                        keySerializer.Release(ref keyBytes);
+                    else
+                        asyncKeySerializer.Release(ref keyBytes);
+                }
+                catch (Exception)
+                {
+                    // If the release fails do not do anything - it was delivered to the hooks as expected
+                }
+                    
+                try
+                {
+                    if (valueSerializer != null)
+                        valueSerializer.Release(ref valBytes);
+                    else
+                        asyncValueSerializer.Release(ref valBytes);
+                }
+                catch (Exception)
+                {
+                    // If the release fails do not do anything - it was delivered to the hooks as expected
+                }
             }
             catch (KafkaException ex)
             {
