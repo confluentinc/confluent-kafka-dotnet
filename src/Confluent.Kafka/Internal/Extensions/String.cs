@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+#pragma warning disable SYSLIB0001 // utf7 insecure
+
 using System;
 using System.Text;
 

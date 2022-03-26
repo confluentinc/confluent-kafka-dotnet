@@ -151,9 +151,11 @@ namespace Confluent.Kafka
                     key,
                     timestamp, topicPartition.Partition,
                     headers,
-                    new TypedDeliveryHandlerShim_Action(
-                        topicPartition.Topic,
-                        deliveryHandler));
+                    deliveryHandler == null
+                        ? null
+                        : new TypedDeliveryHandlerShim_Action(
+                            topicPartition.Topic,
+                            deliveryHandler));
             }
             catch (KafkaException ex)
             {

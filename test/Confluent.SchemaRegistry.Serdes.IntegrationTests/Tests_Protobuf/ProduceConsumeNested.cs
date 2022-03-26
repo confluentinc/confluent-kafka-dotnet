@@ -64,22 +64,6 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     var cr = consumer.Consume();
                     Assert.Equal(u.Field2, cr.Message.Value.Field2);
                 }
-
-                // Check the pre-data bytes are as expected.
-                using (var consumer = new ConsumerBuilder<string, byte[]>(consumerConfig).Build())
-                {
-                    consumer.Subscribe(topic.Name);
-                    var cr = consumer.Consume();
-                    // magic byte + schema id + expected array index length + at least one data byte.
-                    Assert.True(cr.Message.Value.Length > 1 + 4 + 4 + 1);
-                    // magic byte
-                    Assert.Equal(0, cr.Message.Value[0]);
-                    // index array.
-                    Assert.Equal(3, cr.Message.Value[5]);
-                    Assert.Equal(2, cr.Message.Value[6]);
-                    Assert.Equal(1, cr.Message.Value[7]);
-                    Assert.Equal(0, cr.Message.Value[8]);
-                }
             }
         }
     }

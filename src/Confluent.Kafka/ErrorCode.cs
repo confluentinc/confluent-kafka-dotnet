@@ -16,6 +16,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 
 namespace Confluent.Kafka
 {
@@ -393,7 +395,13 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Group coordinator load in progress
         /// </summary>
+        [Obsolete("Superseded by GroupLoadInProgress")]
         GroupLoadInProress = 14,
+
+        /// <summary>
+        ///     Group coordinator load in progress
+        /// </summary>
+        GroupLoadInProgress = 14,
 
         /// <summary>
         /// Group coordinator not available

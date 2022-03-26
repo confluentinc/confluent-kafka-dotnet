@@ -24,7 +24,8 @@ using System.Linq;
 using Avro.Specific;
 using Confluent.Kafka;
 using Confluent.Kafka.Examples.AvroSpecific;
-
+using System;
+using Avro.Generic;
 
 namespace Confluent.SchemaRegistry.Serdes.UnitTests
 {
@@ -147,6 +148,55 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             Assert.Equal(user.name, result.name);
             Assert.Equal(user.favorite_color, result.favorite_color);
             Assert.Equal(user.favorite_number, result.favorite_number);
+        }
+
+        [Fact]
+        public void NullISpecificRecord()
+        {
+            var serializer = new AvroSerializer<User>(schemaRegistryClient);
+            var deserializer = new AvroDeserializer<User>(schemaRegistryClient);
+
+            var bytes = serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Null(bytes);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void NullGenericRecord()
+        {
+            var serializer = new AvroSerializer<GenericRecord>(schemaRegistryClient);
+            var deserializer = new AvroDeserializer<GenericRecord>(schemaRegistryClient);
+
+            var bytes = serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Null(bytes);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void NullString()
+        {
+            var serializer = new AvroSerializer<string>(schemaRegistryClient);
+            var deserializer = new AvroDeserializer<string>(schemaRegistryClient);
+
+            var bytes = serializer.SerializeAsync(null, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Null(bytes);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void NullInt()
+        {
+            var deserializer = new AvroDeserializer<int>(schemaRegistryClient);
+
+            var exception = Assert.Throws<AggregateException>(() => deserializer.DeserializeAsync(ReadOnlyMemory<byte>.Empty, isNull: true, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+
+            Assert.Equal("Cannot deserialize null to a Value Type", exception.InnerException.Message);
         }
 
         [Fact]

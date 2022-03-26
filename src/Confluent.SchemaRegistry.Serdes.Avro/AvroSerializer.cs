@@ -141,6 +141,16 @@ namespace Confluent.SchemaRegistry.Serdes
         { 
             try
             {
+                // null needs to treated specially since the client most likely just wants to send
+                // an individual null value instead of making the subject a null type. Also, null in
+                // Kafka has a special meaning for deletion in a topic with the compact retention policy.
+                // Therefore, we will bypass schema registration and return a null value in Kafka, instead
+                // of an Avro encoded null.
+                if (value == null && typeof(T) != typeof(Null))
+                {
+                    return null;
+                }
+
                 if (serializerImpl == null)
                 {
                     serializerImpl = typeof(T) == typeof(GenericRecord)

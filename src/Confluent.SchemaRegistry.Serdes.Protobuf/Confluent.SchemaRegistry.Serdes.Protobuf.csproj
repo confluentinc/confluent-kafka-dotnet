@@ -4,10 +4,10 @@
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Authors>Confluent Inc.</Authors>
     <Description>Provides a Protobuf Serializer and Deserializer for use with Confluent.Kafka with Confluent Schema Registry integration</Description>
-    <Copyright>Copyright 2020 Confluent Inc.</Copyright>
+    <Copyright>Copyright 2020-2022 Confluent Inc.</Copyright>
     <PackageProjectUrl>https://github.com/confluentinc/confluent-kafka-dotnet/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/confluentinc/confluent-kafka-dotnet/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent_logo.png</PackageIconUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/confluent-logo.png</PackageIconUrl>
     <PackageReleaseNotes>https://github.com/confluentinc/confluent-kafka-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Kafka;Confluent;Schema Registry;Protobuf</PackageTags>
     <PackageId>Confluent.SchemaRegistry.Serdes.Protobuf</PackageId>

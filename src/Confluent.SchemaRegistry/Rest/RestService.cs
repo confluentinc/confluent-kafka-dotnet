@@ -48,16 +48,18 @@ namespace Confluent.SchemaRegistry
         ///     HttpClient instances corresponding to each provided schema registry Uri.
         /// </summary>
         private readonly List<HttpClient> clients;
+        /// <summary>
+        ///     HTTP request authentication value provider
+        /// </summary>
+        private readonly IAuthenticationHeaderValueProvider authenticationHeaderValueProvider;
 
 
         /// <summary>
         ///     Initializes a new instance of the RestService class.
         /// </summary>
-        public RestService(string schemaRegistryUrl, int timeoutMs, string username, string password, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
+        public RestService(string schemaRegistryUrl, int timeoutMs, IAuthenticationHeaderValueProvider authenticationHeaderValueProvider, List<X509Certificate2> certificates, bool enableSslCertificateVerification)
         {
-            var authorizationHeader = username != null && password != null
-                ? new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}")))
-                : null;
+            this.authenticationHeaderValueProvider = authenticationHeaderValueProvider;
 
             this.clients = schemaRegistryUrl
                 .Split(',')
@@ -73,8 +75,6 @@ namespace Confluent.SchemaRegistry
                     {
                         client = new HttpClient() { BaseAddress = new Uri(uri, UriKind.Absolute), Timeout = TimeSpan.FromMilliseconds(timeoutMs) };
                     }
-
-                    if (authorizationHeader != null) { client.DefaultRequestHeaders.Authorization = authorizationHeader; }
                     return client;
                 })
                 .ToList();
@@ -281,6 +281,10 @@ namespace Confluent.SchemaRegistry
                 var content = new StringContent(stringContent, System.Text.Encoding.UTF8, Versions.SchemaRegistry_V1_JSON);
                 content.Headers.ContentType.CharSet = string.Empty;
                 request.Content = content;
+            }
+            if (authenticationHeaderValueProvider != null)
+            {
+                request.Headers.Authorization = authenticationHeaderValueProvider.GetAuthenticationHeader();
             }
             return request;
         }

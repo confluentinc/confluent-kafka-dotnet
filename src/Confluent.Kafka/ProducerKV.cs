@@ -291,13 +291,15 @@ namespace Confluent.Kafka
                     topicPartition.Topic,
                     valBytes,
                     keyBytes,
-                    message.Timestamp, topicPartition.Partition, 
+                    message.Timestamp, topicPartition.Partition,
                     headers,
-                    new TypedDeliveryHandlerShim_Action(
-                        topicPartition.Topic,
-                        enableDeliveryReportKey ? message.Key : default(TKey),
-                        enableDeliveryReportValue ? message.Value : default(TValue),
-                        deliveryHandler));
+                    deliveryHandler == null
+                        ? null
+                        : new TypedDeliveryHandlerShim_Action(
+                            topicPartition.Topic,
+                            enableDeliveryReportKey ? message.Key : default(TKey),
+                            enableDeliveryReportValue ? message.Value : default(TValue),
+                            deliveryHandler));
             }
             catch (KafkaException ex)
             {

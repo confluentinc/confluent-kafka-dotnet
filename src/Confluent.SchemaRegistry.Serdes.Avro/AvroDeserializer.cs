@@ -92,6 +92,19 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             try
             {
+                if (isNull)
+                {
+                    // Jit optimizes this check away
+                    if (default(T) == null)
+                    {
+                        return default;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Cannot deserialize null to a Value Type");
+                    }
+                }
+
                 if (deserializerImpl == null)
                 {
                     deserializerImpl = (typeof(T) == typeof(GenericRecord))
@@ -100,7 +113,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 }
 
                 // TODO: change this interface such that it takes ReadOnlyMemory<byte>, not byte[].
-                return await deserializerImpl.Deserialize(context.Topic, isNull ? null : data.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
+                return isNull ? default : await deserializerImpl.Deserialize(context.Topic, data.ToArray()).ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (AggregateException e)
             {
