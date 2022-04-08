@@ -938,9 +938,7 @@ namespace Confluent.Kafka
         private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<DeliveryResult<TKey, TValue>>, IDeliveryHandler
         {
             public TypedTaskDeliveryHandlerShim(string topic, TKey key, TValue val)
-#if !NET45
                 : base(TaskCreationOptions.RunContinuationsAsynchronously)
-#endif
             {
                 Topic = topic;
                 Key = key;
@@ -961,11 +959,7 @@ namespace Confluent.Kafka
 
                 if (deliveryReport == null)
                 {
-#if NET45
-                    System.Threading.Tasks.Task.Run(() => TrySetResult(null));
-#else
                     TrySetResult(null);
-#endif
                     return;
                 }
 
@@ -985,16 +979,6 @@ namespace Confluent.Kafka
                 // cost of marshalling it.
                 dr.Topic = Topic;
 
-#if NET45
-                if (deliveryReport.Error.IsError)
-                {
-                    System.Threading.Tasks.Task.Run(() => SetException(new ProduceException<TKey, TValue>(deliveryReport.Error, dr)));
-                }
-                else
-                {
-                    System.Threading.Tasks.Task.Run(() => TrySetResult(dr));
-                }
-#else
                 if (deliveryReport.Error.IsError)
                 {
                     TrySetException(new ProduceException<TKey, TValue>(deliveryReport.Error, dr));
@@ -1003,7 +987,6 @@ namespace Confluent.Kafka
                 {
                     TrySetResult(dr);
                 }
-#endif
             }
         }
 

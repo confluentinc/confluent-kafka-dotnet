@@ -39,8 +39,8 @@ namespace Confluent.Kafka.Impl.NativeMethods
     /// </remarks>
     internal class NativeMethods_Centos6
     {
-#if NET45 || NET46 || NET47
-         public const string DllName = "centos6-librdkafka.so";
+#if NET462
+        public const string DllName = "centos6-librdkafka.so";
 #else
         public const string DllName = "centos6-librdkafka";
 #endif
