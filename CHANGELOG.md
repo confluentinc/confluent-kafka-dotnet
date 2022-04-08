@@ -14,6 +14,10 @@ for a complete list of changes, enhancements, fixes and upgrade considerations.
 - No longer crashes on Alpine Linux when MUSL is installed ([shurivich](https://github.com/shurivich)).
 - JSON validation exception messages now properly include failing paths ([drinehimer](https://github.com/drinehimer)).
 
+## Upgrade Considerations
+
+- The earliest supported .NET Framework version is now 4.6.2, previously this was 4.5 ([bjornbouetsmith](https://github.com/bjornbouetsmith)).
+
 
 # 1.8.2
 
