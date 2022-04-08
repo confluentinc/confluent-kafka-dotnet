@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 using System.Reflection;
-#if NET462
+#if NET45 || NET46 || NET47
 using System.ComponentModel;
 #endif
 
@@ -376,7 +376,7 @@ namespace Confluent.Kafka.Impl
                     return false;
                 }
 
-#if NET462
+#if NET45 || NET46 || NET47
 
                 if (!MonoSupport.IsMonoRuntime)
                 {
@@ -432,7 +432,7 @@ namespace Confluent.Kafka.Impl
         }
 
 
-#if NET462
+#if NET45 || NET46 || NET47
         private static void LoadNetFrameworkDelegates(string userSpecifiedPath)
         {
             string path = userSpecifiedPath;
