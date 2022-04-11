@@ -34,9 +34,9 @@ after_build:
   - 7z a docs-%APPVEYOR_REPO_COMMIT%.zip doc/_site/*
 
 test_script:
- - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj & C:\projects\confluent-kafka-dotnet\dumpbin.exe /dependents C:\projects\confluent-kafka-dotnet\test\Confluent.Kafka.UnitTests\bin\Release\net462\librdkafka\x86\librdkafka.dll
- - dotnet test -c %CONFIGURATION% --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj & C:\projects\confluent-kafka-dotnet\dumpbin.exe /dependents C:\projects\confluent-kafka-dotnet\test\Confluent.Kafka.UnitTests\bin\Release\net462\librdkafka\x86\librdkafka.dll
- - dotnet test -c %CONFIGURATION% --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj & C:\projects\confluent-kafka-dotnet\dumpbin.exe /dependents C:\projects\confluent-kafka-dotnet\test\Confluent.Kafka.UnitTests\bin\Release\net462\librdkafka\x86\librdkafka.dll
+ - dotnet test -c %CONFIGURATION% --no-build test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj & C:\projects\confluent-kafka-dotnet\dumpbin.exe --help
+ - dotnet test -c %CONFIGURATION% --no-build test/Confluent.SchemaRegistry.UnitTests/Confluent.SchemaRegistry.UnitTests.csproj & C:\projects\confluent-kafka-dotnet\dumpbin.exe --help
+ - dotnet test -c %CONFIGURATION% --no-build test/Confluent.SchemaRegistry.Serdes.UnitTests/Confluent.SchemaRegistry.Serdes.UnitTests.csproj & C:\projects\confluent-kafka-dotnet\dumpbin.exe --help
 
 artifacts:
   - path: ./src/Confluent.Kafka/bin*/Release/*.nupkg
