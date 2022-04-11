@@ -854,7 +854,7 @@ namespace Confluent.Kafka
                             },
                             IsPartitionEOF = false
                         },
-                        kafkaHandle.CreatePossiblyFatalError(msg.err, null));
+                        kafkaHandle.CreatePossiblyFatalMessageError(msgPtr));
                 }
 
                 TKey key;

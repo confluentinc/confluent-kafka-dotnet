@@ -190,15 +190,30 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
+        internal Error CreatePossiblyFatalMessageError(IntPtr msgPtr)
+        {
+            var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
+            if (msg.err == ErrorCode.Local_Fatal)
+            {
+                return CreateFatalError();
+            }
+            return new Error(msg.err, Util.Marshal.PtrToStringUTF8(Librdkafka.message_errstr(msgPtr)));
+        }
+
         internal Error CreatePossiblyFatalError(ErrorCode err, string reason)
         {
             if (err == ErrorCode.Local_Fatal)
             {
-                var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-                err = Librdkafka.fatal_error(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-                return new Error(err, errorStringBuilder.ToString(), true);
+                return CreateFatalError();
             }
             return new Error(err, reason);
+        }
+
+        internal Error CreateFatalError()
+        {
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var err = Librdkafka.fatal_error(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            return new Error(err, errorStringBuilder.ToString(), true);
         }
 
         private string name;

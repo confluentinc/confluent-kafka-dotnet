@@ -63,6 +63,10 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_message_errstr(
+                /* rd_kafka_message_t * */ IntPtr rkmessage);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_topic_partition_list_t * */ IntPtr
         rd_kafka_topic_partition_list_new(IntPtr size);
 

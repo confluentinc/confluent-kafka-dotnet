@@ -27,13 +27,13 @@ namespace Confluent.Kafka.IntegrationTests
     public partial class Tests
     {
         /// <summary>
-        ///     Test exceptions thrown during deserialization of keys
-        ///     and values are surfaced via the OnConsumeError event.
+        ///     Test exceptions are thrown appropriately during deserialization of keys
+        ///     and values.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_Poll_Error(string bootstrapServers)
+        public void Consumer_Poll_DeserializationError(string bootstrapServers)
         {
-            LogToFile("start Consumer_Poll_Error");
+            LogToFile("start Consumer_Poll_DeserializationError");
 
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
@@ -135,7 +135,7 @@ namespace Confluent.Kafka.IntegrationTests
             }
 
             Assert.Equal(0, Library.HandleCount);
-            LogToFile("end   Consumer_Poll_Error");
+            LogToFile("end   Consumer_Poll_DeserializationError");
         }
 
     }

@@ -151,6 +151,7 @@ namespace Confluent.Kafka.Impl
             _err2str = (Func<ErrorCode, IntPtr>)methods.Single(m => m.Name == "rd_kafka_err2str").CreateDelegate(typeof(Func<ErrorCode, IntPtr>));
             _last_error = (Func<ErrorCode>)methods.Single(m => m.Name == "rd_kafka_last_error").CreateDelegate(typeof(Func<ErrorCode>));
             _fatal_error = (Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_fatal_error").CreateDelegate(typeof(Func<IntPtr, StringBuilder, UIntPtr, ErrorCode>));
+            _message_errstr = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_message_errstr").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_partition_list_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_partition_list_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _topic_partition_list_add = (Func<IntPtr, string, int, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_partition_list_add").CreateDelegate(typeof(Func<IntPtr, string, int, IntPtr>));
@@ -672,6 +673,9 @@ namespace Confluent.Kafka.Impl
 
         private static Func<IntPtr, StringBuilder, UIntPtr, ErrorCode> _fatal_error;
         internal static ErrorCode fatal_error(IntPtr rk, StringBuilder sb, UIntPtr len) => _fatal_error(rk, sb, len);
+
+        private static Func<IntPtr, IntPtr> _message_errstr;
+        internal static IntPtr message_errstr(IntPtr rkmessage) => _message_errstr(rkmessage);
 
         internal delegate long messageTimestampDelegate(IntPtr rkmessage, out IntPtr tstype);
         private static messageTimestampDelegate _message_timestamp;
