@@ -410,9 +410,9 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr rk, IntPtr partitions);
         
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern IntPtr rd_kafka_produceva(
+        internal static extern unsafe IntPtr rd_kafka_produceva(
                 IntPtr rk,
-                rd_kafka_vu[] vus,
+                rd_kafka_vu* vus,
                 IntPtr size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

@@ -107,17 +107,17 @@ namespace Confluent.Kafka.Impl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct ptr_and_size
+    ref struct ptr_and_size
     {
         public IntPtr ptr;
         public UIntPtr size;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    struct vu_data
+    ref struct vu_data
     {
         [FieldOffset(0)]
-        public IntPtr topic;
+        public unsafe char* topic;
 
         [FieldOffset(0)]
         public int partition;
@@ -142,7 +142,7 @@ namespace Confluent.Kafka.Impl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct rd_kafka_vu
+    ref struct rd_kafka_vu
     {
         public rd_kafka_vtype vt;
         public vu_data data;

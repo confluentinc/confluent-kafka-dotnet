@@ -967,13 +967,13 @@ namespace Confluent.Kafka.Impl
         internal static ErrorCode position(IntPtr rk, IntPtr partitions)
             => _position(rk, partitions);
 
-        private delegate IntPtr Produceva(IntPtr rk,
-            rd_kafka_vu[] vus,
+        private unsafe delegate IntPtr Produceva(IntPtr rk,
+            rd_kafka_vu* vus,
             IntPtr size);
 
         private static Produceva _produceva;
 
-        internal static ErrorCode produceva(
+        internal static unsafe ErrorCode produceva(
             IntPtr rk,
             string topic,
             int partition,
@@ -984,12 +984,9 @@ namespace Confluent.Kafka.Impl
             IntPtr headers,
             IntPtr msg_opaque)
         {
-
-            IntPtr topicStrPtr = Marshal.StringToCoTaskMemAnsi(topic);
-            try
+            fixed (char* topicStrPtr = topic)
             {
-                rd_kafka_vu[] vus =
-                {
+                rd_kafka_vu* vus = stackalloc rd_kafka_vu[] {
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Topic,     data  = new vu_data() {topic = topicStrPtr}},
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Partition, data  = new vu_data() {partition = partition}},
                     new rd_kafka_vu() {vt = rd_kafka_vtype.MsgFlags,  data  = new vu_data() {msgflags = msgflags}},
@@ -1002,10 +999,6 @@ namespace Confluent.Kafka.Impl
                 return new Error(_produceva(rk,
                     vus,
                     new IntPtr(8))).Code;
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(topicStrPtr);
             }
         }
 
