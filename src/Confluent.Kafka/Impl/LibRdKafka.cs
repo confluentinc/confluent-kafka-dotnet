@@ -984,7 +984,7 @@ namespace Confluent.Kafka.Impl
             IntPtr headers,
             IntPtr msg_opaque)
         {
-            IntPtr topicStrPtr = Marshal.StringToCoTaskMemAnsi(topic);
+            IntPtr topicStrPtr = Marshal.StringToHGlobalAnsi(topic);
             try
             {
                 rd_kafka_vu* vus = stackalloc rd_kafka_vu[] {
