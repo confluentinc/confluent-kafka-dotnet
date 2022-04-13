@@ -117,7 +117,7 @@ namespace Confluent.Kafka.Impl
     ref struct vu_data
     {
         [FieldOffset(0)]
-        public unsafe char* topic;
+        public IntPtr topic;
 
         [FieldOffset(0)]
         public int partition;

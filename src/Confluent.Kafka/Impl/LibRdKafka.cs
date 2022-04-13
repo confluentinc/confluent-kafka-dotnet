@@ -984,7 +984,8 @@ namespace Confluent.Kafka.Impl
             IntPtr headers,
             IntPtr msg_opaque)
         {
-            fixed (char* topicStrPtr = topic)
+            IntPtr topicStrPtr = Marshal.StringToCoTaskMemAnsi(topic);
+            try
             {
                 rd_kafka_vu* vus = stackalloc rd_kafka_vu[] {
                     new rd_kafka_vu() {vt = rd_kafka_vtype.Topic,     data  = new vu_data() {topic = topicStrPtr}},
@@ -999,6 +1000,10 @@ namespace Confluent.Kafka.Impl
                 return new Error(_produceva(rk,
                     vus,
                     new IntPtr(8))).Code;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(topicStrPtr);
             }
         }
 
