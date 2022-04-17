@@ -120,7 +120,7 @@ namespace Confluent.Kafka.Benchmark
             if (mode == "throughput")
             {
                 const int NUMBER_OF_TESTS = 1;
-                BenchmarkProducer.TaskProduce(bootstrapServers, topicName, numberOfMessages, headerCount, messageSize, NUMBER_OF_TESTS, username, password);
+                BenchmarkProducer.TaskProduce(bootstrapServers, topicName, numberOfMessages, messageSize, headerCount, NUMBER_OF_TESTS, username, password);
                 var firstMessageOffset = BenchmarkProducer.DeliveryHandlerProduce(bootstrapServers, topicName, numberOfMessages, messageSize, headerCount, NUMBER_OF_TESTS, username, password);
                 BenchmarkConsumer.Consume(bootstrapServers, topicName, group, firstMessageOffset, numberOfMessages, headerCount, NUMBER_OF_TESTS, username, password);
             }
