@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.9.0-RC2b" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.Kafka" Version="1.9.0-RC7" /> -->
     <ProjectReference Include="../../src/Confluent.Kafka/Confluent.Kafka.csproj" />
     <PackageReference Include="RocksDbSharp" Version="6.2.2" />
     <PackageReference Include="RocksDbNative" Version="6.2.2" />
