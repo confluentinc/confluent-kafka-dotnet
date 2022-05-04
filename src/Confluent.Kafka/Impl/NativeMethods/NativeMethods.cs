@@ -412,23 +412,12 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_position(
                 IntPtr rk, IntPtr partitions);
-
-        // note: producev signature is rd_kafka_producev(rk, ...)
-        // we are keeping things simple with one binding for now, but it 
-        // will be worth benchmarking the overload with no timestamp, opaque,
-        // partition, etc
+        
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern ErrorCode rd_kafka_producev(
-            IntPtr rk,
-            Librdkafka.ProduceVarTag topicType, [MarshalAs(UnmanagedType.LPStr)] string topic,
-            Librdkafka.ProduceVarTag partitionType, int partition,
-            Librdkafka.ProduceVarTag vaType, IntPtr val, UIntPtr len,
-            Librdkafka.ProduceVarTag keyType, IntPtr key, UIntPtr keylen,
-            Librdkafka.ProduceVarTag msgflagsType, IntPtr msgflags,
-            Librdkafka.ProduceVarTag msg_opaqueType, IntPtr msg_opaque,
-            Librdkafka.ProduceVarTag timestampType, long timestamp,
-            Librdkafka.ProduceVarTag headersType, IntPtr headers,
-            Librdkafka.ProduceVarTag endType);
+        internal static extern unsafe IntPtr rd_kafka_produceva(
+                IntPtr rk,
+                rd_kafka_vu* vus,
+                IntPtr size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_flush(
