@@ -11,6 +11,7 @@ for a complete list of changes, enhancements, fixes and upgrade considerations.
 
 ## Fixes
 
+- Resolved incompatibility with Apple M1 processors ([dkaukov](https://github.com/dkaukov)).
 - No longer crashes on Alpine Linux when MUSL is installed ([shurivich](https://github.com/shurivich)).
 - JSON validation exception messages now properly include failing paths ([drinehimer](https://github.com/drinehimer)).
 
