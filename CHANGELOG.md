@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-- References librdkafka.redist 1.9.0-RC2b. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.0-RC2b)
+- References librdkafka.redist 1.9.0-RC7. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.0-RC7)
 for a complete list of changes, enhancements, fixes and upgrade considerations.
 - References Apache.Avro 1.11.0. Refer to the [release notes](https://github.com/apache/avro/releases/tag/release-1.11.0) for further information ([JanReimerD](https://github.com/JanReimerD)).
 - Added support for serializing and deserializing null in Avro serdes ([YairHalberstadt](https://github.com/YairHalberstadt)).
@@ -11,6 +11,7 @@ for a complete list of changes, enhancements, fixes and upgrade considerations.
 
 ## Fixes
 
+- Resolved incompatibility with Apple M1 processors ([dkaukov](https://github.com/dkaukov)).
 - No longer crashes on Alpine Linux when MUSL is installed ([shurivich](https://github.com/shurivich)).
 - JSON validation exception messages now properly include failing paths ([drinehimer](https://github.com/drinehimer)).
 
