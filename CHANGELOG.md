@@ -2,7 +2,7 @@
 
 ## Enhancements
 
-- References librdkafka.redist 1.9.0-RC9. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.0-RC9)
+- References librdkafka.redist 1.9.0-RC10. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.0-RC10)
 for a complete list of changes, enhancements, fixes and upgrade considerations.
 - References Apache.Avro 1.11.0. Refer to the [release notes](https://github.com/apache/avro/releases/tag/release-1.11.0) for further information ([JanReimerD](https://github.com/JanReimerD)).
 - Added support for serializing and deserializing null in Avro serdes ([YairHalberstadt](https://github.com/YairHalberstadt)).
