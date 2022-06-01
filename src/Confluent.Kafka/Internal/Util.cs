@@ -69,6 +69,16 @@ namespace Confluent.Kafka.Internal
                 return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
             }
 
+            public unsafe static string PtrToStringUTF8(IntPtr strPtr, UIntPtr strLength)
+            {
+                if (strPtr == IntPtr.Zero)
+                {
+                    return null;
+                }
+
+                return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), (int)strLength);
+            }
+
             public static T PtrToStructure<T>(IntPtr ptr)
             {
                 return SystemMarshal.PtrToStructure<T>(ptr);
