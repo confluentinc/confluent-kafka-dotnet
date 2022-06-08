@@ -123,6 +123,20 @@ namespace Confluent.Kafka
             return result;
         }
 
+        private static List<DeleteGroupReport> extractDeleteGroupReport(IntPtr eventPtr)
+        {
+            IntPtr groupResultsPtr = Librdkafka.DeleteGroups_result_groups(eventPtr, out UIntPtr resultCountPtr);
+            int groupResultsCount = (int)resultCountPtr;
+            IntPtr[] groupResultsPtrArr = new IntPtr[groupResultsCount];
+            Marshal.Copy(groupResultsPtr, groupResultsPtrArr, 0, groupResultsCount);
+
+            return groupResultsPtrArr.Select(groupResultPtr => new DeleteGroupReport
+            {
+                Group = PtrToStringUTF8(Librdkafka.group_result_name(groupResultPtr)),
+                Error = new Error(Librdkafka.group_result_error(groupResultPtr))
+            }).ToList();
+        }
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -215,6 +229,31 @@ namespace Confluent.Kafka
                                             {
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetResult(result));
+                                            }
+                                        }
+                                        break;
+
+                                    case Librdkafka.EventType.DeleteGroups_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() =>
+                                                ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetException(
+                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                            }
+
+                                            var result = extractDeleteGroupReport(eventPtr);
+                                            
+                                            if(result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetException(
+                                                        new DeleteGroupsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
                                         break;
@@ -365,6 +404,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
             { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
+            { Librdkafka.EventType.DeleteGroups_Result, typeof(TaskCompletionSource<List<DeleteGroupReport>>) },
         };
 
 
@@ -434,6 +474,19 @@ namespace Confluent.Kafka
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DeleteTopics(
                 topics, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteGroupAsync(IList{string}, DeleteGroupOptions)" />
+        /// </summary>
+        public Task DeleteGroupAsync(IList<string> groups, DeleteGroupOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<List<DeleteGroupReport>>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DeleteGroup(
+                groups, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
@@ -633,6 +686,5 @@ namespace Confluent.Kafka
                 ownedClient.Dispose();
             }
         }
-
     }
 }
