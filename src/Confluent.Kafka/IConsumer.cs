@@ -328,6 +328,11 @@ namespace Confluent.Kafka
         ///     `auto.commit.interval.ms` (and
         ///     `enable.auto.commit`) or manual offset-less
         ///     commit().
+        ///
+        ///     This overload <b>does</b> increment offset, so
+        ///     calling it after event consumption with
+        ///     `ConsumeResult` <b>does</b> move offset
+        ///     to the next event
         /// </summary>
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to
@@ -358,6 +363,11 @@ namespace Confluent.Kafka
         ///     or manual offset-less commit(). Calling
         ///     this method in itself does not commit offsets,
         ///     only store them for future commit.
+        ///     
+        ///     This overload <b>does not</b> increment offset, so
+        ///     calling it after event consumption with
+        ///     `ConsumeResult.TopicPartitionOffset` <b>does not</b>
+        ///     move offset to the next event
         /// </summary>
         /// <remarks>
         ///     `enable.auto.offset.store` must be set to
