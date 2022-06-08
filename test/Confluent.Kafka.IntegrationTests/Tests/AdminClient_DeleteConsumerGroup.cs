@@ -16,29 +16,29 @@ namespace Confluent.Kafka.IntegrationTests
 
             var topic = Guid.NewGuid().ToString();
 
-            var groudId1 = Guid.NewGuid().ToString();
-            var groudId2 = Guid.NewGuid().ToString();
-            var groudId3 = Guid.NewGuid().ToString();
+            var groupId = Guid.NewGuid().ToString();
+            var groupId2 = Guid.NewGuid().ToString();
+            var groupId3 = Guid.NewGuid().ToString();
 
             using (var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 CreateSomeDummyTopic(admin, topic);
 
                 // test single delete group
-                CreateConsumer(bootstrapServers, groudId1, topic);
+                CreateConsumer(bootstrapServers, groupId, topic);
 
-                admin.DeleteGroupAsync(new List<string> { groudId1 }, new DeleteGroupOptions()).Wait();
+                admin.DeleteGroupAsync(new List<string> { groupId }, new DeleteGroupOptions()).Wait();
 
                 var groups = admin.ListGroups(TimeSpan.FromSeconds(5));
-                Assert.DoesNotContain(groups, (group) => group.Group == groudId1);
+                Assert.DoesNotContain(groups, (group) => group.Group == groupId);
 
                 // test
                 //  - delete two groups, one that doesn't exist.
-                CreateConsumer(bootstrapServers, groudId2, topic);
+                CreateConsumer(bootstrapServers, groupId2, topic);
 
                 try
                 {
-                    admin.DeleteGroupAsync(new List<string> { groudId2, groudId3 }, new DeleteGroupOptions()).Wait();
+                    admin.DeleteGroupAsync(new List<string> { groupId2, groupId3 }, new DeleteGroupOptions()).Wait();
                 }
                 catch (AggregateException ex)
                 {
@@ -46,8 +46,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Assert.Equal(2, dge.Results.Count);
                     Assert.Single(dge.Results.Where(r => r.Error.IsError));
                     Assert.Single(dge.Results.Where(r => !r.Error.IsError));
-                    Assert.Equal(groudId2, dge.Results.Where(r => !r.Error.IsError).First().Group);
-                    Assert.Equal(groudId3, dge.Results.Where(r => r.Error.IsError).First().Group);
+                    Assert.Equal(groupId2, dge.Results.Where(r => !r.Error.IsError).First().Group);
+                    Assert.Equal(groupId3, dge.Results.Where(r => r.Error.IsError).First().Group);
                 }
             };
 
