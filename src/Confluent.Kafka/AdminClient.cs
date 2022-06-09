@@ -123,6 +123,19 @@ namespace Confluent.Kafka
             return result;
         }
 
+        private List<CreateAclResult> extractAclResult(IntPtr aclResultsPtr, int aclResultsCount)
+        {
+            IntPtr[] aclsResultsPtrArr = new IntPtr[aclResultsCount];
+            Marshal.Copy(aclResultsPtr, aclsResultsPtrArr, 0, aclResultsCount);
+
+            return aclsResultsPtrArr.Select(aclResultPtr => {
+                return new CreateAclResult 
+                {
+                    Error = new Error(Librdkafka.acl_result_error(aclResultPtr))
+                };
+            }).ToList();
+        }
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -335,6 +348,33 @@ namespace Confluent.Kafka
                                             }
                                         }
                                         break;
+                                    case Librdkafka.EventType.CreateAcls_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreateAclResult>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                return;
+                                            }
+
+                                            var result = extractAclResult(
+                                                Librdkafka.CreateAcls_result_acls(eventPtr, out UIntPtr resultCountPtr), (int)resultCountPtr
+                                            );
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreateAclResult>>)adminClientResult).TrySetException(
+                                                        new CreateAclsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<CreateAclResult>>)adminClientResult).TrySetResult(result));
+                                            }
+                                        }
+                                        break;                                    
 
                                     default:
                                         // Should never happen.
@@ -372,6 +412,9 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
             { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
+            { Librdkafka.EventType.CreateAcls_Result, typeof(TaskCompletionSource<List<CreateAclResult>>) },
+            { Librdkafka.EventType.DescribeAcls_Result, typeof(TaskCompletionSource<DescribeAclsResult>) },
+            { Librdkafka.EventType.DeleteAcls_Result, typeof(TaskCompletionSource<List<DeleteAclsResult>>) },
         };
 
 
@@ -641,5 +684,24 @@ namespace Confluent.Kafka
             }
         }
 
+        public Task<List<CreateAclResult>> CreateAclsAsync(IEnumerable<AclBinding> aclBindings, CreateAclsOptions options = null)
+        {
+            var completionSource = new TaskCompletionSource<List<CreateAclResult>>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.CreateAcls(
+                aclBindings, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
+        }
+
+        public Task<DescribeAclsResult> DescribeAclsAsync(AclBindingFilter aclBindingFilter, DescribeAclsOptions options = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<DeleteAclsResult> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
