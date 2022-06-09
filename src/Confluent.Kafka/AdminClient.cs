@@ -131,10 +131,10 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-
+                            IntPtr eventPtr = IntPtr.Zero;
                             try
                             {
-                                var eventPtr = kafkaHandle.QueuePoll(resultQueue, this.cancellationDelayMaxMs);
+                                eventPtr = kafkaHandle.QueuePoll(resultQueue, this.cancellationDelayMaxMs);
                                 if (eventPtr == IntPtr.Zero)
                                 {
                                     continue;
@@ -350,6 +350,13 @@ namespace Confluent.Kafka
                                 //       result in exceptions. People will be sure to notice and tell us.
                                 this.DisposeResources();
                                 break;
+                            }
+                            finally
+                            {
+                                if (eventPtr != IntPtr.Zero)
+                                {
+                                    Librdkafka.event_destroy(eventPtr);
+                                }
                             }
                         }
                     }
