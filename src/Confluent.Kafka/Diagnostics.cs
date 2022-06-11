@@ -21,14 +21,14 @@ namespace Confluent.Kafka
 {
     internal static class Diagnostics
     {
-        public const string ActivitySourceName = "Confluent.Kafka.Activity";
+        public const string ActivitySourceName = "Confluent.Kafka";
         public static ActivitySource ActivitySource { get; } = new ActivitySource(ActivitySourceName);
 
         public static class Producer
         {
             public const string ActivityName = ActivitySourceName + ".MessageProduced";
 
-            public static Activity Start <TKey, TValue>(string topic, Message<TKey, TValue> message)
+            public static Activity Start<TKey, TValue>(TopicPartition topicPartition, Message<TKey, TValue> message)
             {
                 Activity activity = ActivitySource.StartActivity(ActivityName);
 
@@ -37,18 +37,23 @@ namespace Confluent.Kafka
 
                 using (activity)
                 {
-                    activity?.AddDefaultOpenTelemetryTags(topic, message);
+                    activity?.AddDefaultOpenTelemetryTags(topicPartition, message);
+                    activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value);
                 }
 
                 return activity;
             }
         }
 
-        private static Activity AddDefaultOpenTelemetryTags<TKey, TValue>(this Activity activity, string topic, Message<TKey, TValue> message)
+        private static Activity AddDefaultOpenTelemetryTags<TKey, TValue>(
+            this Activity activity,
+            TopicPartition topicPartition,
+            Message<TKey, TValue> message)
         {
             activity?.AddTag("messaging.system", "kafka");
-            activity?.AddTag("messaging.destination", topic);
+            activity?.AddTag("messaging.destination", topicPartition.Topic);
             activity?.AddTag("messaging.destination_kind", "topic");
+            activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value);
 
             if (message.Key != null)
                 activity?.AddTag("messaging.kafka.message_key", message.Key);

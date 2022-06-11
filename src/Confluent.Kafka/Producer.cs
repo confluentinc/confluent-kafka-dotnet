@@ -16,7 +16,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -581,7 +584,9 @@ namespace Confluent.Kafka
 
             this.DeliveryReportCallback = DeliveryReportCallbackImpl;
 
-            Librdkafka.Initialize(null);
+            string pathToLibrd = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Directory.GetCurrentDirectory())), "Debug\\net6.0\\librdkafka\\x64\\librdkafka.dll");
+
+            Librdkafka.Initialize(pathToLibrd);
 
             var modifiedConfig = Library.NameAndVersionConfig
                 .Concat(config
@@ -784,6 +789,8 @@ namespace Confluent.Kafka
                     ex);
             }
 
+            Activity activity = Diagnostics.Producer.Start(topicPartition, message);
+
             try
             {
                 if (enableDeliveryReports)
@@ -835,6 +842,10 @@ namespace Confluent.Kafka
                         Message = message,
                         TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                     });
+            }
+            finally
+            {
+                activity?.Stop();
             }
         }
 
@@ -907,6 +918,8 @@ namespace Confluent.Kafka
                     ex);
             }
 
+            Activity activity = Diagnostics.Producer.Start(topicPartition, message);
+
             try
             {
                 ProduceImpl(
@@ -932,6 +945,10 @@ namespace Confluent.Kafka
                             Message = message,
                             TopicPartitionOffset = new TopicPartitionOffset(topicPartition, Offset.Unset)
                         });
+            }
+            finally
+            {
+                activity?.Stop();
             }
         }
 
