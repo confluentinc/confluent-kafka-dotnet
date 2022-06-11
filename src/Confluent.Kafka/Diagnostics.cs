@@ -42,22 +42,6 @@ namespace Confluent.Kafka
 
                 return activity;
             }
-
-            public static Activity Start<TKey, TValue>(TopicPartition topicPartition, Message<TKey, TValue> message)
-            {
-                Activity activity = ActivitySource.StartActivity(ActivityName);
-
-                if (activity == null)
-                    return null;
-
-                using (activity)
-                {
-                    activity?.AddDefaultOpenTelemetryTags(topicPartition.Topic, message);
-                    activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value);
-                }
-
-                return activity;
-            }
         }
 
         private static Activity AddDefaultOpenTelemetryTags<TKey, TValue>(this Activity activity, string topic, Message<TKey, TValue> message)
