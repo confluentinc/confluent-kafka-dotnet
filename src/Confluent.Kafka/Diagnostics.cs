@@ -21,7 +21,7 @@ namespace Confluent.Kafka
 {
     internal static class Diagnostics
     {
-        public const string ActivitySourceName = "Confluent.Kafka";
+        private const string ActivitySourceName = "Confluent.Kafka";
         public static ActivitySource ActivitySource { get; } = new ActivitySource(ActivitySourceName);
 
         public static class Producer
@@ -38,7 +38,6 @@ namespace Confluent.Kafka
                 using (activity)
                 {
                     activity?.AddDefaultOpenTelemetryTags(topicPartition, message);
-                    activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value);
                 }
 
                 return activity;
@@ -53,13 +52,10 @@ namespace Confluent.Kafka
             activity?.AddTag("messaging.system", "kafka");
             activity?.AddTag("messaging.destination", topicPartition.Topic);
             activity?.AddTag("messaging.destination_kind", "topic");
-            activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value);
+            activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value.ToString());
 
             if (message.Key != null)
                 activity?.AddTag("messaging.kafka.message_key", message.Key);
-
-            if (message.Value != null)
-                activity?.AddTag("messaging.message_payload_size_bytes", Marshal.SizeOf(message.Value));
 
             return activity;
         }
