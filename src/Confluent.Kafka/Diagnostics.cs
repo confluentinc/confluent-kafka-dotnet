@@ -15,7 +15,6 @@
 // Refer to LICENSE for more information.
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace Confluent.Kafka
 {
@@ -49,13 +48,13 @@ namespace Confluent.Kafka
             TopicPartition topicPartition,
             Message<TKey, TValue> message)
         {
-            activity?.AddTag("messaging.system", "kafka");
-            activity?.AddTag("messaging.destination", topicPartition.Topic);
-            activity?.AddTag("messaging.destination_kind", "topic");
-            activity?.AddTag("messaging.kafka.partition", topicPartition.Partition.Value.ToString());
+            activity?.AddTag(OpenTelemetryMessaging.SYSTEM, "kafka");
+            activity?.AddTag(OpenTelemetryMessaging.DESTINATION, topicPartition.Topic);
+            activity?.AddTag(OpenTelemetryMessaging.DESTINATION_KIND, "topic");
+            activity?.AddTag(OpenTelemetryMessaging.KAFKA_PARTITION, topicPartition.Partition.Value.ToString());
 
             if (message.Key != null)
-                activity?.AddTag("messaging.kafka.message_key", message.Key);
+                activity?.AddTag(OpenTelemetryMessaging.KAFKA_MESSAGE_KEY, message.Key);
 
             return activity;
         }

@@ -80,11 +80,11 @@ namespace Confluent.Kafka.IntegrationTests
             // Check if default OpenTelemetry attributes were created on start events
             foreach (IEnumerable<KeyValuePair<string, string>> startEventTags in startEventsTags)
             {
-                Assert.Contains(startEventTags, tag => tag.Key == "messaging.system" && tag.Value == "kafka");
-                Assert.Contains(startEventTags, tag => tag.Key == "messaging.destination_kind" && tag.Value == "topic");
-                Assert.Contains(startEventTags, tag => tag.Key == "messaging.destination" && tag.Value == singlePartitionTopic);
-                Assert.Contains(startEventTags, tag => tag.Key == "messaging.kafka.partition" && tag.Value == "0");
-                Assert.Contains(startEventTags, tag => tag.Key == "messaging.kafka.message_key" && tag.Value.Contains("test key"));
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.SYSTEM && tag.Value == "kafka");
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.DESTINATION_KIND && tag.Value == "topic");
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.DESTINATION && tag.Value == singlePartitionTopic);
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.KAFKA_PARTITION && tag.Value == "0");
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.KAFKA_MESSAGE_KEY && tag.Value.Contains("test key"));
             }
         }
 
