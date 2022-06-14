@@ -584,9 +584,7 @@ namespace Confluent.Kafka
 
             this.DeliveryReportCallback = DeliveryReportCallbackImpl;
 
-            string pathToLibrd = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Directory.GetCurrentDirectory())), "Debug\\net6.0\\librdkafka\\x64\\librdkafka.dll");
-
-            Librdkafka.Initialize(pathToLibrd);
+            Librdkafka.Initialize(null);
 
             var modifiedConfig = Library.NameAndVersionConfig
                 .Concat(config
