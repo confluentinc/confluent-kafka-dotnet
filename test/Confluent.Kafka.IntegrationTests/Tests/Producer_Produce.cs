@@ -85,6 +85,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.DESTINATION && tag.Value == singlePartitionTopic);
                 Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.KAFKA_PARTITION && tag.Value == "0");
                 Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.KAFKA_MESSAGE_KEY && tag.Value.Contains("test key"));
+                Assert.Contains(startEventTags, tag => tag.Key == OpenTelemetryMessaging.MESSAGE_PAYLOAD_SIZE_BYTES && tag.Value == "10");
             }
         }
 

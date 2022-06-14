@@ -46,5 +46,10 @@ namespace Confluent.Kafka
         /// Kafka message key.
         /// </summary>
         public const string KAFKA_MESSAGE_KEY = "messaging.kafka.message_key";
+
+        /// <summary>
+        /// Kafka message payload size (bytes).
+        /// </summary>
+        public const string MESSAGE_PAYLOAD_SIZE_BYTES = "messaging.message_payload_size_bytes";
     }
 }
