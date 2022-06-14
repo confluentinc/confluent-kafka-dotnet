@@ -19,7 +19,8 @@
 using System;
 using System.Threading.Tasks;
 using Confluent.Kafka.Admin;
-
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Confluent.Kafka.Examples
 {
@@ -89,14 +90,75 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static List<AclBinding> ParseAclBindings(string[] args)
+        {
+            int nAclBindings = args.Length / 7;
+            var aclBindings = new List<AclBinding>();
+            for (int i = 0; i < nAclBindings; i++)
+            {
+                var baseArg = i * 7;
+                object resourceType, resourcePatternType, operation, permissionType;
+                var parseCorrect = true;
+                parseCorrect &= Enum.TryParse(typeof(ResourceType), args[baseArg], out resourceType);
+                parseCorrect &= Enum.TryParse(typeof(ResourcePatternType), args[baseArg + 2], out resourcePatternType);
+                parseCorrect &= Enum.TryParse(typeof(AclOperation), args[baseArg + 5], out operation);
+                parseCorrect &= Enum.TryParse(typeof(AclPermissionType), args[baseArg + 6], out permissionType);
+
+                if (!parseCorrect) return null;
+
+                aclBindings.Add(new AclBinding() {
+                    Type = (ResourceType) resourceType,
+                    Name = args[baseArg + 1],
+                    ResourcePatternType = (ResourcePatternType) resourcePatternType,
+                    Principal = args[baseArg + 3],
+                    Host = args[baseArg + 4],
+                    Operation = (AclOperation) operation,
+                    PermissionType = (AclPermissionType) permissionType,
+                });
+            }
+            return aclBindings;
+        }
+
+        static async Task CreateAclsAsync(string bootstrapServers, List<AclBinding> aclBindings)
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var results = await adminClient.CreateAclsAsync(aclBindings);
+                    Console.WriteLine("All the create ACL operations completed successfully");
+                }
+                catch (CreateAclsException e)
+                {
+                    Console.WriteLine("Some ACL operations failed");
+                    int i = 0;
+                    foreach (var result in e.Results)
+                    {
+                        if (!result.Error.IsError)
+                        {
+                            Console.WriteLine($"Create ACLs operation {i} completed successfully");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"An error occurred in create ACL operation {i}: Code: {result.Error.Code}" +
+                            $", Reason: {result.Error.Reason}");
+                        }
+                        i++;
+                    }
+                }
+            }
+        }
+
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic> [topic-name]");
+                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls> ..");
                 System.Environment.Exit(1);
             }
-            
+
+            var commandArgs = args.Skip(2).ToArray();
+            var numCommandArgs = commandArgs.Length;
             switch (args[1])
             {
                 case "library-version":
@@ -111,6 +173,23 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "create-topic":
                     await CreateTopicAsync(args[0], args[2]);
+                    break;
+                case "create-acls":
+                    var printUsage = numCommandArgs == 0 || numCommandArgs % 7 != 0;
+                    List<AclBinding> aclBindings = null;
+                    if (!printUsage)
+                    {
+                        aclBindings = ParseAclBindings(commandArgs);
+                    }
+                    printUsage = aclBindings == null;
+
+                    if (printUsage)
+                    {
+                        Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
+                        "<principal1> <host1> <operation1> <permission_type1> ..");
+                        System.Environment.Exit(1);
+                    }
+                    await CreateAclsAsync(args[0], aclBindings);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {args[1]}");
