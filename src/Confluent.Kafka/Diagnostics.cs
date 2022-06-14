@@ -18,16 +18,22 @@ using System.Diagnostics;
 
 namespace Confluent.Kafka
 {
+    /// <summary>
+    /// Implements Activity objects with OpenTelemetry messaging tags for instrumentation
+    /// </summary>
     internal static class Diagnostics
     {
         private const string ActivitySourceName = "Confluent.Kafka";
         public static ActivitySource ActivitySource { get; } = new ActivitySource(ActivitySourceName);
 
-        public static class Producer
+        /// <summary>
+        /// Provides an Activity object for the Producer with OpenTelemetry messaging tags for instrumentation
+        /// </summary>
+        internal static class Producer
         {
-            public const string ActivityName = ActivitySourceName + ".MessageProduced";
+            private const string ActivityName = ActivitySourceName + ".MessageProduced";
 
-            public static Activity Start<TKey, TValue>(TopicPartition topicPartition, Message<TKey, TValue> message)
+            internal static Activity Start<TKey, TValue>(TopicPartition topicPartition, Message<TKey, TValue> message)
             {
                 Activity activity = ActivitySource.StartActivity(ActivityName);
 

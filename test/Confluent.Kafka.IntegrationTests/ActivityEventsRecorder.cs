@@ -30,6 +30,10 @@ namespace Confluent.Kafka.IntegrationTests
             this.activityName = activityName;
         }
 
+        /// <summary>
+        /// Builds an ActivityListener with callbacks to store start and stop events to a concurrent queue.
+        /// </summary>
+        /// <returns></returns>
         internal ActivityListener BuildActivityListener()
         {
             using var listener = new ActivityListener
