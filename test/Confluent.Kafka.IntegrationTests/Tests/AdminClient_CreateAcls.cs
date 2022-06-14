@@ -38,8 +38,10 @@ namespace Confluent.Kafka.IntegrationTests
             var noError = new Error(ErrorCode.NoError, "", false);
             var unknownError = new Error(ErrorCode.Unknown, "Unknown broker error", false);
 
-            var newACLs = new List<AclBinding>() {
-                    new AclBinding() {
+            var newACLs = new List<AclBinding>()
+            {
+                    new AclBinding()
+                    {
                         Type = ResourceType.Topic,
                         Name = topicName,
                         ResourcePatternType = ResourcePatternType.Literal,
@@ -48,7 +50,8 @@ namespace Confluent.Kafka.IntegrationTests
                         Operation = AclOperation.Read,
                         PermissionType = AclPermissionType.Allow,
                     },
-                    new AclBinding() {
+                    new AclBinding()
+                    {
                         Type = ResourceType.Topic,
                         Name = topicName,
                         ResourcePatternType = ResourcePatternType.Prefixed,
@@ -57,7 +60,8 @@ namespace Confluent.Kafka.IntegrationTests
                         Operation = AclOperation.Write,
                         PermissionType = AclPermissionType.Deny,
                     },
-                    new AclBinding() {
+                    new AclBinding()
+                    {
                         Type = ResourceType.Group,
                         Name = groupName,
                         ResourcePatternType = ResourcePatternType.Prefixed,
@@ -68,8 +72,10 @@ namespace Confluent.Kafka.IntegrationTests
                     },
             };
 
-            var invalidACLs = new List<AclBinding>() {
-                new AclBinding() {
+            var invalidACLs = new List<AclBinding>()
+            {
+                new AclBinding()
+                {
                     Type = ResourceType.Topic,
                     Name = topicName,
                     ResourcePatternType = ResourcePatternType.Literal,
@@ -82,8 +88,10 @@ namespace Confluent.Kafka.IntegrationTests
                 },
             };
 
-            var validAndInvalidACLs =  new List<AclBinding>() {
-                new AclBinding() {
+            var validAndInvalidACLs =  new List<AclBinding>()
+            {
+                new AclBinding()
+                {
                     Type = ResourceType.Topic,
                     Name = topicName,
                     ResourcePatternType = ResourcePatternType.Literal,
@@ -94,7 +102,8 @@ namespace Confluent.Kafka.IntegrationTests
                     Operation = AclOperation.Read,
                     PermissionType = AclPermissionType.Allow,
                 },
-                new AclBinding() {
+                new AclBinding()
+                {
                     Type = ResourceType.Group,
                     Name = groupName,
                     ResourcePatternType = ResourcePatternType.Prefixed,
@@ -105,7 +114,8 @@ namespace Confluent.Kafka.IntegrationTests
                 },
             };
 
-            CreateAclsOptions createAclsOptions = new CreateAclsOptions() {
+            CreateAclsOptions createAclsOptions = new CreateAclsOptions()
+            {
                 RequestTimeout = maxDuration
             };
 
@@ -114,13 +124,15 @@ namespace Confluent.Kafka.IntegrationTests
             //  - CreateAcls should be idempotent
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                for (int i = 0; i < 2; i++) {
+                for (int i = 0; i < 2; i++)
+                {
                     var resultCreateAcls = await adminClient.CreateAclsAsync(
                         newACLs,
                         createAclsOptions
                     );
                     Assert.Equal(newACLs.Count(), resultCreateAcls.Count());
-                    for (int j = 0; j < newACLs.Count(); j++) {
+                    for (int j = 0; j < newACLs.Count(); j++)
+                    {
                         Assert.Equal(noError, resultCreateAcls[j].Error);
                     }
                 }
@@ -138,7 +150,8 @@ namespace Confluent.Kafka.IntegrationTests
                     )
                 );
                 Assert.Equal(invalidACLs.Count(), createAclsException.Results.Count());
-                for (int j = 0; j < invalidACLs.Count(); j++) {
+                for (int j = 0; j < invalidACLs.Count(); j++)
+                {
                     Assert.Equal(unknownError, createAclsException.Results[j].Error);
                 }
             }

@@ -25,7 +25,8 @@ namespace Confluent.Kafka.UnitTests
     public class CreateAclsErrorTests
     {
 
-        private List<AclBinding> copyAclBindings(List<AclBinding> original) {
+        private List<AclBinding> copyAclBindings(List<AclBinding> original)
+        {
             return original.Select((aclBinding) => {
                 return aclBinding.Clone();
             }).ToList();
@@ -39,7 +40,8 @@ namespace Confluent.Kafka.UnitTests
 
                 var testAclBindings = new List<AclBinding>
                 {
-                    new AclBinding() {
+                    new AclBinding()
+                    {
                         Type = ResourceType.Topic,
                         Name = "mytopic",
                         ResourcePatternType = ResourcePatternType.Literal,
@@ -60,7 +62,8 @@ namespace Confluent.Kafka.UnitTests
                     adminClient.CreateAclsAsync(new List<AclBinding>())
                 );
 
-                CreateAclsOptions options = new CreateAclsOptions() {
+                CreateAclsOptions options = new CreateAclsOptions()
+                {
                     RequestTimeout = TimeSpan.FromMilliseconds(200)
                 };
 
@@ -87,7 +90,8 @@ namespace Confluent.Kafka.UnitTests
                     Assert.EndsWith(expectedError, exInvalidTest.Message);
                 }
 
-                var suffixes = new List<string>() {
+                var suffixes = new List<string>()
+                {
                     "Invalid resource pattern type",
                     "Invalid resource pattern type",
                     "Invalid resource pattern type",

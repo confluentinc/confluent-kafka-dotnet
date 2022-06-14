@@ -63,7 +63,8 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         /// A clone of the AclBinding object 
         /// </summary>
-        public AclBinding Clone() {
+        public AclBinding Clone()
+        {
             return (AclBinding) this.MemberwiseClone();
         }
     }

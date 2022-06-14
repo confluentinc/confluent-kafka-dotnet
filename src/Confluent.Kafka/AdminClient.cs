@@ -445,7 +445,7 @@ namespace Confluent.Kafka
 
             var completionSource = new TaskCompletionSource<List<AlterConfigsReport>>();
             // Note: There is a level of indirection between the GCHandle and
-            // physical memory address. GCHangle.ToIntPtr doesn't return the
+            // physical memory address. GCHandle.ToIntPtr doesn't return the
             // physical address, it returns an id that refers to the object via
             // a handle-table.
             var gch = GCHandle.Alloc(completionSource);
@@ -684,6 +684,9 @@ namespace Confluent.Kafka
             }
         }
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.CreateAclsAsync(IEnumerable{AclBinding}, CreateAclsOptions)" />
+        /// </summary>
         public Task<List<CreateAclResult>> CreateAclsAsync(IEnumerable<AclBinding> aclBindings, CreateAclsOptions options = null)
         {
             var completionSource = new TaskCompletionSource<List<CreateAclResult>>();
@@ -694,11 +697,18 @@ namespace Confluent.Kafka
             return completionSource.Task;
         }
 
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeAclsAsync(AclBindingFilter, DescribeAclsOptions)" />
+        /// </summary>
         public Task<DescribeAclsResult> DescribeAclsAsync(AclBindingFilter aclBindingFilter, DescribeAclsOptions options = null)
         {
             throw new NotImplementedException();
         }
 
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteAclsAsync(IEnumerable{AclBindingFilter}, DeleteAclsOptions)" />
+        /// </summary>
         public Task<DeleteAclsResult> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null)
         {
             throw new NotImplementedException();

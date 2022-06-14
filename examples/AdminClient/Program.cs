@@ -85,7 +85,7 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (CreateTopicsException e)
                 {
-                    Console.WriteLine($"An error occured creating topic {e.Results[0].Topic}: {e.Results[0].Error.Reason}");
+                    Console.WriteLine($"An error occurred creating topic {e.Results[0].Topic}: {e.Results[0].Error.Reason}");
                 }
             }
         }
@@ -106,7 +106,8 @@ namespace Confluent.Kafka.Examples
 
                 if (!parseCorrect) return null;
 
-                aclBindings.Add(new AclBinding() {
+                aclBindings.Add(new AclBinding()
+                {
                     Type = (ResourceType) resourceType,
                     Name = args[baseArg + 1],
                     ResourcePatternType = (ResourcePatternType) resourcePatternType,

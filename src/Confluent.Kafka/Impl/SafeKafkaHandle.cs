@@ -1693,7 +1693,8 @@ namespace Confluent.Kafka.Impl
             IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
-            if (aclBindings.Count() == 0) {
+            if (aclBindings.Count() == 0)
+            {
                 throw new ArgumentException("Expected non-empty IEnumerable of AclBinding");
             }
 
