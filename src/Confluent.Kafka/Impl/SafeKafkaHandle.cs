@@ -563,16 +563,19 @@ namespace Confluent.Kafka.Impl
 
         internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, int millisecondsTimeout)
         {
-            IntPtr offsetsPtr = GetCTopicPartitionList(offsets);
-
             if (!(groupMetadata is ConsumerGroupMetadata))
             {
                 throw new ArgumentException("groupMetadata object must be a value acquired via Consumer.ConsumerGroupMetadata.");
             }
             var serializedMetadata = ((ConsumerGroupMetadata)groupMetadata).serializedMetadata;
-            var cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
+
+            var cgmdPtr = IntPtr.Zero;
+            var offsetsPtr = IntPtr.Zero;
             try
             {
+                cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
+                offsetsPtr = GetCTopicPartitionList(offsets);
+
                 var error = new Error(Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, cgmdPtr, (IntPtr)millisecondsTimeout));
                 if (error.Code != ErrorCode.NoError)
                 {
@@ -589,7 +592,14 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
-                this.DestroyConsumerGroupMetadata(cgmdPtr);
+                if (offsetsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(offsetsPtr);
+                }
+                if (cgmdPtr != IntPtr.Zero)
+                {
+                    this.DestroyConsumerGroupMetadata(cgmdPtr);
+                }
             }
         }
 
