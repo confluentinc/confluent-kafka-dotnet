@@ -55,16 +55,19 @@ namespace Confluent.Kafka
             TopicPartition topicPartition,
             Message<TKey, TValue> message)
         {
-            int messagePayloadBytes = Encoding.UTF8.GetByteCount(message.Value.ToString());
-
             activity?.AddTag(OpenTelemetryMessaging.SYSTEM, "kafka");
             activity?.AddTag(OpenTelemetryMessaging.DESTINATION, topicPartition.Topic);
             activity?.AddTag(OpenTelemetryMessaging.DESTINATION_KIND, "topic");
             activity?.AddTag(OpenTelemetryMessaging.KAFKA_PARTITION, topicPartition.Partition.Value.ToString());
-            activity?.AddTag(OpenTelemetryMessaging.MESSAGE_PAYLOAD_SIZE_BYTES, messagePayloadBytes.ToString());
-
+            
             if (message.Key != null)
                 activity?.AddTag(OpenTelemetryMessaging.KAFKA_MESSAGE_KEY, message.Key);
+
+            if (message.Value != null)
+            {
+                int messagePayloadBytes = Encoding.UTF8.GetByteCount(message.Value.ToString());
+                activity?.AddTag(OpenTelemetryMessaging.MESSAGE_PAYLOAD_SIZE_BYTES, messagePayloadBytes.ToString());
+            }
 
             return activity;
         }
