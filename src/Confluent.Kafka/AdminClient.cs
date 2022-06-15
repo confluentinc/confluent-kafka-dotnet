@@ -128,10 +128,48 @@ namespace Confluent.Kafka
             IntPtr[] aclsResultsPtrArr = new IntPtr[aclResultsCount];
             Marshal.Copy(aclResultsPtr, aclsResultsPtrArr, 0, aclResultsCount);
 
-            return aclsResultsPtrArr.Select(aclResultPtr => {
-                return new CreateAclResult 
+            return aclsResultsPtrArr.Select(aclResultPtr =>
+                new CreateAclResult 
                 {
                     Error = new Error(Librdkafka.acl_result_error(aclResultPtr))
+                }
+            ).ToList();
+        }
+
+        private List<AclBinding> extractAclBindings(IntPtr aclBindingsPtr, int aclBindingsCnt)
+        {
+            IntPtr[] aclBindingsPtrArr = new IntPtr[aclBindingsCnt];
+            Marshal.Copy(aclBindingsPtr, aclBindingsPtrArr, 0, aclBindingsCnt);
+
+            return aclBindingsPtrArr.Select(aclBindingPtr =>
+                new AclBinding()
+                {
+                    Type = Librdkafka.AclBinding_restype(aclBindingPtr),
+                    Name = PtrToStringUTF8(Librdkafka.AclBinding_name(aclBindingPtr)),
+                    ResourcePatternType = Librdkafka.AclBinding_resource_pattern_type(aclBindingPtr),
+                    Principal = PtrToStringUTF8(Librdkafka.AclBinding_principal(aclBindingPtr)),
+                    Host = PtrToStringUTF8(Librdkafka.AclBinding_host(aclBindingPtr)),
+                    Operation = Librdkafka.AclBinding_operation(aclBindingPtr),
+                    PermissionType = Librdkafka.AclBinding_permission_type(aclBindingPtr)
+                }
+            ).ToList();
+        }
+
+        private List<DeleteAclsResult> extractDeleteAclsResults(IntPtr resultPtr)
+        {
+            var resultResponsesPtr = Librdkafka.DeleteAcls_result_responses(resultPtr, out UIntPtr resultResponsesCntPtr);
+
+            IntPtr[] resultResponsesPtrArr = new IntPtr[(int)resultResponsesCntPtr];
+            Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
+
+            return resultResponsesPtrArr.Select(resultResponsePtr => {
+                var matchingAcls = Librdkafka.DeleteAcls_result_response_matching_acls(resultResponsePtr,
+                                                                                       out UIntPtr resultResponseAclCntPtr);
+
+                return new DeleteAclsResult 
+                {
+                    Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr)),
+                    AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
                 };
             }).ToList();
         }
@@ -374,7 +412,32 @@ namespace Confluent.Kafka
                                                     ((TaskCompletionSource<List<CreateAclResult>>)adminClientResult).TrySetResult(result));
                                             }
                                         }
-                                        break;                                    
+                                        break;
+                                    case Librdkafka.EventType.DeleteAcls_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DeleteAclsResult>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                return;
+                                            }
+
+                                            var result = extractDeleteAclsResults(eventPtr);
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DeleteAclsResult>>)adminClientResult).TrySetException(
+                                                        new DeleteAclsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<List<DeleteAclsResult>>)adminClientResult).TrySetResult(result));
+                                            }
+                                        }
+                                        break; 
 
                                     default:
                                         // Should never happen.
@@ -709,9 +772,14 @@ namespace Confluent.Kafka
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteAclsAsync(IEnumerable{AclBindingFilter}, DeleteAclsOptions)" />
         /// </summary>
-        public Task<DeleteAclsResult> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null)
+        public Task<List<DeleteAclsResult>> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null)
         {
-            throw new NotImplementedException();
+            var completionSource = new TaskCompletionSource<List<DeleteAclsResult>>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DeleteAcls(
+                aclBindingFilters, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
         }
     }
 }

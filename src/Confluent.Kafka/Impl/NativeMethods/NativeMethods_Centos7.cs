@@ -762,7 +762,47 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         /* size_t */ UIntPtr errstr_size);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AclBindingFilter_new(
+                        /* rd_kafka_ResourceType_t */ ResourceType restype,
+                        /* const char * */[MarshalAs(UnmanagedType.LPStr)] string name,
+                        /* rd_kafka_ResourcePatternType_t */ ResourcePatternType resource_pattern_type,
+                        /* const char * */[MarshalAs(UnmanagedType.LPStr)] string principal,
+                        /* const char * */[MarshalAs(UnmanagedType.LPStr)] string host,
+                        /* rd_kafka_AclOperation_t */ AclOperation operation,
+                        /* rd_kafka_AclPermissionType_t */ AclPermissionType permission_type,
+                        /* char * */ StringBuilder errstr,
+                        /* size_t */ UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_AclBinding_destroy(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ResourceType rd_kafka_AclBinding_restype(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AclBinding_name(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ResourcePatternType rd_kafka_AclBinding_resource_pattern_type(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AclBinding_principal(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AclBinding_host(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern AclOperation rd_kafka_AclBinding_operation(
+                        /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern AclPermissionType rd_kafka_AclBinding_permission_type(
                         /* rd_kafka_AclBinding_t * */ IntPtr acl_binding);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -781,6 +821,28 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_acl_result_error(
                         /* const rd_kafka_acl_result_t * */ IntPtr aclres);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteAcls(
+                        /* rd_kafka_t * */ IntPtr rk,
+                        /* rd_kafka_AclBindingFilter_t ** */ IntPtr[] del_acls,
+                        UIntPtr del_acls_cnt,
+                        /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                        /* rd_kafka_queue_t * */ IntPtr rkqu);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DeleteAcls_result_responses(
+                        /* rd_kafka_DeleteAcls_result_t * */ IntPtr result,
+                        /* size_t * */ out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DeleteAcls_result_response_error(
+                        /* rd_kafka_DeleteAcls_result_response_t * */ IntPtr result_response);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DeleteAcls_result_response_matching_acls(
+                        /* rd_kafka_DeleteAcls_result_response_t * */ IntPtr result_response,
+                        /* size_t * */ out UIntPtr matching_acls_cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_topic_result_error(IntPtr topicres);

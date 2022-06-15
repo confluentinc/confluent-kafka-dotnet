@@ -22,21 +22,21 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during a create ACLs request.
+    ///     Represents an error that occurred during a delete ACLs request.
     /// </summary>
-    public class CreateAclsException : KafkaException
+    public class DeleteAclsException : KafkaException
     {
         /// <summary>
-        ///     Initialize a new instance of CreateAclsException.
+        ///     Initialize a new instance of DeleteAclsException.
         /// </summary>
         /// <param name="results">
-        ///     The result corresponding to all the ACLs in the request 
+        ///     The result corresponding to all the ACL filters in the request 
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public CreateAclsException(List<CreateAclResult> results)
+        public DeleteAclsException(List<DeleteAclsResult> results)
             : base(new Error(ErrorCode.Local_Partial,
-                "An error occurred creating ACLs: [" +
+                "An error occurred delete ACLs: [" +
                 String.Join(", ", results.Select(r => r.Error)) +
                 "]."))
         {
@@ -44,10 +44,10 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     The result corresponding to all the ACLs in the request 
+        ///     The result corresponding to all the ACL filters in the request 
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<CreateAclResult> Results { get; }
+        public List<DeleteAclsResult> Results { get; }
     }
 }

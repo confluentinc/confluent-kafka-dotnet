@@ -264,9 +264,9 @@ namespace Confluent.Kafka
         ///     The options to use when describing ACL bindings.
         /// </param>
         /// <returns>
-        ///     A Task returning a DescribeAclsResult.
+        ///     A Task returning a List of DescribeAclsResult.
         /// </returns>
-        Task<DeleteAclsResult> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null);
+        Task<List<DeleteAclsResult>> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null);
 
     }
 

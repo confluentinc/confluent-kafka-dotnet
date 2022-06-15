@@ -24,5 +24,12 @@ namespace Confluent.Kafka.Admin
     /// </summary>
     public class AclBindingFilter : AclBinding
     {
+        /// <summary>
+        /// A clone of the AclBindingFilter object 
+        /// </summary>
+        new public AclBindingFilter Clone()
+        {
+            return (AclBindingFilter)this.MemberwiseClone();
+        }
     }
 }

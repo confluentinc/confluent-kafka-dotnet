@@ -74,24 +74,10 @@ namespace Confluent.Kafka.UnitTests
                 Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
 
                 // Invalid ACL bindings
-                var invalidTests = new List<List<AclBinding>>
-                {
-                    copyAclBindings(testAclBindings),
-                    copyAclBindings(testAclBindings),
-                };
-                invalidTests[0][0].Type = ResourceType.Unknown;
-                invalidTests[1][0].Type = ResourceType.Any;
-                var expectedError = "Invalid resource type";
-                foreach (List<AclBinding> invalidTest in invalidTests)
-                {
-                    var exInvalidTest = await Assert.ThrowsAsync<KafkaException>(() =>
-                         adminClient.CreateAclsAsync(invalidTest)
-                    );
-                    Assert.EndsWith(expectedError, exInvalidTest.Message);
-                }
-
                 var suffixes = new List<string>()
                 {
+                    "Invalid resource type",
+                    "Invalid resource type",
                     "Invalid resource pattern type",
                     "Invalid resource pattern type",
                     "Invalid resource pattern type",
@@ -103,19 +89,21 @@ namespace Confluent.Kafka.UnitTests
                     "Invalid principal",
                     "Invalid host",
                 };
-                invalidTests = suffixes.Select((suffix) => {
+                var invalidTests = suffixes.Select((suffix) => {
                     return copyAclBindings(testAclBindings);
                 }).ToList();
-                invalidTests[0][0].ResourcePatternType = ResourcePatternType.Unknown;
-                invalidTests[1][0].ResourcePatternType = ResourcePatternType.Match;
-                invalidTests[2][0].ResourcePatternType = ResourcePatternType.Any;
-                invalidTests[3][0].Operation = AclOperation.Unknown;
-                invalidTests[4][0].Operation = AclOperation.Any;
-                invalidTests[5][0].PermissionType = AclPermissionType.Unknown;
-                invalidTests[6][0].PermissionType = AclPermissionType.Any;
-                invalidTests[7][0].Name = null;
-                invalidTests[8][0].Principal = null;
-                invalidTests[9][0].Host = null;
+                invalidTests[0][0].Type = ResourceType.Unknown;
+                invalidTests[1][0].Type = ResourceType.Any;
+                invalidTests[2][0].ResourcePatternType = ResourcePatternType.Unknown;
+                invalidTests[3][0].ResourcePatternType = ResourcePatternType.Match;
+                invalidTests[4][0].ResourcePatternType = ResourcePatternType.Any;
+                invalidTests[5][0].Operation = AclOperation.Unknown;
+                invalidTests[6][0].Operation = AclOperation.Any;
+                invalidTests[7][0].PermissionType = AclPermissionType.Unknown;
+                invalidTests[8][0].PermissionType = AclPermissionType.Any;
+                invalidTests[9][0].Name = null;
+                invalidTests[10][0].Principal = null;
+                invalidTests[11][0].Host = null;
 
                 var i = 0;
                 foreach (List<AclBinding> invalidTest in invalidTests)
