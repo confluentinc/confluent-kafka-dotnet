@@ -68,7 +68,7 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         public AclBinding Clone()
         {
-            return (AclBinding) this.MemberwiseClone();
+            return (AclBinding) MemberwiseClone();
         }
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace Confluent.Kafka.Admin
         /// </returns>
         public override bool Equals(Object obj)
         {
-            if (obj == null || !(obj is AclBinding))
+            if (obj == null || !GetType().Equals(obj.GetType()))
             {
                 return false;
             }
@@ -153,6 +153,9 @@ namespace Confluent.Kafka.Admin
             return hash;
         }
 
+        private string Quote(string str) =>
+                str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
+
         /// <summary>
         ///     Returns a JSON representation of this AclBinding object.
         /// </summary>
@@ -162,8 +165,6 @@ namespace Confluent.Kafka.Admin
         public override string ToString()
         {
             var result = new StringBuilder();
-            Func<string,string> Quote = (string str) =>
-                str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
             result.Append($"{{\"Type\": \"{Type}\", \"Name\": {Quote(Name)}");
             result.Append($", \"ResourcePatternType\": \"{ResourcePatternType}\", \"Principal\": {Quote(Principal)}");
             result.Append($", \"Host\": {Quote(Host)}, \"Operation\": \"{Operation}\"");

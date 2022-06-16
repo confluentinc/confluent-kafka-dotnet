@@ -29,7 +29,7 @@ namespace Confluent.Kafka.Admin
         /// </summary>
         new public AclBindingFilter Clone()
         {
-            return (AclBindingFilter)this.MemberwiseClone();
+            return (AclBindingFilter) MemberwiseClone();
         }
     }
 }

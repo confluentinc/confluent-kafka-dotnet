@@ -53,8 +53,8 @@ namespace Confluent.Kafka.Admin
             var result = (AbstractAclsResult) obj;
             if (base.Equals(result)) return true;
             return this.Error == result.Error &&
-                this.AclBindings == null ? result.AclBindings == null :
-                new HashSet<AclBinding>(this.AclBindings).SetEquals(new HashSet<AclBinding>(result.AclBindings));
+                (this.AclBindings == null ? result.AclBindings == null :
+                new HashSet<AclBinding>(this.AclBindings).SetEquals(new HashSet<AclBinding>(result.AclBindings)));
         }
 
         /// <summary>
