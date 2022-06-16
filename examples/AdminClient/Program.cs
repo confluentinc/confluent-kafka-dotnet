@@ -90,10 +90,10 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static List<AclBinding> ParseAclBindings(string[] args)
+        static List<T> ParseAclBindings<T>(string[] args) where T: AclBinding, new()
         {
             int nAclBindings = args.Length / 7;
-            var aclBindings = new List<AclBinding>();
+            var aclBindings = new List<T>();
             for (int i = 0; i < nAclBindings; i++)
             {
                 var baseArg = i * 7;
@@ -106,13 +106,21 @@ namespace Confluent.Kafka.Examples
 
                 if (!parseCorrect) return null;
 
-                aclBindings.Add(new AclBinding()
+                var name = args[baseArg + 1];
+                var principal = args[baseArg + 3];
+                var host = args[baseArg + 4];
+
+                if (name == "") name = null;
+                if (principal == "") principal = null;
+                if (host == "") host = null;
+
+                aclBindings.Add(new T()
                 {
                     Type = (ResourceType) resourceType,
-                    Name = args[baseArg + 1],
+                    Name = name,
                     ResourcePatternType = (ResourcePatternType) resourcePatternType,
-                    Principal = args[baseArg + 3],
-                    Host = args[baseArg + 4],
+                    Principal = principal,
+                    Host = host,
                     Operation = (AclOperation) operation,
                     PermissionType = (AclPermissionType) permissionType,
                 });
@@ -120,8 +128,33 @@ namespace Confluent.Kafka.Examples
             return aclBindings;
         }
 
-        static async Task CreateAclsAsync(string bootstrapServers, List<AclBinding> aclBindings)
+
+        static void PrintAclBindings(List<AclBinding> aclBindings)
         {
+            foreach (AclBinding aclBinding in aclBindings)
+            {
+                Console.WriteLine($"\t{aclBinding}");
+            }
+        }
+
+        static async Task CreateAclsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            var numCommandArgs = commandArgs.Length;
+            var printUsage = numCommandArgs == 0 || numCommandArgs % 7 != 0;
+            List<AclBinding> aclBindings = null;
+            if (!printUsage)
+            {
+                aclBindings = ParseAclBindings<AclBinding>(commandArgs);
+            }
+            printUsage = aclBindings == null;
+
+            if (printUsage)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
+                "<principal1> <host1> <operation1> <permission_type1> ..");
+                System.Environment.Exit(1);
+            }
+
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
@@ -147,6 +180,69 @@ namespace Confluent.Kafka.Examples
                         i++;
                     }
                 }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred calling the CreateAcls operation: {e.Message}");
+                }
+            }
+        }
+
+        static async Task DeleteAclsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            var numCommandArgs = commandArgs.Length;
+            var printUsage = numCommandArgs == 0 || numCommandArgs % 7 != 0;
+            List<AclBindingFilter> aclBindingFilters = null;
+            if (!printUsage)
+            {
+                aclBindingFilters = ParseAclBindings<AclBindingFilter>(commandArgs);
+            }
+            printUsage = aclBindingFilters == null;
+
+            if (printUsage)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> delete-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
+                "<principal1> <host1> <operation1> <permission_type1> ..");
+                System.Environment.Exit(1);
+            }
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var results = await adminClient.DeleteAclsAsync(aclBindingFilters);
+                    Console.WriteLine("All the delete ACL operations completed successfully");
+                    int i = 0;
+                    foreach (var result in results)
+                    {
+                        Console.WriteLine($"Deleted ACLs in operation {i}");
+                        PrintAclBindings(result.AclBindings);
+                        i++;
+                    }
+                }
+                catch (DeleteAclsException e)
+                {
+                    Console.WriteLine("Some ACL operations failed");
+                    int i = 0;
+                    foreach (var result in e.Results)
+                    {
+                        if (!result.Error.IsError)
+                        {
+                            Console.WriteLine($"Delete ACLs operation {i} completed successfully");
+                            Console.WriteLine($"Deleted ACLs in operation {i}");
+                            PrintAclBindings(result.AclBindings);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"An error occurred in delete ACL operation {i}: Code: {result.Error.Code}" +
+                            $", Reason: {result.Error.Reason}");
+                        }
+                        i++;
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred calling the DeleteAcls operation: {e.Message}");
+                }
             }
         }
 
@@ -154,12 +250,11 @@ namespace Confluent.Kafka.Examples
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls> ..");
+                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls|delete-acls> ..");
                 System.Environment.Exit(1);
             }
 
             var commandArgs = args.Skip(2).ToArray();
-            var numCommandArgs = commandArgs.Length;
             switch (args[1])
             {
                 case "library-version":
@@ -176,21 +271,10 @@ namespace Confluent.Kafka.Examples
                     await CreateTopicAsync(args[0], args[2]);
                     break;
                 case "create-acls":
-                    var printUsage = numCommandArgs == 0 || numCommandArgs % 7 != 0;
-                    List<AclBinding> aclBindings = null;
-                    if (!printUsage)
-                    {
-                        aclBindings = ParseAclBindings(commandArgs);
-                    }
-                    printUsage = aclBindings == null;
-
-                    if (printUsage)
-                    {
-                        Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
-                        "<principal1> <host1> <operation1> <permission_type1> ..");
-                        System.Environment.Exit(1);
-                    }
-                    await CreateAclsAsync(args[0], aclBindings);
+                    await CreateAclsAsync(args[0], commandArgs);
+                    break;
+                case "delete-acls":
+                    await DeleteAclsAsync(args[0], commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {args[1]}");

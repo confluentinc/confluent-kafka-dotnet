@@ -14,24 +14,13 @@
 //
 // Refer to LICENSE for more information.
 
-using System.Collections.Generic;
-
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
     ///     Provides describe ACLs result or error information.
     /// </summary>
-    public class DescribeAclsResult
+    public class DescribeAclsResult : AbstractAclsResult
     {
-        /// <summary>
-        ///     List of ACL bindings matching the provided filter
-        /// </summary>
-        public List<AclBinding> AclBindings { get; set; }
-
-        /// <summary>
-        ///     Operation error status, null if successful.
-        /// </summary>
-        public Error Error { get; set; }
     }
 }

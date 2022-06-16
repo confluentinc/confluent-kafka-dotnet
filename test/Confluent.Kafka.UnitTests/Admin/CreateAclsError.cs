@@ -62,7 +62,7 @@ namespace Confluent.Kafka.UnitTests
                     adminClient.CreateAclsAsync(new List<AclBinding>())
                 );
 
-                CreateAclsOptions options = new CreateAclsOptions()
+                CreateAclsOptions options = new CreateAclsOptions
                 {
                     RequestTimeout = TimeSpan.FromMilliseconds(200)
                 };

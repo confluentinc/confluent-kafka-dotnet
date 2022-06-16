@@ -14,12 +14,17 @@
 //
 // Refer to LICENSE for more information.
 
-namespace Confluent.Kafka.Admin
+using Confluent.Kafka.Admin;
+using Xunit;
+
+
+namespace Confluent.Kafka.UnitTests
 {
-    /// <summary>
-    ///     Provides delete ACLs result or error information.
-    /// </summary>
-    public class DeleteAclsResult : AbstractAclsResult
+    public class AclBindingTests
     {
+        [Fact]
+        public void Equality()
+        {
+        }
     }
 }

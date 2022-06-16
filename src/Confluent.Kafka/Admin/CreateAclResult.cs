@@ -14,6 +14,8 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -25,5 +27,74 @@ namespace Confluent.Kafka.Admin
         ///     Per ACL binding error status.
         /// </summary>
         public Error Error { get; set; }
+
+        /// <summary>
+        ///     Tests whether this CreateAclResult instance is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if obj is a CreateAclResult and the Error property values are equal. false otherwise.
+        /// </returns>
+        public override bool Equals(Object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            var result = (CreateAclResult) obj;
+            if (base.Equals(result)) return true;
+            return this.Error == result.Error;
+        }
+
+        /// <summary>
+        ///     Tests whether CreateAclResult instance a is equal to CreateAclResult instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first CreateAclResult instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second CreateAclResult instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if CreateAclResult instances a and b are equal. false otherwise.
+        /// </returns>
+        public static bool operator ==(CreateAclResult a, CreateAclResult b)
+        {
+            if (a is null)
+            {
+                return (b is null);
+            }
+
+            return a.Equals(b);
+        }
+
+        /// <summary>
+        ///     Tests whether CreateAclResult instance a is not equal to CreateAclResult instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first CreateAclResult instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second CreateAclResult instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if CreateAclResult instances a and b are not equal. false otherwise.
+        /// </returns>
+        public static bool operator !=(CreateAclResult a, CreateAclResult b)
+            => !(a == b);
+
+        /// <summary>
+        ///     Returns a hash code for this CreateAclResult value.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this CreateAclResult value.
+        /// </returns>
+        public override int GetHashCode()
+        {
+            if (Error == null) return 0;
+            return Error.GetHashCode();
+        }
     }
 }

@@ -138,6 +138,7 @@ namespace Confluent.Kafka
 
         private List<AclBinding> extractAclBindings(IntPtr aclBindingsPtr, int aclBindingsCnt)
         {
+            if (aclBindingsCnt == 0) return new List<AclBinding> {};
             IntPtr[] aclBindingsPtrArr = new IntPtr[aclBindingsCnt];
             Marshal.Copy(aclBindingsPtr, aclBindingsPtrArr, 0, aclBindingsCnt);
 
@@ -165,7 +166,6 @@ namespace Confluent.Kafka
             return resultResponsesPtrArr.Select(resultResponsePtr => {
                 var matchingAcls = Librdkafka.DeleteAcls_result_response_matching_acls(resultResponsePtr,
                                                                                        out UIntPtr resultResponseAclCntPtr);
-
                 return new DeleteAclsResult 
                 {
                     Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr)),

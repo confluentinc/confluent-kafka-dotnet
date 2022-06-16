@@ -22,42 +22,43 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during a create ACLs request.
+    ///     Represents an error that occurred during an ACLs request.
     /// </summary>
-    public class CreateAclsException : KafkaException
+    public abstract class AbstractAclsException<T> : KafkaException where T: AbstractAclsResult
     {
         /// <summary>
-        ///     Initialize a new instance of CreateAclsException.
+        ///     Initialize a new instance of AbstractAclsException.
         /// </summary>
+        /// <param name="message">
+        ///     The message to show in the Error.
+        /// </param>
         /// <param name="results">
-        ///     The result corresponding to all the ACLs in the request 
+        ///     The result corresponding to all the ACL operations in the request 
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public CreateAclsException(List<CreateAclResult> results)
+        public AbstractAclsException(string message, List<T> results)
             : base(new Error(ErrorCode.Local_Partial,
-                "An error occurred creating ACLs: [" +
-                String.Join(", ", results.Select(r => r.Error)) +
-                "]."))
+                $"{message}: [{String.Join(", ", results.Select(r => r.ToString()))}]."))
         {
             this.Results = results;
         }
 
         /// <summary>
-        ///     The result corresponding to all the ACLs in the request 
+        ///     The result corresponding to all the ACL operations in the request 
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<CreateAclResult> Results { get; }
+        public List<T> Results { get; }
 
         /// <summary>
-        ///     Tests whether this CreateAclsException instance is equal to the specified object.
+        ///     Tests whether this instance is equal to the specified object.
         /// </summary>
         /// <param name="obj">
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if obj is a CreateAclsException and the Error and Results property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the Error and Results property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {
@@ -65,25 +66,26 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var exception = (CreateAclsException) obj;
+            var exception = (AbstractAclsException<T>) obj;
             if (base.Equals(exception)) return true;
             return this.Error == exception.Error &&
                 (this.Results?.SequenceEqual(exception.Results) ?? exception.Results == null);
         }
 
+
         /// <summary>
-        ///     Tests whether CreateAclsException instance a is equal to CreateAclsException instance b.
+        ///     Tests whether AbstractAclsException instance a is equal to AbstractAclsException instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first CreateAclsException instance to compare.
+        ///     The first AbstractAclsException instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second CreateAclsException instance to compare.
+        ///     The second AbstractAclsException instance to compare.
         /// </param>
         /// <returns>
-        ///     true if CreateAclsException instances a and b are equal. false otherwise.
+        ///     true if AbstractAclsException instances a and b are equal. false otherwise.
         /// </returns>
-        public static bool operator ==(CreateAclsException a, CreateAclsException b)
+        public static bool operator ==(AbstractAclsException<T> a, AbstractAclsException<T> b)
         {
             if (a is null)
             {
@@ -94,25 +96,25 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Tests whether CreateAclsException instance a is not equal to CreateAclsException instance b.
+        ///     Tests whether AbstractAclsException instance a is not equal to AbstractAclsException instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first CreateAclsException instance to compare.
+        ///     The first AbstractAclsException instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second CreateAclsException instance to compare.
+        ///     The second AbstractAclsException instance to compare.
         /// </param>
         /// <returns>
-        ///     true if CreateAclsException instances a and b are not equal. false otherwise.
+        ///     true if AbstractAclsException instances a and b are not equal. false otherwise.
         /// </returns>
-        public static bool operator !=(CreateAclsException a, CreateAclsException b)
+        public static bool operator !=(AbstractAclsException<T> a, AbstractAclsException<T> b)
             => !(a == b);
 
         /// <summary>
-        ///     Returns a hash code for this CreateAclsException value.
+        ///     Returns a hash code for this value.
         /// </summary>
         /// <returns>
-        ///     An integer that specifies a hash value for this CreateAclsException value.
+        ///     An integer that specifies a hash value for this value.
         /// </returns>
         public override int GetHashCode()
         {
@@ -120,7 +122,7 @@ namespace Confluent.Kafka.Admin
             if (Error != null) hash ^= Error.GetHashCode();
             if (Results != null)
             {
-                foreach(CreateAclResult result in Results)
+                foreach(T result in Results)
                 {
                     hash ^= result.GetHashCode();
                 }

@@ -14,8 +14,6 @@
 //
 // Refer to LICENSE for more information.
 
-using System;
-using System.Linq;
 using System.Collections.Generic;
 
 
@@ -24,7 +22,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Represents an error that occurred during a delete ACLs request.
     /// </summary>
-    public class DeleteAclsException : KafkaException
+    public class DeleteAclsException : AbstractAclsException<DeleteAclsResult>
     {
         /// <summary>
         ///     Initialize a new instance of DeleteAclsException.
@@ -35,19 +33,6 @@ namespace Confluent.Kafka.Admin
         ///     results will be in error.
         /// </param>
         public DeleteAclsException(List<DeleteAclsResult> results)
-            : base(new Error(ErrorCode.Local_Partial,
-                "An error occurred delete ACLs: [" +
-                String.Join(", ", results.Select(r => r.Error)) +
-                "]."))
-        {
-            this.Results = results;
-        }
-
-        /// <summary>
-        ///     The result corresponding to all the ACL filters in the request 
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
-        /// </summary>
-        public List<DeleteAclsResult> Results { get; }
+            : base("An error occurred deleting ACLs", results) {}
     }
 }

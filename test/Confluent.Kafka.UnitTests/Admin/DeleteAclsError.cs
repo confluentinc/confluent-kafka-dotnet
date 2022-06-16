@@ -66,7 +66,7 @@ namespace Confluent.Kafka.UnitTests
                     adminClient.DeleteAclsAsync(new List<AclBindingFilter>())
                 );
 
-                DeleteAclsOptions options = new DeleteAclsOptions()
+                DeleteAclsOptions options = new DeleteAclsOptions
                 {
                     RequestTimeout = TimeSpan.FromMilliseconds(200)
                 };

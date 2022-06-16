@@ -15,6 +15,9 @@
 // Refer to LICENSE for more information.
 
 
+using System;
+using System.Text;
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -66,6 +69,106 @@ namespace Confluent.Kafka.Admin
         public AclBinding Clone()
         {
             return (AclBinding) this.MemberwiseClone();
+        }
+
+        /// <summary>
+        ///     Tests whether this instance is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if this is an AclBinding or subclass and the property values are equal. false otherwise.
+        /// </returns>
+        public override bool Equals(Object obj)
+        {
+            if (obj == null || !(obj is AclBinding))
+            {
+                return false;
+            }
+            var aclBinding = (AclBinding)obj;
+            if (base.Equals(aclBinding)) return true;
+            return this.Type == aclBinding.Type &&
+                this.Name == aclBinding.Name &&
+                this.ResourcePatternType == aclBinding.ResourcePatternType &&
+                this.Principal == aclBinding.Principal &&
+                this.Host == aclBinding.Host &&
+                this.Operation == aclBinding.Operation &&
+                this.PermissionType == aclBinding.PermissionType;
+        }
+
+        /// <summary>
+        ///     Tests whether AclBinding instance a is equal to AclBinding instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first AclBinding instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second AclBinding instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if AclBinding instances a and b are equal. false otherwise.
+        /// </returns>
+        public static bool operator ==(AclBinding a, AclBinding b)
+        {
+            if (a is null)
+            {
+                return (b is null);
+            }
+
+            return a.Equals(b);
+        }
+
+        /// <summary>
+        ///     Tests whether AclBinding instance a is not equal to AclBinding instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first AclBinding instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second AclBinding instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if AclBinding instances a and b are not equal. false otherwise.
+        /// </returns>
+        public static bool operator !=(AclBinding a, AclBinding b)
+            => !(a == b);
+
+        /// <summary>
+        ///     Returns a hash code for this value.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this value.
+        /// </returns>
+        public override int GetHashCode()
+        {
+            int hash = 1;
+            hash ^= Type.GetHashCode();
+            hash ^= ResourcePatternType.GetHashCode();
+            hash ^= Operation.GetHashCode();
+            hash ^= PermissionType.GetHashCode();
+            if (Name != null) hash ^= Name.GetHashCode();
+            if (Principal != null) hash ^= Principal.GetHashCode();
+            if (Host != null) hash ^= Host.GetHashCode();
+            return hash;
+        }
+
+        /// <summary>
+        ///     Returns a JSON representation of this AclBinding object.
+        /// </summary>
+        /// <returns>
+        ///     A JSON representation of this AclBinding object.
+        /// </returns>
+        public override string ToString()
+        {
+            var result = new StringBuilder();
+            Func<string,string> Quote = (string str) =>
+                str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
+            result.Append($"{{\"Type\": \"{Type}\", \"Name\": {Quote(Name)}");
+            result.Append($", \"ResourcePatternType\": \"{ResourcePatternType}\", \"Principal\": {Quote(Principal)}");
+            result.Append($", \"Host\": {Quote(Host)}, \"Operation\": \"{Operation}\"");
+            result.Append($", \"PermissionType\": \"{PermissionType}\"}}");
+            return result.ToString();
         }
     }
 }
