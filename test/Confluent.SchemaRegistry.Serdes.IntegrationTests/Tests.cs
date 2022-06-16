@@ -40,8 +40,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
         {
             if (testParameters == null)
             {
-                var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
-                var codeBasePath = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
+                var codeBasePath = Assembly.GetExecutingAssembly().Location;
                 var dirPath = Path.GetDirectoryName(codeBasePath);
                 var jsonPath = Path.Combine(dirPath, "testconf.json");
 
