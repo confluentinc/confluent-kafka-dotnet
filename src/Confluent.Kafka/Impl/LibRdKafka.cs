@@ -447,16 +447,14 @@ namespace Confluent.Kafka.Impl
                 if (!isInitialized || handle == IntPtr.Zero)
                     return true;
 
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    isInitialized = WindowsNative.FreeLibrary(handle);
-                }
-                else
-                {
-                    isInitialized = PosixNative.dlclose(handle) == 0;
-                }
+                var unloaded = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? WindowsNative.FreeLibrary(handle)
+                    : PosixNative.dlclose(handle) == 0;
 
-                return !isInitialized;
+                if (unloaded)
+                    isInitialized = false;
+
+                return unloaded;
             }
         }
 
