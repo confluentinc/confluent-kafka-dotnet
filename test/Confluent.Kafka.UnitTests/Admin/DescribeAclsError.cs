@@ -22,15 +22,8 @@ using System.Linq;
 
 namespace Confluent.Kafka.UnitTests
 {
-    public class DeleteAclsErrorTests
+    public class DescribeAclsErrorTests
     {
-
-        private static List<AclBindingFilter> CopyAclBindingFilters(List<AclBindingFilter> original)
-        {
-            return original.Select((aclBinding) => {
-                return aclBinding.Clone();
-            }).ToList();
-        }
 
         [Fact]
         public async void Errors()
@@ -50,7 +43,7 @@ namespace Confluent.Kafka.UnitTests
                     new AclBindingFilter()
                     {
                         Type = ResourceType.Any,
-                        ResourcePatternType = ResourcePatternType.Any,
+                        ResourcePatternType = ResourcePatternType.Match,
                         Operation = AclOperation.Any,
                         PermissionType = AclPermissionType.Any
                     },
@@ -58,24 +51,22 @@ namespace Confluent.Kafka.UnitTests
 
                 // null aclBindingFilters
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                    adminClient.DeleteAclsAsync(null)
+                    adminClient.DescribeAclsAsync(null)
                 );
 
-                // empty aclBindingFilters
-                await Assert.ThrowsAsync<ArgumentException>(() =>
-                    adminClient.DeleteAclsAsync(new List<AclBindingFilter>())
-                );
-
-                var options = new DeleteAclsOptions
+                var options = new DescribeAclsOptions
                 {
                     RequestTimeout = TimeSpan.FromMilliseconds(200)
                 };
 
                 // Correct input, fail with timeout
-                var ex = await Assert.ThrowsAsync<KafkaException>(() =>
-                    adminClient.DeleteAclsAsync(testAclBindingFilters, options)
-                );
-                Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
+                foreach (AclBindingFilter aclBindingFilter in testAclBindingFilters)
+                {
+                    var ex = await Assert.ThrowsAsync<KafkaException>(() =>
+                                        adminClient.DescribeAclsAsync(aclBindingFilter, options)
+                                    );
+                    Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
+                }
 
                 // Invalid ACL binding filters
                 var suffixes = new List<string>()
@@ -86,18 +77,18 @@ namespace Confluent.Kafka.UnitTests
                     "Invalid permission type",
                 };
                 var invalidTests = suffixes.Select((suffix) => {
-                    return CopyAclBindingFilters(testAclBindingFilters);
+                    return testAclBindingFilters[0].Clone();
                 }).ToList();
-                invalidTests[0][0].Type = ResourceType.Unknown;
-                invalidTests[1][0].ResourcePatternType = ResourcePatternType.Unknown;
-                invalidTests[2][0].Operation = AclOperation.Unknown;
-                invalidTests[3][0].PermissionType = AclPermissionType.Unknown;
+                invalidTests[0].Type = ResourceType.Unknown;
+                invalidTests[1].ResourcePatternType = ResourcePatternType.Unknown;
+                invalidTests[2].Operation = AclOperation.Unknown;
+                invalidTests[3].PermissionType = AclPermissionType.Unknown;
 
-                var i = 0;
-                foreach (List<AclBindingFilter> invalidTest in invalidTests)
+                int i = 0;
+                foreach (AclBindingFilter invalidTest in invalidTests)
                 {
                     var exInvalidTest = await Assert.ThrowsAsync<KafkaException>(() =>
-                         adminClient.DeleteAclsAsync(invalidTest)
+                         adminClient.DescribeAclsAsync(invalidTest)
                     );
                     Assert.EndsWith(suffixes[i], exInvalidTest.Message);
                     i++;

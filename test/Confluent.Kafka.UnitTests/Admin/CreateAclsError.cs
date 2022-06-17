@@ -25,7 +25,7 @@ namespace Confluent.Kafka.UnitTests
     public class CreateAclsErrorTests
     {
 
-        private List<AclBinding> copyAclBindings(List<AclBinding> original)
+        private static List<AclBinding> CopyAclBindings(List<AclBinding> original)
         {
             return original.Select((aclBinding) => {
                 return aclBinding.Clone();
@@ -43,9 +43,9 @@ namespace Confluent.Kafka.UnitTests
                     new AclBinding()
                     {
                         Type = ResourceType.Topic,
-                        Name = "mytopic",
+                        Name = "my-topic",
                         ResourcePatternType = ResourcePatternType.Literal,
-                        Principal = "User:myuser",
+                        Principal = "User:my-user",
                         Host = "*",
                         Operation = AclOperation.All,
                         PermissionType = AclPermissionType.Allow
@@ -62,7 +62,7 @@ namespace Confluent.Kafka.UnitTests
                     adminClient.CreateAclsAsync(new List<AclBinding>())
                 );
 
-                CreateAclsOptions options = new CreateAclsOptions
+                var options = new CreateAclsOptions
                 {
                     RequestTimeout = TimeSpan.FromMilliseconds(200)
                 };
@@ -90,7 +90,7 @@ namespace Confluent.Kafka.UnitTests
                     "Invalid host",
                 };
                 var invalidTests = suffixes.Select((suffix) => {
-                    return copyAclBindings(testAclBindings);
+                    return CopyAclBindings(testAclBindings);
                 }).ToList();
                 invalidTests[0][0].Type = ResourceType.Unknown;
                 invalidTests[1][0].Type = ResourceType.Any;

@@ -823,6 +823,18 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         /* const rd_kafka_acl_result_t * */ IntPtr aclres);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DescribeAcls(
+                        /* rd_kafka_t * */ IntPtr rk,
+                        /* rd_kafka_AclBindingFilter_t * */ IntPtr acl_filter,
+                        /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                        /* rd_kafka_queue_t * */ IntPtr rkqu);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DescribeAcls_result_acls(
+                        /* const rd_kafka_DescribeAcls_result_t * */ IntPtr result,
+                        /* size_t * */ out UIntPtr cntp);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_DeleteAcls(
                         /* rd_kafka_t * */ IntPtr rk,
                         /* rd_kafka_AclBindingFilter_t ** */ IntPtr[] del_acls,

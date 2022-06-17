@@ -156,6 +156,19 @@ namespace Confluent.Kafka
             ).ToList();
         }
 
+        private DescribeAclsResult extractDescribeAclsResult(IntPtr resultPtr)
+        {
+            var errCode = Librdkafka.event_error(resultPtr);
+            var errString = Librdkafka.event_error_string(resultPtr);
+            var resultAcls = Librdkafka.DescribeAcls_result_acls(resultPtr,
+                                                                out UIntPtr resultAclCntPtr);
+            return new DescribeAclsResult
+            {
+                Error = new Error(errCode, errString, false),
+                AclBindings = extractAclBindings(resultAcls, (int) resultAclCntPtr)
+            };
+        }
+
         private List<DeleteAclsResult> extractDeleteAclsResults(IntPtr resultPtr)
         {
             var resultResponsesPtr = Librdkafka.DeleteAcls_result_responses(resultPtr, out UIntPtr resultResponsesCntPtr);
@@ -413,6 +426,31 @@ namespace Confluent.Kafka
                                             }
                                         }
                                         break;
+                                    case Librdkafka.EventType.DescribeAcls_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                            }
+
+                                            var result = extractDescribeAclsResult(eventPtr);
+
+                                            if (result.Error.IsError)
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetException(
+                                                        new DescribeAclsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() => 
+                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetResult(result));
+                                            }
+                                        }
+                                        break; 
                                     case Librdkafka.EventType.DeleteAcls_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
@@ -765,7 +803,12 @@ namespace Confluent.Kafka
         /// </summary>
         public Task<DescribeAclsResult> DescribeAclsAsync(AclBindingFilter aclBindingFilter, DescribeAclsOptions options = null)
         {
-            throw new NotImplementedException();
+            var completionSource = new TaskCompletionSource<DescribeAclsResult>();
+            var gch = GCHandle.Alloc(completionSource);
+            Handle.LibrdkafkaHandle.DescribeAcls(
+                aclBindingFilter, options, resultQueue,
+                GCHandle.ToIntPtr(gch));
+            return completionSource.Task;
         }
 
 

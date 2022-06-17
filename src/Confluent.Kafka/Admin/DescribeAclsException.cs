@@ -15,41 +15,31 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Linq;
-using System.Collections.Generic;
-
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during an ACLs request.
+    ///     Represents an error that occurred during a DescribeAcls request.
     /// </summary>
-    public abstract class AbstractAclsException<T> : KafkaException where T: AbstractAclsResult
+    public class DescribeAclsException : KafkaException
     {
         /// <summary>
-        ///     Initialize a new instance of AbstractAclsException.
+        ///     Initialize a new instance of DescribeAclsException.
         /// </summary>
-        /// <param name="message">
-        ///     The message to show in the Error.
+        /// <param name="result">
+        ///     The result corresponding to the ACL filter in the request
         /// </param>
-        /// <param name="results">
-        ///     The result corresponding to all the ACL operations in the request 
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
-        /// </param>
-        public AbstractAclsException(string message, List<T> results)
+        public DescribeAclsException(DescribeAclsResult result)
             : base(new Error(ErrorCode.Local_Partial,
-                $"{message}: [{String.Join(", ", results.Select(r => r.ToString()))}]."))
+                $"An error occurred describing ACLs: {result.ToString()}."))
         {
-            this.Results = results;
+            this.Result = result;
         }
 
         /// <summary>
-        ///     The result corresponding to all the ACL operations in the request 
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
+        ///     The result corresponding to the describe ACLs operation in the request 
         /// </summary>
-        public List<T> Results { get; }
+        public DescribeAclsResult Result { get; }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -66,26 +56,26 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var exception = (AbstractAclsException<T>) obj;
+            var exception = (DescribeAclsException) obj;
             if (base.Equals(exception)) return true;
-            return this.Error == exception.Error &&
-                (this.Results?.SequenceEqual(exception.Results) ?? exception.Results == null);
+            return Error == exception.Error &&
+                   Result == exception.Result;
         }
 
 
         /// <summary>
-        ///     Tests whether AbstractAclsException instance a is equal to AbstractAclsException instance b.
+        ///     Tests whether DescribeAclsException instance a is equal to DescribeAclsException instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first AbstractAclsException instance to compare.
+        ///     The first DescribeAclsException instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second AbstractAclsException instance to compare.
+        ///     The second DescribeAclsException instance to compare.
         /// </param>
         /// <returns>
-        ///     true if AbstractAclsException instances a and b are equal. false otherwise.
+        ///     true if DescribeAclsException instances a and b are equal. false otherwise.
         /// </returns>
-        public static bool operator ==(AbstractAclsException<T> a, AbstractAclsException<T> b)
+        public static bool operator ==(DescribeAclsException a, DescribeAclsException b)
         {
             if (a is null)
             {
@@ -96,18 +86,18 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Tests whether AbstractAclsException instance a is not equal to AbstractAclsException instance b.
+        ///     Tests whether DescribeAclsException instance a is not equal to DescribeAclsException instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first AbstractAclsException instance to compare.
+        ///     The first DescribeAclsException instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second AbstractAclsException instance to compare.
+        ///     The second DescribeAclsException instance to compare.
         /// </param>
         /// <returns>
-        ///     true if AbstractAclsException instances a and b are not equal. false otherwise.
+        ///     true if DescribeAclsException instances a and b are not equal. false otherwise.
         /// </returns>
-        public static bool operator !=(AbstractAclsException<T> a, AbstractAclsException<T> b)
+        public static bool operator !=(DescribeAclsException a, DescribeAclsException b)
             => !(a == b);
 
         /// <summary>
@@ -120,12 +110,9 @@ namespace Confluent.Kafka.Admin
         {
             int hash = 1;
             if (Error != null) hash ^= Error.GetHashCode();
-            if (Results != null)
+            if (Result != null)
             {
-                foreach(T result in Results)
-                {
-                    hash ^= result.GetHashCode();
-                }
+                hash ^= Result.GetHashCode();
             }
             return hash;
         }

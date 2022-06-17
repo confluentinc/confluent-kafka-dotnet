@@ -21,7 +21,7 @@ using Xunit;
 
 namespace Confluent.Kafka.UnitTests
 {
-    public class AbstractAclsExceptionTests
+    public class DeleteAclsExceptionTests
     {
         [Fact]
         public void Equality()

@@ -97,12 +97,11 @@ namespace Confluent.Kafka.Examples
             for (int i = 0; i < nAclBindings; i++)
             {
                 var baseArg = i * 7;
-                object resourceType, resourcePatternType, operation, permissionType;
                 var parseCorrect = true;
-                parseCorrect &= Enum.TryParse(typeof(ResourceType), args[baseArg], out resourceType);
-                parseCorrect &= Enum.TryParse(typeof(ResourcePatternType), args[baseArg + 2], out resourcePatternType);
-                parseCorrect &= Enum.TryParse(typeof(AclOperation), args[baseArg + 5], out operation);
-                parseCorrect &= Enum.TryParse(typeof(AclPermissionType), args[baseArg + 6], out permissionType);
+                parseCorrect &= Enum.TryParse(typeof(ResourceType), args[baseArg], out object resourceType);
+                parseCorrect &= Enum.TryParse(typeof(ResourcePatternType), args[baseArg + 2], out object resourcePatternType);
+                parseCorrect &= Enum.TryParse(typeof(AclOperation), args[baseArg + 5], out object operation);
+                parseCorrect &= Enum.TryParse(typeof(AclPermissionType), args[baseArg + 6], out object permissionType);
 
                 if (!parseCorrect) return null;
 

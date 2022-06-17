@@ -14,15 +14,16 @@
 //
 // Refer to LICENSE for more information.
 
+using System;
 using System.Collections.Generic;
-
+using System.Linq;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during a delete ACLs request.
+    ///     Represents an error that occurred during a DeleteAcls request.
     /// </summary>
-    public class DeleteAclsException : AbstractAclsException<DeleteAclsResult>
+    public class DeleteAclsException : KafkaException
     {
         /// <summary>
         ///     Initialize a new instance of DeleteAclsException.
@@ -33,6 +34,96 @@ namespace Confluent.Kafka.Admin
         ///     results will be in error.
         /// </param>
         public DeleteAclsException(List<DeleteAclsResult> results)
-            : base("An error occurred deleting ACLs", results) {}
+            : base(new Error(ErrorCode.Local_Partial,
+                $"An error occurred deleting ACLs: [{string.Join(", ", results.Select(r => r.ToString()))}]."))
+        {
+            this.Results = results;
+        }
+
+        /// <summary>
+        ///     The result corresponding to all the delete ACLs operations in the request 
+        ///     (whether or not they were in error). At least one of these
+        ///     results will be in error.
+        /// </summary>
+        public List<DeleteAclsResult> Results { get; }
+
+        /// <summary>
+        ///     Tests whether this instance is equal to the specified object.
+        /// </summary>
+        /// <param name="obj">
+        ///     The object to test.
+        /// </param>
+        /// <returns>
+        ///     true if this is of the same type as obj and the Error and Results property values are equal. false otherwise.
+        /// </returns>
+        public override bool Equals(Object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            var exception = (DeleteAclsException) obj;
+            if (base.Equals(exception)) return true;
+            return Error == exception.Error &&
+                (Results?.SequenceEqual(exception.Results) ?? exception.Results == null);
+        }
+
+
+        /// <summary>
+        ///     Tests whether DeleteAclsException instance a is equal to DeleteAclsException instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first DeleteAclsException instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second DeleteAclsException instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if DeleteAclsException instances a and b are equal. false otherwise.
+        /// </returns>
+        public static bool operator ==(DeleteAclsException a, DeleteAclsException b)
+        {
+            if (a is null)
+            {
+                return b is null;
+            }
+
+            return a.Equals(b);
+        }
+
+        /// <summary>
+        ///     Tests whether DeleteAclsException instance a is not equal to DeleteAclsException instance b.
+        /// </summary>
+        /// <param name="a">
+        ///     The first DeleteAclsException instance to compare.
+        /// </param>
+        /// <param name="b">
+        ///     The second DeleteAclsException instance to compare.
+        /// </param>
+        /// <returns>
+        ///     true if DeleteAclsException instances a and b are not equal. false otherwise.
+        /// </returns>
+        public static bool operator !=(DeleteAclsException a, DeleteAclsException b)
+            => !(a == b);
+
+        /// <summary>
+        ///     Returns a hash code for this value.
+        /// </summary>
+        /// <returns>
+        ///     An integer that specifies a hash value for this value.
+        /// </returns>
+        public override int GetHashCode()
+        {
+            int hash = 1;
+            if (Error != null) hash ^= Error.GetHashCode();
+            if (Results != null)
+            {
+                foreach(DeleteAclsResult result in Results)
+                {
+                    hash ^= result.GetHashCode();
+                }
+            }
+            return hash;
+        }
     }
 }

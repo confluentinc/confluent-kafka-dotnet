@@ -335,6 +335,8 @@ namespace Confluent.Kafka.Impl
             _CreateAcls = (_CreateAcls_delegate)methods.Single(m => m.Name == "rd_kafka_CreateAcls").CreateDelegate(typeof(_CreateAcls_delegate));
             _CreateAcls_result_acls = (_CreateAcls_result_acls_delegate)methods.Single(m => m.Name == "rd_kafka_CreateAcls_result_acls").CreateDelegate(typeof(_CreateAcls_result_acls_delegate));
             _acl_result_error = (_acl_result_error_delegate)methods.Single(m => m.Name == "rd_kafka_acl_result_error").CreateDelegate(typeof(_acl_result_error_delegate));
+            _DescribeAcls = (_DescribeAcls_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeAcls").CreateDelegate(typeof(_DescribeAcls_delegate));
+            _DescribeAcls_result_acls = (_DescribeAcls_result_acls_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeAcls_result_acls").CreateDelegate(typeof(_DescribeAcls_result_acls_delegate));
             _DeleteAcls = (_DeleteAcls_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls").CreateDelegate(typeof(_DeleteAcls_delegate));
             _DeleteAcls_result_responses = (_DeleteAcls_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_responses").CreateDelegate(typeof(_DeleteAcls_result_responses_delegate));
             _DeleteAcls_result_response_error = (_DeleteAcls_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_response_error").CreateDelegate(typeof(_DeleteAcls_result_response_error_delegate));
@@ -1482,6 +1484,22 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr acl_result_error(
             IntPtr aclres
         ) => _acl_result_error(aclres);
+
+        private delegate void _DescribeAcls_delegate(IntPtr handle, IntPtr aclBindingFilterPtr, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _DescribeAcls_delegate _DescribeAcls;
+        internal static void DescribeAcls(
+            IntPtr handle,
+            IntPtr aclBindingFilterPtr,
+            IntPtr optionsPtr,
+            IntPtr resultQueuePtr
+        ) => _DescribeAcls(handle, aclBindingFilterPtr, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _DescribeAcls_result_acls_delegate(IntPtr result, out UIntPtr cntp);
+        private static _DescribeAcls_result_acls_delegate _DescribeAcls_result_acls;
+        internal static IntPtr DescribeAcls_result_acls(
+            IntPtr result,
+            out UIntPtr cntp
+        ) => _DescribeAcls_result_acls(result, out cntp);
 
         private delegate void _DeleteAcls_delegate(IntPtr handle, IntPtr[] aclBindingFilterPtrs, UIntPtr aclBindingFilterPtrsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
         private static _DeleteAcls_delegate _DeleteAcls;
