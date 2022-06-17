@@ -154,11 +154,15 @@ namespace Confluent.Kafka.IntegrationTests
                 },
             };
 
-            CreateAclsOptions createAclsOptions = new CreateAclsOptions
+            var createAclsOptions = new CreateAclsOptions
             {
                 RequestTimeout = maxDuration
             };
-            DeleteAclsOptions deleteAclsOptions = new DeleteAclsOptions
+            var describeAclsOptions = new DescribeAclsOptions
+            {
+                RequestTimeout = maxDuration
+            };
+            var deleteAclsOptions = new DeleteAclsOptions
             {
                 RequestTimeout = maxDuration
             };
@@ -212,6 +216,14 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(new CreateAclsException(
                     new List<CreateAclResult> { unknownErrorCreateResult, noErrorCreateResult }
                 ), createAclsException);
+
+                // DescribeAcls must return the three ACLs
+                var describeAclsResult = await adminClient.DescribeAclsAsync(aclBindingFilters[0], describeAclsOptions);
+                Assert.Equal(new DescribeAclsResult
+                {
+                    Error = noError,
+                    AclBindings = newACLs
+                }, describeAclsResult);
             }
 
             //  - construction of admin client from configuration.
@@ -260,6 +272,14 @@ namespace Confluent.Kafka.IntegrationTests
                     Error = noError,
                     AclBindings = new List<AclBinding>()
                 }, resultDeleteAcls[1]);
+
+                // All the ACLs should have been deleted
+                var describeAclsResult = await adminClient.DescribeAclsAsync(aclBindingFilters[0], describeAclsOptions);
+                Assert.Equal(new DescribeAclsResult
+                {
+                    Error = noError,
+                    AclBindings = new List<AclBinding>{}
+                }, describeAclsResult);
             }
 
             Assert.Equal(0, Library.HandleCount);

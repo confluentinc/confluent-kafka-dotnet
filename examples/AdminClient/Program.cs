@@ -186,6 +186,46 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static async Task DescribeAclsAsync(string bootstrapServers, string[] commandArgs)
+        {
+            var numCommandArgs = commandArgs.Length;
+            var printUsage = numCommandArgs != 7;
+            List<AclBindingFilter> aclBindingFilters = null;
+            if (!printUsage)
+            {
+                aclBindingFilters = ParseAclBindings<AclBindingFilter>(commandArgs);
+            }
+            printUsage = aclBindingFilters == null;
+
+            if (printUsage)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> describe-acls <resource_type> <resource_name> <resource_patter_type> "+
+                "<principal> <host> <operation> <permission_type>");
+                System.Environment.Exit(1);
+            }
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    var result = await adminClient.DescribeAclsAsync(aclBindingFilters[0]);
+                    Console.WriteLine($"Matching ACLs");
+                    PrintAclBindings(result.AclBindings);
+                }
+                catch (DescribeAclsException e)
+                {
+                    var result = e.Result;
+                    Console.WriteLine("Describe ACLs operation failed");
+                    Console.WriteLine($"An error occurred in describe ACLs operation: Code: {result.Error.Code}" +
+                        $", Reason: {result.Error.Reason}");
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occurred calling the describe ACLs operation: {e.Message}");
+                }
+            }
+        }
+
         static async Task DeleteAclsAsync(string bootstrapServers, string[] commandArgs)
         {
             var numCommandArgs = commandArgs.Length;
@@ -249,7 +289,7 @@ namespace Confluent.Kafka.Examples
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls|delete-acls> ..");
+                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls|describe-acls|delete-acls> ..");
                 System.Environment.Exit(1);
             }
 
@@ -271,6 +311,9 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "create-acls":
                     await CreateAclsAsync(args[0], commandArgs);
+                    break;
+                case "describe-acls":
+                    await DescribeAclsAsync(args[0], commandArgs);
                     break;
                 case "delete-acls":
                     await DeleteAclsAsync(args[0], commandArgs);
