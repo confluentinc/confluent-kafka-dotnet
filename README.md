@@ -1,7 +1,6 @@
 Confluent's .NET Client for Apache Kafka<sup>TM</sup>
 =====================================================
 
-[![Travis Build Status](https://travis-ci.org/confluentinc/confluent-kafka-dotnet.svg?branch=master)](https://travis-ci.org/confluentinc/confluent-kafka-dotnet)
 [![Build status](https://ci.appveyor.com/api/projects/status/kux83eykufuv16cn/branch/master?svg=true)](https://ci.appveyor.com/project/ConfluentClientEngineering/confluent-kafka-dotnet/branch/master)
 [![Chat on Slack](https://img.shields.io/badge/chat-on%20slack-7A5979.svg)](https://launchpass.com/confluentcommunity)
 
@@ -35,7 +34,7 @@ client. Thanks Andreas!
 
 confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
 
-- [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net45, netstandard1.3, netstandard2.0]* - The core client library.
+- [Confluent.Kafka](https://www.nuget.org/packages/Confluent.Kafka/) *[net462, netstandard1.3, netstandard2.0]* - The core client library.
 - [Confluent.SchemaRegistry.Serdes.Avro](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Avro/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Avro serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Protobuf](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Protobuf/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Protobuf serialized data with Confluent Schema Registry integration.
 - [Confluent.SchemaRegistry.Serdes.Json](https://www.nuget.org/packages/Confluent.SchemaRegistry.Serdes.Json/) *[netstandard2.0]* - Provides a serializer and deserializer for working with Json serialized data with Confluent Schema Registry integration.
@@ -44,13 +43,13 @@ confluent-kafka-dotnet is distributed via NuGet. We provide five packages:
 To install Confluent.Kafka from within Visual Studio, search for Confluent.Kafka in the NuGet Package Manager UI, or run the following command in the Package Manager Console:
 
 ```
-Install-Package Confluent.Kafka -Version 1.8.2
+Install-Package Confluent.Kafka -Version 1.9.0
 ```
 
 To add a reference to a dotnet core project, execute the following at the command line:
 
 ```
-dotnet add package -v 1.8.2 Confluent.Kafka
+dotnet add package -v 1.9.0 Confluent.Kafka
 ```
 
 Note: `Confluent.Kafka` depends on the `librdkafka.redist` package which provides a number of different builds of `librdkafka` that are compatible with [common platforms](https://github.com/edenhill/librdkafka/wiki/librdkafka.redist-NuGet-package-runtime-libraries). If you are on one of these platforms this will all work seamlessly (and you don't need to explicitly reference `librdkafka.redist`). If you are on a different platform, you may need to [build librdkafka](https://github.com/edenhill/librdkafka#building) manually (or acquire it via other means) and load it using the [Library.Load](https://docs.confluent.io/current/clients/confluent-kafka-dotnet/api/Confluent.Kafka.Library.html#Confluent_Kafka_Library_Load_System_String_) method.

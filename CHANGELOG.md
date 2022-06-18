@@ -1,3 +1,29 @@
+# 1.9.0
+
+## Enhancements
+
+- References librdkafka.redist 1.9.0. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.0)
+for a complete list of changes, enhancements, fixes and upgrade considerations.
+- References Apache.Avro 1.11.0. Refer to the [release notes](https://github.com/apache/avro/releases/tag/release-1.11.0) for further information ([JanReimerD](https://github.com/JanReimerD)).
+- Added support for serializing and deserializing null in Avro serdes ([YairHalberstadt](https://github.com/YairHalberstadt)).
+- Enhanced CachedSchemaRegistryClient to allow for user-implemented authentication schemes ([henrydaly](https://github.com/henrydaly)).
+- Reduced memory use when producing with delivery reports disabled ([TrickyCat](https://github.com/TrickyCat)).
+
+## Fixes
+
+- Resolved incompatibility with Apple M1 processors ([dkaukov](https://github.com/dkaukov)).
+- No longer crashes on Alpine Linux when MUSL is installed ([shurivich](https://github.com/shurivich)).
+- JSON validation exception messages now properly include failing paths ([drinehimer](https://github.com/drinehimer)).
+- Upgraded Google.Protobuf dependency to 3.15.0 (CVE-2021-22570).
+- Resolved memory leak in AdminClient response handler ([emasab](https://github.com/emasab)).
+- Resolved memory leak in Producer.SendOffsetsToTransaction.
+
+
+## Upgrade Considerations
+
+- The earliest supported .NET Framework version is now 4.6.2, previously this was 4.5 ([bjornbouetsmith](https://github.com/bjornbouetsmith)).
+
+
 # 1.8.2
 
 # Enhancements and Fixes

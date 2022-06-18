@@ -65,41 +65,23 @@ namespace Confluent.Kafka.Internal
                 byte* pTraverse = (byte*)strPtr;
                 while (*pTraverse != 0) { pTraverse += 1; }
                 var length = (int)(pTraverse - (byte*)strPtr);
-#if NET45
-                var strBuffer = new byte[length];
-                System.Runtime.InteropServices.Marshal.Copy(strPtr, strBuffer, 0, length);
-                return Encoding.UTF8.GetString(strBuffer);
-#else
-                // Avoid unnecessary data copying on NET45+
+
                 return Encoding.UTF8.GetString((byte*)strPtr.ToPointer(), length);
-#endif
             }
 
             public static T PtrToStructure<T>(IntPtr ptr)
             {
-#if NET45
-                return (T)SystemMarshal.PtrToStructure(ptr, typeof(T));
-#else
                 return SystemMarshal.PtrToStructure<T>(ptr);
-#endif
             }
 
             public static int SizeOf<T>()
             {
-#if NET45
-                return SystemMarshal.SizeOf(typeof(T));
-#else
                 return SystemMarshal.SizeOf<T>();
-#endif
             }
 
             public static IntPtr OffsetOf<T>(string fieldName)
             {
-#if NET45
-                return SystemMarshal.OffsetOf(typeof(T), fieldName);
-#else
                 return SystemMarshal.OffsetOf<T>(fieldName);
-#endif
             }
         }
     }

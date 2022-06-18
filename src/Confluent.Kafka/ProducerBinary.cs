@@ -171,9 +171,7 @@ namespace Confluent.Kafka
         private class TypedTaskDeliveryHandlerShim : TaskCompletionSource<DeliveryResult>, IDeliveryHandler
         {
             public TypedTaskDeliveryHandlerShim(string topic)
-#if !NET45
                 : base(TaskCreationOptions.RunContinuationsAsynchronously)
-#endif
             {
                 Topic = topic;
             }
@@ -191,11 +189,7 @@ namespace Confluent.Kafka
 
                 if (deliveryReport == null)
                 {
-#if NET45
-                    System.Threading.Tasks.Task.Run(() => TrySetResult(null));
-#else
                     TrySetResult(null);
-#endif
                     return;
                 }
 
@@ -210,16 +204,6 @@ namespace Confluent.Kafka
                 // cost of marshalling it.
                 dr.Topic = Topic;
 
-#if NET45
-                if (deliveryReport.Error.IsError)
-                {
-                    System.Threading.Tasks.Task.Run(() => SetException(new ProduceException(deliveryReport.Error, dr)));
-                }
-                else
-                {
-                    System.Threading.Tasks.Task.Run(() => TrySetResult(dr));
-                }
-#else
                 if (deliveryReport.Error.IsError)
                 {
                     TrySetException(new ProduceException(deliveryReport.Error, dr));
@@ -228,7 +212,6 @@ namespace Confluent.Kafka
                 {
                     TrySetResult(dr);
                 }
-#endif
             }
         }
 

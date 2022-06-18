@@ -1,4 +1,4 @@
-﻿#if NETCOREAPP2_1
+﻿#if NETCOREAPP2_1_OR_GREATER
 using System;
 using System.Buffers;
 using System.Buffers.Binary;

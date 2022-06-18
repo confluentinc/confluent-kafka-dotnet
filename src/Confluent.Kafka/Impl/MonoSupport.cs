@@ -20,7 +20,7 @@ using System.Linq;
 
 namespace Confluent.Kafka.Impl
 {
-#if NET45 || NET46 || NET47
+#if NET462
     internal static class MonoSupport
     {
         private static readonly Lazy<bool> HasMonoRuntime = new Lazy<bool>(() => Type.GetType("Mono.Runtime") != null);
