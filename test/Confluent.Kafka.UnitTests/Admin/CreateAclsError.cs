@@ -24,56 +24,72 @@ namespace Confluent.Kafka.UnitTests
 {
     public class CreateAclsErrorTests
     {
+        private readonly IList<AclBinding> testAclBindings = new List<AclBinding>
+        {
+            new AclBinding()
+            {
+                Type = ResourceType.Topic,
+                Name = "my-topic",
+                ResourcePatternType = ResourcePatternType.Literal,
+                Principal = "User:my-user",
+                Host = "*",
+                Operation = AclOperation.All,
+                PermissionType = AclPermissionType.Allow
+            },
+        }.AsReadOnly();
 
-        private static List<AclBinding> CopyAclBindings(List<AclBinding> original)
+        private readonly CreateAclsOptions options = new CreateAclsOptions()
+        {
+            RequestTimeout = TimeSpan.FromMilliseconds(200)
+        };
+
+        private static IList<AclBinding> CopyAclBindings(IList<AclBinding> original)
         {
             return original.Select((aclBinding) => {
                 return aclBinding.Clone();
-            }).ToList();
+            }).ToList().AsReadOnly();
         }
 
         [Fact]
-        public async void Errors()
+        public async void NullAclBindings()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
             {
-
-                var testAclBindings = new List<AclBinding>
-                {
-                    new AclBinding()
-                    {
-                        Type = ResourceType.Topic,
-                        Name = "my-topic",
-                        ResourcePatternType = ResourcePatternType.Literal,
-                        Principal = "User:my-user",
-                        Host = "*",
-                        Operation = AclOperation.All,
-                        PermissionType = AclPermissionType.Allow
-                    },
-                };
-
-                // null aclBindings
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
                     adminClient.CreateAclsAsync(null)
                 );
+            }
+        }
 
-                // empty aclBindings
+        [Fact]
+        public async void EmptyAclBindings()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            {
                 await Assert.ThrowsAsync<ArgumentException>(() =>
                     adminClient.CreateAclsAsync(new List<AclBinding>())
                 );
-
-                var options = new CreateAclsOptions
-                {
-                    RequestTimeout = TimeSpan.FromMilliseconds(200)
-                };
-
+            }
+        }
+        
+        [Fact]
+        public async void LocalTimeout()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            {
                 // Correct input, fail with timeout
                 var ex = await Assert.ThrowsAsync<KafkaException>(() =>
                     adminClient.CreateAclsAsync(testAclBindings, options)
                 );
                 Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
+            }
+        }
 
-                // Invalid ACL bindings
+        [Fact]
+        public async void InvalidAclBindings()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            {
                 var suffixes = new List<string>()
                 {
                     "Invalid resource type",
@@ -106,7 +122,7 @@ namespace Confluent.Kafka.UnitTests
                 invalidTests[11][0].Host = null;
 
                 var i = 0;
-                foreach (List<AclBinding> invalidTest in invalidTests)
+                foreach (IList<AclBinding> invalidTest in invalidTests)
                 {
                     var exInvalidTest = await Assert.ThrowsAsync<KafkaException>(() =>
                          adminClient.CreateAclsAsync(invalidTest)

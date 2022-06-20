@@ -24,60 +24,76 @@ namespace Confluent.Kafka.UnitTests
 {
     public class DeleteAclsErrorTests
     {
+        private readonly IList<AclBindingFilter> testAclBindingFilters = new List<AclBindingFilter>
+        {
+            new AclBindingFilter()
+            {
+                Type = ResourceType.Any,
+                ResourcePatternType = ResourcePatternType.Match,
+                Operation = AclOperation.Any,
+                PermissionType = AclPermissionType.Any
+            },
+            new AclBindingFilter()
+            {
+                Type = ResourceType.Any,
+                ResourcePatternType = ResourcePatternType.Any,
+                Operation = AclOperation.Any,
+                PermissionType = AclPermissionType.Any
+            },
+        }.AsReadOnly();
 
-        private static List<AclBindingFilter> CopyAclBindingFilters(List<AclBindingFilter> original)
+        private readonly DeleteAclsOptions options = new DeleteAclsOptions
+        {
+            RequestTimeout = TimeSpan.FromMilliseconds(200)
+        };
+
+        private static IList<AclBindingFilter> CopyAclBindingFilters(IList<AclBindingFilter> original)
         {
             return original.Select((aclBinding) => {
                 return aclBinding.Clone();
-            }).ToList();
+            }).ToList().AsReadOnly();
         }
 
         [Fact]
-        public async void Errors()
+        public async void NullAclBindingFilters()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
-
-                var testAclBindingFilters = new List<AclBindingFilter>
-                {
-                    new AclBindingFilter()
-                    {
-                        Type = ResourceType.Any,
-                        ResourcePatternType = ResourcePatternType.Match,
-                        Operation = AclOperation.Any,
-                        PermissionType = AclPermissionType.Any
-                    },
-                    new AclBindingFilter()
-                    {
-                        Type = ResourceType.Any,
-                        ResourcePatternType = ResourcePatternType.Any,
-                        Operation = AclOperation.Any,
-                        PermissionType = AclPermissionType.Any
-                    },
-                };
-
-                // null aclBindingFilters
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
                     adminClient.DeleteAclsAsync(null)
                 );
+            }
+        }
 
-                // empty aclBindingFilters
+        [Fact]
+        public async void EmptyAclBindingFilters()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
                 await Assert.ThrowsAsync<ArgumentException>(() =>
                     adminClient.DeleteAclsAsync(new List<AclBindingFilter>())
                 );
+            }
+        }
 
-                var options = new DeleteAclsOptions
-                {
-                    RequestTimeout = TimeSpan.FromMilliseconds(200)
-                };
-
+        [Fact]
+        public async void LocalTimeout()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
                 // Correct input, fail with timeout
                 var ex = await Assert.ThrowsAsync<KafkaException>(() =>
                     adminClient.DeleteAclsAsync(testAclBindingFilters, options)
                 );
                 Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
+            }
+        }
 
-                // Invalid ACL binding filters
+        [Fact]
+        public async void InvalidAclBindingFilters()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
                 var suffixes = new List<string>()
                 {
                     "Invalid resource type",
@@ -94,7 +110,7 @@ namespace Confluent.Kafka.UnitTests
                 invalidTests[3][0].PermissionType = AclPermissionType.Unknown;
 
                 var i = 0;
-                foreach (List<AclBindingFilter> invalidTest in invalidTests)
+                foreach (IList<AclBindingFilter> invalidTest in invalidTests)
                 {
                     var exInvalidTest = await Assert.ThrowsAsync<KafkaException>(() =>
                          adminClient.DeleteAclsAsync(invalidTest)

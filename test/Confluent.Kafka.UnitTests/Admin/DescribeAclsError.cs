@@ -24,42 +24,47 @@ namespace Confluent.Kafka.UnitTests
 {
     public class DescribeAclsErrorTests
     {
+        private readonly IList<AclBindingFilter> testAclBindingFilters = new List<AclBindingFilter>
+        {
+            new AclBindingFilter()
+            {
+                Type = ResourceType.Any,
+                ResourcePatternType = ResourcePatternType.Match,
+                Operation = AclOperation.Any,
+                PermissionType = AclPermissionType.Any
+            },
+            new AclBindingFilter()
+            {
+                Type = ResourceType.Any,
+                ResourcePatternType = ResourcePatternType.Match,
+                Operation = AclOperation.Any,
+                PermissionType = AclPermissionType.Any
+            },
+        }.AsReadOnly();
+
+        private readonly DescribeAclsOptions options = new DescribeAclsOptions
+        {
+            RequestTimeout = TimeSpan.FromMilliseconds(200)
+        };
 
         [Fact]
-        public async void Errors()
+        public async void NullAclBindingFilters()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
-
-                var testAclBindingFilters = new List<AclBindingFilter>
-                {
-                    new AclBindingFilter()
-                    {
-                        Type = ResourceType.Any,
-                        ResourcePatternType = ResourcePatternType.Match,
-                        Operation = AclOperation.Any,
-                        PermissionType = AclPermissionType.Any
-                    },
-                    new AclBindingFilter()
-                    {
-                        Type = ResourceType.Any,
-                        ResourcePatternType = ResourcePatternType.Match,
-                        Operation = AclOperation.Any,
-                        PermissionType = AclPermissionType.Any
-                    },
-                };
-
-                // null aclBindingFilters
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
                     adminClient.DescribeAclsAsync(null)
                 );
+            }
+        }
 
-                var options = new DescribeAclsOptions
-                {
-                    RequestTimeout = TimeSpan.FromMilliseconds(200)
-                };
-
+        [Fact]
+        public async void LocalTimeout()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
                 // Correct input, fail with timeout
+                // try multiple times with the same AdminClient
                 foreach (AclBindingFilter aclBindingFilter in testAclBindingFilters)
                 {
                     var ex = await Assert.ThrowsAsync<KafkaException>(() =>
@@ -67,8 +72,14 @@ namespace Confluent.Kafka.UnitTests
                                     );
                     Assert.Equal("Failed while waiting for controller: Local: Timed out", ex.Message);
                 }
-
-                // Invalid ACL binding filters
+            }
+        }
+        
+        [Fact]
+        public async void InvalidAclBindingFilters()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
                 var suffixes = new List<string>()
                 {
                     "Invalid resource type",
