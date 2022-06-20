@@ -38,4 +38,3 @@ To execute, enter the relevant directory and run:
 ```
 dotnet test
 ```
-
