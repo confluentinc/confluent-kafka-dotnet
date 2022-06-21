@@ -142,7 +142,16 @@ namespace Confluent.SchemaRegistry.Serdes
                     {
                         deserializeMutex.Release();
                     }
-                    
+
+                    if (typeof(ISpecificRecord).IsAssignableFrom(typeof(T)))
+                    {
+                        // This is a generic deserializer and it knows the type that needs to be serialized into. 
+                        // Passing default(T) will result in null value and that will force the datumRead to
+                        // use the schema namespace and name provided in the schema, which may not match (T).
+                        var reuse = Activator.CreateInstance<T>();
+                        return datumReader.Read(reuse, new BinaryDecoder(stream));
+                    }
+
                     return datumReader.Read(default(T), new BinaryDecoder(stream));
                 }
             }

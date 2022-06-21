@@ -257,5 +257,29 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var bytes = avroSerializer.SerializeAsync("hello world", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Throws<System.AggregateException>(() => avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
         }
+
+        /// <summary>
+        /// Test a case when .NET data class name and / or namespace do not match the schema name and / or namespace.
+        /// </summary>
+        [Fact]
+        public void ISpecificRecord_SchemaTypeMismatch()
+        {
+            var serializer = new AvroSerializer<User2>(schemaRegistryClient);
+            var deserializer = new AvroDeserializer<User2>(schemaRegistryClient);
+
+            var user = new User2
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
+        }
     }
 }
