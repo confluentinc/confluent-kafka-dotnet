@@ -20,7 +20,7 @@ using System;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the DeleteAcls method.
+    ///     Options for the "AdminClient.DeleteAclsAsync" method.
     /// </summary>
     public class DeleteAclsOptions
     {

@@ -20,7 +20,7 @@ using System;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Options for the CreateAcls method.
+    ///     Options for the "AdminClient.CreateAclsAsync" method.
     /// </summary>
     public class CreateAclsOptions
     {

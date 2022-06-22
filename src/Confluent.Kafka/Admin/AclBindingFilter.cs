@@ -18,9 +18,8 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    /// Represents an ACL binding that specify the operation and permission type for a specific principal
-    /// over one or more resources of the same type. Used by `AdminClient.CreateAcls`,
-    /// returned by `AdminClient.DescribeAcls` and `AdminClient.DeleteAcls`.
+    /// Represents a filter used to return a list of ACL bindings matching some or all of its attributes.
+    /// Used by "IAdminClient.DescribeAclsAsync" and "IAdminClient.DeleteAclsAsync".
     /// </summary>
     public class AclBindingFilter : AclBinding
     {

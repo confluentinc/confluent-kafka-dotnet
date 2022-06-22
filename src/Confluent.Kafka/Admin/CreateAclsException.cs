@@ -57,7 +57,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if obj is a CreateAclsException and the Error and Results property values are equal. false otherwise.
+        ///     true if obj is a CreateAclsException and the <see cref="KafkaException.Error"/> and <see cref="Results"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {

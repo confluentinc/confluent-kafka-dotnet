@@ -21,7 +21,7 @@ using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during a DeleteAcls request.
+    ///     Represents an error that occurred during a delete ACLs request.
     /// </summary>
     public class DeleteAclsException : KafkaException
     {
@@ -54,7 +54,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is of the same type as obj and the Error and Results property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the <see cref="KafkaException.Error"/> and <see cref="Results"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {

@@ -19,7 +19,7 @@ using System;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occurred during a DescribeAcls request.
+    ///     Represents an error that occurred during a describe ACLs request.
     /// </summary>
     public class DescribeAclsException : KafkaException
     {
@@ -48,7 +48,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is of the same type as obj and the Error and Results property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the <see cref="KafkaException.Error"/> and <see cref="Result"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {

@@ -225,7 +225,7 @@ namespace Confluent.Kafka
         ///     The options to use when creating the ACL bindings.
         /// </param>
         /// <returns>
-        ///     A Task returning a List of CreateAclResult.
+        ///     A Task returning a List of <see cref="Admin.CreateAclResult"/>.
         /// </returns>
         Task<List<CreateAclResult>> CreateAclsAsync(IEnumerable<AclBinding> aclBindings, CreateAclsOptions options = null);
 
@@ -237,15 +237,16 @@ namespace Confluent.Kafka
         ///    A filter with attributes that must match.
         ///    string attributes match exact values or any string if set to null.
         ///    enum attributes match exact values or any value if equal to `Any`.
-        ///    If `ResourcePatternType` is set to `Match` returns all
-        ///    the ACL bindings with `Literal`, `Wildcard`
-        ///    or `Prefixed` pattern type that match the resource name.
+        ///    If `ResourcePatternType` is set to <see cref="Admin.ResourcePatternType.Match"/> returns ACL bindings with:
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with resource name equal to the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with wildcard resource name that matches the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Prefixed"/> pattern type with resource name that is a prefix of the given resource name
         /// </param>
         /// <param name="options">
         ///     The options to use when describing ACL bindings.
         /// </param>
         /// <returns>
-        ///     A Task returning a DescribeAclsResult.
+        ///     A Task returning a <see cref="Admin.DescribeAclsResult"/>.
         /// </returns>
         Task<DescribeAclsResult> DescribeAclsAsync(AclBindingFilter aclBindingFilter, DescribeAclsOptions options = null);
 
@@ -256,15 +257,16 @@ namespace Confluent.Kafka
         ///    A IEnumerable of ACL binding filters to match ACLs to delete.
         ///    string attributes match exact values or any string if set to null.
         ///    enum attributes match exact values or any value if equal to `Any`.
-        ///    If `ResourcePatternType` is set to `Match` returns all
-        ///    the ACL bindings with `Literal`, `Wildcard`
-        ///    or `Prefixed` pattern type that match the resource name.
+        ///    If `ResourcePatternType` is set to <see cref="Admin.ResourcePatternType.Match"/> deletes ACL bindings with:
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with resource name equal to the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with wildcard resource name that matches the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Prefixed"/> pattern type with resource name that is a prefix of the given resource name
         /// </param>
         /// <param name="options">
         ///     The options to use when describing ACL bindings.
         /// </param>
         /// <returns>
-        ///     A Task returning a List of DescribeAclsResult.
+        ///     A Task returning a List of <see cref="Admin.DeleteAclsResult"/>.
         /// </returns>
         Task<List<DeleteAclsResult>> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null);
 

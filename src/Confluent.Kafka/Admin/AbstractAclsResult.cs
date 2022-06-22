@@ -21,7 +21,7 @@ using System.Linq;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///    Base class for ACL results with an Error and a list of AclBindings
+    ///    Base class for ACL results with an <see cref="Error" /> and a list of <see cref="AclBinding" />
     /// </summary>
     public abstract class AbstractAclsResult
     {
@@ -42,7 +42,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is of the same type as obj and the Error and AclBindings property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the <see cref="Error" /> and <see cref="AclBindings" /> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {

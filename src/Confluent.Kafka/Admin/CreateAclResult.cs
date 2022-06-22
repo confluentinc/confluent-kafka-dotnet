@@ -35,7 +35,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if obj is a CreateAclResult and the Error property values are equal. false otherwise.
+        ///     true if obj is a CreateAclResult and the <see cref="Error"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {
