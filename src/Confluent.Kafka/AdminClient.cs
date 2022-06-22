@@ -131,7 +131,7 @@ namespace Confluent.Kafka
             return aclsResultsPtrArr.Select(aclResultPtr =>
                 new CreateAclResult 
                 {
-                    Error = new Error(Librdkafka.acl_result_error(aclResultPtr))
+                    Error = new Error(Librdkafka.acl_result_error(aclResultPtr), false)
                 }
             ).ToList();
         }
@@ -181,7 +181,7 @@ namespace Confluent.Kafka
                                                                                        out UIntPtr resultResponseAclCntPtr);
                 return new DeleteAclsResult 
                 {
-                    Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr)),
+                    Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr), false),
                     AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
                 };
             }).ToList();

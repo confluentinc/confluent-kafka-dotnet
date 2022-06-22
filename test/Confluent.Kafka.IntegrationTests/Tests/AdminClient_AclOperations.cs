@@ -178,8 +178,8 @@ namespace Confluent.Kafka.IntegrationTests
                         newACLs,
                         createAclsOptions
                     );
-                    Assert.Equal(newACLs.Count(), resultCreateAcls.Count());
-                    for (int j = 0; j < newACLs.Count(); j++)
+                    Assert.Equal(newACLs.Count, resultCreateAcls.Count);
+                    for (int j = 0; j < newACLs.Count; j++)
                     {
                         Assert.Equal(noErrorCreateResult, resultCreateAcls[j]);
                     }
