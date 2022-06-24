@@ -52,7 +52,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 try
                 {
-                    admin.DeleteGroupAsync(new List<string> {groupId2, groupId3}, new DeleteGroupOptions()).GetAwaiter().GetResult();
+                    admin.DeleteGroupAsync(new List<string> {groupId2, groupId3}, new DeleteGroupOptions()).Wait();
                     Assert.True(false); // expecting exception.
                 }
                 catch (AggregateException ex)
