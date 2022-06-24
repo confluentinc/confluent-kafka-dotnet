@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.8.2-RC5 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.9.0-RC2 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -137,6 +137,22 @@ namespace Confluent.Kafka
         ///     Https
         /// </summary>
         Https
+    }
+
+    /// <summary>
+    ///     SaslOauthbearerMethod enum values
+    /// </summary>
+    public enum SaslOauthbearerMethod
+    {
+        /// <summary>
+        ///     Default
+        /// </summary>
+        Default,
+
+        /// <summary>
+        ///     Oidc
+        /// </summary>
+        Oidc
     }
 
     /// <summary>
@@ -837,6 +853,54 @@ namespace Confluent.Kafka
         ///     importance: low
         /// </summary>
         public bool? EnableSaslOauthbearerUnsecureJwt { get { return GetBool("enable.sasl.oauthbearer.unsecure.jwt"); } set { this.SetObject("enable.sasl.oauthbearer.unsecure.jwt", value); } }
+
+        /// <summary>
+        ///     Set to "default" or "oidc" to control which login method is used. If set it to "oidc", OAuth/OIDC login method will be used. sasl.oauthbearer.client.id, sasl.oauthbearer.client.secret, and sasl.oauthbearer.token.endpoint.url are needed if sasl.oauthbearer.method is set to "oidc".
+        ///
+        ///     default: default
+        ///     importance: low
+        /// </summary>
+        public SaslOauthbearerMethod? SaslOauthbearerMethod { get { return (SaslOauthbearerMethod?)GetEnum(typeof(SaslOauthbearerMethod), "sasl.oauthbearer.method"); } set { this.SetObject("sasl.oauthbearer.method", value); } }
+
+        /// <summary>
+        ///     It's a public identifier for the application. It must be unique across all clients that the authorization server handles. This is only used when sasl.oauthbearer.method is set to oidc.
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SaslOauthbearerClientId { get { return Get("sasl.oauthbearer.client.id"); } set { this.SetObject("sasl.oauthbearer.client.id", value); } }
+
+        /// <summary>
+        ///     A client secret only known to the application and the authorization server. This should be a sufficiently random string that are not guessable. This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SaslOauthbearerClientSecret { get { return Get("sasl.oauthbearer.client.secret"); } set { this.SetObject("sasl.oauthbearer.client.secret", value); } }
+
+        /// <summary>
+        ///     Client use this to specify the scope of the access request to the broker. This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SaslOauthbearerScope { get { return Get("sasl.oauthbearer.scope"); } set { this.SetObject("sasl.oauthbearer.scope", value); } }
+
+        /// <summary>
+        ///     Allow additional information to be provided to the broker. It's comma-separated list of key=value pairs. The example of the input is "supportFeatureX=true,organizationId=sales-emea". This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SaslOauthbearerExtensions { get { return Get("sasl.oauthbearer.extensions"); } set { this.SetObject("sasl.oauthbearer.extensions", value); } }
+
+        /// <summary>
+        ///     OAUTH issuer token endpoint HTTP(S) URI used to retrieve the token. This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///
+        ///     default: ''
+        ///     importance: low
+        /// </summary>
+        public string SaslOauthbearerTokenEndpointUrl { get { return Get("sasl.oauthbearer.token.endpoint.url"); } set { this.SetObject("sasl.oauthbearer.token.endpoint.url", value); } }
 
         /// <summary>
         ///     List of plugin libraries to load (; separated). The library search path is platform dependent (see dlopen(3) for Unix and LoadLibrary() for Windows). If no filename extension is specified the platform-specific extension (such as .dll or .so) will be appended automatically.

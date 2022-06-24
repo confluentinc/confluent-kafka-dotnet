@@ -190,15 +190,30 @@ namespace Confluent.Kafka.Impl
             return true;
         }
 
+        internal Error CreatePossiblyFatalMessageError(IntPtr msgPtr)
+        {
+            var msg = Util.Marshal.PtrToStructure<rd_kafka_message>(msgPtr);
+            if (msg.err == ErrorCode.Local_Fatal)
+            {
+                return CreateFatalError();
+            }
+            return new Error(msg.err, Util.Marshal.PtrToStringUTF8(Librdkafka.message_errstr(msgPtr)));
+        }
+
         internal Error CreatePossiblyFatalError(ErrorCode err, string reason)
         {
             if (err == ErrorCode.Local_Fatal)
             {
-                var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
-                err = Librdkafka.fatal_error(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
-                return new Error(err, errorStringBuilder.ToString(), true);
+                return CreateFatalError();
             }
             return new Error(err, reason);
+        }
+
+        internal Error CreateFatalError()
+        {
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+            var err = Librdkafka.fatal_error(this.handle, errorStringBuilder, (UIntPtr)errorStringBuilder.Capacity);
+            return new Error(err, errorStringBuilder.ToString(), true);
         }
 
         private string name;
@@ -374,7 +389,7 @@ namespace Confluent.Kafka.Impl
 
             try
             {
-                var errorCode = Librdkafka.producev(
+                var errorCode = Librdkafka.produceva(
                     handle,
                     topic,
                     partition,
@@ -548,16 +563,19 @@ namespace Confluent.Kafka.Impl
 
         internal void SendOffsetsToTransaction(IEnumerable<TopicPartitionOffset> offsets, IConsumerGroupMetadata groupMetadata, int millisecondsTimeout)
         {
-            IntPtr offsetsPtr = GetCTopicPartitionList(offsets);
-
             if (!(groupMetadata is ConsumerGroupMetadata))
             {
                 throw new ArgumentException("groupMetadata object must be a value acquired via Consumer.ConsumerGroupMetadata.");
             }
             var serializedMetadata = ((ConsumerGroupMetadata)groupMetadata).serializedMetadata;
-            var cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
+
+            var cgmdPtr = IntPtr.Zero;
+            var offsetsPtr = IntPtr.Zero;
             try
             {
+                cgmdPtr = this.DeserializeConsumerGroupMetadata(serializedMetadata);
+                offsetsPtr = GetCTopicPartitionList(offsets);
+
                 var error = new Error(Librdkafka.send_offsets_to_transaction(this.handle, offsetsPtr, cgmdPtr, (IntPtr)millisecondsTimeout));
                 if (error.Code != ErrorCode.NoError)
                 {
@@ -574,7 +592,14 @@ namespace Confluent.Kafka.Impl
             }
             finally
             {
-                this.DestroyConsumerGroupMetadata(cgmdPtr);
+                if (offsetsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.topic_partition_list_destroy(offsetsPtr);
+                }
+                if (cgmdPtr != IntPtr.Zero)
+                {
+                    this.DestroyConsumerGroupMetadata(cgmdPtr);
+                }
             }
         }
 

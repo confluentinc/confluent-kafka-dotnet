@@ -13,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry.Serdes.Protobuf</PackageId>
     <Title>Confluent.SchemaRegistry.Serdes.Protobuf</Title>
     <AssemblyName>Confluent.SchemaRegistry.Serdes.Protobuf</AssemblyName>
-    <VersionPrefix>1.8.2</VersionPrefix>
+    <VersionPrefix>1.9.0</VersionPrefix>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+    <PackageReference Include="Google.Protobuf" Version="3.15.0" />
   </ItemGroup>
 
   <ItemGroup>

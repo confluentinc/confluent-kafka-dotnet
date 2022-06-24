@@ -145,10 +145,10 @@ namespace Confluent.Kafka
                         while (true)
                         {
                             ct.ThrowIfCancellationRequested();
-
+                            IntPtr eventPtr = IntPtr.Zero;
                             try
                             {
-                                var eventPtr = kafkaHandle.QueuePoll(resultQueue, this.cancellationDelayMaxMs);
+                                eventPtr = kafkaHandle.QueuePoll(resultQueue, this.cancellationDelayMaxMs);
                                 if (eventPtr == IntPtr.Zero)
                                 {
                                     continue;
@@ -185,7 +185,7 @@ namespace Confluent.Kafka
                                                 Task.Run(() => 
                                                     ((TaskCompletionSource<List<CreateTopicReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                return;
+                                                break;
                                             }
 
                                             var result = extractTopicResults(
@@ -212,7 +212,7 @@ namespace Confluent.Kafka
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteTopicReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                return;
+                                                break;
                                             }
 
                                             var result = extractTopicResults(
@@ -265,7 +265,7 @@ namespace Confluent.Kafka
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<CreatePartitionsReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                return;
+                                                break;
                                             }
 
                                             var result = extractTopicResults(
@@ -293,7 +293,7 @@ namespace Confluent.Kafka
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DescribeConfigsResult>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                return;
+                                                break;
                                             }
 
                                             var result = extractResultConfigs(
@@ -321,7 +321,7 @@ namespace Confluent.Kafka
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<AlterConfigsReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                return;
+                                                break;
                                             }
 
                                             var result = extractResultConfigs(
@@ -349,7 +349,7 @@ namespace Confluent.Kafka
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteRecordsReport>>)adminClientResult).TrySetException(
                                                         new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
-                                                return;
+                                                break;
                                             }
 
                                             var result = extractDeleteRecordsReports(Librdkafka.DeleteRecords_result_offsets(eventPtr));
@@ -389,6 +389,13 @@ namespace Confluent.Kafka
                                 //       result in exceptions. People will be sure to notice and tell us.
                                 this.DisposeResources();
                                 break;
+                            }
+                            finally
+                            {
+                                if (eventPtr != IntPtr.Zero)
+                                {
+                                    Librdkafka.event_destroy(eventPtr);
+                                }
                             }
                         }
                     }
