@@ -1604,14 +1604,16 @@ namespace Confluent.Kafka.Impl
             ThrowIfHandleClosed();
 
             options = options == null ? new DeleteTopicsOptions() : options;
-            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteTopics);
-            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
-            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
-            setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] deleteTopicsPtrs = new IntPtr[deleteTopics.Count()];
+            IntPtr optionsPtr = IntPtr.Zero;
             try
             {
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteTopics);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
                 int idx = 0;
                 foreach (var deleteTopic in deleteTopics)
                 {
@@ -1637,7 +1639,10 @@ namespace Confluent.Kafka.Impl
                     }
                 }
 
-                Librdkafka.AdminOptions_destroy(optionsPtr);
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
             }
         }
 
