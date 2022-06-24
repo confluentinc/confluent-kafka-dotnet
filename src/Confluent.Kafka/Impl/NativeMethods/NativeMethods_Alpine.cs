@@ -577,8 +577,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_DeleteGroup_t * */ IntPtr rd_kafka_DeleteGroup_new(
-        [MarshalAs(UnmanagedType.LPStr)] string group
-);
+        [MarshalAs(UnmanagedType.LPStr)] string group);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void rd_kafka_DeleteGroup_destroy(

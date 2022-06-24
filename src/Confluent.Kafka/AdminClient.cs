@@ -238,8 +238,9 @@ namespace Confluent.Kafka
                                             if (errorCode != ErrorCode.NoError)
                                             {
                                                 Task.Run(() =>
-                                                ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetException(
-                                                    new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                    ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
                                             }
 
                                             var result = extractDeleteGroupReport(eventPtr);

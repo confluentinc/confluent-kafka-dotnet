@@ -1515,14 +1515,16 @@ namespace Confluent.Kafka.Impl
             ThrowIfHandleClosed();
 
             options = options == null ? new DeleteRecordsOptions() : options;
-            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteRecords);
-            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
-            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
-            setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr deleteRecordsPtr = IntPtr.Zero;
+            IntPtr optionsPtr = IntPtr.Zero;
             try
             {
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteRecords);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
                 if (topicPartitionOffsets.Where(tpo => tpo.Topic == null).Count() > 0)
                 {
                     throw new ArgumentException("Cannot delete records because one or more topics were specified as null.");
@@ -1547,7 +1549,10 @@ namespace Confluent.Kafka.Impl
                     Librdkafka.DeleteRecords_destroy(deleteRecordsPtr);
                 }
 
-                Librdkafka.AdminOptions_destroy(optionsPtr);
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
             }
         }
 
@@ -1556,14 +1561,16 @@ namespace Confluent.Kafka.Impl
             ThrowIfHandleClosed();
 
             options = options == null ? new DeleteGroupOptions() : options;
-            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteGroups);
-            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
-            setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
-            setOption_completionSource(optionsPtr, completionSourcePtr);
 
             IntPtr[] deleteGroupsPtrs = new IntPtr[deleteGroups.Count()];
+            IntPtr optionsPtr = IntPtr.Zero;
             try
             {
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteGroups);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
                 for (int i = 0; i < deleteGroups.Count(); i++)
                 {
                     deleteGroupsPtrs[i] = Librdkafka.DeleteGroup_new(deleteGroups[i]);
@@ -1581,7 +1588,10 @@ namespace Confluent.Kafka.Impl
                     }
                 }
 
-                Librdkafka.AdminOptions_destroy(optionsPtr);
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
             }
         }
 
