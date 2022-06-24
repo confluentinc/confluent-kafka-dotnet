@@ -247,6 +247,7 @@ namespace Confluent.Kafka
                                             
                                             if(result.Any(r => r.Error.IsError))
                                             {
+                                                eventPtr = IntPtr.Zero;
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetException(
                                                         new DeleteGroupsException(result)));
