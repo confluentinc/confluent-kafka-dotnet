@@ -1,15 +1,32 @@
-﻿{"namespace": "Confluent.Kafka.Examples.AvroSpecific",
- "type": "record",
- "name": "User",
- "fields": [
-     {"name": "name", "type": "string"},
-     {"name": "favorite_number",  "type": ["int", "null"]},
-     {"name": "favorite_color", "type": ["string", "null"]},
-     {"name": "hourly_rate", "type": {
-        "type": "bytes",
-        "logicalType": "decimal",
-        "precision": 4,
-        "scale": 2
-     }}
- ]
+﻿{
+    "namespace": "confluent.io.examples.serialization.avro",
+    "name": "User",
+    "type": "record",
+    "fields": [
+        {
+            "name": "name",
+            "type": "string"
+        },
+        {
+            "name": "favorite_number",
+            "type": "long"
+        },
+        {
+            "name": "favorite_color",
+            "type": "string"
+        },
+        {
+            "name": "hourly_rate",
+            "type": [
+                "null",
+                {
+                    "type": "bytes",
+                    "logicalType": "decimal",
+                    "precision": 4,
+                    "scale": 2
+                }
+            ],
+            "default": null
+        }
+    ]
 }
