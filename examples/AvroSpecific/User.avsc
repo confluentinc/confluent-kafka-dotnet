@@ -3,8 +3,30 @@
     "name": "User",
     "type": "record",
     "fields": [
-        {"name": "name", "type": "string"},
-        {"name": "favorite_number", "type": "long"},
-        {"name": "favorite_color", "type": "string"}
+        {
+            "name": "name",
+            "type": "string"
+        },
+        {
+            "name": "favorite_number",
+            "type": "long"
+        },
+        {
+            "name": "favorite_color",
+            "type": "string"
+        },
+        {
+            "name": "hourly_rate",
+            "type": [
+                "null",
+                {
+                    "type": "bytes",
+                    "logicalType": "decimal",
+                    "precision": 4,
+                    "scale": 2
+                }
+            ],
+            "default": null
+        }
     ]
 }
