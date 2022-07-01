@@ -18,6 +18,7 @@
 using System;
 using System.Text;
 
+
 namespace Confluent.Kafka.Admin
 {
     /// <summary>

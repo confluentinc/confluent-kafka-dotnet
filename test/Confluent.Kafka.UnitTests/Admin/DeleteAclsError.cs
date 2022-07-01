@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using Confluent.Kafka.Admin;
 using System.Linq;
 
+
 namespace Confluent.Kafka.UnitTests
 {
     public class DeleteAclsErrorTests

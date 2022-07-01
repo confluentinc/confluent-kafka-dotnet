@@ -24,6 +24,7 @@ using System.Text;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 
+
 namespace Confluent.Kafka.Impl
 {
     enum RdKafkaType
