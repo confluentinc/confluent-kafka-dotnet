@@ -114,6 +114,19 @@ namespace Confluent.Kafka
         public static bool Load(string path)
             => Librdkafka.Initialize(path);
 
+        /// <summary>
+        ///     Unloads the native librdkafka library from the process.
+        /// </summary>
+        /// <returns>
+        ///     true if librdkafka was unloaded, false if not unloaded
+        /// </returns>
+        /// <remarks>
+        ///     You will not typically need to call this method - only needed under
+        ///     certain hosting requirements, such as IIS.
+        /// </remarks>
+        public static bool Unload()
+            => Librdkafka.Unload();
+
         private static int kafkaHandleCreateCount = 0;
         private static int kafkaHandleDestroyCount = 0;
 
