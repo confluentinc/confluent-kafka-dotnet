@@ -37,7 +37,7 @@ namespace Confluent.Kafka.Admin
         /// The resource name, which depends on the resource type.
         /// For ResourceBroker the resource name is the broker id.
         /// </summary>
-	    public string Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// The resource pattern, relative to the name.
