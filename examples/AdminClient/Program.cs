@@ -75,8 +75,16 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static async Task CreateTopicAsync(string bootstrapServers, string topicName)
+        static async Task CreateTopicAsync(string bootstrapServers, string[] commandArgs)
         {
+            if (commandArgs.Length != 1)
+            {
+                Console.WriteLine("usage: .. <bootstrapServers> create-topic <topic_name>");
+                System.Environment.Exit(1);
+            }
+
+            var topicName = commandArgs[0];
+
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
                 try
@@ -310,7 +318,7 @@ namespace Confluent.Kafka.Examples
                     PrintMetadata(bootstrapServers);
                     break;
                 case "create-topic":
-                    await CreateTopicAsync(bootstrapServers, commandArgs[0]);
+                    await CreateTopicAsync(bootstrapServers, commandArgs);
                     break;
                 case "create-acls":
                     await CreateAclsAsync(bootstrapServers, commandArgs);
