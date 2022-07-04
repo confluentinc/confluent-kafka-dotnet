@@ -18,13 +18,13 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    /// Represents a filter used to return a list of ACL bindings matching some or all of its attributes.
-    /// Used by "IAdminClient.DescribeAclsAsync" and "IAdminClient.DeleteAclsAsync".
+    ///     Represents a filter used to return a list of ACL bindings matching some or all of its attributes.
+    ///     Used by "IAdminClient.DescribeAclsAsync" and "IAdminClient.DeleteAclsAsync".
     /// </summary>
     public class AclBindingFilter : AclBinding
     {
         /// <summary>
-        /// A clone of the AclBindingFilter object 
+        ///     A clone of the AclBindingFilter object 
         /// </summary>
         new public AclBindingFilter Clone()
         {

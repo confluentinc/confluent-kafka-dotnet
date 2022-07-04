@@ -22,9 +22,9 @@ using System.Text;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    /// Represents an ACL binding that specify the operation and permission type for a specific principal
-    /// over one or more resources of the same type. Used by "IAdminClient.CreateAclsAsync",
-    /// returned by  "IAdminClient.DescribeAclsAsync" and "IAdminClient.DeleteAclsAsync".
+    ///     Represents an ACL binding that specify the operation and permission type for a specific principal
+    ///     over one or more resources of the same type. Used by "IAdminClient.CreateAclsAsync",
+    ///     returned by "IAdminClient.DescribeAclsAsync" and "IAdminClient.DeleteAclsAsync".
     /// </summary>
     public class AclBinding
     {
@@ -34,38 +34,38 @@ namespace Confluent.Kafka.Admin
         public ResourceType Type { get; set; }
 
         /// <summary>
-        /// The resource name, which depends on the resource type.
-        /// For ResourceBroker the resource name is the broker id.
+        ///     The resource name, which depends on the resource type.
+        ///     For ResourceBroker the resource name is the broker id.
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// The resource pattern, relative to the name.
+        ///     The resource pattern, relative to the name.
         /// </summary>
         public ResourcePatternType ResourcePatternType { get; set; }
 
         /// <summary>
-        /// The principal this AclBinding refers to.
+        ///     The principal this AclBinding refers to.
         /// </summary>
         public string Principal { get; set; }
 
         /// <summary>
-        /// The host that the call is allowed to come from.
+        ///     The host that the call is allowed to come from.
         /// </summary>
         public string Host { get; set; }
 
         /// <summary>
-        /// The operation/s specified by this binding.
+        ///     The operation/s specified by this binding.
         /// </summary>
         public AclOperation Operation { get; set; }
 
         /// <summary>
-        /// The permission type for the specified operation.
+        ///     The permission type for the specified operation.
         /// </summary>
         public AclPermissionType PermissionType { get; set; }
         
         /// <summary>
-        /// A clone of the AclBinding object 
+        ///     A clone of the AclBinding object 
         /// </summary>
         public AclBinding Clone()
         {
@@ -89,13 +89,13 @@ namespace Confluent.Kafka.Admin
             }
             var aclBinding = (AclBinding)obj;
             if (base.Equals(aclBinding)) return true;
-            return this.Type == aclBinding.Type &&
-                this.Name == aclBinding.Name &&
-                this.ResourcePatternType == aclBinding.ResourcePatternType &&
-                this.Principal == aclBinding.Principal &&
-                this.Host == aclBinding.Host &&
-                this.Operation == aclBinding.Operation &&
-                this.PermissionType == aclBinding.PermissionType;
+            return Type == aclBinding.Type &&
+                Name == aclBinding.Name &&
+                ResourcePatternType == aclBinding.ResourcePatternType &&
+                Principal == aclBinding.Principal &&
+                Host == aclBinding.Host &&
+                Operation == aclBinding.Operation &&
+                PermissionType == aclBinding.PermissionType;
         }
 
         /// <summary>

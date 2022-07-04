@@ -18,72 +18,72 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    /// Enumerates the different types of ACL operation.
+    ///     Enumerates the different types of ACL operation.
     /// </summary>
     public enum AclOperation : int
     {
         /// <summary>
-        /// Unknown
+        ///     Unknown
         /// </summary>
         Unknown = 0,
 
         /// <summary>
-        /// In a filter, matches any AclOperation
+        ///     In a filter, matches any AclOperation
         /// </summary>
         Any = 1,
 
         /// <summary>
-        /// ALL the operations
+        ///     ALL the operations
         /// </summary>
         All = 2,
 
         /// <summary>
-        /// READ operation
+        ///     READ operation
         /// </summary>
         Read = 3,
 
         /// <summary>
-        /// WRITE operation
+        ///     WRITE operation
         /// </summary>
         Write = 4,
 
         /// <summary>
-        /// CREATE operation
+        ///     CREATE operation
         /// </summary>
         Create = 5,
 
         /// <summary>
-        /// DELETE operation
+        ///     DELETE operation
         /// </summary>
         Delete = 6,
 
         /// <summary>
-        /// ALTER operation
+        ///     ALTER operation
         /// </summary>
         Alter = 7,
 
         /// <summary>
-        /// DESCRIBE operation
+        ///     DESCRIBE operation
         /// </summary>
         Describe = 8,
 
         /// <summary>
-        /// CLUSTER_ACTION operation
+        ///     CLUSTER_ACTION operation
         /// </summary>
         ClusterAction = 9,
 
         /// <summary>
-        /// DESCRIBE_CONFIGS operation
+        ///     DESCRIBE_CONFIGS operation
         /// </summary>
         DescribeConfigs = 10,
 
         /// <summary>
-        /// ALTER_CONFIGS operation
+        ///     ALTER_CONFIGS operation
         /// </summary>
         AlterConfigs = 11,
 
         /// <summary>
-        /// IDEMPOTENT_WRITE operation
+        ///     IDEMPOTENT_WRITE operation
         /// </summary>
         IdempotentWrite = 12,
     }

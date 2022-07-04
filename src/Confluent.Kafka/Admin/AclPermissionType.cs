@@ -18,27 +18,27 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    /// Enumerates the different types of ACL permission types.
+    ///     Enumerates the different types of ACL permission types.
     /// </summary>
     public enum AclPermissionType : int
     {
         /// <summary>
-        /// Unknown
+        ///     Unknown
         /// </summary>        
         Unknown = 0,
 
         /// <summary>
-        /// In a filter, matches any AclPermissionType
+        ///     In a filter, matches any AclPermissionType
         /// </summary>        
         Any = 1,
 
         /// <summary>
-        /// Disallows access
+        ///     Disallows access
         /// </summary>        
         Deny = 2,
 
         /// <summary>
-        /// Grants access
+        ///     Grants access
         /// </summary>        
         Allow = 3,
     }

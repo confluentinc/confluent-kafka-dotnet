@@ -18,32 +18,32 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    /// Enumerates the different types of Kafka resource patterns.
+    ///     Enumerates the different types of Kafka resource patterns.
     /// </summary>
     public enum ResourcePatternType : int
     {
         /// <summary>
-        /// Resource pattern type is not known or not set.
+        ///     Resource pattern type is not known or not set.
         /// </summary>        
         Unknown = 0,
 
         /// <summary>
-        /// Match any resource, used for lookups.
+        ///     Match any resource, used for lookups.
         /// </summary>        
         Any = 1,
 
         /// <summary>
-        /// Match: will perform pattern matching
+        ///     Match: will perform pattern matching
         /// </summary>        
         Match = 2,
 
         /// <summary>
-        /// Literal: A literal resource name
+        ///     Literal: A literal resource name
         /// </summary>        
         Literal = 3,
         
         /// <summary>
-        /// Prefixed: A prefixed resource name
+        ///     Prefixed: A prefixed resource name
         /// </summary>        
         Prefixed = 4,
     }
