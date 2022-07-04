@@ -294,33 +294,35 @@ namespace Confluent.Kafka.Examples
                 System.Environment.Exit(1);
             }
 
+            var bootstrapServers = args[0];
+            var command = args[1];
             var commandArgs = args.Skip(2).ToArray();
-            switch (args[1])
+            switch (command)
             {
                 case "library-version":
                     Console.WriteLine($"librdkafka Version: {Library.VersionString} ({Library.Version:X})");
                     Console.WriteLine($"Debug Contexts: {string.Join(", ", Library.DebugContexts)}");
                     break;
                 case "list-groups":
-                    ListGroups(args[0]);
+                    ListGroups(bootstrapServers);
                     break;
                 case "metadata":
-                    PrintMetadata(args[0]);
+                    PrintMetadata(bootstrapServers);
                     break;
                 case "create-topic":
-                    await CreateTopicAsync(args[0], args[2]);
+                    await CreateTopicAsync(bootstrapServers, commandArgs[0]);
                     break;
                 case "create-acls":
-                    await CreateAclsAsync(args[0], commandArgs);
+                    await CreateAclsAsync(bootstrapServers, commandArgs);
                     break;
                 case "describe-acls":
-                    await DescribeAclsAsync(args[0], commandArgs);
+                    await DescribeAclsAsync(bootstrapServers, commandArgs);
                     break;
                 case "delete-acls":
-                    await DeleteAclsAsync(args[0], commandArgs);
+                    await DeleteAclsAsync(bootstrapServers, commandArgs);
                     break;
                 default:
-                    Console.WriteLine($"unknown command: {args[1]}");
+                    Console.WriteLine($"unknown command: {command}");
                     break;
             }
         }
