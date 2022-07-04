@@ -95,7 +95,7 @@ namespace Confluent.Kafka.Examples
         {
             int nAclBindings = args.Length / 7;
             var aclBindings = new List<T>();
-            for (int i = 0; i < nAclBindings; i++)
+            for (int i = 0; i < nAclBindings; ++i)
             {
                 var baseArg = i * 7;
                 var parseCorrect = true;
@@ -177,7 +177,7 @@ namespace Confluent.Kafka.Examples
                             Console.WriteLine($"An error occurred in create ACL operation {i}: Code: {result.Error.Code}" +
                             $", Reason: {result.Error.Reason}");
                         }
-                        i++;
+                        ++i;
                     }
                 }
                 catch (KafkaException e)
@@ -256,7 +256,7 @@ namespace Confluent.Kafka.Examples
                     {
                         Console.WriteLine($"Deleted ACLs in operation {i}");
                         PrintAclBindings(result.AclBindings);
-                        i++;
+                        ++i;
                     }
                 }
                 catch (DeleteAclsException e)
@@ -276,7 +276,7 @@ namespace Confluent.Kafka.Examples
                             Console.WriteLine($"An error occurred in delete ACL operation {i}: Code: {result.Error.Code}" +
                             $", Reason: {result.Error.Reason}");
                         }
-                        i++;
+                        ++i;
                     }
                 }
                 catch (KafkaException e)

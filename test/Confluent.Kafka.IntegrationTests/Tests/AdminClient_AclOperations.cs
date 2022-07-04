@@ -173,7 +173,7 @@ namespace Confluent.Kafka.IntegrationTests
             //  - CreateAcls should be idempotent
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             {
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < 2; ++i)
                 {
                     var resultCreateAcls = await adminClient.CreateAclsAsync(
                         newACLs,

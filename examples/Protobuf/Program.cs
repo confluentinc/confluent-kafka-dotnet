@@ -105,11 +105,11 @@ namespace Confluent.Kafka.Examples.Protobuf
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                long i = 1;
+                long i = 0;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { Name = text, FavoriteColor = "green", FavoriteNumber = i++ };
+                    User user = new User { Name = text, FavoriteColor = "green", FavoriteNumber = ++i };
                     await producer
                         .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
                         .ContinueWith(task => task.IsFaulted

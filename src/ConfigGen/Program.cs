@@ -581,7 +581,7 @@ namespace Confluent.Kafka
                 yield break;
 
             int lastPipe = 0;
-            for (int i = 1; i < line.Length - 1; i++)
+            for (int i = 1; i < line.Length - 1; ++i)
             {
                 if (line[i] == '|' && line[i - 1] == ' ' && line[i + 1] == ' ')
                 {

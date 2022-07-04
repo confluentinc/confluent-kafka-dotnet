@@ -144,11 +144,11 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter first names, q to exit.");
 
-                long i = 1;
+                long i = 0;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
+                    User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = ++i };
                     await producer
                         .ProduceAsync(topicName, new Message<string, User> { Value = user })
                         .ContinueWith(task => task.IsFaulted

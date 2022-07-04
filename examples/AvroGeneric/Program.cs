@@ -98,13 +98,13 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                long i = 1;
+                long i = 0;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
                     var record = new GenericRecord(s);
                     record.Add("name", text);
-                    record.Add("favorite_number", i++);
+                    record.Add("favorite_number", ++i);
                     record.Add("favorite_color", "blue");
 
                     try

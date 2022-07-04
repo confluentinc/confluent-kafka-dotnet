@@ -103,7 +103,7 @@ namespace Confluent.Kafka.UnitTests
                          adminClient.DescribeAclsAsync(invalidTest)
                     );
                     Assert.EndsWith(suffixes[i], exInvalidTest.Message);
-                    i++;
+                    ++i;
                 }
             }
         }
