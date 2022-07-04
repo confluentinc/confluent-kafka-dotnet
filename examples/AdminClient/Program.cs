@@ -80,7 +80,8 @@ namespace Confluent.Kafka.Examples
             if (commandArgs.Length != 1)
             {
                 Console.WriteLine("usage: .. <bootstrapServers> create-topic <topic_name>");
-                System.Environment.Exit(1);
+                Environment.ExitCode = 1;
+                return;
             }
 
             var topicName = commandArgs[0];
@@ -160,7 +161,8 @@ namespace Confluent.Kafka.Examples
             {
                 Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
                 "<principal1> <host1> <operation1> <permission_type1> ..");
-                System.Environment.Exit(1);
+                Environment.ExitCode = 1;
+                return;
             }
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
@@ -210,7 +212,8 @@ namespace Confluent.Kafka.Examples
             {
                 Console.WriteLine("usage: .. <bootstrapServers> describe-acls <resource_type> <resource_name> <resource_patter_type> "+
                 "<principal> <host> <operation> <permission_type>");
-                System.Environment.Exit(1);
+                Environment.ExitCode = 1;
+                return;
             }
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
@@ -250,7 +253,8 @@ namespace Confluent.Kafka.Examples
             {
                 Console.WriteLine("usage: .. <bootstrapServers> delete-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
                 "<principal1> <host1> <operation1> <permission_type1> ..");
-                System.Environment.Exit(1);
+                Environment.ExitCode = 1;
+                return;
             }
 
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
@@ -299,7 +303,8 @@ namespace Confluent.Kafka.Examples
             if (args.Length < 2)
             {
                 Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls|describe-acls|delete-acls> ..");
-                System.Environment.Exit(1);
+                Environment.ExitCode = 1;
+                return;
             }
 
             var bootstrapServers = args[0];
