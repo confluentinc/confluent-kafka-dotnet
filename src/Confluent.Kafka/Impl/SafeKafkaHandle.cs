@@ -1687,6 +1687,18 @@ namespace Confluent.Kafka.Impl
             Librdkafka.AdminOptions_destroy(optionsPtr);
         }
 
+        private static void Validate(AclBinding aclBinding)
+        {
+            if (aclBinding.Pattern == null) throw new ArgumentNullException("Pattern cannot be null");
+            if (aclBinding.Entry == null) throw new ArgumentNullException("Entry cannot be null");
+        }
+
+        private static void Validate(AclBindingFilter aclBindingFilter)
+        {
+            if (aclBindingFilter.PatternFilter == null) throw new ArgumentNullException("PatternFilter cannot be null");
+            if (aclBindingFilter.EntryFilter == null) throw new ArgumentNullException("EntryFilter cannot be null");
+        }
+
         internal void CreateAcls(
             IEnumerable<AclBinding> aclBindings,
             CreateAclsOptions options,
@@ -1697,6 +1709,10 @@ namespace Confluent.Kafka.Impl
             if (aclBindings.Count() == 0)
             {
                 throw new ArgumentException("Expected non-empty IEnumerable of AclBinding");
+            }
+            foreach (var aclBinding in aclBindings)
+            {
+                Validate(aclBinding);
             }
 
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
@@ -1713,13 +1729,13 @@ namespace Confluent.Kafka.Impl
                 foreach (var aclBinding in aclBindings)
                 {
                     IntPtr newAclPtr = Librdkafka.AclBinding_new(
-                        aclBinding.Type,
-                        aclBinding.Name,
-                        aclBinding.ResourcePatternType,
-                        aclBinding.Principal,
-                        aclBinding.Host,
-                        aclBinding.Operation,
-                        aclBinding.PermissionType,
+                        aclBinding.Pattern.Type,
+                        aclBinding.Pattern.Name,
+                        aclBinding.Pattern.ResourcePatternType,
+                        aclBinding.Entry.Principal,
+                        aclBinding.Entry.Host,
+                        aclBinding.Entry.Operation,
+                        aclBinding.Entry.PermissionType,
                         errorStringBuilder,
                         (UIntPtr)errorStringBuilder.Capacity
                     );
@@ -1757,6 +1773,7 @@ namespace Confluent.Kafka.Impl
             {
                 throw new ArgumentNullException("Expected non-null AclBindingFilter");
             }
+            Validate(aclBindingFilter);
 
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
 
@@ -1769,13 +1786,13 @@ namespace Confluent.Kafka.Impl
             try
             {
                 aclBindingFilterPtr = Librdkafka.AclBindingFilter_new(
-                    aclBindingFilter.Type,
-                    aclBindingFilter.Name,
-                    aclBindingFilter.ResourcePatternType,
-                    aclBindingFilter.Principal,
-                    aclBindingFilter.Host,
-                    aclBindingFilter.Operation,
-                    aclBindingFilter.PermissionType,
+                    aclBindingFilter.PatternFilter.Type,
+                    aclBindingFilter.PatternFilter.Name,
+                    aclBindingFilter.PatternFilter.ResourcePatternType,
+                    aclBindingFilter.EntryFilter.Principal,
+                    aclBindingFilter.EntryFilter.Host,
+                    aclBindingFilter.EntryFilter.Operation,
+                    aclBindingFilter.EntryFilter.PermissionType,
                     errorStringBuilder,
                     (UIntPtr)errorStringBuilder.Capacity
                 );
@@ -1806,6 +1823,10 @@ namespace Confluent.Kafka.Impl
             {
                 throw new ArgumentException("Expected non-empty IEnumerable of AclBindingFilter");
             }
+            foreach (var aclBindingFilter in aclBindingFilters)
+            {
+                Validate(aclBindingFilter);
+            }
 
             var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
 
@@ -1821,13 +1842,13 @@ namespace Confluent.Kafka.Impl
                 foreach (var aclBindingFilter in aclBindingFilters)
                 {
                     IntPtr aclBindingFilterPtr = Librdkafka.AclBindingFilter_new(
-                        aclBindingFilter.Type,
-                        aclBindingFilter.Name,
-                        aclBindingFilter.ResourcePatternType,
-                        aclBindingFilter.Principal,
-                        aclBindingFilter.Host,
-                        aclBindingFilter.Operation,
-                        aclBindingFilter.PermissionType,
+                        aclBindingFilter.PatternFilter.Type,
+                        aclBindingFilter.PatternFilter.Name,
+                        aclBindingFilter.PatternFilter.ResourcePatternType,
+                        aclBindingFilter.EntryFilter.Principal,
+                        aclBindingFilter.EntryFilter.Host,
+                        aclBindingFilter.EntryFilter.Operation,
+                        aclBindingFilter.EntryFilter.PermissionType,
                         errorStringBuilder,
                         (UIntPtr)errorStringBuilder.Capacity
                     );

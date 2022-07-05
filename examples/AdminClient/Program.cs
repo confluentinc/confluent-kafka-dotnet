@@ -100,10 +100,10 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static List<T> ParseAclBindings<T>(string[] args) where T: AclBinding, new()
+        static List<AclBinding> ParseAclBindings(string[] args)
         {
             int nAclBindings = args.Length / 7;
-            var aclBindings = new List<T>();
+            var aclBindings = new List<AclBinding>();
             for (int i = 0; i < nAclBindings; ++i)
             {
                 var baseArg = i * 7;
@@ -123,18 +123,31 @@ namespace Confluent.Kafka.Examples
                 if (principal == "") principal = null;
                 if (host == "") host = null;
 
-                aclBindings.Add(new T()
+                aclBindings.Add(new AclBinding()
                 {
-                    Type = (ResourceType) resourceType,
-                    Name = name,
-                    ResourcePatternType = (ResourcePatternType) resourcePatternType,
-                    Principal = principal,
-                    Host = host,
-                    Operation = (AclOperation) operation,
-                    PermissionType = (AclPermissionType) permissionType,
+                    Pattern = new ResourcePattern
+                    {
+                        Type = (ResourceType) resourceType,
+                        Name = name,
+                        ResourcePatternType = (ResourcePatternType) resourcePatternType
+                    },
+                    Entry = new AccessControlEntry
+                    {
+                        Principal = principal,
+                        Host = host,
+                        Operation = (AclOperation) operation,
+                        PermissionType = (AclPermissionType) permissionType
+                    }
                 });
             }
             return aclBindings;
+        }
+
+
+        static List<AclBindingFilter> ParseAclBindingFilters(string[] args)
+        {
+            var aclBindings = ParseAclBindings(args);
+            return aclBindings.Select(aclBinding => aclBinding.ToFilter()).ToList();
         }
 
 
@@ -153,7 +166,7 @@ namespace Confluent.Kafka.Examples
             List<AclBinding> aclBindings = null;
             if (!printUsage)
             {
-                aclBindings = ParseAclBindings<AclBinding>(commandArgs);
+                aclBindings = ParseAclBindings(commandArgs);
             }
             printUsage = aclBindings == null;
 
@@ -204,7 +217,7 @@ namespace Confluent.Kafka.Examples
             List<AclBindingFilter> aclBindingFilters = null;
             if (!printUsage)
             {
-                aclBindingFilters = ParseAclBindings<AclBindingFilter>(commandArgs);
+                aclBindingFilters = ParseAclBindingFilters(commandArgs);
             }
             printUsage = aclBindingFilters == null;
 
@@ -245,7 +258,7 @@ namespace Confluent.Kafka.Examples
             List<AclBindingFilter> aclBindingFilters = null;
             if (!printUsage)
             {
-                aclBindingFilters = ParseAclBindings<AclBindingFilter>(commandArgs);
+                aclBindingFilters = ParseAclBindingFilters(commandArgs);
             }
             printUsage = aclBindingFilters == null;
 

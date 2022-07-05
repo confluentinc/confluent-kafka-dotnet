@@ -32,7 +32,7 @@ namespace Confluent.Kafka.Admin
         /// </param>
         public DescribeAclsException(DescribeAclsResult result)
             : base(new Error(ErrorCode.Local_Partial,
-                $"An error occurred describing ACLs: {result.ToString()}."))
+                $"An error occurred describing ACLs: {result}."))
         {
             this.Result = result;
         }

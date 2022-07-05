@@ -28,33 +28,51 @@ namespace Confluent.Kafka.UnitTests
         {
             var acl1 = new AclBinding
             {
-                Type = ResourceType.Topic,
-                Name = null,
-                ResourcePatternType = ResourcePatternType.Literal,
-                Principal = null,
-                Host = "h1",
-                Operation = AclOperation.All,
-                PermissionType = AclPermissionType.Allow
+                Pattern = new ResourcePattern
+                {
+                    Type = ResourceType.Topic,
+                    Name = null,
+                    ResourcePatternType = ResourcePatternType.Literal
+                },
+                Entry = new AccessControlEntry
+                {
+                    Principal = null,
+                    Host = "h1",
+                    Operation = AclOperation.All,
+                    PermissionType = AclPermissionType.Allow
+                }
             };
             var acl2 = new AclBinding
             {
-                Type = ResourceType.Topic,
-                Name = "a1",
-                ResourcePatternType = ResourcePatternType.Literal,
-                Principal = "p1",
-                Host = "h1",
-                Operation = AclOperation.All,
-                PermissionType = AclPermissionType.Allow
+                Pattern = new ResourcePattern
+                {
+                    Type = ResourceType.Topic,
+                    Name = "a1",
+                    ResourcePatternType = ResourcePatternType.Literal
+                },
+                Entry = new AccessControlEntry
+                {
+                    Principal = "p1",
+                    Host = "h1",
+                    Operation = AclOperation.All,
+                    PermissionType = AclPermissionType.Allow
+                }
             };
             var acl3 = new AclBinding
             {
-                Type = ResourceType.Topic,
-                Name = "a2",
-                ResourcePatternType = ResourcePatternType.Literal,
-                Principal = "p1",
-                Host = "h1",
-                Operation = AclOperation.All,
-                PermissionType = AclPermissionType.Allow
+                Pattern = new ResourcePattern
+                {
+                    Type = ResourceType.Topic,
+                    Name = "a2",
+                    ResourcePatternType = ResourcePatternType.Literal
+                },
+                Entry = new AccessControlEntry
+                {
+                    Principal = "p1",
+                    Host = "h1",
+                    Operation = AclOperation.All,
+                    PermissionType = AclPermissionType.Allow
+                }
             };
 
             var ex1 = new DeleteAclsException(new List<DeleteAclsResult>());

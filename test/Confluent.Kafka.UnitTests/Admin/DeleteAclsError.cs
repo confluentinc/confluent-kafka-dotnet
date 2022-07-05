@@ -29,17 +29,29 @@ namespace Confluent.Kafka.UnitTests
         {
             new AclBindingFilter()
             {
-                Type = ResourceType.Any,
-                ResourcePatternType = ResourcePatternType.Match,
-                Operation = AclOperation.Any,
-                PermissionType = AclPermissionType.Any
+                PatternFilter = new ResourcePatternFilter
+                {
+                    Type = ResourceType.Any,
+                    ResourcePatternType = ResourcePatternType.Match
+                },
+                EntryFilter = new AccessControlEntryFilter
+                {
+                    Operation = AclOperation.Any,
+                    PermissionType = AclPermissionType.Any
+                }
             },
             new AclBindingFilter()
             {
-                Type = ResourceType.Any,
-                ResourcePatternType = ResourcePatternType.Any,
-                Operation = AclOperation.Any,
-                PermissionType = AclPermissionType.Any
+                PatternFilter = new ResourcePatternFilter
+                {
+                    Type = ResourceType.Any,
+                    ResourcePatternType = ResourcePatternType.Any
+                },
+                EntryFilter = new AccessControlEntryFilter
+                {
+                    Operation = AclOperation.Any,
+                    PermissionType = AclPermissionType.Any
+                }
             },
         }.AsReadOnly();
 
@@ -78,6 +90,40 @@ namespace Confluent.Kafka.UnitTests
         }
 
         [Fact]
+        public async void NullResourcePattern()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    adminClient.DeleteAclsAsync(new List<AclBindingFilter>
+                    {
+                        new AclBindingFilter
+                        {
+                            EntryFilter = testAclBindingFilters[0].EntryFilter
+                        }
+                    })
+                );
+            }
+        }
+
+        [Fact]
+        public async void NullAccessControlEntry()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    adminClient.DeleteAclsAsync(new List<AclBindingFilter>
+                    {
+                        new AclBindingFilter
+                        {
+                            PatternFilter = testAclBindingFilters[0].PatternFilter
+                        }
+                    })
+                );
+            }
+        }
+
+        [Fact]
         public async void LocalTimeout()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
@@ -105,10 +151,10 @@ namespace Confluent.Kafka.UnitTests
                 var invalidTests = suffixes.Select((suffix) => {
                     return CopyAclBindingFilters(testAclBindingFilters);
                 }).ToList();
-                invalidTests[0][0].Type = ResourceType.Unknown;
-                invalidTests[1][0].ResourcePatternType = ResourcePatternType.Unknown;
-                invalidTests[2][0].Operation = AclOperation.Unknown;
-                invalidTests[3][0].PermissionType = AclPermissionType.Unknown;
+                invalidTests[0][0].PatternFilter.Type = ResourceType.Unknown;
+                invalidTests[1][0].PatternFilter.ResourcePatternType = ResourcePatternType.Unknown;
+                invalidTests[2][0].EntryFilter.Operation = AclOperation.Unknown;
+                invalidTests[3][0].EntryFilter.PermissionType = AclPermissionType.Unknown;
 
                 var i = 0;
                 foreach (IList<AclBindingFilter> invalidTest in invalidTests)

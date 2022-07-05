@@ -29,17 +29,29 @@ namespace Confluent.Kafka.UnitTests
         {
             new AclBindingFilter()
             {
-                Type = ResourceType.Any,
-                ResourcePatternType = ResourcePatternType.Match,
-                Operation = AclOperation.Any,
-                PermissionType = AclPermissionType.Any
+                PatternFilter = new ResourcePatternFilter
+                {
+                    Type = ResourceType.Any,
+                    ResourcePatternType = ResourcePatternType.Match
+                },
+                EntryFilter = new AccessControlEntryFilter
+                {
+                    Operation = AclOperation.Any,
+                    PermissionType = AclPermissionType.Any
+                }
             },
             new AclBindingFilter()
             {
-                Type = ResourceType.Any,
-                ResourcePatternType = ResourcePatternType.Match,
-                Operation = AclOperation.Any,
-                PermissionType = AclPermissionType.Any
+                PatternFilter = new ResourcePatternFilter
+                {
+                    Type = ResourceType.Any,
+                    ResourcePatternType = ResourcePatternType.Match
+                },
+                EntryFilter = new AccessControlEntryFilter
+                {
+                    Operation = AclOperation.Any,
+                    PermissionType = AclPermissionType.Any
+                }
             },
         }.AsReadOnly();
 
@@ -49,12 +61,44 @@ namespace Confluent.Kafka.UnitTests
         };
 
         [Fact]
-        public async void NullAclBindingFilters()
+        public async void NullAclBindingFilter()
         {
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
                     adminClient.DescribeAclsAsync(null)
+                );
+            }
+        }
+
+        [Fact]
+        public async void NullResourcePattern()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    adminClient.DescribeAclsAsync(
+                        new AclBindingFilter
+                        {
+                            EntryFilter = testAclBindingFilters[0].EntryFilter
+                        }
+                    )
+                );
+            }
+        }
+
+        [Fact]
+        public async void NullAccessControlEntry()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    adminClient.DescribeAclsAsync(
+                        new AclBindingFilter
+                        {
+                            PatternFilter = testAclBindingFilters[0].PatternFilter
+                        }
+                    )
                 );
             }
         }
@@ -91,10 +135,10 @@ namespace Confluent.Kafka.UnitTests
                 var invalidTests = suffixes.Select((suffix) => {
                     return testAclBindingFilters[0].Clone();
                 }).ToList();
-                invalidTests[0].Type = ResourceType.Unknown;
-                invalidTests[1].ResourcePatternType = ResourcePatternType.Unknown;
-                invalidTests[2].Operation = AclOperation.Unknown;
-                invalidTests[3].PermissionType = AclPermissionType.Unknown;
+                invalidTests[0].PatternFilter.Type = ResourceType.Unknown;
+                invalidTests[1].PatternFilter.ResourcePatternType = ResourcePatternType.Unknown;
+                invalidTests[2].EntryFilter.Operation = AclOperation.Unknown;
+                invalidTests[3].EntryFilter.PermissionType = AclPermissionType.Unknown;
 
                 int i = 0;
                 foreach (AclBindingFilter invalidTest in invalidTests)

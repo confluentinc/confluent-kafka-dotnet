@@ -51,33 +51,51 @@ namespace Confluent.Kafka.IntegrationTests
             {
                     new AclBinding()
                     {
-                        Type = ResourceType.Topic,
-                        Name = topicName,
-                        ResourcePatternType = ResourcePatternType.Literal,
-                        Principal = "User:test-user-1",
-                        Host = "*",
-                        Operation = AclOperation.Read,
-                        PermissionType = AclPermissionType.Allow,
+                        Pattern = new ResourcePattern
+                        {
+                            Type = ResourceType.Topic,
+                            Name = topicName,
+                            ResourcePatternType = ResourcePatternType.Literal
+                        },
+                        Entry = new AccessControlEntry
+                        {
+                            Principal = "User:test-user-1",
+                            Host = "*",
+                            Operation = AclOperation.Read,
+                            PermissionType = AclPermissionType.Allow
+                        }
                     },
                     new AclBinding()
                     {
-                        Type = ResourceType.Topic,
-                        Name = topicName,
-                        ResourcePatternType = ResourcePatternType.Prefixed,
-                        Principal = "User:test-user-2",
-                        Host = "*",
-                        Operation = AclOperation.Write,
-                        PermissionType = AclPermissionType.Deny,
+                        Pattern = new ResourcePattern
+                        {
+                            Type = ResourceType.Topic,
+                            Name = topicName,
+                            ResourcePatternType = ResourcePatternType.Prefixed
+                        },
+                        Entry = new AccessControlEntry
+                        {
+                            Principal = "User:test-user-2",
+                            Host = "*",
+                            Operation = AclOperation.Write,
+                            PermissionType = AclPermissionType.Deny
+                        }
                     },
                     new AclBinding()
                     {
-                        Type = ResourceType.Group,
-                        Name = groupName,
-                        ResourcePatternType = ResourcePatternType.Prefixed,
-                        Principal = "User:test-user-2",
-                        Host = "some-host",
-                        Operation = AclOperation.All,
-                        PermissionType = AclPermissionType.Allow,
+                        Pattern = new ResourcePattern
+                        {
+                            Type = ResourceType.Group,
+                            Name = groupName,
+                            ResourcePatternType = ResourcePatternType.Prefixed
+                        },
+                        Entry = new AccessControlEntry
+                        {
+                            Principal = "User:test-user-2",
+                            Host = "some-host",
+                            Operation = AclOperation.All,
+                            PermissionType = AclPermissionType.Allow
+                        }
                     },
             };
 
@@ -85,41 +103,59 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 new AclBinding()
                 {
-                    Type = ResourceType.Topic,
-                    Name = topicName,
-                    ResourcePatternType = ResourcePatternType.Literal,
-                    // Principal must be in the form "{principalType}:{principalName}"
-                    // Broker returns ErrUnknown in this case
-                    Principal = "wrong-principal",
-                    Host = "*",
-                    Operation = AclOperation.Read,
-                    PermissionType = AclPermissionType.Allow,
-                },
+                    Pattern = new ResourcePattern
+                    {
+                        Type = ResourceType.Topic,
+                        Name = topicName,
+                        ResourcePatternType = ResourcePatternType.Literal
+                    },
+                    Entry = new AccessControlEntry
+                    {
+                        // Principal must be in the form "{principalType}:{principalName}"
+                        // Broker returns ErrUnknown in this case
+                        Principal = "wrong-principal",
+                        Host =  "*",
+                        Operation = AclOperation.Read,
+                        PermissionType = AclPermissionType.Allow
+                    }
+                }
             };
 
             var validAndInvalidACLs =  new List<AclBinding>
             {
                 new AclBinding()
                 {
-                    Type = ResourceType.Topic,
-                    Name = topicName,
-                    ResourcePatternType = ResourcePatternType.Literal,
-                    // Principal must be in the form "{principalType}:{principalName}"
-                    // Broker returns ErrUnknown in this case
-                    Principal = "wrong-principal",
-                    Host = "*",
-                    Operation = AclOperation.Read,
-                    PermissionType = AclPermissionType.Allow,
+                    Pattern = new ResourcePattern
+                    {
+                        Type = ResourceType.Topic,
+                        Name = topicName,
+                        ResourcePatternType = ResourcePatternType.Literal
+                    },
+                    Entry = new AccessControlEntry
+                    {
+                        // Principal must be in the form "{principalType}:{principalName}"
+                        // Broker returns ErrUnknown in this case
+                        Principal = "wrong-principal",
+                        Host =  "*",
+                        Operation = AclOperation.Read,
+                        PermissionType = AclPermissionType.Allow
+                    }
                 },
                 new AclBinding()
                 {
-                    Type = ResourceType.Group,
-                    Name = groupName,
-                    ResourcePatternType = ResourcePatternType.Prefixed,
-                    Principal = "User:test-user-2",
-                    Host = "some-host",
-                    Operation = AclOperation.All,
-                    PermissionType = AclPermissionType.Allow,
+                    Pattern = new ResourcePattern
+                    {
+                        Type = ResourceType.Group,
+                        Name = groupName,
+                        ResourcePatternType = ResourcePatternType.Prefixed
+                    },
+                    Entry = new AccessControlEntry
+                    {
+                        Principal = "User:test-user-2",
+                        Host = "some-host",
+                        Operation = AclOperation.All,
+                        PermissionType = AclPermissionType.Allow
+                    }
                 },
             };
 
@@ -127,32 +163,56 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 new AclBindingFilter()
                 {
-                    Type = ResourceType.Any,
-                    ResourcePatternType = ResourcePatternType.Any,
-                    Operation = AclOperation.Any,
-                    PermissionType = AclPermissionType.Any,
+                    PatternFilter = new ResourcePatternFilter
+                    {
+                        Type = ResourceType.Any,
+                        ResourcePatternType = ResourcePatternType.Any
+                    },
+                    EntryFilter = new AccessControlEntryFilter
+                    {
+                        Operation = AclOperation.Any,
+                        PermissionType = AclPermissionType.Any
+                    }
                 },
                 new AclBindingFilter()
                 {
-                    Type = ResourceType.Any,
-                    ResourcePatternType = ResourcePatternType.Prefixed,
-                    Operation = AclOperation.Any,
-                    PermissionType = AclPermissionType.Any,
+                    PatternFilter = new ResourcePatternFilter
+                    {
+                        Type = ResourceType.Any,
+                        ResourcePatternType = ResourcePatternType.Prefixed
+                    },
+                    EntryFilter = new AccessControlEntryFilter
+                    {
+                        Operation = AclOperation.Any,
+                        PermissionType = AclPermissionType.Any
+                    }
                 },
                 new AclBindingFilter()
                 {
-                    Type = ResourceType.Topic,
-                    ResourcePatternType = ResourcePatternType.Any,
-                    Operation = AclOperation.Any,
-                    PermissionType = AclPermissionType.Any,
+                    PatternFilter = new ResourcePatternFilter
+                    {
+                        Type = ResourceType.Topic,
+                        ResourcePatternType = ResourcePatternType.Any
+                    },
+                    EntryFilter = new AccessControlEntryFilter
+                    {
+                        Operation = AclOperation.Any,
+                        PermissionType = AclPermissionType.Any
+                    }
                 },
                 new AclBindingFilter()
                 {
-                    Type = ResourceType.Group,
-                    ResourcePatternType = ResourcePatternType.Any,
-                    Operation = AclOperation.Any,
-                    PermissionType = AclPermissionType.Any,
-                },
+                    PatternFilter = new ResourcePatternFilter
+                    {
+                        Type = ResourceType.Group,
+                        ResourcePatternType = ResourcePatternType.Any
+                    },
+                    EntryFilter = new AccessControlEntryFilter
+                    {
+                        Operation = AclOperation.Any,
+                        PermissionType = AclPermissionType.Any
+                    }
+                }
             };
 
             var createAclsOptions = new CreateAclsOptions
@@ -239,7 +299,7 @@ namespace Confluent.Kafka.IntegrationTests
                     deleteAclsOptions
                 );
                 Assert.Single(resultDeleteAcls);
-                Assert.Equal(2, resultDeleteAcls[0].AclBindings.Count());
+                Assert.Equal(2, resultDeleteAcls[0].AclBindings.Count);
                 Assert.Equal(new DeleteAclsResult
                 {
                     Error = noError,
@@ -259,7 +319,7 @@ namespace Confluent.Kafka.IntegrationTests
                     },
                     deleteAclsOptions
                 );
-                Assert.Equal(2, resultDeleteAcls.Count());
+                Assert.Equal(2, resultDeleteAcls.Count);
                 Assert.Equal(new DeleteAclsResult
                 {
                     Error = noError,

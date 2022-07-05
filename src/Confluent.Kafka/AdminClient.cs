@@ -145,13 +145,19 @@ namespace Confluent.Kafka
             return aclBindingsPtrArr.Select(aclBindingPtr =>
                 new AclBinding()
                 {
-                    Type = Librdkafka.AclBinding_restype(aclBindingPtr),
-                    Name = PtrToStringUTF8(Librdkafka.AclBinding_name(aclBindingPtr)),
-                    ResourcePatternType = Librdkafka.AclBinding_resource_pattern_type(aclBindingPtr),
-                    Principal = PtrToStringUTF8(Librdkafka.AclBinding_principal(aclBindingPtr)),
-                    Host = PtrToStringUTF8(Librdkafka.AclBinding_host(aclBindingPtr)),
-                    Operation = Librdkafka.AclBinding_operation(aclBindingPtr),
-                    PermissionType = Librdkafka.AclBinding_permission_type(aclBindingPtr)
+                    Pattern = new ResourcePattern
+                    {
+                        Type = Librdkafka.AclBinding_restype(aclBindingPtr),
+                        Name = PtrToStringUTF8(Librdkafka.AclBinding_name(aclBindingPtr)),
+                        ResourcePatternType = Librdkafka.AclBinding_resource_pattern_type(aclBindingPtr)
+                    },
+                    Entry = new AccessControlEntry
+                    {
+                        Principal = PtrToStringUTF8(Librdkafka.AclBinding_principal(aclBindingPtr)),
+                        Host = PtrToStringUTF8(Librdkafka.AclBinding_host(aclBindingPtr)),
+                        Operation = Librdkafka.AclBinding_operation(aclBindingPtr),
+                        PermissionType = Librdkafka.AclBinding_permission_type(aclBindingPtr)
+                    }
                 }
             ).ToList();
         }

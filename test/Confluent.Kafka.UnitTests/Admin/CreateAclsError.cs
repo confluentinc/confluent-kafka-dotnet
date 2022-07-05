@@ -29,13 +29,19 @@ namespace Confluent.Kafka.UnitTests
         {
             new AclBinding()
             {
-                Type = ResourceType.Topic,
-                Name = "my-topic",
-                ResourcePatternType = ResourcePatternType.Literal,
-                Principal = "User:my-user",
-                Host = "*",
-                Operation = AclOperation.All,
-                PermissionType = AclPermissionType.Allow
+                Pattern = new ResourcePattern
+                {
+                    Type = ResourceType.Topic,
+                    Name = "my-topic",
+                    ResourcePatternType = ResourcePatternType.Literal
+                },
+                Entry = new AccessControlEntry
+                {
+                    Principal = "User:my-user",
+                    Host = "*",
+                    Operation = AclOperation.All,
+                    PermissionType = AclPermissionType.Allow
+                }
             },
         }.AsReadOnly();
 
@@ -54,7 +60,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public async void NullAclBindings()
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
                     adminClient.CreateAclsAsync(null)
@@ -65,18 +71,52 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public async void EmptyAclBindings()
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 await Assert.ThrowsAsync<ArgumentException>(() =>
                     adminClient.CreateAclsAsync(new List<AclBinding>())
                 );
             }
         }
-        
+
+        [Fact]
+        public async void NullResourcePattern()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    adminClient.CreateAclsAsync(new List<AclBinding>
+                    {
+                        new AclBinding
+                        {
+                            Entry = testAclBindings[0].Entry
+                        }
+                    })
+                );
+            }
+        }
+
+        [Fact]
+        public async void NullAccessControlEntry()
+        {
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
+            {
+                await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                    adminClient.CreateAclsAsync(new List<AclBinding>
+                    {
+                        new AclBinding
+                        {
+                            Pattern = testAclBindings[0].Pattern
+                        }
+                    })
+                );
+            }
+        }
+
         [Fact]
         public async void LocalTimeout()
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 // Correct input, fail with timeout
                 var ex = await Assert.ThrowsAsync<KafkaException>(() =>
@@ -89,7 +129,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public async void InvalidAclBindings()
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 var suffixes = new List<string>()
                 {
@@ -109,18 +149,18 @@ namespace Confluent.Kafka.UnitTests
                 var invalidTests = suffixes.Select((suffix) => {
                     return CopyAclBindings(testAclBindings);
                 }).ToList();
-                invalidTests[0][0].Type = ResourceType.Unknown;
-                invalidTests[1][0].Type = ResourceType.Any;
-                invalidTests[2][0].ResourcePatternType = ResourcePatternType.Unknown;
-                invalidTests[3][0].ResourcePatternType = ResourcePatternType.Match;
-                invalidTests[4][0].ResourcePatternType = ResourcePatternType.Any;
-                invalidTests[5][0].Operation = AclOperation.Unknown;
-                invalidTests[6][0].Operation = AclOperation.Any;
-                invalidTests[7][0].PermissionType = AclPermissionType.Unknown;
-                invalidTests[8][0].PermissionType = AclPermissionType.Any;
-                invalidTests[9][0].Name = null;
-                invalidTests[10][0].Principal = null;
-                invalidTests[11][0].Host = null;
+                invalidTests[0][0].Pattern.Type = ResourceType.Unknown;
+                invalidTests[1][0].Pattern.Type = ResourceType.Any;
+                invalidTests[2][0].Pattern.ResourcePatternType = ResourcePatternType.Unknown;
+                invalidTests[3][0].Pattern.ResourcePatternType = ResourcePatternType.Match;
+                invalidTests[4][0].Pattern.ResourcePatternType = ResourcePatternType.Any;
+                invalidTests[5][0].Entry.Operation = AclOperation.Unknown;
+                invalidTests[6][0].Entry.Operation = AclOperation.Any;
+                invalidTests[7][0].Entry.PermissionType = AclPermissionType.Unknown;
+                invalidTests[8][0].Entry.PermissionType = AclPermissionType.Any;
+                invalidTests[9][0].Pattern.Name = null;
+                invalidTests[10][0].Entry.Principal = null;
+                invalidTests[11][0].Entry.Host = null;
 
                 var i = 0;
                 foreach (IList<AclBinding> invalidTest in invalidTests)

@@ -26,7 +26,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public async void NullTopic()
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 // null topics argument
                 await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -38,7 +38,7 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public async void LocalTimeout()
         {
-            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:666" }).Build())
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = "localhost:90922" }).Build())
             {
                 var testTopics = new List<TopicSpecification>
                 {

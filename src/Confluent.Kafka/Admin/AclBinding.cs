@@ -15,10 +15,6 @@
 // Refer to LICENSE for more information.
 
 
-using System;
-using System.Text;
-
-
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
@@ -29,47 +25,37 @@ namespace Confluent.Kafka.Admin
     public class AclBinding
     {
         /// <summary>
-        ///     The resource type.
+        ///     The resource pattern.
         /// </summary>
-        public ResourceType Type { get; set; }
+        public ResourcePattern Pattern { get; set; }
 
         /// <summary>
-        ///     The resource name, which depends on the resource type.
-        ///     For ResourceBroker the resource name is the broker id.
+        ///    The access control entry.
         /// </summary>
-        public string Name { get; set; }
+        public AccessControlEntry Entry { get; set; }
 
         /// <summary>
-        ///     The resource pattern, relative to the name.
+        ///     Create a filter which matches only this AclBinding.
         /// </summary>
-        public ResourcePatternType ResourcePatternType { get; set; }
+        public AclBindingFilter ToFilter()
+        {
+            return new AclBindingFilter
+            {
+                PatternFilter = Pattern.ToFilter(),
+                EntryFilter = Entry.ToFilter(),
+            };
+        }
 
-        /// <summary>
-        ///     The principal this AclBinding refers to.
-        /// </summary>
-        public string Principal { get; set; }
 
-        /// <summary>
-        ///     The host that the call is allowed to come from.
-        /// </summary>
-        public string Host { get; set; }
-
-        /// <summary>
-        ///     The operation/s specified by this binding.
-        /// </summary>
-        public AclOperation Operation { get; set; }
-
-        /// <summary>
-        ///     The permission type for the specified operation.
-        /// </summary>
-        public AclPermissionType PermissionType { get; set; }
-        
         /// <summary>
         ///     A clone of the AclBinding object 
         /// </summary>
         public AclBinding Clone()
         {
-            return (AclBinding) MemberwiseClone();
+            var ret = (AclBinding) MemberwiseClone();
+            ret.Pattern = ret.Pattern.Clone();
+            ret.Entry = ret.Entry.Clone();
+            return ret;
         }
 
         /// <summary>
@@ -79,9 +65,9 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is an AclBinding or subclass and the property values are equal. false otherwise.
+        ///     true if this is an AclBinding and the property values are equal. false otherwise.
         /// </returns>
-        public override bool Equals(Object obj)
+        public override bool Equals(object obj)
         {
             if (obj == null || !GetType().Equals(obj.GetType()))
             {
@@ -89,13 +75,8 @@ namespace Confluent.Kafka.Admin
             }
             var aclBinding = (AclBinding)obj;
             if (base.Equals(aclBinding)) return true;
-            return Type == aclBinding.Type &&
-                Name == aclBinding.Name &&
-                ResourcePatternType == aclBinding.ResourcePatternType &&
-                Principal == aclBinding.Principal &&
-                Host == aclBinding.Host &&
-                Operation == aclBinding.Operation &&
-                PermissionType == aclBinding.PermissionType;
+            return Pattern == aclBinding.Pattern &&
+                Entry == aclBinding.Entry;
         }
 
         /// <summary>
@@ -144,18 +125,10 @@ namespace Confluent.Kafka.Admin
         public override int GetHashCode()
         {
             int hash = 1;
-            hash ^= Type.GetHashCode();
-            hash ^= ResourcePatternType.GetHashCode();
-            hash ^= Operation.GetHashCode();
-            hash ^= PermissionType.GetHashCode();
-            if (Name != null) hash ^= Name.GetHashCode();
-            if (Principal != null) hash ^= Principal.GetHashCode();
-            if (Host != null) hash ^= Host.GetHashCode();
+            hash ^= Pattern.GetHashCode();
+            hash ^= Entry.GetHashCode();
             return hash;
         }
-
-        private string Quote(string str) =>
-                str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
 
         /// <summary>
         ///     Returns a JSON representation of this AclBinding object.
@@ -165,12 +138,7 @@ namespace Confluent.Kafka.Admin
         /// </returns>
         public override string ToString()
         {
-            var result = new StringBuilder();
-            result.Append($"{{\"Type\": \"{Type}\", \"Name\": {Quote(Name)}");
-            result.Append($", \"ResourcePatternType\": \"{ResourcePatternType}\", \"Principal\": {Quote(Principal)}");
-            result.Append($", \"Host\": {Quote(Host)}, \"Operation\": \"{Operation}\"");
-            result.Append($", \"PermissionType\": \"{PermissionType}\"}}");
-            return result.ToString();
+            return $"{{\"Pattern\": {Pattern}, \"Entry\": {Entry}}}";
         }
     }
 }
