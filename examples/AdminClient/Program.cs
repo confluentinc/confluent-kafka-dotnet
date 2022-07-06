@@ -107,17 +107,13 @@ namespace Confluent.Kafka.Examples
             for (int i = 0; i < nAclBindings; ++i)
             {
                 var baseArg = i * 7;
-                var parseCorrect = true;
-                parseCorrect &= Enum.TryParse(typeof(ResourceType), args[baseArg], out object resourceType);
-                parseCorrect &= Enum.TryParse(typeof(ResourcePatternType), args[baseArg + 2], out object resourcePatternType);
-                parseCorrect &= Enum.TryParse(typeof(AclOperation), args[baseArg + 5], out object operation);
-                parseCorrect &= Enum.TryParse(typeof(AclPermissionType), args[baseArg + 6], out object permissionType);
-
-                if (!parseCorrect) return null;
-
+                var resourceType = Enum.Parse<ResourceType>(args[baseArg]);
                 var name = args[baseArg + 1];
+                var resourcePatternType = Enum.Parse<ResourcePatternType>(args[baseArg + 2]);
                 var principal = args[baseArg + 3];
                 var host = args[baseArg + 4];
+                var operation = Enum.Parse<AclOperation>(args[baseArg + 5]);
+                var permissionType = Enum.Parse<AclPermissionType>(args[baseArg + 6]);
 
                 if (name == "") name = null;
                 if (principal == "") principal = null;
@@ -127,16 +123,16 @@ namespace Confluent.Kafka.Examples
                 {
                     Pattern = new ResourcePattern
                     {
-                        Type = (ResourceType) resourceType,
+                        Type = resourceType,
                         Name = name,
-                        ResourcePatternType = (ResourcePatternType) resourcePatternType
+                        ResourcePatternType = resourcePatternType
                     },
                     Entry = new AccessControlEntry
                     {
                         Principal = principal,
                         Host = host,
-                        Operation = (AclOperation) operation,
-                        PermissionType = (AclPermissionType) permissionType
+                        Operation = operation,
+                        PermissionType = permissionType
                     }
                 });
             }
@@ -166,9 +162,14 @@ namespace Confluent.Kafka.Examples
             List<AclBinding> aclBindings = null;
             if (!printUsage)
             {
-                aclBindings = ParseAclBindings(commandArgs);
+                try
+                {
+                    aclBindings = ParseAclBindings(commandArgs);
+                }
+                catch {
+                    printUsage = true;
+                }
             }
-            printUsage = aclBindings == null;
 
             if (printUsage)
             {
@@ -217,9 +218,15 @@ namespace Confluent.Kafka.Examples
             List<AclBindingFilter> aclBindingFilters = null;
             if (!printUsage)
             {
-                aclBindingFilters = ParseAclBindingFilters(commandArgs);
+                try
+                {
+                    aclBindingFilters = ParseAclBindingFilters(commandArgs);
+                }
+                catch
+                {
+                    printUsage = true;
+                }
             }
-            printUsage = aclBindingFilters == null;
 
             if (printUsage)
             {
@@ -258,9 +265,15 @@ namespace Confluent.Kafka.Examples
             List<AclBindingFilter> aclBindingFilters = null;
             if (!printUsage)
             {
-                aclBindingFilters = ParseAclBindingFilters(commandArgs);
+                try
+                {
+                    aclBindingFilters = ParseAclBindingFilters(commandArgs);
+                }
+                catch
+                {
+                    printUsage = true;
+                }
             }
-            printUsage = aclBindingFilters == null;
 
             if (printUsage)
             {
