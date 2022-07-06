@@ -173,8 +173,8 @@ namespace Confluent.Kafka.Examples
             }
             catch
             {
-                Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
-                "<principal1> <host1> <operation1> <permission_type1> ..");
+                Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> " +
+                    "<principal1> <host1> <operation1> <permission_type1> ..");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -184,11 +184,11 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var results = await adminClient.CreateAclsAsync(aclBindings);
-                    Console.WriteLine("All the create ACL operations completed successfully");
+                    Console.WriteLine("All create ACL operations completed successfully");
                 }
                 catch (CreateAclsException e)
                 {
-                    Console.WriteLine("Some ACL operations failed");
+                    Console.WriteLine("One or more create ACL operations failed.");
                     int i = 0;
                     foreach (var result in e.Results)
                     {
@@ -220,8 +220,8 @@ namespace Confluent.Kafka.Examples
             }
             catch
             {
-                Console.WriteLine("usage: .. <bootstrapServers> describe-acls <resource_type> <resource_name> <resource_patter_type> "+
-                "<principal> <host> <operation> <permission_type>");
+                Console.WriteLine("usage: .. <bootstrapServers> describe-acls <resource_type> <resource_name> <resource_patter_type> " +
+                    "<principal> <host> <operation> <permission_type>");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -231,15 +231,13 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var result = await adminClient.DescribeAclsAsync(aclBindingFilters[0]);
-                    Console.WriteLine($"Matching ACLs");
+                    Console.WriteLine("Matching ACLs:");
                     PrintAclBindings(result.AclBindings);
                 }
                 catch (DescribeAclsException e)
                 {
-                    var result = e.Result;
-                    Console.WriteLine("Describe ACLs operation failed");
-                    Console.WriteLine($"An error occurred in describe ACLs operation: Code: {result.Error.Code}" +
-                        $", Reason: {result.Error.Reason}");
+                    Console.WriteLine($"An error occurred in describe ACLs operation: Code: {e.Result.Error.Code}" +
+                        $", Reason: {e.Result.Error.Reason}");
                 }
                 catch (KafkaException e)
                 {
@@ -257,8 +255,8 @@ namespace Confluent.Kafka.Examples
             }
             catch
             {
-                Console.WriteLine("usage: .. <bootstrapServers> delete-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
-                "<principal1> <host1> <operation1> <permission_type1> ..");
+                Console.WriteLine("usage: .. <bootstrapServers> delete-acls <resource_type1> <resource_name1> <resource_patter_type1> " +
+                    "<principal1> <host1> <operation1> <permission_type1> ..");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -268,7 +266,6 @@ namespace Confluent.Kafka.Examples
                 try
                 {
                     var results = await adminClient.DeleteAclsAsync(aclBindingFilters);
-                    Console.WriteLine("All the delete ACL operations completed successfully");
                     int i = 0;
                     foreach (var result in results)
                     {
@@ -279,7 +276,7 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (DeleteAclsException e)
                 {
-                    Console.WriteLine("Some ACL operations failed");
+                    Console.WriteLine("One or more create ACL operations failed.");
                     int i = 0;
                     foreach (var result in e.Results)
                     {
