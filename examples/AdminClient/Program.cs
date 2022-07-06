@@ -189,9 +189,9 @@ namespace Confluent.Kafka.Examples
                 catch (CreateAclsException e)
                 {
                     Console.WriteLine("One or more create ACL operations failed.");
-                    int i = 0;
-                    foreach (var result in e.Results)
+                    for (int i = 0; i < e.Results.Count; ++i)
                     {
+                        var result = e.Results[i];
                         if (!result.Error.IsError)
                         {
                             Console.WriteLine($"Create ACLs operation {i} completed successfully");
@@ -201,7 +201,6 @@ namespace Confluent.Kafka.Examples
                             Console.WriteLine($"An error occurred in create ACL operation {i}: Code: {result.Error.Code}" +
                             $", Reason: {result.Error.Reason}");
                         }
-                        ++i;
                     }
                 }
                 catch (KafkaException e)
@@ -277,21 +276,19 @@ namespace Confluent.Kafka.Examples
                 catch (DeleteAclsException e)
                 {
                     Console.WriteLine("One or more create ACL operations failed.");
-                    int i = 0;
-                    foreach (var result in e.Results)
+                    for (int i = 0; i < e.Results.Count; ++i)
                     {
+                        var result = e.Results[i];
                         if (!result.Error.IsError)
                         {
-                            Console.WriteLine($"Delete ACLs operation {i} completed successfully");
                             Console.WriteLine($"Deleted ACLs in operation {i}");
                             PrintAclBindings(result.AclBindings);
                         }
                         else
                         {
                             Console.WriteLine($"An error occurred in delete ACL operation {i}: Code: {result.Error.Code}" +
-                            $", Reason: {result.Error.Reason}");
+                                $", Reason: {result.Error.Reason}");
                         }
-                        ++i;
                     }
                 }
                 catch (KafkaException e)
