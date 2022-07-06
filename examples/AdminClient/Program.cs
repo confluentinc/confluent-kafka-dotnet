@@ -100,8 +100,17 @@ namespace Confluent.Kafka.Examples
             }
         }
 
-        static List<AclBinding> ParseAclBindings(string[] args)
+        static List<AclBinding> ParseAclBindings(string[] args, bool many)
         {
+            var numCommandArgs = args.Length;
+            if (
+                many ?
+                (numCommandArgs == 0 || numCommandArgs % 7 != 0) :
+                numCommandArgs != 7
+            )
+            {
+                throw new ArgumentException("wrong number of arguments");
+            }
             int nAclBindings = args.Length / 7;
             var aclBindings = new List<AclBinding>();
             for (int i = 0; i < nAclBindings; ++i)
@@ -140,9 +149,9 @@ namespace Confluent.Kafka.Examples
         }
 
 
-        static List<AclBindingFilter> ParseAclBindingFilters(string[] args)
+        static List<AclBindingFilter> ParseAclBindingFilters(string[] args, bool many)
         {
-            var aclBindings = ParseAclBindings(args);
+            var aclBindings = ParseAclBindings(args, many);
             return aclBindings.Select(aclBinding => aclBinding.ToFilter()).ToList();
         }
 
@@ -157,21 +166,12 @@ namespace Confluent.Kafka.Examples
 
         static async Task CreateAclsAsync(string bootstrapServers, string[] commandArgs)
         {
-            var numCommandArgs = commandArgs.Length;
-            var printUsage = numCommandArgs == 0 || numCommandArgs % 7 != 0;
-            List<AclBinding> aclBindings = null;
-            if (!printUsage)
+            List<AclBinding> aclBindings;
+            try
             {
-                try
-                {
-                    aclBindings = ParseAclBindings(commandArgs);
-                }
-                catch {
-                    printUsage = true;
-                }
+                aclBindings = ParseAclBindings(commandArgs, true);
             }
-
-            if (printUsage)
+            catch
             {
                 Console.WriteLine("usage: .. <bootstrapServers> create-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
                 "<principal1> <host1> <operation1> <permission_type1> ..");
@@ -213,22 +213,12 @@ namespace Confluent.Kafka.Examples
 
         static async Task DescribeAclsAsync(string bootstrapServers, string[] commandArgs)
         {
-            var numCommandArgs = commandArgs.Length;
-            var printUsage = numCommandArgs != 7;
-            List<AclBindingFilter> aclBindingFilters = null;
-            if (!printUsage)
+            List<AclBindingFilter> aclBindingFilters;
+            try
             {
-                try
-                {
-                    aclBindingFilters = ParseAclBindingFilters(commandArgs);
-                }
-                catch
-                {
-                    printUsage = true;
-                }
+                aclBindingFilters = ParseAclBindingFilters(commandArgs, false);
             }
-
-            if (printUsage)
+            catch
             {
                 Console.WriteLine("usage: .. <bootstrapServers> describe-acls <resource_type> <resource_name> <resource_patter_type> "+
                 "<principal> <host> <operation> <permission_type>");
@@ -260,22 +250,12 @@ namespace Confluent.Kafka.Examples
 
         static async Task DeleteAclsAsync(string bootstrapServers, string[] commandArgs)
         {
-            var numCommandArgs = commandArgs.Length;
-            var printUsage = numCommandArgs == 0 || numCommandArgs % 7 != 0;
-            List<AclBindingFilter> aclBindingFilters = null;
-            if (!printUsage)
+            List<AclBindingFilter> aclBindingFilters;
+            try
             {
-                try
-                {
-                    aclBindingFilters = ParseAclBindingFilters(commandArgs);
-                }
-                catch
-                {
-                    printUsage = true;
-                }
+                aclBindingFilters = ParseAclBindingFilters(commandArgs, true);
             }
-
-            if (printUsage)
+            catch
             {
                 Console.WriteLine("usage: .. <bootstrapServers> delete-acls <resource_type1> <resource_name1> <resource_patter_type1> "+
                 "<principal1> <host1> <operation1> <permission_type1> ..");
