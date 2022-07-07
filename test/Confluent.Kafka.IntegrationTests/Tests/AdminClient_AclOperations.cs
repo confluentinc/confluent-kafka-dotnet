@@ -38,11 +38,11 @@ namespace Confluent.Kafka.IntegrationTests
             var maxDuration = TimeSpan.FromSeconds(30);
             var noError = new Error(ErrorCode.NoError, "", false);
             var unknownError = new Error(ErrorCode.Unknown, "Unknown broker error", false);
-            var noErrorCreateResult = new CreateAclResult
+            var noErrorCreateResult = new CreateAclReport
             {
                 Error = noError
             };
-            var unknownErrorCreateResult = new CreateAclResult
+            var unknownErrorCreateResult = new CreateAclReport
             {
                 Error = unknownError
             };
@@ -235,15 +235,10 @@ namespace Confluent.Kafka.IntegrationTests
             {
                 for (int i = 0; i < 2; ++i)
                 {
-                    var resultCreateAcls = await adminClient.CreateAclsAsync(
+                    await adminClient.CreateAclsAsync(
                         newACLs,
                         createAclsOptions
                     );
-                    Assert.Equal(newACLs.Count, resultCreateAcls.Count);
-                    for (int j = 0; j < newACLs.Count; j++)
-                    {
-                        Assert.Equal(noErrorCreateResult, resultCreateAcls[j]);
-                    }
                 }
             }
 
@@ -259,7 +254,7 @@ namespace Confluent.Kafka.IntegrationTests
                     )
                 );
                 Assert.Equal(new CreateAclsException(
-                    new List<CreateAclResult> { unknownErrorCreateResult }
+                    new List<CreateAclReport> { unknownErrorCreateResult }
                 ), createAclsException);
             }
 
@@ -275,15 +270,24 @@ namespace Confluent.Kafka.IntegrationTests
                     )
                 );
                 Assert.Equal(new CreateAclsException(
-                    new List<CreateAclResult> { unknownErrorCreateResult, noErrorCreateResult }
+                    new List<CreateAclReport> { unknownErrorCreateResult, noErrorCreateResult }
                 ), createAclsException);
 
                 // DescribeAcls must return the three ACLs
                 var describeAclsResult = await adminClient.DescribeAclsAsync(aclBindingFilters[0], describeAclsOptions);
+                var newACLsShuffled = new List<AclBinding>
+                {
+                    newACLs[0],
+                    newACLs[2],
+                    newACLs[1],
+                };
                 Assert.Equal(new DescribeAclsResult
                 {
-                    Error = noError,
                     AclBindings = newACLs
+                }, describeAclsResult);
+                Assert.Equal(new DescribeAclsResult
+                {
+                    AclBindings = newACLsShuffled
                 }, describeAclsResult);
             }
 
@@ -302,7 +306,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, resultDeleteAcls[0].AclBindings.Count);
                 Assert.Equal(new DeleteAclsResult
                 {
-                    Error = noError,
                     AclBindings = new List<AclBinding>
                     {
                         newACLs[1],
@@ -322,7 +325,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(2, resultDeleteAcls.Count);
                 Assert.Equal(new DeleteAclsResult
                 {
-                    Error = noError,
                     AclBindings = new List<AclBinding>
                     {
                         newACLs[0]
@@ -330,7 +332,6 @@ namespace Confluent.Kafka.IntegrationTests
                 }, resultDeleteAcls[0]);
                 Assert.Equal(new DeleteAclsResult
                 {
-                    Error = noError,
                     AclBindings = new List<AclBinding>()
                 }, resultDeleteAcls[1]);
 
@@ -338,7 +339,6 @@ namespace Confluent.Kafka.IntegrationTests
                 var describeAclsResult = await adminClient.DescribeAclsAsync(aclBindingFilters[0], describeAclsOptions);
                 Assert.Equal(new DescribeAclsResult
                 {
-                    Error = noError,
                     AclBindings = new List<AclBinding>{}
                 }, describeAclsResult);
             }

@@ -21,7 +21,7 @@ using Xunit;
 
 namespace Confluent.Kafka.UnitTests
 {
-    public class DescribeAclsExceptionTests
+    public class DeleteAclsResultTests
     {
         [Fact]
         public void Equality()
@@ -58,63 +58,36 @@ namespace Confluent.Kafka.UnitTests
                     PermissionType = AclPermissionType.Allow
                 }
             };
-            var acl3 = new AclBinding
-            {
-                Pattern = new ResourcePattern
-                {
-                    Type = ResourceType.Topic,
-                    Name = "a2",
-                    ResourcePatternType = ResourcePatternType.Literal
-                },
-                Entry = new AccessControlEntry
-                {
-                    Principal = "p1",
-                    Host = "h1",
-                    Operation = AclOperation.All,
-                    PermissionType = AclPermissionType.Allow
-                }
-            };
 
-            var ex1 = new DescribeAclsException(new DescribeAclsReport());
-            var ex2 = new DescribeAclsException(new DescribeAclsReport());
-            var ex3 = new DescribeAclsException(new DescribeAclsReport()
+            var res1 = new DeleteAclsResult {};
+            var res2 = new DeleteAclsResult {};
+            var res3 = new DeleteAclsResult
             {
-                Error = new Error(ErrorCode.NoError, "Success", false),
                 AclBindings = new List<AclBinding>
                 {
                     acl1,
                     acl2
                 }
-            });
-            var ex4 = new DescribeAclsException(new DescribeAclsReport()
+            };
+            var res4 = new DeleteAclsResult
             {
-                Error = new Error(ErrorCode.NoError, "Other message", false),
-                AclBindings = new List<AclBinding>
-                {
-                    acl2.Clone(),
-                    acl1.Clone(),
-                    acl1.Clone(),
-                }
-            });
-            var ex5 = new DescribeAclsException(new DescribeAclsReport()
+                AclBindings = res3.AclBindings
+            };
+            var res5 = new DeleteAclsResult
             {
-                Error = new Error(ErrorCode.NoError, "Other message", false),
                 AclBindings = new List<AclBinding>
                 {
                     acl1.Clone(),
-                    acl2.Clone(),
-                    acl3.Clone(),
+                    acl2.Clone()
                 }
-            });
+            };
 
-            Assert.Equal(ex1, ex2);
-            Assert.True(ex1 == ex2);
-            Assert.NotEqual(ex2, ex3);
-            Assert.True(ex2 != ex3);
-            Assert.Equal(ex3, ex4);
-            Assert.True(ex3 == ex4);
-            Assert.NotEqual(ex4, ex5);
-            Assert.True(ex4 != ex5);
+            Assert.Equal(res1, res2);
+            Assert.True(res1 == res2);
+            Assert.Equal(res3, res4);
+            Assert.True(res3 == res4);
+            Assert.Equal(res3, res5);
+            Assert.True(res3 == res5);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Provides create ACL error information.
     /// </summary>
-    public class CreateAclResult
+    public class CreateAclReport
     {
         /// <summary>
         ///     Per ACL binding error status.
@@ -30,13 +30,13 @@ namespace Confluent.Kafka.Admin
         public Error Error { get; set; }
 
         /// <summary>
-        ///     Tests whether this CreateAclResult instance is equal to the specified object.
+        ///     Tests whether this CreateAclReport instance is equal to the specified object.
         /// </summary>
         /// <param name="obj">
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if obj is a CreateAclResult and the <see cref="Error"/> property values are equal. false otherwise.
+        ///     true if obj is a CreateAclReport and the <see cref="Error"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {
@@ -44,24 +44,24 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var result = (CreateAclResult) obj;
+            var result = (CreateAclReport) obj;
             if (base.Equals(result)) return true;
-            return this.Error == result.Error;
+            return Error == result.Error;
         }
 
         /// <summary>
-        ///     Tests whether CreateAclResult instance a is equal to CreateAclResult instance b.
+        ///     Tests whether CreateAclReport instance a is equal to CreateAclReport instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first CreateAclResult instance to compare.
+        ///     The first CreateAclReport instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second CreateAclResult instance to compare.
+        ///     The second CreateAclReport instance to compare.
         /// </param>
         /// <returns>
-        ///     true if CreateAclResult instances a and b are equal. false otherwise.
+        ///     true if CreateAclReport instances a and b are equal. false otherwise.
         /// </returns>
-        public static bool operator ==(CreateAclResult a, CreateAclResult b)
+        public static bool operator ==(CreateAclReport a, CreateAclReport b)
         {
             if (a is null)
             {
@@ -72,25 +72,25 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Tests whether CreateAclResult instance a is not equal to CreateAclResult instance b.
+        ///     Tests whether CreateAclReport instance a is not equal to CreateAclReport instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first CreateAclResult instance to compare.
+        ///     The first CreateAclReport instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second CreateAclResult instance to compare.
+        ///     The second CreateAclReport instance to compare.
         /// </param>
         /// <returns>
-        ///     true if CreateAclResult instances a and b are not equal. false otherwise.
+        ///     true if CreateAclReport instances a and b are not equal. false otherwise.
         /// </returns>
-        public static bool operator !=(CreateAclResult a, CreateAclResult b)
+        public static bool operator !=(CreateAclReport a, CreateAclReport b)
             => !(a == b);
 
         /// <summary>
-        ///     Returns a hash code for this CreateAclResult value.
+        ///     Returns a hash code for this CreateAclReport value.
         /// </summary>
         /// <returns>
-        ///     An integer that specifies a hash value for this CreateAclResult value.
+        ///     An integer that specifies a hash value for this CreateAclReport value.
         /// </returns>
         public override int GetHashCode()
         {

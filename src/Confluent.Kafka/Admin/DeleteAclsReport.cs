@@ -15,16 +15,16 @@
 // Refer to LICENSE for more information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///    Base class for ACL results with an <see cref="Error" /> and a list of <see cref="AclBinding" />
+    ///    Report for a delete ACLs operation with an <see cref="Error" /> and a list of <see cref="AclBinding" />
     /// </summary>
-    public abstract class AbstractAclsResult
+    public class DeleteAclsReport
     {
         /// <summary>
         ///     List of ACL bindings in this result
@@ -35,6 +35,17 @@ namespace Confluent.Kafka.Admin
         ///     Operation error status, null if successful.
         /// </summary>
         public Error Error { get; set; }
+
+        /// <summary>
+        ///     The result of this report.
+        /// </summary>
+        internal DeleteAclsResult ToResult()
+        {
+            return new DeleteAclsResult
+            {
+                AclBindings = AclBindings.Select(aclBinding => aclBinding.Clone()).ToList()
+            };
+        }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -51,26 +62,26 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var result = (AbstractAclsResult) obj;
-            if (base.Equals(result)) return true;
-            return this.Error == result.Error &&
-                (this.AclBindings == null ? result.AclBindings == null :
-                new HashSet<AclBinding>(this.AclBindings).SetEquals(new HashSet<AclBinding>(result.AclBindings)));
+            var report = (DeleteAclsReport) obj;
+            if (base.Equals(report)) return true;
+            return Error == report.Error &&
+                (AclBindings == null ? report.AclBindings == null :
+                new HashSet<AclBinding>(AclBindings).SetEquals(new HashSet<AclBinding>(report.AclBindings)));
         }
 
         /// <summary>
-        ///     Tests whether AbstractAclsResult instance a is equal to AbstractAclsResult instance b.
+        ///     Tests whether DeleteAclsReport instance a is equal to DeleteAclsReport instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first AbstractAclsResult instance to compare.
+        ///     The first DeleteAclsReport instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second AbstractAclsResult instance to compare.
+        ///     The second DeleteAclsReport instance to compare.
         /// </param>
         /// <returns>
-        ///     true if AbstractAclsResult instances a and b are equal. false otherwise.
+        ///     true if DeleteAclsReport instances a and b are equal. false otherwise.
         /// </returns>
-        public static bool operator ==(AbstractAclsResult a, AbstractAclsResult b)
+        public static bool operator ==(DeleteAclsReport a, DeleteAclsReport b)
         {
             if (a is null)
             {
@@ -81,18 +92,18 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Tests whether AbstractAclsResult instance a is not equal to AbstractAclsResult instance b.
+        ///     Tests whether DeleteAclsReport instance a is not equal to DeleteAclsReport instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first AbstractAclsResult instance to compare.
+        ///     The first DeleteAclsReport instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second AbstractAclsResult instance to compare.
+        ///     The second DeleteAclsReport instance to compare.
         /// </param>
         /// <returns>
-        ///     true if AbstractAclsResult instances a and b are not equal. false otherwise.
+        ///     true if DeleteAclsReport instances a and b are not equal. false otherwise.
         /// </returns>
-        public static bool operator !=(AbstractAclsResult a, AbstractAclsResult b)
+        public static bool operator !=(DeleteAclsReport a, DeleteAclsReport b)
             => !(a == b);
 
         /// <summary>

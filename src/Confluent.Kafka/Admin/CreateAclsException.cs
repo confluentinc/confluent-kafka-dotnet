@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public CreateAclsException(List<CreateAclResult> results)
+        public CreateAclsException(List<CreateAclReport> results)
             : base(new Error(ErrorCode.Local_Partial,
                 "An error occurred creating ACLs: [" +
                 String.Join(", ", results.Select(r => r.Error)) +
@@ -48,7 +48,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<CreateAclResult> Results { get; }
+        public List<CreateAclReport> Results { get; }
 
         /// <summary>
         ///     Tests whether this CreateAclsException instance is equal to the specified object.
@@ -120,7 +120,7 @@ namespace Confluent.Kafka.Admin
             if (Error != null) hash ^= Error.GetHashCode();
             if (Results != null)
             {
-                foreach(CreateAclResult result in Results)
+                foreach(CreateAclReport result in Results)
                 {
                     hash ^= result.GetHashCode();
                 }

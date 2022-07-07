@@ -21,7 +21,7 @@ using Xunit;
 
 namespace Confluent.Kafka.UnitTests
 {
-    public class AbstractAclResultTests
+    public class DescribeAclsReportTests
     {
         [Fact]
         public void Equality()
@@ -59,13 +59,13 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
 
-            var res1 = new DeleteAclsResult {};
-            var res2 = new DeleteAclsResult {};
-            var res3 = new DeleteAclsResult
+            var rep1 = new DescribeAclsReport {};
+            var rep2 = new DescribeAclsReport {};
+            var rep3 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),
             };
-            var res4 = new DeleteAclsResult
+            var rep4 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),
                 AclBindings = new List<AclBinding>
@@ -74,12 +74,12 @@ namespace Confluent.Kafka.UnitTests
                     acl2
                 }
             };
-            var res5 = new DeleteAclsResult
+            var rep5 = new DescribeAclsReport
             {
-                Error = res4.Error,
-                AclBindings = res4.AclBindings
+                Error = rep4.Error,
+                AclBindings = rep4.AclBindings
             };
-            var res6 = new DeleteAclsResult
+            var rep6 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Other message", false),
                 AclBindings = new List<AclBinding>
@@ -88,7 +88,7 @@ namespace Confluent.Kafka.UnitTests
                     acl2.Clone()
                 }
             };
-            var res7 = new DeleteAclsResult
+            var rep7 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", true),
                 AclBindings = new List<AclBinding>
@@ -98,18 +98,18 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
 
-            Assert.Equal(res1, res2);
-            Assert.True(res1 == res2);
-            Assert.NotEqual(res1, res3);
-            Assert.False(res1 == res3);
-            Assert.NotEqual(res3, res4);
-            Assert.True(res3 != res4);
-            Assert.Equal(res4, res5);
-            Assert.True(res4 == res5);
-            Assert.Equal(res4, res6);
-            Assert.True(res4 == res6);
-            Assert.NotEqual(res6, res7);
-            Assert.True(res6 != res7);
+            Assert.Equal(rep1, rep2);
+            Assert.True(rep1 == rep2);
+            Assert.NotEqual(rep1, rep3);
+            Assert.False(rep1 == rep3);
+            Assert.NotEqual(rep3, rep4);
+            Assert.True(rep3 != rep4);
+            Assert.Equal(rep4, rep5);
+            Assert.True(rep4 == rep5);
+            Assert.Equal(rep4, rep6);
+            Assert.True(rep4 == rep6);
+            Assert.NotEqual(rep6, rep7);
+            Assert.True(rep6 != rep7);
         }
     }
 }

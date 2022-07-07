@@ -26,31 +26,31 @@ namespace Confluent.Kafka.UnitTests
         [Fact]
         public void Equality()
         {
-            var ex1 = new CreateAclsException(new List<CreateAclResult>());
-            var ex2 = new CreateAclsException(new List<CreateAclResult>
+            var ex1 = new CreateAclsException(new List<CreateAclReport>());
+            var ex2 = new CreateAclsException(new List<CreateAclReport>
             {
-                new CreateAclResult()
+                new CreateAclReport()
                 {
                     Error = null,
                 }
             });
-            var ex3 = new CreateAclsException(new List<CreateAclResult>
+            var ex3 = new CreateAclsException(new List<CreateAclReport>
             {
-                new CreateAclResult()
+                new CreateAclReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Success", false),
                 }
             });
-            var ex4 = new CreateAclsException(new List<CreateAclResult>
+            var ex4 = new CreateAclsException(new List<CreateAclReport>
             {
-                new CreateAclResult()
+                new CreateAclReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
                 }
             });
-            var ex5 = new CreateAclsException(new List<CreateAclResult>
+            var ex5 = new CreateAclsException(new List<CreateAclReport>
             {
-                new CreateAclResult()
+                new CreateAclReport()
                 {
                     Error = new Error(ErrorCode.Unknown, "Other message", false),
                 }

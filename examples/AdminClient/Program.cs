@@ -183,7 +183,7 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    var results = await adminClient.CreateAclsAsync(aclBindings);
+                    await adminClient.CreateAclsAsync(aclBindings);
                     Console.WriteLine("All create ACL operations completed successfully");
                 }
                 catch (CreateAclsException e)

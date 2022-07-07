@@ -34,7 +34,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public DeleteAclsException(List<DeleteAclsResult> results)
+        public DeleteAclsException(List<DeleteAclsReport> results)
             : base(new Error(ErrorCode.Local_Partial,
                 $"An error occurred deleting ACLs: [{string.Join(", ", results.Select(r => r.ToString()))}]."))
         {
@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<DeleteAclsResult> Results { get; }
+        public List<DeleteAclsReport> Results { get; }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -119,9 +119,9 @@ namespace Confluent.Kafka.Admin
             if (Error != null) hash ^= Error.GetHashCode();
             if (Results != null)
             {
-                foreach(DeleteAclsResult result in Results)
+                foreach(DeleteAclsReport report in Results)
                 {
-                    hash ^= result.GetHashCode();
+                    hash ^= report.GetHashCode();
                 }
             }
             return hash;

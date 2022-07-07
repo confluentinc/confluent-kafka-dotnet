@@ -1706,6 +1706,10 @@ namespace Confluent.Kafka.Impl
             IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
+            if (aclBindings == null)
+            {
+                throw new ArgumentNullException("Expected non-null aclBindings argument");
+            }
             if (aclBindings.Count() == 0)
             {
                 throw new ArgumentException("Expected non-empty IEnumerable of AclBinding");

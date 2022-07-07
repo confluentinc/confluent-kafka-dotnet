@@ -15,20 +15,38 @@
 // Refer to LICENSE for more information.
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///    Result for a delete ACLs operation with a list of <see cref="AclBinding" />
+    ///    Report for a describe ACLs operation with an <see cref="Error" /> and a list of <see cref="AclBinding" />
     /// </summary>
-    public class DeleteAclsResult
+    public class DescribeAclsReport
     {
         /// <summary>
         ///     List of ACL bindings in this result
         /// </summary>
         public List<AclBinding> AclBindings { get; set; }
+
+        /// <summary>
+        ///     Operation error status, null if successful.
+        /// </summary>
+        public Error Error { get; set; }
+
+
+        /// <summary>
+        ///     The result of this report.
+        /// </summary>
+        internal DescribeAclsResult ToResult()
+        {
+            return new DescribeAclsResult
+            {
+                AclBindings = AclBindings.Select(aclBinding => aclBinding.Clone()).ToList()
+            };
+        }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -45,25 +63,26 @@ namespace Confluent.Kafka.Admin
             {
                 return false;
             }
-            var result = (DeleteAclsResult) obj;
-            if (base.Equals(result)) return true;
-            return AclBindings == null ? result.AclBindings == null :
-                new HashSet<AclBinding>(AclBindings).SetEquals(new HashSet<AclBinding>(result.AclBindings));
+            var report = (DescribeAclsReport) obj;
+            if (base.Equals(report)) return true;
+            return Error == report.Error &&
+                (AclBindings == null ? report.AclBindings == null :
+                new HashSet<AclBinding>(AclBindings).SetEquals(new HashSet<AclBinding>(report.AclBindings)));
         }
 
         /// <summary>
-        ///     Tests whether DeleteAclsResult instance a is equal to DeleteAclsResult instance b.
+        ///     Tests whether DescribeAclsReport instance a is equal to DescribeAclsReport instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first DeleteAclsResult instance to compare.
+        ///     The first DescribeAclsReport instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second DeleteAclsResult instance to compare.
+        ///     The second DescribeAclsReport instance to compare.
         /// </param>
         /// <returns>
-        ///     true if DeleteAclsResult instances a and b are equal. false otherwise.
+        ///     true if DescribeAclsReport instances a and b are equal. false otherwise.
         /// </returns>
-        public static bool operator ==(DeleteAclsResult a, DeleteAclsResult b)
+        public static bool operator ==(DescribeAclsReport a, DescribeAclsReport b)
         {
             if (a is null)
             {
@@ -74,18 +93,18 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     Tests whether DeleteAclsResult instance a is not equal to DeleteAclsResult instance b.
+        ///     Tests whether DescribeAclsReport instance a is not equal to DescribeAclsReport instance b.
         /// </summary>
         /// <param name="a">
-        ///     The first DeleteAclsResult instance to compare.
+        ///     The first DescribeAclsReport instance to compare.
         /// </param>
         /// <param name="b">
-        ///     The second DeleteAclsResult instance to compare.
+        ///     The second DescribeAclsReport instance to compare.
         /// </param>
         /// <returns>
-        ///     true if DeleteAclsResult instances a and b are not equal. false otherwise.
+        ///     true if DescribeAclsReport instances a and b are not equal. false otherwise.
         /// </returns>
-        public static bool operator !=(DeleteAclsResult a, DeleteAclsResult b)
+        public static bool operator !=(DescribeAclsReport a, DescribeAclsReport b)
             => !(a == b);
 
         /// <summary>
@@ -97,6 +116,7 @@ namespace Confluent.Kafka.Admin
         public override int GetHashCode()
         {
             int hash = 1;
+            if (Error != null) hash ^= Error.GetHashCode();
             if (AclBindings != null)
             {
                 foreach(AclBinding aclBinding in AclBindings)

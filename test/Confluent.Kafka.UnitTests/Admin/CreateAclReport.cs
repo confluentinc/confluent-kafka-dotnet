@@ -20,30 +20,30 @@ using Xunit;
 
 namespace Confluent.Kafka.UnitTests
 {
-    public class CreateAclResultTests
+    public class CreateAclReportTests
     {
         [Fact]
         public void Equality()
         {
-            var res1 = new CreateAclResult {};
-            var res2 = new CreateAclResult {};
-            var res3 = new CreateAclResult
+            var res1 = new CreateAclReport {};
+            var res2 = new CreateAclReport {};
+            var res3 = new CreateAclReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),
             };
-            var res4 = new CreateAclResult
+            var res4 = new CreateAclReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),
             };
-            var res5 = new CreateAclResult
+            var res5 = new CreateAclReport
             {
                 Error = res4.Error,
             };
-            var res6 = new CreateAclResult
+            var res6 = new CreateAclReport
             {
                 Error = new Error(ErrorCode.NoError, "Other message", false),
             };
-            var res7 = new CreateAclResult
+            var res7 = new CreateAclReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", true),
             };

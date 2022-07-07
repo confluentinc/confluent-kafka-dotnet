@@ -30,7 +30,7 @@ namespace Confluent.Kafka.Admin
         /// <param name="result">
         ///     The result corresponding to the ACL filter in the request
         /// </param>
-        public DescribeAclsException(DescribeAclsResult result)
+        public DescribeAclsException(DescribeAclsReport result)
             : base(new Error(ErrorCode.Local_Partial,
                 $"An error occurred describing ACLs: {result}."))
         {
@@ -40,7 +40,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     The result corresponding to the describe ACLs operation in the request 
         /// </summary>
-        public DescribeAclsResult Result { get; }
+        public DescribeAclsReport Result { get; }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.

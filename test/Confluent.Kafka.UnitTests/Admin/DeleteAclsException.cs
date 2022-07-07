@@ -75,10 +75,10 @@ namespace Confluent.Kafka.UnitTests
                 }
             };
 
-            var ex1 = new DeleteAclsException(new List<DeleteAclsResult>());
-            var ex2 = new DeleteAclsException(new List<DeleteAclsResult>
+            var ex1 = new DeleteAclsException(new List<DeleteAclsReport>());
+            var ex2 = new DeleteAclsException(new List<DeleteAclsReport>
             {
-                new DeleteAclsResult()
+                new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Success", false),
                     AclBindings = new List<AclBinding>
@@ -88,9 +88,9 @@ namespace Confluent.Kafka.UnitTests
                     }
                 }
             });
-            var ex3 = new DeleteAclsException(new List<DeleteAclsResult>
+            var ex3 = new DeleteAclsException(new List<DeleteAclsReport>
             {
-                new DeleteAclsResult()
+                new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
                     AclBindings = new List<AclBinding>
@@ -101,9 +101,9 @@ namespace Confluent.Kafka.UnitTests
                     }
                 }
             });
-            var ex4 = new DeleteAclsException(new List<DeleteAclsResult>
+            var ex4 = new DeleteAclsException(new List<DeleteAclsReport>
             {
-                new DeleteAclsResult()
+                new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
                     AclBindings = new List<AclBinding>
