@@ -171,7 +171,10 @@ namespace Confluent.Kafka
             return new DescribeAclsReport
             {
                 Error = new Error(errCode, errString, false),
-                AclBindings = extractAclBindings(resultAcls, (int) resultAclCntPtr)
+                Result = new DescribeAclsResult
+                {
+                    AclBindings = extractAclBindings(resultAcls, (int) resultAclCntPtr)
+                }
             };
         }
 
@@ -188,7 +191,10 @@ namespace Confluent.Kafka
                 return new DeleteAclsReport 
                 {
                     Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr), false),
-                    AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
+                    Result = new DeleteAclsResult
+                    {
+                        AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
+                    }
                 };
             }).ToList();
         }
@@ -453,7 +459,7 @@ namespace Confluent.Kafka
                                             else
                                             {
                                                 Task.Run(() => 
-                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetResult(report.ToResult()));
+                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetResult(report.Result));
                                             }
                                         }
                                         break; 
@@ -477,7 +483,7 @@ namespace Confluent.Kafka
                                             }
                                             else
                                             {
-                                                var results = reports.Select(result => result.ToResult()).ToList();
+                                                var results = reports.Select(result => result.Result).ToList();
                                                 Task.Run(() => 
                                                     ((TaskCompletionSource<List<DeleteAclsResult>>)adminClientResult).TrySetResult(results));
                                             }

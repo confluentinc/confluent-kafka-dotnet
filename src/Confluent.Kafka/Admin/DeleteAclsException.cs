@@ -29,16 +29,16 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Initialize a new instance of DeleteAclsException.
         /// </summary>
-        /// <param name="results">
+        /// <param name="reports">
         ///     The result corresponding to all the ACL filters in the request 
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </param>
-        public DeleteAclsException(List<DeleteAclsReport> results)
+        public DeleteAclsException(List<DeleteAclsReport> reports)
             : base(new Error(ErrorCode.Local_Partial,
-                $"An error occurred deleting ACLs: [{string.Join(", ", results.Select(r => r.ToString()))}]."))
+                $"An error occurred deleting ACLs: [{string.Join(", ", reports.Select(r => r.ToString()))}]."))
         {
-            this.Results = results;
+            Reports = reports;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Confluent.Kafka.Admin
         ///     (whether or not they were in error). At least one of these
         ///     results will be in error.
         /// </summary>
-        public List<DeleteAclsReport> Results { get; }
+        public List<DeleteAclsReport> Reports { get; }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -55,7 +55,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is of the same type as obj and the <see cref="KafkaException.Error"/> and <see cref="Results"/> property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the <see cref="KafkaException.Error"/> and <see cref="Reports"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {
@@ -66,7 +66,7 @@ namespace Confluent.Kafka.Admin
             var exception = (DeleteAclsException) obj;
             if (base.Equals(exception)) return true;
             return Error == exception.Error &&
-                (Results?.SequenceEqual(exception.Results) ?? exception.Results == null);
+                (Reports?.SequenceEqual(exception.Reports) ?? exception.Reports == null);
         }
 
 
@@ -117,9 +117,9 @@ namespace Confluent.Kafka.Admin
         {
             int hash = 1;
             if (Error != null) hash ^= Error.GetHashCode();
-            if (Results != null)
+            if (Reports != null)
             {
-                foreach(DeleteAclsReport report in Results)
+                foreach(DeleteAclsReport report in Reports)
                 {
                     hash ^= report.GetHashCode();
                 }

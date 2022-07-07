@@ -235,8 +235,8 @@ namespace Confluent.Kafka.Examples
                 }
                 catch (DescribeAclsException e)
                 {
-                    Console.WriteLine($"An error occurred in describe ACLs operation: Code: {e.Result.Error.Code}" +
-                        $", Reason: {e.Result.Error.Reason}");
+                    Console.WriteLine($"An error occurred in describe ACLs operation: Code: {e.Report.Error.Code}" +
+                        $", Reason: {e.Report.Error.Reason}");
                 }
                 catch (KafkaException e)
                 {
@@ -276,18 +276,18 @@ namespace Confluent.Kafka.Examples
                 catch (DeleteAclsException e)
                 {
                     Console.WriteLine("One or more create ACL operations failed.");
-                    for (int i = 0; i < e.Results.Count; ++i)
+                    for (int i = 0; i < e.Reports.Count; ++i)
                     {
-                        var result = e.Results[i];
-                        if (!result.Error.IsError)
+                        var report = e.Reports[i];
+                        if (!report.Error.IsError)
                         {
                             Console.WriteLine($"Deleted ACLs in operation {i}");
-                            PrintAclBindings(result.AclBindings);
+                            PrintAclBindings(report.Result.AclBindings);
                         }
                         else
                         {
-                            Console.WriteLine($"An error occurred in delete ACL operation {i}: Code: {result.Error.Code}" +
-                                $", Reason: {result.Error.Reason}");
+                            Console.WriteLine($"An error occurred in delete ACL operation {i}: Code: {report.Error.Code}" +
+                                $", Reason: {report.Error.Reason}");
                         }
                     }
                 }

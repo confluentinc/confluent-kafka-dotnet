@@ -268,7 +268,7 @@ namespace Confluent.Kafka
         /// <exception cref="DescribeAclsException">
         ///     Thrown if the corresponding result is in
         ///     error. The entire result is
-        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeAclsException.Result" />
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeAclsException.Report" />
         ///     property of the exception.
         /// </exception>
         /// <returns>
@@ -303,7 +303,7 @@ namespace Confluent.Kafka
         ///     Thrown if any of the constituent results is in
         ///     error. The entire result (which may contain
         ///     constituent results that are not in error) is
-        ///     available via the <see cref="Confluent.Kafka.Admin.DeleteAclsException.Results" />
+        ///     available via the <see cref="Confluent.Kafka.Admin.DeleteAclsException.Reports" />
         ///     property of the exception.
         /// </exception>
         /// <returns>

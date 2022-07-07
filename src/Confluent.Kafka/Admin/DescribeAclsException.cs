@@ -27,20 +27,20 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Initialize a new instance of DescribeAclsException.
         /// </summary>
-        /// <param name="result">
+        /// <param name="report">
         ///     The result corresponding to the ACL filter in the request
         /// </param>
-        public DescribeAclsException(DescribeAclsReport result)
+        public DescribeAclsException(DescribeAclsReport report)
             : base(new Error(ErrorCode.Local_Partial,
-                $"An error occurred describing ACLs: {result}."))
+                $"An error occurred describing ACLs: {report}."))
         {
-            this.Result = result;
+            Report = report;
         }
 
         /// <summary>
         ///     The result corresponding to the describe ACLs operation in the request 
         /// </summary>
-        public DescribeAclsReport Result { get; }
+        public DescribeAclsReport Report { get; }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -49,7 +49,7 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is of the same type as obj and the <see cref="KafkaException.Error"/> and <see cref="Result"/> property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the <see cref="KafkaException.Error"/> and <see cref="Report"/> property values are equal. false otherwise.
         /// </returns>
         public override bool Equals(Object obj)
         {
@@ -60,7 +60,7 @@ namespace Confluent.Kafka.Admin
             var exception = (DescribeAclsException) obj;
             if (base.Equals(exception)) return true;
             return Error == exception.Error &&
-                   Result == exception.Result;
+                   Report == exception.Report;
         }
 
 
@@ -111,9 +111,9 @@ namespace Confluent.Kafka.Admin
         {
             int hash = 1;
             if (Error != null) hash ^= Error.GetHashCode();
-            if (Result != null)
+            if (Report != null)
             {
-                hash ^= Result.GetHashCode();
+                hash ^= Report.GetHashCode();
             }
             return hash;
         }

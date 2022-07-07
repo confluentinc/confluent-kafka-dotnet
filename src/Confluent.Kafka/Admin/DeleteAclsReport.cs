@@ -27,25 +27,14 @@ namespace Confluent.Kafka.Admin
     public class DeleteAclsReport
     {
         /// <summary>
-        ///     List of ACL bindings in this result
+        ///     Result of this report
         /// </summary>
-        public List<AclBinding> AclBindings { get; set; }
+        public DeleteAclsResult Result { get; set; }
 
         /// <summary>
         ///     Operation error status, null if successful.
         /// </summary>
         public Error Error { get; set; }
-
-        /// <summary>
-        ///     The result of this report.
-        /// </summary>
-        internal DeleteAclsResult ToResult()
-        {
-            return new DeleteAclsResult
-            {
-                AclBindings = AclBindings.Select(aclBinding => aclBinding.Clone()).ToList()
-            };
-        }
 
         /// <summary>
         ///     Tests whether this instance is equal to the specified object.
@@ -54,9 +43,9 @@ namespace Confluent.Kafka.Admin
         ///     The object to test.
         /// </param>
         /// <returns>
-        ///     true if this is of the same type as obj and the <see cref="Error" /> and <see cref="AclBindings" /> property values are equal. false otherwise.
+        ///     true if this is of the same type as obj and the <see cref="Error" /> and <see cref="Result" /> property values are equal. false otherwise.
         /// </returns>
-        public override bool Equals(Object obj)
+        public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
             {
@@ -65,8 +54,7 @@ namespace Confluent.Kafka.Admin
             var report = (DeleteAclsReport) obj;
             if (base.Equals(report)) return true;
             return Error == report.Error &&
-                (AclBindings == null ? report.AclBindings == null :
-                new HashSet<AclBinding>(AclBindings).SetEquals(new HashSet<AclBinding>(report.AclBindings)));
+                Result == report.Result;
         }
 
         /// <summary>
@@ -116,13 +104,7 @@ namespace Confluent.Kafka.Admin
         {
             int hash = 1;
             if (Error != null) hash ^= Error.GetHashCode();
-            if (AclBindings != null)
-            {
-                foreach(AclBinding aclBinding in AclBindings)
-                {
-                    hash ^= aclBinding.GetHashCode();
-                }
-            }
+            if (Result != null) hash ^= Result.GetHashCode();
             return hash;
         }
     }

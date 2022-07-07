@@ -81,10 +81,13 @@ namespace Confluent.Kafka.UnitTests
                 new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Success", false),
-                    AclBindings = new List<AclBinding>
+                    Result = new DeleteAclsResult
                     {
-                        acl1,
-                        acl2
+                        AclBindings = new List<AclBinding>
+                        {
+                            acl1,
+                            acl2
+                        }
                     }
                 }
             });
@@ -93,11 +96,14 @@ namespace Confluent.Kafka.UnitTests
                 new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
-                    AclBindings = new List<AclBinding>
+                    Result = new DeleteAclsResult
                     {
-                        acl2.Clone(),
-                        acl1.Clone(),
-                        acl1.Clone(),
+                        AclBindings = new List<AclBinding>
+                        {
+                            acl2.Clone(),
+                            acl1.Clone(),
+                            acl1.Clone(),
+                        }
                     }
                 }
             });
@@ -106,11 +112,14 @@ namespace Confluent.Kafka.UnitTests
                 new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
-                    AclBindings = new List<AclBinding>
+                    Result = new DeleteAclsResult
                     {
-                        acl1.Clone(),
-                        acl2.Clone(),
-                        acl3.Clone(),
+                        AclBindings = new List<AclBinding>
+                        {
+                            acl1.Clone(),
+                            acl2.Clone(),
+                            acl3.Clone(),
+                        }
                     }
                 }
             });
