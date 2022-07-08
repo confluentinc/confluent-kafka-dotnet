@@ -81,13 +81,10 @@ namespace Confluent.Kafka.UnitTests
                 new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Success", false),
-                    Result = new DeleteAclsResult
+                    AclBindings = new List<AclBinding>
                     {
-                        AclBindings = new List<AclBinding>
-                        {
-                            acl1,
-                            acl2
-                        }
+                        acl1,
+                        acl2
                     }
                 }
             });
@@ -96,14 +93,11 @@ namespace Confluent.Kafka.UnitTests
                 new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
-                    Result = new DeleteAclsResult
+                    AclBindings = new List<AclBinding>
                     {
-                        AclBindings = new List<AclBinding>
-                        {
-                            acl2.Clone(),
-                            acl1.Clone(),
-                            acl1.Clone(),
-                        }
+                        acl2.Clone(),
+                        acl1.Clone(),
+                        acl1.Clone(),
                     }
                 }
             });
@@ -112,14 +106,11 @@ namespace Confluent.Kafka.UnitTests
                 new DeleteAclsReport()
                 {
                     Error = new Error(ErrorCode.NoError, "Other message", false),
-                    Result = new DeleteAclsResult
+                    AclBindings = new List<AclBinding>
                     {
-                        AclBindings = new List<AclBinding>
-                        {
-                            acl1.Clone(),
-                            acl2.Clone(),
-                            acl3.Clone(),
-                        }
+                        acl1.Clone(),
+                        acl2.Clone(),
+                        acl3.Clone(),
                     }
                 }
             });

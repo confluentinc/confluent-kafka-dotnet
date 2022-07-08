@@ -27,9 +27,9 @@ namespace Confluent.Kafka.Admin
     public class DescribeAclsReport
     {
         /// <summary>
-        ///     Result of this report
+        ///     List of ACL bindings in this result
         /// </summary>
-        public DescribeAclsResult Result { get; set; }
+        public List<AclBinding> AclBindings { get; set; }
 
         /// <summary>
         ///     Operation error status, null if successful.
@@ -54,7 +54,8 @@ namespace Confluent.Kafka.Admin
             var report = (DescribeAclsReport) obj;
             if (base.Equals(report)) return true;
             return Error == report.Error &&
-                Result == report.Result;
+                (AclBindings == null ? report.AclBindings == null :
+                new HashSet<AclBinding>(AclBindings).SetEquals(new HashSet<AclBinding>(report.AclBindings)));
         }
 
         /// <summary>
@@ -104,7 +105,13 @@ namespace Confluent.Kafka.Admin
         {
             int hash = 1;
             if (Error != null) hash ^= Error.GetHashCode();
-            if (Result != null) hash ^= Result.GetHashCode();
+            if (AclBindings != null)
+            {
+                foreach(AclBinding aclBinding in AclBindings)
+                {
+                    hash ^= aclBinding.GetHashCode();
+                }
+            }
             return hash;
         }
     }

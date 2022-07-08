@@ -171,10 +171,7 @@ namespace Confluent.Kafka
             return new DescribeAclsReport
             {
                 Error = new Error(errCode, errString, false),
-                Result = new DescribeAclsResult
-                {
-                    AclBindings = extractAclBindings(resultAcls, (int) resultAclCntPtr)
-                }
+                AclBindings = extractAclBindings(resultAcls, (int) resultAclCntPtr)
             };
         }
 
@@ -191,10 +188,7 @@ namespace Confluent.Kafka
                 return new DeleteAclsReport 
                 {
                     Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr), false),
-                    Result = new DeleteAclsResult
-                    {
-                        AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
-                    }
+                    AclBindings = extractAclBindings(matchingAcls, (int) resultResponseAclCntPtr)
                 };
             }).ToList();
         }
@@ -458,8 +452,12 @@ namespace Confluent.Kafka
                                             }
                                             else
                                             {
+                                                var result = new DescribeAclsResult
+                                                {
+                                                    AclBindings = report.AclBindings
+                                                };
                                                 Task.Run(() => 
-                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetResult(report.Result));
+                                                    ((TaskCompletionSource<DescribeAclsResult>)adminClientResult).TrySetResult(result));
                                             }
                                         }
                                         break; 
@@ -483,7 +481,10 @@ namespace Confluent.Kafka
                                             }
                                             else
                                             {
-                                                var results = reports.Select(result => result.Result).ToList();
+                                                var results = reports.Select(report => new DeleteAclsResult
+                                                    {
+                                                        AclBindings = report.AclBindings
+                                                    }).ToList();
                                                 Task.Run(() => 
                                                     ((TaskCompletionSource<List<DeleteAclsResult>>)adminClientResult).TrySetResult(results));
                                             }

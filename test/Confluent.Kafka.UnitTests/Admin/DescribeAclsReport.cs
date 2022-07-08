@@ -68,42 +68,33 @@ namespace Confluent.Kafka.UnitTests
             var rep4 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", false),
-                Result = new DescribeAclsResult
+                AclBindings = new List<AclBinding>
                 {
-                    AclBindings = new List<AclBinding>
-                    {
-                        acl1,
-                        acl2
-                    }
+                    acl1,
+                    acl2
                 }
             };
             var rep5 = new DescribeAclsReport
             {
                 Error = rep4.Error,
-                Result = rep4.Result
+                AclBindings = rep4.AclBindings
             };
             var rep6 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Other message", false),
-                Result = new DescribeAclsResult
+                AclBindings = new List<AclBinding>
                 {
-                    AclBindings = new List<AclBinding>
-                    {
-                        acl1.Clone(),
-                        acl2.Clone()
-                    }
+                    acl1.Clone(),
+                    acl2.Clone()
                 }
             };
             var rep7 = new DescribeAclsReport
             {
                 Error = new Error(ErrorCode.NoError, "Success", true),
-                Result = new DescribeAclsResult
+                AclBindings = new List<AclBinding>
                 {
-                    AclBindings = new List<AclBinding>
-                    {
-                        acl1.Clone(),
-                        acl2.Clone()
-                    }
+                    acl1.Clone(),
+                    acl2.Clone()
                 }
             };
 

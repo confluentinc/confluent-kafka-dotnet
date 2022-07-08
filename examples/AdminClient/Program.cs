@@ -103,11 +103,8 @@ namespace Confluent.Kafka.Examples
         static List<AclBinding> ParseAclBindings(string[] args, bool many)
         {
             var numCommandArgs = args.Length;
-            if (
-                many ?
-                (numCommandArgs == 0 || numCommandArgs % 7 != 0) :
-                numCommandArgs != 7
-            )
+            if (many ? (numCommandArgs == 0 || numCommandArgs % 7 != 0)
+                    : numCommandArgs != 7)
             {
                 throw new ArgumentException("wrong number of arguments");
             }
@@ -282,7 +279,7 @@ namespace Confluent.Kafka.Examples
                         if (!report.Error.IsError)
                         {
                             Console.WriteLine($"Deleted ACLs in operation {i}");
-                            PrintAclBindings(report.Result.AclBindings);
+                            PrintAclBindings(report.AclBindings);
                         }
                         else
                         {
