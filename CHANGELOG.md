@@ -11,6 +11,7 @@
 - The AdminClient poll loop no longer terminates when a request results in an error ([emasab](https://github.com/emasab)).
 
 
+
 # 1.9.0
 
 ## Enhancements
