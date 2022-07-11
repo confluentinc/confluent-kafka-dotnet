@@ -167,7 +167,7 @@ namespace Confluent.Kafka
             var errCode = Librdkafka.event_error(resultPtr);
             var errString = Librdkafka.event_error_string(resultPtr);
             var resultAcls = Librdkafka.DescribeAcls_result_acls(resultPtr,
-                                                                out UIntPtr resultAclCntPtr);
+                                    out UIntPtr resultAclCntPtr);
             return new DescribeAclsReport
             {
                 Error = new Error(errCode, errString, false),
@@ -183,8 +183,8 @@ namespace Confluent.Kafka
             Marshal.Copy(resultResponsesPtr, resultResponsesPtrArr, 0, (int)resultResponsesCntPtr);
 
             return resultResponsesPtrArr.Select(resultResponsePtr => {
-                var matchingAcls = Librdkafka.DeleteAcls_result_response_matching_acls(resultResponsePtr,
-                                                                                       out UIntPtr resultResponseAclCntPtr);
+                var matchingAcls = Librdkafka.DeleteAcls_result_response_matching_acls(
+                                        resultResponsePtr, out UIntPtr resultResponseAclCntPtr);
                 return new DeleteAclsReport 
                 {
                     Error = new Error(Librdkafka.DeleteAcls_result_response_error(resultResponsePtr), false),
