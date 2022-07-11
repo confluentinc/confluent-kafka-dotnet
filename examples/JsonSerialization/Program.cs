@@ -47,19 +47,18 @@ namespace Confluent.Kafka.Examples.JsonSerialization
     ///     integration of System.Text.Json and JSON Schema, so this
     ///     is not yet supported by the Confluent serializers.
     /// </remarks>
-    class Person
+    class User
     {
         [JsonRequired] // use Newtonsoft.Json annotations
-        [JsonProperty("firstName")]
-        public string FirstName { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
 
         [JsonRequired]
-        [JsonProperty("lastName")]
-        public string LastName { get; set; }
+        [JsonProperty("favorite_color")]
+        public string FavoriteColor { get; set; }
 
-        [Range(0, 150)] // or System.ComponentModel.DataAnnotations annotations
-        [JsonProperty("age")]
-        public int Age { get; set; }
+        [JsonProperty("favorite_number")]
+        public long FavoriteNumber { get; set; }
     }
 
     class Program
@@ -106,8 +105,9 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             var consumeTask = Task.Run(() =>
             {
                 using (var consumer =
-                    new ConsumerBuilder<Null, Person>(consumerConfig)
-                        .SetValueDeserializer(new JsonDeserializer<Person>().AsSyncOverAsync())
+                    new ConsumerBuilder<string, User>(consumerConfig)
+                        .SetKeyDeserializer(Deserializers.Utf8)
+                        .SetValueDeserializer(new JsonDeserializer<User>().AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
                 {
@@ -120,7 +120,8 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                             try
                             {
                                 var cr = consumer.Consume(cts.Token);
-                                Console.WriteLine($"Name: {cr.Message.Value.FirstName} {cr.Message.Value.LastName}, age: {cr.Message.Value.Age}");
+                                var user = cr.Message.Value;
+                                Console.WriteLine($"user name: {user.Name}, favorite number: {user.FavoriteNumber}, favorite color: {user.FavoriteColor}");
                             }
                             catch (ConsumeException e)
                             {
@@ -137,19 +138,19 @@ namespace Confluent.Kafka.Examples.JsonSerialization
 
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
-                new ProducerBuilder<Null, Person>(producerConfig)
-                    .SetValueSerializer(new JsonSerializer<Person>(schemaRegistry, jsonSerializerConfig))
+                new ProducerBuilder<string, User>(producerConfig)
+                    .SetValueSerializer(new JsonSerializer<User>(schemaRegistry, jsonSerializerConfig))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter first names, q to exit.");
 
-                int i = 0;
+                long i = 0;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    Person person = new Person { FirstName = text, LastName = "lastname", Age = i++ % 150 };
+                    User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = ++i };
                     await producer
-                        .ProduceAsync(topicName, new Message<Null, Person> { Value = person })
+                        .ProduceAsync(topicName, new Message<string, User> { Value = user })
                         .ContinueWith(task => task.IsFaulted
                             ? $"error producing message: {task.Exception.Message}"
                             : $"produced to: {task.Result.TopicPartitionOffset}");

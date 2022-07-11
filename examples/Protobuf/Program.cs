@@ -81,7 +81,8 @@ namespace Confluent.Kafka.Examples.Protobuf
                             try
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
-                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Message.Value.FavoriteColor}");
+                                var user = consumeResult.Message.Value;
+                                Console.WriteLine($"key: {consumeResult.Message.Key} user name: {user.Name}, favorite number: {user.FavoriteNumber}, favorite color: {user.FavoriteColor}");
                             }
                             catch (ConsumeException e)
                             {
@@ -104,11 +105,11 @@ namespace Confluent.Kafka.Examples.Protobuf
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                int i = 0;
+                long i = 0;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { Name = text, FavoriteColor = "green", FavoriteNumber = i++ };
+                    User user = new User { Name = text, FavoriteColor = "green", FavoriteNumber = ++i };
                     await producer
                         .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
                         .ContinueWith(task => task.IsFaulted

@@ -44,5 +44,8 @@ namespace Confluent.Kafka
                     return Encoding.GetEncoding(encodingName);
             }
         }
+
+        internal static string Quote(this string str) =>
+                str == null ? "null" : $"\"{str.Replace("\"","\\\"")}\"";
     }
 }

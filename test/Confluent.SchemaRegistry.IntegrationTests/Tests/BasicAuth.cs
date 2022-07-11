@@ -136,7 +136,10 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             });
 
             // connect to authenticating without credentials. shouldn't work.
-            Assert.Throws<HttpRequestException>(() => 
+            // SR <= 5.3.4 returns Unauthorized with empty Content (HttpRequestException)
+            // 5.3.4 < SR <= 5.3.8 returns Unauthorized with message but without error_code (SchemaRegistryException)
+            // SR >= 5.40 returns Unauthorized with message and error_code (SchemaRegistryException)
+            var schemaRegistryException = Assert.Throws<SchemaRegistryException>(() => 
             { 
                 var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.ServerWithAuth });
                 var topicName = Guid.NewGuid().ToString();
@@ -150,7 +153,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
                     throw e.InnerException;
                 }
             });
-
+            Assert.Equal(401, schemaRegistryException.ErrorCode);
+            Assert.Equal("Unauthorized; error code: 401", schemaRegistryException.Message);
         }
     }
 }

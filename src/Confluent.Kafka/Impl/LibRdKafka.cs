@@ -58,7 +58,10 @@ namespace Confluent.Kafka.Impl
             DeleteTopics = 2,
             CreatePartitions=  3,
             AlterConfigs = 4,
-            DescribeConfigs = 5
+            DescribeConfigs = 5,
+            CreateAcls = 9,
+            DescribeAcls = 10,
+            DeleteAcls = 11,
         }
 
         public enum EventType : int
@@ -79,6 +82,9 @@ namespace Confluent.Kafka.Impl
             DeleteRecords_Result = 105,
             DeleteGroups_Result = 106,
             DeleteConsumerGroupOffsets_Result = 107,
+            CreateAcls_Result = 0x400,
+            DescribeAcls_Result = 0x800,
+            DeleteAcls_Result = 0x1000,
         }
 
         // Minimum librdkafka version.
@@ -315,6 +321,26 @@ namespace Confluent.Kafka.Impl
 
             _DescribeConfigs = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DescribeConfigs").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DescribeConfigs_result_resources = (_DescribeConfigs_result_resources_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeConfigs_result_resources").CreateDelegate(typeof(_DescribeConfigs_result_resources_delegate));
+
+            _AclBinding_new = (_AclBinding_new_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_new").CreateDelegate(typeof(_AclBinding_new_delegate));
+            _AclBindingFilter_new = (_AclBindingFilter_new_delegate)methods.Single(m => m.Name == "rd_kafka_AclBindingFilter_new").CreateDelegate(typeof(_AclBindingFilter_new_delegate));
+            _AclBinding_destroy = (_AclBinding_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_destroy").CreateDelegate(typeof(_AclBinding_destroy_delegate));
+            _AclBinding_restype = (_AclBinding_restype_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_restype").CreateDelegate(typeof(_AclBinding_restype_delegate));
+            _AclBinding_name = (_AclBinding_name_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_name").CreateDelegate(typeof(_AclBinding_name_delegate));
+            _AclBinding_resource_pattern_type = (_AclBinding_resource_pattern_type_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_resource_pattern_type").CreateDelegate(typeof(_AclBinding_resource_pattern_type_delegate));
+            _AclBinding_principal = (_AclBinding_principal_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_principal").CreateDelegate(typeof(_AclBinding_principal_delegate));
+            _AclBinding_host = (_AclBinding_host_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_host").CreateDelegate(typeof(_AclBinding_host_delegate));
+            _AclBinding_operation = (_AclBinding_operation_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_operation").CreateDelegate(typeof(_AclBinding_operation_delegate));
+            _AclBinding_permission_type = (_AclBinding_permission_type_delegate)methods.Single(m => m.Name == "rd_kafka_AclBinding_permission_type").CreateDelegate(typeof(_AclBinding_permission_type_delegate));
+            _CreateAcls = (_CreateAcls_delegate)methods.Single(m => m.Name == "rd_kafka_CreateAcls").CreateDelegate(typeof(_CreateAcls_delegate));
+            _CreateAcls_result_acls = (_CreateAcls_result_acls_delegate)methods.Single(m => m.Name == "rd_kafka_CreateAcls_result_acls").CreateDelegate(typeof(_CreateAcls_result_acls_delegate));
+            _acl_result_error = (_acl_result_error_delegate)methods.Single(m => m.Name == "rd_kafka_acl_result_error").CreateDelegate(typeof(_acl_result_error_delegate));
+            _DescribeAcls = (_DescribeAcls_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeAcls").CreateDelegate(typeof(_DescribeAcls_delegate));
+            _DescribeAcls_result_acls = (_DescribeAcls_result_acls_delegate)methods.Single(m => m.Name == "rd_kafka_DescribeAcls_result_acls").CreateDelegate(typeof(_DescribeAcls_result_acls_delegate));
+            _DeleteAcls = (_DeleteAcls_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls").CreateDelegate(typeof(_DeleteAcls_delegate));
+            _DeleteAcls_result_responses = (_DeleteAcls_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_responses").CreateDelegate(typeof(_DeleteAcls_result_responses_delegate));
+            _DeleteAcls_result_response_error = (_DeleteAcls_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_response_error").CreateDelegate(typeof(_DeleteAcls_result_response_error_delegate));
+            _DeleteAcls_result_response_matching_acls = (_DeleteAcls_result_response_matching_acls_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_response_matching_acls").CreateDelegate(typeof(_DeleteAcls_result_response_matching_acls_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1356,6 +1382,154 @@ namespace Confluent.Kafka.Impl
             IntPtr result
         ) => _DeleteRecords_result_offsets(result);
 
+        //
+        // ACLs
+        //
+        private delegate IntPtr _AclBinding_new_delegate(ResourceType restype, string name, ResourcePatternType resource_pattern_type, string principal, string host, AclOperation operation, AclPermissionType permission_type, StringBuilder errstr, UIntPtr errstr_size);
+        private static  _AclBinding_new_delegate _AclBinding_new;
+        internal static IntPtr AclBinding_new(
+            ResourceType restype,
+            string name,
+            ResourcePatternType resource_pattern_type,
+            string principal,
+            string host,
+            AclOperation operation,
+            AclPermissionType permission_type,
+            StringBuilder errstr,
+            UIntPtr errstr_size
+        ) => _AclBinding_new(restype, name, resource_pattern_type, principal, host, operation, permission_type, errstr, errstr_size);
+
+        private delegate IntPtr _AclBindingFilter_new_delegate(ResourceType restype, string name, ResourcePatternType resource_pattern_type, string principal, string host, AclOperation operation, AclPermissionType permission_type, StringBuilder errstr, UIntPtr errstr_size);
+        private static  _AclBindingFilter_new_delegate _AclBindingFilter_new;
+        internal static IntPtr AclBindingFilter_new(
+            ResourceType restype,
+            string name,
+            ResourcePatternType resource_pattern_type,
+            string principal,
+            string host,
+            AclOperation operation,
+            AclPermissionType permission_type,
+            StringBuilder errstr,
+            UIntPtr errstr_size
+        ) => _AclBindingFilter_new(restype, name, resource_pattern_type, principal, host, operation, permission_type, errstr, errstr_size);
+
+
+        private delegate void _AclBinding_destroy_delegate(IntPtr acl_binding);
+        private static _AclBinding_destroy_delegate _AclBinding_destroy;
+        internal static void AclBinding_destroy(
+                IntPtr acl_binding) => _AclBinding_destroy(acl_binding);
+
+        private delegate ResourceType _AclBinding_restype_delegate(IntPtr acl_binding);
+        private static _AclBinding_restype_delegate _AclBinding_restype;
+        internal static ResourceType AclBinding_restype(
+            IntPtr acl_binding
+        ) => _AclBinding_restype(acl_binding);
+        
+        private delegate IntPtr _AclBinding_name_delegate(IntPtr acl_binding);
+        private static _AclBinding_name_delegate _AclBinding_name;
+        internal static IntPtr AclBinding_name(
+            IntPtr acl_binding
+        ) => _AclBinding_name(acl_binding);
+        
+        private delegate ResourcePatternType _AclBinding_resource_pattern_type_delegate(IntPtr acl_binding);
+        private static _AclBinding_resource_pattern_type_delegate _AclBinding_resource_pattern_type;
+        internal static ResourcePatternType AclBinding_resource_pattern_type(
+            IntPtr acl_binding
+        ) => _AclBinding_resource_pattern_type(acl_binding);
+        
+        private delegate IntPtr _AclBinding_principal_delegate(IntPtr acl_binding);
+        private static _AclBinding_principal_delegate _AclBinding_principal;
+        internal static IntPtr AclBinding_principal(
+            IntPtr acl_binding
+        ) => _AclBinding_principal(acl_binding);
+        
+        private delegate IntPtr _AclBinding_host_delegate(IntPtr acl_binding);
+        private static _AclBinding_host_delegate _AclBinding_host;
+        internal static IntPtr AclBinding_host(
+            IntPtr acl_binding
+        ) => _AclBinding_host(acl_binding);
+        
+        private delegate AclOperation _AclBinding_operation_delegate(IntPtr acl_binding);
+        private static _AclBinding_operation_delegate _AclBinding_operation;
+        internal static AclOperation AclBinding_operation(
+            IntPtr acl_binding
+        ) => _AclBinding_operation(acl_binding);
+
+        private delegate AclPermissionType _AclBinding_permission_type_delegate(IntPtr acl_binding);
+        private static _AclBinding_permission_type_delegate _AclBinding_permission_type;
+        internal static AclPermissionType AclBinding_permission_type(
+            IntPtr acl_binding
+        ) => _AclBinding_permission_type(acl_binding);
+
+        private delegate void _CreateAcls_delegate(IntPtr handle, IntPtr[] aclBindingsPtrs, UIntPtr aclBindingsPtrsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _CreateAcls_delegate _CreateAcls;
+        internal static void CreateAcls(
+            IntPtr handle,
+            IntPtr[] aclBindingsPtrs,
+            UIntPtr aclBindingsPtrsSize,
+            IntPtr optionsPtr,
+            IntPtr resultQueuePtr
+        ) => _CreateAcls(handle, aclBindingsPtrs, aclBindingsPtrsSize, optionsPtr, resultQueuePtr);
+
+
+        private delegate IntPtr _CreateAcls_result_acls_delegate(IntPtr result, out UIntPtr cntp);
+        private static _CreateAcls_result_acls_delegate _CreateAcls_result_acls;
+        internal static IntPtr CreateAcls_result_acls(
+            IntPtr result,
+            out UIntPtr cntp
+        ) => _CreateAcls_result_acls(result, out cntp);
+
+        private delegate IntPtr _acl_result_error_delegate(IntPtr aclres);
+        private static _acl_result_error_delegate _acl_result_error;
+        internal static IntPtr acl_result_error(
+            IntPtr aclres
+        ) => _acl_result_error(aclres);
+
+        private delegate void _DescribeAcls_delegate(IntPtr handle, IntPtr aclBindingFilterPtr, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _DescribeAcls_delegate _DescribeAcls;
+        internal static void DescribeAcls(
+            IntPtr handle,
+            IntPtr aclBindingFilterPtr,
+            IntPtr optionsPtr,
+            IntPtr resultQueuePtr
+        ) => _DescribeAcls(handle, aclBindingFilterPtr, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _DescribeAcls_result_acls_delegate(IntPtr result, out UIntPtr cntp);
+        private static _DescribeAcls_result_acls_delegate _DescribeAcls_result_acls;
+        internal static IntPtr DescribeAcls_result_acls(
+            IntPtr result,
+            out UIntPtr cntp
+        ) => _DescribeAcls_result_acls(result, out cntp);
+
+        private delegate void _DeleteAcls_delegate(IntPtr handle, IntPtr[] aclBindingFilterPtrs, UIntPtr aclBindingFilterPtrsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _DeleteAcls_delegate _DeleteAcls;
+        internal static void DeleteAcls(
+            IntPtr handle,
+            IntPtr[] aclBindingFilterPtrs,
+            UIntPtr aclBindingFilterPtrsSize,
+            IntPtr optionsPtr,
+            IntPtr resultQueuePtr
+        ) => _DeleteAcls(handle, aclBindingFilterPtrs, aclBindingFilterPtrsSize, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _DeleteAcls_result_response_error_delegate(IntPtr resultResponse);
+        private static _DeleteAcls_result_response_error_delegate _DeleteAcls_result_response_error;
+        internal static IntPtr DeleteAcls_result_response_error(
+            IntPtr resultResponse
+        ) => _DeleteAcls_result_response_error(resultResponse);
+
+        private delegate IntPtr _DeleteAcls_result_responses_delegate(IntPtr result, out UIntPtr cntp);
+        private static _DeleteAcls_result_responses_delegate _DeleteAcls_result_responses;
+        internal static IntPtr DeleteAcls_result_responses(
+            IntPtr result,
+            out UIntPtr cntp
+        ) => _DeleteAcls_result_responses(result, out cntp);
+
+        private delegate IntPtr _DeleteAcls_result_response_matching_acls_delegate(IntPtr resultResponse, out UIntPtr matchingAclsCntp);
+        private static _DeleteAcls_result_response_matching_acls_delegate _DeleteAcls_result_response_matching_acls;
+        internal static IntPtr DeleteAcls_result_response_matching_acls(
+            IntPtr resultResponse,
+            out UIntPtr matchingAclsCntp
+        ) => _DeleteAcls_result_response_matching_acls(resultResponse, out matchingAclsCntp);
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);

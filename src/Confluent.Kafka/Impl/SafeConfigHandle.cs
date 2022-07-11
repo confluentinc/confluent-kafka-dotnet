@@ -86,7 +86,7 @@ namespace Confluent.Kafka.Impl
                 }
 
                 var dict = new Dictionary<string, string>();
-                for (int i = 0; i < (int) cntp / 2; i++)
+                for (int i = 0; i < (int) cntp / 2; ++i)
                 {
                     dict.Add(Util.Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(data, 2 * i * Util.Marshal.SizeOf<IntPtr>())),
                              Util.Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(data, (2 * i + 1) * Util.Marshal.SizeOf<IntPtr>())));

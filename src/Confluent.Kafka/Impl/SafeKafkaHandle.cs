@@ -24,6 +24,7 @@ using System.Text;
 using Confluent.Kafka.Admin;
 using Confluent.Kafka.Internal;
 
+
 namespace Confluent.Kafka.Impl
 {
     enum RdKafkaType
@@ -1684,6 +1685,198 @@ namespace Confluent.Kafka.Impl
             }
 
             Librdkafka.AdminOptions_destroy(optionsPtr);
+        }
+
+        private static void Validate(AclBinding aclBinding)
+        {
+            if (aclBinding.Pattern == null) throw new ArgumentNullException("Pattern cannot be null");
+            if (aclBinding.Entry == null) throw new ArgumentNullException("Entry cannot be null");
+        }
+
+        private static void Validate(AclBindingFilter aclBindingFilter)
+        {
+            if (aclBindingFilter.PatternFilter == null) throw new ArgumentNullException("PatternFilter cannot be null");
+            if (aclBindingFilter.EntryFilter == null) throw new ArgumentNullException("EntryFilter cannot be null");
+        }
+
+        internal void CreateAcls(
+            IEnumerable<AclBinding> aclBindings,
+            CreateAclsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            if (aclBindings == null)
+            {
+                throw new ArgumentNullException("Expected non-null aclBindings argument");
+            }
+            if (aclBindings.Count() == 0)
+            {
+                throw new ArgumentException("Expected non-empty IEnumerable of AclBinding");
+            }
+            foreach (var aclBinding in aclBindings)
+            {
+                Validate(aclBinding);
+            }
+
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+
+            options = options ?? new CreateAclsOptions();
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.CreateAcls);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            IntPtr[] newAclsPtrs = new IntPtr[aclBindings.Count()];
+            try 
+            {
+                int idx = 0;
+                foreach (var aclBinding in aclBindings)
+                {
+                    IntPtr newAclPtr = Librdkafka.AclBinding_new(
+                        aclBinding.Pattern.Type,
+                        aclBinding.Pattern.Name,
+                        aclBinding.Pattern.ResourcePatternType,
+                        aclBinding.Entry.Principal,
+                        aclBinding.Entry.Host,
+                        aclBinding.Entry.Operation,
+                        aclBinding.Entry.PermissionType,
+                        errorStringBuilder,
+                        (UIntPtr)errorStringBuilder.Capacity
+                    );
+                    if (newAclPtr == IntPtr.Zero)
+                    {
+                        throw new KafkaException(new Error(ErrorCode.Unknown, errorStringBuilder.ToString()));
+                    }
+
+                    newAclsPtrs[idx] = newAclPtr;
+                    idx++;
+                }
+                Librdkafka.CreateAcls(handle, newAclsPtrs, (UIntPtr)newAclsPtrs.Length, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                foreach (var newAclPtr in newAclsPtrs)
+                {
+                     if (newAclPtr != IntPtr.Zero)
+                     {
+                         Librdkafka.AclBinding_destroy(newAclPtr);
+                     }
+                }
+                Librdkafka.AdminOptions_destroy(optionsPtr);
+            }
+        }
+
+        internal void DescribeAcls(
+            AclBindingFilter aclBindingFilter,
+            DescribeAclsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            if (aclBindingFilter == null)
+            {
+                throw new ArgumentNullException("Expected non-null AclBindingFilter");
+            }
+            Validate(aclBindingFilter);
+
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+
+            options = options ?? new DescribeAclsOptions();
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DescribeAcls);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            IntPtr aclBindingFilterPtr = IntPtr.Zero;
+            try
+            {
+                aclBindingFilterPtr = Librdkafka.AclBindingFilter_new(
+                    aclBindingFilter.PatternFilter.Type,
+                    aclBindingFilter.PatternFilter.Name,
+                    aclBindingFilter.PatternFilter.ResourcePatternType,
+                    aclBindingFilter.EntryFilter.Principal,
+                    aclBindingFilter.EntryFilter.Host,
+                    aclBindingFilter.EntryFilter.Operation,
+                    aclBindingFilter.EntryFilter.PermissionType,
+                    errorStringBuilder,
+                    (UIntPtr)errorStringBuilder.Capacity
+                );
+                if (aclBindingFilterPtr == IntPtr.Zero)
+                {
+                    throw new KafkaException(new Error(ErrorCode.Unknown, errorStringBuilder.ToString()));
+                }
+                Librdkafka.DescribeAcls(handle, aclBindingFilterPtr, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                if (aclBindingFilterPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AclBinding_destroy(aclBindingFilterPtr);
+                }
+                Librdkafka.AdminOptions_destroy(optionsPtr);
+            }
+        }
+
+        internal void DeleteAcls(
+            IEnumerable<AclBindingFilter> aclBindingFilters,
+            DeleteAclsOptions options,
+            IntPtr resultQueuePtr,
+            IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+            if (aclBindingFilters.Count() == 0)
+            {
+                throw new ArgumentException("Expected non-empty IEnumerable of AclBindingFilter");
+            }
+            foreach (var aclBindingFilter in aclBindingFilters)
+            {
+                Validate(aclBindingFilter);
+            }
+
+            var errorStringBuilder = new StringBuilder(Librdkafka.MaxErrorStringLength);
+
+            options = options ?? new DeleteAclsOptions();
+            IntPtr optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteAcls);
+            setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+            setOption_completionSource(optionsPtr, completionSourcePtr);
+
+            IntPtr[] aclBindingFilterPtrs = new IntPtr[aclBindingFilters.Count()];
+            try 
+            {
+                int idx = 0;
+                foreach (var aclBindingFilter in aclBindingFilters)
+                {
+                    IntPtr aclBindingFilterPtr = Librdkafka.AclBindingFilter_new(
+                        aclBindingFilter.PatternFilter.Type,
+                        aclBindingFilter.PatternFilter.Name,
+                        aclBindingFilter.PatternFilter.ResourcePatternType,
+                        aclBindingFilter.EntryFilter.Principal,
+                        aclBindingFilter.EntryFilter.Host,
+                        aclBindingFilter.EntryFilter.Operation,
+                        aclBindingFilter.EntryFilter.PermissionType,
+                        errorStringBuilder,
+                        (UIntPtr)errorStringBuilder.Capacity
+                    );
+                    if (aclBindingFilterPtr == IntPtr.Zero)
+                    {
+                        throw new KafkaException(new Error(ErrorCode.Unknown, errorStringBuilder.ToString()));
+                    }
+
+                    aclBindingFilterPtrs[idx] = aclBindingFilterPtr;
+                    idx++;
+                }
+                Librdkafka.DeleteAcls(handle, aclBindingFilterPtrs, (UIntPtr)aclBindingFilterPtrs.Length, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                foreach (var aclBindingFiltersPtr in aclBindingFilterPtrs)
+                {
+                     if (aclBindingFiltersPtr != IntPtr.Zero)
+                     {
+                         Librdkafka.AclBinding_destroy(aclBindingFiltersPtr);
+                     }
+                }
+                Librdkafka.AdminOptions_destroy(optionsPtr);
+            }
         }
 
         internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)
