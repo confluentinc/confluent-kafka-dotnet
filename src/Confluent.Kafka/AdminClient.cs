@@ -138,7 +138,7 @@ namespace Confluent.Kafka
 
         private List<AclBinding> extractAclBindings(IntPtr aclBindingsPtr, int aclBindingsCnt)
         {
-            if (aclBindingsCnt == 0) return new List<AclBinding> {};
+            if (aclBindingsCnt == 0) { return new List<AclBinding> {}; }
             IntPtr[] aclBindingsPtrArr = new IntPtr[aclBindingsCnt];
             Marshal.Copy(aclBindingsPtr, aclBindingsPtrArr, 0, aclBindingsCnt);
 

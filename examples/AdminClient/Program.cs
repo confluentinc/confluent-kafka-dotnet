@@ -104,7 +104,7 @@ namespace Confluent.Kafka.Examples
         {
             var numCommandArgs = args.Length;
             if (many ? (numCommandArgs == 0 || numCommandArgs % 7 != 0)
-                    : numCommandArgs != 7)
+                     : numCommandArgs != 7)
             {
                 throw new ArgumentException("wrong number of arguments");
             }
@@ -121,9 +121,9 @@ namespace Confluent.Kafka.Examples
                 var operation = Enum.Parse<AclOperation>(args[baseArg + 5]);
                 var permissionType = Enum.Parse<AclPermissionType>(args[baseArg + 6]);
 
-                if (name == "") name = null;
-                if (principal == "") principal = null;
-                if (host == "") host = null;
+                if (name == "") { name = null; }
+                if (principal == "") { principal = null; }
+                if (host == "") { host = null; }
 
                 aclBindings.Add(new AclBinding()
                 {

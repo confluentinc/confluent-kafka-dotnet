@@ -81,7 +81,7 @@ namespace Confluent.Kafka
             TxnRequiresAbort = Librdkafka.error_txn_requires_abort(error);
             IsRetriable = Librdkafka.error_is_retriable(error);
             reason = Librdkafka.error_string(error);
-            if (destroy) Librdkafka.error_destroy(error);
+            if (destroy) { Librdkafka.error_destroy(error); }
         }
 
         /// <summary>
