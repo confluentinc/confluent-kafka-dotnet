@@ -17,7 +17,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - 29092:29092
+      - 9092:29092
     environment:
       KAFKA_BROKER_ID: 0
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT, PLAINTEXT_HOST:PLAINTEXT
