@@ -226,8 +226,8 @@ namespace Confluent.Kafka
         /// </param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown if <paramref name="aclBindings"/> param is null
-        ///     or one the <see cref="Confluent.Kafka.Admin.AclBinding.Entry"/> is null or
-        ///     one <see cref="Confluent.Kafka.Admin.AclBinding.Pattern"/> is null.
+        ///     or a <see cref="Confluent.Kafka.Admin.AclBinding.Entry"/> is null or
+        ///     a <see cref="Confluent.Kafka.Admin.AclBinding.Pattern"/> is null.
         /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown if the <paramref name="aclBindings"/> param is empty.
