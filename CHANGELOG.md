@@ -1,3 +1,18 @@
+# 1.9.1-RC1
+
+## Enhancements
+
+- References librdkafka.redist 1.9.1 which includes an Apple M1 librdkafka build.
+- Added ACL AdminClient operations (CreateAcls, DescribeAcls, DeleteAcls) ([emasab](https://github.com/emasab)).
+- Enhanced the Avro Specific Deserializer to ignore the type namespace ([sergemat](https://github.com/sergemat)).
+
+
+## Fixes
+
+- The AdminClient poll loop no longer terminates when a request results in an error ([emasab](https://github.com/emasab)).
+
+
+
 # 1.9.0
 
 ## Enhancements
