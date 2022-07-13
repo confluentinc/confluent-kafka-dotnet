@@ -88,8 +88,6 @@ namespace Confluent.Kafka.IntegrationTests
             consumer.Commit(cr);
 
             consumer.Close();
-
-            Thread.Sleep(TimeSpan.FromSeconds(1));
         }
     }
 }
