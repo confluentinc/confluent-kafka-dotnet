@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using Xunit;
 
+
 namespace Confluent.Kafka.IntegrationTests
 {
     public partial class Tests 

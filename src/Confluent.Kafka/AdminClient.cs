@@ -133,7 +133,7 @@ namespace Confluent.Kafka
             return groupResultsPtrArr.Select(groupResultPtr => new DeleteGroupReport
             {
                 Group = PtrToStringUTF8(Librdkafka.group_result_name(groupResultPtr)),
-                Error = new Error(Librdkafka.group_result_error(groupResultPtr))
+                Error = new Error(Librdkafka.group_result_error(groupResultPtr), false)
             }).ToList();
         }
 
@@ -317,7 +317,6 @@ namespace Confluent.Kafka
                                             
                                             if(result.Any(r => r.Error.IsError))
                                             {
-                                                eventPtr = IntPtr.Zero;
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteGroupReport>>)adminClientResult).TrySetException(
                                                         new DeleteGroupsException(result)));
