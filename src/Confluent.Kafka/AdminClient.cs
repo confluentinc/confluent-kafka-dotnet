@@ -853,7 +853,6 @@ namespace Confluent.Kafka
             }
         }
 
-
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.CreateAclsAsync(IEnumerable{AclBinding}, CreateAclsOptions)" />
         /// </summary>
@@ -866,7 +865,6 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
-        
 
         /// <summary>
         ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeAclsAsync(AclBindingFilter, DescribeAclsOptions)" />
