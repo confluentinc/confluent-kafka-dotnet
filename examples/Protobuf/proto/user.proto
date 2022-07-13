@@ -1,9 +1,7 @@
 syntax = "proto3";
 
-package confluent.kafka.examples.protobuf;
-
 message User {
     string Name = 1;
-    int32 FavoriteNumber = 2;
+    int64 FavoriteNumber = 2;
     string FavoriteColor = 3;
 }

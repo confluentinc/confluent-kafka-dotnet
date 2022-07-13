@@ -4,7 +4,7 @@
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TestProjectType>UnitTest</TestProjectType>
     <AssemblyName>Confluent.Kafka.UnitTests</AssemblyName>
-    <TargetFrameworks>net5.0;net462</TargetFrameworks>
+    <TargetFrameworks>net6.0;net462</TargetFrameworks>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>Confluent.Kafka.UnitTests.snk</AssemblyOriginatorKeyFile>
@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <!-- Needed for testing net462 on Linux -->
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <PackageReference Include="Moq" Version="4.8.2" />

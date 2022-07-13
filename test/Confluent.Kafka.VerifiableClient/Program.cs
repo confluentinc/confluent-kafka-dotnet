@@ -220,7 +220,7 @@ namespace Confluent.Kafka.VerifiableClient
                 {
                     return;
                 }
-                for (var i = 0; i < (int)msgsToSend && MsgCnt < Config.MaxMsgs; i++, MsgCnt++)
+                for (var i = 0; i < (int)msgsToSend && MsgCnt < Config.MaxMsgs; ++i, ++MsgCnt)
                 {
                     Produce(Config.Topic, $"{Config.ValuePrefix}{MsgCnt}");
                 }

@@ -70,7 +70,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
                 using (var consumer =
                     new ConsumerBuilder<string, User>(consumerConfig)
-                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                         .SetValueDeserializer(new AvroDeserializer<User>(schemaRegistry).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
@@ -84,7 +83,8 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                             try
                             {
                                 var consumeResult = consumer.Consume(cts.Token);
-                                Console.WriteLine($"user name: {consumeResult.Message.Key}, favorite color: {consumeResult.Message.Value.favorite_color}, hourly_rate: {consumeResult.Message.Value.hourly_rate}");
+                                var user = consumeResult.Message.Value;
+                                Console.WriteLine($"key: {consumeResult.Message.Key}, user name: {user.name}, favorite number: {user.favorite_number}, favorite color: {user.favorite_color}, hourly_rate: {user.hourly_rate}");
                             }
                             catch (ConsumeException e)
                             {
@@ -102,7 +102,6 @@ namespace Confluent.Kafka.Examples.AvroSpecific
             using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig))
             using (var producer =
                 new ProducerBuilder<string, User>(producerConfig)
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry, avroSerializerConfig))
                     .SetValueSerializer(new AvroSerializer<User>(schemaRegistry, avroSerializerConfig))
                     .Build())
             {
@@ -112,7 +111,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {
-                    User user = new User { name = text, favorite_color = "green", favorite_number = i++, hourly_rate = new Avro.AvroDecimal(67.99) };
+                    User user = new User { name = text, favorite_color = "green", favorite_number = ++i, hourly_rate = new Avro.AvroDecimal(67.99) };
                     producer
                         .ProduceAsync(topicName, new Message<string, User> { Key = text, Value = user })
                         .ContinueWith(task =>
@@ -120,6 +119,7 @@ namespace Confluent.Kafka.Examples.AvroSpecific
                                 if (!task.IsFaulted)
                                 {
                                     Console.WriteLine($"produced to: {task.Result.TopicPartitionOffset}");
+                                    return;
                                 }
 
                                 // Task.Exception is of type AggregateException. Use the InnerException property
