@@ -64,8 +64,7 @@ namespace Confluent.Kafka.Impl
             DeleteConsumerGroupOffsets = 8,
             CreateAcls = 9,
             DescribeAcls = 10,
-            DeleteAcls = 11,
-            Count = 12
+            DeleteAcls = 11
         }
 
         public enum EventType : int
