@@ -42,7 +42,7 @@ namespace Confluent.Kafka.IntegrationTests
                 // test single delete group
                 CreateConsumer(bootstrapServers, groupId, topic.Name);
 
-                admin.DeleteGroupAsync(new List<string> { groupId }, new DeleteGroupOptions()).Wait();
+                admin.DeleteGroupsAsync(new List<string> { groupId }, new DeleteGroupOptions()).Wait();
 
                 var groups = admin.ListGroups(TimeSpan.FromSeconds(5));
                 Assert.DoesNotContain(groups, (group) => group.Group == groupId);
@@ -53,7 +53,7 @@ namespace Confluent.Kafka.IntegrationTests
 
                 try
                 {
-                    admin.DeleteGroupAsync(new List<string> {groupId2, groupId3}, new DeleteGroupOptions()).Wait();
+                    admin.DeleteGroupsAsync(new List<string> {groupId2, groupId3}, new DeleteGroupOptions()).Wait();
                     Assert.True(false); // expecting exception.
                 }
                 catch (AggregateException ex)

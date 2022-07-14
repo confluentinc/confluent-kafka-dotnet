@@ -114,7 +114,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The results of the delete group requests.
         /// </returns>
-        Task DeleteGroupAsync(IList<string> groups, DeleteGroupOptions options = null);
+        Task DeleteGroupsAsync(IList<string> groups, DeleteGroupOptions options = null);
 
         /// <summary>
         ///     Delete a set of topics. This operation is not

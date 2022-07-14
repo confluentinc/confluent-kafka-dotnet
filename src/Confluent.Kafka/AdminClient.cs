@@ -123,7 +123,7 @@ namespace Confluent.Kafka
             return result;
         }
 
-        private static List<DeleteGroupReport> extractDeleteGroupReport(IntPtr eventPtr)
+        private static List<DeleteGroupReport> extractDeleteGroupsReport(IntPtr eventPtr)
         {
             IntPtr groupResultsPtr = Librdkafka.DeleteGroups_result_groups(eventPtr, out UIntPtr resultCountPtr);
             int groupResultsCount = (int)resultCountPtr;
@@ -313,7 +313,7 @@ namespace Confluent.Kafka
                                                 break;
                                             }
 
-                                            var result = extractDeleteGroupReport(eventPtr);
+                                            var result = extractDeleteGroupsReport(eventPtr);
                                             
                                             if(result.Any(r => r.Error.IsError))
                                             {
@@ -645,13 +645,13 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteGroupAsync(IList{string}, DeleteGroupOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteGroupsAsync(IList{string}, DeleteGroupOptions)" />
         /// </summary>
-        public Task DeleteGroupAsync(IList<string> groups, DeleteGroupOptions options = null)
+        public Task DeleteGroupsAsync(IList<string> groups, DeleteGroupOptions options = null)
         {
             var completionSource = new TaskCompletionSource<List<DeleteGroupReport>>();
             var gch = GCHandle.Alloc(completionSource);
-            Handle.LibrdkafkaHandle.DeleteGroup(
+            Handle.LibrdkafkaHandle.DeleteGroups(
                 groups, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
