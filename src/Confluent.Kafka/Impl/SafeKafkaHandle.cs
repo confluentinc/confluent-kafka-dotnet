@@ -1557,11 +1557,11 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void DeleteGroups(IList<string> deleteGroups, DeleteGroupOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        internal void DeleteGroups(IList<string> deleteGroups, DeleteGroupsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
 
-            options = options == null ? new DeleteGroupOptions() : options;
+            options = options == null ? new DeleteGroupsOptions() : options;
 
             IntPtr[] deleteGroupsPtrs = new IntPtr[deleteGroups.Count()];
             IntPtr optionsPtr = IntPtr.Zero;

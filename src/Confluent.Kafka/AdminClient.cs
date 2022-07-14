@@ -125,12 +125,12 @@ namespace Confluent.Kafka
 
         private static List<DeleteGroupReport> extractDeleteGroupsReport(IntPtr eventPtr)
         {
-            IntPtr groupResultsPtr = Librdkafka.DeleteGroups_result_groups(eventPtr, out UIntPtr resultCountPtr);
-            int groupResultsCount = (int)resultCountPtr;
-            IntPtr[] groupResultsPtrArr = new IntPtr[groupResultsCount];
-            Marshal.Copy(groupResultsPtr, groupResultsPtrArr, 0, groupResultsCount);
+            IntPtr groupsResultPtr = Librdkafka.DeleteGroups_result_groups(eventPtr, out UIntPtr resultCountPtr);
+            int groupsResultCount = (int)resultCountPtr;
+            IntPtr[] groupsResultPtrArr = new IntPtr[groupsResultCount];
+            Marshal.Copy(groupsResultPtr, groupsResultPtrArr, 0, groupsResultCount);
 
-            return groupResultsPtrArr.Select(groupResultPtr => new DeleteGroupReport
+            return groupsResultPtrArr.Select(groupResultPtr => new DeleteGroupReport
             {
                 Group = PtrToStringUTF8(Librdkafka.group_result_name(groupResultPtr)),
                 Error = new Error(Librdkafka.group_result_error(groupResultPtr), false)
@@ -645,9 +645,9 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteGroupsAsync(IList{string}, DeleteGroupOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteGroupsAsync(IList{string}, DeleteGroupsOptions)" />
         /// </summary>
-        public Task DeleteGroupsAsync(IList<string> groups, DeleteGroupOptions options = null)
+        public Task DeleteGroupsAsync(IList<string> groups, DeleteGroupsOptions options = null)
         {
             var completionSource = new TaskCompletionSource<List<DeleteGroupReport>>();
             var gch = GCHandle.Alloc(completionSource);

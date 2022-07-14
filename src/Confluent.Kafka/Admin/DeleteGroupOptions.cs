@@ -22,7 +22,7 @@ namespace Confluent.Kafka.Admin
     /// <summary>
     ///     Options for the DeleteGroups method.
     /// </summary>
-    public class DeleteGroupOptions
+    public class DeleteGroupsOptions
     {
         /// <summary>
         ///     The overall request timeout, including broker lookup, request 

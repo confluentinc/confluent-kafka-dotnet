@@ -103,7 +103,7 @@ namespace Confluent.Kafka
             IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null);
 
         /// <summary>
-        ///     Delete a set of consumer groups.
+        ///     Delete a set of groups.
         /// </summary>
         /// <param name="groups">
         ///     The group names to delete.
@@ -114,7 +114,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     The results of the delete group requests.
         /// </returns>
-        Task DeleteGroupsAsync(IList<string> groups, DeleteGroupOptions options = null);
+        Task DeleteGroupsAsync(IList<string> groups, DeleteGroupsOptions options = null);
 
         /// <summary>
         ///     Delete a set of topics. This operation is not
