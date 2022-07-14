@@ -1,15 +1,18 @@
-# 1.9.1-RC1
+# 1.9.1-RC2
 
 ## Enhancements
 
 - References librdkafka.redist 1.9.1 which includes an Apple M1 librdkafka build.
 - Added ACL AdminClient operations (CreateAcls, DescribeAcls, DeleteAcls) ([emasab](https://github.com/emasab)).
+- Added DeleteGroups to AdminClient ([3schwartz](https://github.com/3schwartz)).
 - Enhanced the Avro Specific Deserializer to ignore the type namespace ([sergemat](https://github.com/sergemat)).
+- Improved efficiency of the statistics handler ([VladimirTyrin](https://github.com/VladimirTyrin)).
 
 
 ## Fixes
 
 - The AdminClient poll loop no longer terminates when a request results in an error ([emasab](https://github.com/emasab)).
+- Upgraded Newtonsoft.Json to 13.0.1 to address a security vulnerability in 9.0.1.
 
 
 
