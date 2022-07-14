@@ -17,7 +17,7 @@
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of a request related to a group.
+    ///     The result of a DeleteGroup request.
     /// </summary>
     public class DeleteGroupReport
     {
