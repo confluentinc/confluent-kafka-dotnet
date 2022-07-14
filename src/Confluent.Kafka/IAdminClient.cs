@@ -102,6 +102,19 @@ namespace Confluent.Kafka
         Task CreatePartitionsAsync(
             IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null);
 
+        /// <summary>
+        ///     Delete a set of groups.
+        /// </summary>
+        /// <param name="groups">
+        ///     The group names to delete.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when deleting groups.
+        /// </param>
+        /// <returns>
+        ///     The results of the delete group requests.
+        /// </returns>
+        Task DeleteGroupsAsync(IList<string> groups, DeleteGroupsOptions options = null);
 
         /// <summary>
         ///     Delete a set of topics. This operation is not

@@ -576,6 +576,29 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_DeleteGroup_t * */ IntPtr rd_kafka_DeleteGroup_new(
+        [MarshalAs(UnmanagedType.LPStr)] string group);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteGroup_destroy(
+                /* rd_kafka_DeleteGroup_t * */ IntPtr del_group);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteGroups(
+                /* rd_kafka_t * */ IntPtr rk,
+                /* rd_kafka_DeleteGroup_t ** */ IntPtr[] del_groups,
+                UIntPtr del_group_cnt,
+                /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                /* rd_kafka_queue_t * */ IntPtr rkqu);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DeleteGroups_result_groups(
+                /* rd_kafka_DeleteGroups_result_t * */ IntPtr result,
+                /* size_t * */ out UIntPtr cntp
+        );
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern /* rd_kafka_DeleteRecords_t * */ IntPtr rd_kafka_DeleteRecords_new(
                 /* rd_kafka_topic_partition_list_t * */ IntPtr offsets
         );
@@ -864,6 +887,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_topic_result_name(IntPtr topicres);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_group_result_name(IntPtr groupres);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_group_result_error(IntPtr groupres);
 
 
         //

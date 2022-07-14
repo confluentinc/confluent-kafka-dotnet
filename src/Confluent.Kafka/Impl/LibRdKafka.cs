@@ -59,9 +59,12 @@ namespace Confluent.Kafka.Impl
             CreatePartitions=  3,
             AlterConfigs = 4,
             DescribeConfigs = 5,
+            DeleteRecords = 6,
+            DeleteGroups = 7,
+            DeleteConsumerGroupOffsets = 8,
             CreateAcls = 9,
             DescribeAcls = 10,
-            DeleteAcls = 11,
+            DeleteAcls = 11
         }
 
         public enum EventType : int
@@ -279,6 +282,12 @@ namespace Confluent.Kafka.Impl
             _DeleteTopics = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteTopics").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DeleteTopics_result_topics = (_DeleteTopics_result_topics_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteTopics_result_topics").CreateDelegate(typeof(_DeleteTopics_result_topics_delegate));
 
+            _DeleteGroup_new = (Func<string, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteGroup_new").CreateDelegate(typeof(Func<string, IntPtr>));
+            _DeleteGroup_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteGroup_destroy").CreateDelegate(typeof(Action<IntPtr>));
+
+            _DeleteGroups = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteGroups").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
+            _DeleteGroups_result_groups = (_DeleteGroups_result_groups_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteGroups_result_groups").CreateDelegate(typeof(_DeleteGroups_result_groups_delegate));
+
             _DeleteRecords_new = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_new").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _DeleteRecords_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_destroy").CreateDelegate(typeof(Action<IntPtr>));
 
@@ -345,6 +354,9 @@ namespace Confluent.Kafka.Impl
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_result_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+
+            _group_result_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_group_result_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
+            _group_result_error = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_group_result_error").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
 
             _destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _destroy_flags = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_destroy_flags").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
@@ -1201,6 +1213,28 @@ namespace Confluent.Kafka.Impl
         ) => _DeleteTopics_result_topics(result, out cntp);
 
 
+        private static Func<string, IntPtr> _DeleteGroup_new;
+        internal static IntPtr DeleteGroup_new(
+            string group) => _DeleteGroup_new(group);
+
+        private static Action<IntPtr> _DeleteGroup_destroy;
+        internal static void DeleteGroup_destroy(IntPtr del_group) => _DeleteGroup_destroy(del_group);
+
+        private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _DeleteGroups;
+        internal static void DeleteGroups(
+            IntPtr rk,
+            IntPtr[] del_groups,
+            UIntPtr del_groups_cnt,
+            IntPtr options,
+            IntPtr rkqu) => _DeleteGroups(rk, del_groups, del_groups_cnt, options, rkqu);
+
+        private delegate IntPtr _DeleteGroups_result_groups_delegate(IntPtr result, out UIntPtr cntp);
+        private static _DeleteGroups_result_groups_delegate _DeleteGroups_result_groups;
+        internal static IntPtr DeleteGroups_result_groups(
+            IntPtr result,
+            out UIntPtr cntp) => _DeleteGroups_result_groups(result, out cntp);
+
+
         private static Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr> _NewPartitions_new;
         internal static IntPtr NewPartitions_new(
                 string topic, 
@@ -1539,6 +1573,12 @@ namespace Confluent.Kafka.Impl
 
         private static Func<IntPtr, IntPtr> _topic_result_name;
         internal static IntPtr topic_result_name(IntPtr topicres) => _topic_result_name(topicres);
+
+        private static Func<IntPtr, IntPtr> _group_result_name;
+        internal static IntPtr group_result_name(IntPtr groupres) => _group_result_name(groupres);
+
+        private static Func<IntPtr, IntPtr> _group_result_error;
+        internal static IntPtr group_result_error(IntPtr groupres) => _group_result_error(groupres);
 
 
         //
