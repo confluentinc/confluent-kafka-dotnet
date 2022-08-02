@@ -4,12 +4,12 @@
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <AssemblyName>JsonSerialization</AssemblyName>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="1.9.0" /> -->
+    <!-- nuget package reference: <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="1.9.2" /> -->
     <ProjectReference Include="../../src/Confluent.SchemaRegistry.Serdes.Json/Confluent.SchemaRegistry.Serdes.Json.csproj" />
   </ItemGroup>
 

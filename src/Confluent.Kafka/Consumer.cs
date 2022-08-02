@@ -112,7 +112,7 @@ namespace Confluent.Kafka
             try
             {
                 // Ensure registered handlers are never called as a side-effect of Dispose/Finalize (prevents deadlocks in common scenarios).
-                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json));
+                statisticsHandler?.Invoke(Util.Marshal.PtrToStringUTF8(json, json_len));
             }
             catch (Exception e)
             {

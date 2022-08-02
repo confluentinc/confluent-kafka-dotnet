@@ -2,17 +2,19 @@
 
   <PropertyGroup>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <TargetFrameworks>net5.0;</TargetFrameworks>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Confluent.SchemaRegistry.Serdes.UnitTests.snk</AssemblyOriginatorKeyFile>
-    <LangVersion>9.0</LangVersion>
+    <TestProjectType>UnitTest</TestProjectType>
+    <AssemblyName>Confluent.SchemaRegistry.Serdes.UnitTests</AssemblyName>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
-    <PackageReference Include="Moq" Version="4.7.99" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <!-- Needed for testing net462 on Linux -->
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+    <PackageReference Include="Moq" Version="4.7.99" />
     <PackageReference Include="Google.Protobuf" Version="3.15.0" />
     <PackageReference Include="Apache.Avro" Version="1.11.0" />
     <PackageReference Include="System.Runtime" Version="4.3" />
@@ -23,10 +25,6 @@
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Avro\Confluent.SchemaRegistry.Serdes.Avro.csproj" />
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Json\Confluent.SchemaRegistry.Serdes.Json.csproj" />
     <ProjectReference Include="..\..\src\Confluent.SchemaRegistry.Serdes.Protobuf\Confluent.SchemaRegistry.Serdes.Protobuf.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
 </Project>

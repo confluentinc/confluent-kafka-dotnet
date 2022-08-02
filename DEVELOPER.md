@@ -23,23 +23,7 @@ dotnet test
 
 ### Integration Tests
 
-From within the [Confluent Platform](https://www.confluent.io/product/compare/) (or Apache Kafka) distribution directory,
-run the following two commands (in separate terminal windows) to set up a single broker test Kafka cluster:
-
-```
-./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties
-
-./bin/kafka-server-start ./etc/kafka/server.properties
-```
-
-Now use the `bootstrap-topics.sh` script in the test/Confleunt.Kafka.IntegrationTests directory to set up the
-prerequisite topics:
-
-```
-./bootstrap-topics.sh <confluent platform path> <zookeeper>
-```
-
-Now bring up two schema registry instances (one with basic auth enabled, one without) using docker compose from inside the tests/Confluent.SchemaRegistry.IntegrationTests directory:
+From the test/docker directory bring up the Kafka cluster with two schema registry instances (one with basic auth enabled, one without).
 
 ```
 docker-compose up
@@ -49,3 +33,8 @@ There are integration test suites corresponding to each nuget package. These are
 [Confluent.SchemaRegistry.IntegrationTests](test/Confluent.SchemaRegistry.IntegrationTests) and
 [Confluent.SchemaRegistry.Serdes.IntegrationTests](test/Confluent.SchemaRegistry.Serdes.IntegrationTests).
 
+To execute, enter the relevant directory and run:
+
+```
+dotnet test
+```
