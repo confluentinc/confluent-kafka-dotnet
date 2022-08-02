@@ -1,4 +1,4 @@
-# 1.9.2-RC2
+# 1.9.2
 
 ## Enhancements
 
