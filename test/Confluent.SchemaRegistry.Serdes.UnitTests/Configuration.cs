@@ -37,7 +37,7 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
                 (string topic, string schema, bool normalize) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
             schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(
-                (int id) => new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro)
+                (int id, string format) => new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro)
             );
             schemaRegistryClient = schemaRegistryMock.Object;
         }
