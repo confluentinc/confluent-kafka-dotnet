@@ -317,21 +317,21 @@ namespace Confluent.SchemaRegistry
             => SanitizeRegisteredSchema(await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}/versions/latest", HttpMethod.Get)
                         .ConfigureAwait(continueOnCapturedContext: false));
 
-        public async Task<int> RegisterSchemaAsync(string subject, Schema schema)
+        public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize)
             => schema.SchemaType == SchemaType.Avro
                 // In the avro case, just send the schema string to maintain backards compatibility.
-                ? (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                ? (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions?normalize={normalize}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)).Id
-                : (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions", HttpMethod.Post, schema)
+                : (await RequestAsync<SchemaId>($"subjects/{WebUtility.UrlEncode(subject)}/versions?normalize={normalize}", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false)).Id;
 
         // Checks whether a schema has been registered under a given subject.
-        public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas)
+        public async Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas, bool normalize)
             => SanitizeRegisteredSchema(schema.SchemaType == SchemaType.Avro
                 // In the avro case, just send the schema string to maintain backards compatibility.
-                ? await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema.SchemaString))
+                ? await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?normalize={normalize}&deleted={!ignoreDeletedSchemas}", HttpMethod.Post, new SchemaString(schema.SchemaString))
                         .ConfigureAwait(continueOnCapturedContext: false)
-                : await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?deleted={!ignoreDeletedSchemas}", HttpMethod.Post, schema)
+                : await RequestAsync<RegisteredSchema>($"subjects/{WebUtility.UrlEncode(subject)}?normalize={normalize}&deleted={!ignoreDeletedSchemas}", HttpMethod.Post, schema)
                         .ConfigureAwait(continueOnCapturedContext: false));
 
         #endregion Subjects

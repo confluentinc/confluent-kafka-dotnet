@@ -33,15 +33,15 @@ namespace Confluent.SchemaRegistry
     ///     A caching Schema Registry client.
     ///
     ///     The following method calls cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, Schema)" />
-    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, Schema, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.GetSchemaIdAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSchemaAsync(int, string)" />
-    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema)" />
-    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string)" />
+    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, Schema, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.RegisterSchemaAsync(string, string, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetRegisteredSchemaAsync(string, int)" />
     ///
     ///     The following method calls do NOT cache results:
-    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool)" />
+    ///      - <see cref="CachedSchemaRegistryClient.LookupSchemaAsync(string, Schema, bool, bool)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetLatestSchemaAsync(string)" />
     ///      - <see cref="CachedSchemaRegistryClient.GetAllSubjectsAsync" />
     ///      - <see cref="CachedSchemaRegistryClient.GetSubjectVersionsAsync(string)" />
@@ -314,12 +314,12 @@ namespace Confluent.SchemaRegistry
         }
 
         /// <inheritdoc/>
-        public Task<int> GetSchemaIdAsync(string subject, string avroSchema)
-            => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
+        public Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false)
+            => GetSchemaIdAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro), normalize);
 
         
         /// <inheritdoc/>
-        public async Task<int> GetSchemaIdAsync(string subject, Schema schema)
+        public async Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
@@ -339,7 +339,7 @@ namespace Confluent.SchemaRegistry
                     CleanCacheIfFull();
 
                     // throws SchemaRegistryException if schema is not known.
-                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true).ConfigureAwait(continueOnCapturedContext: false);
+                    var registeredSchema = await restService.LookupSchemaAsync(subject, schema, true, normalize).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema.SchemaString] = registeredSchema.Id;
                     schemaById[registeredSchema.Id] = registeredSchema.Schema;
                     schemaId = registeredSchema.Id;
@@ -355,7 +355,7 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public async Task<int> RegisterSchemaAsync(string subject, Schema schema)
+        public async Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false)
         {
             await cacheMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
             try
@@ -374,7 +374,7 @@ namespace Confluent.SchemaRegistry
                 {
                     CleanCacheIfFull();
 
-                    schemaId = await restService.RegisterSchemaAsync(subject, schema).ConfigureAwait(continueOnCapturedContext: false);
+                    schemaId = await restService.RegisterSchemaAsync(subject, schema, normalize).ConfigureAwait(continueOnCapturedContext: false);
                     idBySchema[schema.SchemaString] = schemaId;
                 }
 
@@ -388,8 +388,8 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public Task<int> RegisterSchemaAsync(string subject, string avroSchema)
-            => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro));
+        public Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false)
+            => RegisterSchemaAsync(subject, new Schema(avroSchema, EmptyReferencesList, SchemaType.Avro), normalize);
     
 
         /// <summary>
@@ -426,8 +426,8 @@ namespace Confluent.SchemaRegistry
 
 
         /// <inheritdoc/>
-        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas)
-            => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas);
+        public Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas, bool normalize = false)
+            => restService.LookupSchemaAsync(subject, schema, ignoreDeletedSchemas, normalize);
 
 
         /// <inheritdoc/>
