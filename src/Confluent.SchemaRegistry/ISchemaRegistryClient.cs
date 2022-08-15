@@ -43,7 +43,7 @@ namespace Confluent.SchemaRegistry
         ///     The schema to register.
         /// </param>
         /// <param name="normalize">
-        ///   Whether to normalize schemas.
+        ///     Whether to normalize schemas.
         /// </param>
         /// <returns>
         ///     A unique id identifying the schema.

@@ -30,8 +30,13 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var testSchema1 = 
                 "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
+                "\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\": \"string\"}},{\"name\":\"favorite_number\",\"type\":[\"i" +
+                "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
+            var normalized = 
+                "{\"type\":\"record\",\"name\":\"User\",\"namespace\":\"Confluent.Kafka.Examples.AvroSpecific" +
                 "\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"favorite_number\",\"type\":[\"i" +
                 "nt\",\"null\"]},{\"name\":\"favorite_color\",\"type\":[\"string\",\"null\"]}]}";
+
 
             var sr = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = config.Server });
 
@@ -40,7 +45,9 @@ namespace Confluent.SchemaRegistry.IntegrationTests
 
             var id1 = sr.RegisterSchemaAsync(subject, testSchema1, true).Result;
             var id2 = sr.GetSchemaIdAsync(subject, testSchema1, true).Result;
+            var schema = sr.GetSchemaAsync(id2).Result;
             Assert.Equal(id1, id2);
+            Assert.Equal(normalized, schema);
         }
     }
 }
