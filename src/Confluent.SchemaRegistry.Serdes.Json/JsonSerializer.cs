@@ -58,6 +58,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private const int DefaultInitialBufferSize = 1024;
 
         private bool autoRegisterSchema = true;
+        private bool normalizeSchemas = false;
         private bool useLatestVersion = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
@@ -113,6 +114,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
             if (config.BufferBytes != null) { this.initialBufferSize = config.BufferBytes.Value; }
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
+            if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
 
@@ -180,10 +182,10 @@ namespace Confluent.SchemaRegistry.Serdes
                             // first usage: register/get schema to check compatibility
                             schemaId = autoRegisterSchema
                                 ? await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false)
                                 : await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
 
                             // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.

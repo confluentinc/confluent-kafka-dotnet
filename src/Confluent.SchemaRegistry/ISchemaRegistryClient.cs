@@ -42,11 +42,14 @@ namespace Confluent.SchemaRegistry
         /// <param name="avroSchema">
         ///     The schema to register.
         /// </param>
+        /// <param name="normalize">
+        ///     Whether to normalize schemas.
+        /// </param>
         /// <returns>
         ///     A unique id identifying the schema.
         /// </returns>
-        [Obsolete("Superseded by RegisterSchemaAsync(string, Schema)")]
-        Task<int> RegisterSchemaAsync(string subject, string avroSchema);
+        [Obsolete("Superseded by RegisterSchemaAsync(string, Schema, bool)")]
+        Task<int> RegisterSchemaAsync(string subject, string avroSchema, bool normalize = false);
 
 
         /// <summary>
@@ -59,10 +62,13 @@ namespace Confluent.SchemaRegistry
         /// <param name="schema">
         ///     The schema to register.
         /// </param>
+        /// <param name="normalize">
+        ///     Whether to normalize schemas.
+        /// </param>
         /// <returns>
         ///     A unique id identifying the schema.
         /// </returns>
-        Task<int> RegisterSchemaAsync(string subject, Schema schema);
+        Task<int> RegisterSchemaAsync(string subject, Schema schema, bool normalize = false);
 
         /// <summary>
         ///   Get the unique id of the specified avro schema registered against 
@@ -74,14 +80,17 @@ namespace Confluent.SchemaRegistry
         /// <param name="avroSchema">
         ///   The schema to get the id for.
         /// </param>
+        /// <param name="normalize">
+        ///   Whether to normalize schemas.
+        /// </param>
         /// <returns>
         ///   The unique id identifying the schema.
         /// </returns>
         /// <exception cref="SchemaRegistryException">
         ///   Thrown if the schema is not registered against the subject.
         /// </exception>
-        [Obsolete("Superseded by GetSchemaIdAsync(string, Schema)")]
-        Task<int> GetSchemaIdAsync(string subject, string avroSchema);
+        [Obsolete("Superseded by GetSchemaIdAsync(string, Schema, bool)")]
+        Task<int> GetSchemaIdAsync(string subject, string avroSchema, bool normalize = false);
 
 
         /// <summary>
@@ -94,13 +103,16 @@ namespace Confluent.SchemaRegistry
         /// <param name="schema">
         ///   The schema to get the id for.
         /// </param>
+        /// <param name="normalize">
+        ///   Whether to normalize schemas.
+        /// </param>
         /// <returns>
         ///   The unique id identifying the schema.
         /// </returns>
         /// <exception cref="SchemaRegistryException">
         ///   Thrown if the schema is not registered against the subject.
         /// </exception>
-        Task<int> GetSchemaIdAsync(string subject, Schema schema);
+        Task<int> GetSchemaIdAsync(string subject, Schema schema, bool normalize = false);
 
 
         /// <summary>
@@ -136,10 +148,13 @@ namespace Confluent.SchemaRegistry
         /// <param name="ignoreDeletedSchemas">
         ///     Whether or not to ignore deleted schemas.
         /// </param>
+        /// <param name="normalize">
+        ///     Whether to normalize schemas.
+        /// </param>
         /// <returns>
         ///     The schema identified by the specified <paramref name="subject" /> and <paramref name="schema" />.
         /// </returns>
-        Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas);
+        Task<RegisteredSchema> LookupSchemaAsync(string subject, Schema schema, bool ignoreDeletedSchemas, bool normalize = false);
 
 
         /// <summary>

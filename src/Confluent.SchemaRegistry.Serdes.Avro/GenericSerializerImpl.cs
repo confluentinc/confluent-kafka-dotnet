@@ -34,6 +34,7 @@ namespace Confluent.SchemaRegistry.Serdes
     {
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
+        private bool normalizeSchemas;
         private bool useLatestVersion;
         private int initialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy;
@@ -47,12 +48,14 @@ namespace Confluent.SchemaRegistry.Serdes
         public GenericSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             bool autoRegisterSchema,
+            bool normalizeSchemas,
             bool useLatestVersion,
             int initialBufferSize,
             SubjectNameStrategyDelegate subjectNameStrategy)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.autoRegisterSchema = autoRegisterSchema;
+            this.normalizeSchemas = normalizeSchemas;
             this.useLatestVersion = useLatestVersion;
             this.initialBufferSize = initialBufferSize;
             this.subjectNameStrategy = subjectNameStrategy;
@@ -146,12 +149,12 @@ namespace Confluent.SchemaRegistry.Serdes
                             if (autoRegisterSchema)
                             {
                                 newSchemaId = await schemaRegistryClient
-                                    .RegisterSchemaAsync(subject, writerSchemaString)
+                                    .RegisterSchemaAsync(subject, writerSchemaString, normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                             }
                             else
                             {
-                                newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString)
+                                newSchemaId = await schemaRegistryClient.GetSchemaIdAsync(subject, writerSchemaString, normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                             }
                         }
