@@ -28,7 +28,7 @@ namespace Confluent.Kafka.IntegrationTests
         ///     Simple Consumer StoreOffsets test.
         /// </summary>
         [Theory, MemberData(nameof(KafkaParameters))]
-        public void Consumer_StoreOffsets(string bootstrapServers)
+        public void Consumer_StoreOffset(string bootstrapServers)
         {
             LogToFile("start Consumer_StoreOffset");
 
@@ -41,7 +41,7 @@ namespace Confluent.Kafka.IntegrationTests
                 EnableAutoOffsetStore = false
             };
 
-            var producerConfig = new ProducerConfig{ BootstrapServers = bootstrapServers };
+            var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
 
             IEnumerable<TopicPartition> assignment = null;
 
