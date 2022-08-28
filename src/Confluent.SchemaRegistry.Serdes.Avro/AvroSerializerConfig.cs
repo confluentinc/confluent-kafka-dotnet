@@ -54,6 +54,14 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string AutoRegisterSchemas = "avro.serializer.auto.register.schemas";
 
             /// <summary>
+            ///     Specifies whether to normalize schemas, which will transform schemas
+            ///     to have a consistent format, including ordering properties and references.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string NormalizeSchemas = "avro.serializer.normalize.schemas";
+
+            /// <summary>
             ///     Specifies whether or not the Avro serializer should use the latest subject
             ///     version for serialization.
             ///     WARNING: There is no check that the latest schema is backwards compatible
@@ -113,6 +121,19 @@ namespace Confluent.SchemaRegistry.Serdes
         }
         
         
+        /// <summary>
+        ///     Specifies whether to normalize schemas, which will transform schemas
+        ///     to have a consistent format, including ordering properties and references.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? NormalizeSchemas
+        {
+            get { return GetBool(PropertyNames.NormalizeSchemas); }
+            set { SetObject(PropertyNames.NormalizeSchemas, value); }
+        }
+
+
         /// <summary>
         ///     Specifies whether or not the Avro serializer should use the latest subject
         ///     version for serialization.

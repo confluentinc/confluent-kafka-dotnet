@@ -102,6 +102,19 @@ namespace Confluent.Kafka
         Task CreatePartitionsAsync(
             IEnumerable<PartitionsSpecification> partitionsSpecifications, CreatePartitionsOptions options = null);
 
+        /// <summary>
+        ///     Delete a set of groups.
+        /// </summary>
+        /// <param name="groups">
+        ///     The group names to delete.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when deleting groups.
+        /// </param>
+        /// <returns>
+        ///     The results of the delete group requests.
+        /// </returns>
+        Task DeleteGroupsAsync(IList<string> groups, DeleteGroupsOptions options = null);
 
         /// <summary>
         ///     Delete a set of topics. This operation is not
@@ -214,6 +227,103 @@ namespace Confluent.Kafka
         ///     The result of the delete records request.
         /// </returns>
         Task<List<DeleteRecordsResult>> DeleteRecordsAsync(IEnumerable<TopicPartitionOffset> topicPartitionOffsets, DeleteRecordsOptions options = null);
+    
+        /// <summary>
+        ///     Creates one or more ACL bindings.
+        /// </summary>
+        /// <param name="aclBindings">
+        ///     A IEnumerable with the ACL bindings to create.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when creating the ACL bindings.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if <paramref name="aclBindings"/> param is null
+        ///     or a <see cref="Confluent.Kafka.Admin.AclBinding.Entry"/> is null or
+        ///     a <see cref="Confluent.Kafka.Admin.AclBinding.Pattern"/> is null.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if the <paramref name="aclBindings"/> param is empty.
+        /// </exception>
+        /// <exception cref="CreateAclsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.CreateAclsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task with an empty result when successful.
+        /// </returns>
+        Task CreateAclsAsync(IEnumerable<AclBinding> aclBindings, CreateAclsOptions options = null);
+
+
+        /// <summary>
+        ///    Finds ACL bindings using a filter.
+        /// </summary>
+        /// <param name="aclBindingFilter">
+        ///    A filter with attributes that must match.
+        ///    string attributes match exact values or any string if set to null.
+        ///    enum attributes match exact values or any value if equal to `Any`.
+        ///    If `ResourcePatternType` is set to <see cref="Admin.ResourcePatternType.Match"/> returns ACL bindings with:
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with resource name equal to the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with wildcard resource name that matches the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Prefixed"/> pattern type with resource name that is a prefix of the given resource name
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when describing ACL bindings.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if <paramref name="aclBindingFilter"/> param is null
+        ///     or any of <see cref="Confluent.Kafka.Admin.AclBindingFilter.EntryFilter"/> and
+        ///     <see cref="Confluent.Kafka.Admin.AclBindingFilter.PatternFilter"/> is null.
+        /// </exception>
+        /// <exception cref="DescribeAclsException">
+        ///     Thrown if the corresponding result is in
+        ///     error. The entire result is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeAclsException.Result" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task returning a <see cref="Admin.DescribeAclsResult"/>.
+        /// </returns>
+        Task<DescribeAclsResult> DescribeAclsAsync(AclBindingFilter aclBindingFilter, DescribeAclsOptions options = null);
+
+        /// <summary>
+        ///    Deletes ACL bindings using multiple filters.
+        /// </summary>
+        /// <param name="aclBindingFilters">
+        ///    A IEnumerable of ACL binding filters to match ACLs to delete.
+        ///    string attributes match exact values or any string if set to null.
+        ///    enum attributes match exact values or any value if equal to `Any`.
+        ///    If `ResourcePatternType` is set to <see cref="Admin.ResourcePatternType.Match"/> deletes ACL bindings with:
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with resource name equal to the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Literal"/> pattern type with wildcard resource name that matches the given resource name
+        ///    * <see cref="Admin.ResourcePatternType.Prefixed"/> pattern type with resource name that is a prefix of the given resource name
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when describing ACL bindings.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown if <paramref name="aclBindingFilters"/> param is null
+        ///     or any of <see cref="Confluent.Kafka.Admin.AclBindingFilter.EntryFilter"/> and
+        ///     <see cref="Confluent.Kafka.Admin.AclBindingFilter.PatternFilter"/> is null.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if the <paramref name="aclBindingFilters"/> param is empty.
+        /// </exception>
+        /// <exception cref="DeleteAclsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DeleteAclsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.DeleteAclsResult"/>.
+        /// </returns>
+        Task<List<DeleteAclsResult>> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null);
+
     }
 
 }

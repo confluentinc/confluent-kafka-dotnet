@@ -45,9 +45,26 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Initialize a new Error instance from a native pointer to
-        ///     a rd_kafka_error_t object, then destroy the native object.
+        ///     a rd_kafka_error_t object, then destroy the native object
         /// </summary>
-        internal Error(IntPtr error)
+        /// <param name="error">
+        ///     The rd_kafka_error_t object to initialize from.
+        /// </param>
+        internal Error(IntPtr error) : this(error, true)
+        {
+        }
+
+        /// <summary>
+        ///     Initialize a new Error instance from a native pointer to
+        ///     a rd_kafka_error_t object, then destroy the native object if <paramref name="destroy"/> is true
+        /// </summary>
+        /// <param name="error">
+        ///     The rd_kafka_error_t object to initialize from.
+        /// </param>
+        /// <param name="destroy">
+        ///     Destroy the passed error.
+        /// </param>
+        internal Error(IntPtr error, bool destroy)
         {
             if (error == IntPtr.Zero)
             {
@@ -64,7 +81,7 @@ namespace Confluent.Kafka
             TxnRequiresAbort = Librdkafka.error_txn_requires_abort(error);
             IsRetriable = Librdkafka.error_is_retriable(error);
             reason = Librdkafka.error_string(error);
-            Librdkafka.error_destroy(error);
+            if (destroy) { Librdkafka.error_destroy(error); }
         }
 
         /// <summary>

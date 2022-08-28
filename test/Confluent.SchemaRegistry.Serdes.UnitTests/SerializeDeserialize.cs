@@ -40,13 +40,13 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             testTopic = "topic";
             var schemaRegistryMock = new Mock<ISchemaRegistryClient>();
             schemaRegistryMock.Setup(x => x.ConstructValueSubjectName(testTopic, It.IsAny<string>())).Returns($"{testTopic}-value");
-            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>())).ReturnsAsync(
-                (string topic, string schema) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
+            schemaRegistryMock.Setup(x => x.RegisterSchemaAsync("topic-value", It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(
+                (string topic, string schema, bool normalize) => store.TryGetValue(schema, out int id) ? id : store[schema] = store.Count + 1
             );
             schemaRegistryMock.Setup(x => x.GetSchemaAsync(It.IsAny<int>(), It.IsAny<string>())).ReturnsAsync(
                 (int id, string format) => new Schema(store.Where(x => x.Value == id).First().Key, null, SchemaType.Avro)
             );
-            schemaRegistryClient = schemaRegistryMock.Object;   
+            schemaRegistryClient = schemaRegistryMock.Object;
         }
 
         [Fact]
@@ -256,6 +256,30 @@ namespace Confluent.SchemaRegistry.Serdes.UnitTests
             var avroDeserializer = new AvroDeserializer<int>(schemaRegistryClient);
             var bytes = avroSerializer.SerializeAsync("hello world", new SerializationContext(MessageComponentType.Value, testTopic)).Result;
             Assert.Throws<System.AggregateException>(() => avroDeserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result);
+        }
+
+        /// <summary>
+        /// Test a case when .NET data class name and / or namespace do not match the schema name and / or namespace.
+        /// </summary>
+        [Fact]
+        public void ISpecificRecord_SchemaTypeMismatch()
+        {
+            var serializer = new AvroSerializer<User2>(schemaRegistryClient);
+            var deserializer = new AvroDeserializer<User2>(schemaRegistryClient);
+
+            var user = new User2
+            {
+                favorite_color = "blue",
+                favorite_number = 100,
+                name = "awesome"
+            };
+
+            var bytes = serializer.SerializeAsync(user, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+            var result = deserializer.DeserializeAsync(bytes, false, new SerializationContext(MessageComponentType.Value, testTopic)).Result;
+
+            Assert.Equal(user.name, result.name);
+            Assert.Equal(user.favorite_color, result.favorite_color);
+            Assert.Equal(user.favorite_number, result.favorite_number);
         }
     }
 }

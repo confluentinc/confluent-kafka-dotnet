@@ -82,6 +82,7 @@ namespace Confluent.SchemaRegistry.Serdes
 
         private ISchemaRegistryClient schemaRegistryClient;
         private bool autoRegisterSchema;
+        private bool normalizeSchemas;
         private bool useLatestVersion;
         private int initialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy;
@@ -98,12 +99,14 @@ namespace Confluent.SchemaRegistry.Serdes
         public SpecificSerializerImpl(
             ISchemaRegistryClient schemaRegistryClient,
             bool autoRegisterSchema,
+            bool normalizeSchemas,
             bool useLatestVersion,
             int initialBufferSize,
             SubjectNameStrategyDelegate subjectNameStrategy)
         {
             this.schemaRegistryClient = schemaRegistryClient;
             this.autoRegisterSchema = autoRegisterSchema;
+            this.normalizeSchemas = normalizeSchemas;
             this.useLatestVersion = useLatestVersion;
             this.initialBufferSize = initialBufferSize;
             this.subjectNameStrategy = subjectNameStrategy;
@@ -222,10 +225,10 @@ namespace Confluent.SchemaRegistry.Serdes
                             // first usage: register/get schema to check compatibility
                             currentSchemaData.WriterSchemaId = autoRegisterSchema
                                 ? await schemaRegistryClient
-                                    .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString)
+                                    .RegisterSchemaAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false)
                                 : await schemaRegistryClient
-                                    .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString)
+                                    .GetSchemaIdAsync(subject, currentSchemaData.WriterSchemaString, normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                         }
 

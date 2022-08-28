@@ -54,6 +54,14 @@ namespace Confluent.SchemaRegistry.Serdes
             public const string AutoRegisterSchemas = "json.serializer.auto.register.schemas";
 
             /// <summary>
+            ///     Specifies whether to normalize schemas, which will transform schemas
+            ///     to have a consistent format, including ordering properties and references.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string NormalizeSchemas = "json.serializer.normalize.schemas";
+
+            /// <summary>
             ///     Specifies whether or not the JSON serializer should use the latest subject
             ///     version for serialization.
             ///     WARNING: There is no check that the latest schema is backwards compatible
@@ -112,6 +120,19 @@ namespace Confluent.SchemaRegistry.Serdes
             set { SetObject(PropertyNames.AutoRegisterSchemas, value); }
         }
         
+
+        /// <summary>
+        ///     Specifies whether to normalize schemas, which will transform schemas
+        ///     to have a consistent format, including ordering properties and references.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? NormalizeSchemas
+        {
+            get { return GetBool(PropertyNames.NormalizeSchemas); }
+            set { SetObject(PropertyNames.NormalizeSchemas, value); }
+        }
+
 
         /// <summary>
         ///     Specifies whether or not the JSON serializer should use the latest subject

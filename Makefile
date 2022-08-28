@@ -7,10 +7,10 @@
 OS=$(shell uname -s)
 
 EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
-TEST_DIRS==$(shell find ./test -name '*.csproj' -exec dirname {} \;)
+TEST_DIRS=$(shell find ./test -name '*.csproj'   \;)
+UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
-LINUX_FRAMEWORK=netcoreapp2.1
-DEFAULT_FRAMEWORK?=$(LINUX_FRAMEWORK)
+DEFAULT_FRAMEWORK?=net5.0
 
 all:
 	@echo "Usage:   make <dotnet-command>"
@@ -19,18 +19,10 @@ all:
 .PHONY: test
 
 build:
-	# Assuming .NET Core on Linux (net451 will not work).
-	@(if [[ "$(OS)" == "Linux" ]] ; then \
-		for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
-		for d in $(TEST_DIRS) ; do dotnet $@ -f $(LINUX_FRAMEWORK) $$d; done ; \
-	else \
-		for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
-		for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
-	fi)
+	for d in $(EXAMPLE_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ; \
+	for d in $(TEST_DIRS) ; do dotnet $@ -f $(DEFAULT_FRAMEWORK) $$d; done ;
 
 test:
-	@(if [[ "$(OS)" == "Linux" ]] ; then \
-		dotnet test -f $(LINUX_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
-	else \
-		dotnet test -f $(DEFAULT_FRAMEWORK) test/Confluent.Kafka.UnitTests/Confluent.Kafka.UnitTests.csproj ; \
-	fi)
+	@(for d in $(UNIT_TEST_DIRS) ; do \
+		dotnet test -f $(DEFAULT_FRAMEWORK) test/$$d/$$d.csproj ; \
+	done)

@@ -1,4 +1,4 @@
-// *** Auto-generated from librdkafka v1.9.0-RC2 *** - do not modify manually.
+// *** Auto-generated from librdkafka v1.9.2 *** - do not modify manually.
 //
 // Copyright 2018 Confluent Inc.
 //
@@ -527,6 +527,14 @@ namespace Confluent.Kafka
         public BrokerAddressFamily? BrokerAddressFamily { get { return (BrokerAddressFamily?)GetEnum(typeof(BrokerAddressFamily), "broker.address.family"); } set { this.SetObject("broker.address.family", value); } }
 
         /// <summary>
+        ///     Maximum time allowed for broker connection setup (TCP connection setup as well SSL and SASL handshake). If the connection to the broker is not fully functional after this the connection will be closed and retried.
+        ///
+        ///     default: 30000
+        ///     importance: medium
+        /// </summary>
+        public int? SocketConnectionSetupTimeoutMs { get { return GetInt("socket.connection.setup.timeout.ms"); } set { this.SetObject("socket.connection.setup.timeout.ms", value); } }
+
+        /// <summary>
         ///     Close broker connections after the specified time of inactivity. Disable with 0. If this property is left at its default value some heuristics are performed to determine a suitable default value, this is currently limited to identifying brokers on Azure (see librdkafka issue #3109 for more info).
         ///
         ///     default: 0
@@ -583,7 +591,7 @@ namespace Confluent.Kafka
         public bool? EnableRandomSeed { get { return GetBool("enable.random.seed"); } set { this.SetObject("enable.random.seed", value); } }
 
         /// <summary>
-        ///     Log broker disconnects. It might be useful to turn this off when interacting with 0.9 brokers with an aggressive `connection.max.idle.ms` value.
+        ///     Log broker disconnects. It might be useful to turn this off when interacting with 0.9 brokers with an aggressive `connections.max.idle.ms` value.
         ///
         ///     default: true
         ///     importance: low
@@ -855,7 +863,7 @@ namespace Confluent.Kafka
         public bool? EnableSaslOauthbearerUnsecureJwt { get { return GetBool("enable.sasl.oauthbearer.unsecure.jwt"); } set { this.SetObject("enable.sasl.oauthbearer.unsecure.jwt", value); } }
 
         /// <summary>
-        ///     Set to "default" or "oidc" to control which login method is used. If set it to "oidc", OAuth/OIDC login method will be used. sasl.oauthbearer.client.id, sasl.oauthbearer.client.secret, and sasl.oauthbearer.token.endpoint.url are needed if sasl.oauthbearer.method is set to "oidc".
+        ///     Set to "default" or "oidc" to control which login method to be used. If set to "oidc", the following properties must also be be specified: `sasl.oauthbearer.client.id`, `sasl.oauthbearer.client.secret`, and `sasl.oauthbearer.token.endpoint.url`.
         ///
         ///     default: default
         ///     importance: low
@@ -863,7 +871,7 @@ namespace Confluent.Kafka
         public SaslOauthbearerMethod? SaslOauthbearerMethod { get { return (SaslOauthbearerMethod?)GetEnum(typeof(SaslOauthbearerMethod), "sasl.oauthbearer.method"); } set { this.SetObject("sasl.oauthbearer.method", value); } }
 
         /// <summary>
-        ///     It's a public identifier for the application. It must be unique across all clients that the authorization server handles. This is only used when sasl.oauthbearer.method is set to oidc.
+        ///     Public identifier for the application. Must be unique across all clients that the authorization server handles. Only used when `sasl.oauthbearer.method` is set to "oidc".
         ///
         ///     default: ''
         ///     importance: low
@@ -871,7 +879,7 @@ namespace Confluent.Kafka
         public string SaslOauthbearerClientId { get { return Get("sasl.oauthbearer.client.id"); } set { this.SetObject("sasl.oauthbearer.client.id", value); } }
 
         /// <summary>
-        ///     A client secret only known to the application and the authorization server. This should be a sufficiently random string that are not guessable. This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///     Client secret only known to the application and the authorization server. This should be a sufficiently random string that is not guessable. Only used when `sasl.oauthbearer.method` is set to "oidc".
         ///
         ///     default: ''
         ///     importance: low
@@ -879,7 +887,7 @@ namespace Confluent.Kafka
         public string SaslOauthbearerClientSecret { get { return Get("sasl.oauthbearer.client.secret"); } set { this.SetObject("sasl.oauthbearer.client.secret", value); } }
 
         /// <summary>
-        ///     Client use this to specify the scope of the access request to the broker. This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///     Client use this to specify the scope of the access request to the broker. Only used when `sasl.oauthbearer.method` is set to "oidc".
         ///
         ///     default: ''
         ///     importance: low
@@ -887,7 +895,7 @@ namespace Confluent.Kafka
         public string SaslOauthbearerScope { get { return Get("sasl.oauthbearer.scope"); } set { this.SetObject("sasl.oauthbearer.scope", value); } }
 
         /// <summary>
-        ///     Allow additional information to be provided to the broker. It's comma-separated list of key=value pairs. The example of the input is "supportFeatureX=true,organizationId=sales-emea". This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///     Allow additional information to be provided to the broker. Comma-separated list of key=value pairs. E.g., "supportFeatureX=true,organizationId=sales-emea".Only used when `sasl.oauthbearer.method` is set to "oidc".
         ///
         ///     default: ''
         ///     importance: low
@@ -895,7 +903,7 @@ namespace Confluent.Kafka
         public string SaslOauthbearerExtensions { get { return Get("sasl.oauthbearer.extensions"); } set { this.SetObject("sasl.oauthbearer.extensions", value); } }
 
         /// <summary>
-        ///     OAUTH issuer token endpoint HTTP(S) URI used to retrieve the token. This is only used when sasl.oauthbearer.method is set to "oidc".
+        ///     OAuth/OIDC issuer token endpoint HTTP(S) URI used to retrieve token. Only used when `sasl.oauthbearer.method` is set to "oidc".
         ///
         ///     default: ''
         ///     importance: low

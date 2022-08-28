@@ -44,13 +44,12 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             // var s = (RecordSchema)RecordSchema.Parse(File.ReadAllText("my-schema.json"));
             var s = (RecordSchema)RecordSchema.Parse(
                 @"{
-                    ""namespace"": ""Confluent.Kafka.Examples.AvroSpecific"",
                     ""type"": ""record"",
                     ""name"": ""User"",
                     ""fields"": [
                         {""name"": ""name"", ""type"": ""string""},
-                        {""name"": ""favorite_number"",  ""type"": [""int"", ""null""]},
-                        {""name"": ""favorite_color"", ""type"": [""string"", ""null""]}
+                        {""name"": ""favorite_number"",  ""type"": ""long""},
+                        {""name"": ""favorite_color"", ""type"": ""string""}
                     ]
                   }"
             );
@@ -61,7 +60,6 @@ namespace Confluent.Kafka.Examples.AvroGeneric
                 using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
                 using (var consumer =
                     new ConsumerBuilder<string, GenericRecord>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = groupName })
-                        .SetKeyDeserializer(new AvroDeserializer<string>(schemaRegistry).AsSyncOverAsync())
                         .SetValueDeserializer(new AvroDeserializer<GenericRecord>(schemaRegistry).AsSyncOverAsync())
                         .SetErrorHandler((_, e) => Console.WriteLine($"Error: {e.Reason}"))
                         .Build())
@@ -95,13 +93,12 @@ namespace Confluent.Kafka.Examples.AvroGeneric
             using (var schemaRegistry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = schemaRegistryUrl }))
             using (var producer =
                 new ProducerBuilder<string, GenericRecord>(new ProducerConfig { BootstrapServers = bootstrapServers })
-                    .SetKeySerializer(new AvroSerializer<string>(schemaRegistry))
                     .SetValueSerializer(new AvroSerializer<GenericRecord>(schemaRegistry))
                     .Build())
             {
                 Console.WriteLine($"{producer.Name} producing on {topicName}. Enter user names, q to exit.");
 
-                int i = 0;
+                long i = 1;
                 string text;
                 while ((text = Console.ReadLine()) != "q")
                 {

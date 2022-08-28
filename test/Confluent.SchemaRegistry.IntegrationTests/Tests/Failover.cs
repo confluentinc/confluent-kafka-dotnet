@@ -36,8 +36,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
-                var id2 = sr.GetSchemaIdAsync(subject, testSchema).Result;
+                var id = sr.RegisterSchemaAsync(subject, testSchema, false).Result;
+                var id2 = sr.GetSchemaIdAsync(subject, testSchema, false).Result;
                 Assert.Equal(id, id2);
             }
 
@@ -45,8 +45,8 @@ namespace Confluent.SchemaRegistry.IntegrationTests
             {
                 var topicName = Guid.NewGuid().ToString();
                 var subject = SubjectNameStrategy.Topic.ConstructKeySubjectName(topicName, null);
-                var id = sr.RegisterSchemaAsync(subject, testSchema).Result;
-                var id2 = sr.GetSchemaIdAsync(subject, testSchema).Result;
+                var id = sr.RegisterSchemaAsync(subject, testSchema, false).Result;
+                var id2 = sr.GetSchemaIdAsync(subject, testSchema, false).Result;
                 Assert.Equal(id, id2);
             }
 
