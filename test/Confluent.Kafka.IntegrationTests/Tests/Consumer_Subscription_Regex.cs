@@ -54,7 +54,7 @@ namespace Confluent.Kafka.IntegrationTests
                 Util.ProduceNullStringMessages(bootstrapServers, topic1.Name, 100, 100);
                 Util.ProduceNullStringMessages(bootstrapServers, topic2.Name, 100, 100);
 
-                consumer.Subscribe("^" + prefix + "*");
+                consumer.Subscribe("^" + prefix + ".*$");
 
                 // Wait for assignment
                 consumer.Consume(TimeSpan.FromSeconds(10));
