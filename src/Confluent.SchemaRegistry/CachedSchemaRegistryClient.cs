@@ -164,7 +164,7 @@ namespace Confluent.SchemaRegistry
             {
                 if (basicAuthInfo != "")
                 {
-                    var userPass = (basicAuthInfo).Split(':');
+                    var userPass = basicAuthInfo.Split(new char[] { ':' }, 2);
                     if (userPass.Length != 2)
                     {
                         throw new ArgumentException($"Configuration property {SchemaRegistryConfig.PropertyNames.SchemaRegistryBasicAuthUserInfo} must be of the form 'username:password'.");
