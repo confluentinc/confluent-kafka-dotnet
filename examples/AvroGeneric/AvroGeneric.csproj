@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AssemblyName>AvroSpecific</AssemblyName>
+    <AssemblyName>AvroGeneric</AssemblyName>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>7.1</LangVersion>
