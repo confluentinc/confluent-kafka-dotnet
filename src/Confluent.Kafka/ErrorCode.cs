@@ -713,9 +713,124 @@ namespace Confluent.Kafka
         TopicDeletionDisabled = 73,
 
         /// <summary>
+        ///     Leader epoch is older than broker epoch.
+        /// </summary>
+        FencedLeaderEpoch = 74,
+
+        /// <summary>
+        ///     Leader epoch is newer than broker epoch.
+        /// </summary>
+        UnknownLeaderEpoch = 75,
+
+        /// <summary>
         ///     Unsupported compression type.
         /// </summary>
-        UnsupportedCompressionType = 74
+        UnsupportedCompressionType = 76,
+
+        /// <summary>
+        ///     Broker epoch has changed.
+        /// </summary>
+        StaleBrokerEpoch = 77,
+
+        /// <summary>
+        ///     Leader high watermark is not caught up.
+        /// </summary>
+        OffsetNotAvailable = 78,
+
+        /// <summary>
+        ///     Group member needs a valid member ID.
+        /// </summary>
+        MemberIdRequired = 79,
+
+        /// <summary>
+        ///     Preferred leader was not available.
+        /// </summary>
+        PreferredLeaderNotAvailable = 80,
+
+        /// <summary>
+        ///     Consumer group has reached maximum size.
+        /// </summary>
+        GroupMaxSizeReached = 81,
+
+        /// <summary>
+        ///     Static consumer fenced by other consumer with same group.instance.id.
+        /// </summary>
+        FencedInstanceId = 82,
+
+        /// <summary>
+        ///     Eligible partition leaders are not available.
+        /// </summary>
+        EligibleLeadersNotAvailable = 83,
+
+        /// <summary>
+        ///     Leader election not needed for topic partition.
+        /// </summary>
+        ElectionNotNeeded = 84,
+
+        /// <summary>
+        ///     No partition reassignment is in progress.
+        /// </summary>
+        NoReassignmentInProgress = 85,
+
+        /// <summary>
+        ///     Deleting offsets of a topic while the consumer group is subscribed to it.
+        /// </summary>
+        GroupSubscribedToTopic = 86,
+
+        /// <summary>
+        /// Broker failed to validate record.
+        /// </summary>
+        InvalidRecord = 87,
+
+        /// <summary>
+        ///     There are unstable offsets that need to be cleared.
+        /// </summary>
+        UnstableOffsetCommit = 88,
+
+        /// <summary>
+        ///     Throttling quota has been exceeded.
+        /// </summary>
+        ThrottlingQuotaExceeded = 89,
+
+        /// <summary>
+        ///     There is a newer producer with the same transactionalId which fences the current one.
+        /// </summary>
+        ProducerFenced = 90,
+
+        /// <summary>
+        ///     Request illegally referred to resource that does not exist.
+        /// </summary>
+        ResourceNotFound = 91,
+
+        /// <summary>
+        ///     Request illegally referred to the same resource twice.
+        /// </summary>
+        DuplicateResource = 92,
+
+        /// <summary>
+        ///     Requested credential would not meet criteria for acceptability.
+        /// </summary>
+        UnacceptableCredential = 93,
+
+        /// <summary>
+        ///     Indicates that the either the sender or recipient of a voter-only request is not one of the expected voters.
+        /// </summary>
+        InconsistentVoterSet = 94,
+
+        /// <summary>
+        ///     Invalid update version.
+        /// </summary>
+        InvalidUpdateVersion = 95,
+
+        /// <summary>
+        ///     Unable to update finalized features due to server error.
+        /// </summary>
+        FeatureUpdateFailed = 96,
+
+        /// <summary>
+        ///     Request principal deserialization failed during forwarding.
+        /// </summary>
+        PrincipalDeserializationFailure = 97
     };
 
     /// <summary>
