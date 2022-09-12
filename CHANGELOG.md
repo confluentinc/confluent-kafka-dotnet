@@ -1,3 +1,15 @@
+# 1.9.3 
+
+## Enhancements
+
+- Added `NormalizeSchemas` configuration property to the Avro, Json and Protobuf serdes.
+
+## Fixes
+
+- Schema Registry authentication now works with passwords that contain the ':' character ([luismedel](https://github.com/luismedel)). 
+- Added missing librdkafka internal and broker error codes to the `ErrorCode` enum.
+
+
 # 1.9.2
 
 ## Enhancements
