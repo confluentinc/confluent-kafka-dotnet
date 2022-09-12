@@ -315,6 +315,20 @@ namespace Confluent.Kafka
         /// </summary>
         Local_Application = -143,
 
+        /// <summary>
+        ///     Assignment lost
+        /// </summary>
+        Local_AssignmentLost = -142,
+
+        /// <summary>
+        ///     No operation performed
+        /// </summary>
+        Local_Noop = -141,
+
+        /// <summary>
+        ///     No offset to automatically reset to
+        /// </summary>
+        Local_AutoOffsetReset = -140,
 
 
         /// <summary>
