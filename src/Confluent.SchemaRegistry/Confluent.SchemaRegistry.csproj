@@ -13,7 +13,7 @@
     <PackageId>Confluent.SchemaRegistry</PackageId>
     <Title>Confluent.SchemaRegistry</Title>
     <AssemblyName>Confluent.SchemaRegistry</AssemblyName>
-    <VersionPrefix>1.9.2</VersionPrefix>
+    <VersionPrefix>1.9.3</VersionPrefix>
     <TargetFrameworks>netstandard2.0;netstandard1.4</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
