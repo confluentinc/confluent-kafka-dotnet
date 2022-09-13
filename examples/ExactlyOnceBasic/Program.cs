@@ -343,6 +343,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
         private void RecreateProducer()
         {
             Log("TESTAPP (Re)Creating producer");
+            if (_producer != null) _producer.Dispose();
             _producer = new ProducerBuilder<string, string>(producerConfig).Build();
             _producer.InitTransactions(TimeSpan.FromSeconds(30));
         }
