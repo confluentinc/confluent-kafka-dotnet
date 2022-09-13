@@ -161,38 +161,7 @@ namespace Confluent.SchemaRegistry.Serdes
                 await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
                 try
                 {
-                    string subject = this.subjectNameStrategy != null
-                        // use the subject name strategy specified in the serializer config if available.
-                        ? this.subjectNameStrategy(context, this.schemaFullname)
-                        // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
-                        : context.Component == MessageComponentType.Key
-                            ? schemaRegistryClient.ConstructKeySubjectName(context.Topic, this.schemaFullname)
-                            : schemaRegistryClient.ConstructValueSubjectName(context.Topic, this.schemaFullname);
-
-                    if (!subjectsRegistered.Contains(subject))
-                    {
-                        if (useLatestVersion)
-                        {
-                            var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
-                                .ConfigureAwait(continueOnCapturedContext: false);
-                            schemaId = latestSchema.Id;
-                        }
-                        else
-                        {
-                            // first usage: register/get schema to check compatibility
-                            schemaId = autoRegisterSchema
-                                ? await schemaRegistryClient.RegisterSchemaAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false)
-                                : await schemaRegistryClient.GetSchemaIdAsync(subject,
-                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
-                                    .ConfigureAwait(continueOnCapturedContext: false);
-
-                            // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
-                        }
-
-                        subjectsRegistered.Add(subject);
-                    }
+                    _ = await GetSchemaId(context);
                 }
                 finally
                 {
@@ -212,6 +181,62 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 throw e.InnerException;
             }
+        }
+
+        /// <summary>
+        ///     Produces the schema ID for the given serialization context.
+        ///     This call may block or throw on first use for a particular topic during
+        ///     schema registration.
+        /// </summary>
+        /// <param name="context">
+        ///     Context relevant to the serialize operation.
+        /// </param>
+        /// <returns>
+        ///     A <see cref="System.Threading.Tasks.Task" /> that completes with 
+        ///     the schema ID value.
+        /// </returns>
+        public async Task<int?> GetSchemaId(SerializationContext context)
+        {
+            var subject = ResolveSubject(context);
+            if (!subjectsRegistered.Contains(subject))
+            {
+                this.schemaId = await ResolveSubjectSchemaId(subject);
+                subjectsRegistered.Add(subject);
+            }
+            return schemaId.Value;
+        }
+
+        private async Task<int?> ResolveSubjectSchemaId(string subject)
+        {
+            if (useLatestVersion)
+            {
+                var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+                return latestSchema.Id;
+            }
+            else
+            {
+                // first usage: register/get schema to check compatibility
+                return autoRegisterSchema
+                    ? await schemaRegistryClient.RegisterSchemaAsync(subject,
+                            new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                        .ConfigureAwait(continueOnCapturedContext: false)
+                    : await schemaRegistryClient.GetSchemaIdAsync(subject,
+                            new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                // TODO: It may be better to fail fast if conflicting values for schemaId are seen here.
+            }
+        }
+
+        private string ResolveSubject(SerializationContext context)
+        {
+            return this.subjectNameStrategy != null
+                // use the subject name strategy specified in the serializer config if available.
+                ? this.subjectNameStrategy(context, this.schemaFullname)
+                // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
+                : context.Component == MessageComponentType.Key
+                    ? schemaRegistryClient.ConstructKeySubjectName(context.Topic, this.schemaFullname)
+                    : schemaRegistryClient.ConstructValueSubjectName(context.Topic, this.schemaFullname);
         }
     }
 }
