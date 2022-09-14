@@ -158,16 +158,8 @@ namespace Confluent.SchemaRegistry.Serdes
 
             try
             {
-                await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
-                try
-                {
-                    _ = await GetSchemaId(context);
-                }
-                finally
-                {
-                    serializeMutex.Release();
-                }
-                
+                _ = await GetSchemaId(context);
+
                 using (var stream = new MemoryStream(initialBufferSize))
                 using (var writer = new BinaryWriter(stream))
                 {
@@ -197,13 +189,22 @@ namespace Confluent.SchemaRegistry.Serdes
         /// </returns>
         public async Task<int?> GetSchemaId(SerializationContext context)
         {
-            var subject = ResolveSubject(context);
-            if (!subjectsRegistered.Contains(subject))
+            await serializeMutex.WaitAsync().ConfigureAwait(continueOnCapturedContext: false);
+            try
             {
-                this.schemaId = await ResolveSubjectSchemaId(subject);
-                subjectsRegistered.Add(subject);
+                var subject = ResolveSubject(context);
+                if (!subjectsRegistered.Contains(subject))
+                {
+                    this.schemaId = await ResolveSubjectSchemaId(subject);
+                    subjectsRegistered.Add(subject);
+                }
+
+                return schemaId;
             }
-            return schemaId.Value;
+            finally
+            {
+                serializeMutex.Release();
+            }
         }
 
         private async Task<int?> ResolveSubjectSchemaId(string subject)
