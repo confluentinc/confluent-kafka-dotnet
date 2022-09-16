@@ -27,13 +27,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
     ///     for the DllName const.
     /// </summary>
     /// <remarks>
-    ///     This copy/pasting is required because DllName must be const. 
+    ///     This copy/pasting is required because DllName must be const.
     ///     TODO: generate the NativeMethods classes at runtime (compile C# code) rather
     ///     than copy/paste.
-    /// 
-    ///     Alternatively, we could have used dlopen to load the native library, but to 
+    ///
+    ///     Alternatively, we could have used dlopen to load the native library, but to
     ///     do that we need to know the absolute path of the native libraries because the
-    ///     dlopen call does not know .NET runtime library storage conventions. Unfortunately 
+    ///     dlopen call does not know .NET runtime library storage conventions. Unfortunately
     ///     these are relatively complex, so we prefer to go with the copy/paste solution
     ///     which is relatively simple.
     /// </remarks>
@@ -507,6 +507,53 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         IntPtr options,
                         IntPtr opaque);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_AdminOptions_set_require_stable(
+                        IntPtr options,
+                        IntPtr true_or_false,
+                        StringBuilder errstr,
+                        UIntPtr errstr_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ListConsumerGroupOffsets_new(
+                [MarshalAs(UnmanagedType.LPStr)] string group, IntPtr partitions);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ListConsumerGroupOffsets_destroy(IntPtr groupPartitions);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_ListConsumerGroupOffsets_result_groups(
+                IntPtr resultResponse, out UIntPtr groupsTopicPartitionsCount);
+
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_ListConsumerGroupOffsets(
+                IntPtr handle,
+                IntPtr[] listGroupsPartitions,
+                UIntPtr listGroupsPartitionsSize,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterConsumerGroupOffsets_new(
+                [MarshalAs(UnmanagedType.LPStr)] string group, IntPtr partitions);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_AlterConsumerGroupOffsets_destroy(IntPtr groupPartitions);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_AlterConsumerGroupOffsets_result_groups(
+                IntPtr resultResponse, out UIntPtr groupsTopicPartitionsCount);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_AlterConsumerGroupOffsets(
+                IntPtr handle,
+                IntPtr[] alterGroupsPartitions,
+                UIntPtr alterGroupsPartitionsSize,
+                IntPtr optionsPtr,
+                IntPtr resultQueuePtr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewTopic_new(

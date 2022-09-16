@@ -343,6 +343,59 @@ namespace Confluent.Kafka
         /// </returns>
         Task<DeleteConsumerGroupOffsetsResult> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null);
 
+        ///    Alters consumer group offsets for a number of topic partitions.
+        /// </summary>
+        /// <param name="groupPartitions">
+        ///    A IEnumerable of GroupTopicPartitionOffsets, each denoting the group and the
+        ///    TopicPartitionOffsets associated with that group to alter the offsets for.
+        ///    The Count of the IEnumerable must exactly be 1.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when altering consumer group offsets.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if the <paramref name="groupPartitions"/> has a count not equal
+        ///     to 1, or if any of the topic names are null.
+        /// </exception>
+        /// <exception cref="AlterConsumerGroupOffsetsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.AlterConsumerGroupOffsetsResult"/>.
+        /// </returns>
+        Task<List<AlterConsumerGroupOffsetsResult>> AlterConsumerGroupOffsetsAsync(IEnumerable<GroupTopicPartitionOffsets> groupPartitions, AlterConsumerGroupOffsetsOptions options = null);
+
+        /// <summary>
+        ///    Lists consumer group offsets for a number of topic partitions.
+        /// </summary>
+        /// <param name="groupPartitions">
+        ///    A IEnumerable of GroupTopicPartitions, each denoting the group and the
+        ///    TopicPartitions associated with that group to fetch the offsets for.
+        ///    The Count of the IEnumerable must exactly be 1.
+        /// </param>
+        /// <param name="options">
+        ///     The options to use when listing consumer group offsets.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        ///     Thrown if the <paramref name="groupPartitions"/> has a count not equal
+        ///     to 1, or if any of the topic names are null.
+        /// </exception>
+        /// <exception cref="ListConsumerGroupOffsetsException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.ListConsumerGroupOffsetsResult"/>.
+        /// </returns>
+        Task<List<ListConsumerGroupOffsetsResult>> ListConsumerGroupOffsetsAsync(IEnumerable<GroupTopicPartitions> groupPartitions, ListConsumerGroupOffsetsOptions options = null);
+
     }
 
 }

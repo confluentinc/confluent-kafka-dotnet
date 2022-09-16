@@ -64,7 +64,9 @@ namespace Confluent.Kafka.Impl
             DeleteConsumerGroupOffsets = 8,
             CreateAcls = 9,
             DescribeAcls = 10,
-            DeleteAcls = 11
+            DeleteAcls = 11,
+            AlterConsumerGroupOffsets = 12,
+            ListConsumerGroupOffsets = 13,
         }
 
         public enum EventType : int
@@ -88,6 +90,8 @@ namespace Confluent.Kafka.Impl
             CreateAcls_Result = 0x400,
             DescribeAcls_Result = 0x800,
             DeleteAcls_Result = 0x1000,
+            AlterConsumerGroupOffsets_Result = 0x1200,
+            ListConsumerGroupOffsets_Result = 0x1400,
         }
 
         // Minimum librdkafka version.
@@ -266,6 +270,7 @@ namespace Confluent.Kafka.Impl
             _AdminOptions_set_incremental = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_incremental").CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_broker = (Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_broker").CreateDelegate(typeof(Func<IntPtr, int, StringBuilder, UIntPtr, ErrorCode>));
             _AdminOptions_set_opaque = (Action<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_opaque").CreateDelegate(typeof(Action<IntPtr, IntPtr>));
+            _AdminOptions_set_require_stable = (Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_AdminOptions_set_require_stable").CreateDelegate(typeof(Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode>));
 
             _NewTopic_new = (Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewTopic_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewTopic_destroy").CreateDelegate(typeof(Action<IntPtr>));
@@ -356,6 +361,16 @@ namespace Confluent.Kafka.Impl
             _DeleteAcls_result_responses = (_DeleteAcls_result_responses_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_responses").CreateDelegate(typeof(_DeleteAcls_result_responses_delegate));
             _DeleteAcls_result_response_error = (_DeleteAcls_result_response_error_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_response_error").CreateDelegate(typeof(_DeleteAcls_result_response_error_delegate));
             _DeleteAcls_result_response_matching_acls = (_DeleteAcls_result_response_matching_acls_delegate)methods.Single(m => m.Name == "rd_kafka_DeleteAcls_result_response_matching_acls").CreateDelegate(typeof(_DeleteAcls_result_response_matching_acls_delegate));
+
+            _AlterConsumerGroupOffsets_new = (_AlterConsumerGroupOffsets_new_delegate)methods.Single(m => m.Name == "rd_kafka_AlterConsumerGroupOffsets_new").CreateDelegate(typeof(_AlterConsumerGroupOffsets_new_delegate));
+            _AlterConsumerGroupOffsets_destroy = (_AlterConsumerGroupOffsets_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_AlterConsumerGroupOffsets_destroy").CreateDelegate(typeof(_AlterConsumerGroupOffsets_destroy_delegate));
+            _AlterConsumerGroupOffsets_result_groups = (_AlterConsumerGroupOffsets_result_groups_delegate)methods.Single(m => m.Name == "rd_kafka_AlterConsumerGroupOffsets_result_groups").CreateDelegate(typeof(_AlterConsumerGroupOffsets_result_groups_delegate));
+            _AlterConsumerGroupOffsets = (_AlterConsumerGroupOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_AlterConsumerGroupOffsets").CreateDelegate(typeof(_AlterConsumerGroupOffsets_delegate));
+
+            _ListConsumerGroupOffsets_new = (_ListConsumerGroupOffsets_new_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets_new").CreateDelegate(typeof(_ListConsumerGroupOffsets_new_delegate));
+            _ListConsumerGroupOffsets_destroy = (_ListConsumerGroupOffsets_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets_destroy").CreateDelegate(typeof(_ListConsumerGroupOffsets_destroy_delegate));
+            _ListConsumerGroupOffsets_result_groups = (_ListConsumerGroupOffsets_result_groups_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets_result_groups").CreateDelegate(typeof(_ListConsumerGroupOffsets_result_groups_delegate));
+            _ListConsumerGroupOffsets = (_ListConsumerGroupOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets").CreateDelegate(typeof(_ListConsumerGroupOffsets_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1150,6 +1165,12 @@ namespace Confluent.Kafka.Impl
             IntPtr options,
             IntPtr opaque) => _AdminOptions_set_opaque(options, opaque);
 
+        private static Func<IntPtr, IntPtr, StringBuilder, UIntPtr, ErrorCode> _AdminOptions_set_require_stable;
+        internal static ErrorCode AdminOptions_set_require_stable(
+            IntPtr options,
+            IntPtr true_or_false,
+            StringBuilder errstr,
+            UIntPtr errstr_size) => _AdminOptions_set_require_stable(options, true_or_false, errstr, errstr_size);
 
         private static Func<string, IntPtr, IntPtr, StringBuilder, UIntPtr, IntPtr> _NewTopic_new;
         internal static IntPtr NewTopic_new(
@@ -1593,6 +1614,61 @@ namespace Confluent.Kafka.Impl
             IntPtr resultResponse,
             out UIntPtr matchingAclsCntp
         ) => _DeleteAcls_result_response_matching_acls(resultResponse, out matchingAclsCntp);
+
+
+        private delegate IntPtr _AlterConsumerGroupOffsets_new_delegate(string group, IntPtr partitions);
+        private static _AlterConsumerGroupOffsets_new_delegate _AlterConsumerGroupOffsets_new;
+        internal static IntPtr AlterConsumerGroupOffsets_new(string group, IntPtr partitions)
+            => _AlterConsumerGroupOffsets_new(group, partitions);
+
+        private delegate void _AlterConsumerGroupOffsets_destroy_delegate(IntPtr groupPartitions);
+        private static _AlterConsumerGroupOffsets_destroy_delegate _AlterConsumerGroupOffsets_destroy;
+        internal static void AlterConsumerGroupOffsets_destroy(IntPtr groupPartitions)
+            => _AlterConsumerGroupOffsets_destroy(groupPartitions);
+
+        private delegate void _AlterConsumerGroupOffsets_delegate(IntPtr handle, IntPtr[] alterGroupsPartitions, UIntPtr alterGroupsPartitionsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _AlterConsumerGroupOffsets_delegate _AlterConsumerGroupOffsets;
+        internal static void AlterConsumerGroupOffsets(
+            IntPtr handle,
+            IntPtr[] alterGroupsPartitions,
+            UIntPtr alterGroupsPartitionsSize,
+            IntPtr optionsPtr,
+            IntPtr resultQueuePtr) => _AlterConsumerGroupOffsets(handle, alterGroupsPartitions, alterGroupsPartitionsSize, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _AlterConsumerGroupOffsets_result_groups_delegate(IntPtr resultResponse, out UIntPtr groupsTopicPartitionsCount);
+        private static _AlterConsumerGroupOffsets_result_groups_delegate _AlterConsumerGroupOffsets_result_groups;
+        internal static IntPtr AlterConsumerGroupOffsets_result_groups(
+            IntPtr resultResponse,
+            out UIntPtr groupsTopicPartitionsCount
+        ) => _AlterConsumerGroupOffsets_result_groups(resultResponse, out groupsTopicPartitionsCount);
+
+
+        private delegate IntPtr _ListConsumerGroupOffsets_new_delegate(string group, IntPtr partitions);
+        private static _ListConsumerGroupOffsets_new_delegate _ListConsumerGroupOffsets_new;
+        internal static IntPtr ListConsumerGroupOffsets_new(string group, IntPtr partitions)
+            => _ListConsumerGroupOffsets_new(group, partitions);
+
+        private delegate void _ListConsumerGroupOffsets_destroy_delegate(IntPtr groupPartitions);
+        private static _ListConsumerGroupOffsets_destroy_delegate _ListConsumerGroupOffsets_destroy;
+        internal static void ListConsumerGroupOffsets_destroy(IntPtr groupPartitions)
+            => _ListConsumerGroupOffsets_destroy(groupPartitions);
+
+        private delegate void _ListConsumerGroupOffsets_delegate(IntPtr handle, IntPtr[] listGroupsPartitions, UIntPtr listGroupsPartitionsSize, IntPtr optionsPtr, IntPtr resultQueuePtr);
+        private static _ListConsumerGroupOffsets_delegate _ListConsumerGroupOffsets;
+        internal static void ListConsumerGroupOffsets(
+            IntPtr handle,
+            IntPtr[] listGroupsPartitions,
+            UIntPtr listGroupsPartitionsSize,
+            IntPtr optionsPtr,
+            IntPtr resultQueuePtr) => _ListConsumerGroupOffsets(handle, listGroupsPartitions, listGroupsPartitionsSize, optionsPtr, resultQueuePtr);
+
+        private delegate IntPtr _ListConsumerGroupOffsets_result_groups_delegate(IntPtr resultResponse, out UIntPtr groupsTopicPartitionsCount);
+        private static _ListConsumerGroupOffsets_result_groups_delegate _ListConsumerGroupOffsets_result_groups;
+        internal static IntPtr ListConsumerGroupOffsets_result_groups(
+            IntPtr resultResponse,
+            out UIntPtr groupsTopicPartitionsCount
+        ) => _ListConsumerGroupOffsets_result_groups(resultResponse, out groupsTopicPartitionsCount);
+
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);
