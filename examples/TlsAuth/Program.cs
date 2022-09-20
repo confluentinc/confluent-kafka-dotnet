@@ -27,7 +27,7 @@ namespace Confluent.Kafka.Examples.TlsAuth
     {
         public static async Task Main(string[] args)
         {
-            if (args.Length < 4)
+            if (args.Length < 4 || (args[2] == "auth" && args.Length < 6))
             {
                 Console.WriteLine("Usage: .. brokerList topicName noauth|auth ssl-ca-location [ssl-keystore-location] [ssl-keystore-password]");
                 return;
