@@ -30,17 +30,39 @@ namespace Confluent.Kafka.Examples.ConsumerExample
     public class Program
     {
         /// <summary>
-        ///     In this example
-        ///         - offsets are manually committed.
-        ///         - no extra thread is created for the Poll (Consume) loop.
+        ///     In this example:
+        ///         - The consumer operates in a group - you can start multiple instances
+        ///           of the application, and they will share consumption from the topics.
+        ///         - Offsets are committed using the StoreOffset mechanism (best practice
+        ///           for at-least once semantics).
         /// </summary>
         public static void Run_Consume(string brokerList, List<string> topics, CancellationToken cancellationToken)
         {
             var config = new ConsumerConfig
             {
                 BootstrapServers = brokerList,
-                GroupId = "csharp-consumer",
-                EnableAutoCommit = false,
+                GroupId = "csharp-consumer-group",
+                // The default value for both EnableAutoCommit and EnableAutoOffsetStore is true.
+                // When EnableAutoOffsetStore is true, offsets are marked for auto-commit immediately
+                // prior to being returned to the application from the Consume method. Keeping in
+                // mind that offsets are committed periodically (at interval AutoCommitIntervalMs),
+                // in a background thread, this gives neither at-least once or at-most once semantics:
+                //  - If the application crashes before processing of the message is complete, but
+                //    after the background thread has sent the offset commit protocol request to the
+                //    group coordinator, then the message will not be processed when consumption starts
+                //    again for this partition.
+                //  - If the application crashes after processing of the message is complete, but
+                //    before the background thread has sent the offset commit protocol request to
+                //    the group coordinator, then the message will be processed a second time when
+                //    consumption starts again for this partition.
+                // Note: With the Java client, default auto commit capability *does* give at-least once
+                // semantics because the protocol request is sent as a side effect of the call to 
+                // poll.
+                // With librdkafka based clients, the best way to achieve at-least once semantics
+                // is to set EnableAutoOffsetStore to false, and use the StoreOffset method to mark
+                // an offset for commit after processing is complete.
+                EnableAutoCommit = true,
+                EnableAutoOffsetStore = false,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
@@ -49,8 +71,6 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // https://www.confluent.io/blog/cooperative-rebalancing-in-kafka-streams-consumer-ksqldb/
                 PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
             };
-
-            const int commitPeriod = 5;
 
             // Note: If a key or value deserializer is not set (as is the case below), the 
             // deserializer corresponding to the appropriate type from Confluent.Kafka.Deserializers
@@ -104,6 +124,16 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                     {
                         try
                         {
+                            // In addition to delivering consumed messages (and partition EOF events) to the application,
+                            // all handlers (with the exception of the log handler) are called as a side effect of a call
+                            // to Consume, on the consume thread.
+                            // It is important to note that in the event the group needs to rebalance, the rebalance will
+                            // be blocked until the next call is made to Consume if a PartitionsAssigned/Revoked or Lost
+                            // handler is configured. If one of these handlers is not configured, default assignment logic
+                            // will occur automatically on a background thread and the rebalance will not be blocked.
+                            // In most cases, you probably *do* want to delay the rebalance until the next call to Consume,
+                            // because this will ensure the consumer still owns the partition associated with the message
+                            // just consumed, allowing offsets to be committed or stored successfully.
                             var consumeResult = consumer.Consume(cancellationToken);
 
                             if (consumeResult.IsPartitionEOF)
@@ -116,23 +146,11 @@ namespace Confluent.Kafka.Examples.ConsumerExample
 
                             Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Message.Value}");
 
-                            if (consumeResult.Offset % commitPeriod == 0)
-                            {
-                                // The Commit method sends a "commit offsets" request to the Kafka
-                                // cluster and synchronously waits for the response. This is very
-                                // slow compared to the rate at which the consumer is capable of
-                                // consuming messages. A high performance application will typically
-                                // commit offsets relatively infrequently and be designed handle
-                                // duplicate messages in the event of failure.
-                                try
-                                {
-                                    consumer.Commit(consumeResult);
-                                }
-                                catch (KafkaException e)
-                                {
-                                    Console.WriteLine($"Commit error: {e.Error.Reason}");
-                                }
-                            }
+                            // Mark the offset associated with the consumed message as eligible for commit.
+                            // We know the consumer still owns the partition because any group rebalance is delayed until
+                            // the next call to consume, since we have rebalance handlers configured, and these
+                            // execute as a side effect of the next call to Consume.
+                            consumer.StoreOffset(consumeResult);
                         }
                         catch (ConsumeException e)
                         {
@@ -149,23 +167,23 @@ namespace Confluent.Kafka.Examples.ConsumerExample
         }
 
         /// <summary>
-        ///     In this example
-        ///         - consumer group functionality (i.e. .Subscribe + offset commits) is not used.
-        ///         - the consumer is manually assigned to a partition and always starts consumption
-        ///           from a specific offset (0).
+        ///     In this example:
+        ///         - Consumer group functionality (i.e. .Subscribe, offset commit) is not used.
+        ///         - The consumer is manually assigned to a partition and always starts consumption
+        ///           from the first message in the log.
         /// </summary>
         public static void Run_ManualAssign(string brokerList, List<string> topics, CancellationToken cancellationToken)
         {
             var config = new ConsumerConfig
             {
-                // the group.id property must be specified when creating a consumer, even 
+                // The GroupId property must be specified when creating a consumer, even 
                 // if you do not intend to use any consumer group functionality.
-                GroupId = new Guid().ToString(),
+                GroupId = "csharp-example-consumer-group",
                 BootstrapServers = brokerList,
-                // partition offsets can be committed to a group even by consumers not
-                // subscribed to the group. in this example, auto commit is disabled
-                // to prevent this from occurring.
-                EnableAutoCommit = true
+                // Partition offsets can be committed to a group even by consumers not
+                // subscribed to the group. By default, auto offset commit is enabled.
+                // Since we don't make use of committed offsets, disable this.
+                EnableAutoCommit = false,
             };
 
             using (var consumer =
