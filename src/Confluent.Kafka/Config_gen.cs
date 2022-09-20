@@ -982,6 +982,18 @@ namespace Confluent.Kafka
         public ProducerConfig(IDictionary<string, string> config) : base(config) { }
 
         /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic. Throw an ArgumentException if so.
+        /// </summary>
+        public ProducerConfig NotUserConfigurableCheck()
+        {
+            var toCheck = new string[] { "transactional.id" };
+            this.Where(kv => toCheck.Contains(kv.Key)).ToList()
+                .ForEach(kv => { throw new ArgumentException($"Producer config property '{kv.Key}' is not user configurable."); });
+            return this;
+        }
+
+        /// <summary>
         ///     Specifies whether or not the producer should start a background poll
         ///     thread to receive delivery reports and event notifications. Generally,
         ///     this should be set to true. If set to false, you will need to call
@@ -1184,6 +1196,18 @@ namespace Confluent.Kafka
         ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public ConsumerConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic. Throw an ArgumentException if so.
+        /// </summary>
+        public ConsumerConfig NotUserConfigurableCheck()
+        {
+            var toCheck = new string[] { "enable.partition.eof", "partition.assignment.strategy", "enable.auto.commit", "enable.auto.offset.store" };
+            this.Where(kv => toCheck.Contains(kv.Key)).ToList()
+                .ForEach(kv => { throw new ArgumentException($"Consumer config property '{kv.Key}' is not user configurable."); });
+            return this;
+        }
 
         /// <summary>
         ///     A comma separated list of fields that may be optionally set

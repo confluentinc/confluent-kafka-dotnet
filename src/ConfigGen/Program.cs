@@ -464,6 +464,18 @@ namespace Confluent.Kafka
                 createClassConstructors("ConsumerConfig") +
 @"
         /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic. Throw an ArgumentException if so.
+        /// </summary>
+        public ConsumerConfig NotUserConfigurableCheck()
+        {
+            var toCheck = new string[] { ""enable.partition.eof"", ""partition.assignment.strategy"", ""enable.auto.commit"", ""enable.auto.offset.store"" };
+            this.Where(kv => toCheck.Contains(kv.Key)).ToList()
+                .ForEach(kv => { throw new ArgumentException($""Consumer config property '{kv.Key}' is not user configurable.""); });
+            return this;
+        }
+
+        /// <summary>
         ///     A comma separated list of fields that may be optionally set
         ///     in <see cref=""Confluent.Kafka.ConsumeResult{TKey,TValue}"" />
         ///     objects returned by the
@@ -485,6 +497,18 @@ namespace Confluent.Kafka
             return
                 createClassConstructors("ProducerConfig") +
 @"
+        /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic. Throw an ArgumentException if so.
+        /// </summary>
+        public ProducerConfig NotUserConfigurableCheck()
+        {
+            var toCheck = new string[] { ""transactional.id"" };
+            this.Where(kv => toCheck.Contains(kv.Key)).ToList()
+                .ForEach(kv => { throw new ArgumentException($""Producer config property '{kv.Key}' is not user configurable.""); });
+            return this;
+        }
+
         /// <summary>
         ///     Specifies whether or not the producer should start a background poll
         ///     thread to receive delivery reports and event notifications. Generally,
