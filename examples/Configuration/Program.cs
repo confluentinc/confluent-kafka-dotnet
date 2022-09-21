@@ -26,14 +26,14 @@ IConfiguration configuration = new ConfigurationBuilder()
     .Build();
 
 // You can bind configuration directly to the strongly typed configuration classes.
-var pConfig = configuration.GetSection("Producer").Get<ProducerConfig>().NotUserConfigurableCheck();
-var cConfig = configuration.GetSection("Consumer").Get<ConsumerConfig>().NotUserConfigurableCheck();
+var pConfig = configuration.GetSection("Producer").Get<ProducerConfig>().ThrowIfContainsNonUserConfigurable();
+var cConfig = configuration.GetSection("Consumer").Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
 var topicName = configuration.GetValue<string>("General:TopicName");
 
 // After reading the user configuration, adjust as required.
 // Note that some config properties have implications for application logic and generally
-// shouldn't be set independent of the code. The NotUserConfigurableCheck() above is used
-// to check for these and will throw an ArgumentException if any are present in the
+// shouldn't be set independent of the code. The ThrowIfHasNonUserConfigurable() method above
+// is used to check for these and will throw an ArgumentException if any are present in the
 // configuration. EnableAutoCommit is one such property.
 cConfig.EnableAutoCommit = false;
 

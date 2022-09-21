@@ -1,6 +1,6 @@
 // *** Auto-generated from librdkafka v1.9.2 *** - do not modify manually.
 //
-// Copyright 2018 Confluent Inc.
+// Copyright 2018-2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the 'License');
 // you may not use this file except in compliance with the License.
@@ -985,7 +985,7 @@ namespace Confluent.Kafka
         ///     Check if any properties have been set that have implications for
         ///     application logic. Throw an ArgumentException if so.
         /// </summary>
-        public ProducerConfig NotUserConfigurableCheck()
+        public ProducerConfig ThrowIfContainsNonUserConfigurable()
         {
             var toCheck = new string[] { "transactional.id" };
             this.Where(kv => toCheck.Contains(kv.Key)).ToList()
@@ -1201,7 +1201,7 @@ namespace Confluent.Kafka
         ///     Check if any properties have been set that have implications for
         ///     application logic. Throw an ArgumentException if so.
         /// </summary>
-        public ConsumerConfig NotUserConfigurableCheck()
+        public ConsumerConfig ThrowIfContainsNonUserConfigurable()
         {
             var toCheck = new string[] { "enable.partition.eof", "partition.assignment.strategy", "enable.auto.commit", "enable.auto.offset.store" };
             this.Where(kv => toCheck.Contains(kv.Key)).ToList()
