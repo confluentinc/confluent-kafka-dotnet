@@ -36,9 +36,15 @@ using System.Threading.Tasks;
 namespace Confluent.Kafka.Examples.ExactlyOnceBasic
 {
 
+    /// <summary>
+    ///     Main class of this EOS producer example.
+    /// </summary>
     public class Program
     {
 
+        /// <summary>
+        ///     Main method.
+        /// </summary>
         public static async Task Main(string[] args)
         {
             var r = new Random();
@@ -99,7 +105,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
         }
     }
 
-
+    /// <summary>
+    ///     Process configuration. Contains an input and output topic
+    ///     and a commit period in seconds.
+    /// </summary>
     class ProcessConfig
     {
         public static string InputTopic { get; set; }
@@ -119,6 +128,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     Generates configuration for the AdminClient.
+        /// </summary>
         public static Dictionary<string, string> AdminConfig
         {
             get
@@ -141,6 +153,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     Generates configuration for the source producer.
+        /// </summary>
         public static Dictionary<string, string> SourceProducerConfig
         {
             get
@@ -166,6 +181,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     Generates configuration for the target producer.
+        /// </summary>
         public static Dictionary<string, string> TargetProducerConfig
         {
             get
@@ -199,6 +217,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
         }
 
 
+        /// <summary>
+        ///     Generates configuration for the consumer.
+        /// </summary>
         public static Dictionary<string, string> ConsumerConfig
         {
             get
@@ -234,6 +255,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
         }
     }
 
+    /// <summary>
+    ///     Generates random messages to a topic.
+    /// </summary>
     public class OrderGenerator
     {
         private static readonly Random random = new Random();
@@ -281,6 +305,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
         }
     }
 
+    /// <summary>
+    ///     Reads messages from an input topic and replicates them to an output topic
+    ///     with EOS.
+    /// </summary>
     public class OrderProcessingWorker : IHostedService
     {
         private readonly CancellationTokenSource _stoppingToken;
@@ -302,6 +330,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
         private bool recreateProducer = false;
 
 
+        /// <summary>
+        ///     Initializes fields and creates the producer.
+        /// </summary>
         public OrderProcessingWorker()
         {
             _stoppingToken = new CancellationTokenSource();
@@ -309,6 +340,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             RecreateProducer();
         }
 
+        /// <summary>
+        ///     Retry callback that stops retries if
+        ///     the error is fatal or abortable or not retriable.
+        /// </summary>
         private void RetryIfNeeded(string operation, KafkaException e)
         {
             var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
@@ -322,6 +357,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             RetryAfterSleeping();
         }
 
+        /// <summary>
+        ///     Retry callback that stops retries only if
+        ///     the error is fatal or abortable.
+        /// </summary>
         private void RetryUnlessFatalOrAborted(string operation, KafkaException e)
         {
             var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
@@ -335,11 +374,18 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             RetryAfterSleeping();
         }
 
+        /// <summary>
+        ///     Retry callback that sleeps for a configured period.
+        /// </summary>
         private void RetryAfterSleeping(string operation = null, KafkaException e = null)
         {
             Thread.Sleep(RetryAfterMs);
         }
 
+        /// <summary>
+        ///     Recreates the producer after disposing the old one
+        ///     and initializes transactions.
+        /// </summary>
         private void RecreateProducer()
         {
             Log("TESTAPP (Re)Creating producer");
@@ -348,6 +394,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             _producer.InitTransactions(TimeSpan.FromSeconds(30));
         }
 
+        /// <summary>
+        ///     Starts this worker's async task.
+        /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             Log("TESTAPP StartAsync");
@@ -359,6 +408,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     Cancels this worker's task and awaits its termination.
+        /// </summary>
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             Log("TESTAPP StopAsync");
@@ -371,6 +423,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     Seeks assigned partitions to last committed offset,
+        ///     or to the earliest offset if no offset was committed yet.
+        /// </summary>
         private void RewindConsumer<K, V>(IConsumer<K, V> consumer, TimeSpan timeout)
         {
             var committedOffsets = consumer.Committed(consumer.Assignment, timeout);
@@ -386,6 +442,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     This worker's job.
+        /// </summary>
         private void TradingJob()
         {
             DateTime lastTransactionCommit = DateTime.UtcNow;
@@ -468,6 +527,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             _isProcessFinished = true;
         }
 
+        /// <summary>
+        ///     Retry executing <paramref name="action"/> until it succeeds,
+        ///     call <paramref name="onKafkaException"/> if a <see cref="Confluent.Kafka.KafkaException" /> occurs.
+        /// </summary>
         private void Retry(string operation, Action action, Action<string, KafkaException> onKafkaException = null)
         {
             while (!_isProcessFinished)
@@ -492,6 +555,12 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     Commits transaction's produced and consumed messages.
+        ///     Aborts transaction if an abortable exception is thrown,
+        ///     recreates the producer if a fatal exception is thrown or
+        ///     retries each operation that is throwing a retriable exception.
+        /// </summary>
         private DateTime CommitTransaction(IConsumer<string, string> consumer)
         {
             while (!_isProcessFinished)
@@ -605,7 +674,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             return lastTransactionCommit;
         }
 
-
+        /// <summary>
+        ///     When partitions are being revoked, commit transaction's remaining partitions
+        ///     before revoke is completed.
+        /// </summary>
         private void PartitionsRevokedHandler(IConsumer<string, string> consumer, List<TopicPartitionOffset> partitions)
         {
             Log("TESTAPP Partitions revoked.");
@@ -615,11 +687,17 @@ namespace Confluent.Kafka.Examples.ExactlyOnceBasic
             }
         }
 
+        /// <summary>
+        ///     When partitions are lost, don't act.
+        /// </summary>
         private void PartitionsLostHandler(IConsumer<string, string> consumer, List<TopicPartitionOffset> partitions)
         {
             Log("TESTAPP Partitions lost.");
         }
 
+        /// <summary>
+        ///     Logs provided <paramref name="message"/>.
+        /// </summary>
         private void Log(string message)
         {
             double ts = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalSeconds;
