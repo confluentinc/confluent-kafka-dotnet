@@ -15,8 +15,8 @@
 // Refer to LICENSE for more information.
 
 using System;
-using Confluent.Kafka;
 using Microsoft.Extensions.Configuration;
+using Confluent.Kafka;
 
 
 // An example demonstrating working with Confluent.Kafka and ASP.NET style configuration.
@@ -31,10 +31,11 @@ var cConfig = configuration.GetSection("Consumer").Get<ConsumerConfig>().ThrowIf
 var topicName = configuration.GetValue<string>("General:TopicName");
 
 // After reading the user configuration, adjust as required.
-// Note that some config properties have implications for application logic and generally
-// shouldn't be set independent of the code. The ThrowIfHasNonUserConfigurable() method above
+// Note that some Consumer config properties have implications for application logic and generally
+// shouldn't be set independent of the code. The ThrowIfHasNonUserConfigurable() helper method above
 // is used to check for these and will throw an ArgumentException if any are present in the
-// configuration. EnableAutoCommit is one such property.
+// configuration. EnableAutoCommit is one such property. There are no such Producer or AdminClient
+// properties, and the ThrowIfContainsNonUserConfigurable method is (currently) a noop in these cases.
 cConfig.EnableAutoCommit = false;
 
 var assigned = false;

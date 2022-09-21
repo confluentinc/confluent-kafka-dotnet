@@ -953,6 +953,22 @@ namespace Confluent.Kafka
         ///     This will change the values "in-place" i.e. operations on this class WILL modify the provided collection
         /// </summary>
         public AdminClientConfig(IDictionary<string, string> config) : base(config) { }
+
+        /// <summary>
+        ///     Check if any properties have been set that have implications for
+        ///     application logic and therefore shouldn't be set via external
+        ///     configuration, independent of the code. Throw an ArgumentException
+        ///     if so.
+        ///
+        ///     There are currently no such AdminClient configuration properties
+        ///     and this method will never throw.
+        /// </summary>
+        public AdminClientConfig ThrowIfContainsNonUserConfigurable()
+        {
+            // noop
+            return this;
+        }
+
     }
 
 
@@ -983,13 +999,16 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Check if any properties have been set that have implications for
-        ///     application logic. Throw an ArgumentException if so.
+        ///     application logic and therefore shouldn't be set via external
+        ///     configuration, independent of the code. Throw an ArgumentException
+        ///     if so.
+        ///
+        ///     There are currently no such Producer configuration properties
+        ///     and this method will never throw.
         /// </summary>
         public ProducerConfig ThrowIfContainsNonUserConfigurable()
         {
-            var toCheck = new string[] { "transactional.id" };
-            this.Where(kv => toCheck.Contains(kv.Key)).ToList()
-                .ForEach(kv => { throw new ArgumentException($"Producer config property '{kv.Key}' is not user configurable."); });
+            // noop
             return this;
         }
 
@@ -1199,7 +1218,9 @@ namespace Confluent.Kafka
 
         /// <summary>
         ///     Check if any properties have been set that have implications for
-        ///     application logic. Throw an ArgumentException if so.
+        ///     application logic and therefore shouldn't be set via external
+        ///     configuration, independent of the code. Throw an ArgumentException
+        ///     if so.
         /// </summary>
         public ConsumerConfig ThrowIfContainsNonUserConfigurable()
         {
