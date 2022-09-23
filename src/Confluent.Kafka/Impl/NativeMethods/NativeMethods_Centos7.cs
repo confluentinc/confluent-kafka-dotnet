@@ -556,6 +556,18 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 IntPtr resultQueuePtr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_list_consumer_groups(
+                IntPtr handle, out IntPtr grplistp, IntPtr timeout_ms);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern ErrorCode rd_kafka_describe_consumer_groups(
+                IntPtr handle,
+                [MarshalAs(UnmanagedType.LPArray)] string[] groups,
+                UIntPtr group_cnt,
+                out IntPtr grplistp,
+                IntPtr timeout_ms);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewTopic_new(
                         [MarshalAs(UnmanagedType.LPStr)] string topic,
                         IntPtr num_partitions,

@@ -1071,5 +1071,17 @@ namespace Confluent.Kafka
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListConsumerGroups(TimeSpan)" />
+        /// </summary>
+        public List<GroupInfo> ListConsumerGroups(TimeSpan timeout)
+            => Handle.LibrdkafkaHandle.ListConsumerGroups(timeout.TotalMillisecondsAsInt());
+
+        /// <summary>
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeConsumerGroups(IList{string}, TimeSpan)" />
+        /// </summary>
+        public List<GroupInfo> DescribeConsumerGroups(IList<string> groups, TimeSpan timeout)
+            => Handle.LibrdkafkaHandle.DescribeConsumerGroups(groups, timeout.TotalMillisecondsAsInt());
     }
 }

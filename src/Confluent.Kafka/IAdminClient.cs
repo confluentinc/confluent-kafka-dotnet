@@ -29,6 +29,8 @@ namespace Confluent.Kafka
     public interface IAdminClient : IClient
     {
         /// <summary>
+        ///     DEPRECATED.
+        ///     Superseded by ListConsumerGroups and DescribeConsumerGroups.
         ///     Get information pertaining to all groups in
         ///     the Kafka cluster (blocking)
         ///
@@ -42,6 +44,8 @@ namespace Confluent.Kafka
 
 
         /// <summary>
+        ///     DEPRECATED.
+        ///     Superseded by ListConsumerGroups and DescribeConsumerGroups.
         ///     Get information pertaining to a particular
         ///     group in the Kafka cluster (blocking).
         ///
@@ -396,6 +400,54 @@ namespace Confluent.Kafka
         /// </returns>
         Task<List<ListConsumerGroupOffsetsResult>> ListConsumerGroupOffsetsAsync(IEnumerable<GroupTopicPartitions> groupPartitions, ListConsumerGroupOffsetsOptions options = null);
 
+        /// <summary>
+        ///    Lists consumer groups in the cluster.
+        /// </summary>
+        /// <param name="timeout">
+        ///     The (approximate) maximum time to wait for response from brokers.
+        /// </param>
+        /// <exception cref="KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="ListConsumerGroupException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.ListConsumerGroupException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A List of <see cref="Confluent.Kafka.GroupInfo"/>, with
+        ///     only the GroupInfo.Group and GroupInfo.Error populated.
+        ///     TODO(milind): a bit torn on whether we should have a different return type for this
+        ///                   or mirror librdkafka and have the same return for list and describe both.
+        /// </returns>
+        List<GroupInfo> ListConsumerGroups(TimeSpan timeout);
+
+        /// <summary>
+        ///    Describes consumer groups in the cluster.
+        /// </summary>
+        /// <param name="groups">
+        ///     The list of groups to describe. This can be set
+        ///     to null to describe all groups.
+        /// </param>
+        /// <param name="timeout">
+        ///     The (approximate) maximum time to wait for response from brokers.
+        /// </param>
+        /// <exception cref="KafkaException">
+        ///     Thrown if there is any client-level error.
+        /// </exception>
+        /// <exception cref="DescribeConsumerGroupException">
+        ///     Thrown if any of the constituent results is in
+        ///     error. The entire result (which may contain
+        ///     constituent results that are not in error) is
+        ///     available via the <see cref="Confluent.Kafka.Admin.DescribeConsumerGroupException.Results" />
+        ///     property of the exception.
+        /// </exception>
+        /// <returns>
+        ///     A List of <see cref="Confluent.Kafka.GroupInfo"/>.
+        /// </returns>
+        List<GroupInfo> DescribeConsumerGroups(IList<string> groups, TimeSpan timeout);
     }
 
 }

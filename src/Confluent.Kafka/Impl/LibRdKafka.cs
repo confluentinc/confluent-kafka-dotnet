@@ -372,6 +372,10 @@ namespace Confluent.Kafka.Impl
             _ListConsumerGroupOffsets_result_groups = (_ListConsumerGroupOffsets_result_groups_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets_result_groups").CreateDelegate(typeof(_ListConsumerGroupOffsets_result_groups_delegate));
             _ListConsumerGroupOffsets = (_ListConsumerGroupOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets").CreateDelegate(typeof(_ListConsumerGroupOffsets_delegate));
 
+            _list_consumer_groups = (_list_consumer_groups_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups").CreateDelegate(typeof(_list_consumer_groups_delegate));
+
+            _describe_consumer_groups = (_describe_consumer_groups_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups").CreateDelegate(typeof(_describe_consumer_groups_delegate));
+
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
             _topic_result_name = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_name").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1669,6 +1673,23 @@ namespace Confluent.Kafka.Impl
             out UIntPtr groupsTopicPartitionsCount
         ) => _ListConsumerGroupOffsets_result_groups(resultResponse, out groupsTopicPartitionsCount);
 
+        private delegate ErrorCode _list_consumer_groups_delegate(IntPtr rk, out IntPtr grplistp, IntPtr timeout_ms);
+        private static _list_consumer_groups_delegate _list_consumer_groups;
+        internal static ErrorCode list_consumer_groups(
+            IntPtr rk,
+            out IntPtr grplistp,
+            IntPtr timeout_ms) => _list_consumer_groups(rk, out grplistp, timeout_ms);
+
+        private delegate ErrorCode _describe_consumer_groups_delegate(
+            IntPtr rk, string[] groups, UIntPtr group_cnt, out IntPtr grplistp, IntPtr timeout_ms);
+        private static _describe_consumer_groups_delegate _describe_consumer_groups;
+        internal static ErrorCode describe_consumer_groups(
+            IntPtr rk,
+            string[] groups,
+            UIntPtr group_cnt,
+            out IntPtr grplistp,
+            IntPtr timeout_ms)
+                => _describe_consumer_groups(rk, groups, group_cnt, out grplistp, timeout_ms);
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);

@@ -1174,6 +1174,27 @@ namespace Confluent.Kafka.Impl
         }
 
         /// <summary>
+        ///     Creates and returns a List{TopicPartition} from a C rd_kafka_topic_partition_list_t *.
+        /// </summary>
+        internal static List<TopicPartition> GetTopicPartitionList(IntPtr listPtr)
+        {
+            if (listPtr == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("FATAL: Cannot marshal from a NULL ptr.");
+            }
+
+            var list = Util.Marshal.PtrToStructure<rd_kafka_topic_partition_list>(listPtr);
+            return Enumerable.Range(0, list.cnt)
+                .Select(i => Util.Marshal.PtrToStructure<rd_kafka_topic_partition>(
+                    list.elems + i * Util.Marshal.SizeOf<rd_kafka_topic_partition>()))
+                .Select(ktp => new TopicPartition(
+                        ktp.topic,
+                        ktp.partition
+                    ))
+                .ToList();
+        }
+
+        /// <summary>
         ///     Creates and returns a C rd_kafka_topic_partition_list_t * populated by offsets.
         /// </summary>
         /// <returns>
@@ -1298,7 +1319,8 @@ namespace Confluent.Kafka.Impl
                                             mi.member_metadata_size),
                                         CopyBytes(
                                             mi.member_assignment,
-                                            mi.member_assignment_size)
+                                            mi.member_assignment_size),
+                                            null
                                     ))
                                 .ToList()
                         ))
@@ -2097,7 +2119,8 @@ namespace Confluent.Kafka.Impl
 	        // For now, we only support one group at a time given as a single element of groupsPartitions.
 	        // Code has been written so that only this if-guard needs to be removed when we add support for
 	        // multiple GroupTopicPartitions.
-            if (groupsPartitions.Count() != 1) {
+            if (groupsPartitions.Count() != 1) 
+            {
                 throw new ArgumentException("Can only list offsets for one group at a time");
             }
 
@@ -2151,6 +2174,114 @@ namespace Confluent.Kafka.Impl
                 }
             }
 
+        }
+
+        internal List<GroupInfo> ListConsumerGroups(int millisecondsTimeout)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr grplistPtr = IntPtr.Zero;
+            List<GroupInfo> groups = null;
+            try
+            {
+                ErrorCode err = Librdkafka.list_consumer_groups(handle, out grplistPtr, (IntPtr)millisecondsTimeout);
+                if (err != ErrorCode.NoError)
+                {
+                    throw new KafkaException(CreatePossiblyFatalError(err, null));
+                }
+                var list = Util.Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
+                groups = Enumerable.Range(0, list.group_cnt)
+                    .Select(i => Util.Marshal.PtrToStructure<rd_kafka_group_info>(
+                        list.groups + i * Util.Marshal.SizeOf<rd_kafka_group_info>()))
+                    .Select(gi => new GroupInfo(gi.group, gi.err))
+                    .ToList();
+            }
+            finally
+            {
+                if (grplistPtr != IntPtr.Zero)
+                {
+                    Librdkafka.group_list_destroy(grplistPtr);
+                }
+            }
+
+            if (groups.Any(groupInfo => groupInfo.Error.IsError))
+            {
+                throw new ListConsumerGroupException(groups);
+            }
+            return groups;
+        }
+
+
+        internal List<GroupInfo> DescribeConsumerGroups(IList<string> groups, int millisecondsTimeout)
+        {
+            ThrowIfHandleClosed();
+
+            IntPtr grplistPtr = IntPtr.Zero;
+            List<GroupInfo> result = null;
+            try
+            {
+                var groupsArray = groups != null ? groups.ToArray() : null;
+                var groupCnt = groups != null ? groups.Count() : 0;
+                ErrorCode err = Librdkafka.describe_consumer_groups(
+                    handle,
+                    groupsArray,
+                    (UIntPtr)(groupCnt),
+                    out grplistPtr,
+                    (IntPtr)millisecondsTimeout);
+
+                if (err != ErrorCode.NoError)
+                {
+                    throw new KafkaException(CreatePossiblyFatalError(err, null));
+                }
+
+                var list = Util.Marshal.PtrToStructure<rd_kafka_group_list>(grplistPtr);
+                result =
+                Enumerable.Range(0, list.group_cnt)
+                    .Select(i => Util.Marshal.PtrToStructure<rd_kafka_group_info>(
+                        list.groups + i * Util.Marshal.SizeOf<rd_kafka_group_info>()))
+                    .Select(gi => new GroupInfo(
+                            new BrokerMetadata(
+                                gi.broker.id,
+                                gi.broker.host,
+                                gi.broker.port
+                            ),
+                            gi.group,
+                            gi.err,
+                            gi.state,
+                            gi.protocol_type,
+                            gi.protocol,
+                            Enumerable.Range(0, gi.member_cnt)
+                                .Select(j => Util.Marshal.PtrToStructure<rd_kafka_group_member_info>(
+                                    gi.members + j * Util.Marshal.SizeOf<rd_kafka_group_member_info>()))
+                                .Select(mi => new GroupMemberInfo(
+                                        mi.member_id,
+                                        mi.client_id,
+                                        mi.client_host,
+                                        CopyBytes(
+                                            mi.member_metadata,
+                                            mi.member_metadata_size),
+                                        CopyBytes(
+                                            mi.member_assignment,
+                                            mi.member_assignment_size),
+                                        GetTopicPartitionList(mi.member_assignment_toppars)
+                                    ))
+                                .ToList()
+                        ))
+                    .ToList();
+            }
+            finally
+            {
+                if (grplistPtr != IntPtr.Zero)
+                {
+                    Librdkafka.group_list_destroy(grplistPtr);
+                }
+            }
+
+            if (result.Any(groupInfo => groupInfo.Error.IsError))
+            {
+                throw new DescribeConsumerGroupException(result);
+            }
+            return result;
         }
 
         internal void OAuthBearerSetToken(string tokenValue, long lifetimeMs, string principalName, IDictionary<string, string> extensions)

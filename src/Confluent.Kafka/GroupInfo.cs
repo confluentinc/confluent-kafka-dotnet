@@ -28,6 +28,21 @@ namespace Confluent.Kafka
     public class GroupInfo
     {
         /// <summary>
+        ///     Initializes a new instance of the GroupInfo class with only the Group
+        ///     and Error properties set. Used when this group is only listed.
+        /// </summary>
+        /// <param name="group">
+        ///     The group name.
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> value associated with the information encapsulated by this class.
+        /// </param>
+        public GroupInfo(string group, Error error)
+        {
+            Group = group;
+            Error = error;
+        }
+        /// <summary>
         ///     Initializes a new instance of the GroupInfo class.
         /// </summary>
         /// <param name="broker">
@@ -63,7 +78,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Gets the originating-broker info.
+        ///     Gets the originating-broker info (coordinator)
         /// </summary>
         public BrokerMetadata Broker { get; }
 
@@ -88,7 +103,7 @@ namespace Confluent.Kafka
         public string ProtocolType { get; }
 
         /// <summary>
-        ///     Gets the group protocol
+        ///     Gets the group protocol (partition assignor)
         /// </summary>
         public string Protocol { get; }
 

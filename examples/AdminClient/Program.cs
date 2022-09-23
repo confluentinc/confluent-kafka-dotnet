@@ -388,11 +388,84 @@ namespace Confluent.Kafka.Examples
             }
         }
 
+        static void ListConsumerGroups(string bootstrapServers, string[] commandArgs) {
+            var timeout = TimeSpan.FromSeconds(30);
+            if (commandArgs.Length > 0)
+            {
+                timeout = TimeSpan.FromSeconds(Int32.Parse(commandArgs[0]));
+            }
+
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    List<GroupInfo> groups = adminClient.ListConsumerGroups(timeout);
+                    foreach (var groupInfo in groups) {
+                        var errString = "";
+                        if (groupInfo.Error.Code != ErrorCode.NoError) {
+                            errString = $" ({groupInfo.Error})";
+                        }
+                        Console.WriteLine($"{groupInfo.Group}{errString}");
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occured listing consumer groups: {e}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+            }
+        }
+
+        static void DescribeConsumerGroups(string bootstrapServers, string[] commandArgs) {
+            List<string> groupNames = null;
+            if (commandArgs.Length > 0)
+            {
+                groupNames = commandArgs.ToList();
+            }
+
+            var timeout = TimeSpan.FromSeconds(30);
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
+            {
+                try
+                {
+                    List<GroupInfo> groups = adminClient.DescribeConsumerGroups(groupNames, timeout);
+                    foreach (var group in groups)
+                    {
+                        Console.WriteLine($"  Group: {group.Group} {group.Error} {group.State}");
+                        Console.WriteLine($"  Broker: {group.Broker.BrokerId} {group.Broker.Host}:{group.Broker.Port}");
+                        Console.WriteLine($"  Protocol: {group.ProtocolType} {group.Protocol}");
+                        Console.WriteLine($"  Members:");
+                        foreach (var m in group.Members)
+                        {
+                            Console.WriteLine($"    {m.MemberId} {m.ClientId} {m.ClientHost}");
+                            Console.WriteLine($"    Metadata: {m.MemberMetadata.Length} bytes");
+                            Console.WriteLine($"    Assignment: {m.MemberAssignment.Length} bytes");
+                            var topicPartitions = String.Join(", ", m.MemberAssignmentTopicPartitions.Select(tp => tp.ToString()));
+                            Console.WriteLine($"    TopicPartitions: [{topicPartitions}]");
+                        }
+                    }
+                }
+                catch (KafkaException e)
+                {
+                    Console.WriteLine($"An error occured describing consumer groups: {e}");
+                    Environment.ExitCode = 1;
+                }
+            }
+        }
+
         public static async Task Main(string[] args)
         {
             if (args.Length < 2)
             {
-                Console.WriteLine("usage: .. <bootstrapServers> <list-groups|metadata|library-version|create-topic|create-acls|describe-acls|delete-acls|alter-consumer-group-offsets|list-consumer-group-offsets> ..");
+                Console.WriteLine(
+                    "usage: .. <bootstrapServers> " + String.Join("|", new string[] {
+                        "list-groups", "metadata", "library-version", "create-topic", "create-acls",
+                        "describe-acls", "delete-acls", "alter-consumer-group-offsets", "list-consumer-group-offsets",
+                        "list-consumer-groups", "describe-consumer-groups"
+                    }) +
+                    " ..");
                 Environment.ExitCode = 1;
                 return;
             }
@@ -429,6 +502,12 @@ namespace Confluent.Kafka.Examples
                     break;
                 case "list-consumer-group-offsets":
                     await ListConsumerGroupOffsetsAsync(bootstrapServers, commandArgs);
+                    break;
+                case "list-consumer-groups":
+                    ListConsumerGroups(bootstrapServers, commandArgs);
+                    break;
+                case "describe-consumer-groups":
+                    DescribeConsumerGroups(bootstrapServers, commandArgs);
                     break;
                 default:
                     Console.WriteLine($"unknown command: {command}");

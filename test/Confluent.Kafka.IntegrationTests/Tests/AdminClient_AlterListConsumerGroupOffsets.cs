@@ -93,9 +93,9 @@ namespace Confluent.Kafka.IntegrationTests
                     consumer.StoreOffset(record);
                 }
 
-                Assert.Equal(msgCnt, numMessages);
+                Assert.Equal(numMessages, msgCnt);
                 consumer.Commit();
-                
+
                 // Check that we are not be able to alter the offsets while the consumer is still active.
                 var errorOccured = false;
                 try 
