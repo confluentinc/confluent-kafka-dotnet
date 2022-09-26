@@ -1,4 +1,4 @@
-// Copyright 2021 Confluent Inc.
+// Copyright 2022 Confluent Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,789 +14,680 @@
 //
 // Refer to LICENSE for more information.
 
+using Confluent.Kafka;
 using Confluent.Kafka.Admin;
+using Microsoft.Extensions.Configuration;
 using System;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using FASTER.core;
+using System.IO;
 
 
-/// <summary>
-///     This example demonstrates how to count the number of occurrences of each word in a
-///     given input set, where the input set can potentially be large enough that the
-///     computation needs to be distributed across many machines. This is an example of a
-///     streaming [map-reduce](https://en.wikipedia.org/wiki/MapReduce) calculation, with
-///     **exactly once processing** semantics.
-///
-///     There are 3 stages:
-///
-///     gen:     Generates line input data.
-///     map:     Extracts words from the line data and partitions them into a new topic.
-///     reduce:  Counts the total number of each word.
-///
-///     The reduce phase uses FASTER to materialize word count state backed by a Kafka
-///     topic. FASTER is a local KV store by Microsoft that is reportedly more performant
-///     than RocksDb.
-///
-///     https://www.microsoft.com/en-us/research/uploads/prod/2018/03/faster-sigmod18.pdf
-///     https://github.com/microsoft/FASTER
-///
-///     If you know that the working state will always be less than available memory, you do
-///     not need to use FASTER, or RocksDb or similar - an in memory collection such as
-///     Dictionary<,> will be easier and more performant.
-/// </summary>
 namespace Confluent.Kafka.Examples.ExactlyOnce
 {
+    /// <summary>
+    ///     Main class of this EOS producer example.
+    /// </summary>
     public class Program
     {
-        /// <summary>
-        ///     Default timeout used for transaction related operations.
-        /// </summary>
-        static TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
-        ///     The number of partitions we'll use for each topic.
+        ///     Logs provided <paramref name="message"/>.
         /// </summary>
-        const int NumPartitions = 12;
-
-        /// <summary>
-        ///     The name of the input Kafka topic containing the lines of text to count the words in.
-        ///         * key = null
-        ///         * value = a line of text (type: string)
-        /// </summary>
-        const string Topic_InputLines = "lines";
-
-        /// <summary>
-        ///     The name of the Kafka topic containing the stream of words to count.
-        ///         * key = individual words (type: string)
-        ///         * value = null.
-        ///
-        ///     Note: This topic is not compacted, so setting the value to null is appropriate. Be
-        ///           aware that for compacted topics though, null has special meaning - it's a
-        ///           tombstone marker.
-        /// </summary>
-        const string Topic_Words = "words";
-
-        /// <summary>
-        ///     The name of the Kafka topic containing the word count state (should be compacted).
-        ///         * key = word (type: string)
-        ///         * value = count (type: int)
-        /// </summary>
-        const string Topic_Counts = "counts";
-
-
-        /// <summary>
-        ///     The transactional id stem for the word splitting processor.
-        /// </summary>
-        const string TransactionalIdPrefix_MapWords = "map-words-transaction-id";
-
-
-        /// <summary>
-        ///     The transactional id stem for the word count processor.
-        /// </summary>
-        const string TransactionalIdPrefix_Aggregate = "aggregator-transaction-id";
-
-
-        /// <summary>
-        ///     Name of the consumer group used in the map phase when consuming
-        ///     from the Topic_InputLines topic.
-        /// </summary>
-        const string ConsumerGroup_MapWords = "map-words-consumer-group";
-
-        /// <summary>
-        ///     Name of the consumer group used in the reduce phase when
-        ///     consuming from the Topic_Words topic.
-        /// </summary>
-        const string ConsumerGroup_Aggregate = "aggregate-consumer-group";
-
-        /// <summary>
-        ///     Name of the consumer group used when loading count state
-        ///     from Topic_Counts.
-        /// </summary>
-        const string ConsumerGroup_LoadState = "load-state-consumer-group";
-
-
-        class FasterState : IDisposable
+        public static void Log(string message)
         {
-            public FasterState(Partition partition)
+            Console.Error.WriteLine($"{DateTimeOffset.Now.ToUnixTimeSeconds()}|EXAMPLE|{message}");
+        }
+
+        private static async Task CreateTopic(IAdminClient adminClient, string name, int partitions)
+        {
+
+            try
             {
-                this.Path = System.IO.Path.Join(System.IO.Path.GetTempPath(), "partition_" + (int)partition);
-                this.ObjectLog = Devices.CreateLogDevice(this.Path + "_obj.log");
-                this.Log = Devices.CreateLogDevice(this.Path + ".log");
-                this.Store = new FasterKV<string, int>(
-                    size: 1L << 20, // 1M cache lines of 64 bytes each = 64MB hash table
-                    logSettings: new LogSettings { LogDevice = this.Log, ObjectLogDevice = this.ObjectLog }
-                );
-                var funcs = new SimpleFunctions<string, int>((a, b) => a + b); // function used for read-modify-write (RMW).
-                this.Session = this.Store.NewSession(funcs);
+                await adminClient.CreateTopicsAsync(new List<TopicSpecification>
+                {
+                    new TopicSpecification
+                    {
+                        Name = name,
+                        NumPartitions = partitions
+                    }
+                });
+                Log($"Created topic {name}");
             }
-
-            string Path { get; set; }
-            IDevice Log { get; set; }
-            IDevice ObjectLog { get; set; }
-            public FasterKV<string, int> Store { get; set; }
-            public ClientSession<string, int, int, int, Empty, IFunctions<string, int, int, int, Empty>> Session { get; set; }
-
-            public void Dispose()
+            catch (CreateTopicsException e)
             {
-                this.Session.Dispose();
-                this.Store.Dispose();
-                this.Log.Dispose();
-                this.ObjectLog.Dispose();
-                File.Delete(this.Path);
+                // Continue if topic already exists
+                Log($"Topic {name} already exists");
+            }
+            catch (Exception e)
+            {
+                Log($"CreateTopic caught a different type of exception, this shouldn't happen'");
+                throw;
             }
         }
 
         /// <summary>
-        ///     Cache of materialized word count state corresponding to partitions currently
-        ///     assigned to this instance.
+        ///     Main method.
         /// </summary>
-        static Dictionary<Partition, FasterState> WordCountState = new Dictionary<Partition, FasterState>();
-
-        /// <summary>
-        ///     Remove all topics used by this example if they exist.
-        /// </summary>
-        static async Task DeleteTopics(string brokerList, string clientId)
-        {
-            var config = new AdminClientConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId
-            };
-
-            using (var adminClent = new AdminClientBuilder(config).Build())
-            {
-                try
-                {
-                    await adminClent.DeleteTopicsAsync(new List<string> { Topic_InputLines, Topic_Words, Topic_Counts });
-                }
-                catch (DeleteTopicsException e)
-                {
-                    // propagate the exception unless the error was that one or more of the topics didn't exist.
-                    if (e.Results.Select(r => r.Error.Code).Where(el => el != ErrorCode.UnknownTopicOrPart && el != ErrorCode.NoError).Count() > 0)
-                    {
-                        throw new Exception("Unable to delete topics", e);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Create all topics used by this example, if they don't already exist.
-        /// </summary>
-        static async Task CreateTopicsMaybe(string brokerList, string clientId)
-        {
-            var config = new AdminClientConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId
-            };
-
-            using (var adminClent = new AdminClientBuilder(config).Build())
-            {
-                var countsTopicSpec = new TopicSpecification
-                {
-                    Name = Topic_Counts,
-                    // note: in production, you should generally use a replication factor of 3.
-                    ReplicationFactor = 1,
-                    NumPartitions = NumPartitions,
-                    // this topic backs a kv (word -> count) state store, so it can be compacted.
-                    Configs = new Dictionary<string, string> { { "cleanup.policy", "compact" } }
-                };
-
-                var wordsTopicSpec = new TopicSpecification
-                {
-                    Name = Topic_Words,
-                    ReplicationFactor = 1,
-                    NumPartitions = NumPartitions
-                };
-
-                var inputLinesTopicSpec = new TopicSpecification
-                {
-                    Name = Topic_InputLines,
-                    ReplicationFactor = 1,
-                    NumPartitions = NumPartitions
-                };
-
-                try
-                {
-                    await adminClent.CreateTopicsAsync(new List<TopicSpecification> { countsTopicSpec, wordsTopicSpec, inputLinesTopicSpec });
-                }
-                catch (CreateTopicsException ex)
-                {
-                    // propagate the exception unless the error was that one or more of the topics already exists.
-                    if (ex.Results.Select(r => r.Error.Code).Where(el => el != ErrorCode.TopicAlreadyExists && el != ErrorCode.NoError).Count() > 0)
-                    {
-                        throw new Exception("Unable to create topics", ex);
-                    }
-                }
-            }
-        }
-
-
-        /// <summary>
-        ///     Generate example line input data (using the source code of this example as the source!).
-        /// </summary>
-        static async Task Generator_LineInputData(string brokerList, string clientId, CancellationToken ct)
-        {
-            var client = new HttpClient();
-            var r = await client.GetAsync("https://raw.githubusercontent.com/confluentinc/confluent-kafka-dotnet/master/examples/ExactlyOnce/Program.cs", ct);
-            r.EnsureSuccessStatusCode();
-            var content = await r.Content.ReadAsStringAsync();
-            var lines = content.Split('\n');
-
-            var pConfig = new ProducerConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId
-            };
-
-            Console.WriteLine($"Producing text line data to topic: {Topic_InputLines}");
-            using (var producer = new ProducerBuilder<Null, string>(pConfig).Build())
-            {
-                var lCount = 0;
-                foreach (var l in lines)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1), ct);  // slow down the calls to produce to make the output more interesting to watch.
-                    await producer.ProduceAsync(Topic_InputLines, new Message<Null, string> { Value = l }, ct);  // Note: producing synchronously is slow and should generally be avoided.
-                    lCount += 1;
-                    if (lCount % 10 == 0)
-                    {
-                        Console.WriteLine($"Produced {lCount} input lines.");
-                    }
-                }
-
-                producer.Flush(ct);
-            }
-
-            Console.WriteLine("Generator_LineInputData: Wrote all input lines to Kafka");
-        }
-
-
-        /// <summary>
-        ///     A transactional (exactly once) processing loop that reads lines of text from
-        ///     Topic_InputLines, splits them into words, and outputs the result to Topic_Words.
-        /// </summary>
-        static void Processor_MapWords(string brokerList, string clientId, CancellationToken ct)
-        {
-            if (clientId == null)
-            {
-                throw new Exception("Map processor requires that a client id is specified.");
-            }
-
-            var pConfig = new ProducerConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId + "_producer",
-                // The TransactionalId identifies this instance of the map words processor.
-                // If you start another instance with the same transactional id, the existing
-                // instance will be fenced.
-                TransactionalId = TransactionalIdPrefix_MapWords + "-" + clientId
-            };
-
-            var cConfig = new ConsumerConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId + "_consumer",
-                GroupId = ConsumerGroup_MapWords,
-                // AutoOffsetReset specifies the action to take when there
-                // are no committed offsets for a partition, or an error
-                // occurs retrieving offsets. If there are committed offsets,
-                // it has no effect.
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                // Offsets are committed using the producer as part of the
-                // transaction - not the consumer. When using transactions,
-                // you must turn off auto commit on the consumer, which is
-                // enabled by default!
-                EnableAutoCommit = false,
-                // Enable incremental rebalancing by using the CooperativeSticky
-                // assignor (avoid stop-the-world rebalances).
-                PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
-            };
-
-            var txnCommitPeriod = TimeSpan.FromSeconds(10);
-
-            var lastTxnCommit = DateTime.Now;
-
-            using (var producer = new ProducerBuilder<string, Null>(pConfig).Build())
-            using (var consumer = new ConsumerBuilder<Null, string>(cConfig)
-                .SetPartitionsRevokedHandler((c, partitions) => {
-                    var remaining = c.Assignment.Where(tp => partitions.Where(x => x.TopicPartition == tp).Count() == 0);
-                    Console.WriteLine(
-                        "** MapWords consumer group partitions revoked: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], remaining: [" +
-                        string.Join(',', remaining.Select(p => p.Partition.Value)) +
-                        "]");
-
-                    // All handlers (except the log handler) are executed as a
-                    // side-effect of, and on the same thread as the Consume or
-                    // Close methods. Any exception thrown in a handler (with
-                    // the exception of the log and error handlers) will
-                    // be propagated to the application via the initiating
-                    // call. i.e. in this example, any exceptions thrown in this
-                    // handler will be exposed via the Consume method in the main
-                    // consume loop and handled by the try/catch block there.
-
-                    producer.SendOffsetsToTransaction(
-                        c.Assignment.Select(a => new TopicPartitionOffset(a, c.Position(a))),
-                        c.ConsumerGroupMetadata,
-                        DefaultTimeout);
-                    producer.CommitTransaction();
-                    producer.BeginTransaction();
-                })
-
-                .SetPartitionsLostHandler((c, partitions) => {
-                    // Ownership of the partitions has been involuntarily lost and
-                    // are now likely already owned by another consumer.
-
-                    Console.WriteLine(
-                        "** MapWords consumer group partitions lost: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "]");
-
-                    producer.AbortTransaction();
-                    producer.BeginTransaction();
-                })
-
-                .SetPartitionsAssignedHandler((c, partitions) => {
-                    Console.WriteLine(
-                        "** MapWords consumer group additional partitions assigned: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], all: [" +
-                        string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
-                        "]");
-
-                    // No action is required here related to transactions - offsets
-                    // for the newly assigned partitions will be committed in the
-                    // main consume loop along with those for already assigned
-                    // partitions as per usual.
-                })
-                .Build())
-            {
-                consumer.Subscribe(Topic_InputLines);
-
-                producer.InitTransactions(DefaultTimeout);
-                producer.BeginTransaction();
-
-                var wCount = 0;
-                var lCount = 0;
-                while (true)
-                {
-                    try
-                    {
-                        ct.ThrowIfCancellationRequested();
-
-                        // Do not block on Consume indefinitely to avoid the possibility of a transaction timeout.
-                        var cr = consumer.Consume(TimeSpan.FromSeconds(1));
-
-                        if (cr != null)
-                        {
-                            lCount += 1;
-
-                            var words = Regex.Split(cr.Message.Value.ToLower(), @"[^a-zA-Z_]").Where(s => s != String.Empty);
-                            foreach (var w in words)
-                            {
-                                while (true)
-                                {
-                                    try
-                                    {
-                                        producer.Produce(Topic_Words, new Message<string, Null> { Key = w });
-                                        // Note: when using transactions, there is no need to check for errors of individual
-                                        // produce call delivery reports because if the transaction commits successfully, you
-                                        // can be sure that all the constituent messages were delivered successfully and in order.
-
-                                        wCount += 1;
-                                    }
-                                    catch (KafkaException e)
-                                    {
-                                        // An immediate failure of the produce call is most often caused by the
-                                        // local message queue being full, and appropriate response to that is
-                                        // to wait a bit and retry.
-                                        if (e.Error.Code == ErrorCode.Local_QueueFull)
-                                        {
-                                            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
-                                            continue;
-                                        }
-                                        throw;
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-
-                        // Commit transactions every TxnCommitPeriod
-                        if (DateTime.Now > lastTxnCommit + txnCommitPeriod)
-                        {
-                            // Note: Exceptions thrown by SendOffsetsToTransaction and
-                            // CommitTransaction that are not marked as fatal can be
-                            // recovered from. However, in order to keep this example
-                            // short(er), the additional logic required to achieve this
-                            // has been omitted. This should happen only rarely, so
-                            // requiring a process restart in this case is not necessarily
-                            // a bad compromise, even in production scenarios.
-
-                            producer.SendOffsetsToTransaction(
-                                // Note: committed offsets reflect the next message to consume, not last
-                                // message consumed. consumer.Position returns the last consumed offset
-                                // values + 1, as required.
-                                consumer.Assignment.Select(a => new TopicPartitionOffset(a, consumer.Position(a))),
-                                consumer.ConsumerGroupMetadata,
-                                DefaultTimeout);
-                            producer.CommitTransaction();
-                            producer.BeginTransaction();
-
-                            Console.WriteLine($"Committed MapWords transaction(s) comprising {wCount} words from {lCount} lines.");
-                            lastTxnCommit = DateTime.Now;
-                            wCount = 0;
-                            lCount = 0;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        // Attempt to abort the transaction (but ignore any errors) as a measure
-                        // against stalling consumption of Topic_Words.
-                        producer.AbortTransaction();
-
-                        Console.WriteLine("Exiting MapWords consume loop due to an exception: " + e);
-                        // Note: transactions may be committed / aborted in the partitions
-                        // revoked / lost handler as a side effect of the call to close.
-                        consumer.Close();
-                        Console.WriteLine("MapWords consumer closed");
-                        break;
-                    }
-
-                    // Assume the presence of an external system that monitors whether worker
-                    // processes have died, and restarts new instances as required. This
-                    // setup is typical, and avoids complex error handling logic in the
-                    // client code.
-                }
-            }
-        }
-
-
-        /// <summary>
-        ///     Materialize the count state in the Topic_Counts change log topic for the
-        ///     specified partitions into FASTER KV stores.
-        /// </summary>
-        public static void LoadCountState(string brokerList, IEnumerable<Partition> partitions, CancellationToken ct)
-        {
-            var cConfig = new ConsumerConfig
-            {
-                BootstrapServers = brokerList,
-                GroupId = ConsumerGroup_LoadState,
-                EnablePartitionEof = true,
-                EnableAutoCommit = false
-            };
-
-            int msgCount = 0;
-            using (var consumer = new ConsumerBuilder<string, int>(cConfig).Build())
-            {
-                consumer.Assign(partitions.Select(p => new TopicPartitionOffset(Topic_Counts, p, Offset.Beginning)));
-
-                int eofCount = 0;
-                while (true)
-                {
-                    var cr = consumer.Consume();
-                    if (cr.IsPartitionEOF)
-                    {
-                        eofCount += 1;
-                        if (eofCount == partitions.Count())
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        msgCount += 1;
-                        WordCountState[cr.Partition].Session.Upsert(cr.Message.Key, cr.Message.Value);
-                    }
-                }
-            }
-
-            Console.WriteLine($"Finished materializing word counts state ({msgCount} messages) for partitions [" +
-                string.Join(',', partitions.Select(p => p.Value)) + $"] in Kafka topic '{Topic_Counts}'. ");
-        }
-
-
-        /// <summary>
-        ///     A transactional (exactly once) processing loop that reads individual words and updates 
-        ///     the corresponding total count state.
-        ///
-        ///     When a rebalance occurs (including on startup), the count state for the incrementally
-        ///     assigned partitions is reloaded before the loop commences to update it. For this use-
-        ///     case, the CooperativeSticky assignor is much more efficient than the Range or RoundRobin
-        ///     assignors since it keeps to a minimum the count state that needs to be materialized.
-        /// </summary>
-        /// <remarks>
-        ///     Refer to Processor_MapWords for more detailed comments.
-        /// </remarks>
-        public static void Processor_AggregateWords(string brokerList, string clientId, CancellationToken ct)
-        {
-            if (clientId == null)
-            {
-                throw new Exception("Aggregate words processor requires that a client id is specified.");
-            }
-
-            var txnCommitPeriod = TimeSpan.FromSeconds(10);
-
-            var pConfig = new ProducerConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId + "_producer",
-                TransactionalId = TransactionalIdPrefix_Aggregate + "-" + clientId
-            };
-
-            var cConfig = new ConsumerConfig
-            {
-                BootstrapServers = brokerList,
-                ClientId = clientId + "_consumer",
-                GroupId = ConsumerGroup_Aggregate,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                // This should be greater than the maximum amount of time required to read in
-                // existing count state. It should not be too large, since a rebalance may be
-                // blocked for this long.
-                MaxPollIntervalMs = 600000, // 10 minutes.
-                EnableAutoCommit = false,
-                // Enable incremental rebalancing by using the CooperativeSticky
-                // assignor (avoid stop-the-world rebalances). This is particularly important,
-                // in the AggregateWords case, since the entire count state for newly assigned
-                // partitions is loaded in the partitions assigned handler.
-                PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky,
-            };
-
-            var lastTxnCommit = DateTime.Now;
-
-            using (var producer = new ProducerBuilder<string, int>(pConfig).Build())
-            using (var consumer = new ConsumerBuilder<string, Null>(cConfig)
-                .SetPartitionsRevokedHandler((c, partitions) => {
-                    var remaining = c.Assignment.Where(tp => partitions.Where(x => x.TopicPartition == tp).Count() == 0);
-                    Console.WriteLine(
-                        "** AggregateWords consumer group partitions revoked: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], remaining: [" +
-                        string.Join(',', remaining.Select(p => p.Partition.Value)) +
-                        "]");
-
-                    // Remove materialized word count state for the partitions that have been revoked.
-                    foreach (var tp in partitions)
-                    {
-                        WordCountState[tp.Partition].Dispose();
-                        WordCountState.Remove(tp.Partition);
-                    }
-
-                    producer.SendOffsetsToTransaction(
-                        c.Assignment.Select(a => new TopicPartitionOffset(a, c.Position(a))),
-                        c.ConsumerGroupMetadata,
-                        DefaultTimeout);
-                    producer.CommitTransaction();
-                    producer.BeginTransaction();
-                })
-
-                .SetPartitionsLostHandler((c, partitions) => {
-                    Console.WriteLine(
-                        "** AggregateWords consumer group partitions lost: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "]");
-
-                    // clear materialized word count state for all partitions.
-                    foreach (var tp in partitions)
-                    {
-                        WordCountState[tp.Partition].Dispose();
-                        WordCountState.Remove(tp.Partition);
-                    }
-
-                    producer.AbortTransaction();
-                    producer.BeginTransaction();
-                })
-
-                .SetPartitionsAssignedHandler((c, partitions) => {
-                    Console.WriteLine(
-                        "** AggregateWords consumer group partition assigned: [" +
-                        string.Join(',', partitions.Select(p => p.Partition.Value)) +
-                        "], all: [" +
-                        string.Join(',', c.Assignment.Concat(partitions).Select(p => p.Partition.Value)) +
-                        "]");
-
-                    if (partitions.Count > 0)
-                    {
-                        // Initialize FASTER KV stores for each new partition.
-                        foreach (var tp in partitions)
-                        {
-                            var partitionState = new FasterState(tp.Partition);
-                            WordCountState.Add(tp.Partition, partitionState);
-                        }
-
-                        // Materialize count state for partitions into the FASTER KV stores.
-                        // Note: the partiioning of Topic_Counts matches Topic_Words.
-                        LoadCountState(brokerList, partitions.Select(tp => tp.Partition), ct);
-                    }
-                })
-                .Build())
-            {
-                consumer.Subscribe(Topic_Words);
-
-                producer.InitTransactions(DefaultTimeout);
-                producer.BeginTransaction();
-
-                var wCount = 0;
-
-                while (true)
-                {
-                    try
-                    {
-                        ct.ThrowIfCancellationRequested();
-
-                        var cr = consumer.Consume(TimeSpan.FromSeconds(1));
-
-                        if (cr != null)
-                        {
-                            string key = cr.Message.Key;
-                            var (_, count) = WordCountState[cr.Partition].Session.Read(cr.Message.Key);
-                            count += 1;
-                            WordCountState[cr.Partition].Session.Upsert(key, count);
-
-                            producer.Produce(Topic_Counts, new Message<string, int> { Key = cr.Message.Key, Value = count });
-
-                            wCount += 1;
-                        }
-
-                        if (DateTime.Now > lastTxnCommit + txnCommitPeriod)
-                        {
-                            producer.SendOffsetsToTransaction(
-                                // Note: committed offsets reflect the next message to consume, not last
-                                // message consumed. consumer.Position returns the last consumed offset
-                                // values + 1, as required.
-                                consumer.Assignment.Select(a => new TopicPartitionOffset(a, consumer.Position(a))),
-                                consumer.ConsumerGroupMetadata,
-                                DefaultTimeout);
-                            producer.CommitTransaction();
-
-                            producer.BeginTransaction();
-
-                            Console.WriteLine($"Committed AggregateWords transaction(s) comprising updates to {wCount} words.");
-                            lastTxnCommit = DateTime.Now;
-                            wCount = 0;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        producer.AbortTransaction();
-
-                        Console.WriteLine("Exiting AggregateWords consume loop due to an exception: " + e);
-                        consumer.Close();
-                        Console.WriteLine("AggregateWords consumer closed");
-                        break;
-                    }
-                }
-            }
-        }
-
-        public async static Task PeriodicallyDisplayTopCountsState(string brokerList, CancellationToken ct)
-        {
-            while (true)
-            {
-                await Task.Delay(10000, ct);
-
-                var N = 5;
-                var maxWords = new List<(int, string)>();
-                foreach (var kvp in WordCountState)
-                {
-                    var store = kvp.Value;
-                    var itr = store.Store.Iterate();
-
-                    while(itr.GetNext(out var recordInfo))
-                    {
-                        var wc = (itr.GetValue(), itr.GetKey());
-                        if (maxWords.Count < N) { maxWords.Add(wc); }
-                        else { if (wc.Item1 > maxWords[N-1].Item1) { maxWords[N-1] = wc; } }
-                        maxWords.Sort((x, y) => y.Item1.CompareTo(x.Item1));
-                    }
-                }
-
-                if (maxWords.Count > 0) { Console.WriteLine("Most frequently occuring words known to this instance:"); }
-                foreach (var wc in maxWords)
-                {
-                    Console.WriteLine(" " + wc.Item2 + " " + wc.Item1);
-                }
-            }
-        }
-
         public static async Task Main(string[] args)
         {
-            Action printUsage = () =>
+            CancellationTokenSource cancelled = new CancellationTokenSource();
+            CancellationTokenSource completed = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) =>
             {
-                Console.WriteLine("Usage: .. <brokerList> gen|del|map|count [client-id]");
-                Console.WriteLine("   del:     delete all Kafka topics created by this application (client-id optional)");
-                Console.WriteLine("   gen:     generate line data (client-id optional)");
-                Console.WriteLine("   map:     split the input lines into words (client-id required)");
-                Console.WriteLine("   reduce:  count the number of occurances of each word (client-id required)");
+                e.Cancel = true; // prevent the process from terminating.
+                cancelled.Cancel();
+            };
+            AppDomain.CurrentDomain.ProcessExit += (_, e) =>
+            {
+                cancelled.Cancel();
+                completed.Token.WaitHandle.WaitOne();
             };
 
-            if (args.Length != 2 && args.Length != 3)
+            if (args.Length != 2)
             {
-                printUsage();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("create_words <transactional-id>");
+                Console.WriteLine("reverse_words <transactional-id>");
+                completed.Cancel();
                 return;
             }
 
-            string brokerList = args[0];
-            string mode = args[1];
-            string clientId = args.Length > 2 ? args[2] : null;
+            var command = args[0];
+            var transactionalId = args[1];
 
-            CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
-                e.Cancel = true; // prevent the process from terminating.
-                cts.Cancel();
-            };
+            IConfiguration configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("./appsettings.json")
+                .Build();
 
-            if (mode != "del")
+            var producerConfig = configuration.GetSection("Producer").Get<ProducerConfig>().ThrowIfContainsNonUserConfigurable();
+            var consumerConfig = configuration.GetSection("Consumer").Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
+            var generalConfig = configuration.GetSection("General");
+            var wordsConfig = generalConfig.GetSection("Words");
+            var reversedWordsConfig = generalConfig.GetSection("ReversedWords");
+
+            var wordsTopicName = wordsConfig.GetValue<string>("TopicName");
+            var wordsTopicPartitions = wordsConfig.GetValue<int>("TopicPartitions");
+
+            var reversedWordsTopicName = reversedWordsConfig.GetValue<string>("TopicName");
+            var reversedWordsTopicPartitions = reversedWordsConfig.GetValue<int>("TopicPartitions");
+
+            var adminClient = new AdminClientBuilder(producerConfig).Build();
+            await CreateTopic(adminClient, wordsTopicName, wordsTopicPartitions);
+            await CreateTopic(adminClient, reversedWordsTopicName, reversedWordsTopicPartitions);
+
+            producerConfig.TransactionalId = transactionalId;
+            var consumerBuilder = new ConsumerBuilder<Null, string>(consumerConfig);
+            var producerBuilder = new ProducerBuilder<Null, string>(producerConfig);
+            var retryInterval = generalConfig.GetValue<TimeSpan>("RetryInterval");
+            var localTransactionOperationTimeout = generalConfig.GetValue<TimeSpan>("LocalTransactionOperationTimeout");
+
+            switch (command)
             {
-                await CreateTopicsMaybe(brokerList, clientId);
-            }
-
-            switch (mode)
-            {
-                case "del":
-                    await DeleteTopics(brokerList, clientId);
-                    return;
-
-                case "gen":
-                    try { await Generator_LineInputData(brokerList, clientId, cts.Token); }
-                    catch (OperationCanceledException) {}
-                    return;
-
-                case "map":
-                    try { Processor_MapWords(brokerList, clientId, cts.Token); }
-                    catch (OperationCanceledException) {}
-                    return;
-
-                case "reduce":
-                    var processors = new List<Task>();
-                    processors.Add(Task.Run(() => Processor_AggregateWords(brokerList, clientId, cts.Token)));
-                    processors.Add(Task.Run(async () => await PeriodicallyDisplayTopCountsState(brokerList, cts.Token)));
-
-                    var allTasks = await Task.WhenAny(processors.ToArray());
-                    if (allTasks.IsFaulted)
+                case "create_words":
+                    new WordsCreator
                     {
-                        if (!(allTasks.Exception.InnerException is OperationCanceledException))
-                        {
-                            Console.WriteLine(allTasks.Exception.InnerException.ToString());
-                        }
+                        OutputTopic = wordsTopicName,
+                        ProduceRate = wordsConfig.GetValue<TimeSpan>("ProduceRate"),
+                        RetryInterval = retryInterval,
+                        LocalTransactionOperationTimeout = localTransactionOperationTimeout,
+                        ProducerBuilder = producerBuilder,
+                        Log = Program.Log,
+                        CTS = cancelled
+                    }
+                    .Run();
+                    break;
+                case "reverse_words":
+                    new WordReverser
+                    {
+                        InputTopic = wordsTopicName,
+                        OutputTopic = reversedWordsTopicName,
+                        CommitMaxMessages = reversedWordsConfig.GetValue<int>("CommitMaxMessages"),
+                        CommitPeriod = reversedWordsConfig.GetValue<TimeSpan>("CommitPeriod"),
+                        CommitTimeout = reversedWordsConfig.GetValue<TimeSpan>("CommitTimeout"),
+                        RetryInterval = retryInterval,
+                        LocalTransactionOperationTimeout = localTransactionOperationTimeout,
+                        ProducerBuilder = producerBuilder,
+                        ConsumerBuilder = consumerBuilder,
+                        Log = Program.Log,
+                        CTS = cancelled
+                    }
+                    .Run();
+                    break;
+                default:
+                    Log("Unknown command");
+                    break;
+            }
+            completed.Cancel();
+        }
+    }
+
+    /// <summary>
+    ///     This transactional producer allows to use a producer an consumer for transactions,
+    ///     by recreating the producer when a fatal error happens, sending offsets to transaction
+    ///     and handling aborts and retries correctly.
+    /// </summary>
+    public class TransactionalProducer<K, V> : IDisposable
+    {
+        public string OutputTopic { get; set; }
+
+        public Action<string> Log { get; set; }
+
+        public TimeSpan RetryInterval { get; set; }
+
+        public TimeSpan LocalTransactionOperationTimeout { get; set; }
+
+        public ProducerBuilder<K, V> ProducerBuilder { get; set; }
+
+        public IConsumer<K, V> Consumer { get; set; }
+
+        private bool ToRecreateProducer = true;
+
+        private IProducer<K, V> Producer { get; set; }
+
+        public CancellationTokenSource CTS { get; set; }
+
+        /// <summary>
+        ///     Retry callback that sleeps for a configured period.
+        /// </summary>
+        private void RetryAfterSleeping(string operation = null, KafkaException e = null)
+        {
+            Thread.Sleep(RetryInterval);
+        }
+
+        /// <summary>
+        ///     Retry callback that stops retries if
+        ///     the error is fatal or abortable or not retriable.
+        /// </summary>
+        private void RetryIfNeeded(string operation, KafkaException e)
+        {
+            var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
+            var IsRetriable = e is KafkaRetriableException;
+            var IsFatal = e.Error.IsFatal;
+            Log($"{operation} Kafka Exception caught: '{e.Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}");
+            if (IsFatal || TxnRequiresAbort || !IsRetriable)
+            {
+                throw e;
+            }
+            RetryAfterSleeping();
+        }
+
+        /// <summary>
+        ///     Retry callback that stops retries only if
+        ///     the error is fatal or abortable.
+        /// </summary>
+        private void RetryUnlessFatalOrAbortable(string operation, KafkaException e)
+        {
+            var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
+            var IsRetriable = e is KafkaRetriableException;
+            var IsFatal = e.Error.IsFatal;
+            Log($"{operation} Kafka Exception caught: '{e.Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}");
+            if (IsFatal || TxnRequiresAbort)
+            {
+                throw e;
+            }
+            RetryAfterSleeping();
+        }
+
+        /// <summary>
+        ///     Recreates the producer after disposing the old one
+        ///     and initializes transactions.
+        /// </summary>
+        private void RecreateProducer()
+        {
+            Log("(Re)Creating producer");
+            if (Producer != null) Producer.Dispose();
+            Producer = ProducerBuilder.Build();
+            Producer.InitTransactions(LocalTransactionOperationTimeout);
+        }
+
+        /// <summary>
+        ///     Retry executing <paramref name="action"/> until it succeeds,
+        ///     call <paramref name="onKafkaException"/> if a <see cref="Confluent.Kafka.KafkaException" /> occurs.
+        /// </summary>
+        private void Retry(string operation, Action action, Action<string, KafkaException> onKafkaException = null)
+        {
+            while (!CTS.IsCancellationRequested)
+            {
+                try
+                {
+                    action();
+                    break;
+                }
+                catch (KafkaException e)
+                {
+                    if (onKafkaException != null)
+                    {
+                        onKafkaException(operation, e);
+                    }
+                }
+                catch
+                {
+                    Log($"{operation} caught a different type of exception, this shouldn't happen'");
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Commits transaction's produced and consumed messages.
+        ///     Aborts transaction if an abortable exception is thrown,
+        ///     recreates the producer if a fatal exception is thrown or
+        ///     retries each operation that is throwing a retriable exception.
+        /// </summary>
+        public void CommitKafkaTransaction(List<Message<K, V>> messages)
+        {
+            while (!CTS.IsCancellationRequested)
+            {
+                try
+                {
+                    if (ToRecreateProducer)
+                    {
+                        RecreateProducer();
+                        ToRecreateProducer = false;
+                    }
+                    try
+                    {
+                        Log("Calling BeginTransaction");
+                        Producer.BeginTransaction();
+                    }
+                    catch (Exception e)
+                    {
+                        Log($"BeginTransaction threw: {e.Message}");
+                        throw;
                     }
 
-                    Console.WriteLine("exiting...");
-                    return;
+                    Log($"Transaction contains {messages.Count} messages");
 
-                default:
-                    printUsage();
-                    return;
+
+                    Log("Calling Produce many times");
+                    foreach (var message in messages)
+                    {
+                        Retry("Produce", () =>
+                        {
+                            Producer.Produce(OutputTopic, message);
+                        }, RetryUnlessFatalOrAbortable);
+                    }
+
+                    Log($"Produce completed");
+
+                    if (Consumer != null)
+                    {
+                        Retry("SendOffsetsToTransaction", () =>
+                        {
+                            Log("Calling SendOffsetsToTransaction");
+                            Producer.SendOffsetsToTransaction(
+                                Consumer.Assignment.Select(a => new TopicPartitionOffset(a, Consumer.Position(a))),
+                                Consumer.ConsumerGroupMetadata,
+                                LocalTransactionOperationTimeout);
+                        }, RetryIfNeeded);
+                        Log($"SendOffsetsToTransaction completed");
+                    }
+
+                    Retry("CommitTransaction", () =>
+                    {
+                        Log("calling CommitTransaction");
+                        Producer.CommitTransaction();
+                    }, RetryIfNeeded);
+
+                    Log($"CommitTransaction completed");
+                    break;
+                }
+                catch (KafkaException e)
+                {
+                    Log($"Kafka Exception caught, aborting transaction, trying again in {RetryInterval.TotalSeconds} seconds: '{e.Message}'");
+                    var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
+                    if (e.Error.IsFatal)
+                    {
+                        ToRecreateProducer = true;
+                    }
+                    else if (TxnRequiresAbort)
+                    {
+                        Retry("AbortTransaction", () =>
+                        {
+                            Log("calling AbortTransaction");
+                            Producer.AbortTransaction(LocalTransactionOperationTimeout);
+                        }, (string operation, KafkaException eInner) =>
+                        {
+                            var TxnRequiresAbortErrorInner = eInner is KafkaTxnRequiresAbortException;
+                            var IsRetriableInner = eInner is KafkaRetriableException;
+                            var IsFatalInner = eInner.Error.IsFatal;
+                            Log($"AbortTransaction Kafka Exception caught, trying again in {RetryInterval.TotalSeconds} seconds: '{eInner.Message}', IsFatal: {IsFatalInner}, TxnRequiresAbort: {TxnRequiresAbortErrorInner}, IsRetriable: {IsRetriableInner}");
+                            RetryAfterSleeping();
+                            if (!TxnRequiresAbortErrorInner && !IsRetriableInner)
+                            {
+                                if (IsFatalInner)
+                                {
+                                    ToRecreateProducer = true;
+                                }
+                                // Propagate abort to consumer and application
+                                throw e;
+                            }
+                        });
+                        // Propagate abort to consumer and application
+                        throw;
+                    }
+                    RetryAfterSleeping();
+                }
+                catch
+                {
+                    Log("Caught a different type of exception, this shouldn't happen'");
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Implement IDisposable.
+        /// </summary>
+        public void Dispose()
+        {
+            if (Producer != null) Producer.Dispose();
+        }
+    }
+
+    /// <summary>
+    ///     Creates random words and sends them to a topic.
+    /// </summary>
+    public class WordsCreator
+    {
+        private static readonly Random random = new Random();
+
+        public TimeSpan ProduceRate { get; set; }
+
+        public IProducer<Null, string> Producer { get; set; }
+
+        public string OutputTopic { get; set; }
+
+        public ProducerBuilder<Null, string> ProducerBuilder { get; set; }
+
+        public TimeSpan RetryInterval { get; set; }
+
+        public TimeSpan LocalTransactionOperationTimeout { get; set; }
+
+        private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
+
+        public Action<string> Log { get; set; }
+
+        public CancellationTokenSource CTS { get; set; }
+
+        private List<Message<Null, string>> CreatedWords = new List<Message<Null, string>>();
+
+        private string CreateWord()
+        {
+            int start = (int)'a';
+            int end = (int)'z';
+            int length = random.Next(5, 10);
+            StringBuilder sb = new StringBuilder(10);
+            char nextChar = (char)random.Next(start, end + 1);
+            for (int i = 0; i < length; i++)
+            {
+                sb.Append(nextChar);
+                nextChar = (char)random.Next(start, end + 1);
+            }
+            return sb.ToString();
+        }
+
+        public void Run()
+        {
+            TransactionalProducer = new TransactionalProducer<Null, string>
+            {
+                OutputTopic = OutputTopic,
+                RetryInterval = RetryInterval,
+                LocalTransactionOperationTimeout = LocalTransactionOperationTimeout,
+                ProducerBuilder = ProducerBuilder,
+                CTS = CTS,
+                Log = Log
+            };
+            while (!CTS.IsCancellationRequested)
+            {
+                try
+                {
+                    if (!CreatedWords.Any())
+                    {
+                        CreatedWords.Add(new Message<Null, string> { Value = CreateWord() });
+                    }
+                    TransactionalProducer.CommitKafkaTransaction(CreatedWords);
+                    CreatedWords.Clear();
+                    Log($"Produced one word");
+                }
+                catch (KafkaException)
+                {
+                    // Retry the same word
+                }
+                Thread.Sleep(ProduceRate);
             }
 
+            TransactionalProducer.Dispose();
+            Log($"Process finished");
+        }
+    }
+
+    /// <summary>
+    ///     Reads words from a topic, reverses and sends them to a different topic with EOS.
+    /// </summary>
+    public class WordReverser
+    {
+        public string InputTopic { get; set; }
+
+        public string OutputTopic { get; set; }
+
+        public ConsumerBuilder<Null, string> ConsumerBuilder { get; set; }
+
+        public ProducerBuilder<Null, string> ProducerBuilder { get; set; }
+
+        public int CommitMaxMessages { get; set; }
+
+        public TimeSpan CommitPeriod { get; set; }
+
+        public TimeSpan CommitTimeout { get; set; }
+
+        public TimeSpan RetryInterval { get; set; }
+
+        public TimeSpan LocalTransactionOperationTimeout { get; set; }
+
+        private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
+
+        private IConsumer<Null, string> Consumer { get; set; }
+
+        private List<Message<Null, string>> ReversedWords = new List<Message<Null, string>>();
+
+        private DateTime? LastCommit = null;
+
+        public CancellationTokenSource CTS { get; set; }
+
+        public Action<string> Log { get; set; }
+
+        /// <summary>
+        ///     Seeks assigned partitions to last committed offset,
+        ///     or to the earliest offset if no offset was committed yet.
+        /// </summary>
+        private void RewindConsumer(TimeSpan timeout)
+        {
+            var committedOffsets = Consumer.Committed(Consumer.Assignment, timeout);
+            committedOffsets = committedOffsets.Select(committed =>
+            {
+                var position = Consumer.Position(committed.TopicPartition);
+                position = position < 0 ? -2 : position;
+                return new TopicPartitionOffset(committed.TopicPartition, position);
+            }).ToList();
+            foreach (var committedOffset in committedOffsets)
+            {
+                Consumer.Seek(committedOffset);
+            }
+        }
+
+        /// <summary>
+        ///     Retry callback that sleeps for a configured period.
+        /// </summary>
+        private void RetryAfterSleeping(string operation = null, KafkaException e = null)
+        {
+            Thread.Sleep(RetryInterval);
+        }
+
+        /// <summary>
+        ///     Retry executing <paramref name="action"/> until it succeeds,
+        ///     call <paramref name="onKafkaException"/> if a <see cref="Confluent.Kafka.KafkaException" /> occurs.
+        /// </summary>
+        private void Retry(string operation, Action action, Action<string, KafkaException> onKafkaException = null)
+        {
+            while (!CTS.IsCancellationRequested)
+            {
+                try
+                {
+                    action();
+                    break;
+                }
+                catch (KafkaException e)
+                {
+                    if (onKafkaException != null)
+                    {
+                        onKafkaException(operation, e);
+                    }
+                }
+                catch
+                {
+                    Log($"{operation} caught a different type of exception, this shouldn't happen'");
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     When partitions are being revoked, commit transaction's remaining partitions
+        ///     before revoke is completed.
+        /// </summary>
+        private void PartitionsRevokedHandler(IConsumer<Null, string> consumer, List<TopicPartitionOffset> partitions)
+        {
+            Log("Partitions revoked.");
+            if (!CTS.IsCancellationRequested)
+            {
+                CheckCommit();
+            }
+        }
+
+        /// <summary>
+        ///     When partitions are lost, don't act.
+        /// </summary>
+        private void PartitionsLostHandler(IConsumer<Null, string> consumer, List<TopicPartitionOffset> partitions)
+        {
+            Log("Partitions lost.");
+        }
+
+        private string Reverse(string original)
+        {
+            char[] originalChars = original.ToCharArray();
+            Array.Reverse(originalChars);
+            return new string(originalChars);
+        }
+
+        /// <summary>
+        ///     Aborts the transaction by clearing words and resetting the offsets to
+        ///     the committed ones, processing the messages again and sending to the next transaction.
+        ///
+        ///     Previously sent and aborted messages won't be read by a consumer with read_committed
+        ///     isolation level.
+        ///
+        ///     If there's and application transaction involved too, this method should abort that
+        ///     transaction too, otherwise any program failure can lead to a half-committed state.
+        /// </summary>
+        private void AbortTransaction()
+        {
+            ReversedWords.Clear();
+            Retry("Consumer", () =>
+            {
+                RewindConsumer(CommitTimeout);
+            }, RetryAfterSleeping);
+        }
+
+        /// <summary>
+        ///     Starts EOS consumer and producer main loop.
+        /// </summary>
+        public void Run()
+        {
+            if (LastCommit != null) return;
+            LastCommit = DateTime.UtcNow;
+
+            Consumer = ConsumerBuilder
+                .SetPartitionsLostHandler(PartitionsLostHandler)
+                .SetPartitionsRevokedHandler(PartitionsRevokedHandler)
+                .Build();
+            TransactionalProducer = new TransactionalProducer<Null, string>
+            {
+                OutputTopic = OutputTopic,
+                RetryInterval = RetryInterval,
+                LocalTransactionOperationTimeout = LocalTransactionOperationTimeout,
+                ProducerBuilder = ProducerBuilder,
+                Consumer = Consumer,
+                CTS = CTS,
+                Log = Log
+            };
+
+            try
+            {
+                Consumer.Subscribe(InputTopic);
+                while (!CTS.IsCancellationRequested)
+                {
+                    try
+                    {
+                        ConsumeResult<Null, string> consumeResult = Consumer.Consume(100);
+
+                        if (consumeResult != null && consumeResult.Message != null)
+                        {
+                            ReversedWords.Add(new Message<Null, string> { Value = Reverse(consumeResult.Message.Value) });
+                        }
+
+                        if (ReversedWords.Count >= CommitMaxMessages ||
+                            DateTime.UtcNow > LastCommit + CommitPeriod)
+                        {
+                            CheckCommit();
+                        }
+                    }
+                    catch (KafkaException e)
+                    {
+                        var txnRequiresAbort = e is KafkaTxnRequiresAbortException;
+                        Log($"Consumer KafkaException exception: {e.Message}, TxnRequiresAbort: {txnRequiresAbort}");
+                        if (txnRequiresAbort)
+                        {
+                            AbortTransaction();
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log($"Consumer Exception type: {e.GetType()}");
+                if (e is OperationCanceledException)
+                {
+                    CTS.Cancel();
+                }
+                else
+                {
+                    Log($"Caught inner exception: {e.Message}");
+                }
+            }
+
+            TransactionalProducer.Dispose();
+            Consumer.Close();
+            Log($"Process finished");
+        }
+
+        /// <summary>
+        ///     Sends and commits accumulated messages, if any.
+        ///     This should commit any application transaction too.
+        /// </summary>
+        private void CheckCommit()
+        {
+            if (ReversedWords.Any())
+            {
+                TransactionalProducer.CommitKafkaTransaction(ReversedWords);
+                LastCommit = DateTime.UtcNow;
+                ReversedWords.Clear();
+            }
         }
     }
 }
