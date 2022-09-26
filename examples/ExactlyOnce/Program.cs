@@ -17,6 +17,7 @@
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -34,13 +35,16 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
     public class Program
     {
 
-        /// <summary>
-        ///     Logs provided <paramref name="message"/>.
-        /// </summary>
-        public static void Log(string message)
-        {
-            Console.Error.WriteLine($"{DateTimeOffset.Now.ToUnixTimeSeconds()}|EXAMPLE|{message}");
-        }
+        public static ILoggerFactory LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+            builder.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.SingleLine = true;
+                options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ ";
+                options.UseUtcTimestamp = true;
+            }));
+
+        private static ILogger logger = LoggerFactory.CreateLogger<Program>();
 
         private static async Task CreateTopic(IAdminClient adminClient, string name, int partitions)
         {
@@ -55,16 +59,16 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                         NumPartitions = partitions
                     }
                 });
-                Log($"Created topic {name}");
+                logger.LogInformation($"Created topic {name}");
             }
             catch (CreateTopicsException)
             {
                 // Continue if topic already exists
-                Log($"Topic {name} already exists");
+                logger.LogInformation($"Topic {name} already exists");
             }
             catch (Exception e)
             {
-                Log($"CreateTopic caught a different type of exception: \"{e.Message}\", this shouldn't happen'");
+                logger.LogError($"CreateTopic caught a different type of exception: \"{e.Message}\", this shouldn't happen'");
                 throw;
             }
         }
@@ -123,7 +127,6 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     new WordCreator
                     {
                         Config = wordCreatorConfig,
-                        Log = Program.Log,
                         CancellationTokenSource = cts
                     }
                     .Run();
@@ -133,13 +136,12 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     new WordReverser
                     {
                         Config = wordReverserConfig,
-                        Log = Program.Log,
                         CancellationTokenSource = cts
                     }
                     .Run();
                     break;
                 default:
-                    Log("Unknown command");
+                    logger.LogError("Unknown command");
                     break;
             }
             completedCancellationTokenSource.Cancel();
@@ -155,7 +157,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
     {
         public string OutputTopic { get; set; }
 
-        public Action<string> Log { get; set; }
+        private ILogger logger = Program.LoggerFactory.CreateLogger<TransactionalProducer<K, V>>();
 
         public TimeSpan RetryInterval { get; set; }
 
@@ -165,9 +167,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         public IConsumer<K, V> Consumer { get; set; }
 
-        private bool ToRecreateProducer = true;
+        private bool toRecreateProducer = true;
 
-        private IProducer<K, V> Producer { get; set; }
+        private IProducer<K, V> producer { get; set; }
 
         public CancellationTokenSource CancellationTokenSource { get; set; }
 
@@ -188,7 +190,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
             var IsRetriable = e is KafkaRetriableException;
             var IsFatal = e.Error.IsFatal;
-            Log($"{operation} Kafka Exception caught: '{e.Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}");
+            logger.LogError($"{operation} Kafka Exception caught: '{e.Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}");
             if (IsFatal || TxnRequiresAbort || !IsRetriable)
             {
                 throw e;
@@ -205,7 +207,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
             var IsRetriable = e is KafkaRetriableException;
             var IsFatal = e.Error.IsFatal;
-            Log($"{operation} Kafka Exception caught: '{e.Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}");
+            logger.LogError($"{operation} Kafka Exception caught: '{e.Message}', IsFatal: {IsFatal}, TxnRequiresAbort: {TxnRequiresAbort}, IsRetriable: {IsRetriable}");
             if (IsFatal || TxnRequiresAbort)
             {
                 throw e;
@@ -219,10 +221,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void RecreateProducer()
         {
-            Log("(Re)Creating producer");
-            if (Producer != null) Producer.Dispose();
-            Producer = new ProducerBuilder<K, V>(ProducerConfig).Build();
-            Producer.InitTransactions(LocalTransactionOperationTimeout);
+            logger.LogInformation("(Re)Creating producer");
+            if (producer != null) producer.Dispose();
+            producer = new ProducerBuilder<K, V>(ProducerConfig).Build();
+            producer.InitTransactions(LocalTransactionOperationTimeout);
         }
 
         /// <summary>
@@ -247,7 +249,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 }
                 catch
                 {
-                    Log($"{operation} caught a different type of exception, this shouldn't happen'");
+                    logger.LogError($"{operation} caught a different type of exception, this shouldn't happen'");
                     throw;
                 }
             }
@@ -265,84 +267,84 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             {
                 try
                 {
-                    if (ToRecreateProducer)
+                    if (toRecreateProducer)
                     {
                         RecreateProducer();
-                        ToRecreateProducer = false;
+                        toRecreateProducer = false;
                     }
                     try
                     {
-                        Log("Calling BeginTransaction");
-                        Producer.BeginTransaction();
+                        logger.LogInformation("Calling BeginTransaction");
+                        producer.BeginTransaction();
                     }
                     catch (Exception e)
                     {
-                        Log($"BeginTransaction threw: {e.Message}");
+                        logger.LogError($"BeginTransaction threw: {e.Message}");
                         throw;
                     }
 
-                    Log($"Transaction contains {messages.Count} messages");
+                    logger.LogInformation($"Transaction contains {messages.Count} messages");
 
 
-                    Log("Calling Produce many times");
+                    logger.LogInformation("Calling Produce many times");
                     foreach (var message in messages)
                     {
                         Retry("Produce", () =>
                         {
-                            Producer.Produce(OutputTopic, message);
+                            producer.Produce(OutputTopic, message);
                         }, RetryUnlessFatalOrAbortable);
                     }
 
-                    Log($"Produce completed");
+                    logger.LogInformation($"Produce completed");
 
                     if (Consumer != null)
                     {
                         Retry("SendOffsetsToTransaction", () =>
                         {
-                            Log("Calling SendOffsetsToTransaction");
-                            Producer.SendOffsetsToTransaction(
+                            logger.LogInformation("Calling SendOffsetsToTransaction");
+                            producer.SendOffsetsToTransaction(
                                 Consumer.Assignment.Select(a => new TopicPartitionOffset(a, Consumer.Position(a))),
                                 Consumer.ConsumerGroupMetadata,
                                 LocalTransactionOperationTimeout);
                         }, RetryIfNeeded);
-                        Log($"SendOffsetsToTransaction completed");
+                        logger.LogInformation($"SendOffsetsToTransaction completed");
                     }
 
                     Retry("CommitTransaction", () =>
                     {
-                        Log("calling CommitTransaction");
-                        Producer.CommitTransaction();
+                        logger.LogInformation("calling CommitTransaction");
+                        producer.CommitTransaction();
                     }, RetryIfNeeded);
 
-                    Log($"CommitTransaction completed");
+                    logger.LogInformation($"CommitTransaction completed");
                     break;
                 }
                 catch (KafkaException e)
                 {
-                    Log($"Kafka Exception caught, aborting transaction, trying again in {RetryInterval.TotalSeconds} seconds: '{e.Message}'");
+                    logger.LogError($"Kafka Exception caught, aborting transaction, trying again in {RetryInterval.TotalSeconds} seconds: '{e.Message}'");
                     var TxnRequiresAbort = e is KafkaTxnRequiresAbortException;
                     if (e.Error.IsFatal)
                     {
-                        ToRecreateProducer = true;
+                        toRecreateProducer = true;
                     }
                     else if (TxnRequiresAbort)
                     {
                         Retry("AbortTransaction", () =>
                         {
-                            Log("calling AbortTransaction");
-                            Producer.AbortTransaction(LocalTransactionOperationTimeout);
+                            logger.LogInformation("calling AbortTransaction");
+                            producer.AbortTransaction(LocalTransactionOperationTimeout);
                         }, (string operation, KafkaException eInner) =>
                         {
                             var TxnRequiresAbortErrorInner = eInner is KafkaTxnRequiresAbortException;
                             var IsRetriableInner = eInner is KafkaRetriableException;
                             var IsFatalInner = eInner.Error.IsFatal;
-                            Log($"AbortTransaction Kafka Exception caught, trying again in {RetryInterval.TotalSeconds} seconds: '{eInner.Message}', IsFatal: {IsFatalInner}, TxnRequiresAbort: {TxnRequiresAbortErrorInner}, IsRetriable: {IsRetriableInner}");
+                            logger.LogError($"AbortTransaction Kafka Exception caught, trying again in {RetryInterval.TotalSeconds} seconds: '{eInner.Message}', IsFatal: {IsFatalInner}, TxnRequiresAbort: {TxnRequiresAbortErrorInner}, IsRetriable: {IsRetriableInner}");
                             RetryAfterSleeping();
                             if (!TxnRequiresAbortErrorInner && !IsRetriableInner)
                             {
                                 if (IsFatalInner)
                                 {
-                                    ToRecreateProducer = true;
+                                    toRecreateProducer = true;
                                 }
                                 // Propagate abort to consumer and application
                                 throw e;
@@ -355,7 +357,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 }
                 catch
                 {
-                    Log("Caught a different type of exception, this shouldn't happen'");
+                    logger.LogError("Caught a different type of exception, this shouldn't happen'");
                     throw;
                 }
             }
@@ -366,7 +368,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         public void Dispose()
         {
-            if (Producer != null) Producer.Dispose();
+            if (producer != null) producer.Dispose();
         }
     }
 
@@ -394,15 +396,15 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         public WordCreatorConfig Config { get; set; }
 
-        public Action<string> Log { get; set; }
+        private ILogger logger = Program.LoggerFactory.CreateLogger<WordCreator>();
 
         public CancellationTokenSource CancellationTokenSource { get; set; }
 
         private static readonly Random random = new Random();
 
-        private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
+        private TransactionalProducer<Null, string> transactionalProducer { get; set; }
 
-        private List<Message<Null, string>> CreatedWords = new List<Message<Null, string>>();
+        private List<Message<Null, string>> createdWords = new List<Message<Null, string>>();
 
         private string CreateWord()
         {
@@ -421,26 +423,25 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         public void Run()
         {
-            TransactionalProducer = new TransactionalProducer<Null, string>
+            transactionalProducer = new TransactionalProducer<Null, string>
             {
                 OutputTopic = Config.OutputTopic,
                 RetryInterval = Config.RetryInterval,
                 LocalTransactionOperationTimeout = Config.LocalTransactionOperationTimeout,
                 ProducerConfig = Config.Producer,
-                CancellationTokenSource = CancellationTokenSource,
-                Log = Log
+                CancellationTokenSource = CancellationTokenSource
             };
             while (!CancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
-                    if (!CreatedWords.Any())
+                    if (!createdWords.Any())
                     {
-                        CreatedWords.Add(new Message<Null, string> { Value = CreateWord() });
+                        createdWords.Add(new Message<Null, string> { Value = CreateWord() });
                     }
-                    TransactionalProducer.CommitKafkaTransaction(CreatedWords);
-                    CreatedWords.Clear();
-                    Log($"Produced one word");
+                    transactionalProducer.CommitKafkaTransaction(createdWords);
+                    createdWords.Clear();
+                    logger.LogInformation($"Produced one word");
                 }
                 catch (KafkaException)
                 {
@@ -449,8 +450,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 Thread.Sleep(Config.ProduceRate);
             }
 
-            TransactionalProducer.Dispose();
-            Log($"Process finished");
+            transactionalProducer.Dispose();
+            logger.LogInformation($"Process finished");
         }
     }
 
@@ -487,17 +488,17 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         public WordReverserConfig Config { get; set; }
 
-        private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
+        private TransactionalProducer<Null, string> transactionalProducer { get; set; }
 
-        private IConsumer<Null, string> Consumer { get; set; }
+        private IConsumer<Null, string> consumer { get; set; }
 
-        private List<Message<Null, string>> ReversedWords = new List<Message<Null, string>>();
+        private List<Message<Null, string>> reversedWords = new List<Message<Null, string>>();
 
-        private DateTime? LastCommit = null;
+        private DateTime? lastCommit = null;
 
         public CancellationTokenSource CancellationTokenSource { get; set; }
 
-        public Action<string> Log { get; set; }
+        private ILogger logger = Program.LoggerFactory.CreateLogger<WordReverser>();
 
         /// <summary>
         ///     Seeks assigned partitions to last committed offset,
@@ -505,16 +506,16 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void RewindConsumer(TimeSpan timeout)
         {
-            var committedOffsets = Consumer.Committed(Consumer.Assignment, timeout);
+            var committedOffsets = consumer.Committed(consumer.Assignment, timeout);
             committedOffsets = committedOffsets.Select(committed =>
             {
-                var position = Consumer.Position(committed.TopicPartition);
+                var position = consumer.Position(committed.TopicPartition);
                 position = position < 0 ? -2 : position;
                 return new TopicPartitionOffset(committed.TopicPartition, position);
             }).ToList();
             foreach (var committedOffset in committedOffsets)
             {
-                Consumer.Seek(committedOffset);
+                consumer.Seek(committedOffset);
             }
         }
 
@@ -548,7 +549,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 }
                 catch
                 {
-                    Log($"{operation} caught a different type of exception, this shouldn't happen'");
+                    logger.LogError($"{operation} caught a different type of exception, this shouldn't happen'");
                     throw;
                 }
             }
@@ -560,7 +561,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void PartitionsRevokedHandler(IConsumer<Null, string> consumer, List<TopicPartitionOffset> partitions)
         {
-            Log("Partitions revoked.");
+            logger.LogInformation("Partitions revoked.");
             if (!CancellationTokenSource.IsCancellationRequested)
             {
                 CheckCommit();
@@ -572,7 +573,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void PartitionsLostHandler(IConsumer<Null, string> consumer, List<TopicPartitionOffset> partitions)
         {
-            Log("Partitions lost.");
+            logger.LogWarning("Partitions lost.");
         }
 
         private string Reverse(string original)
@@ -594,7 +595,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void AbortTransaction()
         {
-            ReversedWords.Clear();
+            reversedWords.Clear();
             Retry("Consumer", () =>
             {
                 RewindConsumer(Config.CommitTimeout);
@@ -606,40 +607,39 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         public void Run()
         {
-            if (LastCommit != null) return;
-            LastCommit = DateTime.UtcNow;
+            if (lastCommit != null) return;
+            lastCommit = DateTime.UtcNow;
 
-            Consumer = new ConsumerBuilder<Null, string>(Config.Consumer)
+            consumer = new ConsumerBuilder<Null, string>(Config.Consumer)
                 .SetPartitionsLostHandler(PartitionsLostHandler)
                 .SetPartitionsRevokedHandler(PartitionsRevokedHandler)
                 .Build();
-            TransactionalProducer = new TransactionalProducer<Null, string>
+            transactionalProducer = new TransactionalProducer<Null, string>
             {
                 OutputTopic = Config.OutputTopic,
                 RetryInterval = Config.RetryInterval,
                 LocalTransactionOperationTimeout = Config.LocalTransactionOperationTimeout,
                 ProducerConfig = Config.Producer,
-                Consumer = Consumer,
-                CancellationTokenSource = CancellationTokenSource,
-                Log = Log
+                Consumer = consumer,
+                CancellationTokenSource = CancellationTokenSource
             };
 
             try
             {
-                Consumer.Subscribe(Config.InputTopic);
+                consumer.Subscribe(Config.InputTopic);
                 while (!CancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
-                        ConsumeResult<Null, string> consumeResult = Consumer.Consume(100);
+                        ConsumeResult<Null, string> consumeResult = consumer.Consume(100);
 
                         if (consumeResult != null && consumeResult.Message != null)
                         {
-                            ReversedWords.Add(new Message<Null, string> { Value = Reverse(consumeResult.Message.Value) });
+                            reversedWords.Add(new Message<Null, string> { Value = Reverse(consumeResult.Message.Value) });
                         }
 
-                        if (ReversedWords.Count >= Config.CommitMaxMessages ||
-                            DateTime.UtcNow > LastCommit + Config.CommitPeriod)
+                        if (reversedWords.Count >= Config.CommitMaxMessages ||
+                            DateTime.UtcNow > lastCommit + Config.CommitPeriod)
                         {
                             CheckCommit();
                         }
@@ -647,7 +647,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     catch (KafkaException e)
                     {
                         var txnRequiresAbort = e is KafkaTxnRequiresAbortException;
-                        Log($"Consumer KafkaException exception: {e.Message}, TxnRequiresAbort: {txnRequiresAbort}");
+                        logger.LogError($"Consumer KafkaException exception: {e.Message}, TxnRequiresAbort: {txnRequiresAbort}");
                         if (txnRequiresAbort)
                         {
                             AbortTransaction();
@@ -657,20 +657,20 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             }
             catch (Exception e)
             {
-                Log($"Consumer Exception type: {e.GetType()}");
+                logger.LogError($"Consumer Exception type: {e.GetType()}");
                 if (e is OperationCanceledException)
                 {
                     CancellationTokenSource.Cancel();
                 }
                 else
                 {
-                    Log($"Caught inner exception: {e.Message}");
+                    logger.LogError($"Caught inner exception: {e.Message}");
                 }
             }
 
-            TransactionalProducer.Dispose();
-            Consumer.Close();
-            Log($"Process finished");
+            transactionalProducer.Dispose();
+            consumer.Close();
+            logger.LogInformation($"Process finished");
         }
 
         /// <summary>
@@ -679,11 +679,11 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void CheckCommit()
         {
-            if (ReversedWords.Any())
+            if (reversedWords.Any())
             {
-                TransactionalProducer.CommitKafkaTransaction(ReversedWords);
-                LastCommit = DateTime.UtcNow;
-                ReversedWords.Clear();
+                transactionalProducer.CommitKafkaTransaction(reversedWords);
+                lastCommit = DateTime.UtcNow;
+                reversedWords.Clear();
             }
         }
     }
