@@ -57,14 +57,14 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 });
                 Log($"Created topic {name}");
             }
-            catch (CreateTopicsException e)
+            catch (CreateTopicsException)
             {
                 // Continue if topic already exists
                 Log($"Topic {name} already exists");
             }
             catch (Exception e)
             {
-                Log($"CreateTopic caught a different type of exception, this shouldn't happen'");
+                Log($"CreateTopic caught a different type of exception: \"{e.Message}\", this shouldn't happen'");
                 throw;
             }
         }
