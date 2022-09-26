@@ -104,17 +104,15 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 .AddJsonFile("./appsettings.json")
                 .Build();
 
-            var wordCreatorConfig = new WordCreatorConfig();
-            var wordReverserConfig = new WordReverserConfig();
-
-            configuration.GetSection("WordCreator").Bind(wordCreatorConfig);
-            configuration.GetSection("WordReverser").Bind(wordReverserConfig);
+            var wordCreatorConfig = configuration.GetSection("WordCreator").Get<WordCreatorConfig>();
+            var wordReverserConfig = configuration.GetSection("WordReverser").Get<WordReverserConfig>();
+            var adminClientConfig = configuration.GetSection("AdminClient").Get<AdminClientConfig>();
 
             wordCreatorConfig.Producer.ThrowIfContainsNonUserConfigurable();
             wordReverserConfig.Producer.ThrowIfContainsNonUserConfigurable();
             wordReverserConfig.Consumer.ThrowIfContainsNonUserConfigurable();
 
-            var adminClient = new AdminClientBuilder(wordCreatorConfig.Producer).Build();
+            var adminClient = new AdminClientBuilder(adminClientConfig).Build();
             await CreateTopic(adminClient, wordCreatorConfig.OutputTopic, wordCreatorConfig.TopicPartitions);
             await CreateTopic(adminClient, wordReverserConfig.OutputTopic, wordReverserConfig.TopicPartitions);
 
