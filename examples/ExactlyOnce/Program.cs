@@ -74,17 +74,17 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         public static async Task Main(string[] args)
         {
-            CancellationTokenSource cancelled = new CancellationTokenSource();
-            CancellationTokenSource completed = new CancellationTokenSource();
+            CancellationTokenSource cts = new CancellationTokenSource();
+            CancellationTokenSource completedCancellationTokenSource = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) =>
             {
                 e.Cancel = true; // prevent the process from terminating.
-                cancelled.Cancel();
+                cts.Cancel();
             };
             AppDomain.CurrentDomain.ProcessExit += (_, e) =>
             {
-                cancelled.Cancel();
-                completed.Token.WaitHandle.WaitOne();
+                cts.Cancel();
+                completedCancellationTokenSource.Token.WaitHandle.WaitOne();
             };
 
             if (args.Length != 2)
@@ -92,7 +92,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 Console.WriteLine("Usage:");
                 Console.WriteLine("create_words <transactional-id>");
                 Console.WriteLine("reverse_words <transactional-id>");
-                completed.Cancel();
+                completedCancellationTokenSource.Cancel();
                 return;
             }
 
@@ -137,7 +137,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                         LocalTransactionOperationTimeout = localTransactionOperationTimeout,
                         ProducerBuilder = producerBuilder,
                         Log = Program.Log,
-                        CTS = cancelled
+                        CancellationTokenSource = cts
                     }
                     .Run();
                     break;
@@ -154,7 +154,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                         ProducerBuilder = producerBuilder,
                         ConsumerBuilder = consumerBuilder,
                         Log = Program.Log,
-                        CTS = cancelled
+                        CancellationTokenSource = cts
                     }
                     .Run();
                     break;
@@ -162,7 +162,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     Log("Unknown command");
                     break;
             }
-            completed.Cancel();
+            completedCancellationTokenSource.Cancel();
         }
     }
 
@@ -189,7 +189,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         private IProducer<K, V> Producer { get; set; }
 
-        public CancellationTokenSource CTS { get; set; }
+        public CancellationTokenSource CancellationTokenSource { get; set; }
 
         /// <summary>
         ///     Retry callback that sleeps for a configured period.
@@ -251,7 +251,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void Retry(string operation, Action action, Action<string, KafkaException> onKafkaException = null)
         {
-            while (!CTS.IsCancellationRequested)
+            while (!CancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
@@ -281,7 +281,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         public void CommitKafkaTransaction(List<Message<K, V>> messages)
         {
-            while (!CTS.IsCancellationRequested)
+            while (!CancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
@@ -413,7 +413,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         public Action<string> Log { get; set; }
 
-        public CancellationTokenSource CTS { get; set; }
+        public CancellationTokenSource CancellationTokenSource { get; set; }
 
         private List<Message<Null, string>> CreatedWords = new List<Message<Null, string>>();
 
@@ -440,10 +440,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 RetryInterval = RetryInterval,
                 LocalTransactionOperationTimeout = LocalTransactionOperationTimeout,
                 ProducerBuilder = ProducerBuilder,
-                CTS = CTS,
+                CancellationTokenSource = CancellationTokenSource,
                 Log = Log
             };
-            while (!CTS.IsCancellationRequested)
+            while (!CancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
@@ -498,7 +498,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         private DateTime? LastCommit = null;
 
-        public CancellationTokenSource CTS { get; set; }
+        public CancellationTokenSource CancellationTokenSource { get; set; }
 
         public Action<string> Log { get; set; }
 
@@ -535,7 +535,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void Retry(string operation, Action action, Action<string, KafkaException> onKafkaException = null)
         {
-            while (!CTS.IsCancellationRequested)
+            while (!CancellationTokenSource.IsCancellationRequested)
             {
                 try
                 {
@@ -564,7 +564,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         private void PartitionsRevokedHandler(IConsumer<Null, string> consumer, List<TopicPartitionOffset> partitions)
         {
             Log("Partitions revoked.");
-            if (!CTS.IsCancellationRequested)
+            if (!CancellationTokenSource.IsCancellationRequested)
             {
                 CheckCommit();
             }
@@ -623,14 +623,14 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 LocalTransactionOperationTimeout = LocalTransactionOperationTimeout,
                 ProducerBuilder = ProducerBuilder,
                 Consumer = Consumer,
-                CTS = CTS,
+                CancellationTokenSource = CancellationTokenSource,
                 Log = Log
             };
 
             try
             {
                 Consumer.Subscribe(InputTopic);
-                while (!CTS.IsCancellationRequested)
+                while (!CancellationTokenSource.IsCancellationRequested)
                 {
                     try
                     {
@@ -663,7 +663,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 Log($"Consumer Exception type: {e.GetType()}");
                 if (e is OperationCanceledException)
                 {
-                    CTS.Cancel();
+                    CancellationTokenSource.Cancel();
                 }
                 else
                 {
