@@ -104,55 +104,37 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 .AddJsonFile("./appsettings.json")
                 .Build();
 
-            var producerConfig = configuration.GetSection("Producer").Get<ProducerConfig>().ThrowIfContainsNonUserConfigurable();
-            var consumerConfig = configuration.GetSection("Consumer").Get<ConsumerConfig>().ThrowIfContainsNonUserConfigurable();
-            var generalConfig = configuration.GetSection("General");
-            var wordsConfig = generalConfig.GetSection("Words");
-            var reversedWordsConfig = generalConfig.GetSection("ReversedWords");
+            var wordCreatorConfig = new WordCreatorConfig();
+            var wordReverserConfig = new WordReverserConfig();
 
-            var wordsTopicName = wordsConfig.GetValue<string>("TopicName");
-            var wordsTopicPartitions = wordsConfig.GetValue<int>("TopicPartitions");
+            configuration.GetSection("WordCreator").Bind(wordCreatorConfig);
+            configuration.GetSection("WordReverser").Bind(wordReverserConfig);
 
-            var reversedWordsTopicName = reversedWordsConfig.GetValue<string>("TopicName");
-            var reversedWordsTopicPartitions = reversedWordsConfig.GetValue<int>("TopicPartitions");
+            wordCreatorConfig.Producer.ThrowIfContainsNonUserConfigurable();
+            wordReverserConfig.Producer.ThrowIfContainsNonUserConfigurable();
+            wordReverserConfig.Consumer.ThrowIfContainsNonUserConfigurable();
 
-            var adminClient = new AdminClientBuilder(producerConfig).Build();
-            await CreateTopic(adminClient, wordsTopicName, wordsTopicPartitions);
-            await CreateTopic(adminClient, reversedWordsTopicName, reversedWordsTopicPartitions);
-
-            producerConfig.TransactionalId = transactionalId;
-            var consumerBuilder = new ConsumerBuilder<Null, string>(consumerConfig);
-            var producerBuilder = new ProducerBuilder<Null, string>(producerConfig);
-            var retryInterval = generalConfig.GetValue<TimeSpan>("RetryInterval");
-            var localTransactionOperationTimeout = generalConfig.GetValue<TimeSpan>("LocalTransactionOperationTimeout");
+            var adminClient = new AdminClientBuilder(wordCreatorConfig.Producer).Build();
+            await CreateTopic(adminClient, wordCreatorConfig.OutputTopic, wordCreatorConfig.TopicPartitions);
+            await CreateTopic(adminClient, wordReverserConfig.OutputTopic, wordReverserConfig.TopicPartitions);
 
             switch (command)
             {
                 case "create_words":
-                    new WordsCreator
+                    wordCreatorConfig.Producer.TransactionalId = transactionalId;
+                    new WordCreator
                     {
-                        OutputTopic = wordsTopicName,
-                        ProduceRate = wordsConfig.GetValue<TimeSpan>("ProduceRate"),
-                        RetryInterval = retryInterval,
-                        LocalTransactionOperationTimeout = localTransactionOperationTimeout,
-                        ProducerBuilder = producerBuilder,
+                        Config = wordCreatorConfig,
                         Log = Program.Log,
                         CancellationTokenSource = cts
                     }
                     .Run();
                     break;
                 case "reverse_words":
+                    wordReverserConfig.Producer.TransactionalId = transactionalId;
                     new WordReverser
                     {
-                        InputTopic = wordsTopicName,
-                        OutputTopic = reversedWordsTopicName,
-                        CommitMaxMessages = reversedWordsConfig.GetValue<int>("CommitMaxMessages"),
-                        CommitPeriod = reversedWordsConfig.GetValue<TimeSpan>("CommitPeriod"),
-                        CommitTimeout = reversedWordsConfig.GetValue<TimeSpan>("CommitTimeout"),
-                        RetryInterval = retryInterval,
-                        LocalTransactionOperationTimeout = localTransactionOperationTimeout,
-                        ProducerBuilder = producerBuilder,
-                        ConsumerBuilder = consumerBuilder,
+                        Config = wordReverserConfig,
                         Log = Program.Log,
                         CancellationTokenSource = cts
                     }
@@ -181,7 +163,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
         public TimeSpan LocalTransactionOperationTimeout { get; set; }
 
-        public ProducerBuilder<K, V> ProducerBuilder { get; set; }
+        public ProducerConfig ProducerConfig { get; set; }
 
         public IConsumer<K, V> Consumer { get; set; }
 
@@ -241,7 +223,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         {
             Log("(Re)Creating producer");
             if (Producer != null) Producer.Dispose();
-            Producer = ProducerBuilder.Build();
+            Producer = new ProducerBuilder<K, V>(ProducerConfig).Build();
             Producer.InitTransactions(LocalTransactionOperationTimeout);
         }
 
@@ -390,30 +372,37 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         }
     }
 
-    /// <summary>
-    ///     Creates random words and sends them to a topic.
-    /// </summary>
-    public class WordsCreator
+    public class WordCreatorConfig
     {
-        private static readonly Random random = new Random();
-
-        public TimeSpan ProduceRate { get; set; }
-
-        public IProducer<Null, string> Producer { get; set; }
 
         public string OutputTopic { get; set; }
 
-        public ProducerBuilder<Null, string> ProducerBuilder { get; set; }
+        public int TopicPartitions { get; set; }
+
+        public TimeSpan ProduceRate { get; set; }
 
         public TimeSpan RetryInterval { get; set; }
 
         public TimeSpan LocalTransactionOperationTimeout { get; set; }
 
-        private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
+        public ProducerConfig Producer { get; set; }
+    }
+
+    /// <summary>
+    ///     Creates random words and sends them to a topic.
+    /// </summary>
+    public class WordCreator
+    {
+
+        public WordCreatorConfig Config { get; set; }
 
         public Action<string> Log { get; set; }
 
         public CancellationTokenSource CancellationTokenSource { get; set; }
+
+        private static readonly Random random = new Random();
+
+        private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
 
         private List<Message<Null, string>> CreatedWords = new List<Message<Null, string>>();
 
@@ -436,10 +425,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         {
             TransactionalProducer = new TransactionalProducer<Null, string>
             {
-                OutputTopic = OutputTopic,
-                RetryInterval = RetryInterval,
-                LocalTransactionOperationTimeout = LocalTransactionOperationTimeout,
-                ProducerBuilder = ProducerBuilder,
+                OutputTopic = Config.OutputTopic,
+                RetryInterval = Config.RetryInterval,
+                LocalTransactionOperationTimeout = Config.LocalTransactionOperationTimeout,
+                ProducerConfig = Config.Producer,
                 CancellationTokenSource = CancellationTokenSource,
                 Log = Log
             };
@@ -459,7 +448,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 {
                     // Retry the same word
                 }
-                Thread.Sleep(ProduceRate);
+                Thread.Sleep(Config.ProduceRate);
             }
 
             TransactionalProducer.Dispose();
@@ -467,18 +456,15 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         }
     }
 
-    /// <summary>
-    ///     Reads words from a topic, reverses and sends them to a different topic with EOS.
-    /// </summary>
-    public class WordReverser
+
+    public class WordReverserConfig
     {
+
         public string InputTopic { get; set; }
 
         public string OutputTopic { get; set; }
 
-        public ConsumerBuilder<Null, string> ConsumerBuilder { get; set; }
-
-        public ProducerBuilder<Null, string> ProducerBuilder { get; set; }
+        public int TopicPartitions { get; set; }
 
         public int CommitMaxMessages { get; set; }
 
@@ -489,6 +475,19 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         public TimeSpan RetryInterval { get; set; }
 
         public TimeSpan LocalTransactionOperationTimeout { get; set; }
+
+        public ProducerConfig Producer { get; set; }
+
+        public ConsumerConfig Consumer { get; set; }
+    }
+
+    /// <summary>
+    ///     Reads words from a topic, reverses and sends them to a different topic with EOS.
+    /// </summary>
+    public class WordReverser
+    {
+
+        public WordReverserConfig Config { get; set; }
 
         private TransactionalProducer<Null, string> TransactionalProducer { get; set; }
 
@@ -526,7 +525,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void RetryAfterSleeping(string operation = null, KafkaException e = null)
         {
-            Thread.Sleep(RetryInterval);
+            Thread.Sleep(Config.RetryInterval);
         }
 
         /// <summary>
@@ -600,7 +599,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             ReversedWords.Clear();
             Retry("Consumer", () =>
             {
-                RewindConsumer(CommitTimeout);
+                RewindConsumer(Config.CommitTimeout);
             }, RetryAfterSleeping);
         }
 
@@ -612,16 +611,16 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
             if (LastCommit != null) return;
             LastCommit = DateTime.UtcNow;
 
-            Consumer = ConsumerBuilder
+            Consumer = new ConsumerBuilder<Null, string>(Config.Consumer)
                 .SetPartitionsLostHandler(PartitionsLostHandler)
                 .SetPartitionsRevokedHandler(PartitionsRevokedHandler)
                 .Build();
             TransactionalProducer = new TransactionalProducer<Null, string>
             {
-                OutputTopic = OutputTopic,
-                RetryInterval = RetryInterval,
-                LocalTransactionOperationTimeout = LocalTransactionOperationTimeout,
-                ProducerBuilder = ProducerBuilder,
+                OutputTopic = Config.OutputTopic,
+                RetryInterval = Config.RetryInterval,
+                LocalTransactionOperationTimeout = Config.LocalTransactionOperationTimeout,
+                ProducerConfig = Config.Producer,
                 Consumer = Consumer,
                 CancellationTokenSource = CancellationTokenSource,
                 Log = Log
@@ -629,7 +628,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
 
             try
             {
-                Consumer.Subscribe(InputTopic);
+                Consumer.Subscribe(Config.InputTopic);
                 while (!CancellationTokenSource.IsCancellationRequested)
                 {
                     try
@@ -641,8 +640,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                             ReversedWords.Add(new Message<Null, string> { Value = Reverse(consumeResult.Message.Value) });
                         }
 
-                        if (ReversedWords.Count >= CommitMaxMessages ||
-                            DateTime.UtcNow > LastCommit + CommitPeriod)
+                        if (ReversedWords.Count >= Config.CommitMaxMessages ||
+                            DateTime.UtcNow > LastCommit + Config.CommitPeriod)
                         {
                             CheckCommit();
                         }
