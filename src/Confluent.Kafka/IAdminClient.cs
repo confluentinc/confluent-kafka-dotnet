@@ -403,8 +403,8 @@ namespace Confluent.Kafka
         /// <summary>
         ///    Lists consumer groups in the cluster.
         /// </summary>
-        /// <param name="timeout">
-        ///     The (approximate) maximum time to wait for response from brokers.
+        /// <param name="options">
+        ///     The options to use while listing consumer groups.
         /// </param>
         /// <exception cref="KafkaException">
         ///     Thrown if there is any client-level error.
@@ -421,8 +421,9 @@ namespace Confluent.Kafka
         ///     only the GroupInfo.Group and GroupInfo.Error populated.
         ///     TODO(milind): a bit torn on whether we should have a different return type for this
         ///                   or mirror librdkafka and have the same return for list and describe both.
+        ///                   This todo will be removed after a PR review.
         /// </returns>
-        List<GroupInfo> ListConsumerGroups(TimeSpan timeout);
+        List<GroupInfo> ListConsumerGroups(ListConsumerGroupsOptions options = null);
 
         /// <summary>
         ///    Describes consumer groups in the cluster.
@@ -431,8 +432,8 @@ namespace Confluent.Kafka
         ///     The list of groups to describe. This can be set
         ///     to null to describe all groups.
         /// </param>
-        /// <param name="timeout">
-        ///     The (approximate) maximum time to wait for response from brokers.
+        /// <param name="options">
+        ///     The options to use while describing consumer groups.
         /// </param>
         /// <exception cref="KafkaException">
         ///     Thrown if there is any client-level error.
@@ -447,7 +448,7 @@ namespace Confluent.Kafka
         /// <returns>
         ///     A List of <see cref="Confluent.Kafka.GroupInfo"/>.
         /// </returns>
-        List<GroupInfo> DescribeConsumerGroups(IList<string> groups, TimeSpan timeout);
+        List<GroupInfo> DescribeConsumerGroups(IList<string> groups, DescribeConsumerGroupsOptions options = null);
     }
 
 }

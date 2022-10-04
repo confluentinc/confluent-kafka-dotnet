@@ -42,6 +42,31 @@ namespace Confluent.Kafka
             Group = group;
             Error = error;
         }
+
+        /// <summary>
+        ///     Initializes a new instance of the GroupInfo class with only the Group, State,
+        ///     IsSimpleConsumerGroup and Error properties set. Used when this group is only listed.
+        /// </summary>
+        /// <param name="group">
+        ///     The group name.
+        /// </param>
+        /// <param name="error">
+        ///     A rich <see cref="Error"/> value associated with the information encapsulated by this class.
+        /// </param>
+        /// <param name="state">
+        ///     The group state code.
+        /// </param>
+        /// <param name="isSimpleConsumerGroup">
+        ///    If the group is a simple consumer group or not.
+        /// </param>
+        public GroupInfo(string group, Error error, ConsumerGroupState state, bool isSimpleConsumerGroup)
+        {
+            Group = group;
+            Error = error;
+            StateCode = state;
+            IsSimpleConsumerGroup = isSimpleConsumerGroup;
+        }
+
         /// <summary>
         ///     Initializes a new instance of the GroupInfo class.
         /// </summary>
@@ -55,7 +80,13 @@ namespace Confluent.Kafka
         ///     A rich <see cref="Error"/> value associated with the information encapsulated by this class.
         /// </param>
         /// <param name="state">
-        ///     The group state.
+        ///     The group state (string).
+        /// </param>
+        /// <param name="stateCode">
+        ///     The group state (enum).
+        /// </param>
+        /// <param name="isSimpleConsumerGroup">
+        ///     If the group is a simple consumer group or not.
         /// </param>
         /// <param name="protocolType">
         ///     The group protocol type.
@@ -66,12 +97,16 @@ namespace Confluent.Kafka
         /// <param name="members">
         ///     The group members.
         /// </param>
-        public GroupInfo(BrokerMetadata broker, string group, Error error, string state, string protocolType, string protocol, List<GroupMemberInfo> members)
+        public GroupInfo(BrokerMetadata broker, string group, Error error, string state, 
+                         ConsumerGroupState stateCode, bool isSimpleConsumerGroup, string protocolType, 
+                         string protocol, List<GroupMemberInfo> members)
         {
             Broker = broker;
             Group = group;
             Error = error;
             State = state;
+            StateCode = stateCode;
+            IsSimpleConsumerGroup = isSimpleConsumerGroup;
             ProtocolType = protocolType;
             Protocol = protocol;
             Members = members;
@@ -93,9 +128,21 @@ namespace Confluent.Kafka
         public Error Error { get; }
 
         /// <summary>
-        ///     Gets the group state
+        ///     DEPRECATED. Use StateCode instead.
+        ///
+        ///     Gets the group state (string representation)
         /// </summary>
         public string State { get; }
+
+        /// <summary>
+        ///     Gets the group state (enum representation)
+        /// </summary>
+        public ConsumerGroupState StateCode { get; }
+
+        /// <summary>
+        ///     Gets if this group is a simple consumer group
+        /// </summary>
+        public bool IsSimpleConsumerGroup { get; }
 
         /// <summary>
         ///     Gets the group protocol type

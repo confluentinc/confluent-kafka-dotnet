@@ -88,10 +88,12 @@ namespace Confluent.Kafka
         public byte[] MemberAssignment { get; }
 
         /// <summary>
-        ///     Gets the parsed list of TopicPartitionOffsets that are encoded inside MemberAssignment.
-        ///     TODO(milind): I finally mirrored the librdkafka struct after considering creating a new type
-        ///                   for parsed fields like topic partitions. Tell me if this needs to be changed.
+        ///     Gets the parsed list of TopicPartitions that are encoded inside MemberAssignment.
+        ///     This may be null in case the TopicPartitions can't be parsed.
+        ///     TODO(milind): This mirrors the librdkafka struct. The other alternative is creating a new type
+        ///                   for parsed fields and putting the topic partitions inside it. This TODO will be removed
+        ///                   after PR review.
         /// </summary>
-        public List<TopicPartition> MemberAssignmentTopicPartitions { get; }
+        public List<TopicPartition> MemberAssignmentTopicPartitions { get; } = null;
     }
 }

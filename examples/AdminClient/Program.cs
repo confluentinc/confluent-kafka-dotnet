@@ -399,13 +399,13 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    List<GroupInfo> groups = adminClient.ListConsumerGroups(timeout);
+                    List<GroupInfo> groups = adminClient.ListConsumerGroups(new ListConsumerGroupsOptions() { RequestTimeout = timeout });
                     foreach (var groupInfo in groups) {
                         var errString = "";
                         if (groupInfo.Error.Code != ErrorCode.NoError) {
-                            errString = $" ({groupInfo.Error})";
+                            errString = $", Error = ({groupInfo.Error})";
                         }
-                        Console.WriteLine($"{groupInfo.Group}{errString}");
+                        Console.WriteLine($"{groupInfo.Group}, State = {groupInfo.StateCode}, Is Simple = {groupInfo.IsSimpleConsumerGroup}{errString}");
                     }
                 }
                 catch (KafkaException e)
@@ -430,19 +430,24 @@ namespace Confluent.Kafka.Examples
             {
                 try
                 {
-                    List<GroupInfo> groups = adminClient.DescribeConsumerGroups(groupNames, timeout);
+                    List<GroupInfo> groups = adminClient.DescribeConsumerGroups(groupNames, new DescribeConsumerGroupsOptions() { RequestTimeout = timeout });
                     foreach (var group in groups)
                     {
-                        Console.WriteLine($"  Group: {group.Group} {group.Error} {group.State}");
+                        Console.WriteLine($"  Group: {group.Group} {group.Error} {group.StateCode}");
                         Console.WriteLine($"  Broker: {group.Broker.BrokerId} {group.Broker.Host}:{group.Broker.Port}");
                         Console.WriteLine($"  Protocol: {group.ProtocolType} {group.Protocol}");
+                        Console.WriteLine($"  IsSimpleConsumerGroup: {group.IsSimpleConsumerGroup}");
                         Console.WriteLine($"  Members:");
                         foreach (var m in group.Members)
                         {
                             Console.WriteLine($"    {m.MemberId} {m.ClientId} {m.ClientHost}");
                             Console.WriteLine($"    Metadata: {m.MemberMetadata.Length} bytes");
                             Console.WriteLine($"    Assignment: {m.MemberAssignment.Length} bytes");
-                            var topicPartitions = String.Join(", ", m.MemberAssignmentTopicPartitions.Select(tp => tp.ToString()));
+                            var topicPartitions = "";
+                            if (m.MemberAssignmentTopicPartitions != null)
+                            {
+                                topicPartitions = String.Join(", ", m.MemberAssignmentTopicPartitions.Select(tp => tp.ToString()));
+                            }
                             Console.WriteLine($"    TopicPartitions: [{topicPartitions}]");
                         }
                     }

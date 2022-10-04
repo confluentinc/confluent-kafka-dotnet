@@ -1305,6 +1305,8 @@ namespace Confluent.Kafka.Impl
                             gi.group,
                             gi.err,
                             gi.state,
+                            gi.state_code,
+                            gi.is_simple_consumer_group == 1,
                             gi.protocol_type,
                             gi.protocol,
                             Enumerable.Range(0, gi.member_cnt)
@@ -2176,15 +2178,34 @@ namespace Confluent.Kafka.Impl
 
         }
 
-        internal List<GroupInfo> ListConsumerGroups(int millisecondsTimeout)
+        internal List<GroupInfo> ListConsumerGroups(ListConsumerGroupsOptions options = null)
         {
             ThrowIfHandleClosed();
 
             IntPtr grplistPtr = IntPtr.Zero;
+            IntPtr optionsPtr = IntPtr.Zero;
             List<GroupInfo> groups = null;
             try
             {
-                ErrorCode err = Librdkafka.list_consumer_groups(handle, out grplistPtr, (IntPtr)millisecondsTimeout);
+                // Set options if any.
+                if (options != null)
+                {
+                    var timeoutMs = -1;
+                    if (options.RequestTimeout.HasValue)
+                    {
+                        timeoutMs = options.RequestTimeout.Value.TotalMillisecondsAsInt();
+                    }
+
+                    ConsumerGroupState[] statesList = null;
+                    if (options.States != null)
+                    {
+                        statesList = options.States.ToArray();
+                    }
+
+                    optionsPtr = Librdkafka.list_consumer_groups_options_new(timeoutMs, statesList, (UIntPtr)(statesList == null ? 0 : statesList.Count()));
+                }
+
+                ErrorCode err = Librdkafka.list_consumer_groups(handle, out grplistPtr, optionsPtr);
                 if (err != ErrorCode.NoError)
                 {
                     throw new KafkaException(CreatePossiblyFatalError(err, null));
@@ -2193,7 +2214,7 @@ namespace Confluent.Kafka.Impl
                 groups = Enumerable.Range(0, list.group_cnt)
                     .Select(i => Util.Marshal.PtrToStructure<rd_kafka_group_info>(
                         list.groups + i * Util.Marshal.SizeOf<rd_kafka_group_info>()))
-                    .Select(gi => new GroupInfo(gi.group, gi.err))
+                    .Select(gi => new GroupInfo(gi.group, gi.err, gi.state_code, gi.is_simple_consumer_group == 1))
                     .ToList();
             }
             finally
@@ -2201,6 +2222,10 @@ namespace Confluent.Kafka.Impl
                 if (grplistPtr != IntPtr.Zero)
                 {
                     Librdkafka.group_list_destroy(grplistPtr);
+                }
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.list_consumer_groups_options_destroy(optionsPtr);
                 }
             }
 
@@ -2212,14 +2237,24 @@ namespace Confluent.Kafka.Impl
         }
 
 
-        internal List<GroupInfo> DescribeConsumerGroups(IList<string> groups, int millisecondsTimeout)
+        internal List<GroupInfo> DescribeConsumerGroups(IList<string> groups, DescribeConsumerGroupsOptions options = null)
         {
             ThrowIfHandleClosed();
 
             IntPtr grplistPtr = IntPtr.Zero;
+            IntPtr optionsPtr = IntPtr.Zero;
             List<GroupInfo> result = null;
             try
             {
+                if (options != null)
+                {
+                    var timeoutMs = -1;
+                    if (options.RequestTimeout.HasValue)
+                    {
+                        timeoutMs = options.RequestTimeout.Value.TotalMillisecondsAsInt();
+                    }
+                    optionsPtr = Librdkafka.describe_consumer_groups_options_new(timeoutMs);
+                }
                 var groupsArray = groups != null ? groups.ToArray() : null;
                 var groupCnt = groups != null ? groups.Count() : 0;
                 ErrorCode err = Librdkafka.describe_consumer_groups(
@@ -2227,7 +2262,7 @@ namespace Confluent.Kafka.Impl
                     groupsArray,
                     (UIntPtr)(groupCnt),
                     out grplistPtr,
-                    (IntPtr)millisecondsTimeout);
+                    optionsPtr);
 
                 if (err != ErrorCode.NoError)
                 {
@@ -2248,6 +2283,8 @@ namespace Confluent.Kafka.Impl
                             gi.group,
                             gi.err,
                             gi.state,
+                            gi.state_code,
+                            gi.is_simple_consumer_group == 1,
                             gi.protocol_type,
                             gi.protocol,
                             Enumerable.Range(0, gi.member_cnt)
@@ -2263,7 +2300,7 @@ namespace Confluent.Kafka.Impl
                                         CopyBytes(
                                             mi.member_assignment,
                                             mi.member_assignment_size),
-                                        GetTopicPartitionList(mi.member_assignment_toppars)
+                                        mi.member_assignment_toppars == IntPtr.Zero ? null : GetTopicPartitionList(mi.member_assignment_toppars)
                                     ))
                                 .ToList()
                         ))
@@ -2274,6 +2311,10 @@ namespace Confluent.Kafka.Impl
                 if (grplistPtr != IntPtr.Zero)
                 {
                     Librdkafka.group_list_destroy(grplistPtr);
+                }
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.describe_consumer_groups_options_destroy(optionsPtr);
                 }
             }
 

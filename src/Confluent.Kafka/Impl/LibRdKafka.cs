@@ -373,8 +373,12 @@ namespace Confluent.Kafka.Impl
             _ListConsumerGroupOffsets = (_ListConsumerGroupOffsets_delegate)methods.Single(m => m.Name == "rd_kafka_ListConsumerGroupOffsets").CreateDelegate(typeof(_ListConsumerGroupOffsets_delegate));
 
             _list_consumer_groups = (_list_consumer_groups_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups").CreateDelegate(typeof(_list_consumer_groups_delegate));
+            _list_consumer_groups_options_new = (_list_consumer_groups_options_new_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups_options_new").CreateDelegate(typeof(_list_consumer_groups_options_new_delegate));
+            _list_consumer_groups_options_destroy = (_list_consumer_groups_options_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_list_consumer_groups_options_destroy").CreateDelegate(typeof(_list_consumer_groups_options_destroy_delegate));
 
             _describe_consumer_groups = (_describe_consumer_groups_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups").CreateDelegate(typeof(_describe_consumer_groups_delegate));
+            _describe_consumer_groups_options_new = (_describe_consumer_groups_options_new_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups_options_new").CreateDelegate(typeof(_describe_consumer_groups_options_new_delegate));
+            _describe_consumer_groups_options_destroy = (_describe_consumer_groups_options_destroy_delegate)methods.Single(m => m.Name == "rd_kafka_describe_consumer_groups_options_destroy").CreateDelegate(typeof(_describe_consumer_groups_options_destroy_delegate));
 
             _topic_result_error = (Func<IntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_topic_result_error").CreateDelegate(typeof(Func<IntPtr, ErrorCode>));
             _topic_result_error_string = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_topic_result_error_string").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
@@ -1673,23 +1677,40 @@ namespace Confluent.Kafka.Impl
             out UIntPtr groupsTopicPartitionsCount
         ) => _ListConsumerGroupOffsets_result_groups(resultResponse, out groupsTopicPartitionsCount);
 
-        private delegate ErrorCode _list_consumer_groups_delegate(IntPtr rk, out IntPtr grplistp, IntPtr timeout_ms);
+        private delegate ErrorCode _list_consumer_groups_delegate(IntPtr rk, out IntPtr grplistp, IntPtr options);
         private static _list_consumer_groups_delegate _list_consumer_groups;
         internal static ErrorCode list_consumer_groups(
             IntPtr rk,
             out IntPtr grplistp,
-            IntPtr timeout_ms) => _list_consumer_groups(rk, out grplistp, timeout_ms);
+            IntPtr options) => _list_consumer_groups(rk, out grplistp, options);
+
+        private delegate IntPtr _list_consumer_groups_options_new_delegate(int requestTimeout, ConsumerGroupState[] states, UIntPtr statesCnt);
+        private static _list_consumer_groups_options_new_delegate _list_consumer_groups_options_new;
+        internal static IntPtr list_consumer_groups_options_new(
+            int requestTimeout, ConsumerGroupState[] states, UIntPtr statesCnt) => _list_consumer_groups_options_new(requestTimeout, states, statesCnt);
+
+        private delegate void _list_consumer_groups_options_destroy_delegate(IntPtr options);
+        private static _list_consumer_groups_options_destroy_delegate _list_consumer_groups_options_destroy;
+        internal static void list_consumer_groups_options_destroy(IntPtr options) => _list_consumer_groups_options_destroy(options);
 
         private delegate ErrorCode _describe_consumer_groups_delegate(
-            IntPtr rk, string[] groups, UIntPtr group_cnt, out IntPtr grplistp, IntPtr timeout_ms);
+            IntPtr rk, string[] groups, UIntPtr group_cnt, out IntPtr grplistp, IntPtr options);
         private static _describe_consumer_groups_delegate _describe_consumer_groups;
         internal static ErrorCode describe_consumer_groups(
             IntPtr rk,
             string[] groups,
             UIntPtr group_cnt,
             out IntPtr grplistp,
-            IntPtr timeout_ms)
-                => _describe_consumer_groups(rk, groups, group_cnt, out grplistp, timeout_ms);
+            IntPtr options)
+                => _describe_consumer_groups(rk, groups, group_cnt, out grplistp, options);
+
+        private delegate IntPtr _describe_consumer_groups_options_new_delegate(int requestTimeout);
+        private static _describe_consumer_groups_options_new_delegate _describe_consumer_groups_options_new;
+        internal static IntPtr describe_consumer_groups_options_new(int requestTimeout) => _describe_consumer_groups_options_new(requestTimeout);
+
+        private delegate void _describe_consumer_groups_options_destroy_delegate(IntPtr options);
+        private static _describe_consumer_groups_options_destroy_delegate _describe_consumer_groups_options_destroy;
+        internal static void describe_consumer_groups_options_destroy(IntPtr options) => _describe_consumer_groups_options_destroy(options);
 
         private static Func<IntPtr, ErrorCode> _topic_result_error;
         internal static ErrorCode topic_result_error(IntPtr topicres) => _topic_result_error(topicres);

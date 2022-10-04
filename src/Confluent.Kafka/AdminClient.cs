@@ -1073,15 +1073,15 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListConsumerGroups(TimeSpan)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.ListConsumerGroups(ListConsumerGroupsOptions)" />
         /// </summary>
-        public List<GroupInfo> ListConsumerGroups(TimeSpan timeout)
-            => Handle.LibrdkafkaHandle.ListConsumerGroups(timeout.TotalMillisecondsAsInt());
+        public List<GroupInfo> ListConsumerGroups(ListConsumerGroupsOptions options = null)
+            => Handle.LibrdkafkaHandle.ListConsumerGroups(options);
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeConsumerGroups(IList{string}, TimeSpan)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DescribeConsumerGroups(IList{string}, DescribeConsumerGroupsOptions)" />
         /// </summary>
-        public List<GroupInfo> DescribeConsumerGroups(IList<string> groups, TimeSpan timeout)
-            => Handle.LibrdkafkaHandle.DescribeConsumerGroups(groups, timeout.TotalMillisecondsAsInt());
+        public List<GroupInfo> DescribeConsumerGroups(IList<string> groups, DescribeConsumerGroupsOptions options = null)
+            => Handle.LibrdkafkaHandle.DescribeConsumerGroups(groups, options);
     }
 }

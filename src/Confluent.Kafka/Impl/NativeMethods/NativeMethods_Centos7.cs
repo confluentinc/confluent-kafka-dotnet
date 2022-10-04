@@ -557,7 +557,14 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_list_consumer_groups(
-                IntPtr handle, out IntPtr grplistp, IntPtr timeout_ms);
+                IntPtr handle, out IntPtr grplistp, IntPtr options);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_list_consumer_groups_options_new(
+                int requestTimeout, ConsumerGroupState[] states, UIntPtr statesCnt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_list_consumer_groups_options_destroy(IntPtr options);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_describe_consumer_groups(
@@ -565,7 +572,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
                 [MarshalAs(UnmanagedType.LPArray)] string[] groups,
                 UIntPtr group_cnt,
                 out IntPtr grplistp,
-                IntPtr timeout_ms);
+                IntPtr options);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_describe_consumer_groups_options_new(int requestTimeout);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_describe_consumer_groups_options_destroy(IntPtr options);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewTopic_new(
