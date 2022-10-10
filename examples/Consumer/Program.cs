@@ -153,7 +153,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             {
                 // the group.id property must be specified when creating a consumer, even 
                 // if you do not intend to use any consumer group functionality.
-                GroupId = "groupid-not-used-but-mandatory",
+                GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = brokerList,
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
