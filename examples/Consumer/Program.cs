@@ -162,9 +162,6 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // if you do not intend to use any consumer group functionality.
                 GroupId = Guid.NewGuid().ToString(),
                 BootstrapServers = brokerList,
-                // partition offsets can be committed to a group even by consumers not
-                // subscribed to the group. in this example, auto commit is disabled
-                // to prevent this from occurring.
                 EnableAutoCommit = true
             };
 
