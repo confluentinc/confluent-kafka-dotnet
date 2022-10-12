@@ -324,6 +324,11 @@ namespace Confluent.Kafka
         /// </returns>
         Task<List<DeleteAclsResult>> DeleteAclsAsync(IEnumerable<AclBindingFilter> aclBindingFilters, DeleteAclsOptions options = null);
 
+        /// <summary>
+        ///    TODO: Fill this
+        /// </returns>
+        Task DeleteConsumerGroupOffsetsAsync(string group, IEnumerable<TopicPartitionOffset> partitions, DeleteConsumerGroupOffsetsOptions options = null);
+
     }
 
 }

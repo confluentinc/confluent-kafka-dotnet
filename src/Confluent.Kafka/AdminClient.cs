@@ -207,6 +207,17 @@ namespace Confluent.Kafka
             }).ToList();
         }
 
+        private List<DeleteConsumerGroupOffsetsReport> extractDeleteConsumerGroupOffsetsReports(IntPtr resultPtr)
+        => SafeKafkaHandle.GetTopicPartitionOffsetErrorList(resultPtr)
+                    .Select(a => new DeleteConsumerGroupOffsetsReport
+                    {
+                        Topic = a.Topic,
+                        Partition = a.Partition,
+                        Offset = a.Offset,
+                        Error = a.Error
+                    })
+                    .ToList();
+
         private Task StartPollTask(CancellationToken ct)
             => Task.Factory.StartNew(() =>
                 {
@@ -445,6 +456,40 @@ namespace Confluent.Kafka
                                             }
                                         }
                                         break;
+                                    
+                                    case Librdkafka.EventType.DeleteConsumerGroupOffsets_Result:
+                                        {
+                                            if (errorCode != ErrorCode.NoError)
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteConsumerGroupOffsetsReport>>)adminClientResult).TrySetException(
+                                                        new KafkaException(kafkaHandle.CreatePossiblyFatalError(errorCode, errorStr))));
+                                                break;
+                                            }
+
+                                            var result = extractDeleteConsumerGroupOffsetsReports(Librdkafka.DeleteRecords_result_offsets(eventPtr));
+
+                                            if (result.Any(r => r.Error.IsError))
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteConsumerGroupOffsetsReport>>)adminClientResult).TrySetException(
+                                                        new DeleteConsumerGroupOffsetsException(result)));
+                                            }
+                                            else
+                                            {
+                                                Task.Run(() =>
+                                                    ((TaskCompletionSource<List<DeleteConsumerGroupOffsetsResult>>)adminClientResult).TrySetResult(
+                                                        result.Select(a => new DeleteConsumerGroupOffsetsResult
+                                                            {
+                                                                Topic = a.Topic,
+                                                                Partition = a.Partition,
+                                                                Offset = a.Offset,
+                                                                Error = a.Error // internal, not exposed in success case.
+                                                            }).ToList()));
+                                            }
+                                        }
+                                        break;
+
                                     case Librdkafka.EventType.CreateAcls_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
@@ -567,6 +612,7 @@ namespace Confluent.Kafka
             { Librdkafka.EventType.AlterConfigs_Result, typeof(TaskCompletionSource<List<AlterConfigsReport>>) },
             { Librdkafka.EventType.CreatePartitions_Result, typeof(TaskCompletionSource<List<CreatePartitionsReport>>) },
             { Librdkafka.EventType.DeleteRecords_Result, typeof(TaskCompletionSource<List<DeleteRecordsResult>>) },
+            { Librdkafka.EventType.DeleteConsumerGroupOffsets_Result, typeof(TaskCompletionSource<List<DeleteConsumerGroupOffsetsResult>>) },
             { Librdkafka.EventType.DeleteGroups_Result, typeof(TaskCompletionSource<List<DeleteGroupReport>>) },
             { Librdkafka.EventType.CreateAcls_Result, typeof(TaskCompletionSource<Null>) },
             { Librdkafka.EventType.DescribeAcls_Result, typeof(TaskCompletionSource<DescribeAclsResult>) },

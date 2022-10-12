@@ -294,6 +294,11 @@ namespace Confluent.Kafka.Impl
             _DeleteRecords = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
             _DeleteRecords_result_offsets = (Func<IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteRecords_result_offsets").CreateDelegate(typeof(Func<IntPtr, IntPtr>));
 
+            _DeleteConsumerGroupOffsets_new = (Func<string, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteConsumerGroupOffsets_new").CreateDelegate(typeof(Func<string, IntPtr, IntPtr>));
+            _DeleteConsumerGroupOffsets_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteConsumerGroupOffsets_destroy").CreateDelegate(typeof(Action<IntPtr>));
+
+            _DeleteConsumerGroupOffsets = (Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_DeleteConsumerGroupOffsets").CreateDelegate(typeof(Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr>));
+
             _NewPartitions_new = (Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_new").CreateDelegate(typeof(Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr>));
             _NewPartitions_destroy = (Action<IntPtr>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_destroy").CreateDelegate(typeof(Action<IntPtr>));
             _NewPartitions_set_replica_assignment = (Func<IntPtr, int, int[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>)methods.Single(m => m.Name == "rd_kafka_NewPartitions_set_replica_assignment").CreateDelegate(typeof(Func<IntPtr, int, int[], UIntPtr, StringBuilder, UIntPtr, ErrorCode>));
@@ -1415,6 +1420,23 @@ namespace Confluent.Kafka.Impl
         internal static IntPtr DeleteRecords_result_offsets(
             IntPtr result
         ) => _DeleteRecords_result_offsets(result);
+
+        private static Func<string, IntPtr, IntPtr> _DeleteConsumerGroupOffsets_new;
+        internal static IntPtr DeleteConsumerGroupOffsets_new(
+                string group, IntPtr topicPartitionOffsets
+        ) => _DeleteConsumerGroupOffsets_new(group, topicPartitionOffsets);
+
+        private static Action<IntPtr> _DeleteConsumerGroupOffsets_destroy;
+        internal static void DeleteConsumerGroupOffsets_destroy(
+            IntPtr del_records) => _DeleteConsumerGroupOffsets_destroy(del_records);
+
+        private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _DeleteConsumerGroupOffsets;
+        internal static void DeleteConsumerGroupOffsets(
+            IntPtr rk,
+            IntPtr[] del_grpoffsets,
+            UIntPtr del_grpoffsets_cnt,
+            IntPtr options,
+            IntPtr rkqu) => _DeleteConsumerGroupOffsets(rk, del_grpoffsets, del_grpoffsets_cnt, options, rkqu);
 
         //
         // ACLs
