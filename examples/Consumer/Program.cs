@@ -41,6 +41,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 BootstrapServers = brokerList,
                 GroupId = "csharp-consumer",
                 EnableAutoOffsetStore = false,
+                EnableAutoCommit = true,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
@@ -115,7 +116,10 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                             Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Message.Value}");
                             try
                             {
-                                // StoreOffset stores offset in an in-memory store which will be automatically committed every AutoCommitIntervalMs.
+                                // Store the offset associated with consumeResult to a local cache. Stored offsets are committed to Kafka by a background thread every AutoCommitIntervalMs. 
+                                // The offset stored is actually the offset of the consumeResult + 1 since by convention, committed offsets specify the next message to consume. 
+                                // If EnableAutoOffsetStore had been set to the default value true, the .NET client would automatically store offsets immediately prior to delivering messages to the application. 
+                                // Explicitly storing offsets after processing gives at-least once semantics, the default behavior does not.
                                 consumer.StoreOffset(consumeResult);
                             }
                             catch (KafkaException e)
@@ -149,7 +153,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             {
                 // the group.id property must be specified when creating a consumer, even 
                 // if you do not intend to use any consumer group functionality.
-                GroupId = "csharp-consumer-GROUPID-NOT-USED",
+                GroupId = "groupid-not-used-but-mandatory",
                 BootstrapServers = brokerList,
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
