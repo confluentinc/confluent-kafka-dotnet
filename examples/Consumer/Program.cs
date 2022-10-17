@@ -31,7 +31,7 @@ namespace Confluent.Kafka.Examples.ConsumerExample
     {
         /// <summary>
         ///     In this example
-        ///         - offsets are manually committed.
+        ///         - offsets are automatically committed.
         ///         - no extra thread is created for the Poll (Consume) loop.
         /// </summary>
         public static void Run_Consume(string brokerList, List<string> topics, CancellationToken cancellationToken)
@@ -40,7 +40,8 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             {
                 BootstrapServers = brokerList,
                 GroupId = "csharp-consumer",
-                EnableAutoCommit = false,
+                EnableAutoOffsetStore = false,
+                EnableAutoCommit = true,
                 StatisticsIntervalMs = 5000,
                 SessionTimeoutMs = 6000,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
@@ -49,8 +50,6 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                 // https://www.confluent.io/blog/cooperative-rebalancing-in-kafka-streams-consumer-ksqldb/
                 PartitionAssignmentStrategy = PartitionAssignmentStrategy.CooperativeSticky
             };
-
-            const int commitPeriod = 5;
 
             // Note: If a key or value deserializer is not set (as is the case below), the 
             // deserializer corresponding to the appropriate type from Confluent.Kafka.Deserializers
@@ -115,23 +114,17 @@ namespace Confluent.Kafka.Examples.ConsumerExample
                             }
 
                             Console.WriteLine($"Received message at {consumeResult.TopicPartitionOffset}: {consumeResult.Message.Value}");
-
-                            if (consumeResult.Offset % commitPeriod == 0)
+                            try
                             {
-                                // The Commit method sends a "commit offsets" request to the Kafka
-                                // cluster and synchronously waits for the response. This is very
-                                // slow compared to the rate at which the consumer is capable of
-                                // consuming messages. A high performance application will typically
-                                // commit offsets relatively infrequently and be designed handle
-                                // duplicate messages in the event of failure.
-                                try
-                                {
-                                    consumer.Commit(consumeResult);
-                                }
-                                catch (KafkaException e)
-                                {
-                                    Console.WriteLine($"Commit error: {e.Error.Reason}");
-                                }
+                                // Store the offset associated with consumeResult to a local cache. Stored offsets are committed to Kafka by a background thread every AutoCommitIntervalMs. 
+                                // The offset stored is actually the offset of the consumeResult + 1 since by convention, committed offsets specify the next message to consume. 
+                                // If EnableAutoOffsetStore had been set to the default value true, the .NET client would automatically store offsets immediately prior to delivering messages to the application. 
+                                // Explicitly storing offsets after processing gives at-least once semantics, the default behavior does not.
+                                consumer.StoreOffset(consumeResult);
+                            }
+                            catch (KafkaException e)
+                            {
+                                Console.WriteLine($"Store Offset error: {e.Error.Reason}");
                             }
                         }
                         catch (ConsumeException e)
@@ -160,12 +153,12 @@ namespace Confluent.Kafka.Examples.ConsumerExample
             {
                 // the group.id property must be specified when creating a consumer, even 
                 // if you do not intend to use any consumer group functionality.
-                GroupId = Guid.NewGuid().ToString(),
+                GroupId = "groupid-not-used-but-mandatory",
                 BootstrapServers = brokerList,
                 // partition offsets can be committed to a group even by consumers not
                 // subscribed to the group. in this example, auto commit is disabled
                 // to prevent this from occurring.
-                EnableAutoCommit = true
+                EnableAutoCommit = false
             };
 
             using (var consumer =
