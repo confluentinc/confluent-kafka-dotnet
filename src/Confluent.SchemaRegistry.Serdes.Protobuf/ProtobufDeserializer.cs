@@ -136,7 +136,9 @@ namespace Confluent.SchemaRegistry.Serdes
                             stream.ReadVarint();
                         }
                     }
-                    return Task.FromResult(parser.ParseFrom(stream));
+
+                    T message = parser.ParseFrom(stream);
+                    return Task.FromResult(message);
                 }
             }
             catch (AggregateException e)

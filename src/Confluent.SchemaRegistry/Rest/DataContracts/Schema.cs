@@ -106,6 +106,18 @@ namespace  Confluent.SchemaRegistry
 
         [DataMember(Name = "schemaType")]
         internal string SchemaType_String { get; set; }
+        
+        /// <summary>
+        ///     Metadata for the schema
+        /// </summary>
+        [DataMember(Name = "metadata")]
+        public Metadata Metadata { get; set; }
+
+        /// <summary>
+        ///     RuleSet for the schema
+        /// </summary>
+        [DataMember(Name = "ruleSet")]
+        public RuleSet RuleSet { get; set; }
 
         /// <summary>
         ///     The type of schema
@@ -143,6 +155,33 @@ namespace  Confluent.SchemaRegistry
         ///     Empty constructor for serialization
         /// </summary>
         protected Schema() { }
+
+        /// <summary>
+        ///     Initializes a new instance of this class.
+        /// </summary>
+        /// <param name="schemaString">
+        ///     String representation of the schema.
+        /// </param>
+        /// <param name="schemaType">
+        ///     The schema type: AVRO, PROTOBUF, JSON
+        /// </param>
+        /// <param name="references">
+        ///     A list of schemas referenced by this schema.
+        /// </param>
+        /// <param name="metadata">
+        ///     Metadata for the schema.
+        /// </param>
+        /// <param name="ruleSet">
+        ///     Rule set for the schema.
+        /// </param>
+        public Schema(string schemaString, List<SchemaReference> references, SchemaType schemaType, Metadata metadata, RuleSet ruleSet)
+        {
+            SchemaString = schemaString;
+            References = references;
+            SchemaType = schemaType;
+            Metadata = metadata;
+            RuleSet = ruleSet;
+        }
 
         /// <summary>
         ///     Initializes a new instance of this class.
