@@ -14,6 +14,7 @@
 //
 // Refer to LICENSE for more information.
 
+extern alias ProtobufNet;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,6 +23,7 @@ using System.Threading.Tasks;
 using System.Net;
 using Confluent.Kafka;
 using Google.Protobuf;
+using ProtobufNet::Google.Protobuf.Reflection;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -45,9 +47,9 @@ namespace Confluent.SchemaRegistry.Serdes
     ///                            a single 0 byte as an optimization.
     ///                         2. The protobuf serialized data.
     /// </remarks>
-    public class ProtobufDeserializer<T> : IAsyncDeserializer<T> where T : class, IMessage<T>, new()
+    public class ProtobufDeserializer<T> : AsyncDeserializer<T, FileDescriptorSet> where T : class, IMessage<T>, new()
     {
-        private bool useDeprecatedFormat = false;
+        private bool useDeprecatedFormat;
         
         private MessageParser<T> parser;
 
@@ -58,13 +60,24 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     Deserializer configuration properties (refer to 
         ///     <see cref="ProtobufDeserializerConfig" />).
         /// </param>
-        public ProtobufDeserializer(IEnumerable<KeyValuePair<string, string>> config = null)
+        public ProtobufDeserializer(IEnumerable<KeyValuePair<string, string>> config = null) : this(null, config)
+        {
+        }
+
+        public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, IEnumerable<KeyValuePair<string, string>> config = null) 
+            : this(schemaRegistryClient, config != null ? new ProtobufDeserializerConfig(config) : null)
+        {
+        }
+
+        public ProtobufDeserializer(ISchemaRegistryClient schemaRegistryClient, ProtobufDeserializerConfig config, 
+            IList<IRuleExecutor> ruleExecutors = null) : base(schemaRegistryClient, config, ruleExecutors)
         {
             this.parser = new MessageParser<T>(() => new T());
 
             if (config == null) { return; }
 
-            var nonProtobufConfig = config.Where(item => !item.Key.StartsWith("protobuf."));
+            var nonProtobufConfig = config
+                .Where(item => !item.Key.StartsWith("protobuf.") && !item.Key.StartsWith("rules."));
             if (nonProtobufConfig.Count() > 0)
             {
                 throw new ArgumentException($"ProtobufDeserializer: unknown configuration parameter {nonProtobufConfig.First().Key}");
@@ -75,6 +88,10 @@ namespace Confluent.SchemaRegistry.Serdes
             {
                 this.useDeprecatedFormat = protobufConfig.UseDeprecatedFormat.Value;
             }
+
+            if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
+            if (config.UseLatestWithMetadata != null) { this.useLatestWithMetadata = config.UseLatestWithMetadata; }
+            if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
         }
 
         /// <summary>
@@ -94,9 +111,9 @@ namespace Confluent.SchemaRegistry.Serdes
         ///     A <see cref="System.Threading.Tasks.Task" /> that completes
         ///     with the deserialized value.
         /// </returns>
-        public Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
+        public override async Task<T> DeserializeAsync(ReadOnlyMemory<byte> data, bool isNull, SerializationContext context)
         {
-            if (isNull) { return Task.FromResult<T>(null); }
+            if (isNull) { return null; }
 
             var array = data.ToArray();
             if (array.Length < 6)
@@ -104,8 +121,32 @@ namespace Confluent.SchemaRegistry.Serdes
                 throw new InvalidDataException($"Expecting data framing of length 6 bytes or more but total data size is {array.Length} bytes");
             }
 
+            bool isKey = context.Component == MessageComponentType.Key;
+            string topic = context.Topic;
+            string subject = this.subjectNameStrategy != null
+                // use the subject name strategy specified in the serializer config if available.
+                ? this.subjectNameStrategy(
+                    new SerializationContext(isKey ? MessageComponentType.Key : MessageComponentType.Value, topic),
+                    null)
+                // else fall back to the deprecated config from (or default as currently supplied by) SchemaRegistry.
+                : schemaRegistryClient == null 
+                    ? null
+                    : isKey 
+                        ? schemaRegistryClient.ConstructKeySubjectName(topic)
+                        : schemaRegistryClient.ConstructValueSubjectName(topic);
+            
+            // Currently Protobuf does not support migration rules because of lack of support for DynamicMessage
+            // See https://github.com/protocolbuffers/protobuf/issues/658
+            /*
+            Schema latestSchema = await SerdeUtils.GetReaderSchema(schemaRegistryClient, subject, useLatestWithMetadata, useLatestVersion)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            */
+
             try
             {
+                Schema writerSchema = null;
+                FileDescriptorSet fdSet = null;
+                T message;
                 using (var stream = new MemoryStream(array))
                 using (var reader = new BinaryReader(stream))
                 {
@@ -119,7 +160,7 @@ namespace Confluent.SchemaRegistry.Serdes
                     // serialized data includes tag and type information, which is enough for
                     // the IMessage<T> implementation to deserialize the data (even if the
                     // schema has evolved). _schemaId is thus unused.
-                    var _schemaId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
+                    var writerId = IPAddress.NetworkToHostOrder(reader.ReadInt32());
 
                     // Read the index array length, then all of the indices. These are not
                     // needed, but parsing them is the easiest way to seek to the start of
@@ -137,14 +178,39 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                     }
 
-                    T message = parser.ParseFrom(stream);
-                    return Task.FromResult(message);
+                    if (schemaRegistryClient != null)
+                    {
+                        (writerSchema, fdSet) = await GetSchema(writerId);
+                    }
+
+                    message = parser.ParseFrom(stream);
                 }
+
+                if (writerSchema != null)
+                {
+                    FieldTransformer fieldTransformer = async (ctx, transform, message) =>
+                    {
+                        return await ProtobufUtils.Transform(ctx, fdSet, message, transform).ConfigureAwait(false);
+                    };
+                    message = await ExecuteRules(context.Component == MessageComponentType.Key, subject, context.Topic, context.Headers, RuleMode.Read, null,
+                        writerSchema, message, fieldTransformer)
+                        .ContinueWith(t => (T)t.Result)
+                        .ConfigureAwait(continueOnCapturedContext: false);
+                }
+                
+                return message;
             }
             catch (AggregateException e)
             {
                 throw e.InnerException;
             }
+        }
+
+        protected override async Task<FileDescriptorSet> ParseSchema(Schema schema)
+        {
+            IDictionary<string, string> references = await ResolveReferences(schema)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            return ProtobufUtils.Parse(schema.SchemaString, references);
         }
     }
 }

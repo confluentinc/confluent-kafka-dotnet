@@ -36,7 +36,7 @@ namespace Confluent.SchemaRegistry
         /// <summary>
         ///     A constraint or validation rule.
         /// </summary>
-        [EnumMember(Value = "CONSTRAINT")]
-        Constraint
+        [EnumMember(Value = "CONDITION")]
+        Condition
     }
 }

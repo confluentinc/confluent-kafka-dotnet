@@ -25,9 +25,9 @@ namespace Confluent.SchemaRegistry
     /// </summary>
     public class RuleContext
     {
-        public RegisteredSchema Source { get; set; }
+        public Schema Source { get; set; }
 
-        public RegisteredSchema Target { get; set; }
+        public Schema Target { get; set; }
 
         public string Subject { get; set; }
 
@@ -41,12 +41,17 @@ namespace Confluent.SchemaRegistry
 
         public Rule Rule { get; set; }
 
+        public int Index { get; set; }
+
+        public IList<Rule> Rules { get; set; }
+
+        public FieldTransformer FieldTransformer { get; set; }
         public IDictionary<object, object> CustomData { get; } = new Dictionary<object, object>();
 
         private Stack<FieldContext> fieldContexts = new Stack<FieldContext>();
 
-        public RuleContext(RegisteredSchema source, RegisteredSchema target, string subject, string topic,
-            Headers headers, bool isKey, RuleMode ruleMode, Rule rule)
+        public RuleContext(Schema source, Schema target, string subject, string topic, Headers headers, bool isKey,
+            RuleMode ruleMode, Rule rule, int index, IList<Rule> rules, FieldTransformer fieldTransformer)
         {
             Source = source;
             Target = target;
@@ -56,45 +61,53 @@ namespace Confluent.SchemaRegistry
             IsKey = isKey;
             RuleMode = ruleMode;
             Rule = rule;
+            Index = index;
+            Rules = rules;
+            FieldTransformer = fieldTransformer;
         }
 
-        internal ISet<string> getAnnotations(string fullName)
+        public ISet<string> GetTags(string fullName)
         {
-            ISet<string> annotations = new HashSet<string>();
-            Metadata metadata = Target.Metadata;
-            if (metadata != null && metadata.Annotations != null)
+            ISet<string> tags = new HashSet<string>();
+            if (Target?.Metadata?.Tags != null)
             {
-                // TODO wildcard matching
-                metadata.Annotations.TryGetValue(fullName, out var ann);
-                if (ann != null)
+                foreach (var entry in Target?.Metadata?.Tags)
                 {
-                    annotations.UnionWith(ann);
+                    if (WildcardMatcher.Match(fullName, entry.Key))
+                    {
+                        tags.UnionWith(entry.Value);
+                    }
                 }
             }
 
-                /*
-                  for (Map.Entry<String, SortedSet<String>> entry : metadata.getAnnotations().entrySet()) {
-                    if (WildcardMatcher.match(fullName, entry.getKey())) {
-                      annotations.addAll(entry.getValue());
-                    }
-                  }
-                */
+            return tags;
+        }
 
-            return annotations;
+
+        public string GetParameter(string key)
+        {
+            string value = null;
+            Rule.Params?.TryGetValue(key, out value);
+            if (value == null)
+            {
+                Target.Metadata?.Properties?.TryGetValue(key, out value);
+            }
+
+            return value;
         }
 
 
         public FieldContext CurrentField()
         {
-            return fieldContexts.Peek();
+            return fieldContexts.Count != 0 ? fieldContexts.Peek() : null;
         }
 
-        public FieldContext EnterField(RuleContext ctx, object containingMessage,
-            string fullName, string name, Type type, ISet<string> annotations)
+        public FieldContext EnterField(object containingMessage,
+            string fullName, string name, Type type, ISet<string> tags)
         {
-            ISet<string> allAnnotations = new HashSet<string>(annotations);
-            allAnnotations.UnionWith(ctx.getAnnotations(fullName));
-            return new FieldContext(ctx, containingMessage, fullName, name, type, allAnnotations);
+            ISet<string> allTags = new HashSet<string>(tags);
+            allTags.UnionWith(GetTags(fullName));
+            return new FieldContext(this, containingMessage, fullName, name, type, allTags);
         }
 
         public class FieldContext : IDisposable
@@ -109,18 +122,24 @@ namespace Confluent.SchemaRegistry
 
             public Type Type { get; set; }
 
-            public ISet<string> Annotations { get; set; }
+            public ISet<string> Tags { get; set; }
 
             public FieldContext(RuleContext ruleContext, object containingMessage, string fullName, string name,
-                Type type, ISet<string> annotations)
+                Type type, ISet<string> tags)
             {
                 RuleContext = ruleContext;
                 ContainingMessage = containingMessage;
                 FullName = fullName;
                 Name = name;
                 Type = type;
-                Annotations = annotations;
+                Tags = tags;
                 RuleContext.fieldContexts.Push(this);
+            }
+
+            public bool IsPrimitive()
+            {
+                return Type == Type.String || Type == Type.Bytes || Type == Type.Int || Type == Type.Long ||
+                       Type == Type.Float || Type == Type.Double || Type == Type.Boolean || Type == Type.Null;
             }
 
             public void Dispose()

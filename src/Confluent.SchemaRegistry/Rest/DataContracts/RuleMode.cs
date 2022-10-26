@@ -58,9 +58,9 @@ namespace Confluent.SchemaRegistry
         Write,
         
         /// <summary>
-        ///     A rule used during both read and write (consuming and producing).
+        ///     A rule used during both write and read (producing and consuming).
         /// </summary>
-        [EnumMember(Value = "READWRITE")]
-        ReadWrite
+        [EnumMember(Value = "WRITEREAD")]
+        WriteRead
     }
 }

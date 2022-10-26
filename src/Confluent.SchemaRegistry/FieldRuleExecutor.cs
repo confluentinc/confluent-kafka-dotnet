@@ -14,23 +14,28 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace Confluent.SchemaRegistry
 {
-    public delegate object FieldTransformer(RuleContext ctx, FieldTransform fieldTransform, object message);
-    
-    public delegate object FieldTransform(RuleContext ctx, RuleContext.FieldContext fieldCtx, object fieldValue);
-    
     public abstract class FieldRuleExecutor : IRuleExecutor
     {
-        internal FieldTransformer FieldTransformer { get; set; }
+        public abstract void Configure(IEnumerable<KeyValuePair<string, string>> config);
         
         public abstract string Type();
 
-        protected abstract FieldTransform newTransform(RuleContext ctx);
+        public abstract IFieldTransform NewTransform(RuleContext ctx);
 
-        public object Transform(RuleContext ctx, object message)
+        public async Task<object> Transform(RuleContext ctx, object message)
         {
-            return FieldTransformer.Invoke(ctx, newTransform(ctx), message);
+            using (IFieldTransform transform = NewTransform(ctx))
+            {
+                return await ctx.FieldTransformer.Invoke(ctx, transform, message)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+            }
         }
+
+        public abstract void Dispose();
     }
 }

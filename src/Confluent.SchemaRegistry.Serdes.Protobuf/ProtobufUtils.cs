@@ -14,12 +14,23 @@
 //
 // Refer to LICENSE for more information.
 
+extern alias ProtobufNet;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
+using ProtobufNet::ProtoBuf.Reflection;
+using IFileSystem = ProtobufNet::Google.Protobuf.Reflection.IFileSystem;
+using FileDescriptorSet = ProtobufNet::Google.Protobuf.Reflection.FileDescriptorSet;
+using DescriptorProto = ProtobufNet::Google.Protobuf.Reflection.DescriptorProto;
+using FieldDescriptorProto = ProtobufNet::Google.Protobuf.Reflection.FieldDescriptorProto;
 
 
 namespace Confluent.SchemaRegistry.Serdes
@@ -29,45 +40,110 @@ namespace Confluent.SchemaRegistry.Serdes
     /// </summary>
     public static class ProtobufUtils
     {
-        public static object Transform(RuleContext ctx, MessageDescriptor desc, object message,
-            FieldTransform fieldTransform)
+        public static IDictionary<string, string> BuiltIns = new Dictionary<string, string>
+        {
+            { "confluent/meta.proto", GetResource("confluent.meta.proto") },
+            { "confluent/type/decimal.proto", GetResource("confluent.type.decimal.proto") },
+            { "google/type/calendar_period.proto", GetResource("google.type.calendar_period.proto") },
+            { "google/type/color.proto", GetResource("google.type.color.proto") },
+            { "google/type/date.proto", GetResource("google.type.date.proto") },
+            { "google/type/datetime.proto", GetResource("google.type.datetime.proto") },
+            { "google/type/dayofweek.proto", GetResource("google.type.dayofweek.proto") },
+            { "google/type/expr.proto", GetResource("google.type.expr.proto") },
+            { "google/type/fraction.proto", GetResource("google.type.fraction.proto") },
+            { "google/type/latlng.proto", GetResource("google.type.latlng.proto") },
+            { "google/type/money.proto", GetResource("google.type.money.proto") },
+            { "google/type/month.proto", GetResource("google.type.month.proto") },
+            { "google/type/postal_address.proto", GetResource("google.type.postal_address.proto") },
+            { "google/type/quaternion.proto", GetResource("google.type.quaternion.proto") },
+            { "google/type/timeofday.proto", GetResource("google.type.timeofday.proto") },
+            { "google/protobuf/any.proto", GetResource("google.protobuf.any.proto") },
+            { "google/protobuf/api.proto", GetResource("google.protobuf.api.proto") },
+            { "google/protobuf/descriptor.proto", GetResource("google.protobuf.descriptor.proto") },
+            { "google/protobuf/duration.proto", GetResource("google.protobuf.duration.proto") },
+            { "google/protobuf/empty.proto", GetResource("google.protobuf.empty.proto") },
+            { "google/protobuf/field_mask.proto", GetResource("google.protobuf.field_mask.proto") },
+            { "google/protobuf/source_context.proto", GetResource("google.protobuf.source_context.proto") },
+            { "google/protobuf/struct.proto", GetResource("google.protobuf.struct.proto") },
+            { "google/protobuf/timestamp.proto", GetResource("google.protobuf.timestamp.proto") },
+            { "google/protobuf/type.proto", GetResource("google.protobuf.type.proto") },
+            { "google/protobuf/wrappers.proto", GetResource("google.protobuf.wrappers.proto") }
+        };
+        
+        private static string GetResource(string resourceName)
+        {
+            var info = Assembly.GetExecutingAssembly().GetName();
+            var name = info.Name;
+            using var stream = Assembly
+                .GetExecutingAssembly()
+                .GetManifestResourceStream($"{name}.proto.{resourceName}");
+            using var streamReader = new StreamReader(stream, Encoding.UTF8);
+            return streamReader.ReadToEnd();
+        }
+
+        public static async Task<object> Transform(RuleContext ctx, object desc, object message,
+            IFieldTransform fieldTransform)
         {
             if (desc == null || message == null)
             {
                 return message;
             }
 
-            if (message is IList &&
-                message.GetType().IsGenericType &&
-                message.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(List<>)))
+            RuleContext.FieldContext fieldContext = ctx.CurrentField();
+            
+            if (typeof(IList).IsAssignableFrom(message.GetType()) 
+                || (message.GetType().IsGenericType 
+                    && (message.GetType().GetGenericTypeDefinition() == typeof(List<>) 
+                        || message.GetType().GetGenericTypeDefinition() == typeof(IList<>))))
             {
-                List<object> list = (List<object>)message;
-                return list.Select(it => Transform(ctx, desc, it, fieldTransform)).ToList();
+                var tasks = ((IList<object>)message)
+                    .Select(it => Transform(ctx, desc, it, fieldTransform))
+                    .ToList();
+                object[] items = await Task.WhenAll(tasks).ConfigureAwait(false);
+                return items.ToList();
             }
-            else if (message is IDictionary &&
-                     message.GetType().IsGenericType &&
-                     message.GetType().GetGenericTypeDefinition().IsAssignableFrom(typeof(Dictionary<,>)))
+            else if (typeof(IDictionary).IsAssignableFrom(message.GetType()) 
+                     || (message.GetType().IsGenericType 
+                         && (message.GetType().GetGenericTypeDefinition() == typeof(Dictionary<,>) 
+                             || message.GetType().GetGenericTypeDefinition() == typeof(IDictionary<,>))))
             {
                 return message;
             }
             else if (message is IMessage)
             {
                 IMessage copy = Copy((IMessage)message);
+                string messageFullName = copy.Descriptor.FullName;
+                if (!messageFullName.StartsWith("."))
+                {
+                    messageFullName = "." + messageFullName;
+                }
+
+                DescriptorProto messageType = FindMessageByName(desc, messageFullName);
                 foreach (FieldDescriptor fd in copy.Descriptor.Fields.InDeclarationOrder())
                 {
-                    FieldDescriptor schemaFd = desc.FindFieldByName(fd.Name);
-                    using (ctx.EnterField(ctx, copy, fd.FullName, fd.Name, GetType(fd), GetInlineAnnotations(fd)))
+                    FieldDescriptorProto schemaFd = FindFieldByName(messageType, fd.Name);
+                    using (ctx.EnterField(copy, fd.FullName, fd.Name, GetType(fd), GetInlineTags(schemaFd)))
                     {
                         object value = fd.Accessor.GetValue(copy);
-                        MessageDescriptor d = desc;
+                        DescriptorProto d = messageType;
                         if (value is IMessage)
                         {
                             // Pass the schema-based descriptor which has the metadata
-                            d = schemaFd.MessageType;
+                            d = schemaFd.GetMessageType();
                         }
 
-                        object newValue = Transform(ctx, d, value, fieldTransform);
-                        fd.Accessor.SetValue(copy, newValue);
+                        object newValue = await Transform(ctx, d, value, fieldTransform).ConfigureAwait(false);
+                        if (ctx.Rule.Kind == RuleKind.Condition)
+                        {
+                            if (newValue is bool b && !b)
+                            {
+                                throw new RuleConditionException(ctx.Rule);
+                            }
+                        }
+                        else
+                        {
+                            fd.Accessor.SetValue(copy, newValue);
+                        }
                     }
                 }
 
@@ -75,14 +151,16 @@ namespace Confluent.SchemaRegistry.Serdes
             }
             else
             {
-                RuleContext.FieldContext fieldContext = ctx.CurrentField();
                 if (fieldContext != null)
                 {
-                    ISet<string> intersect = new HashSet<string>(fieldContext.Annotations);
-                    intersect.IntersectWith(ctx.Rule.Annotations);
-                    if (intersect.Count != 0)
+                    ISet<string> ruleTags = ctx.Rule.Tags ?? new HashSet<string>();
+                    ISet<string> intersect = new HashSet<string>(fieldContext.Tags);
+                    intersect.IntersectWith(ruleTags);
+                    
+                    if (ruleTags.Count == 0 || intersect.Count != 0)
                     {
-                        return fieldTransform.Invoke(ctx, fieldContext, message);
+                        return await fieldTransform.Transform(ctx, fieldContext, message)
+                            .ConfigureAwait(continueOnCapturedContext: false);
                     }
                 }
 
@@ -90,9 +168,50 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
+        private static DescriptorProto FindMessageByName(object desc, string messageFullName)
+        {
+            if (desc is FileDescriptorSet)
+            {
+                foreach (var file in ((FileDescriptorSet)desc).Files)
+                {
+                    foreach (var messageType in file.MessageTypes)
+                    {
+                        return FindMessageByName(messageType, messageFullName);
+                    }
+                }
+            }
+            else if (desc is DescriptorProto)
+            {
+                DescriptorProto messageType = (DescriptorProto)desc;
+                if (messageType.GetFullyQualifiedName().Equals(messageFullName))
+                {
+                    return messageType;
+                }
+
+                foreach (DescriptorProto nestedType in messageType.NestedTypes)
+                {
+                    return FindMessageByName(nestedType, messageFullName);
+                }
+            }
+            return null;
+        }
+
+        private static FieldDescriptorProto FindFieldByName(DescriptorProto desc, string fieldName)
+        {
+            foreach (FieldDescriptorProto fd in desc.Fields)
+            {
+                if (fd.Name.Equals(fieldName))
+                {
+                    return fd;
+                }
+            }
+
+            return null;
+        }
+
         private static IMessage Copy(IMessage message)
         {
-            var builder = (IMessage)Activator.CreateInstance(typeof(IMessage));
+            var builder = (IMessage)Activator.CreateInstance(message.GetType());
             builder.MergeFrom(message.ToByteArray());
             return builder;
         }
@@ -102,10 +221,6 @@ namespace Confluent.SchemaRegistry.Serdes
             if (field.IsMap)
             {
                 return RuleContext.Type.Map;
-            }
-            else if (field.IsRepeated)
-            {
-                return RuleContext.Type.Array;
             }
 
             switch (field.FieldType)
@@ -139,18 +254,74 @@ namespace Confluent.SchemaRegistry.Serdes
             }
         }
 
-        private static ISet<string> GetInlineAnnotations(FieldDescriptor fd)
+        private static ISet<string> GetInlineTags(FieldDescriptorProto fd)
         {
-            ISet<string> annotations = new HashSet<string>();
-            // TODO
-            /*
-            if (fd.getOptions().hasExtension(MetaProto.fieldMeta))
+            ISet<string> tags = new HashSet<string>();
+            var options = fd.Options?.UninterpretedOptions;
+            if (options != null)
             {
-                Meta meta = fd.getOptions().getExtension(MetaProto.fieldMeta);
-                annotations.addAll(meta.getAnnotationList());
+                foreach (var option in options)
+                {
+                    switch (option.Names.Count())
+                    {
+                        case 1:
+                            if (option.Names[0].name_part.Contains("field_meta")
+                                && option.Names[0].name_part.Contains("tags"))
+                            {
+                                tags.Add(option.AggregateValue);
+                            }
+
+                            break;
+                        case 2:
+                            if (option.Names[0].name_part.Contains("field_meta")
+                                && option.Names[1].name_part.Contains("tags"))
+                            {
+                                tags.Add(option.AggregateValue);
+                            }
+
+                            break;
+                    }
+                }
             }
-            */
-            return annotations;
+            return tags;
+        }
+
+        public static FileDescriptorSet Parse(string schema, IDictionary<string, string> imports)
+        {
+            IDictionary<string, string> allImports = new Dictionary<string, string>(BuiltIns);
+            imports?.ToList().ForEach(x => allImports.Add(x.Key, x.Value));
+            
+            var fds = new FileDescriptorSet();
+            fds.FileSystem = new ProtobufImports(allImports);
+            
+            fds.Add("__root.proto", true, new StringReader(schema));
+            foreach (KeyValuePair<string, string> import in allImports)
+            {
+                fds.AddImportPath(import.Key);
+                
+            }
+            fds.Process();
+            return fds;
+        } 
+        
+        class ProtobufImports : IFileSystem
+        {
+            protected IDictionary<string, string> Imports { get; set; }
+
+            public ProtobufImports(IDictionary<string, string> imports)
+            {
+                Imports = imports;
+            }
+
+            public bool Exists(string path)
+            {
+                return Imports.ContainsKey(path);
+            }
+
+            public TextReader OpenText(string path)
+            {
+                return new StringReader(Imports[path]);
+            }
         }
     }
 }

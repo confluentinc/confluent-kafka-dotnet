@@ -14,12 +14,21 @@
 //
 // Refer to LICENSE for more information.
 
+using System.Threading.Tasks;
+
 namespace Confluent.SchemaRegistry
 {
-    public interface IRuleExecutor
+    /// <summary>
+    ///     A rule executor   
+    /// </summary>
+    public interface IRuleExecutor : IRuleBase
     {
-        string Type();
-        
-        object Transform(RuleContext ctx, object message);
+        /// <summary>
+        ///     Transform the message based on the rule context 
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        Task<object> Transform(RuleContext ctx, object message);
     }
 }
