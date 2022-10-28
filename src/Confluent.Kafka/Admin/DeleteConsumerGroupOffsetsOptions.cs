@@ -36,7 +36,7 @@ namespace Confluent.Kafka.Admin
 
         /// <summary>
         ///     The broker's operation timeout - the maximum time to wait for
-        ///     DeleteRecordsAsync before returning a result to the application.
+        ///     DeleteConsumerGroupOffsetsAsync before returning a result to the application.
         ///     If set to null, will return immediately upon triggering record
         ///     deletion.
         /// 

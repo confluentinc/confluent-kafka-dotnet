@@ -58,8 +58,6 @@ namespace Confluent.Kafka.IntegrationTests
                 Assert.Equal(1, committedOffsets.Count);
                 Assert.Equal(-1001, committedOffsets[0].Offset); //offset is unset
 
-                // consumer.Unassign();
-
                 // Consumer is actively subscribed to the topic
                 consumer.Subscribe(new List<String>(){topic1.Name});
                 consumer.Commit(new List<TopicPartitionOffset>() {new TopicPartitionOffset(topic1.Name, 0, offsetToCommit)}); //commit some offset for consumer
@@ -96,10 +94,7 @@ namespace Confluent.Kafka.IntegrationTests
                 watermarkOffsets = consumer.QueryWatermarkOffsets(new TopicPartition(topic2.Name, 0),TimeSpan.FromSeconds(10));
                 Assert.Equal(0, watermarkOffsets.Low); //offsets are unchaged after the reset
                 Assert.Equal(0, watermarkOffsets.High);
-
-                
             }
-
             LogToFile("end   AdminClient_DeleteRecords");
         }
     }

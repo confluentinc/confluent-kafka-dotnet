@@ -1241,13 +1241,6 @@ namespace Confluent.Kafka.Impl
             IntPtr result,
             out UIntPtr cntp) => _DeleteGroups_result_groups(result, out cntp);
 
-        private delegate IntPtr _DeleteConsumerGroupOffsets_result_groups_delegate(IntPtr result, out UIntPtr cntp);
-        private static _DeleteConsumerGroupOffsets_result_groups_delegate _DeleteConsumerGroupOffsets_result_groups;
-        internal static IntPtr DeleteConsumerGroupOffsets_result_groups(
-            IntPtr result,
-            out UIntPtr cntp) => _DeleteConsumerGroupOffsets_result_groups(result, out cntp);
-
-
         private static Func<string, UIntPtr, StringBuilder, UIntPtr, IntPtr> _NewPartitions_new;
         internal static IntPtr NewPartitions_new(
                 string topic, 
@@ -1445,6 +1438,12 @@ namespace Confluent.Kafka.Impl
             UIntPtr del_grpoffsets_cnt,
             IntPtr options,
             IntPtr rkqu) => _DeleteConsumerGroupOffsets(rk, del_grpoffsets, del_grpoffsets_cnt, options, rkqu);
+        
+        private delegate IntPtr _DeleteConsumerGroupOffsets_result_groups_delegate(IntPtr result, out UIntPtr cntp);
+        private static _DeleteConsumerGroupOffsets_result_groups_delegate _DeleteConsumerGroupOffsets_result_groups;
+        internal static IntPtr DeleteConsumerGroupOffsets_result_groups(
+            IntPtr result,
+            out UIntPtr cntp) => _DeleteConsumerGroupOffsets_result_groups(result, out cntp);
 
         //
         // ACLs

@@ -709,7 +709,7 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteGroupsAsync(IList{string}, DeleteGroupsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteConsumerGroupOffsetsAsync(string, IEnumerable{TopicPartitionOffset}, DeleteConsumerGroupOffsetsOptions)" />
         /// </summary>
         public Task<List<DeleteConsumerGroupOffsetsResult>> DeleteConsumerGroupOffsetsAsync(string group, IEnumerable<TopicPartitionOffset> partitions, DeleteConsumerGroupOffsetsOptions options = null)
         {
