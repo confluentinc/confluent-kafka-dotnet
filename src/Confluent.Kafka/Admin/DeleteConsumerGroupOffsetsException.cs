@@ -22,7 +22,7 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     Represents an error that occured during a delete records request.
+    ///     Represents an error that occured during a delete consumer group offset request.
     /// </summary>
     public class DeleteConsumerGroupOffsetsException : KafkaException
     {
@@ -30,14 +30,12 @@ namespace Confluent.Kafka.Admin
         ///     Initializes a new DeleteConsumerGroupOffsetsException.
         /// </summary>
         /// <param name="results">
-        ///     The result corresponding to all topic partitions in the request
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
+        ///     The result corresponding to the request.
         /// </param>
         public DeleteConsumerGroupOffsetsException(List<DeleteConsumerGroupOffsetsReport> results)
             : base(new Error(ErrorCode.Local_Partial,
-                "An error occurred deleting records: [" +
-                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Topic)) +
+                "An error occurred deleting consumer group offset: [" +
+                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Group)) +
                 "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
                 "]."))
         {
@@ -45,9 +43,7 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     The result corresponding to all topics partitions in the request 
-        ///     (whether or not they were in error). At least one of these
-        ///     results will be in error.
+        ///     The result corresponding to the request.
         /// </summary>
         public List<DeleteConsumerGroupOffsetsReport> Results { get; }
     }

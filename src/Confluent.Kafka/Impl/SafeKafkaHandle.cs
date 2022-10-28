@@ -1596,6 +1596,56 @@ namespace Confluent.Kafka.Impl
             }
         }
 
+        internal void DeleteConsumerGroupOffsets(string group, IEnumerable<TopicPartitionOffset> partitions, DeleteConsumerGroupOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        {
+            ThrowIfHandleClosed();
+
+            options = options == null ? new DeleteConsumerGroupOffsetsOptions() : options;
+
+            IntPtr[] partitionsPtrs = new IntPtr[partitions.Count()];
+            IntPtr optionsPtr = IntPtr.Zero;
+            try
+            {
+                optionsPtr = Librdkafka.AdminOptions_new(handle, Librdkafka.AdminOp.DeleteConsumerGroupOffsets);
+                setOption_RequestTimeout(optionsPtr, options.RequestTimeout);
+                setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
+                setOption_completionSource(optionsPtr, completionSourcePtr);
+
+                if (partitions.Where(tpo => tpo.Topic == null).Count() > 0)
+                {
+                    throw new ArgumentException("Cannot delete offsets because one or more topics were specified as null.");
+                }
+
+                IntPtr cOffsets = GetCTopicPartitionList(partitions);
+                if (cOffsets == IntPtr.Zero)
+                {
+                    throw new ArgumentNullException("Delete offsets partitions collection must not be null");
+                }
+
+                for (int i = 0; i < partitions.Count(); i++)
+                {
+                    partitionsPtrs[i] = Librdkafka.DeleteConsumerGroupOffsets_new(group, cOffsets);
+                }
+
+                Librdkafka.DeleteConsumerGroupOffsets(handle, partitionsPtrs, (UIntPtr)partitionsPtrs.Length, optionsPtr, resultQueuePtr);
+            }
+            finally
+            {
+                foreach(var partitionsPtr in partitionsPtrs)
+                {
+                    if(partitionsPtr != IntPtr.Zero)
+                    {
+                        Librdkafka.DeleteConsumerGroupOffsets_destroy(partitionsPtr);
+                    }
+                }
+
+                if (optionsPtr != IntPtr.Zero)
+                {
+                    Librdkafka.AdminOptions_destroy(optionsPtr);
+                }
+            }
+        }
+
         internal void DeleteTopics(
             IEnumerable<string> deleteTopics,
             DeleteTopicsOptions options,

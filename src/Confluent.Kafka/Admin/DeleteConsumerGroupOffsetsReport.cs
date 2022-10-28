@@ -13,34 +13,29 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
-
+using System.Collections.Generic;
 
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The per-partition result of delete records request
+    ///     The result of delete consumer group offset request
     ///     (including error status).
     /// </summary>
     public class DeleteConsumerGroupOffsetsReport
     {
-        /// <summary>
-        ///     The topic name.
-        /// </summary>
-        public string Topic { get; set; }
 
         /// <summary>
-        ///     The partition.
+        ///    Consumer group id.
         /// </summary>
-        public Partition Partition { get; set; }
+        public string Group { get; set; }
 
         /// <summary>
-        ///     Post-deletion low-watermark (smallest available offset of all
-        ///     live replicas).
+        ///     Partitions for which the offsets were reset for.
         /// </summary>
-        public Offset Offset { get; set; }
+        public List<TopicPartitionOffset> Partitions { get; set; }
 
         /// <summary>
-        ///     Per-partition error status.
+        ///     Error status.
         /// </summary>
         public Error Error { get; set; }
     }
