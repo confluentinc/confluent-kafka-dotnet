@@ -27,10 +27,12 @@ namespace Confluent.Kafka.Admin
     public class DeleteConsumerGroupOffsetsException : KafkaException
     {
         /// <summary>
-        ///     Initializes a new DeleteConsumerGroupOffsetsException.
+        ///     Initializes a new instance of DeleteConsumerGroupOffsetsException.
         /// </summary>
         /// <param name="results">
-        ///     The result corresponding to the request.
+        ///     The result corresponding to all the delete consumer group offsets
+        ///     operations in the request (whether or not they were in error). 
+        ///     At least one of these results will be in error.
         /// </param>
         public DeleteConsumerGroupOffsetsException(List<DeleteConsumerGroupOffsetsReport> results)
             : base(new Error(ErrorCode.Local_Partial,
@@ -43,7 +45,9 @@ namespace Confluent.Kafka.Admin
         }
 
         /// <summary>
-        ///     The result corresponding to the request.
+        ///     The result corresponding to all the delete consumer group offsets
+        ///     operations in the request (whether or not they were in error). 
+        ///     At least one of these results will be in error.
         /// </summary>
         public List<DeleteConsumerGroupOffsetsReport> Results { get; }
     }

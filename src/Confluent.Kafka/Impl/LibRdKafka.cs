@@ -1429,7 +1429,7 @@ namespace Confluent.Kafka.Impl
 
         private static Action<IntPtr> _DeleteConsumerGroupOffsets_destroy;
         internal static void DeleteConsumerGroupOffsets_destroy(
-            IntPtr del_records) => _DeleteConsumerGroupOffsets_destroy(del_records);
+            IntPtr del_grpoffsets) => _DeleteConsumerGroupOffsets_destroy(del_grpoffsets);
 
         private static Action<IntPtr, IntPtr[], UIntPtr, IntPtr, IntPtr> _DeleteConsumerGroupOffsets;
         internal static void DeleteConsumerGroupOffsets(

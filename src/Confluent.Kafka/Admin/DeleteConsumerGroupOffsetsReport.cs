@@ -13,7 +13,9 @@
 // limitations under the License.
 //
 // Refer to LICENSE for more information.
+
 using System.Collections.Generic;
+
 
 namespace Confluent.Kafka.Admin
 {
@@ -23,7 +25,6 @@ namespace Confluent.Kafka.Admin
     /// </summary>
     public class DeleteConsumerGroupOffsetsReport
     {
-
         /// <summary>
         ///    Consumer group id.
         /// </summary>

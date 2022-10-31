@@ -709,14 +709,14 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteConsumerGroupOffsetsAsync(string, IEnumerable{TopicPartitionOffset}, DeleteConsumerGroupOffsetsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteConsumerGroupOffsetsAsync(IEnumerable{ConsumerGroupOffsets}, DeleteConsumerGroupOffsetsOptions)" />
         /// </summary>
-        public Task<List<DeleteConsumerGroupOffsetsResult>> DeleteConsumerGroupOffsetsAsync(string group, IEnumerable<TopicPartitionOffset> partitions, DeleteConsumerGroupOffsetsOptions options = null)
+        public Task<List<DeleteConsumerGroupOffsetsResult>> DeleteConsumerGroupOffsetsAsync(IEnumerable<ConsumerGroupOffsets> deleteGroupOffsets, DeleteConsumerGroupOffsetsOptions options = null)
         {
             var completionSource = new TaskCompletionSource<List<DeleteConsumerGroupOffsetsResult>>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DeleteConsumerGroupOffsets(
-                group, partitions, options, resultQueue,
+                deleteGroupOffsets, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }

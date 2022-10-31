@@ -1596,13 +1596,13 @@ namespace Confluent.Kafka.Impl
             }
         }
 
-        internal void DeleteConsumerGroupOffsets(string group, IEnumerable<TopicPartitionOffset> partitions, DeleteConsumerGroupOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
+        internal void DeleteConsumerGroupOffsets(IEnumerable<ConsumerGroupOffsets> deleteGroupOffsets, DeleteConsumerGroupOffsetsOptions options, IntPtr resultQueuePtr, IntPtr completionSourcePtr)
         {
             ThrowIfHandleClosed();
 
             options = options == null ? new DeleteConsumerGroupOffsetsOptions() : options;
 
-            IntPtr[] partitionsPtrs = new IntPtr[partitions.Count()];
+            IntPtr[] partitionsPtrs = new IntPtr[deleteGroupOffsets.Count()];
             IntPtr optionsPtr = IntPtr.Zero;
             try
             {
@@ -1611,22 +1611,21 @@ namespace Confluent.Kafka.Impl
                 setOption_OperationTimeout(optionsPtr, options.OperationTimeout);
                 setOption_completionSource(optionsPtr, completionSourcePtr);
 
-                if (partitions.Where(tpo => tpo.Topic == null).Count() > 0)
+                if (deleteGroupOffsets.Where(deleteGroupOffset => deleteGroupOffset.Group == null || deleteGroupOffset.Partitions == null).Count() > 0)
                 {
-                    throw new ArgumentException("Cannot delete offsets because one or more topics were specified as null.");
+                    throw new ArgumentException("Cannot delete offsets because one or more group ids or partitions were specified as null.");
                 }
 
-                IntPtr cOffsets = GetCTopicPartitionList(partitions);
-                if (cOffsets == IntPtr.Zero)
-                {
-                    throw new ArgumentNullException("Delete offsets partitions collection must not be null");
-                }
+                for (int i = 0; i < deleteGroupOffsets.Count(); i++) {
+                    List<TopicPartitionOffset> topicPartitionOffsets = deleteGroupOffsets.ElementAt(i).Partitions.Select(a => new TopicPartitionOffset(a, 0)).ToList();
+                    IntPtr cOffsets = GetCTopicPartitionList(topicPartitionOffsets);
+                    if (cOffsets == IntPtr.Zero)
+                    {
+                        throw new ArgumentNullException("Delete offsets partitions collection must not be null");
+                    }
 
-                for (int i = 0; i < partitions.Count(); i++)
-                {
-                    partitionsPtrs[i] = Librdkafka.DeleteConsumerGroupOffsets_new(group, cOffsets);
+                    partitionsPtrs[i] = Librdkafka.DeleteConsumerGroupOffsets_new(deleteGroupOffsets.ElementAt(i).Group, cOffsets);                    
                 }
-
                 Librdkafka.DeleteConsumerGroupOffsets(handle, partitionsPtrs, (UIntPtr)partitionsPtrs.Length, optionsPtr, resultQueuePtr);
             }
             finally

@@ -20,21 +20,34 @@ using System.Collections.Generic;
 namespace Confluent.Kafka.Admin
 {
     /// <summary>
-    ///     The result of delete consumer group offset request
-    ///     (including error status).
+    ///     Represents a consumer group id with the partitions for which the offsets need to 
+    ///     be reset for. Used by "IAdminClient.DeleteConsumerGroupOffsetsAsync".
     /// </summary>
-    public class DeleteConsumerGroupOffsetsResult
+    public class ConsumerGroupOffsets
     {
         /// <summary>
+        ///     Initializes a new ConsumerGroupOffsets instance.
+        /// </summary>
+        /// <param name="group">
         ///     Consumer group id.
+        /// </param>
+        /// <param name="partitions">
+        ///     Partitions for which the offsets need to be reset for.
+        /// </param>
+        public ConsumerGroupOffsets(string group, List<TopicPartition> partitions)
+        {
+            Group = group;
+            Partitions = partitions;
+        }
+
+        /// <summary>
+        ///    Consumer group id.
         /// </summary>
         public string Group { get; set; }
 
         /// <summary>
         ///     Partitions for which the offsets were reset for.
         /// </summary>
-        public List<TopicPartitionOffset> Partitions { get; set; }
-
-        internal Error Error { get; set; }
+        public List<TopicPartition> Partitions { get; set; }
     }
 }
