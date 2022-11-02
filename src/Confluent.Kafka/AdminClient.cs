@@ -209,8 +209,8 @@ namespace Confluent.Kafka
 
         private List<DeleteConsumerGroupOffsetsReport> extractDeleteConsumerGroupOffsetsReports(IntPtr resultPtr)
         {
-            IntPtr groupsOffsetsResultPtr = Librdkafka.DeleteConsumerGroupOffsets_result_groups(resultPtr, out UIntPtr resultCountPtr);
-            int groupsOffsetsResultCount = (int)resultCountPtr;
+            IntPtr groupsOffsetsResultPtr = Librdkafka.DeleteConsumerGroupOffsets_result_groups(resultPtr, out UIntPtr resultCount);
+            int groupsOffsetsResultCount = (int)resultCount;
             IntPtr[] groupsOffsetsResultArr = new IntPtr[groupsOffsetsResultCount];
             Marshal.Copy(groupsOffsetsResultPtr, groupsOffsetsResultArr, 0, groupsOffsetsResultCount);
 
@@ -219,7 +219,7 @@ namespace Confluent.Kafka
                 Group = PtrToStringUTF8(Librdkafka.group_result_name(groupOffsetsResultPtr)),
                 Error = new Error(Librdkafka.group_result_error(groupOffsetsResultPtr), false),
                 Partitions = SafeKafkaHandle.GetTopicPartitionOffsetErrorList(Librdkafka.group_result_partitions(groupOffsetsResultPtr))
-                    .Select(a => new TopicPartitionOffset(a.Topic, a.Partition, a.Offset))
+                    .Select(a => new TopicPartitionOffsetError(a.Topic, a.Partition, a.Offset, a.Error))
                     .ToList()
             }).ToList();
         }
@@ -462,7 +462,7 @@ namespace Confluent.Kafka
                                             }
                                         }
                                         break;
-                                    
+
                                     case Librdkafka.EventType.DeleteConsumerGroupOffsets_Result:
                                         {
                                             if (errorCode != ErrorCode.NoError)
@@ -486,11 +486,11 @@ namespace Confluent.Kafka
                                                 Task.Run(() =>
                                                     ((TaskCompletionSource<List<DeleteConsumerGroupOffsetsResult>>)adminClientResult).TrySetResult(
                                                         result.Select(a => new DeleteConsumerGroupOffsetsResult
-                                                            {
-                                                                Group = a.Group,
-                                                                Partitions = a.Partitions,
-                                                                Error = a.Error // internal, not exposed in success case.
-                                                            }).ToList()));
+                                                        {
+                                                            Group = a.Group,
+                                                            Partitions = a.Partitions,
+                                                            Error = a.Error // internal, not exposed in success case.
+                                                        }).ToList()));
                                             }
                                         }
                                         break;
@@ -709,14 +709,14 @@ namespace Confluent.Kafka
         }
 
         /// <summary>
-        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteConsumerGroupOffsetsAsync(IEnumerable{ConsumerGroupOffsets}, DeleteConsumerGroupOffsetsOptions)" />
+        ///     Refer to <see cref="Confluent.Kafka.IAdminClient.DeleteConsumerGroupOffsetsAsync(String, IEnumerable{TopicPartition}, DeleteConsumerGroupOffsetsOptions)" />
         /// </summary>
-        public Task<List<DeleteConsumerGroupOffsetsResult>> DeleteConsumerGroupOffsetsAsync(IEnumerable<ConsumerGroupOffsets> deleteGroupOffsets, DeleteConsumerGroupOffsetsOptions options = null)
+        public Task<List<DeleteConsumerGroupOffsetsResult>> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null)
         {
             var completionSource = new TaskCompletionSource<List<DeleteConsumerGroupOffsetsResult>>();
             var gch = GCHandle.Alloc(completionSource);
             Handle.LibrdkafkaHandle.DeleteConsumerGroupOffsets(
-                deleteGroupOffsets, options, resultQueue,
+                group, partitions, options, resultQueue,
                 GCHandle.ToIntPtr(gch));
             return completionSource.Task;
         }
