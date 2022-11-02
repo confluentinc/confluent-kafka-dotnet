@@ -175,7 +175,21 @@ namespace Confluent.SchemaRegistry.Serdes
                         {
                             var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
-                            schemaId = latestSchema.Id;
+                            // checks if locally generated schema is compatibile with latest schema on schema and autoregister if set to true else throws exception. 
+                            var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, SchemaType.Json))
+                                .ConfigureAwait(continueOnCapturedContext: false);
+                            Console.WriteLine(latestSchema.SchemaString);
+                            if (isCompatible == false) {
+                                if (autoRegisterSchema) {
+                                    schemaId = await schemaRegistryClient.RegisterSchemaAsync(subject,
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                                    .ConfigureAwait(continueOnCapturedContext: false);
+                                } else {
+                                    throw new InvalidDataException("Schema not compatible with latest schema : " + latestSchema.SchemaString);
+                                }
+                            } else {
+                                schemaId = latestSchema.Id;
+                            }
                         }
                         else
                         {
