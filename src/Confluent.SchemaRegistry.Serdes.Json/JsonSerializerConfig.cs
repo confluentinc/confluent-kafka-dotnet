@@ -64,12 +64,20 @@ namespace Confluent.SchemaRegistry.Serdes
             /// <summary>
             ///     Specifies whether or not the JSON serializer should use the latest subject
             ///     version for serialization.
-            ///     WARNING: There is no check that the latest schema is backwards compatible
-            ///     with the schema of the object being serialized.
             ///
             ///     default: false
             /// </summary>
             public const string UseLatestVersion = "json.serializer.use.latest.version";
+
+            /// <summary>
+            ///     Specifies whether or not the JSON serializer should check the backwards compatibility 
+            ///     with the latest schema of the subject.
+            ///     WARNING: There is no check that the latest schema is backwards compatible
+            ///     with the schema of the object being serialized when default.
+            ///
+            ///     default: false
+            /// </summary>
+            public const string LatestCompatStrict = "json.serializer.latest.compat.strict";
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
@@ -137,8 +145,6 @@ namespace Confluent.SchemaRegistry.Serdes
         /// <summary>
         ///     Specifies whether or not the JSON serializer should use the latest subject
         ///     version for serialization.
-        ///     WARNING: There is no check that the latest schema is backwards compatible
-        ///     with the schema of the object being serialized.
         ///
         ///     default: false
         /// </summary>
@@ -146,6 +152,21 @@ namespace Confluent.SchemaRegistry.Serdes
         {
             get { return GetBool(PropertyNames.UseLatestVersion); }
             set { SetObject(PropertyNames.UseLatestVersion, value); }
+        }
+
+
+        /// <summary>
+        ///     Specifies whether or not the JSON serializer should check the backwards compatibility 
+        ///     with the latest schema of the subject.
+        ///     WARNING: There is no check that the latest schema is backwards compatible
+        ///     with the schema of the object being serialized when default.
+        ///
+        ///     default: false
+        /// </summary>
+        public bool? LatestCompatStrict
+        {
+            get { return GetBool(PropertyNames.LatestCompatStrict); }
+            set { SetObject(PropertyNames.LatestCompatStrict, value); }
         }
         
 
