@@ -47,17 +47,21 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 completedCancellationTokenSource.Token.WaitHandle.WaitOne();
             };
 
-            if (args.Length != 2)
+            if (args.Length == 0 ||
+                (args[0] == "print_words" && args.Length != 1) ||
+                args[0] != "print_words" && args.Length != 2)
             {
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  create_words <transactional-id>");
                 Console.WriteLine("  reverse_words <transactional-id>");
+                Console.WriteLine("  print_words");
                 completedCancellationTokenSource.Cancel();
                 return;
             }
 
             var command = args[0];
-            var transactionalId = args[1];
+            string transactionalId = null;
+            if (args.Length > 1) transactionalId = args[1];
 
             IConfiguration configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -74,6 +78,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     break;
                 case "reverse_words":
                     await new WordReverser().Execute(configuration, transactionalId, adminClient, cts);
+                    break;
+                case "print_words":
+                    await new WordPrinter().Execute(configuration, adminClient, cts);
                     break;
                 default:
                     logger.LogError("Unknown command");
@@ -115,7 +122,7 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
     }
 
     /// <summary>
-    ///     This transactional processor allows to use a producer an consumer for transactions,
+    ///     The transactional processor allows to use a producer an consumer for transactions,
     ///     by recreating the producer when a fatal error happens, sending offsets to transaction
     ///     and handling aborts and retries correctly.
     /// </summary>
@@ -196,6 +203,11 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 if (value != null && consumer == null)
                 {
                     consumerConfig = value;
+
+                    consumerConfig.EnableAutoCommit = false;
+                    consumerConfig.EnableAutoOffsetStore = false;
+                    consumerConfig.IsolationLevel = IsolationLevel.ReadCommitted;
+
                     consumer = new ConsumerBuilder<KC, VC>(value)
                         .SetPartitionsAssignedHandler((c, partitions) =>
                         {
@@ -359,9 +371,31 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         ///     recreates the producer if a fatal exception is thrown or
         ///     retries each operation that is throwing a retriable exception.
         /// </summary>
-        public void CommitKafkaTransaction(ICollection<ProduceMessage<KP, VP>> messages)
+        public void CommitKafkaTransaction(ICollection<ConsumeResult<KC, VC>> inputBatch,
+                                           ICollection<ProduceMessage<KP, VP>> outputBatch)
         {
-            if (ProducerConfig == null) return;
+
+            if (ProducerConfig == null)
+            {
+                if (consumer != null)
+                {
+                    try
+                    {
+                        foreach (var message in inputBatch)
+                        {
+                            Retry("ConsumerStoreOffset", () => consumer.StoreOffset(message),
+                                ThrowIfNotRetriable);
+                        }
+                        Retry("ConsumerCommit", () => consumer.Commit(),
+                                ThrowIfNotRetriable);
+                    }
+                    catch (KafkaException e)
+                    {
+                        throw new KafkaTxnRequiresAbortException(e.Error);
+                    }
+                }
+                return;
+            }
 
             while (!CancellationTokenSource.IsCancellationRequested)
             {
@@ -379,8 +413,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     logger.LogInformation("Calling BeginTransaction.");
                     producer.BeginTransaction();
 
-                    logger.LogInformation("Producing {Count} messages.", messages.Count);
-                    foreach (var message in messages)
+                    logger.LogInformation("Producing {Count} messages.", outputBatch.Count);
+                    foreach (var message in outputBatch)
                     {
                         Retry("Produce", () => producer.Produce(message.Topic,
                                                                 message.Message,
@@ -491,9 +525,9 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         /// </summary>
         private void CommitMaybe()
         {
-            if (outputBatch.Any())
+            if (inputBatch.Any() || outputBatch.Any())
             {
-                CommitKafkaTransaction(outputBatch);
+                CommitKafkaTransaction(inputBatch, outputBatch);
                 EndTransaction(inputBatch, outputBatch, true);
                 ResetTransaction();
             }
@@ -514,7 +548,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                     if (consumer != null)
                     {
                         consumeResult = consumer.Consume(ConsumeTimeout);
-                        inputBatch.Add(consumeResult);
+                        if (consumeResult != null)
+                        {
+                            inputBatch.Add(consumeResult);
+                        }
                     }
                     var messages = Process(consumeResult);
                     outputBatch.AddRange(messages);
@@ -596,6 +633,10 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
         public ProducerConfig Producer { get; set; }
     }
 
+    /// <summary>
+    ///     Generates random words and sends them to a topic with
+    ///     exactly once semantics. This is the producer-only example.
+    /// </summary>
     public class WordCreator
     {
         private readonly ILogger logger = Utils.LoggerFactory.CreateLogger(typeof(WordCreator));
@@ -701,8 +742,8 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
     }
 
     /// <summary>
-    ///     Reads words from a topic, reverse them, and send them to a different topic with
-    ///     exactly once semantics.
+    ///     Read words from a topic, reverse them, and send them to a different topic with
+    ///     exactly once semantics. This is the producer and consumer example.
     /// </summary>
     public class WordReverser
     {
@@ -800,6 +841,119 @@ namespace Confluent.Kafka.Examples.ExactlyOnce
                 //  transaction too, otherwise any program failure can lead
                 //  to a half-committed state.
             }
+        }
+    }
+
+    public class WordPrinterConfig
+    {
+        public TopicSpecification InputTopic { get; set; }
+
+        public int CommitMaxMessages { get; set; }
+
+        public TimeSpan CommitPeriod { get; set; }
+
+        public TimeSpan CommitTimeout { get; set; }
+
+        public TimeSpan RetryInterval { get; set; }
+
+        public ConsumerConfig Consumer { get; set; }
+    }
+
+    /// <summary>
+    ///     Reads words from a topic, prints them to standard output with
+    ///     exactly once semantics. This is the consumer-only example.
+    /// </summary>
+    public class WordPrinter
+    {
+        private readonly ILogger logger = Utils.LoggerFactory.CreateLogger(typeof(WordPrinter));
+
+        private WordPrinterConfig config;
+
+        private List<string> words = new();
+
+        private static void Print(List<string> words)
+        {
+            foreach (var word in words)
+            {
+                Console.WriteLine(word);
+            }
+        }
+
+        public async Task Execute(IConfiguration configuration, IAdminClient adminClient, CancellationTokenSource cts)
+        {
+            config = configuration.GetSection("WordPrinter").Get<WordPrinterConfig>();
+            config.Consumer.ThrowIfContainsNonUserConfigurable();
+
+            await Utils.CreateTopicMaybe(adminClient, config.InputTopic.Name, config.InputTopic.NumPartitions);
+
+            using var transactionalProcessor =
+                    new TransactionalProcessor<Null, string,
+                                               Null, string>
+                    {
+                        RetryInterval = config.RetryInterval,
+                        ConsumerConfig = config.Consumer,
+                        CommitMaxMessages = config.CommitMaxMessages,
+                        CommitPeriod = config.CommitPeriod,
+                        InputTopics = new List<string>()
+                        {
+                            config.InputTopic.Name
+                        },
+                        Process = Process,
+                        EndTransaction = EndTransaction,
+                        CancellationTokenSource = cts
+                    };
+            try
+            {
+                await Task.Run(() =>
+                {
+                    transactionalProcessor.RunLoop();
+                });
+            }
+            catch (Exception e)
+            {
+                logger.LogError("Consumer Exception type: {Type}", e.GetType());
+                if (e is OperationCanceledException)
+                {
+                    cts.Cancel();
+                }
+                else
+                {
+                    logger.LogError("Caught inner exception: {Message}", e.Message);
+                }
+            }
+            logger.LogInformation("Process finished");
+        }
+
+        public List<ProduceMessage<Null, string>> Process(ConsumeResult<Null, string> consumeResult)
+        {
+            if (consumeResult != null && consumeResult.Message != null)
+            {
+                words.Add(consumeResult.Message.Value);
+            }
+            return new List<ProduceMessage<Null, string>>();
+        }
+
+        public void EndTransaction(ICollection<ConsumeResult<Null, string>> _,
+                                   ICollection<ProduceMessage<Null, string>> _1,
+                                   bool committed)
+        {
+            if (committed)
+            {
+                Print(words);
+                //  If there's an application transaction involved too, 
+                //  this method should commit that
+                //  transaction too, otherwise any program failure can lead
+                //  to a half-committed state.
+            }
+            else
+            {
+                //  Retry the same messages after rewind.
+                //  If there's an application transaction involved too, 
+                //  this method should abort that
+                //  transaction too, otherwise any program failure can lead
+                //  to a half-committed state.
+            }
+            words.Clear();
         }
     }
 
