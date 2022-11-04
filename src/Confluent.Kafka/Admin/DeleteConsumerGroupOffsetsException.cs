@@ -29,26 +29,24 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Initializes a new instance of DeleteConsumerGroupOffsetsException.
         /// </summary>
-        /// <param name="results">
+        /// <param name="result">
         ///     The result corresponding to all the delete consumer group offsets
         ///     operations in the request (whether or not they were in error). 
         ///     At least one of these results will be in error.
         /// </param>
-        public DeleteConsumerGroupOffsetsException(List<DeleteConsumerGroupOffsetsReport> results)
+        public DeleteConsumerGroupOffsetsException(DeleteConsumerGroupOffsetsReport result)
             : base(new Error(ErrorCode.Local_Partial,
-                "An error occurred deleting consumer group offset: [" +
-                String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Group)) +
-                "]: [" + String.Join(", ", results.Where(r => r.Error.IsError).Select(r => r.Error)) +
+                "An error occurred deleting consumer group offset: [" + result.Group +
+                "]: [" + String.Join(", ", result.Error.IsError ? new[] { result.Error } : result.Partitions.Where(r => r.Error.IsError).Select(r => r.Error)) +
                 "]."))
         {
-            Results = results;
+            Result = result;
         }
 
         /// <summary>
-        ///     The result corresponding to all the delete consumer group offsets
-        ///     operations in the request (whether or not they were in error). 
-        ///     At least one of these results will be in error.
+        ///     The result corresponding to the delete consumer group offsets
+        ///     operation in the request.
         /// </summary>
-        public List<DeleteConsumerGroupOffsetsReport> Results { get; }
+        public DeleteConsumerGroupOffsetsReport Result { get; }
     }
 }

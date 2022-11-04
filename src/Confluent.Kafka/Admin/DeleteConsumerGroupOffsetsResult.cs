@@ -33,7 +33,7 @@ namespace Confluent.Kafka.Admin
         /// <summary>
         ///     Partitions for which the offsets were reset for.
         /// </summary>
-        public List<TopicPartitionOffsetError> Partitions { get; set; }
+        public List<TopicPartition> Partitions { get; set; }
 
         internal Error Error { get; set; }
     }

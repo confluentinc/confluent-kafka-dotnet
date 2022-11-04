@@ -339,9 +339,9 @@ namespace Confluent.Kafka
         ///     The options to use when deleting the committed offset.
         /// </param>
         /// <returns>
-        ///     A Task returning a List of <see cref="Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsResult"/>.
+        ///     A Task returning <see cref="Confluent.Kafka.Admin.DeleteConsumerGroupOffsetsResult"/>.
         /// </returns>
-        Task<List<DeleteConsumerGroupOffsetsResult>> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null);
+        Task<DeleteConsumerGroupOffsetsResult> DeleteConsumerGroupOffsetsAsync(String group, IEnumerable<TopicPartition> partitions, DeleteConsumerGroupOffsetsOptions options = null);
 
     }
 
