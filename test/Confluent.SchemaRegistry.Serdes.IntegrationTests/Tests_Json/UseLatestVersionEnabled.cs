@@ -24,23 +24,19 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1
     {
         public int IntField { get; set; }
     }
-
 }
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2
 {
-
     public class TestPoco
     {
         public string StringField { get; set; }
     }
-
 }
 
 
 namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
 {
-
     public static partial class Tests
     {
         /// <summary>
@@ -51,28 +47,25 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             var producerConfig = new ProducerConfig { BootstrapServers = bootstrapServers };
             var schemaRegistryConfig = new SchemaRegistryConfig { Url = schemaRegistryServers };
 
-            var topic = new TemporaryTopic(bootstrapServers, 1);
-            var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig);
-
-            using (var producer =
+            using (var topic = new TemporaryTopic(bootstrapServers, 1))
+            using (var schemaRegistry = new CachedSchemaRegistryClient(schemaRegistryConfig)) 
+            {
+                using (var producer =
                 new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco>(producerConfig)
                     .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco>(schemaRegistry))
                     .Build())
-            {
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco{
                         IntField = 1
                     };
                     producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> { Key = "test1", Value = c }).Wait();
                 }
-            }
 
-            using (var producer = 
-                new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(producerConfig)
-                    .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(
+                using (var producer = 
+                    new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(producerConfig)
+                        .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(
                         schemaRegistry, new JsonSerializerConfig{UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatStrict = true}))
-                    .Build())
-            {
+                        .Build())
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco{
                         StringField = "Test"
@@ -84,5 +77,4 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
             }
         }
     }
-
 }
