@@ -10,6 +10,9 @@
 ## Enhancements
 
 - Added `NormalizeSchemas` configuration property to the Avro, Json and Protobuf serdes.
+- Upgraded `NJsonSchema` to v10.6.3
+- Added `LatestCompatStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
+  when `UseLatestVersion` is set to true.
 
 ## Fixes
 
@@ -556,7 +559,3 @@ Feature highlights:
 # 0.11.5 and previous
 
 refer to the [release notes](https://github.com/confluentinc/confluent-kafka-dotnet/releases)
-
-## Minor Enhancements
-
-- Updated `NJsonSchema` to v10.6.3.
