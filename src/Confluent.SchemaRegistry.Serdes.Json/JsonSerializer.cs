@@ -198,8 +198,8 @@ namespace Confluent.SchemaRegistry.Serdes
                         }
                         else
                         {
-                            schemaId = await schemaRegistryClient.RegisterSchemaAsync(subject, 
-                                new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
+                            schemaId = await schemaRegistryClient.GetSchemaIdAsync(subject,
+                                        new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                         }
                         subjectsRegistered.Add(subject);

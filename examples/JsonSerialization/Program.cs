@@ -149,10 +149,16 @@ namespace Confluent.Kafka.Examples.JsonSerialization
                 while ((text = Console.ReadLine()) != "q")
                 {
                     User user = new User { Name = text, FavoriteColor = "blue", FavoriteNumber = i++ };
-                    await producer.ProduceAsync(topicName, new Message<string, User> { Value = user })
-                        .ContinueWith(task => Console.WriteLine(task.IsFaulted
-                            ? $"error producing message: {task.Exception.Message}"
-                            : $"produced to: {task.Result.TopicPartitionOffset}"));
+                    var task = producer.ProduceAsync(topicName, new Message<string, User> { Value = user });
+                    task.Wait();
+                    if (task.IsFaulted) 
+                    {
+                        Console.WriteLine("error producing message: {task.Exception.Message}");
+                    }
+                    else 
+                    {
+                        Console.WriteLine("produced to: {task.Result.TopicPartitionOffset}");
+                    }
                 }
             }
 
@@ -162,7 +168,6 @@ namespace Confluent.Kafka.Examples.JsonSerialization
             {
                 // Note: a subject name strategy was not configured, so the default "Topic" was used.
                 var schema = await schemaRegistry.GetLatestSchemaAsync(SubjectNameStrategy.Topic.ConstructValueSubjectName(topicName));
-                Console.WriteLine("schema id : " + schema.Id);
                 Console.WriteLine("\nThe JSON schema corresponding to the written data:");
                 Console.WriteLine(schema.SchemaString);
             }
