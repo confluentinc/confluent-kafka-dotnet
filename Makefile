@@ -10,7 +10,7 @@ EXAMPLE_DIRS=$(shell find ./examples -name '*.csproj' -exec dirname {} \;)
 TEST_DIRS=$(shell find ./test -name '*.csproj'   \;)
 UNIT_TEST_DIRS=$(shell find . -type d -regex '.*UnitTests$$' -exec basename {} \;)
 
-DEFAULT_FRAMEWORK?=net5.0
+DEFAULT_FRAMEWORK?=net6.0
 
 all:
 	@echo "Usage:   make <dotnet-command>"
