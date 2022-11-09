@@ -64,7 +64,7 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                 using (var producer = 
                     new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(
-                        schemaRegistry, new JsonSerializerConfig{UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatStrict = true}))
+                        schemaRegistry, new JsonSerializerConfig{UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatibilityStrict = true}))
                         .Build())
                 {
                     var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco{

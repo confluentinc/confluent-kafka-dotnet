@@ -78,7 +78,7 @@ namespace Confluent.SchemaRegistry.Serdes
             ///
             ///     default: false
             /// </summary>
-            public const string LatestCompatStrict = "json.serializer.latest.compatibility.strict";
+            public const string LatestCompatibilityStrict = "json.serializer.latest.compatibility.strict";
 
             /// <summary>
             ///     The subject name strategy to use for schema registration / lookup.
@@ -165,10 +165,10 @@ namespace Confluent.SchemaRegistry.Serdes
         ///
         ///     default: false
         /// </summary>
-        public bool? LatestCompatStrict
+        public bool? LatestCompatibilityStrict
         {
-            get { return GetBool(PropertyNames.LatestCompatStrict); }
-            set { SetObject(PropertyNames.LatestCompatStrict, value); }
+            get { return GetBool(PropertyNames.LatestCompatibilityStrict); }
+            set { SetObject(PropertyNames.LatestCompatibilityStrict, value); }
         }
         
 

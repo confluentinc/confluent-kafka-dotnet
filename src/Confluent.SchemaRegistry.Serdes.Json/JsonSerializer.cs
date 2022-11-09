@@ -60,7 +60,7 @@ namespace Confluent.SchemaRegistry.Serdes
         private bool autoRegisterSchema = true;
         private bool normalizeSchemas = false;
         private bool useLatestVersion = false;
-        private bool latestCompatStrict = false;
+        private bool latestCompatibilityStrict = false;
         private int initialBufferSize = DefaultInitialBufferSize;
         private SubjectNameStrategyDelegate subjectNameStrategy = null;
         private ISchemaRegistryClient schemaRegistryClient;
@@ -117,7 +117,7 @@ namespace Confluent.SchemaRegistry.Serdes
             if (config.AutoRegisterSchemas != null) { this.autoRegisterSchema = config.AutoRegisterSchemas.Value; }
             if (config.NormalizeSchemas != null) { this.normalizeSchemas = config.NormalizeSchemas.Value; }
             if (config.UseLatestVersion != null) { this.useLatestVersion = config.UseLatestVersion.Value; }
-            if (config.LatestCompatStrict != null) {this.latestCompatStrict = config.LatestCompatStrict.Value; }
+            if (config.LatestCompatibilityStrict != null) {this.latestCompatibilityStrict = config.LatestCompatibilityStrict.Value; }
             if (config.SubjectNameStrategy != null) { this.subjectNameStrategy = config.SubjectNameStrategy.Value.ToDelegate(); }
 
             if (this.useLatestVersion && this.autoRegisterSchema)
@@ -185,7 +185,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                 .ConfigureAwait(continueOnCapturedContext: false);
                             // checks if locally generated schema is compatibile with latest schema on schema and autoregister if set to true else throws exception. 
                             // to enable this validation latestCompatStrict has to be set true.
-                            if (latestCompatStrict) 
+                            if (latestCompatibilityStrict) 
                             {
                                 var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
                                     .ConfigureAwait(continueOnCapturedContext: false);
