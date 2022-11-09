@@ -619,7 +619,7 @@ namespace Confluent.Kafka.Impl.NativeMethods
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_NewPartitions_new(
-                [MarshalAs(UnmanagedType.LPStr)] string topic, 
+                [MarshalAs(UnmanagedType.LPStr)] string topic,
                 UIntPtr new_total_cnt,
                 StringBuilder errstr, UIntPtr errstr_size);
 
@@ -706,13 +706,13 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_ConfigResource_add_config(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
-                [MarshalAs(UnmanagedType.LPStr)] string name, 
+                [MarshalAs(UnmanagedType.LPStr)] string name,
                 [MarshalAs(UnmanagedType.LPStr)] string value);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_ConfigResource_set_config(
                 /* rd_kafka_ConfigResource_t * */ IntPtr config,
-                [MarshalAs(UnmanagedType.LPStr)] string name, 
+                [MarshalAs(UnmanagedType.LPStr)] string name,
                 [MarshalAs(UnmanagedType.LPStr)] string value);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -877,6 +877,29 @@ namespace Confluent.Kafka.Impl.NativeMethods
                         /* size_t * */ out UIntPtr matching_acls_cntp);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern /* rd_kafka_DeleteConsumerGroupOffsets_t */ IntPtr rd_kafka_DeleteConsumerGroupOffsets_new(
+                        [MarshalAs(UnmanagedType.LPStr)] string group,
+                        /* rd_kafka_topic_partition_list_t * */ IntPtr partitions);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteConsumerGroupOffsets_destroy(
+                        /* rd_kafka_DeleteConsumerGroupOffsets_t * */ IntPtr del_grp_offsets);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void rd_kafka_DeleteConsumerGroupOffsets(
+                       /* rd_kafka_t * */ IntPtr rk,
+                       /* rd_kafka_DeleteConsumerGroupOffsets_t ** */ IntPtr[] del_grp_offsets,
+                       UIntPtr del_grp_offsets_cnt,
+                       /* rd_kafka_AdminOptions_t * */ IntPtr options,
+                       /* rd_kafka_queue_t * */ IntPtr rkqu);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_DeleteConsumerGroupOffsets_result_groups(
+                /* rd_kafka_DeleteConsumerGroupOffsets_result_t * */ IntPtr result,
+                /* size_t * */ out UIntPtr cntp
+        );
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern ErrorCode rd_kafka_topic_result_error(IntPtr topicres);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -892,6 +915,8 @@ namespace Confluent.Kafka.Impl.NativeMethods
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr rd_kafka_group_result_error(IntPtr groupres);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr rd_kafka_group_result_partitions(IntPtr groupres);
 
         //
         // Queues
