@@ -36,6 +36,7 @@ namespace Confluent.Kafka.IntegrationTests
 
             using (var topic1 = new TemporaryTopic(bootstrapServers, 1))
             using (var topic2 = new TemporaryTopic(bootstrapServers, 1))
+            using (var topic3 = new TemporaryTopic(bootstrapServers, 2))
             using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build())
             using (var consumer1 = new ConsumerBuilder<Null, string>(new ConsumerConfig { BootstrapServers = bootstrapServers, GroupId = topic1.Name })
                 .SetPartitionsAssignedHandler((c, partitions) =>
@@ -89,6 +90,7 @@ namespace Confluent.Kafka.IntegrationTests
                 catch (AggregateException ex)
                 {
                     var dcgoe = (DeleteConsumerGroupOffsetsException)ex.InnerException;
+                    Assert.Equal(ErrorCode.Local_Partial, dcgoe.Error.Code);
                     Assert.Equal(groupId1, dcgoe.Result.Group);
                     Assert.Equal(1, dcgoe.Result.Partitions.Count);
                     Assert.Equal(0, dcgoe.Result.Partitions[0].Partition.Value);
@@ -116,6 +118,27 @@ namespace Confluent.Kafka.IntegrationTests
                 committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
                 Assert.Equal(1, committedOffsets.Count);
                 Assert.Equal(Offset.Unset, committedOffsets[0].Offset); // offsets are unchaged after the reset
+
+                // Resetting offset for only one partiton in a multi partition topic
+                consumer1.Assign(new List<TopicPartition>() { new TopicPartition(topic3.Name, 0), new TopicPartition(topic3.Name, 1) });
+                consumer1.Commit(new List<TopicPartitionOffset>() { new TopicPartitionOffset(topic3.Name, 0, offsetToCommit), new TopicPartitionOffset(topic3.Name, 1, offsetToCommit + 1) }); // commit some offsets for consumer
+
+                committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
+                Assert.Equal(2, committedOffsets.Count);
+                Assert.Equal(offsetToCommit, committedOffsets[0].Offset);
+                Assert.Equal(offsetToCommit + 1, committedOffsets[1].Offset);
+
+                // Reset offset for partition 0
+                topicPartitionToReset = new List<TopicPartition>() { new TopicPartition(topic3.Name, 0) };
+                res = adminClient.DeleteConsumerGroupOffsetsAsync(groupId1, topicPartitionToReset).Result;
+                Assert.Equal(groupId1, res.Group);
+                Assert.Equal(1, res.Partitions.Count);
+                Assert.Equal(0, res.Partitions[0].Partition.Value);
+
+                committedOffsets = consumer1.Committed(TimeSpan.FromSeconds(1));
+                Assert.Equal(2, committedOffsets.Count);
+                Assert.Equal(Offset.Unset, committedOffsets[0].Offset); // offset is reset for partition 0
+                Assert.Equal(offsetToCommit + 1, committedOffsets[1].Offset);
             }
             LogToFile("end   AdminClient_DeleteRecords");
         }
