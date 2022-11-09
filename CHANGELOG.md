@@ -11,7 +11,7 @@
 
 - Added `NormalizeSchemas` configuration property to the Avro, Json and Protobuf serdes.
 - Upgraded `NJsonSchema` to v10.6.3
-- Added `LatestCompatStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
+- Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
 
 ## Fixes

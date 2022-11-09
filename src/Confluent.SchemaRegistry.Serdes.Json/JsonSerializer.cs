@@ -183,8 +183,6 @@ namespace Confluent.SchemaRegistry.Serdes
                         {
                             var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
-                            // checks if locally generated schema is compatibile with latest schema on schema and autoregister if set to true else throws exception. 
-                            // to enable this validation latestCompatStrict has to be set true.
                             if (latestCompatibilityStrict) 
                             {
                                 var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
