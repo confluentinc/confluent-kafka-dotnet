@@ -22,5 +22,6 @@ namespace Confluent.SchemaRegistry.Serdes
     internal interface IAvroSerializerImpl<T>
     {
         Task<byte[]> Serialize(string topic, T data, bool isKey);
+        Task<int?> GetSchemaId(string topic, T data, bool isKey);
     }
 }
