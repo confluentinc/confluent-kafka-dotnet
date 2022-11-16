@@ -60,6 +60,7 @@ namespace Confluent.Kafka.IntegrationTests
                     while (consumer.Assignment.Count == 0)
                     {
                         Thread.Sleep(1000);
+                        consumer.Consume(TimeSpan.FromSeconds(1));
                         Assert.True(cnt++ < 10);
                     }
                     var committed = consumer.Committed(TimeSpan.FromSeconds(10));
