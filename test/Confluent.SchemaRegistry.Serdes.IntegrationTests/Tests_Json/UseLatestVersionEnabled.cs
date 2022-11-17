@@ -55,24 +55,19 @@ namespace Confluent.SchemaRegistry.Serdes.IntegrationTests
                     .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco>(schemaRegistry))
                     .Build())
                 {
-                    var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco{
-                        IntField = 1
-                    };
+                    var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco { IntField = 1 };
                     producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses1.TestPoco> { Key = "test1", Value = c }).Wait();
                 }
 
                 using (var producer = 
                     new ProducerBuilder<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(producerConfig)
                         .SetValueSerializer(new JsonSerializer<Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco>(
-                        schemaRegistry, new JsonSerializerConfig{UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatibilityStrict = true}))
+                            schemaRegistry, new JsonSerializerConfig{UseLatestVersion = true, AutoRegisterSchemas = false, LatestCompatibilityStrict = true}))
                         .Build())
                 {
-                    var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco{
-                        StringField = "Test"
-                    };
-                    Assert.Throws<AggregateException>(() => {
-                        producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait();
-                    });
+                    var c = new Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco { StringField = "Test" };
+                    Assert.Throws<AggregateException>(
+                        () => producer.ProduceAsync(topic.Name, new Message<string, Confluent.SchemaRegistry.Serdes.IntegrationTests.TestClasses2.TestPoco> { Key = "test1", Value = c }).Wait());
                 }
             }
         }
