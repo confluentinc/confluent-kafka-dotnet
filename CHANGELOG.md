@@ -1,4 +1,11 @@
-# 1.9.3 
+# 1.9.4
+
+## Fixes
+
+- References librdkafka.redist 1.9.3-RC2 which resolves a transaction related issue. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.3-RC2) for more information.
+
+
+# 1.9.3
 
 ## Enhancements
 
