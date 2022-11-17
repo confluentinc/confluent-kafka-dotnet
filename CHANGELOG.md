@@ -1,3 +1,12 @@
+# 2.0.0 
+
+## Enhancements
+
+- Upgraded `NJsonSchema` to v10.6.3
+- Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
+  when `UseLatestVersion` is set to true.
+
+
 # 1.9.4
 
 ## Fixes
@@ -5,7 +14,7 @@
 - References librdkafka.redist 1.9.3-RC2 which resolves a transaction related issue. Refer to the [librdkafka release notes](https://github.com/edenhill/librdkafka/releases/tag/v1.9.3-RC2) for more information.
 
 
-# 1.9.3
+# 1.9.3 
 
 ## Enhancements
 

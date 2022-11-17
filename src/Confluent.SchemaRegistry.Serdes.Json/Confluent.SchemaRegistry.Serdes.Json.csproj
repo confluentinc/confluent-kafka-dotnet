@@ -22,7 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NJsonSchema" Version="10.5.2" />
+    <PackageReference Include="NJsonSchema" Version="10.6.3" />
   </ItemGroup>
 
   <ItemGroup>
