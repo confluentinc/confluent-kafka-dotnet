@@ -5,6 +5,11 @@
 - Upgraded `NJsonSchema` to v10.6.3
 - Added `LatestCompatibilityStrict` configuration property to JsonSerializerConfig to check the compatibility with latest schema
   when `UseLatestVersion` is set to true.
+- Added DeleteConsumerGroupOffset to AdminClient.
+
+## Fixes
+
+- Added default rebalance callback handler to prevent consumers not having partition revoked handlers from entering into the erroneous state.
 
 
 # 1.9.4
