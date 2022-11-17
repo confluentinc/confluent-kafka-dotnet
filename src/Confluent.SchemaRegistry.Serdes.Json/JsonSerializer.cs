@@ -179,7 +179,7 @@ namespace Confluent.SchemaRegistry.Serdes
                                         new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json), normalizeSchemas)
                                     .ConfigureAwait(continueOnCapturedContext: false);
                         } 
-                        else if(useLatestVersion)
+                        else if (useLatestVersion)
                         {
                             var latestSchema = await schemaRegistryClient.GetLatestSchemaAsync(subject)
                                 .ConfigureAwait(continueOnCapturedContext: false);
@@ -187,7 +187,7 @@ namespace Confluent.SchemaRegistry.Serdes
                             {
                                 var isCompatible = await schemaRegistryClient.IsCompatibleAsync(subject, new Schema(this.schemaText, EmptyReferencesList, SchemaType.Json))
                                     .ConfigureAwait(continueOnCapturedContext: false);
-                                if (isCompatible == false)
+                                if (!isCompatible)
                                 {
                                     throw new InvalidDataException("Schema not compatible with latest schema : " + latestSchema.SchemaString);
                                 }
